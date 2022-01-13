@@ -13,7 +13,7 @@ from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
 from .pipelines.pipeline import (
     GrapheneAssetMaterialization,
-    GraphenePartitionMaterializationCount,
+    GrapheneMaterializationCountByPartition,
     GraphenePipeline,
 )
 from .util import non_null_list
@@ -63,7 +63,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene.NonNull(graphene.List(GrapheneAssetMaterialization)),
         partitions=graphene.List(graphene.String),
     )
-    materializationCountByPartition = non_null_list(GraphenePartitionMaterializationCount)
+    materializationCountByPartition = non_null_list(GrapheneMaterializationCountByPartition)
 
     class Meta:
         name = "AssetNode"
@@ -234,33 +234,18 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def resolve_materializationCountByPartition(self, _graphene_info):
         asset_key = self._external_asset_node.asset_key
+        partition_keys = self.get_partition_keys()
 
-        partitions_def_data = self._external_asset_node.partitions_def_data
-        partition_keys = None
-        if partitions_def_data:
-            # TODO: Add functionality for dynamic partitions definition
-            if isinstance(
-                partitions_def_data, ExternalStaticPartitionsDefinitionData
-            ) or isinstance(partitions_def_data, ExternalTimeWindowPartitionsDefinitionData):
-                partition_keys = [
-                    partition.name
-                    for partition in partitions_def_data.get_partitions_definition().get_partitions()
-                ]
+        count_by_partition = _graphene_info.context.instance.get_materialization_count_by_partition(
+            [self._external_asset_node.asset_key]
+        )[asset_key]
 
-        materialization_count_by_partition = (
-            _graphene_info.context.instance.get_materialization_count_by_partition(
-                [self._external_asset_node.asset_key]
-            )[asset_key]
-        )
-
-        materialization_counts = []
-        if partition_keys:
-            for partition_key in partition_keys:
-                count = materialization_count_by_partition.get(partition_key, 0)
-                materialization_counts.append(
-                    GraphenePartitionMaterializationCount(partition_key, count)
-                )
-        return materialization_counts
+        return [
+            GrapheneMaterializationCountByPartition(
+                partition_key, count_by_partition.get(partition_key, 0)
+            )
+            for partition_key in partition_keys
+        ]
 
 
 class GrapheneAssetNodeOrError(graphene.Union):
