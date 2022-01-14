@@ -33,6 +33,7 @@ from dagster.core.definitions.reconstructable import (
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
+from dagster.utils import merge_dicts
 from dagster.version import __version__ as dagster_module_version
 
 TELEMETRY_STR = ".telemetry"
@@ -56,7 +57,7 @@ TELEMETRY_WHITELISTED_FUNCTIONS = {
 }
 
 
-def telemetry_wrapper(f):
+def telemetry_wrapper(metadata):
     """
     Wrapper around functions that are logged. Will log the function_name, client_time, and
     elapsed_time, and success.
@@ -64,6 +65,16 @@ def telemetry_wrapper(f):
     Wrapped function must be in the list of whitelisted function, and must have a DagsterInstance
     parameter named 'instance' in the signature.
     """
+    if callable(metadata):
+        return _telemetry_wrapper(metadata)
+
+    def _wraps(f):
+        return _telemetry_wrapper(f, metadata)
+
+    return _wraps
+
+
+def _telemetry_wrapper(f, metadata=None):
     if f.__name__ not in TELEMETRY_WHITELISTED_FUNCTIONS:
         raise DagsterInvariantViolationError(
             "Attempted to log telemetry for function {name} that is not in telemetry whitelisted "
@@ -85,15 +96,21 @@ def telemetry_wrapper(f):
     def wrap(*args, **kwargs):
         instance = _check_telemetry_instance_param(args, kwargs, instance_index)
         start_time = datetime.datetime.now()
-        log_action(instance=instance, action=f.__name__ + "_started", client_time=start_time)
+        log_action(
+            instance=instance,
+            action=f.__name__ + "_started",
+            client_time=start_time,
+            metadata=metadata,
+        )
         result = f(*args, **kwargs)
         end_time = datetime.datetime.now()
+        success_metadata = {"success": getattr(result, "success", None)}
         log_action(
             instance=instance,
             action=f.__name__ + "_ended",
             client_time=end_time,
             elapsed_time=end_time - start_time,
-            metadata={"success": getattr(result, "success", None)},
+            metadata=merge_dicts(success_metadata, metadata),
         )
         return result
 
