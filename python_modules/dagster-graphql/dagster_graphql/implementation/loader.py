@@ -19,7 +19,9 @@ class BatchJobRunLoader:
         return self._data[job_name][:limit]
 
     def fetch(self, limit):
-        runs = self._instance.get_runs(limit=RunBucketLimit.by_job(bucket_limit=limit))
+        runs = self._instance.get_runs(
+            limit=RunBucketLimit.by_job(bucket_limit=limit, job_names=self._job_names)
+        )
         self._data = defaultdict(list)
         for run in runs:
             self._data[run.pipeline_name].append(run)
@@ -28,9 +30,10 @@ class BatchJobRunLoader:
 
 
 class BatchTagRunLoader:
-    def __init__(self, graphene_info, tag_key):
+    def __init__(self, graphene_info, tag_key, tag_values):
         self._instance = graphene_info.context.instance
         self._tag_key = check.str_param(tag_key, "tag_key")
+        self._tag_values = check.list_param(tag_values, "tag_values", of_type=str)
         self._fetched = False
         self._fetched_limit = None
         self._data = None
@@ -46,7 +49,9 @@ class BatchTagRunLoader:
 
     def fetch(self, limit):
         runs = self._instance.get_runs(
-            limit=RunBucketLimit.by_tag(self._tag_key, bucket_limit=limit)
+            limit=RunBucketLimit.by_tag(
+                self._tag_key, tag_values=self._tag_values, bucket_limit=limit
+            )
         )
         self._data = defaultdict(list)
         for run in runs:

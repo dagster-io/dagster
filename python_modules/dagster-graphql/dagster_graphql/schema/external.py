@@ -185,9 +185,11 @@ class GrapheneRepository(graphene.ObjectType):
     def resolve_schedules(self, graphene_info):
         from dagster.core.storage.tags import SCHEDULE_NAME_TAG
 
-        batch_run_loader = BatchTagRunLoader(graphene_info, SCHEDULE_NAME_TAG)
-
         schedules = self._repository.get_external_schedules()
+        batch_run_loader = BatchTagRunLoader(
+            graphene_info, SCHEDULE_NAME_TAG, [schedule.name for schedule in schedules]
+        )
+
         schedule_states_by_name = {
             state.name: state
             for state in graphene_info.context.instance.all_stored_job_state(
@@ -209,8 +211,10 @@ class GrapheneRepository(graphene.ObjectType):
     def resolve_sensors(self, graphene_info):
         from dagster.core.storage.tags import SENSOR_NAME_TAG
 
-        batch_run_loader = BatchTagRunLoader(graphene_info, SENSOR_NAME_TAG)
         sensors = self._repository.get_external_sensors()
+        batch_run_loader = BatchTagRunLoader(
+            graphene_info, SENSOR_NAME_TAG, [sensor.name for sensor in sensors]
+        )
         sensor_states_by_name = {
             state.name: state
             for state in graphene_info.context.instance.all_stored_job_state(
