@@ -15,6 +15,7 @@ import hashlib
 import json
 import logging
 import os
+import platform
 import sys
 import uuid
 from collections import namedtuple
@@ -23,7 +24,6 @@ from logging.handlers import RotatingFileHandler
 
 import click
 import yaml
-from typing import List
 from dagster import check
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.reconstructable import (
@@ -33,7 +33,7 @@ from dagster.core.definitions.reconstructable import (
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
-import platform
+from dagster.version import __version__ as dagster_module_version
 
 TELEMETRY_STR = ".telemetry"
 INSTANCE_ID_STR = "instance_id"
@@ -44,18 +44,8 @@ UPDATE_REPO_STATS = "update_repo_stats"
 START_DAGIT_WEBSERVER = "start_dagit_webserver"
 DAEMON_ALIVE = "daemon_alive"
 TELEMETRY_VERSION = "0.2"
-DAGSTER_VERSION: List[
-    str
-] = []  # cache dagster version, but due to circular imports we must wait to import it.
 OS_DESC = platform.platform()
-
-
-def _get_dagster_version():
-    if not DAGSTER_VERSION:
-        from dagster import __version__ as dagster_version
-
-        DAGSTER_VERSION.append(dagster_version)
-    return DAGSTER_VERSION[0]
+OS_PLATFORM = platform.system()
 
 
 TELEMETRY_WHITELISTED_FUNCTIONS = {
@@ -119,7 +109,7 @@ class TelemetryEntry(
     namedtuple(
         "TelemetryEntry",
         "action client_time elapsed_time event_id instance_id pipeline_name_hash "
-        "num_pipelines_in_repo repo_hash python_version metadata version dagster_version os_desc",
+        "num_pipelines_in_repo repo_hash python_version metadata version dagster_version os_desc os_platform",
     )
 ):
     """
@@ -141,6 +131,7 @@ class TelemetryEntry(
     version - Schema version
     dagster_version - Version of the project being used.
     os_desc - String describing OS in use
+    os_platform - Terse string describing OS platform - linux, windows, darwin, etc.
 
     If $DAGSTER_HOME is set, then use $DAGSTER_HOME/logs/
     Otherwise, use ~/.dagster/logs/
@@ -187,8 +178,9 @@ class TelemetryEntry(
             python_version=get_python_version(),
             metadata=metadata,
             version=TELEMETRY_VERSION,
+            dagster_version=dagster_module_version,
             os_desc=OS_DESC,
-            dagster_version=_get_dagster_version(),
+            os_platform=OS_PLATFORM,
         )
 
 
