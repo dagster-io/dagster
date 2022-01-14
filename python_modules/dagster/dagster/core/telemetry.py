@@ -23,6 +23,7 @@ from logging.handlers import RotatingFileHandler
 
 import click
 import yaml
+from typing import List
 from dagster import check
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.reconstructable import (
@@ -32,6 +33,7 @@ from dagster.core.definitions.reconstructable import (
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
+import platform
 
 TELEMETRY_STR = ".telemetry"
 INSTANCE_ID_STR = "instance_id"
@@ -42,6 +44,19 @@ UPDATE_REPO_STATS = "update_repo_stats"
 START_DAGIT_WEBSERVER = "start_dagit_webserver"
 DAEMON_ALIVE = "daemon_alive"
 TELEMETRY_VERSION = "0.2"
+DAGSTER_VERSION: List[
+    str
+] = []  # cache dagster version, but due to circular imports we must wait to import it.
+OS_DESC = platform.platform()
+
+
+def _get_dagster_version():
+    if not DAGSTER_VERSION:
+        from dagster import __version__ as dagster_version
+
+        DAGSTER_VERSION.append(dagster_version)
+    return DAGSTER_VERSION[0]
+
 
 TELEMETRY_WHITELISTED_FUNCTIONS = {
     "_logged_execute_pipeline",
@@ -104,7 +119,7 @@ class TelemetryEntry(
     namedtuple(
         "TelemetryEntry",
         "action client_time elapsed_time event_id instance_id pipeline_name_hash "
-        "num_pipelines_in_repo repo_hash python_version metadata version",
+        "num_pipelines_in_repo repo_hash python_version metadata version dagster_version os_desc",
     )
 ):
     """
@@ -124,6 +139,8 @@ class TelemetryEntry(
     num_pipelines_in_repo - Number of pipelines in repo, if any
     metadata - More information i.e. pipeline success (boolean)
     version - Schema version
+    dagster_version - Version of the project being used.
+    os_desc - String describing OS in use
 
     If $DAGSTER_HOME is set, then use $DAGSTER_HOME/logs/
     Otherwise, use ~/.dagster/logs/
@@ -170,6 +187,8 @@ class TelemetryEntry(
             python_version=get_python_version(),
             metadata=metadata,
             version=TELEMETRY_VERSION,
+            os_desc=OS_DESC,
+            dagster_version=_get_dagster_version(),
         )
 
 
