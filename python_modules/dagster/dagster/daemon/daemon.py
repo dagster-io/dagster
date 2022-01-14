@@ -1,6 +1,7 @@
 import logging
 import sys
 import time
+import uuid
 from abc import abstractclassmethod, abstractmethod
 from collections import deque
 from contextlib import AbstractContextManager
@@ -23,6 +24,7 @@ def get_default_daemon_logger(daemon_name):
 
 DAEMON_HEARTBEAT_ERROR_LIMIT = 5  # Show at most 5 errors
 TELEMETRY_LOGGING_INTERVAL = 3600 * 24  # Interval (in seconds) at which to log that daemon is alive
+TELEMETRY_DAEMON_SESSION_ID = str(uuid.uuid4())
 
 
 class DagsterDaemon(AbstractContextManager):
@@ -154,7 +156,9 @@ class DagsterDaemon(AbstractContextManager):
             not self._last_log_time
             or (curr_time - self._last_log_time).total_seconds() >= TELEMETRY_LOGGING_INTERVAL
         ):
-            log_action(instance, DAEMON_ALIVE)
+            log_action(
+                instance, DAEMON_ALIVE, metadata={"DAEMON_SESSION_ID": TELEMETRY_DAEMON_SESSION_ID}
+            )
             self._last_log_time = curr_time
 
     @abstractmethod
