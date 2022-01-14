@@ -22,7 +22,7 @@ def get_default_daemon_logger(daemon_name):
 
 
 DAEMON_HEARTBEAT_ERROR_LIMIT = 5  # Show at most 5 errors
-TELEMETRY_LOGGING_INTERVAL = 3600  # Interval (in seconds) at which to log that daemon is alive
+TELEMETRY_LOGGING_INTERVAL = 3600 * 24  # Interval (in seconds) at which to log that daemon is alive
 
 
 class DagsterDaemon(AbstractContextManager):
