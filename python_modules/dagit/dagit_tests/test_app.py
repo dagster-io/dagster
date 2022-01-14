@@ -326,6 +326,9 @@ def test_dagit_logs(
                         "python_version",
                         "metadata",
                         "version",
+                        "dagster_version",
+                        "os_desc",
+                        "os_platform",
                     ]
                 )
 
