@@ -18,6 +18,7 @@ from dagster.core.scheduler.instigation import (
 from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG, check_tags
+from dagster.core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster.core.workspace import IWorkspace
 from dagster.seven.compat.pendulum import to_timezone
 from dagster.utils import merge_dicts
@@ -436,6 +437,8 @@ def _create_scheduler_run(
     external_pipeline,
     run_request,
 ):
+    from dagster.daemon.daemon import TELEMETRY_DAEMON_SESSION_ID
+
     run_config = run_request.run_config
     schedule_tags = run_request.tags
 
@@ -455,6 +458,14 @@ def _create_scheduler_run(
     tags[SCHEDULED_EXECUTION_TIME_TAG] = to_timezone(schedule_time, "UTC").isoformat()
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key
+
+    log_action(
+        instance,
+        SCHEDULED_RUN_CREATED,
+        repo_hash=hash_name(repo_location.name),
+        pipeline_name_hash=hash_name(external_pipeline.name),
+        metadata={"DAEMON_SESSION_ID": TELEMETRY_DAEMON_SESSION_ID},
+    )
 
     return instance.create_run(
         pipeline_name=external_schedule.pipeline_name,

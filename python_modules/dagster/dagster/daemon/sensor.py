@@ -18,6 +18,7 @@ from dagster.core.scheduler.instigation import (
 )
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, check_tags
+from dagster.core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster.core.workspace import IWorkspace
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
@@ -449,6 +450,8 @@ def _get_or_create_sensor_run(
 def _create_sensor_run(
     instance, repo_location, external_sensor, external_pipeline, run_request, target_data
 ):
+    from dagster.daemon.daemon import TELEMETRY_DAEMON_SESSION_ID
+
     external_execution_plan = repo_location.get_external_execution_plan(
         external_pipeline,
         run_request.run_config,
@@ -467,6 +470,14 @@ def _create_sensor_run(
     )
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key
+
+    log_action(
+        instance,
+        SENSOR_RUN_CREATED,
+        pipeline_name_hash=hash_name(external_pipeline.name),
+        repo_hash=hash_name(repo_location.name),
+        metadata={"DAEMON_SESSION_ID": TELEMETRY_DAEMON_SESSION_ID},
+    )
 
     return instance.create_run(
         pipeline_name=target_data.pipeline_name,
