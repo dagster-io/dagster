@@ -212,6 +212,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         if filters.updated_after:
             query = query.where(RunsTable.c.update_timestamp > filters.updated_after)
 
+        if filters.created_before:
+            query = query.where(RunsTable.c.create_timestamp < filters.created_before)
+
         return query
 
     def _runs_query(

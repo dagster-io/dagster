@@ -434,7 +434,8 @@ register_serdes_tuple_fallbacks({"PipelineRun": DagsterRun})
 @whitelist_for_serdes
 class PipelineRunsFilter(
     namedtuple(
-        "_PipelineRunsFilter", "run_ids pipeline_name statuses tags snapshot_id updated_after mode"
+        "_PipelineRunsFilter",
+        "run_ids pipeline_name statuses tags snapshot_id updated_after mode created_before",
     )
 ):
     def __new__(
@@ -446,6 +447,7 @@ class PipelineRunsFilter(
         snapshot_id=None,
         updated_after=None,
         mode=None,
+        created_before=None,
     ):
         return super(PipelineRunsFilter, cls).__new__(
             cls,
@@ -456,6 +458,7 @@ class PipelineRunsFilter(
             snapshot_id=check.opt_str_param(snapshot_id, "snapshot_id"),
             updated_after=check.opt_inst_param(updated_after, "updated_after", datetime),
             mode=check.opt_str_param(mode, "mode"),
+            created_before=check.opt_inst_param(created_before, "created_before", datetime),
         )
 
     @staticmethod
