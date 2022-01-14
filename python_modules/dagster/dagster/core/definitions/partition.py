@@ -184,6 +184,12 @@ class StaticPartitionsDefinition(
 ):  # pylint: disable=unsubscriptable-object
     def __init__(self, partition_keys: List[str]):
         check.list_param(partition_keys, "partition_keys", of_type=str)
+
+        # Dagit selects partition ranges following the format '2022-01-13...2022-01-14'
+        # "..." is an invalid substring in partition keys
+        if any(["..." in partition_key for partition_key in partition_keys]):
+            raise DagsterInvalidDefinitionError("'...' is an invalid substring in a partition key")
+
         self._partitions = [Partition(key) for key in partition_keys]
 
     def get_partitions(
