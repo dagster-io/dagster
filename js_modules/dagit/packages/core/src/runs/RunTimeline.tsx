@@ -303,10 +303,13 @@ const RunTimelineRow = (props: RowProps) => {
       .map((run) => {
         const startTime = run.startTime;
         const endTime = run.endTime || Date.now();
-        const left = Math.floor(((startTime - start) / rangeLength) * width);
+        const left = Math.max(0, Math.floor(((startTime - start) / rangeLength) * width));
         const runWidth = Math.max(
           MIN_CHUNK_WIDTH,
-          Math.ceil(((endTime - startTime) / rangeLength) * width),
+          Math.min(
+            Math.ceil(((endTime - startTime) / rangeLength) * width),
+            Math.ceil(((endTime - start) / rangeLength) * width),
+          ),
         );
 
         return {
