@@ -1,3 +1,4 @@
+import {gql, useQuery} from '@apollo/client';
 import {Box, ColorsWIP, Popover, Mono, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -5,21 +6,32 @@ import styled from 'styled-components/macro';
 
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {browserTimezone} from '../app/time/browserTimezone';
+import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
+import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {RunStatus} from '../types/globalTypes';
+import {InstigationStatus, RunStatus} from '../types/globalTypes';
 
 import {RunStatusDot} from './RunStatusDots';
-import {failedStatuses, inProgressStatuses, queuedStatuses, successStatuses} from './RunStatuses';
+import {
+  failedStatuses,
+  inProgressStatuses,
+  queuedStatuses,
+  successStatuses,
+  doneStatuses,
+} from './RunStatuses';
 import {TimeElapsed} from './TimeElapsed';
+import {RunTimelineQuery, RunTimelineQueryVariables} from './types/RunTimelineQuery';
 
 const ROW_HEIGHT = 24;
 const TIME_HEADER_HEIGHT = 36;
 const LABEL_WIDTH = 232;
 
 const ONE_HOUR_MSEC = 60 * 60 * 1000;
+const POLL_INTERVAL = 15 * 1000;
 
 export type RunForJob = {
   id: string;
+  jobName: string | undefined;
   status: RunStatus | 'SCHEDULED';
   startTime: number;
   endTime: number;
@@ -27,7 +39,7 @@ export type RunForJob = {
 
 export type JobMap = {
   [jobKey: string]: {
-    label: string;
+    name: string;
     path: string;
     runs: RunForJob[];
   };
@@ -56,7 +68,6 @@ export const RunTimeline = (props: Props) => {
   }, []);
 
   const [unvalidatedStart, unvalidatedEnd] = range;
-
   // Ensure that `start` is earlier than `end`.
   const [start, end] = React.useMemo(() => {
     return unvalidatedEnd < unvalidatedStart
@@ -64,38 +75,113 @@ export const RunTimeline = (props: Props) => {
       : [unvalidatedStart, unvalidatedEnd];
   }, [unvalidatedStart, unvalidatedEnd]);
 
+  const queryResult = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(RUN_TIMELINE_QUERY, {
+    fetchPolicy: 'network-only',
+    pollInterval: POLL_INTERVAL,
+    notifyOnNetworkStatusChange: true,
+    variables: {
+      inProgressFilter: {
+        statuses: [RunStatus.CANCELING, RunStatus.STARTED],
+        createdBefore: end / 1000.0,
+      },
+      terminatedFilter: {
+        statuses: Array.from(doneStatuses),
+        createdBefore: end / 1000.0,
+        updatedAfter: start / 1000.0,
+      },
+    },
+  });
+  const {data} = queryResult;
+
   const jobList = React.useMemo(() => {
+    const {unterminated, terminated, workspaceOrError} = data || {};
+    const runs: RunForJob[] = [
+      ...(unterminated && unterminated.__typename === 'Runs' ? unterminated.results : []),
+      ...(terminated && terminated.__typename === 'Runs' ? terminated.results : []),
+    ].map((run) => ({
+      id: run.id,
+      status: run.status,
+      jobName: run.pipelineName,
+      startTime:
+        run.stats && run.stats.__typename !== 'PythonError' && run.stats.startTime
+          ? run.stats.startTime * 1000
+          : 0,
+      endTime:
+        run.stats && run.stats.__typename !== 'PythonError' && run.stats.endTime
+          ? run.stats.endTime * 1000
+          : Date.now(),
+    }));
+    const runsByJob = {};
+    runs.forEach((run) => {
+      if (
+        run.jobName &&
+        run.startTime &&
+        overlap(
+          {start, end},
+          {
+            start: run.startTime,
+            end: run.endTime,
+          },
+        )
+      ) {
+        runsByJob[run.jobName] = [...(runsByJob[run.jobName] || []), run];
+      }
+    });
+    const ticksByJob = {};
+    if (workspaceOrError && workspaceOrError.__typename === 'Workspace') {
+      for (const locationEntry of workspaceOrError.locationEntries) {
+        if (
+          locationEntry.__typename === 'WorkspaceLocationEntry' &&
+          locationEntry.locationOrLoadError?.__typename === 'RepositoryLocation'
+        ) {
+          for (const repository of locationEntry.locationOrLoadError.repositories) {
+            for (const pipeline of repository.pipelines) {
+              const schedules = (repository.schedules || []).filter(
+                (schedule) => schedule.pipelineName === pipeline.name,
+              );
+              for (const schedule of schedules) {
+                if (schedule.scheduleState.status === InstigationStatus.RUNNING) {
+                  schedule.futureTicks.results.forEach(({timestamp}) => {
+                    const startTime = timestamp * 1000;
+                    if (overlap({start, end}, {start: startTime, end: startTime})) {
+                      ticksByJob[schedule.pipelineName] = [
+                        ...(ticksByJob[schedule.pipelineName] || []),
+                        {
+                          id: `${schedule.pipelineName}-future-run-${timestamp}`,
+                          jobName: schedule.pipelineName,
+                          status: 'SCHEDULED',
+                          startTime,
+                          endTime: startTime + 10 * 1000,
+                        },
+                      ];
+                    }
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
     const jobKeys = Object.keys(jobs);
-    const overlapComparison = {start, end};
+    const runsByJobKey = jobKeys.reduce((accum, jobKey) => {
+      const job = jobs[jobKey];
+      const jobRuns = [...(runsByJob[job.name] || []), ...(ticksByJob[job.name] || [])];
+      return !jobRuns.length ? accum : {...accum, [jobKey]: jobRuns};
+    }, {});
 
-    const jobsAndRunsInRange = jobKeys.reduce((accum, jobKey) => {
-      const {runs} = jobs[jobKey];
-      const runsInRange = runs.filter(
-        (run) =>
-          run.startTime &&
-          overlap(
-            {
-              start: run.startTime,
-              end: run.endTime || Date.now(),
-            },
-            overlapComparison,
-          ),
-      );
-
-      return !runsInRange.length ? accum : {...accum, [jobKey]: runsInRange};
-    }, {} as {[key: string]: RunForJob[]});
-
-    const jobsInRange = Object.keys(jobsAndRunsInRange);
+    const jobsInRange = Object.keys(runsByJobKey);
 
     const earliest = jobsInRange.reduce((accum, jobKey) => {
-      const startTimes = jobsAndRunsInRange[jobKey].map((job) => job.startTime || 0);
+      const startTimes = runsByJobKey[jobKey].map((run: any) => run.startTime);
       return {...accum, [jobKey]: Math.min(...startTimes)};
     }, {} as {[jobName: string]: number});
 
     return jobsInRange
       .sort((a, b) => earliest[a] - earliest[b])
-      .map((jobKey) => ({...jobs[jobKey], jobKey, runs: jobsAndRunsInRange[jobKey]}));
-  }, [jobs, start, end]);
+      .map((jobKey) => ({...jobs[jobKey], jobKey, runs: runsByJobKey[jobKey]}));
+  }, [jobs, data, start, end]);
 
   const height = ROW_HEIGHT * jobList.length;
 
@@ -105,11 +191,11 @@ export const RunTimeline = (props: Props) => {
         <>
           <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={height} />
           <div>
-            {jobList.map(({jobKey, label, path, runs}, ii) => (
+            {jobList.map(({jobKey, name, path, runs}, ii) => (
               <RunTimelineRow
                 key={jobKey}
                 jobKey={jobKey}
-                jobLabel={label}
+                jobLabel={name}
                 jobPath={path}
                 runs={runs}
                 top={ii * ROW_HEIGHT + TIME_HEADER_HEIGHT}
@@ -303,7 +389,7 @@ const RunTimelineRow = (props: RowProps) => {
       .map((run) => {
         const startTime = run.startTime;
         const endTime = run.endTime || Date.now();
-        const left = Math.max(0, Math.floor(((startTime - start) / rangeLength) * width));
+        const left = Math.floor(((startTime - start) / rangeLength) * width);
         const runWidth = Math.max(
           MIN_CHUNK_WIDTH,
           Math.min(
@@ -529,4 +615,66 @@ const HoverContentJobName = styled.strong`
   text-overflow: ellipsis;
   white-space: nowrap;
   width: 100%;
+`;
+
+const RUN_TIMELINE_QUERY = gql`
+  query RunTimelineQuery($inProgressFilter: RunsFilter!, $terminatedFilter: RunsFilter!) {
+    unterminated: runsOrError(filter: $inProgressFilter) {
+      ... on Runs {
+        results {
+          id
+          pipelineName
+          ...RunTimeFragment
+        }
+      }
+    }
+    terminated: runsOrError(filter: $terminatedFilter) {
+      ... on Runs {
+        results {
+          id
+          pipelineName
+          ...RunTimeFragment
+        }
+      }
+    }
+    workspaceOrError {
+      ... on Workspace {
+        locationEntries {
+          id
+          name
+          loadStatus
+          displayMetadata {
+            key
+            value
+          }
+          locationOrLoadError {
+            ... on RepositoryLocation {
+              id
+              name
+              repositories {
+                id
+                name
+                pipelines {
+                  id
+                  name
+                }
+                schedules {
+                  id
+                  name
+                  pipelineName
+                  scheduleState {
+                    id
+                    status
+                  }
+                  ...ScheduleFutureTicksFragment
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  ${RUN_TIME_FRAGMENT}
+  ${SCHEDULE_FUTURE_TICKS_FRAGMENT}
 `;

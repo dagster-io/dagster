@@ -323,36 +323,10 @@ const OverviewContent = () => {
       const jobsForStatus: JobItemWithRuns[] = filteredJobsWithRuns[status];
       const toAppend = {};
       for (const jobItem of jobsForStatus) {
-        const {repoAddress, runs, job} = jobItem;
+        const {repoAddress, job} = jobItem;
         const jobKey = makeJobKey(repoAddress, job.name);
         toAppend[jobKey] = {
-          label: job.name,
-          path: workspacePipelinePath({
-            repoName: repoAddress.name,
-            repoLocation: repoAddress.location,
-            pipelineName: job.name,
-            isJob: job.isJob,
-          }),
-          runs: runs.map((run) => ({
-            id: run.id,
-            status: run.status,
-            startTime: run.startTime ? run.startTime * 1000 : null,
-            endTime: run.endTime ? run.endTime * 1000 : null,
-          })),
-        };
-      }
-      return {...accum, ...toAppend};
-    }, {} as JobMap);
-
-    for (const jobItem of scheduled) {
-      const {job, repoAddress, schedules} = jobItem;
-      const jobKey = makeJobKey(repoAddress, job.name);
-
-      // If there are no runs tracked for this job yet because they're only scheduled,
-      // add an entry.
-      if (!jobMap.hasOwnProperty(jobKey)) {
-        jobMap[jobKey] = {
-          label: job.name,
+          name: job.name,
           path: workspacePipelinePath({
             repoName: repoAddress.name,
             repoLocation: repoAddress.location,
@@ -362,20 +336,26 @@ const OverviewContent = () => {
           runs: [],
         };
       }
+      return {...accum, ...toAppend};
+    }, {} as JobMap);
 
-      const {runs} = jobMap[jobKey];
-      for (const schedule of schedules) {
-        if (schedule.scheduleState.status === InstigationStatus.RUNNING) {
-          schedule.futureTicks.results.forEach(({timestamp}) => {
-            const startTime = timestamp * 1000;
-            runs.push({
-              id: `${jobKey}-future-run-${timestamp}`,
-              status: 'SCHEDULED',
-              startTime,
-              endTime: startTime + 10 * 1000,
-            });
-          });
-        }
+    for (const jobItem of scheduled) {
+      const {job, repoAddress} = jobItem;
+      const jobKey = makeJobKey(repoAddress, job.name);
+
+      // If there are no runs tracked for this job yet because they're only scheduled,
+      // add an entry.
+      if (!jobMap.hasOwnProperty(jobKey)) {
+        jobMap[jobKey] = {
+          name: job.name,
+          path: workspacePipelinePath({
+            repoName: repoAddress.name,
+            repoLocation: repoAddress.location,
+            pipelineName: job.name,
+            isJob: job.isJob,
+          }),
+          runs: [],
+        };
       }
     }
 
