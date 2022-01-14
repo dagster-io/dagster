@@ -149,12 +149,6 @@
         1,
         "cmdoption-dagit-db-statement-timeout"
       ],
-      "--empty-working-directory": [
-        2,
-        7,
-        1,
-        "cmdoption-dagit-empty-working-directory"
-      ],
       "--empty-workspace": [
         2,
         7,
@@ -1682,12 +1676,6 @@
         7,
         1,
         "cmdoption-dagster-graphql-a"
-      ],
-      "--empty-working-directory": [
-        2,
-        7,
-        1,
-        "cmdoption-dagster-graphql-empty-working-directory"
       ],
       "--empty-workspace": [
         2,
@@ -5931,7 +5919,6 @@
       37
     ],
     "3333": 2,
-    "465": 57,
     "4815": [
       13,
       37
@@ -5952,7 +5939,6 @@
     "54321": 21,
     "5439": 13,
     "5672": 15,
-    "587": 57,
     "6313": [
       13,
       37
@@ -6077,8 +6063,7 @@
       53,
       54,
       55,
-      56,
-      57
+      56
     ],
     "Then": [
       15,
@@ -6210,8 +6195,6 @@
       55,
       56
     ],
-    "_default_failure_email_bodi": 57,
-    "_default_failure_email_subject": 57,
     "_default_failure_messag": 30,
     "_default_failure_message_text_fn": 39,
     "_kei": 3,
@@ -6504,8 +6487,7 @@
       18,
       21,
       24,
-      37,
-      57
+      37
     ],
     "adl": [
       14,
@@ -6599,10 +6581,8 @@
     "alert": [
       32,
       39,
-      54,
-      57
+      54
     ],
-    "alert_email_password": 57,
     "alert_start": 6,
     "alert_success": 6,
     "algorithm": [
@@ -6695,13 +6675,11 @@
       50,
       52,
       53,
-      55,
-      57
+      55
     ],
     "allow_host_key_chang": 42,
     "aloha": 3,
     "along": [
-      2,
       13,
       19,
       21,
@@ -6992,7 +6970,8 @@
       28,
       45,
       50,
-      55
+      55,
+      57
     ],
     "argument": [
       1,
@@ -7651,8 +7630,7 @@
       45,
       48,
       53,
-      55,
-      57
+      55
     ],
     "bool": [
       3,
@@ -7928,8 +7906,7 @@
       53,
       54,
       55,
-      56,
-      57
+      56
     ],
     "callback": 8,
     "caller": [
@@ -8425,8 +8402,7 @@
       39,
       42,
       48,
-      55,
-      57
+      55
     ],
     "combin": [
       1,
@@ -9024,8 +9000,7 @@
       52,
       54,
       55,
-      56,
-      57
+      56
     ],
     "container": 12,
     "container_kwarg": 22,
@@ -9427,8 +9402,7 @@
     ],
     "dagit_base_url": [
       30,
-      39,
-      57
+      39
     ],
     "dagit_port": 2,
     "dagredi": 28,
@@ -9941,8 +9915,7 @@
     "dedupl": 55,
     "deeplink": [
       30,
-      39,
-      57
+      39
     ],
     "def": [
       1,
@@ -10842,8 +10815,7 @@
       53,
       54,
       55,
-      56,
-      57
+      56
     ],
     "elaps": 54,
     "element": [
@@ -10858,17 +10830,7 @@
       24,
       56
     ],
-    "email": [
-      28,
-      57
-    ],
-    "email_body_fn": 57,
-    "email_from": 57,
-    "email_on_job_failur": 57,
-    "email_on_run_failur": 57,
-    "email_password": 57,
-    "email_subject_fn": 57,
-    "email_to": 57,
+    "email": 28,
     "embed": 57,
     "emit": 9,
     "emit_1": 56,
@@ -11749,8 +11711,7 @@
       53,
       54,
       55,
-      56,
-      57
+      56
     ],
     "fail_fast": 21,
     "failur": [
@@ -11767,15 +11728,13 @@
       44,
       48,
       54,
-      55,
-      57
+      55
     ],
     "failure_data": 55,
     "failure_ev": [
       30,
       39,
-      54,
-      57
+      54
     ],
     "failure_hook": 8,
     "failure_typ": 27,
@@ -12603,8 +12562,7 @@
       17,
       26,
       30,
-      39,
-      57
+      39
     ],
     "getrunbyid": 21,
     "giant": [
@@ -12668,7 +12626,6 @@
       53,
       56
     ],
-    "gmail": 57,
     "goe": [
       13,
       37
@@ -12739,8 +12696,7 @@
       45,
       48,
       50,
-      54,
-      57
+      54
     ],
     "graphin": 7,
     "graphout": 7,
@@ -13112,8 +13068,7 @@
       27,
       31,
       35,
-      37,
-      57
+      37
     ],
     "hour": [
       24,
@@ -13200,8 +13155,7 @@
       48,
       49,
       54,
-      55,
-      57
+      55
     ],
     "http_proxi": 30,
     "https_proxi": 30,
@@ -13431,8 +13385,7 @@
       51,
       54,
       55,
-      56,
-      57
+      56
     ],
     "include_exampl": 12,
     "include_rel": 21,
@@ -13475,7 +13428,6 @@
       55
     ],
     "indic": [
-      2,
       3,
       5,
       9,
@@ -13754,8 +13706,7 @@
       53,
       54,
       55,
-      56,
-      57
+      56
     ],
     "instance_config_map": [
       17,
@@ -13841,8 +13792,7 @@
       53,
       54,
       55,
-      56,
-      57
+      56
     ],
     "integ": [
       3,
@@ -14197,8 +14147,7 @@
       53,
       54,
       55,
-      56,
-      57
+      56
     ],
     "job_config": 24,
     "job_def": 45,
@@ -14214,8 +14163,7 @@
       27,
       49,
       52,
-      54,
-      57
+      54
     ],
     "job_namespac": [
       17,
@@ -14225,8 +14173,7 @@
     "job_scoped_clust": 24,
     "job_select": [
       39,
-      54,
-      57
+      54
     ],
     "job_wait_timeout": 17,
     "jobconfigvalidationinvalid": 27,
@@ -14242,8 +14189,7 @@
       47,
       50,
       52,
-      54,
-      57
+      54
     ],
     "jobid": 24,
     "jobnotfounderror": 27,
@@ -14453,7 +14399,8 @@
       50,
       53,
       55,
-      56
+      56,
+      57
     ],
     "lab": 21,
     "label": [
@@ -14475,8 +14422,7 @@
     "lambda": [
       6,
       49,
-      50,
-      57
+      50
     ],
     "lambda_solid": [
       50,
@@ -15868,8 +15814,7 @@
       23,
       37,
       39,
-      54,
-      57
+      54
     ],
     "month": 49,
     "monthli": [
@@ -16064,13 +16009,11 @@
       24,
       39,
       52,
-      53,
-      57
+      53
     ],
     "my_message_fn": [
       30,
-      39,
-      57
+      39
     ],
     "my_modul": [
       15,
@@ -16099,8 +16042,7 @@
       16,
       17,
       30,
-      39,
-      57
+      39
     ],
     "my_repo_nam": 12,
     "my_return_n_": 52,
@@ -16140,8 +16082,7 @@
     "mycoolsit": [
       39,
       48,
-      55,
-      57
+      55
     ],
     "mycorp": 13,
     "myiomanag": 10,
@@ -17494,8 +17435,7 @@
       31,
       35,
       40,
-      42,
-      57
+      42
     ],
     "past": [
       9,
@@ -17729,8 +17669,7 @@
       49,
       50,
       54,
-      55,
-      57
+      55
     ],
     "pipeline_run": [
       6,
@@ -17740,8 +17679,7 @@
       44,
       53,
       54,
-      55,
-      57
+      55
     ],
     "pipeline_run_statu": 54,
     "pipeline_select": [
@@ -17767,8 +17705,7 @@
       50,
       52,
       54,
-      55,
-      57
+      55
     ],
     "pipelineexecutionresult": 50,
     "pipelinefactori": 50,
@@ -17814,10 +17751,7 @@
     "placehold": 3,
     "placement": 24,
     "plai": 54,
-    "plain": [
-      39,
-      57
-    ],
+    "plain": 39,
     "plan": [
       9,
       12,
@@ -17921,8 +17855,7 @@
       34,
       35,
       37,
-      42,
-      57
+      42
     ],
     "port_numb": 27,
     "posit": [
@@ -18261,8 +18194,7 @@
     ],
     "protocol": [
       20,
-      30,
-      57
+      30
     ],
     "provid": [
       1,
@@ -18635,7 +18567,6 @@
     ],
     "rebuild": 2,
     "recalcul": 21,
-    "receipt": 57,
     "receiv": [
       5,
       13,
@@ -18696,6 +18627,7 @@
     "reconstructablerepositori": 12,
     "reconstructor_function_nam": 50,
     "reconstructor_module_nam": 50,
+    "reconstructor_working_directori": 50,
     "record": [
       1,
       9,
@@ -18923,7 +18855,6 @@
       13,
       37
     ],
-    "repli": 57,
     "replic": [
       13,
       37
@@ -18965,8 +18896,7 @@
       37,
       39,
       50,
-      54,
-      57
+      54
     ],
     "repository_data": 52,
     "repository_location_nam": 27,
@@ -19675,8 +19605,7 @@
     "runcoordin": 9,
     "runfailuresensorcontext": [
       39,
-      54,
-      57
+      54
     ],
     "runlaunch": [
       9,
@@ -20057,11 +19986,9 @@
       30,
       37,
       39,
-      42,
-      57
+      42
     ],
     "send_messag": 8,
-    "sender": 57,
     "sens": [
       15,
       16,
@@ -20075,8 +20002,7 @@
     "sensor": [
       30,
       39,
-      52,
-      57
+      52
     ],
     "sensor_nam": 54,
     "sensordefinit": [
@@ -20090,8 +20016,7 @@
       19,
       37,
       39,
-      54,
-      57
+      54
     ],
     "separ": [
       4,
@@ -20158,8 +20083,7 @@
       29,
       30,
       37,
-      40,
-      57
+      40
     ],
     "servic": [
       13,
@@ -20296,7 +20220,6 @@
     ],
     "shortcut": 55,
     "should": [
-      2,
       3,
       5,
       6,
@@ -20541,10 +20464,6 @@
       13,
       37
     ],
-    "smtp": 57,
-    "smtp_host": 57,
-    "smtp_port": 57,
-    "smtp_type": 57,
     "snappi": [
       13,
       37
@@ -20908,8 +20827,7 @@
       53,
       54,
       55,
-      56,
-      57
+      56
     ],
     "specul": [
       13,
@@ -20970,8 +20888,7 @@
     "ssl": [
       2,
       13,
-      24,
-      57
+      24
     ],
     "sslmode": 13,
     "stabil": [
@@ -21039,7 +20956,6 @@
       54
     ],
     "start_sync": 23,
-    "starttl": 57,
     "stat": [
       13,
       37
@@ -21434,7 +21350,6 @@
       56,
       57
     ],
-    "subject": 57,
     "subminor": 24,
     "submiss": 24,
     "submit": [
@@ -21693,8 +21608,7 @@
       53,
       54,
       55,
-      56,
-      57
+      56
     ],
     "taken": 23,
     "tar": 24,
@@ -21782,8 +21696,7 @@
       30,
       39,
       48,
-      55,
-      57
+      55
     ],
     "text_fn": 39,
     "text_messag": 30,
@@ -22407,8 +22320,7 @@
       53,
       54,
       55,
-      56,
-      57
+      56
     ],
     "uniqu": [
       3,
@@ -22580,8 +22492,7 @@
       37,
       39,
       48,
-      55,
-      57
+      55
     ],
     "urlmetadataentrydata": [
       48,
@@ -22659,7 +22570,6 @@
     "use_unsigned_sess": 13,
     "used": [
       1,
-      2,
       3,
       4,
       5,
@@ -23375,8 +23285,7 @@
       53,
       54,
       55,
-      56,
-      57
+      56
     ],
     "while": [
       3,
@@ -23620,7 +23529,6 @@
       13,
       37
     ],
-    "xxx": 57,
     "yaml": [
       2,
       9,
@@ -23757,8 +23665,7 @@
       40,
       44,
       50,
-      53,
-      57
+      53
     ],
     "your_kei": 20,
     "your_org_her": 27,
