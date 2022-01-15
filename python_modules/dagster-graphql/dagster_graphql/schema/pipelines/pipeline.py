@@ -605,6 +605,8 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         self._external_pipeline = check.inst_param(
             external_pipeline, "external_pipeline", ExternalPipeline
         )
+        # optional run loader, provided by a parent graphene object (e.g. GrapheneRepository)
+        # that instantiates multiple pipelines
         self._batch_run_loader = check.opt_inst_param(
             batch_run_loader, "batch_run_loader", BatchJobRunLoader
         )
@@ -644,6 +646,8 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
                 self._external_pipeline.name, kwargs.get("limit")
             )
             return [GrapheneRun(run) for run in runs]
+
+        # otherwise, fall back to the default implementation
         return super().resolve_runs(graphene_info, **kwargs)
 
     def resolve_assetNodes(self, graphene_info, **kwargs):

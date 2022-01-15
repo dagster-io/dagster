@@ -1,10 +1,17 @@
 from collections import defaultdict
 
 from dagster import check
-from dagster.core.storage.pipeline_run import RunBucketLimit
+from dagster.core.storage.pipeline_run import JobBucket, TagBucket
 
 
 class BatchJobRunLoader:
+    """
+    Batch run loader, which fetches a number of runs for a set of jobs.  This can be used to
+    instantiate a batch of graphene jobs, so that job runs can be fetched in a single database query
+    instead of getting split out across multiple queries, without changing the structure of the
+    graphql query.
+    """
+
     def __init__(self, graphene_info, job_names):
         self._instance = graphene_info.context.instance
         self._job_names = check.list_param(job_names, "job_names", of_type=str)
@@ -20,7 +27,7 @@ class BatchJobRunLoader:
 
     def fetch(self, limit):
         runs = self._instance.get_runs(
-            limit=RunBucketLimit.by_job(bucket_limit=limit, job_names=self._job_names)
+            bucket=JobBucket(bucket_limit=limit, job_names=self._job_names),
         )
         self._data = defaultdict(list)
         for run in runs:
@@ -30,6 +37,14 @@ class BatchJobRunLoader:
 
 
 class BatchTagRunLoader:
+    """
+    Batch run loader, which fetches a number of runs for a set of tag values corresponding to a
+    given tag key. This can be used to instantiate a batch of graphene objects that map to a set of
+    job runs using tags (e.g. schedules, sensors, partitions). These tagged job runs can be fetched
+    in a single database query instead of getting split out across multiple queries, without
+    changing the structure of the graphql query.
+    """
+
     def __init__(self, graphene_info, tag_key, tag_values):
         self._instance = graphene_info.context.instance
         self._tag_key = check.str_param(tag_key, "tag_key")
@@ -49,9 +64,9 @@ class BatchTagRunLoader:
 
     def fetch(self, limit):
         runs = self._instance.get_runs(
-            limit=RunBucketLimit.by_tag(
-                self._tag_key, tag_values=self._tag_values, bucket_limit=limit
-            )
+            bucket=TagBucket(
+                tag_key=self._tag_key, bucket_limit=limit, tag_values=self._tag_values
+            ),
         )
         self._data = defaultdict(list)
         for run in runs:

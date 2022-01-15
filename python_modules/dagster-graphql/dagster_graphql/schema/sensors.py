@@ -62,6 +62,9 @@ class GrapheneSensor(graphene.ObjectType):
     def __init__(self, external_sensor, sensor_state, batch_run_loader=None):
         self._external_sensor = check.inst_param(external_sensor, "external_sensor", ExternalSensor)
         self._sensor_state = check.opt_inst_param(sensor_state, "sensor_state", InstigatorState)
+
+        # optional run loader, provided by a parent graphene object (e.g. GrapheneRepository)
+        # that instantiates multiple sensors
         self._batch_run_loader = check.opt_inst_param(
             batch_run_loader, "batch_run_loader", BatchTagRunLoader
         )
@@ -84,6 +87,7 @@ class GrapheneSensor(graphene.ObjectType):
         return self._external_sensor.get_external_origin_id()
 
     def resolve_sensorState(self, _graphene_info):
+        # forward the batch run loader to the instigation state, which provides the sensor runs
         return GrapheneInstigationState(self._sensor_state, self._batch_run_loader)
 
     def resolve_nextTick(self, graphene_info):

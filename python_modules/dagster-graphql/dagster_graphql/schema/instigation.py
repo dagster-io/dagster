@@ -15,7 +15,7 @@ from dagster.core.scheduler.instigation import (
     SensorInstigatorData,
 )
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
-from dagster.core.storage.tags import TagType, get_tag_type
+from dagster.core.storage.tags import SCHEDULE_NAME_TAG, SENSOR_NAME_TAG, TagType, get_tag_type
 from dagster.seven.compat.pendulum import to_timezone
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
@@ -280,6 +280,9 @@ class GrapheneInstigationState(graphene.ObjectType):
         batch_run_loader=None,
     ):
         self._job_state = check.inst_param(job_state, "job_state", InstigatorState)
+
+        # optional run loader, provided by a parent graphene object (e.g. GrapheneRepository)
+        # that instantiates multiple schedules/sensors
         self._batch_run_loader = check.opt_inst_param(
             batch_run_loader, "batch_run_loader", BatchTagRunLoader
         )
@@ -308,7 +311,6 @@ class GrapheneInstigationState(graphene.ObjectType):
 
     def resolve_runs(self, graphene_info, **kwargs):
         from .pipelines.pipeline import GrapheneRun
-        from dagster.core.storage.tags import SENSOR_NAME_TAG, SCHEDULE_NAME_TAG
 
         tag_key = (
             SENSOR_NAME_TAG
