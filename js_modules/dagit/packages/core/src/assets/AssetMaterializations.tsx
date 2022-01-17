@@ -130,7 +130,7 @@ export const AssetMaterializations: React.FC<Props> = ({
   }, [params.asOf, assetLastMaterializedAt, refetch]);
 
   const hasLineage = materializations.some((m) => m.materializationEvent.assetLineage.length > 0);
-  const hasPartitions = materializations.some((m) => m.partition);
+  const hasPartitions = materializations.some((m) => m.partition) || assetHasDefinedPartitions;
 
   const grouped = React.useMemo<MaterializationGroup[]>(() => {
     if (!hasPartitions || xAxis !== 'partition') {

@@ -76,7 +76,7 @@ class GrapheneAssetMaterialization(graphene.ObjectType):
 
 
 class GrapheneMaterializationCountByPartition(graphene.ObjectType):
-    partition = graphene.Field(graphene.String)
+    partition = graphene.NonNull(graphene.String)
     materializationCount = graphene.NonNull(graphene.Int)
 
     class Meta:
