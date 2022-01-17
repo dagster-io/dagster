@@ -5546,7 +5546,7 @@ __metadata:
     typescript: 4.5.4
     webpack: 4.46.0
     worker-loader: ^3.0.8
-    yaml: 2.0.0-1
+    yaml: 2.0.0-10
   peerDependencies:
     "@blueprintjs/core": ^3.45.0
     "@blueprintjs/icons": ^3.26.1
@@ -30450,10 +30450,10 @@ typescript@~3.9.7:
   languageName: node
   linkType: hard
 
-"yaml@npm:2.0.0-1":
-  version: 2.0.0-1
-  resolution: "yaml@npm:2.0.0-1"
-  checksum: ccfbd1424dbf205a8828593faa91dfd40bd21e3fb575e257280d3526ade9508f3ea0acbe7605abc81bac6b4d6729ddb5b3de6bd818232f48480fd1eda8d7fd4c
+"yaml@npm:2.0.0-10":
+  version: 2.0.0-10
+  resolution: "yaml@npm:2.0.0-10"
+  checksum: 7a0bac2f80225da6008fb8ab887f43166fb2485cc3e1350185c43499c76841ea0ca9d79b40c0970e08ab3943f25ffb184e709fef7fb8b26d73987ed0452a91cc
   languageName: node
   linkType: hard
 
