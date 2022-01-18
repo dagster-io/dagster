@@ -78,3 +78,43 @@ export const ManyRows = () => {
 
   return <RunTimeline jobs={jobs} range={[twoHoursAgo, now]} />;
 };
+
+export const VeryLongRunning = () => {
+  const fourHoursAgo = React.useMemo(() => Date.now() - 4 * 60 * 60 * 1000, []);
+  const twoHoursAgo = React.useMemo(() => Date.now() - 2 * 60 * 60 * 1000, []);
+  const twoDaysAgo = React.useMemo(() => Date.now() - 48 * 60 * 60 * 1000, []);
+  const future = React.useMemo(() => Date.now() + 1 * 60 * 60 * 1000, []);
+
+  const jobs = React.useMemo(() => {
+    const jobKeyA = faker.random.words(2).split(' ').join('-').toLowerCase();
+    const jobKeyB = faker.random.words(2).split(' ').join('-').toLowerCase();
+    return {
+      [jobKeyA]: {
+        label: jobKeyA,
+        path: `/${jobKeyA}`,
+        runs: [
+          {
+            id: faker.datatype.uuid(),
+            status: RunStatus.FAILURE,
+            startTime: twoDaysAgo,
+            endTime: twoHoursAgo,
+          },
+        ],
+      },
+      [jobKeyB]: {
+        label: jobKeyB,
+        path: `/${jobKeyB}`,
+        runs: [
+          {
+            id: faker.datatype.uuid(),
+            status: RunStatus.STARTED,
+            startTime: twoDaysAgo,
+            endTime: Date.now(),
+          },
+        ],
+      },
+    };
+  }, [twoDaysAgo, twoHoursAgo]);
+
+  return <RunTimeline jobs={jobs} range={[fourHoursAgo, future]} />;
+};

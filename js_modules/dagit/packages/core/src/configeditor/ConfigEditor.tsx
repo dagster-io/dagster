@@ -42,6 +42,9 @@ interface ConfigEditorProps {
   onHelpContextChange: (helpContext: ConfigEditorHelpContext | null) => void;
 }
 
+// Use `default` due to Webpack config.
+const errorIconPath = Icons.error.default;
+
 const AUTO_COMPLETE_AFTER_KEY = /^[a-zA-Z0-9_@(]$/;
 const performLint = debounce((editor: any) => {
   editor.performLint();
@@ -73,7 +76,7 @@ const CodeMirrorShimStyle = createGlobalStyle`
     .CodeMirror-lint-marker-error {
       background-image: none;
       background: ${ColorsWIP.Red500};
-      mask-image: url(${Icons.error});
+      mask-image: url(${errorIconPath});
       mask-size: cover;
       margin-bottom: 2px;
     }

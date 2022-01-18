@@ -141,6 +141,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         limit: int = None,
         order_by: str = None,
         ascending: bool = False,
+        cursor: str = None,
     ) -> List[RunRecord]:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
 

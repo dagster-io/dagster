@@ -226,7 +226,8 @@ export interface RunsFilter {
   tags?: ExecutionTag[] | null;
   statuses?: RunStatus[] | null;
   snapshotId?: string | null;
-  updatedAfter?: string | null;
+  updatedAfter?: number | null;
+  createdBefore?: number | null;
   mode?: string | null;
 }
 
