@@ -1,5 +1,4 @@
 import memoize from 'lodash/memoize';
-import LayoutWorker from 'worker-loader!../workers/dagre_layout.worker.ts';
 
 import {asyncMemoize} from '../app/Util';
 
@@ -20,7 +19,7 @@ export const getDagrePipelineLayout = memoize(layoutPipeline, _layoutCacheKey);
 
 const _asyncDagrePipelineLayout = (solids: ILayoutOp[], parentSolid?: ILayoutOp) => {
   return new Promise((resolve) => {
-    const worker = new LayoutWorker();
+    const worker = new Worker(new URL('../workers/dagre_layout.worker', import.meta.url));
     worker.addEventListener('message', (event) => {
       resolve(event.data);
       worker.terminate();
