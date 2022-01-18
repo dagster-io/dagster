@@ -5,7 +5,7 @@ When new releases include breaking changes or deprecations, this document descri
 ## Migrating to 0.13.0
 
 Jobs, ops, and graphs have replaced pipelines, solids, modes, and presets as the stable core of the
-system. [Here](https://docs.dagster.io/guides/dagster/graph_job_op) is a guide you can use to update your code using the legacy APIs into using the new Dagster core APIs.
+system. [Here](https://docs.dagster.io/guides/dagster/graph_job_op) is a guide you can use to update your code using the legacy APIs into using the new Dagster core APIs. 0.13.0 is still compatible with the pipeline, solid, mode, and preset APIs, which means that you don't need to migrate your code to upgrade to 0.13.0.
 
 ## Migrating to 0.12.0
 
