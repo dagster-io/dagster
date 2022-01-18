@@ -15,6 +15,7 @@ import hashlib
 import json
 import logging
 import os
+import platform
 import sys
 import uuid
 from collections import namedtuple
@@ -32,6 +33,7 @@ from dagster.core.definitions.reconstructable import (
 )
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.instance import DagsterInstance
+from dagster.version import __version__ as dagster_module_version
 
 TELEMETRY_STR = ".telemetry"
 INSTANCE_ID_STR = "instance_id"
@@ -42,6 +44,9 @@ UPDATE_REPO_STATS = "update_repo_stats"
 START_DAGIT_WEBSERVER = "start_dagit_webserver"
 DAEMON_ALIVE = "daemon_alive"
 TELEMETRY_VERSION = "0.2"
+OS_DESC = platform.platform()
+OS_PLATFORM = platform.system()
+
 
 TELEMETRY_WHITELISTED_FUNCTIONS = {
     "_logged_execute_pipeline",
@@ -104,7 +109,7 @@ class TelemetryEntry(
     namedtuple(
         "TelemetryEntry",
         "action client_time elapsed_time event_id instance_id pipeline_name_hash "
-        "num_pipelines_in_repo repo_hash python_version metadata version",
+        "num_pipelines_in_repo repo_hash python_version metadata version dagster_version os_desc os_platform",
     )
 ):
     """
@@ -124,6 +129,9 @@ class TelemetryEntry(
     num_pipelines_in_repo - Number of pipelines in repo, if any
     metadata - More information i.e. pipeline success (boolean)
     version - Schema version
+    dagster_version - Version of the project being used.
+    os_desc - String describing OS in use
+    os_platform - Terse string describing OS platform - linux, windows, darwin, etc.
 
     If $DAGSTER_HOME is set, then use $DAGSTER_HOME/logs/
     Otherwise, use ~/.dagster/logs/
@@ -170,6 +178,9 @@ class TelemetryEntry(
             python_version=get_python_version(),
             metadata=metadata,
             version=TELEMETRY_VERSION,
+            dagster_version=dagster_module_version,
+            os_desc=OS_DESC,
+            os_platform=OS_PLATFORM,
         )
 
 
