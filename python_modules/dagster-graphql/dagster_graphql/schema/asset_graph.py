@@ -13,7 +13,7 @@ from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
 from .pipelines.pipeline import (
     GrapheneAssetMaterialization,
-    GrapheneMaterializationCountByPartition,
+    GrapheneMaterializationCount,
     GraphenePipeline,
 )
 from .util import non_null_list
@@ -63,7 +63,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene.NonNull(graphene.List(GrapheneAssetMaterialization)),
         partitions=graphene.List(graphene.String),
     )
-    materializationCountByPartition = non_null_list(GrapheneMaterializationCountByPartition)
+    materializationCountByPartition = non_null_list(GrapheneMaterializationCount)
 
     class Meta:
         name = "AssetNode"
@@ -241,9 +241,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         )[asset_key]
 
         return [
-            GrapheneMaterializationCountByPartition(
-                partition_key, count_by_partition.get(partition_key, 0)
-            )
+            GrapheneMaterializationCount(partition_key, count_by_partition.get(partition_key, 0))
             for partition_key in partition_keys
         ]
 
