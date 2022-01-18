@@ -11,7 +11,11 @@ from dagster.core.host_representation.external_data import (
 from . import external
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
-from .pipelines.pipeline import GrapheneAssetMaterialization, GraphenePipeline
+from .pipelines.pipeline import (
+    GrapheneAssetMaterialization,
+    GrapheneMaterializationCount,
+    GraphenePipeline,
+)
 from .util import non_null_list
 
 
@@ -59,6 +63,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         graphene.NonNull(graphene.List(GrapheneAssetMaterialization)),
         partitions=graphene.List(graphene.String),
     )
+    materializationCountByPartition = non_null_list(GrapheneMaterializationCount)
 
     class Meta:
         name = "AssetNode"
@@ -225,6 +230,19 @@ class GrapheneAssetNode(graphene.ObjectType):
         return [
             GrapheneAssetMaterialization(event=event) if event else None
             for event in ordered_materializations
+        ]
+
+    def resolve_materializationCountByPartition(self, _graphene_info):
+        asset_key = self._external_asset_node.asset_key
+        partition_keys = self.get_partition_keys()
+
+        count_by_partition = _graphene_info.context.instance.get_materialization_count_by_partition(
+            [self._external_asset_node.asset_key]
+        )[asset_key]
+
+        return [
+            GrapheneMaterializationCount(partition_key, count_by_partition.get(partition_key, 0))
+            for partition_key in partition_keys
         ]
 
 

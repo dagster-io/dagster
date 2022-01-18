@@ -168,6 +168,25 @@ GET_LATEST_MATERIALIZATION_PER_PARTITION = """
     }
 """
 
+GET_MATERIALIZATION_COUNT_BY_PARTITION = """
+    query AssetNodeQuery($pipelineSelector: PipelineSelector!) {
+        pipelineOrError(params: $pipelineSelector) {
+            ... on Pipeline {
+                id
+                assetNodes {
+                    id
+                    materializationCountByPartition {
+                        ... on MaterializationCountByPartition {
+                            partition
+                            materializationCount
+                        }
+                    }
+                }
+            }
+        }
+    }
+"""
+
 
 def _create_run(graphql_context, pipeline_name, mode="default"):
     selector = infer_pipeline_selector(graphql_context, pipeline_name)
@@ -474,6 +493,86 @@ class TestAssetAwareEventLog(
         assert new_start_time > start_time
 
         assert asset_node["latestMaterializationByPartition"][1] == None
+
+    def test_materialization_count_by_partition(self, graphql_context):
+        # test for unpartitioned asset
+        selector = infer_pipeline_selector(graphql_context, "two_assets_job")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_MATERIALIZATION_COUNT_BY_PARTITION,
+            variables={"pipelineSelector": selector},
+        )
+        assert result.data
+        assert result.data["pipelineOrError"]
+        assert result.data["pipelineOrError"]["assetNodes"]
+
+        materialization_count = result.data["pipelineOrError"]["assetNodes"][0][
+            "materializationCountByPartition"
+        ]
+        assert len(materialization_count) == 0
+
+        # test for partitioned asset with no materializations
+        selector = infer_pipeline_selector(graphql_context, "partition_materialization_job")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_MATERIALIZATION_COUNT_BY_PARTITION,
+            variables={"pipelineSelector": selector},
+        )
+        assert result.data
+        assert result.data["pipelineOrError"]
+        assert result.data["pipelineOrError"]["assetNodes"]
+
+        materialization_count_result = result.data["pipelineOrError"]["assetNodes"][0][
+            "materializationCountByPartition"
+        ]
+        assert len(materialization_count_result) == 4
+        for materialization_count in materialization_count_result:
+            assert materialization_count["materializationCount"] == 0
+
+        # test for partitioned asset with 1 materialization in 1 partition
+        _create_run(graphql_context, "partition_materialization_job")
+
+        selector = infer_pipeline_selector(graphql_context, "partition_materialization_job")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_MATERIALIZATION_COUNT_BY_PARTITION,
+            variables={"pipelineSelector": selector},
+        )
+
+        assert result.data
+        assert result.data["pipelineOrError"]
+        assert result.data["pipelineOrError"]["assetNodes"]
+        asset_node = result.data["pipelineOrError"]["assetNodes"][0]
+        materialization_count = asset_node["materializationCountByPartition"]
+
+        assert len(materialization_count) == 4
+        assert materialization_count[0]["partition"] == "a"
+        assert materialization_count[0]["materializationCount"] == 0
+
+        assert materialization_count[2]["partition"] == "c"
+        assert materialization_count[2]["materializationCount"] == 1
+
+        # test for partitioned asset with 2 materializations in 1 partition
+        _create_run(graphql_context, "partition_materialization_job")
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_MATERIALIZATION_COUNT_BY_PARTITION,
+            variables={"pipelineSelector": selector},
+        )
+
+        assert result.data
+        assert result.data["pipelineOrError"]
+        assert result.data["pipelineOrError"]["assetNodes"]
+        asset_node = result.data["pipelineOrError"]["assetNodes"][0]
+        materialization_count = asset_node["materializationCountByPartition"]
+
+        assert len(materialization_count) == 4
+        assert materialization_count[0]["partition"] == "a"
+        assert materialization_count[0]["materializationCount"] == 0
+
+        assert materialization_count[2]["partition"] == "c"
+        assert materialization_count[2]["materializationCount"] == 2
 
 
 class TestPersistentInstanceAssetInProgress(

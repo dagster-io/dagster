@@ -639,11 +639,17 @@ type AssetNode {
   partitionKeys: [String!]!
   partitionDefinition: String
   latestMaterializationByPartition(partitions: [String]): [AssetMaterialization]!
+  materializationCountByPartition: [MaterializationCountByPartition!]!
 }
 
 type AssetDependency {
   inputName: String!
   asset: AssetNode!
+}
+
+type MaterializationCountByPartition {
+  partition: String
+  materializationCount: Int!
 }
 
 union DagsterRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | RunFailureEvent | RunStartEvent | RunEnqueuedEvent | RunDequeuedEvent | RunStartingEvent | RunCancelingEvent | RunCanceledEvent | RunSuccessEvent | HandledOutputEvent | LoadedInputEvent | LogsCapturedEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent | AlertStartEvent | AlertSuccessEvent

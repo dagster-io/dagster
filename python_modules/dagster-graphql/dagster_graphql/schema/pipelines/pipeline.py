@@ -75,6 +75,14 @@ class GrapheneAssetMaterialization(graphene.ObjectType):
         return self._event.dagster_event.step_materialization_data.materialization.partition
 
 
+class GrapheneMaterializationCount(graphene.ObjectType):
+    partition = graphene.Field(graphene.String)
+    materializationCount = graphene.NonNull(graphene.Int)
+
+    class Meta:
+        name = "MaterializationCountByPartition"
+
+
 class GrapheneAsset(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     key = graphene.NonNull(GrapheneAssetKey)
