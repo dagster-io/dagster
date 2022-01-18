@@ -178,7 +178,7 @@ def submit_backfill_runs(instance, workspace, repo_location, backfill_job, parti
 def create_backfill_run(
     instance, repo_location, external_pipeline, external_partition_set, backfill_job, partition_data
 ):
-    from dagster.daemon.daemon import TELEMETRY_DAEMON_SESSION_ID
+    from dagster.daemon.daemon import get_telemetry_daemon_session_id
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(repo_location, "repo_location", RepositoryLocation)
@@ -258,7 +258,7 @@ def create_backfill_run(
     log_action(
         instance,
         BACKFILL_RUN_CREATED,
-        metadata={"DAEMON_SESSION_ID": TELEMETRY_DAEMON_SESSION_ID},
+        metadata={"DAEMON_SESSION_ID": get_telemetry_daemon_session_id()},
         repo_hash=hash_name(repo_location.name),
         pipeline_name_hash=hash_name(external_pipeline.name),
     )

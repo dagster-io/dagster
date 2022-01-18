@@ -450,7 +450,7 @@ def _get_or_create_sensor_run(
 def _create_sensor_run(
     instance, repo_location, external_sensor, external_pipeline, run_request, target_data
 ):
-    from dagster.daemon.daemon import TELEMETRY_DAEMON_SESSION_ID
+    from dagster.daemon.daemon import get_telemetry_daemon_session_id
 
     external_execution_plan = repo_location.get_external_execution_plan(
         external_pipeline,
@@ -476,7 +476,10 @@ def _create_sensor_run(
         SENSOR_RUN_CREATED,
         pipeline_name_hash=hash_name(external_pipeline.name),
         repo_hash=hash_name(repo_location.name),
-        metadata={"DAEMON_SESSION_ID": TELEMETRY_DAEMON_SESSION_ID},
+        metadata={
+            "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
+            "SENSOR_NAME_HASH": hash_name(external_sensor.name),
+        },
     )
 
     return instance.create_run(

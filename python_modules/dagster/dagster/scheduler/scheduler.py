@@ -437,7 +437,7 @@ def _create_scheduler_run(
     external_pipeline,
     run_request,
 ):
-    from dagster.daemon.daemon import TELEMETRY_DAEMON_SESSION_ID
+    from dagster.daemon.daemon import get_telemetry_daemon_session_id
 
     run_config = run_request.run_config
     schedule_tags = run_request.tags
@@ -464,7 +464,10 @@ def _create_scheduler_run(
         SCHEDULED_RUN_CREATED,
         repo_hash=hash_name(repo_location.name),
         pipeline_name_hash=hash_name(external_pipeline.name),
-        metadata={"DAEMON_SESSION_ID": TELEMETRY_DAEMON_SESSION_ID},
+        metadata={
+            "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
+            "SCHEDULE_NAME_HASH": hash_name(external_schedule.name),
+        },
     )
 
     return instance.create_run(
