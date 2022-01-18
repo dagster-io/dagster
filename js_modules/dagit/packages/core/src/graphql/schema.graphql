@@ -1146,7 +1146,8 @@ input RunsFilter {
   tags: [ExecutionTag!]
   statuses: [RunStatus!]
   snapshotId: String
-  updatedAfter: String
+  updatedAfter: Float
+  createdBefore: Float
   mode: String
 }
 
