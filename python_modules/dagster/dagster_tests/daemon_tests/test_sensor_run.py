@@ -1287,7 +1287,7 @@ def test_asset_sensor_not_triggered_on_observation(external_repo_context):
                 ticks[0],
                 foo_sensor,
                 freeze_datetime,
-                JobTickStatus.SKIPPED,
+                TickStatus.SKIPPED,
             )
 
             freeze_datetime = freeze_datetime.add(seconds=60)
@@ -1304,7 +1304,7 @@ def test_asset_sensor_not_triggered_on_observation(external_repo_context):
                 ticks[0],
                 foo_sensor,
                 freeze_datetime,
-                JobTickStatus.SUCCESS,
+                TickStatus.SUCCESS,
             )
             run = instance.get_runs()[0]
             assert run.run_config == {}
