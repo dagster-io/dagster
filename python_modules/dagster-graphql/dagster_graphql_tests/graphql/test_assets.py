@@ -546,10 +546,10 @@ class TestAssetAwareEventLog(
         materialization_count = asset_node["materializationCountByPartition"]
 
         assert len(materialization_count) == 4
-        assert materialization_count[0]["partition"] == 'a'
+        assert materialization_count[0]["partition"] == "a"
         assert materialization_count[0]["materializationCount"] == 0
 
-        assert materialization_count[2]["partition"] == 'c'
+        assert materialization_count[2]["partition"] == "c"
         assert materialization_count[2]["materializationCount"] == 1
 
         # test for partitioned asset with 2 materializations in 1 partition
@@ -568,10 +568,10 @@ class TestAssetAwareEventLog(
         materialization_count = asset_node["materializationCountByPartition"]
 
         assert len(materialization_count) == 4
-        assert materialization_count[0]["partition"] == 'a'
+        assert materialization_count[0]["partition"] == "a"
         assert materialization_count[0]["materializationCount"] == 0
 
-        assert materialization_count[2]["partition"] == 'c'
+        assert materialization_count[2]["partition"] == "c"
         assert materialization_count[2]["materializationCount"] == 2
 
 
