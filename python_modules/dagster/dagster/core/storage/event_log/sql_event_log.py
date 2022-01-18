@@ -179,7 +179,11 @@ class SqlEventLogStorage(EventLogStorage):
         with self.run_connection(run_id) as conn:
             conn.execute(insert_event_statement)
 
-        if event.is_dagster_event and event.dagster_event.asset_key:
+        if (
+            event.is_dagster_event
+            and event.dagster_event.is_step_materialization
+            and event.dagster_event.asset_key
+        ):
             self.store_asset(event)
 
     def get_logs_for_run_by_log_id(
