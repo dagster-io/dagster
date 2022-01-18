@@ -23,7 +23,12 @@ from .outputs import StepOutput, StepOutputProperties
 from .utils import solid_execution_error_boundary
 
 SolidOutputUnion = Union[
-    DynamicOutput, Output, AssetMaterialization, Materialization, ExpectationResult
+    DynamicOutput,
+    Output,
+    AssetMaterialization,
+    Materialization,
+    ExpectationResult,
+    AssetObservation,
 ]
 
 

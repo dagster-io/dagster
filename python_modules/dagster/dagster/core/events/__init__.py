@@ -60,6 +60,7 @@ if TYPE_CHECKING:
         "HandledOutputData",
         "LoadedInputData",
         "ComputeLogsCaptureData",
+        AssetObservationData,
     ]
 
 

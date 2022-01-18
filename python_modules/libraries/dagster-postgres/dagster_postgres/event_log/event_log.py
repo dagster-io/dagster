@@ -153,7 +153,11 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 (res[0] + "_" + str(res[1]),),
             )
 
-        if event.is_dagster_event and event.dagster_event.asset_key:
+        if (
+            event.is_dagster_event
+            and event.dagster_event.is_step_materialization
+            and event.dagster_event.asset_key
+        ):
             self.store_asset(event)
 
     def store_asset(self, event):

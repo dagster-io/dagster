@@ -13,6 +13,7 @@ from dagster import (
     Any,
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     Field,
     Output,
     graph,
@@ -98,6 +99,17 @@ def foo_solid():
 @pipeline
 def foo_pipeline():
     foo_solid()
+
+
+@solid
+def foo_observation_solid():
+    yield AssetObservation(asset_key=AssetKey("foo"), metadata={"text": "FOO"})
+    yield Output(5)
+
+
+@pipeline
+def foo_observation_pipeline():
+    foo_observation_solid()
 
 
 @solid
@@ -1202,6 +1214,58 @@ def test_asset_job_sensor(external_repo_context):
             assert run.run_config == {}
             assert run.tags
             assert run.tags.get("dagster/sensor_name") == "asset_job_sensor"
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_asset_sensor_not_triggered_on_observation(external_repo_context):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            foo_sensor = external_repo.get_external_sensor("asset_foo_sensor")
+            instance.start_sensor(foo_sensor)
+
+            # generates the foo asset observation
+            execute_pipeline(foo_observation_pipeline, instance=instance)
+
+            # observation should not fire the asset sensor
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_job_ticks(foo_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                foo_sensor,
+                freeze_datetime,
+                JobTickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+
+            # should generate the foo asset
+            execute_pipeline(foo_pipeline, instance=instance)
+
+            # materialization should fire the asset sensor
+            evaluate_sensors(instance, workspace)
+            ticks = instance.get_job_ticks(foo_sensor.get_external_origin_id())
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                foo_sensor,
+                freeze_datetime,
+                JobTickStatus.SUCCESS,
+            )
+            run = instance.get_runs()[0]
+            assert run.run_config == {}
+            assert run.tags
+            assert run.tags.get("dagster/sensor_name") == "asset_foo_sensor"
 
 
 @pytest.mark.parametrize("external_repo_context", repos())
