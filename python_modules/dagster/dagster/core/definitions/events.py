@@ -291,7 +291,7 @@ class AssetObservation(
         asset_key: Union[List[str], AssetKey, str],
         metadata_entries: Optional[List[EventMetadataEntry]] = None,
         partition: Optional[str] = None,
-        metadata: Optional[Dict[str, MetadataValues]] = None,
+        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)

@@ -8,10 +8,9 @@ from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster.config.config_type import Array, ConfigType
 from dagster.config.config_type import Noneable as ConfigNoneable
-
+from dagster.core.definitions.event_metadata import EventMetadataEntry
 from dagster.core.definitions.events import TypeCheck
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.core.definitions.event_metadata import EventMetadataEntry
 from dagster.serdes import whitelist_for_serdes
 
 from .builtin_config_schemas import BuiltinSchemas
@@ -78,8 +77,6 @@ class DagsterType:
         typing_type: Defaults to None. A valid python typing type (e.g. Optional[List[int]]) for the
             value contained within the DagsterType. Meant for internal use.
     """
-
-    key: str
 
     def __init__(
         self,
@@ -262,7 +259,7 @@ class BuiltinScalarDagsterType(DagsterType):
         )
 
     # This is passed to the constructor of subclasses as the argument `type_check_fn`-- that's why
-    # it exists together with the `type_check_fn arg.
+    # it exists together with the `type_check_fn` arg.
     def type_check_fn(self, _context, value) -> TypeCheck:
         return self.type_check_scalar_value(value)
 
