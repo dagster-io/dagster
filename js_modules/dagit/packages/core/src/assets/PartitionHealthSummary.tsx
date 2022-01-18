@@ -22,19 +22,16 @@ export function usePartitionHealthData(assetKey: AssetKey) {
     const latest =
       (data &&
         data.assetNodeOrError.__typename === 'AssetNode' &&
-        data.assetNodeOrError.latestMaterializationByPartition) ||
+        data.assetNodeOrError.materializationCountByPartition) ||
       [];
 
     const keys =
       data && data.assetNodeOrError.__typename === 'AssetNode'
-        ? data.assetNodeOrError.partitionKeys
+        ? data.assetNodeOrError.materializationCountByPartition.map(({partition}) => partition)
         : [];
 
-    const latestByKey = keyBy(
-      latest.filter(Boolean).map((l) => l!),
-      (l) => l.partition,
-    );
-    const spans = assembleIntoSpans(keys, (key) => key in latestByKey);
+    const latestByKey = keyBy(latest, (l) => l.partition);
+    const spans = assembleIntoSpans(keys, (key) => !!latestByKey[key].materializationCount);
 
     return {
       keys,
@@ -161,12 +158,9 @@ const PARTITION_HEALTH_QUERY = gql`
     assetNodeOrError(assetKey: $assetKey) {
       ... on AssetNode {
         id
-        partitionKeys
-        latestMaterializationByPartition {
+        materializationCountByPartition {
           partition
-          materializationEvent {
-            timestamp
-          }
+          materializationCount
         }
       }
     }

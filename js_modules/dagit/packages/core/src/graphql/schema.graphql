@@ -10,7 +10,10 @@ type DagitQuery {
   repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
   workspaceOrError: WorkspaceOrError!
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
-  pipelineSnapshotOrError(snapshotId: String, activePipelineSelector: PipelineSelector): PipelineSnapshotOrError!
+  pipelineSnapshotOrError(
+    snapshotId: String
+    activePipelineSelector: PipelineSelector
+  ): PipelineSnapshotOrError!
   graphOrError(selector: GraphSelector): GraphOrError!
   scheduler: SchedulerOrError!
   scheduleOrError(scheduleSelector: ScheduleSelector!): ScheduleOrError!
@@ -19,8 +22,14 @@ type DagitQuery {
   sensorsOrError(repositorySelector: RepositorySelector!): SensorsOrError!
   instigationStateOrError(instigationSelector: InstigationSelector!): InstigationStateOrError!
   unloadableInstigationStatesOrError(instigationType: InstigationType): InstigationStatesOrError!
-  partitionSetsOrError(repositorySelector: RepositorySelector!, pipelineName: String!): PartitionSetsOrError!
-  partitionSetOrError(repositorySelector: RepositorySelector!, partitionSetName: String): PartitionSetOrError!
+  partitionSetsOrError(
+    repositorySelector: RepositorySelector!
+    pipelineName: String!
+  ): PartitionSetsOrError!
+  partitionSetOrError(
+    repositorySelector: RepositorySelector!
+    partitionSetName: String
+  ): PartitionSetOrError!
   pipelineRunsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
   pipelineRunOrError(runId: ID!): RunOrError!
   runsOrError(filter: RunsFilter, cursor: String, limit: Int): RunsOrError!
@@ -28,8 +37,16 @@ type DagitQuery {
   pipelineRunTags: [PipelineTagAndValues!]!
   runGroupOrError(runId: ID!): RunGroupOrError!
   runGroupsOrError(filter: RunsFilter, cursor: String, limit: Int): RunGroupsOrError!
-  isPipelineConfigValid(pipeline: PipelineSelector!, runConfigData: RunConfigData, mode: String!): PipelineConfigValidationResult!
-  executionPlanOrError(pipeline: PipelineSelector!, runConfigData: RunConfigData, mode: String!): ExecutionPlanOrError!
+  isPipelineConfigValid(
+    pipeline: PipelineSelector!
+    runConfigData: RunConfigData
+    mode: String!
+  ): PipelineConfigValidationResult!
+  executionPlanOrError(
+    pipeline: PipelineSelector!
+    runConfigData: RunConfigData
+    mode: String!
+  ): ExecutionPlanOrError!
   runConfigSchemaOrError(selector: PipelineSelector!, mode: String): RunConfigSchemaOrError!
   instance: Instance!
   assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
@@ -37,7 +54,11 @@ type DagitQuery {
   assetNodes: [AssetNode!]!
   assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
-  partitionBackfillsOrError(status: BulkActionStatus, cursor: String, limit: Int): PartitionBackfillsOrError!
+  partitionBackfillsOrError(
+    status: BulkActionStatus
+    cursor: String
+    limit: Int
+  ): PartitionBackfillsOrError!
   permissions: [GraphenePermission!]!
 }
 
@@ -322,7 +343,11 @@ interface IPipelineSnapshot {
   graphName: String!
 }
 
-union DagsterTypeOrError = RegularDagsterType | PipelineNotFoundError | DagsterTypeNotFoundError | PythonError
+union DagsterTypeOrError =
+    RegularDagsterType
+  | PipelineNotFoundError
+  | DagsterTypeNotFoundError
+  | PythonError
 
 type RegularDagsterType implements DagsterType {
   key: String!
@@ -521,7 +546,12 @@ scalar RunConfigData
 type Asset {
   id: String!
   key: AssetKey!
-  assetMaterializations(partitions: [String], partitionInLast: Int, beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
+  assetMaterializations(
+    partitions: [String]
+    partitionInLast: Int
+    beforeTimestampMillis: String
+    limit: Int
+  ): [AssetMaterialization!]!
   definition: AssetNode
 }
 
@@ -636,7 +666,11 @@ type AssetNode {
   dependedBy: [AssetDependency!]!
   dependencyKeys: [AssetKey!]!
   dependedByKeys: [AssetKey!]!
-  assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
+  assetMaterializations(
+    partitions: [String]
+    beforeTimestampMillis: String
+    limit: Int
+  ): [AssetMaterialization!]!
   partitionKeys: [String!]!
   partitionDefinition: String
   latestMaterializationByPartition(partitions: [String]): [AssetMaterialization]!
@@ -649,11 +683,40 @@ type AssetDependency {
 }
 
 type MaterializationCountByPartition {
-  partition: String
+  partition: String!
   materializationCount: Int!
 }
 
-union DagsterRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | RunFailureEvent | RunStartEvent | RunEnqueuedEvent | RunDequeuedEvent | RunStartingEvent | RunCancelingEvent | RunCanceledEvent | RunSuccessEvent | HandledOutputEvent | LoadedInputEvent | LogsCapturedEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent | AlertStartEvent | AlertSuccessEvent
+union DagsterRunEvent =
+    ExecutionStepFailureEvent
+  | ExecutionStepInputEvent
+  | ExecutionStepOutputEvent
+  | ExecutionStepSkippedEvent
+  | ExecutionStepStartEvent
+  | ExecutionStepSuccessEvent
+  | ExecutionStepUpForRetryEvent
+  | ExecutionStepRestartEvent
+  | LogMessageEvent
+  | RunFailureEvent
+  | RunStartEvent
+  | RunEnqueuedEvent
+  | RunDequeuedEvent
+  | RunStartingEvent
+  | RunCancelingEvent
+  | RunCanceledEvent
+  | RunSuccessEvent
+  | HandledOutputEvent
+  | LoadedInputEvent
+  | LogsCapturedEvent
+  | ObjectStoreOperationEvent
+  | StepExpectationResultEvent
+  | StepMaterializationEvent
+  | EngineEvent
+  | HookCompletedEvent
+  | HookSkippedEvent
+  | HookErroredEvent
+  | AlertStartEvent
+  | AlertSuccessEvent
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   runId: String!
@@ -1303,7 +1366,11 @@ input PipelineSelector {
   solidSelection: [String!]
 }
 
-union PipelineSnapshotOrError = PipelineNotFoundError | PipelineSnapshot | PipelineSnapshotNotFoundError | PythonError
+union PipelineSnapshotOrError =
+    PipelineNotFoundError
+  | PipelineSnapshot
+  | PipelineSnapshotNotFoundError
+  | PythonError
 
 type PipelineSnapshot implements SolidContainer & IPipelineSnapshot & PipelineReference {
   id: ID!
@@ -1471,7 +1538,12 @@ type RunGroupsOrError {
   results: [RunGroup!]!
 }
 
-union PipelineConfigValidationResult = InvalidSubsetError | PipelineConfigValidationValid | RunConfigValidationInvalid | PipelineNotFoundError | PythonError
+union PipelineConfigValidationResult =
+    InvalidSubsetError
+  | PipelineConfigValidationValid
+  | RunConfigValidationInvalid
+  | PipelineNotFoundError
+  | PythonError
 
 type PipelineConfigValidationValid {
   pipelineName: String!
@@ -1517,9 +1589,19 @@ enum EvaluationErrorReason {
   SELECTOR_FIELD_ERROR
 }
 
-union ExecutionPlanOrError = ExecutionPlan | RunConfigValidationInvalid | PipelineNotFoundError | InvalidSubsetError | PythonError
+union ExecutionPlanOrError =
+    ExecutionPlan
+  | RunConfigValidationInvalid
+  | PipelineNotFoundError
+  | InvalidSubsetError
+  | PythonError
 
-union RunConfigSchemaOrError = RunConfigSchema | PipelineNotFoundError | InvalidSubsetError | ModeNotFoundError | PythonError
+union RunConfigSchemaOrError =
+    RunConfigSchema
+  | PipelineNotFoundError
+  | InvalidSubsetError
+  | ModeNotFoundError
+  | PythonError
 
 type RunConfigSchema {
   rootConfigType: ConfigType!
@@ -1618,13 +1700,18 @@ type DagitMutation {
   stopRunningSchedule(scheduleOriginId: String!): ScheduleMutationResult!
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
   stopSensor(jobOriginId: String!): StopSensorMutationResultOrError!
-  terminatePipelineExecution(runId: String!, terminatePolicy: TerminateRunPolicy): TerminateRunResult!
+  terminatePipelineExecution(
+    runId: String!
+    terminatePolicy: TerminateRunPolicy
+  ): TerminateRunResult!
   terminateRun(runId: String!, terminatePolicy: TerminateRunPolicy): TerminateRunResult!
   deletePipelineRun(runId: String!): DeletePipelineRunResult!
   deleteRun(runId: String!): DeletePipelineRunResult!
   reloadRepositoryLocation(repositoryLocationName: String!): ReloadRepositoryLocationMutationResult!
   reloadWorkspace: ReloadWorkspaceMutationResult!
-  shutdownRepositoryLocation(repositoryLocationName: String!): ShutdownRepositoryLocationMutationResult!
+  shutdownRepositoryLocation(
+    repositoryLocationName: String!
+  ): ShutdownRepositoryLocationMutationResult!
   wipeAssets(assetKeys: [AssetKeyInput!]!): AssetWipeMutationResult!
   launchPartitionBackfill(backfillParams: LaunchBackfillParams!): LaunchBackfillResult!
   resumePartitionBackfill(backfillId: String!): ResumeBackfillResult!
@@ -1632,7 +1719,18 @@ type DagitMutation {
   logTelemetry(action: String!, clientTime: String!, metadata: String!): LogTelemetryMutationResult!
 }
 
-union LaunchRunResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError | NoModeProvidedError
+union LaunchRunResult =
+    LaunchRunSuccess
+  | InvalidStepError
+  | InvalidOutputError
+  | RunConfigValidationInvalid
+  | PipelineNotFoundError
+  | RunConflict
+  | UnauthorizedError
+  | PythonError
+  | PresetNotFoundError
+  | ConflictingExecutionParamsError
+  | NoModeProvidedError
 
 type LaunchRunSuccess implements LaunchPipelineRunSuccess {
   run: Run!
@@ -1697,7 +1795,18 @@ input ExecutionMetadata {
   parentRunId: String
 }
 
-union LaunchRunReexecutionResult = LaunchRunSuccess | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError | NoModeProvidedError
+union LaunchRunReexecutionResult =
+    LaunchRunSuccess
+  | InvalidStepError
+  | InvalidOutputError
+  | RunConfigValidationInvalid
+  | PipelineNotFoundError
+  | RunConflict
+  | UnauthorizedError
+  | PythonError
+  | PresetNotFoundError
+  | ConflictingExecutionParamsError
+  | NoModeProvidedError
 
 union ScheduleMutationResult = PythonError | ScheduleStateResult
 
@@ -1711,7 +1820,12 @@ type StopSensorMutationResult {
   instigationState: InstigationState
 }
 
-union TerminateRunResult = TerminateRunSuccess | TerminateRunFailure | RunNotFoundError | UnauthorizedError | PythonError
+union TerminateRunResult =
+    TerminateRunSuccess
+  | TerminateRunFailure
+  | RunNotFoundError
+  | UnauthorizedError
+  | PythonError
 
 type TerminateRunSuccess implements TerminatePipelineExecutionSuccess {
   run: Run!
@@ -1736,13 +1850,22 @@ enum TerminateRunPolicy {
   MARK_AS_CANCELED_IMMEDIATELY
 }
 
-union DeletePipelineRunResult = DeletePipelineRunSuccess | UnauthorizedError | PythonError | RunNotFoundError
+union DeletePipelineRunResult =
+    DeletePipelineRunSuccess
+  | UnauthorizedError
+  | PythonError
+  | RunNotFoundError
 
 type DeletePipelineRunSuccess {
   runId: String!
 }
 
-union ReloadRepositoryLocationMutationResult = WorkspaceLocationEntry | ReloadNotSupported | RepositoryLocationNotFound | UnauthorizedError | PythonError
+union ReloadRepositoryLocationMutationResult =
+    WorkspaceLocationEntry
+  | ReloadNotSupported
+  | RepositoryLocationNotFound
+  | UnauthorizedError
+  | PythonError
 
 type ReloadNotSupported implements Error {
   message: String!
@@ -1754,19 +1877,39 @@ type RepositoryLocationNotFound implements Error {
 
 union ReloadWorkspaceMutationResult = Workspace | UnauthorizedError | PythonError
 
-union ShutdownRepositoryLocationMutationResult = ShutdownRepositoryLocationSuccess | RepositoryLocationNotFound | UnauthorizedError | PythonError
+union ShutdownRepositoryLocationMutationResult =
+    ShutdownRepositoryLocationSuccess
+  | RepositoryLocationNotFound
+  | UnauthorizedError
+  | PythonError
 
 type ShutdownRepositoryLocationSuccess {
   repositoryLocationName: String!
 }
 
-union AssetWipeMutationResult = AssetNotFoundError | UnauthorizedError | PythonError | AssetWipeSuccess
+union AssetWipeMutationResult =
+    AssetNotFoundError
+  | UnauthorizedError
+  | PythonError
+  | AssetWipeSuccess
 
 type AssetWipeSuccess {
   assetKeys: [AssetKey!]!
 }
 
-union LaunchBackfillResult = LaunchBackfillSuccess | PartitionSetNotFoundError | InvalidStepError | InvalidOutputError | RunConfigValidationInvalid | PipelineNotFoundError | RunConflict | UnauthorizedError | PythonError | PresetNotFoundError | ConflictingExecutionParamsError | NoModeProvidedError
+union LaunchBackfillResult =
+    LaunchBackfillSuccess
+  | PartitionSetNotFoundError
+  | InvalidStepError
+  | InvalidOutputError
+  | RunConfigValidationInvalid
+  | PipelineNotFoundError
+  | RunConflict
+  | UnauthorizedError
+  | PythonError
+  | PresetNotFoundError
+  | ConflictingExecutionParamsError
+  | NoModeProvidedError
 
 type LaunchBackfillSuccess {
   backfillId: String!
@@ -1811,7 +1954,9 @@ type DagitSubscription {
   locationStateChangeEvents: LocationStateChangeSubscription!
 }
 
-union PipelineRunLogsSubscriptionPayload = PipelineRunLogsSubscriptionSuccess | PipelineRunLogsSubscriptionFailure
+union PipelineRunLogsSubscriptionPayload =
+    PipelineRunLogsSubscriptionSuccess
+  | PipelineRunLogsSubscriptionFailure
 
 type PipelineRunLogsSubscriptionSuccess {
   run: Run!
@@ -2042,7 +2187,13 @@ type StopRunningScheduleMutation {
   Output: ScheduleMutationResult!
 }
 
-union ConfigTypeOrError = EnumConfigType | CompositeConfigType | RegularConfigType | PipelineNotFoundError | ConfigTypeNotFoundError | PythonError
+union ConfigTypeOrError =
+    EnumConfigType
+  | CompositeConfigType
+  | RegularConfigType
+  | PipelineNotFoundError
+  | ConfigTypeNotFoundError
+  | PythonError
 
 type EnumConfigType implements ConfigType {
   key: String!

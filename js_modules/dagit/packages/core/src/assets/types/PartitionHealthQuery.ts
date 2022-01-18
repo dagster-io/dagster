@@ -13,22 +13,16 @@ export interface PartitionHealthQuery_assetNodeOrError_AssetNotFoundError {
   __typename: "AssetNotFoundError";
 }
 
-export interface PartitionHealthQuery_assetNodeOrError_AssetNode_latestMaterializationByPartition_materializationEvent {
-  __typename: "StepMaterializationEvent";
-  timestamp: string;
-}
-
-export interface PartitionHealthQuery_assetNodeOrError_AssetNode_latestMaterializationByPartition {
-  __typename: "AssetMaterialization";
-  partition: string | null;
-  materializationEvent: PartitionHealthQuery_assetNodeOrError_AssetNode_latestMaterializationByPartition_materializationEvent;
+export interface PartitionHealthQuery_assetNodeOrError_AssetNode_materializationCountByPartition {
+  __typename: "MaterializationCountByPartition";
+  partition: string;
+  materializationCount: number;
 }
 
 export interface PartitionHealthQuery_assetNodeOrError_AssetNode {
   __typename: "AssetNode";
   id: string;
-  partitionKeys: string[];
-  latestMaterializationByPartition: (PartitionHealthQuery_assetNodeOrError_AssetNode_latestMaterializationByPartition | null)[];
+  materializationCountByPartition: PartitionHealthQuery_assetNodeOrError_AssetNode_materializationCountByPartition[];
 }
 
 export type PartitionHealthQuery_assetNodeOrError = PartitionHealthQuery_assetNodeOrError_AssetNotFoundError | PartitionHealthQuery_assetNodeOrError_AssetNode;
