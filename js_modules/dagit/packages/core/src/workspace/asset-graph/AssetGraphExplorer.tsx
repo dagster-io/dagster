@@ -2,7 +2,7 @@ import {gql, QueryResult, useQuery} from '@apollo/client';
 import {Box, ColorsWIP, IconWIP, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import _, {uniq, without} from 'lodash';
 import React from 'react';
-import {useHistory} from 'react-router';
+import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../../app/GraphQueryImpl';
