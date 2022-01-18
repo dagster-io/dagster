@@ -131,7 +131,7 @@ class TelemetryEntry(
     namedtuple(
         "TelemetryEntry",
         "action client_time elapsed_time event_id instance_id pipeline_name_hash "
-        "num_pipelines_in_repo repo_hash python_version metadata version dagster_version os_desc os_platform run_storage_id",
+        "num_pipelines_in_repo num_schedules_in_repo num_sensors_in_repo repo_hash python_version metadata version dagster_version os_desc os_platform run_storage_id",
     )
 ):
     """
@@ -149,6 +149,8 @@ class TelemetryEntry(
     python_version - Python version
     repo_hash - Hash of repo name, if any
     num_pipelines_in_repo - Number of pipelines in repo, if any
+    num_schedules_in_repo - Number of schedules in repo, if any
+    num_sensors_in_repo - Number of sensors in repo, if any
     metadata - More information i.e. pipeline success (boolean)
     version - Schema version
     dagster_version - Version of the project being used.
@@ -169,6 +171,8 @@ class TelemetryEntry(
         elapsed_time=None,
         pipeline_name_hash=None,
         num_pipelines_in_repo=None,
+        num_schedules_in_repo=None,
+        num_sensors_in_repo=None,
         repo_hash=None,
         metadata=None,
         run_storage_id=None,
@@ -187,6 +191,12 @@ class TelemetryEntry(
         num_pipelines_in_repo = check.opt_str_param(
             num_pipelines_in_repo, "num_pipelines_in_repo", default=""
         )
+        num_schedules_in_repo = check.opt_str_param(
+            num_schedules_in_repo, "num_schedules_in_repo", default=""
+        )
+        num_sensors_in_repo = check.opt_str_param(
+            num_sensors_in_repo, "num_sensors_in_repo", default=""
+        )
         repo_hash = check.opt_str_param(repo_hash, "repo_hash", default="")
 
         return super(TelemetryEntry, cls).__new__(
@@ -198,6 +208,8 @@ class TelemetryEntry(
             instance_id=instance_id,
             pipeline_name_hash=pipeline_name_hash,
             num_pipelines_in_repo=num_pipelines_in_repo,
+            num_schedules_in_repo=num_schedules_in_repo,
+            num_sensors_in_repo=num_sensors_in_repo,
             repo_hash=repo_hash,
             python_version=get_python_version(),
             metadata=metadata,
@@ -391,6 +403,8 @@ def log_external_repo_stats(instance, source, external_repo, external_pipeline=N
         pipeline_name_hash = hash_name(external_pipeline.name) if external_pipeline else ""
         repo_hash = hash_name(external_repo.name)
         num_pipelines_in_repo = len(external_repo.get_all_external_pipelines())
+        num_schedules_in_repo = len(external_repo.get_external_schedules())
+        num_sensors_in_repo = len(external_repo.get_external_sensors())
 
         write_telemetry_log_line(
             TelemetryEntry(
@@ -400,6 +414,8 @@ def log_external_repo_stats(instance, source, external_repo, external_pipeline=N
                 instance_id=instance_id,
                 pipeline_name_hash=pipeline_name_hash,
                 num_pipelines_in_repo=str(num_pipelines_in_repo),
+                num_schedules_in_repo=str(num_schedules_in_repo),
+                num_sensors_in_repo=str(num_sensors_in_repo),
                 repo_hash=repo_hash,
                 metadata={"source": source},
             )._asdict()
@@ -420,15 +436,21 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
             repository = pipeline.get_reconstructable_repository().get_definition()
             repo_hash = hash_name(repository.name)
             num_pipelines_in_repo = len(repository.pipeline_names)
+            num_schedules_in_repo = len(repository.schedule_defs)
+            num_sensors_in_repo = len(repository.sensor_defs)
         elif isinstance(repo, ReconstructableRepository):
             pipeline_name_hash = ""
             repository = repo.get_definition()
             repo_hash = hash_name(repository.name)
             num_pipelines_in_repo = len(repository.pipeline_names)
+            num_schedules_in_repo = len(repository.schedule_defs)
+            num_sensors_in_repo = len(repository.sensor_defs)
         else:
             pipeline_name_hash = hash_name(pipeline.get_definition().name)
             repo_hash = hash_name(get_ephemeral_repository_name(pipeline.get_definition().name))
             num_pipelines_in_repo = 1
+            num_schedules_in_repo = 0
+            num_sensors_in_repo = 0
 
         write_telemetry_log_line(
             TelemetryEntry(
@@ -438,6 +460,8 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
                 instance_id=instance_id,
                 pipeline_name_hash=pipeline_name_hash,
                 num_pipelines_in_repo=str(num_pipelines_in_repo),
+                num_schedules_in_repo=str(num_schedules_in_repo),
+                num_sensors_in_repo=str(num_sensors_in_repo),
                 repo_hash=repo_hash,
                 metadata={"source": source},
             )._asdict()
