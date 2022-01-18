@@ -75,6 +75,8 @@ def telemetry_wrapper(metadata):
 
 
 def _telemetry_wrapper(f, metadata=None):
+    metadata = check.opt_dict_param(metadata, "metadata", key_type=str, value_type=str)
+
     if f.__name__ not in TELEMETRY_WHITELISTED_FUNCTIONS:
         raise DagsterInvariantViolationError(
             "Attempted to log telemetry for function {name} that is not in telemetry whitelisted "
