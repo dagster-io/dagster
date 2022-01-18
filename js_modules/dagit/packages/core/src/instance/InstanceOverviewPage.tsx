@@ -145,7 +145,9 @@ const OverviewContent = () => {
 
   const {hiddenRepos, searchValue} = state;
 
-  React.useEffect(() => retrieveLastTenRuns(), [retrieveLastTenRuns]);
+  React.useEffect(() => {
+    retrieveLastTenRuns();
+  }, [retrieveLastTenRuns]);
 
   const optionAddresses = React.useMemo(() => {
     if (!options) {

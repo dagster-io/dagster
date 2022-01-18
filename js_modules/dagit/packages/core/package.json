@@ -19,6 +19,7 @@
     "analyze": "source-map-explorer 'build/static/js/*.js'"
   },
   "peerDependencies": {
+    "@apollo/client": "^3.5.7",
     "@blueprintjs/core": "^3.45.0",
     "@blueprintjs/icons": "^3.26.1",
     "@blueprintjs/popover2": "0.10.1",
@@ -32,7 +33,6 @@
     "styled-components": "^5.3.3"
   },
   "dependencies": {
-    "@apollo/client": "^3.3.16",
     "@vx/shape": "^0.0.192",
     "amator": "^1.1.0",
     "ansi-to-react": "^5.1.0",
@@ -131,7 +131,6 @@
     "eslint-plugin-react-hooks": "4.3.0",
     "eslint-plugin-storybook": "^0.5.5",
     "faker": "5.5.3",
-    "graphql-tag": "^2.12.1",
     "graphql.macro": "^1.4.2",
     "identity-obj-proxy": "^3.0.0",
     "jest": "^26.6.3",

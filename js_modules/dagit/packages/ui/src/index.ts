@@ -1,3 +1,5 @@
+import './blueprint.css';
+
 export * from './components/Alert';
 export * from './components/BaseButton';
 export * from './components/BaseTag';
