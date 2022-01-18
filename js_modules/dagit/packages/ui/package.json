@@ -18,15 +18,15 @@
     "@blueprintjs/select": "^3.16.4",
     "@blueprintjs/table": "^3.8.33",
     "react": "^17.0.2",
-    "react-dom": "^17.0.2"
+    "react-dom": "^17.0.2",
+    "react-is": "^17.0.2",
+    "styled-components": "^5.3.3"
   },
   "dependencies": {
-    "react-is": "^17.0.2",
     "react-markdown": "6.0.3",
     "remark": "13.x",
     "remark-gfm": "1.0.0",
-    "remark-plain-text": "^0.2.0",
-    "styled-components": "^5.3.3"
+    "remark-plain-text": "^0.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.16.7",
