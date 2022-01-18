@@ -14,7 +14,7 @@ from ...implementation.fetch_pipelines import get_pipeline_reference_or_raise
 from ...implementation.fetch_runs import get_runs, get_stats, get_step_stats
 from ...implementation.fetch_schedules import get_schedules_for_pipeline
 from ...implementation.fetch_sensors import get_sensors_for_pipeline
-from ...implementation.loader import BatchJobRunLoader
+from ...implementation.loader import RepositoryScopedBatchLoader
 from ...implementation.utils import UserFacingGraphQLError, capture_error
 from ..asset_key import GrapheneAssetKey
 from ..dagster_types import GrapheneDagsterType, GrapheneDagsterTypeOrError, to_dagster_type
@@ -600,15 +600,15 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
         name = "Pipeline"
 
-    def __init__(self, external_pipeline, batch_run_loader=None):
+    def __init__(self, external_pipeline, batch_loader=None):
         super().__init__()
         self._external_pipeline = check.inst_param(
             external_pipeline, "external_pipeline", ExternalPipeline
         )
-        # optional run loader, provided by a parent graphene object (e.g. GrapheneRepository)
-        # that instantiates multiple pipelines
-        self._batch_run_loader = check.opt_inst_param(
-            batch_run_loader, "batch_run_loader", BatchJobRunLoader
+        # optional run loader, provided by a parent GrapheneRepository object that instantiates
+        # multiple pipelines
+        self._batch_loader = check.opt_inst_param(
+            batch_loader, "batch_loader", RepositoryScopedBatchLoader
         )
 
     def resolve_id(self, _graphene_info):
@@ -637,12 +637,16 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
 
         handle = self._external_pipeline.repository_handle
         location = graphene_info.context.get_repository_location(handle.location_name)
-        return GrapheneRepository(location.get_repository(handle.repository_name), location)
+        return GrapheneRepository(
+            graphene_info.context.instance,
+            location.get_repository(handle.repository_name),
+            location,
+        )
 
     def resolve_runs(self, graphene_info, **kwargs):
         # override the implementation to use the batch run loader
-        if not kwargs.get("cursor") and kwargs.get("limit") and self._batch_run_loader:
-            runs = self._batch_run_loader.get_runs_for_job(
+        if not kwargs.get("cursor") and kwargs.get("limit") and self._batch_loader:
+            runs = self._batch_loader.get_runs_for_job(
                 self._external_pipeline.name, kwargs.get("limit")
             )
             return [GrapheneRun(run) for run in runs]

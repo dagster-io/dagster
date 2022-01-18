@@ -1,75 +1,130 @@
 from collections import defaultdict
+from enum import Enum
 
-from dagster import check
+from dagster import DagsterInstance, check
+from dagster.core.host_representation import ExternalRepository
+from dagster.core.scheduler.instigation import InstigatorType
 from dagster.core.storage.pipeline_run import JobBucket, TagBucket
+from dagster.core.storage.tags import SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
 
 
-class BatchJobRunLoader:
-    """
-    Batch run loader, which fetches a number of runs for a set of jobs.  This can be used to
-    instantiate a batch of graphene jobs, so that job runs can be fetched in a single database query
-    instead of getting split out across multiple queries, without changing the structure of the
-    graphql query.
-    """
+class RepositoryDataType(Enum):
+    JOB_RUNS = "job_runs"
+    SCHEDULE_RUNS = "schedule_runs"
+    SENSOR_RUNS = "sensor_runs"
+    SCHEDULE_STATES = "schedule_states"
+    SENSOR_STATES = "sensor_states"
 
-    def __init__(self, graphene_info, job_names):
-        self._instance = graphene_info.context.instance
-        self._job_names = check.list_param(job_names, "job_names", of_type=str)
-        self._fetched = False
-        self._fetched_limit = None
-        self._data = None
+
+class RepositoryScopedBatchLoader:
+    def __init__(self, instance, external_repository):
+        self._instance = check.inst_param(instance, "instance", DagsterInstance)
+        self._repository = check.inst_param(
+            external_repository, "external_repository", ExternalRepository
+        )
+        self._data = {}
+        self._limits = {}
+
+    def _get(self, data_type, key, limit):
+        check.inst_param(data_type, "data_type", RepositoryDataType)
+        check.str_param(key, "key")
+        check.int_param(limit, "limit")
+        if self._data.get(data_type) is None or limit > self._limits.get(data_type, 0):
+            self._fetch(data_type, limit)
+        return self._data[data_type].get(key, [])[:limit]
+
+    def _fetch(self, data_type, limit):
+        check.inst_param(data_type, "data_type", RepositoryDataType)
+        check.int_param(limit, "limit")
+
+        fetched = defaultdict(list)
+
+        if data_type == RepositoryDataType.JOB_RUNS:
+            job_names = [x.name for x in self._repository.get_all_external_pipelines()]
+            runs = self._instance.get_runs(
+                bucket=JobBucket(bucket_limit=limit, job_names=job_names),
+            )
+            for run in runs:
+                fetched[run.pipeline_name].append(run)
+
+        elif data_type == RepositoryDataType.SCHEDULE_RUNS:
+            schedule_names = [
+                schedule.name for schedule in self._repository.get_external_schedules()
+            ]
+            runs = self._instance.get_runs(
+                bucket=TagBucket(
+                    tag_key=SCHEDULE_NAME_TAG,
+                    bucket_limit=limit,
+                    tag_values=schedule_names,
+                ),
+            )
+            for run in runs:
+                fetched[run.tags.get(SCHEDULE_NAME_TAG)].append(run)
+
+        elif data_type == RepositoryDataType.SENSOR_RUNS:
+            sensor_names = [sensor.name for sensor in self._repository.get_external_sensors()]
+            runs = self._instance.get_runs(
+                bucket=TagBucket(
+                    tag_key=SENSOR_NAME_TAG,
+                    bucket_limit=limit,
+                    tag_values=sensor_names,
+                ),
+            )
+            for run in runs:
+                fetched[run.tags.get(SENSOR_NAME_TAG)].append(run)
+
+        elif data_type == RepositoryDataType.SCHEDULE_STATES:
+            schedule_states = self._instance.all_stored_job_state(
+                repository_origin_id=self._repository.get_external_origin_id(),
+                job_type=InstigatorType.SCHEDULE,
+            )
+            for state in schedule_states:
+                fetched[state.name].append(state)
+
+        elif data_type == RepositoryDataType.SENSOR_STATES:
+            sensor_states = self._instance.all_stored_job_state(
+                repository_origin_id=self._repository.get_external_origin_id(),
+                job_type=InstigatorType.SENSOR,
+            )
+            for state in sensor_states:
+                fetched[state.name].append(state)
+        else:
+            check.failed(f"Unknown data type for {self.__class__.__name__}: {data_type}")
+
+        self._data[data_type] = fetched
+        self._limits[data_type] = limit
 
     def get_runs_for_job(self, job_name, limit):
-        check.invariant(job_name in self._job_names)
-        if not self._fetched or limit > self._fetched_limit:
-            self.fetch(limit)
-        return self._data[job_name][:limit]
-
-    def fetch(self, limit):
-        runs = self._instance.get_runs(
-            bucket=JobBucket(bucket_limit=limit, job_names=self._job_names),
+        check.invariant(
+            job_name
+            in [pipeline.name for pipeline in self._repository.get_all_external_pipelines()]
         )
-        self._data = defaultdict(list)
-        for run in runs:
-            self._data[run.pipeline_name].append(run)
-        self._fetched_limit = limit
-        self._fetched = True
+        return self._get(RepositoryDataType.JOB_RUNS, job_name, limit)
 
-
-class BatchTagRunLoader:
-    """
-    Batch run loader, which fetches a number of runs for a set of tag values corresponding to a
-    given tag key. This can be used to instantiate a batch of graphene objects that map to a set of
-    job runs using tags (e.g. schedules, sensors, partitions). These tagged job runs can be fetched
-    in a single database query instead of getting split out across multiple queries, without
-    changing the structure of the graphql query.
-    """
-
-    def __init__(self, graphene_info, tag_key, tag_values):
-        self._instance = graphene_info.context.instance
-        self._tag_key = check.str_param(tag_key, "tag_key")
-        self._tag_values = check.list_param(tag_values, "tag_values", of_type=str)
-        self._fetched = False
-        self._fetched_limit = None
-        self._data = None
-
-    @property
-    def tag_key(self):
-        return self._tag_key
-
-    def get_runs_for_tag(self, tag_value, limit):
-        if not self._fetched or limit > self._fetched_limit:
-            self.fetch(limit)
-        return self._data[tag_value][:limit]
-
-    def fetch(self, limit):
-        runs = self._instance.get_runs(
-            bucket=TagBucket(
-                tag_key=self._tag_key, bucket_limit=limit, tag_values=self._tag_values
-            ),
+    def get_runs_for_schedule(self, schedule_name, limit):
+        check.invariant(
+            schedule_name
+            in [schedule.name for schedule in self._repository.get_external_schedules()]
         )
-        self._data = defaultdict(list)
-        for run in runs:
-            self._data[run.tags.get(self._tag_key)].append(run)
-        self._fetched_limit = limit
-        self._fetched = True
+        return self._get(RepositoryDataType.SCHEDULE_RUNS, schedule_name, limit)
+
+    def get_runs_for_sensor(self, sensor_name, limit):
+        check.invariant(
+            sensor_name in [sensor.name for sensor in self._repository.get_external_sensors()]
+        )
+        return self._get(RepositoryDataType.SENSOR_RUNS, sensor_name, limit)
+
+    def get_schedule_state(self, schedule_name):
+        check.invariant(
+            schedule_name
+            in [schedule.name for schedule in self._repository.get_external_schedules()]
+        )
+        states = self._get(RepositoryDataType.SCHEDULE_STATES, schedule_name, 1)
+        return states[0] if states else None
+
+    def get_sensor_state(self, sensor_state):
+        check.invariant(
+            sensor_state in [sensor.name for sensor in self._repository.get_external_sensors()]
+        )
+        states = self._get(RepositoryDataType.SENSOR_STATES, sensor_state, 1)
+        return states[0] if states else None

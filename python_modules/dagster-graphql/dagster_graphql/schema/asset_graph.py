@@ -100,12 +100,14 @@ class GrapheneAssetNode(graphene.ObjectType):
             description=external_asset_node.op_description,
         )
 
-    def resolve_repository(self, _graphene_info):
+    def resolve_repository(self, graphene_info):
         loc = None
-        for location in _graphene_info.context.repository_locations:
+        for location in graphene_info.context.repository_locations:
             if self._external_repository in location.get_repositories().values():
                 loc = location
-        return external.GrapheneRepository(self._external_repository, loc)
+        return external.GrapheneRepository(
+            graphene_info.context.instance, self._external_repository, loc
+        )
 
     def resolve_dependencies(self, _graphene_info):
         return [

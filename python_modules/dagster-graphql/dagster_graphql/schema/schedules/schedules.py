@@ -3,7 +3,7 @@ from dagster import check
 from dagster.core.host_representation import ExternalSchedule
 from dagster.core.scheduler.instigation import InstigatorState
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
-from dagster_graphql.implementation.loader import BatchTagRunLoader
+from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 
 from ..errors import (
     GraphenePythonError,
@@ -42,7 +42,7 @@ class GrapheneSchedule(graphene.ObjectType):
     class Meta:
         name = "Schedule"
 
-    def __init__(self, external_schedule, schedule_state, batch_run_loader=None):
+    def __init__(self, external_schedule, schedule_state, batch_loader=None):
         self._external_schedule = check.inst_param(
             external_schedule, "external_schedule", ExternalSchedule
         )
@@ -52,8 +52,8 @@ class GrapheneSchedule(graphene.ObjectType):
 
         # optional run loader, provided by a parent graphene object (e.g. GrapheneRepository)
         # that instantiates multiple schedules
-        self._batch_run_loader = check.opt_inst_param(
-            batch_run_loader, "batch_run_loader", BatchTagRunLoader
+        self._batch_loader = check.opt_inst_param(
+            batch_loader, "batch_loader", RepositoryScopedBatchLoader
         )
 
         if not self._schedule_state:
@@ -78,7 +78,7 @@ class GrapheneSchedule(graphene.ObjectType):
 
     def resolve_scheduleState(self, _graphene_info):
         # forward the batch run loader to the instigation state, which provides the schedule runs
-        return GrapheneInstigationState(self._schedule_state, self._batch_run_loader)
+        return GrapheneInstigationState(self._schedule_state, self._batch_loader)
 
     def resolve_partition_set(self, graphene_info):
         from ..partition_sets import GraphenePartitionSet

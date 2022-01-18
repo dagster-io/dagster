@@ -15,13 +15,13 @@ from dagster.core.scheduler.instigation import (
     SensorInstigatorData,
 )
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
-from dagster.core.storage.tags import SCHEDULE_NAME_TAG, SENSOR_NAME_TAG, TagType, get_tag_type
+from dagster.core.storage.tags import TagType, get_tag_type
 from dagster.seven.compat.pendulum import to_timezone
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from ..implementation.fetch_schedules import get_schedule_next_tick
 from ..implementation.fetch_sensors import get_sensor_next_tick
-from ..implementation.loader import BatchTagRunLoader
+from ..implementation.loader import RepositoryScopedBatchLoader
 from .errors import GraphenePythonError
 from .repository_origin import GrapheneRepositoryOrigin
 from .tags import GraphenePipelineTag
@@ -277,14 +277,14 @@ class GrapheneInstigationState(graphene.ObjectType):
     def __init__(
         self,
         job_state,
-        batch_run_loader=None,
+        batch_loader=None,
     ):
         self._job_state = check.inst_param(job_state, "job_state", InstigatorState)
 
-        # optional run loader, provided by a parent graphene object (e.g. GrapheneRepository)
-        # that instantiates multiple schedules/sensors
-        self._batch_run_loader = check.opt_inst_param(
-            batch_run_loader, "batch_run_loader", BatchTagRunLoader
+        # optional batch loader, provided by a parent GrapheneRepository object that instantiates
+        # multiple schedules/sensors
+        self._batch_loader = check.opt_inst_param(
+            batch_loader, "batch_loader", RepositoryScopedBatchLoader
         )
         super().__init__(
             id=job_state.job_origin_id,
@@ -312,18 +312,12 @@ class GrapheneInstigationState(graphene.ObjectType):
     def resolve_runs(self, graphene_info, **kwargs):
         from .pipelines.pipeline import GrapheneRun
 
-        tag_key = (
-            SENSOR_NAME_TAG
-            if self._job_state.job_type == InstigatorType.SENSOR
-            else SCHEDULE_NAME_TAG
-        )
-        if (
-            kwargs.get("limit")
-            and self._batch_run_loader
-            and self._batch_run_loader.tag_key == tag_key
-        ):
-            runs = self._batch_run_loader.get_runs_for_tag(
-                self._job_state.name, kwargs.get("limit")
+        if kwargs.get("limit") and self._batch_loader:
+            limit = kwargs["limit"]
+            runs = (
+                self._batch_loader.get_runs_for_sensor(self._job_state.name, limit)
+                if self._job_state.job_type == InstigatorType.SENSOR
+                else self._batch_loader.get_runs_for_schedule(self._job_state.name, limit)
             )
             return [GrapheneRun(run) for run in runs]
 
