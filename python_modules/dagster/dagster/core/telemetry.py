@@ -40,15 +40,15 @@ DAGSTER_HOME_FALLBACK = "~/.dagster"
 MAX_BYTES = 10485760  # 10 MB = 10 * 1024 * 1024 bytes
 UPDATE_REPO_STATS = "update_repo_stats"
 START_DAGIT_WEBSERVER = "start_dagit_webserver"
+DAEMON_ALIVE = "daemon_alive"
 TELEMETRY_VERSION = "0.2"
 
-# start_TELEMETRY_WHITELISTED_FUNCTIONS
 TELEMETRY_WHITELISTED_FUNCTIONS = {
     "_logged_execute_pipeline",
     "execute_execute_command",
     "execute_launch_command",
+    "_daemon_run_command",
 }
-# end_TELEMETRY_WHITELISTED_FUNCTIONS
 
 
 def telemetry_wrapper(f):

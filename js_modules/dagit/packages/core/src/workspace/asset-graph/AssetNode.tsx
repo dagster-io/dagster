@@ -1,91 +1,77 @@
-import {gql, useMutation} from '@apollo/client';
+import {gql} from '@apollo/client';
 import {ContextMenu2 as ContextMenu} from '@blueprintjs/popover2';
+import {
+  ColorsWIP,
+  IconWIP,
+  markdownToPlaintext,
+  MenuItemWIP,
+  MenuWIP,
+  Spinner,
+  Tooltip,
+  FontFamily,
+} from '@dagster-io/ui';
 import {isEqual} from 'lodash';
-import qs from 'query-string';
+import qs from 'qs';
 import React, {CSSProperties} from 'react';
-import {Link} from 'react-router-dom';
+import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {AppContext} from '../../app/AppContext';
+import {displayNameForAssetKey} from '../../app/Util';
 import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
-import {showLaunchError} from '../../execute/showLaunchError';
 import {OpTags} from '../../graph/OpTags';
 import {METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
-import {
-  LAUNCH_PIPELINE_EXECUTION_MUTATION,
-  handleLaunchResult,
-  titleForRun,
-} from '../../runs/RunUtils';
+import {titleForRun} from '../../runs/RunUtils';
 import {TimeElapsed} from '../../runs/TimeElapsed';
-import {LaunchPipelineExecution} from '../../runs/types/LaunchPipelineExecution';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {ColorsWIP} from '../../ui/Colors';
-import {IconWIP} from '../../ui/Icon';
-import {markdownToPlaintext} from '../../ui/Markdown';
-import {MenuItemWIP, MenuWIP} from '../../ui/Menu';
-import {FontFamily} from '../../ui/styles';
-import {repoAddressToSelector} from '../repoAddressToSelector';
 import {RepoAddress} from '../types';
-import {workspacePath} from '../workspacePath';
+import {workspacePath, workspacePipelinePathGuessRepo} from '../workspacePath';
 
-import {assetKeyToString, Status} from './Utils';
+import {LiveDataForNode} from './Utils';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
+import {useLaunchSingleAssetJob} from './useLaunchSingleAssetJob';
 
 export const AssetNode: React.FC<{
   definition: AssetNodeFragment;
+  liveData?: LiveDataForNode;
   metadata: {key: string; value: string}[];
   selected: boolean;
-  computeStatus: Status;
+  jobName: string;
   repoAddress: RepoAddress;
   secondaryHighlight: boolean;
 }> = React.memo(
-  ({definition, metadata, selected, computeStatus, repoAddress, secondaryHighlight}) => {
-    const [launchPipelineExecution] = useMutation<LaunchPipelineExecution>(
-      LAUNCH_PIPELINE_EXECUTION_MUTATION,
-    );
-    const {basePath} = React.useContext(AppContext);
-    const {materializationEvent: event, runOrError} = definition.assetMaterializations[0] || {};
+  ({definition, metadata, selected, liveData, repoAddress, jobName, secondaryHighlight}) => {
+    const launch = useLaunchSingleAssetJob();
+    const history = useHistory();
+
+    const {materializationEvent: event, runOrError} = liveData?.lastMaterialization || {};
     const kind = metadata.find((m) => m.key === 'kind')?.value;
-
-    const onLaunch = async () => {
-      if (!definition.jobName) {
-        return;
-      }
-
-      try {
-        const result = await launchPipelineExecution({
-          variables: {
-            executionParams: {
-              selector: {
-                pipelineName: definition.jobName,
-                ...repoAddressToSelector(repoAddress),
-              },
-              mode: 'default',
-              stepKeys: [definition.opName],
-            },
-          },
-        });
-        handleLaunchResult(basePath, definition.jobName, result, true);
-      } catch (error) {
-        showLaunchError(error as Error);
-      }
-    };
 
     return (
       <ContextMenu
         content={
           <MenuWIP>
             <MenuItemWIP
+              icon="open_in_new"
+              onClick={(e) => {
+                launch(repoAddress, jobName, definition.opName);
+                e.stopPropagation();
+              }}
               text={
                 <span>
-                  Launch run to build{' '}
+                  {event ? 'Rematerialize ' : 'Materialize '}
                   <span style={{fontFamily: 'monospace', fontWeight: 600}}>
-                    {assetKeyToString(definition.assetKey)}
+                    {displayNameForAssetKey(definition.assetKey)}
                   </span>
                 </span>
               }
-              icon="open_in_new"
-              onClick={onLaunch}
+            />
+            <MenuItemWIP
+              icon="link"
+              onClick={(e) => {
+                e.stopPropagation();
+                history.push(`/instance/assets/${definition.assetKey.path.join('/')}`);
+              }}
+              text="View in Asset Catalog"
             />
           </MenuWIP>
         }
@@ -93,10 +79,22 @@ export const AssetNode: React.FC<{
         <AssetNodeContainer $selected={selected} $secondaryHighlight={secondaryHighlight}>
           <AssetNodeBox>
             <Name>
-              <IconWIP name="asset" style={{marginRight: 4}} />
-              {assetKeyToString(definition.assetKey)}
+              <IconWIP name="asset" />
+              <div style={{overflow: 'hidden', textOverflow: 'ellipsis'}}>
+                {displayNameForAssetKey(definition.assetKey)}
+              </div>
               <div style={{flex: 1}} />
-              {computeStatus === 'old' && (
+              {liveData && liveData.inProgressRunIds.length > 0 ? (
+                <Tooltip content="A run is currently refreshing this asset.">
+                  <Spinner purpose="body-text" />
+                </Tooltip>
+              ) : liveData && liveData.unstartedRunIds.length > 0 ? (
+                <Tooltip content="A run has started that will refresh this asset soon.">
+                  <Spinner purpose="body-text" stopped />
+                </Tooltip>
+              ) : undefined}
+
+              {liveData?.computeStatus === 'old' && (
                 <UpstreamNotice>
                   upstream
                   <br />
@@ -111,7 +109,7 @@ export const AssetNode: React.FC<{
             )}
             {event ? (
               <Stats>
-                {runOrError.__typename === 'Run' && (
+                {runOrError?.__typename === 'Run' && (
                   <StatsRow>
                     <Link
                       data-tooltip={`${runOrError.pipelineName}${
@@ -119,11 +117,19 @@ export const AssetNode: React.FC<{
                       }`}
                       data-tooltip-style={RunLinkTooltipStyle}
                       style={{overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 8}}
-                      to={workspacePath(
-                        repoAddress.name,
-                        repoAddress.location,
-                        `jobs/${runOrError.pipelineName}:${runOrError.mode}`,
-                      )}
+                      to={
+                        repoAddress.name
+                          ? workspacePath(
+                              repoAddress.name,
+                              repoAddress.location,
+                              `jobs/${runOrError.pipelineName}:${runOrError.mode}`,
+                            )
+                          : workspacePipelinePathGuessRepo(
+                              `${runOrError.pipelineName}:${runOrError.mode}`,
+                              true,
+                              '',
+                            )
+                      }
                     >
                       {`${runOrError.pipelineName}${
                         runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''
@@ -194,15 +200,10 @@ export const AssetNode: React.FC<{
   isEqual,
 );
 
-export const ASSET_NODE_FRAGMENT = gql`
-  fragment AssetNodeFragment on AssetNode {
+export const ASSET_NODE_LIVE_FRAGMENT = gql`
+  fragment AssetNodeLiveFragment on AssetNode {
     id
     opName
-    description
-    jobName
-    assetKey {
-      path
-    }
 
     assetMaterializations(limit: 1) {
       ...LatestMaterializationMetadataFragment
@@ -235,12 +236,27 @@ export const ASSET_NODE_FRAGMENT = gql`
   ${METADATA_ENTRY_FRAGMENT}
 `;
 
-export const getNodeDimensions = (def: AssetNodeFragment) => {
+export const ASSET_NODE_FRAGMENT = gql`
+  fragment AssetNodeFragment on AssetNode {
+    id
+    opName
+    description
+    partitionDefinition
+    assetKey {
+      path
+    }
+  }
+`;
+
+export const getNodeDimensions = (def: {
+  assetKey: {path: string[]};
+  description?: string | null;
+}) => {
   let height = 95;
   if (def.description) {
     height += 25;
   }
-  return {width: Math.max(250, assetKeyToString(def.assetKey).length * 9.5) + 25, height};
+  return {width: Math.max(250, displayNameForAssetKey(def.assetKey).length * 9.5) + 25, height};
 };
 
 const RunLinkTooltipStyle = JSON.stringify({
@@ -283,10 +299,12 @@ const AssetNodeBox = styled.div`
 const Name = styled.div`
   display: flex;
   padding: 4px 6px;
+  align-items: center;
   font-family: ${FontFamily.monospace};
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
   font-weight: 600;
+  gap: 4px;
 `;
 
 const Description = styled.div`

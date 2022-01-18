@@ -7,6 +7,9 @@ from dagster import (
     DagsterInstance,
     Enum,
     Field,
+    In,
+    InputDefinition,
+    Nothing,
     Out,
     Permissive,
     Shape,
@@ -24,7 +27,7 @@ from dagster.core.definitions.partition import (
     StaticPartitionsDefinition,
 )
 from dagster.core.definitions.pipeline_definition import PipelineSubsetDefinition
-from dagster.core.definitions.time_window_partitions import daily_partitioned_config
+from dagster.core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster.core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
@@ -224,9 +227,7 @@ def test_partitions():
     job = my_graph.to_job(
         config=PartitionedConfig(
             run_config_for_partition_fn=config_fn,
-            partitions_def=StaticPartitionsDefinition(
-                [Partition("2020-02-25"), Partition("2020-02-26")]
-            ),
+            partitions_def=StaticPartitionsDefinition(["2020-02-25", "2020-02-26"]),
         ),
     )
     partition_set = job.get_partition_set_def()
@@ -253,9 +254,7 @@ def test_partitions():
     job = my_graph.to_job(
         config=PartitionedConfig(
             run_config_for_partition_fn=shared_config_fn,
-            partitions_def=StaticPartitionsDefinition(
-                [Partition("2020-02-25"), Partition("2020-02-26")]
-            ),
+            partitions_def=StaticPartitionsDefinition(["2020-02-25", "2020-02-26"]),
         ),
     )
     partition_set = job.get_partition_set_def()
@@ -969,9 +968,7 @@ def test_job_partitions_def():
     def my_graph():
         my_op()
 
-    my_job = my_graph.to_job(
-        config=daily_partitioned_config(start_date="2020-01-01")(lambda s, e: {})
-    )
+    my_job = my_graph.to_job(partitions_def=DailyPartitionsDefinition(start_date="2020-01-01"))
     assert my_job.execute_in_process(partition_key="2020-01-01").success
 
 
@@ -997,3 +994,17 @@ def test_graph_top_level_input():
     result = my_graph_with_nesting.execute_in_process(run_config={"inputs": {"x": {"value": 2}}})
     assert result.success
     assert result.output_for_node("my_graph.my_op") == 4
+
+
+def test_nothing_inputs_graph():
+    @op(ins={"sync_signal": In(Nothing)})
+    def my_op():
+        ...
+
+    @graph(input_defs=[InputDefinition("sync_signal", Nothing)])
+    def my_pipeline(sync_signal):
+        my_op(sync_signal)
+
+    the_job = my_pipeline.to_job()
+    result = the_job.execute_in_process()
+    assert result.success

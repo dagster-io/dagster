@@ -1,5 +1,25 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import * as qs from 'query-string';
+import {
+  Box,
+  ButtonWIP,
+  ButtonLink,
+  ColorsWIP,
+  DialogBody,
+  DialogFooter,
+  DialogWIP,
+  Group,
+  HighlightedCodeBlock,
+  IconWIP,
+  MenuItemWIP,
+  MenuLink,
+  MenuWIP,
+  NonIdealState,
+  Popover,
+  Spinner,
+  Table,
+  FontFamily,
+} from '@dagster-io/ui';
+import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -9,20 +29,6 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunTags} from '../runs/RunTags';
 import {InstigationStatus} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ButtonLink} from '../ui/ButtonLink';
-import {ColorsWIP} from '../ui/Colors';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {Group} from '../ui/Group';
-import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
-import {IconWIP} from '../ui/Icon';
-import {MenuItemWIP, MenuWIP} from '../ui/Menu';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Popover} from '../ui/Popover';
-import {Spinner} from '../ui/Spinner';
-import {Table} from '../ui/Table';
-import {FontFamily} from '../ui/styles';
 import {
   findRepositoryAmongOptions,
   isThisThingAJob,
@@ -226,7 +232,7 @@ const NextTickMenuItems: React.FC<{
   }
 
   if (evaluationResult.skipReason) {
-    return <MenuItemWIP text={`View skip reason...`} onClick={() => onItemOpen(true)} />;
+    return <MenuItemWIP text="View skip reason..." onClick={() => onItemOpen(true)} />;
   }
 
   if (evaluationResult.error) {
@@ -247,11 +253,11 @@ const NextTickMenuItems: React.FC<{
           icon="open_in_new"
           onClick={() => onItemOpen(true)}
         />
-        <MenuItemWIP
+        <MenuLink
           text="Open in Launchpad..."
           icon="edit"
           target="_blank"
-          href={workspacePathFromAddress(
+          to={workspacePathFromAddress(
             repoAddress,
             `/pipeline_or_job/${schedule.pipelineName}/playground/setup?${qs.stringify({
               mode: schedule.mode,
@@ -375,11 +381,11 @@ const NextTickDialog: React.FC<{
                       <Popover
                         content={
                           <MenuWIP>
-                            <MenuItemWIP
+                            <MenuLink
                               text="Open in Launchpad..."
                               icon="edit"
                               target="_blank"
-                              href={workspacePathFromAddress(
+                              to={workspacePathFromAddress(
                                 repoAddress,
                                 `/${isJob ? 'jobs' : 'pipelines'}/${
                                   schedule.pipelineName

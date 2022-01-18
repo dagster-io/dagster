@@ -1,12 +1,10 @@
 import {gql} from '@apollo/client';
+import {Box, ButtonLink, Tooltip} from '@dagster-io/ui';
 import qs from 'qs';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
 import {Timestamp} from '../app/time/Timestamp';
-import {Box} from '../ui/Box';
-import {ButtonLink} from '../ui/ButtonLink';
-import {Tooltip} from '../ui/Tooltip';
 
 import {AssetLineageFragment} from './types/AssetLineageFragment';
 

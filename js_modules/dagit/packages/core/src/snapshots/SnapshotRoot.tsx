@@ -1,5 +1,5 @@
 import * as React from 'react';
-import {Route, RouteComponentProps, Switch} from 'react-router-dom';
+import {Route, Switch, useParams} from 'react-router-dom';
 
 import {PipelineExplorerSnapshotRoot} from '../pipelines/PipelineExplorerRoot';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
@@ -7,13 +7,11 @@ import {PipelineRunsRoot} from '../pipelines/PipelineRunsRoot';
 
 import {SnapshotNav} from './SnapshotNav';
 
-export const SnapshotRoot: React.FC<
-  RouteComponentProps<{
+export const SnapshotRoot = () => {
+  const {pipelinePath, tab} = useParams<{
     pipelinePath: string;
     tab?: string;
-  }>
-> = (props) => {
-  const {pipelinePath, tab} = props.match.params;
+  }>();
   const explorerPath = explorerPathFromString(pipelinePath);
 
   return (
@@ -28,13 +26,12 @@ export const SnapshotRoot: React.FC<
     >
       <SnapshotNav activeTab={tab} explorerPath={explorerPath} />
       <Switch>
-        <Route
-          path="/instance/snapshots/:pipelinePath/runs"
-          render={(props: RouteComponentProps<{pipelinePath: string}>) => (
-            <PipelineRunsRoot pipelinePath={props.match.params.pipelinePath} />
-          )}
-        />
-        <Route path="/instance/snapshots/(/?.*)" component={PipelineExplorerSnapshotRoot} />
+        <Route path="/instance/snapshots/:pipelinePath/runs">
+          <PipelineRunsRoot />
+        </Route>
+        <Route path="/instance/snapshots/(/?.*)">
+          <PipelineExplorerSnapshotRoot />
+        </Route>
       </Switch>
     </div>
   );

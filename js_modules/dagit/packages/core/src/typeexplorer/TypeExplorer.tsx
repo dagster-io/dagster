@@ -1,10 +1,10 @@
 import {gql} from '@apollo/client';
+import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
-import {Box} from '../ui/Box';
 
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from './ConfigTypeSchema';
 import {TypeExplorerFragment} from './types/TypeExplorerFragment';
@@ -26,13 +26,13 @@ export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
           {name}
         </SidebarTitle>
       </Box>
-      <SidebarSection title={'Description'}>
+      <SidebarSection title="Description">
         <Box padding={{vertical: 16, horizontal: 24}}>
           <Description description={description || 'No Description Provided'} />
         </Box>
       </SidebarSection>
       {inputSchemaType && (
-        <SidebarSection title={'Input'}>
+        <SidebarSection title="Input">
           <Box padding={{vertical: 16, horizontal: 24}}>
             <ConfigTypeSchema
               type={inputSchemaType}
@@ -42,7 +42,7 @@ export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
         </SidebarSection>
       )}
       {outputSchemaType && (
-        <SidebarSection title={'Output'}>
+        <SidebarSection title="Output">
           <Box padding={{vertical: 16, horizontal: 24}}>
             <ConfigTypeSchema
               type={outputSchemaType}

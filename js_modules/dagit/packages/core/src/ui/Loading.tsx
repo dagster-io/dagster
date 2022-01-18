@@ -1,9 +1,6 @@
 import {QueryResult} from '@apollo/client';
+import {Box, NonIdealState, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
-
-import {Box} from './Box';
-import {NonIdealState} from './NonIdealState';
-import {Spinner} from './Spinner';
 
 interface ILoadingProps<TData> {
   queryResult: QueryResult<TData, any>;

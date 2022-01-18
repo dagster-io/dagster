@@ -1,5 +1,14 @@
 import {gql} from '@apollo/client';
+import {
+  Box,
+  CursorHistoryControls,
+  NonIdealState,
+  Page,
+  TagWIP,
+  TokenizingFieldValue,
+} from '@dagster-io/ui';
 import * as React from 'react';
+import {useParams} from 'react-router-dom';
 
 import {QueryCountdown} from '../app/QueryCountdown';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
@@ -11,13 +20,7 @@ import {
   useQueryPersistedRunFilters,
 } from '../runs/RunsFilterInput';
 import {POLL_INTERVAL, useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
-import {Box} from '../ui/Box';
-import {CursorHistoryControls} from '../ui/CursorControls';
 import {Loading} from '../ui/Loading';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Page} from '../ui/Page';
-import {TagWIP} from '../ui/TagWIP';
-import {TokenizingFieldValue} from '../ui/TokenizingField';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
@@ -29,12 +32,12 @@ const PAGE_SIZE = 25;
 const ENABLED_FILTERS: RunFilterTokenType[] = ['status', 'tag'];
 
 interface Props {
-  pipelinePath: string;
   repoAddress?: RepoAddress;
 }
 
 export const PipelineRunsRoot: React.FC<Props> = (props) => {
-  const {pipelinePath, repoAddress = null} = props;
+  const {pipelinePath} = useParams<{pipelinePath: string}>();
+  const {repoAddress = null} = props;
   const explorerPath = explorerPathFromString(pipelinePath);
   const {pipelineName, snapshotId} = explorerPath;
 

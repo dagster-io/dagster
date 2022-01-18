@@ -362,6 +362,10 @@ class DagsterSubprocessError(DagsterError):
         super(DagsterSubprocessError, self).__init__(*args, **kwargs)
 
 
+class DagsterUserCodeUnreachableError(DagsterError):
+    """Dagster was unable to reach a user code server to fetch information about user code."""
+
+
 class DagsterUserCodeProcessError(DagsterError):
     """An exception has occurred in a user code process that the host process raising this error
     was communicating with."""

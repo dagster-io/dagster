@@ -46,36 +46,6 @@ def schedule_tempdir():
         yield tempdir
 
 
-@pytest.fixture()
-def run_launcher(
-    cluster_provider, helm_namespace_for_k8s_run_launcher
-):  # pylint: disable=redefined-outer-name,unused-argument
-
-    return K8sRunLauncher(
-        image_pull_secrets=[{"name": TEST_IMAGE_PULL_SECRET_NAME}],
-        service_account_name="dagit-admin",
-        instance_config_map="dagster-instance",
-        postgres_password_secret="dagster-postgresql-secret",
-        dagster_home="/opt/dagster/dagster_home",
-        job_image=get_test_project_docker_image(),
-        load_incluster_config=False,
-        kubeconfig_file=cluster_provider.kubeconfig_file,
-        image_pull_policy=image_pull_policy(),
-        job_namespace=helm_namespace_for_k8s_run_launcher,
-        env_config_maps=["dagster-pipeline-env", "test-env-configmap"]
-        + ([TEST_AWS_CONFIGMAP_NAME] if not IS_BUILDKITE else []),
-        env_secrets=["test-env-secret"],
-        volume_mounts=[
-            {
-                "name": "test-volume",
-                "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
-                "subPath": "volume_mounted_file.yaml",
-            }
-        ],
-        volumes=[{"name": "test-volume", "configMap": {"name": TEST_VOLUME_CONFIGMAP_NAME}}],
-    )
-
-
 @pytest.fixture(scope="session")
 def dagster_docker_image():
     docker_image = get_test_project_docker_image()

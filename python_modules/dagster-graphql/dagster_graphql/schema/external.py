@@ -6,9 +6,10 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
 )
+from dagster.core.scheduler.instigation import InstigatorType
 from dagster.core.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 from dagster_graphql.implementation.fetch_runs import (
-    get_in_progress_runs_by_in_progress_step,
+    get_in_progress_runs_by_step,
     get_in_progress_runs_for_job,
 )
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
@@ -184,18 +185,43 @@ class GrapheneRepository(graphene.ObjectType):
         return GrapheneRepositoryLocation(self._repository_location)
 
     def resolve_schedules(self, graphene_info):
-
         schedules = self._repository.get_external_schedules()
+        schedule_states_by_name = {
+            state.name: state
+            for state in graphene_info.context.instance.all_stored_job_state(
+                repository_origin_id=self._repository.get_external_origin_id(),
+                job_type=InstigatorType.SCHEDULE,
+            )
+        }
 
         return sorted(
-            [GrapheneSchedule(graphene_info, schedule) for schedule in schedules],
+            [
+                GrapheneSchedule(
+                    schedule,
+                    schedule_states_by_name.get(schedule.name),
+                )
+                for schedule in schedules
+            ],
             key=lambda schedule: schedule.name,
         )
 
     def resolve_sensors(self, graphene_info):
         sensors = self._repository.get_external_sensors()
+        sensor_states_by_name = {
+            state.name: state
+            for state in graphene_info.context.instance.all_stored_job_state(
+                repository_origin_id=self._repository.get_external_origin_id(),
+                job_type=InstigatorType.SENSOR,
+            )
+        }
         return sorted(
-            [GrapheneSensor(graphene_info, sensor) for sensor in sensors],
+            [
+                GrapheneSensor(
+                    sensor,
+                    sensor_states_by_name.get(sensor.name),
+                )
+                for sensor in sensors
+            ],
             key=lambda sensor: sensor.name,
         )
 
@@ -251,10 +277,11 @@ class GrapheneRepository(graphene.ObjectType):
         for job_name in job_names:
             in_progress_runs.extend(get_in_progress_runs_for_job(_graphene_info, job_name))
 
-        asset_node_keys = [node.op_name for node in self._repository.get_external_asset_nodes()]
-        return get_in_progress_runs_by_in_progress_step(
-            _graphene_info, in_progress_runs, asset_node_keys
-        )
+        # We exclude foreign assets from the search. Foreign assets do not contain an op_name.
+        asset_node_keys = [
+            node.op_name for node in self._repository.get_external_asset_nodes() if node.op_name
+        ]
+        return get_in_progress_runs_by_step(_graphene_info, in_progress_runs, asset_node_keys)
 
 
 class GrapheneRepositoryConnection(graphene.ObjectType):

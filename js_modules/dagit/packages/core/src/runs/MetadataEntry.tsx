@@ -1,19 +1,23 @@
 import {gql} from '@apollo/client';
+import {
+  Box,
+  ButtonWIP,
+  ColorsWIP,
+  DialogBody,
+  DialogFooter,
+  DialogWIP,
+  Group,
+  IconWIP,
+  Markdown,
+  Tooltip,
+  FontFamily,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
-import {assertUnreachable} from '../app/Util';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ColorsWIP} from '../ui/Colors';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
-import {Markdown} from '../ui/Markdown';
-import {Tooltip} from '../ui/Tooltip';
-import {FontFamily} from '../ui/styles';
+import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
 
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 
@@ -66,10 +70,7 @@ export const MetadataEntry: React.FC<{
     case 'EventPathMetadataEntry':
       return (
         <Group direction="row" spacing={8} alignItems="center">
-          <MetadataEntryAction
-            title={'Copy to clipboard'}
-            onClick={(e) => copyValue(e, entry.path)}
-          >
+          <MetadataEntryAction title="Copy to clipboard" onClick={(e) => copyValue(e, entry.path)}>
             {entry.path}
           </MetadataEntryAction>
           <IconButton onClick={(e) => copyValue(e, entry.path)}>
@@ -106,7 +107,7 @@ export const MetadataEntry: React.FC<{
     case 'EventUrlMetadataEntry':
       return (
         <Group direction="row" spacing={8} alignItems="center">
-          <MetadataEntryAction href={entry.url} title={`Open in a new tab`} target="_blank">
+          <MetadataEntryAction href={entry.url} title="Open in a new tab" target="_blank">
             {entry.url}
           </MetadataEntryAction>
           <a href={entry.url} target="_blank" rel="noreferrer">
@@ -153,7 +154,7 @@ export const MetadataEntry: React.FC<{
         <MetadataEntryLink
           to={`/instance/assets/${entry.assetKey.path.map(encodeURIComponent).join('/')}`}
         >
-          {entry.assetKey.path.join(' > ')}
+          {displayNameForAssetKey(entry.assetKey)}
         </MetadataEntryLink>
       );
     default:

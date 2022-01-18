@@ -1,11 +1,10 @@
 import {gql, useMutation} from '@apollo/client';
+import {ButtonWIP, DialogBody, DialogFooter, DialogWIP} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {doneStatuses} from '../runs/RunStatuses';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {BulkActionStatus} from '../types/globalTypes';
-import {ButtonWIP} from '../ui/Button';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
 
 import {InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results} from './types/InstanceBackfillsQuery';
 

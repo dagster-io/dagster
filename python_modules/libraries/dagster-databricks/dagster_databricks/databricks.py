@@ -111,7 +111,7 @@ class DatabricksJobRunner:
     """Submits jobs created using Dagster config to Databricks, and monitors their progress."""
 
     def __init__(
-        self, host, token, poll_interval_sec=10, max_wait_time_sec=DEFAULT_RUN_MAX_WAIT_TIME_SEC
+        self, host, token, poll_interval_sec=5, max_wait_time_sec=DEFAULT_RUN_MAX_WAIT_TIME_SEC
     ):
         """Args:
         host (str): Databricks host, e.g. https://uksouth.azuredatabricks.net
@@ -169,8 +169,10 @@ class DatabricksJobRunner:
         # since they're imported by our scripts.
         # Add them if they're not already added by users in config.
         libraries = list(run_config.get("libraries", []))
-        python_libraries = {x["pypi"]["package"].split("==")[0] for x in libraries if "pypi" in x}
-        for library in ["dagster", "dagster_databricks", "dagster_pyspark"]:
+        python_libraries = {
+            x["pypi"]["package"].split("==")[0].replace("_", "-") for x in libraries if "pypi" in x
+        }
+        for library in ["dagster", "dagster-databricks", "dagster-pyspark"]:
             if library not in python_libraries:
                 libraries.append(
                     {"pypi": {"package": "{}=={}".format(library, dagster.__version__)}}
@@ -247,32 +249,43 @@ class DatabricksJobRunner:
         )
 
 
+def poll_run_state(
+    client,
+    log,
+    start_poll_time: float,
+    databricks_run_id: int,
+    max_wait_time_sec: float,
+):
+    run_state = client.get_run_state(databricks_run_id)
+    if run_state.has_terminated():
+        if run_state.is_successful():
+            log.info("Run %s completed successfully" % databricks_run_id)
+            return True
+        else:
+            error_message = "Run %s failed with result state: %s. Message: %s" % (
+                databricks_run_id,
+                run_state.result_state,
+                run_state.state_message,
+            )
+            log.error(error_message)
+            raise DatabricksError(error_message)
+    else:
+        log.info("Run %s in state %s" % (databricks_run_id, run_state))
+    if time.time() - start_poll_time > max_wait_time_sec:
+        raise DatabricksError(
+            "Job run {} took more than {}s to complete; failing".format(
+                databricks_run_id, max_wait_time_sec
+            )
+        )
+    return False
+
+
 def wait_for_run_to_complete(client, log, databricks_run_id, poll_interval_sec, max_wait_time_sec):
     """Wait for a Databricks run to complete."""
     check.int_param(databricks_run_id, "databricks_run_id")
     log.info("Waiting for Databricks run %s to complete..." % databricks_run_id)
     start = time.time()
     while True:
-        log.debug("Waiting %.1f seconds..." % poll_interval_sec)
+        if poll_run_state(client, log, start, databricks_run_id, max_wait_time_sec):
+            return
         time.sleep(poll_interval_sec)
-        run_state = client.get_run_state(databricks_run_id)
-        if run_state.has_terminated():
-            if run_state.is_successful():
-                log.info("Run %s completed successfully" % databricks_run_id)
-                return
-            else:
-                error_message = "Run %s failed with result state: %s. Message: %s" % (
-                    databricks_run_id,
-                    run_state.result_state,
-                    run_state.state_message,
-                )
-                log.error(error_message)
-                raise DatabricksError(error_message)
-        else:
-            log.info("Run %s in state %s" % (databricks_run_id, run_state))
-        if time.time() - start > max_wait_time_sec:
-            raise DatabricksError(
-                "Job run {} took more than {}s to complete; failing".format(
-                    databricks_run_id, max_wait_time_sec
-                )
-            )

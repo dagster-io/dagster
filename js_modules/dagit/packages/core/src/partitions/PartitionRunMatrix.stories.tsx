@@ -1,3 +1,4 @@
+import {TokenizingFieldValue} from '@dagster-io/ui';
 import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import moment from 'moment';
@@ -5,7 +6,6 @@ import * as React from 'react';
 
 import {StorybookProvider} from '../testing/StorybookProvider';
 import {RunStatus, StepEventStatus} from '../types/globalTypes';
-import {TokenizingFieldValue} from '../ui/TokenizingField';
 
 import {PartitionRunMatrix} from './PartitionRunMatrix';
 import {
@@ -79,7 +79,7 @@ function buildRun(
   statuses: {[stepKey: string]: StepEventStatus},
   tags: PartitionSetLoaderRunFragment_tags[] = [],
 ) {
-  const id = faker.random.uuid().slice(0, 8);
+  const id = faker.datatype.uuid().slice(0, 8);
   const startTime = new Date(isoDateString).getTime() / 1000;
   const result: PartitionSetLoaderRunFragment = {
     __typename: 'Run',

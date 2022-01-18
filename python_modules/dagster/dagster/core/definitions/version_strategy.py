@@ -1,48 +1,36 @@
 import hashlib
 import inspect
-from abc import ABC, abstractmethod
-from collections import namedtuple
-from typing import TYPE_CHECKING, Optional
-
-from dagster import check
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 if TYPE_CHECKING:
     from .solid_definition import SolidDefinition
+    from .op_definition import OpDefinition
     from .resource_definition import ResourceDefinition
 
 
-class SolidVersionContext(
-    namedtuple(
-        "_SolidVersionContext",
-        "solid_def solid_config",
-    )
-):
-    """Version-specific solid context.
+class OpVersionContext(NamedTuple):
+    """Provides execution-time information for computing the version for an op.
     Attributes:
-        solid_def (SolidDefinition): The definition of the solid to compute a version for.
-        solid_config (Any): The parsed config to be passed to the solid during execution.
+        op_def (OpDefinition): The definition of the op to compute a version for.
+        op_config (Any): The parsed config to be passed to the op during execution.
     """
 
-    def __new__(
-        cls,
-        solid_def,
-        solid_config,
-    ):
-        if TYPE_CHECKING:
-            solid_def = check.inst_param(
-                solid_def, "solid_def", SolidDefinition  # pylint: disable=E0601
-            )
-        return super(SolidVersionContext, cls).__new__(
-            cls, solid_def=solid_def, solid_config=solid_config
-        )
+    op_def: "OpDefinition"
+    op_config: Any
+
+    @property
+    def solid_def(self) -> "SolidDefinition":
+        return self.op_def
+
+    @property
+    def solid_config(self) -> Any:
+        return self.op_config
 
 
-class ResourceVersionContext(
-    namedtuple(
-        "_ResourceVersionContext",
-        "resource_def resource_config",
-    )
-):
+SolidVersionContext = OpVersionContext
+
+
+class ResourceVersionContext(NamedTuple):
     """Version-specific resource context.
 
     Attributes:
@@ -50,21 +38,11 @@ class ResourceVersionContext(
         resource_config (Any): The parsed config to be passed to the resource during execution.
     """
 
-    def __new__(
-        cls,
-        resource_def,
-        resource_config,
-    ):
-        if TYPE_CHECKING:
-            resource_def = check.inst_param(
-                resource_def, "resource_def", ResourceDefinition  # pylint: disable=E0601
-            )
-        return super(ResourceVersionContext, cls).__new__(
-            cls, resource_def=resource_def, resource_config=resource_config
-        )
+    resource_def: "ResourceDefinition"
+    resource_config: Any
 
 
-class VersionStrategy(ABC):
+class VersionStrategy:
     """Abstract class for defining a strategy to version solids and resources.
 
     When subclassing, `get_solid_version` must be implemented, and `get_resource_version` can be
@@ -77,9 +55,11 @@ class VersionStrategy(ABC):
     up-to-date version will run.
     """
 
-    @abstractmethod
     def get_solid_version(self, context: SolidVersionContext) -> str:
         pass
+
+    def get_op_version(self, context: OpVersionContext) -> str:
+        return self.get_solid_version(context)
 
     def get_resource_version(
         self, context: ResourceVersionContext  # pylint: disable=unused-argument
@@ -92,8 +72,12 @@ class SourceHashVersionStrategy(VersionStrategy):
         code_as_str = inspect.getsource(fn)
         return hashlib.sha1(code_as_str.encode("utf-8")).hexdigest()
 
-    def get_solid_version(self, context: SolidVersionContext) -> str:
-        return self._get_source_hash(context.solid_def.compute_fn.decorated_fn)
+    def get_op_version(self, context: OpVersionContext) -> str:
+        compute_fn = context.op_def.compute_fn
+        if callable(compute_fn):
+            return self._get_source_hash(compute_fn)
+        else:
+            return self._get_source_hash(compute_fn.decorated_fn)
 
     def get_resource_version(self, context: ResourceVersionContext) -> Optional[str]:
         return self._get_source_hash(context.resource_def.resource_fn)

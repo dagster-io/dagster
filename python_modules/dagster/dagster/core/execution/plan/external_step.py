@@ -19,6 +19,7 @@ from dagster.core.execution.context_creation_pipeline import PlanExecutionContex
 from dagster.core.execution.plan.execute_step import core_dagster_event_sequence_for_step
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
+from dagster.serdes import deserialize_value
 
 PICKLED_EVENTS_FILE_NAME = "events.pkl"
 PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"
@@ -76,9 +77,13 @@ class LocalExternalStepLauncher(StepLauncher):
         file_manager = LocalFileManager(".")
         events_file_handle = LocalFileHandle(events_file_path)
         events_data = file_manager.read_data(events_file_handle)
-        events = pickle.loads(events_data)
+        all_events = deserialize_value(pickle.loads(events_data))
 
-        yield from events
+        for event in all_events:
+            # write each pickled event from the external instance to the local instance
+            step_context.instance.handle_new_event(event)
+            if event.is_dagster_event:
+                yield event.dagster_event
 
 
 def _module_in_package_dir(file_path: str, package_dir: str) -> str:
@@ -134,14 +139,18 @@ def step_context_to_step_run_ref(
                             recon_pipeline.repository.pointer.python_file, package_dir
                         ),
                         recon_pipeline.repository.pointer.fn_name,
+                        working_directory=os.getcwd(),
                     ),
                     container_image=recon_pipeline.repository.container_image,
                     executable_path=recon_pipeline.repository.executable_path,
+                    entry_point=recon_pipeline.repository.entry_point,
                 ),
                 pipeline_name=recon_pipeline.pipeline_name,
                 solids_to_execute=recon_pipeline.solids_to_execute,
             )
 
+    parent_run_id = step_context.pipeline_run.parent_run_id
+    parent_run = step_context.instance.get_run_by_id(parent_run_id) if parent_run_id else None
     return StepRunRef(
         run_config=step_context.run_config,
         pipeline_run=step_context.pipeline_run,
@@ -150,7 +159,35 @@ def step_context_to_step_run_ref(
         retry_mode=retry_mode,
         recon_pipeline=recon_pipeline,
         prior_attempts_count=prior_attempts_count,
+        known_state=step_context.execution_plan.known_state,
+        parent_run=parent_run,
     )
+
+
+def external_instance_from_step_run_ref(
+    step_run_ref: StepRunRef, event_listener_fn=None
+) -> DagsterInstance:
+    """
+    Create an ephemeral DagsterInstance that is suitable for executing steps that are specified
+    by a StepRunRef by pre-populating certain values.
+
+    Args:
+        step_run_ref (StepRunRef): The reference to the the step that we want to execute
+        event_listener_fn (EventLogEntry -> Any): A function that handles each individual
+            EventLogEntry created on this instance. Generally used to send these events back to
+            the host instance.
+    Returns:
+        DagsterInstance: A DagsterInstance that can be used to execute an external step.
+    """
+    instance = DagsterInstance.ephemeral()
+    # re-execution expects the parent run to be available on the instance, so add these
+    if step_run_ref.parent_run:
+        # remove the pipeline_snapshot_id, as this instance doesn't have any snapshots
+        instance.add_run(step_run_ref.pipeline_run._replace(pipeline_snapshot_id=None))
+        instance.add_run(step_run_ref.parent_run._replace(pipeline_snapshot_id=None))
+    if event_listener_fn:
+        instance.add_event_listener(step_run_ref.run_id, event_listener_fn)
+    return instance
 
 
 def step_run_ref_to_step_context(
@@ -166,6 +203,7 @@ def step_run_ref_to_step_context(
         step_run_ref.run_config,
         mode=step_run_ref.pipeline_run.mode,
         step_keys_to_execute=[step_run_ref.step_key],
+        known_state=step_run_ref.known_state,
     )
 
     initialization_manager = PlanExecutionContextManager(

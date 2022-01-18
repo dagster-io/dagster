@@ -1,42 +1,47 @@
-import {gql, useQuery} from '@apollo/client';
-import {uniq, without} from 'lodash';
+import {gql, QueryResult, useQuery} from '@apollo/client';
+import {Box, ColorsWIP, IconWIP, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
+import _, {uniq, without} from 'lodash';
 import React from 'react';
-import {useHistory} from 'react-router-dom';
+import {useHistory} from 'react-router';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../../app/GraphQueryImpl';
-import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
-import {LaunchRootExecutionButton} from '../../execute/LaunchRootExecutionButton';
+import {QueryCountdown} from '../../app/QueryCountdown';
 import {SVGViewport} from '../../graph/SVGViewport';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
+import {RightInfoPanel, RightInfoPanelContent} from '../../pipelines/GraphExplorer';
+import {EmptyDAGNotice, LargeDAGNotice} from '../../pipelines/GraphNotices';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';
 import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
+import {useDidLaunchEvent} from '../../runs/RunUtils';
 import {GraphQueryInput} from '../../ui/GraphQueryInput';
 import {Loading} from '../../ui/Loading';
-import {NonIdealState} from '../../ui/NonIdealState';
-import {SplitPanelContainer} from '../../ui/SplitPanelContainer';
 import {buildPipelineSelector} from '../WorkspaceContext';
-import {repoAddressToSelector} from '../repoAddressToSelector';
 import {RepoAddress} from '../types';
 
 import {AssetLinks} from './AssetLinks';
-import {AssetNode, ASSET_NODE_FRAGMENT, getNodeDimensions} from './AssetNode';
-import {ForeignNode, getForeignNodeDimensions} from './ForeignNode';
+import {AssetNode, ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
+import {ForeignNode} from './ForeignNode';
+import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {
-  buildGraphComputeStatuses,
   buildGraphData,
+  buildLiveData,
   GraphData,
   graphHasCycles,
+  IN_PROGRESS_RUNS_FRAGMENT,
   layoutGraph,
+  LiveData,
   Node,
 } from './Utils';
+import {AssetGraphLiveQuery, AssetGraphLiveQueryVariables} from './types/AssetGraphLiveQuery';
 import {
   AssetGraphQuery,
   AssetGraphQueryVariables,
   AssetGraphQuery_pipelineOrError_Pipeline_assetNodes,
 } from './types/AssetGraphQuery';
+import {useFindAssetInWorkspace} from './useFindAssetInWorkspace';
 
 type AssetNode = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
 
@@ -44,31 +49,73 @@ interface Props {
   repoAddress: RepoAddress;
   explorerPath: ExplorerPath;
   handles: GraphExplorerSolidHandleFragment[];
-  selectedHandle?: GraphExplorerSolidHandleFragment;
+  selectedHandles: GraphExplorerSolidHandleFragment[];
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
 }
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
-  const {repoAddress, explorerPath} = props;
+  const {repoAddress, explorerPath, handles} = props;
   const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
+  const repositorySelector = {
+    repositoryLocationName: repoAddress.location,
+    repositoryName: repoAddress.name,
+  };
+
   const queryResult = useQuery<AssetGraphQuery, AssetGraphQueryVariables>(ASSETS_GRAPH_QUERY, {
     variables: {pipelineSelector},
     notifyOnNetworkStatusChange: true,
   });
 
-  useDocumentTitle('Assets');
-
-  const graphData = React.useMemo(() => {
+  const {graphData, graphAssetKeys} = React.useMemo(() => {
     if (queryResult.data?.pipelineOrError.__typename !== 'Pipeline') {
-      return null;
+      return {graphAssetKeys: [], graphData: null};
     }
-    return buildGraphData(queryResult.data.pipelineOrError.assetNodes, explorerPath.pipelineName);
-  }, [queryResult, explorerPath.pipelineName]);
+    const assetNodes = queryResult.data.pipelineOrError.assetNodes;
+    const queryOps = filterByQuery(
+      handles.map((h) => h.solid),
+      explorerPath.opsQuery,
+    );
+    const queryAssetNodes = assetNodes.filter((a) =>
+      queryOps.all.some((op) => op.name === a.opName),
+    );
+    const graphData = buildGraphData(queryAssetNodes);
+    return {
+      graphAssetKeys: queryAssetNodes.map((n) => ({path: n.assetKey.path})),
+      graphData: graphData,
+    };
+  }, [queryResult.data, handles, explorerPath.opsQuery]);
+
+  const liveResult = useQuery<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>(
+    ASSETS_GRAPH_LIVE_QUERY,
+    {
+      skip: graphAssetKeys.length === 0,
+      variables: {pipelineSelector, repositorySelector, assetKeys: graphAssetKeys},
+      notifyOnNetworkStatusChange: true,
+      pollInterval: 5 * 1000,
+    },
+  );
+
+  const liveDataByNode = React.useMemo(() => {
+    if (!liveResult.data || !graphData) {
+      return {};
+    }
+
+    const {repositoryOrError, pipelineOrError} = liveResult.data;
+    const liveAssetNodes =
+      pipelineOrError.__typename === 'Pipeline' ? pipelineOrError.assetNodes : [];
+    const inProgressRunsByStep =
+      repositoryOrError.__typename === 'Repository' ? repositoryOrError.inProgressRunsByStep : [];
+
+    return buildLiveData(graphData, liveAssetNodes, inProgressRunsByStep);
+  }, [graphData, liveResult]);
+
+  useDocumentTitle('Assets');
+  useDidLaunchEvent(liveResult.refetch);
 
   return (
     <Loading allowStaleData queryResult={queryResult}>
-      {({pipelineOrError}) => {
-        if (pipelineOrError.__typename !== 'Pipeline' || !graphData) {
+      {() => {
+        if (!graphData) {
           return <NonIdealState icon="error" title="Query Error" />;
         }
 
@@ -83,84 +130,108 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
             />
           );
         }
-        if (!Object.keys(graphData.nodes).length) {
-          return (
-            <NonIdealState
-              icon="no-results"
-              title="No assets defined"
-              description="No assets defined using the @asset definition"
-            />
-          );
-        }
 
-        return <AssetGraphExplorerWithData graphData={graphData} {...props} />;
+        return (
+          <AssetGraphExplorerWithData
+            key={explorerPath.pipelineName}
+            graphData={graphData}
+            liveDataQueryResult={liveResult}
+            liveDataByNode={liveDataByNode}
+            {...props}
+          />
+        );
       }}
     </Loading>
   );
 };
 
 const AssetGraphExplorerWithData: React.FC<
-  {graphData: ReturnType<typeof buildGraphData>} & Props
+  {
+    graphData: GraphData;
+    liveDataByNode: LiveData;
+    liveDataQueryResult: QueryResult<any>;
+  } & Props
 > = (props) => {
   const {
     repoAddress,
     handles,
-    selectedHandle,
+    selectedHandles,
     explorerPath,
     onChangeExplorerPath,
+    liveDataQueryResult,
+    liveDataByNode,
     graphData,
   } = props;
 
   const history = useHistory();
-  const selectedDefinition = selectedHandle?.solid.definition;
-  const selectedGraphNode =
-    selectedDefinition &&
-    Object.values(graphData.nodes).find(
-      (node) => node.definition.opName === selectedDefinition.name,
-    );
+  const findAssetInWorkspace = useFindAssetInWorkspace();
+
+  const selectedDefinitions = selectedHandles.map((h) => h.solid.definition);
+  const selectedGraphNodes = selectedDefinitions.map(
+    (def) => Object.values(graphData.nodes).find((node) => node.definition.opName === def.name)!,
+  );
+  const focusedGraphNode = selectedGraphNodes[selectedGraphNodes.length - 1];
 
   const onSelectNode = React.useCallback(
-    (e: React.MouseEvent<any>, assetKey: {path: string[]}, node: Node) => {
+    async (e: React.MouseEvent<any>, assetKey: {path: string[]}, node: Node | null) => {
       e.stopPropagation();
 
-      if (!node) {
-        history.push(`/instance/assets/${assetKey.path.map(encodeURIComponent).join('/')}`);
+      let clicked: {opName: string | null; jobName: string | null} = {opName: null, jobName: null};
+
+      if (node?.definition) {
+        // The asset's defintion was provided in our job.assetNodes query. Show it in the current graph.
+        clicked = {opName: node.definition.opName, jobName: explorerPath.pipelineName};
+      } else {
+        // The asset's definition was not provided in our query for job.assetNodes. This means
+        // it's in another job or is a foreign asset not defined in the repository at all.
+        clicked = await findAssetInWorkspace(assetKey);
+      }
+
+      if (!clicked.opName || !clicked.jobName) {
+        // We were unable to find this asset in the workspace - show it in the asset catalog.
+        history.push(`/instance/assets/${assetKey.path.join('/')}`);
         return;
       }
 
-      const {opName, jobName} = node.definition;
-      if (!opName) {
-        return;
+      let nextOpsQuery = explorerPath.opsQuery;
+      let nextOpsNameSelection = clicked.opName;
+
+      if (clicked.jobName !== explorerPath.pipelineName) {
+        nextOpsQuery = '';
+      } else if (e.shiftKey || e.metaKey) {
+        const existing = explorerPath.opNames[0].split(',');
+        const added =
+          e.shiftKey && focusedGraphNode && node
+            ? opsInRange({graph: graphData, from: focusedGraphNode, to: node})
+            : [clicked.opName];
+
+        nextOpsNameSelection = (existing.includes(clicked.opName)
+          ? without(existing, clicked.opName)
+          : uniq([...existing, ...added])
+        ).join(',');
       }
-
-      const append = jobName === explorerPath.pipelineName && (e.shiftKey || e.metaKey);
-      const existing = explorerPath.opsQuery.split(',');
-      const added =
-        e.shiftKey && selectedGraphNode
-          ? opsInRange({graph: graphData, from: selectedGraphNode, to: node})
-          : [opName];
-
-      const next = append
-        ? (existing.includes(opName)
-            ? without(existing, opName)
-            : uniq([...existing, ...added])
-          ).join(',')
-        : `${opName}`;
 
       onChangeExplorerPath(
         {
           ...explorerPath,
-          opNames: [opName],
-          opsQuery: next,
-          pipelineName: jobName || explorerPath.pipelineName,
+          opNames: [nextOpsNameSelection],
+          opsQuery: nextOpsQuery,
+          pipelineName: clicked.jobName,
         },
         'replace',
       );
     },
-    [explorerPath, selectedGraphNode, graphData, onChangeExplorerPath, history],
+    [
+      explorerPath,
+      onChangeExplorerPath,
+      findAssetInWorkspace,
+      history,
+      focusedGraphNode,
+      graphData,
+    ],
   );
 
-  const {all: highlighted} = React.useMemo(
+  const queryResultAssets = React.useMemo(
     () =>
       filterByQuery(
         handles.map((h) => h.solid),
@@ -170,8 +241,11 @@ const AssetGraphExplorerWithData: React.FC<
   );
 
   const layout = React.useMemo(() => layoutGraph(graphData), [graphData]);
-  const computeStatuses = React.useMemo(() => buildGraphComputeStatuses(graphData), [graphData]);
-  console.log(layout);
+
+  const viewportEl = React.useRef<SVGViewport>();
+  React.useEffect(() => {
+    viewportEl.current?.autocenter();
+  }, [layout, viewportEl]);
 
   return (
     <SplitPanelContainer
@@ -181,18 +255,14 @@ const AssetGraphExplorerWithData: React.FC<
       first={
         <>
           <SVGViewport
+            ref={(r) => (viewportEl.current = r || undefined)}
             interactor={SVGViewport.Interactors.PanAndZoom}
             graphWidth={layout.width}
             graphHeight={layout.height}
             onKeyDown={() => {}}
             onClick={() =>
               onChangeExplorerPath(
-                {
-                  ...explorerPath,
-                  pipelineName: explorerPath.pipelineName,
-                  opsQuery: '',
-                  opNames: [],
-                },
+                {...explorerPath, pipelineName: explorerPath.pipelineName, opNames: []},
                 'replace',
               )
             }
@@ -205,15 +275,10 @@ const AssetGraphExplorerWithData: React.FC<
 
                 {layout.nodes.map((layoutNode) => {
                   const graphNode = graphData.nodes[layoutNode.id];
-                  const {width, height} =
-                    !graphNode || graphNode.hidden
-                      ? getForeignNodeDimensions(layoutNode.id)
-                      : getNodeDimensions(graphNode.definition);
-
                   const path = JSON.parse(layoutNode.id);
                   if (
-                    layoutNode.x + width < bounds.left ||
-                    layoutNode.y + height < bounds.top ||
+                    layoutNode.x + layoutNode.width < bounds.left ||
+                    layoutNode.y + layoutNode.height < bounds.top ||
                     layoutNode.x > bounds.right ||
                     layoutNode.y > bounds.bottom
                   ) {
@@ -222,33 +287,25 @@ const AssetGraphExplorerWithData: React.FC<
 
                   return (
                     <foreignObject
+                      {...layoutNode}
                       key={layoutNode.id}
-                      x={layoutNode.x}
-                      y={layoutNode.y}
-                      width={width}
-                      height={height}
                       onClick={(e) => onSelectNode(e, {path}, graphNode)}
                       style={{overflow: 'visible'}}
                     >
-                      {!graphNode || graphNode.hidden ? (
+                      {!graphNode || !graphNode.definition.opName ? (
                         <ForeignNode assetKey={{path}} />
                       ) : (
                         <AssetNode
                           definition={graphNode.definition}
+                          liveData={liveDataByNode[graphNode.id]}
                           metadata={
                             handles.find((h) => h.handleID === graphNode.definition.opName)!.solid
                               .definition.metadata
                           }
-                          selected={selectedGraphNode === graphNode}
-                          computeStatus={computeStatuses[graphNode.id]}
+                          selected={focusedGraphNode === graphNode}
+                          jobName={explorerPath.pipelineName}
                           repoAddress={repoAddress}
-                          secondaryHighlight={
-                            explorerPath.opsQuery
-                              ? highlighted.some(
-                                  (h) => h.definition.name === graphNode.definition.opName,
-                                )
-                              : false
-                          }
+                          secondaryHighlight={selectedGraphNodes.includes(graphNode)}
                         />
                       )}
                     </foreignObject>
@@ -258,6 +315,26 @@ const AssetGraphExplorerWithData: React.FC<
             )}
           </SVGViewport>
 
+          {handles.length === 0 ? (
+            <EmptyDAGNotice nodeType="asset" isGraph />
+          ) : queryResultAssets.applyingEmptyDefault ? (
+            <LargeDAGNotice nodeType="asset" />
+          ) : undefined}
+
+          <div style={{position: 'absolute', right: 12, top: 12}}>
+            <LaunchAssetExecutionButton
+              title={titleForLaunch(selectedGraphNodes, liveDataByNode)}
+              repoAddress={repoAddress}
+              assetJobName={explorerPath.pipelineName}
+              assets={(selectedGraphNodes.length
+                ? selectedGraphNodes
+                : Object.values(graphData.nodes)
+              ).map((n) => n.definition)}
+            />
+          </div>
+          <div style={{position: 'absolute', left: 24, top: 16}}>
+            <QueryCountdown pollInterval={5 * 1000} queryResult={liveDataQueryResult} />
+          </div>
           <AssetQueryInputContainer>
             <GraphQueryInput
               items={handles.map((h) => h.solid)}
@@ -265,39 +342,66 @@ const AssetGraphExplorerWithData: React.FC<
               placeholder="Type an asset subset…"
               onChange={(opsQuery) => onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')}
             />
-            <LaunchRootExecutionButton
-              pipelineName={explorerPath.pipelineName}
-              disabled={!explorerPath.opsQuery || highlighted.length === 0}
-              getVariables={() => ({
-                executionParams: {
-                  mode: 'default',
-                  executionMetadata: {},
-                  runConfigData: {},
-                  selector: {
-                    ...repoAddressToSelector(repoAddress),
-                    pipelineName: explorerPath.pipelineName,
-                    solidSelection: highlighted.map((h) => h.name),
-                  },
-                },
-              })}
-            />
           </AssetQueryInputContainer>
         </>
       }
       second={
-        selectedGraphNode && selectedDefinition ? (
-          <SidebarAssetInfo
-            node={selectedGraphNode.definition}
-            definition={selectedDefinition}
-            repoAddress={repoAddress}
-          />
-        ) : (
-          <SidebarPipelineOrJobOverview repoAddress={repoAddress} explorerPath={explorerPath} />
-        )
+        <RightInfoPanel>
+          <RightInfoPanelContent>
+            {selectedGraphNodes.length > 1 ? (
+              <Box
+                style={{height: '70%', color: ColorsWIP.Gray400}}
+                flex={{justifyContent: 'center', alignItems: 'center', gap: 4, direction: 'column'}}
+              >
+                <IconWIP size={48} name="asset" color={ColorsWIP.Gray400} />
+                {`${selectedGraphNodes.length} Assets Selected`}
+              </Box>
+            ) : selectedGraphNodes.length === 1 && selectedGraphNodes[0] ? (
+              <SidebarAssetInfo
+                node={selectedGraphNodes[0].definition}
+                liveData={liveDataByNode[selectedGraphNodes[0].id]}
+                definition={selectedDefinitions[0]}
+                repoAddress={repoAddress}
+              />
+            ) : (
+              <SidebarPipelineOrJobOverview repoAddress={repoAddress} explorerPath={explorerPath} />
+            )}
+          </RightInfoPanelContent>
+        </RightInfoPanel>
       }
     />
   );
 };
+
+const ASSETS_GRAPH_LIVE_QUERY = gql`
+  query AssetGraphLiveQuery(
+    $pipelineSelector: PipelineSelector!
+    $repositorySelector: RepositorySelector!
+    $assetKeys: [AssetKeyInput!]
+  ) {
+    repositoryOrError(repositorySelector: $repositorySelector) {
+      __typename
+      ... on Repository {
+        id
+        name
+        inProgressRunsByStep {
+          ...InProgressRunsFragment
+        }
+      }
+    }
+    pipelineOrError(params: $pipelineSelector) {
+      ... on Pipeline {
+        id
+        assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
+          id
+          ...AssetNodeLiveFragment
+        }
+      }
+    }
+  }
+  ${IN_PROGRESS_RUNS_FRAGMENT}
+  ${ASSET_NODE_LIVE_FRAGMENT}
+`;
 
 const ASSETS_GRAPH_QUERY = gql`
   query AssetGraphQuery($pipelineSelector: PipelineSelector!) {
@@ -305,26 +409,16 @@ const ASSETS_GRAPH_QUERY = gql`
       ... on Pipeline {
         id
         assetNodes {
-          ...AssetNodeFragment
           id
-          assetKey {
+          ...AssetNodeFragment
+          dependencyKeys {
             path
-          }
-          dependencies {
-            inputName
-            upstreamAsset {
-              id
-              assetKey {
-                path
-              }
-            }
           }
         }
       }
     }
   }
   ${ASSET_NODE_FRAGMENT}
-  ${LATEST_MATERIALIZATION_METADATA_FRAGMENT}
 `;
 
 const SVGContainer = styled.svg`
@@ -342,6 +436,22 @@ const AssetQueryInputContainer = styled.div`
   display: flex;
 `;
 
+const graphDirectionOf = ({graph, from, to}: {graph: GraphData; from: Node; to: Node}) => {
+  const stack = [from];
+  while (stack.length) {
+    const node = stack.pop()!;
+
+    const downstream = [...Object.keys(graph.downstream[node.id] || {})]
+      .map((n) => graph.nodes[n])
+      .filter(Boolean);
+    if (downstream.some((d) => d.id === to.id)) {
+      return 'downstream';
+    }
+    stack.push(...downstream);
+  }
+  return 'upstream';
+};
+
 const opsInRange = (
   {graph, from, to}: {graph: GraphData; from: Node; to: Node},
   seen: string[] = [],
@@ -352,21 +462,36 @@ const opsInRange = (
   if (from.id === to.id) {
     return [to.definition.opName!];
   }
-  const adjacent = [
-    ...Object.keys(graph.upstream[from.id] || {}),
-    ...Object.keys(graph.downstream[from.id] || {}),
-  ].map((n) => graph.nodes[n]);
 
-  let best: string[] = [];
+  if (seen.length === 0 && graphDirectionOf({graph, from, to}) === 'upstream') {
+    [from, to] = [to, from];
+  }
 
-  for (const node of adjacent) {
+  const downstream = [...Object.keys(graph.downstream[from.id] || {})]
+    .map((n) => graph.nodes[n])
+    .filter(Boolean);
+
+  const ledToTarget: string[] = [];
+
+  for (const node of downstream) {
     if (seen.includes(node.id)) {
       continue;
     }
     const result: string[] = opsInRange({graph, from: node, to}, [...seen, from.id]);
-    if (result.length && (best.length === 0 || result.length < best.length)) {
-      best = [from.definition.opName!, ...result];
+    if (result.length) {
+      ledToTarget.push(from.definition.opName!, ...result);
     }
   }
-  return best;
+  return uniq(ledToTarget);
+};
+
+const titleForLaunch = (nodes: Node[], liveDataByNode: LiveData) => {
+  const isRematerializeForAll = (nodes.length
+    ? nodes.map((n) => liveDataByNode[n.id])
+    : Object.values(liveDataByNode)
+  ).every((e) => !!e?.lastMaterialization);
+
+  return `${isRematerializeForAll ? 'Rematerialize' : 'Materialize'} ${
+    nodes.length === 0 ? `All` : nodes.length === 1 ? `Selected` : `Selected (${nodes.length})`
+  }`;
 };

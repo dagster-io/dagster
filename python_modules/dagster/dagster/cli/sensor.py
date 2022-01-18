@@ -12,10 +12,14 @@ from dagster.cli.workspace.cli_target import (
     get_repository_location_from_kwargs,
     repository_target_argument,
 )
-from dagster.core.definitions.run_request import JobType
+from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.job import JobState, JobStatus, SensorJobData
+from dagster.core.scheduler.instigation import (
+    InstigatorState,
+    InstigatorStatus,
+    SensorInstigatorData,
+)
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -28,7 +32,7 @@ def sensor_cli():
 
 def print_changes(external_repository, instance, print_fn=print, preview=False):
     sensor_states = instance.all_stored_job_state(
-        external_repository.get_origin_id(), JobType.SENSOR
+        external_repository.get_origin_id(), InstigatorType.SENSOR
     )
     external_sensors = external_repository.get_external_sensors()
     external_sensors_dict = {s.get_external_origin_id(): s for s in external_sensors}
@@ -142,7 +146,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
             stored_sensors_by_origin_id = {
                 stored_sensor_state.job_origin_id: stored_sensor_state
                 for stored_sensor_state in instance.all_stored_job_state(
-                    external_repo.get_external_origin_id(), job_type=JobType.SENSOR
+                    external_repo.get_external_origin_id(), job_type=InstigatorType.SENSOR
                 )
             }
 
@@ -153,17 +157,20 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                     external_sensor.get_external_origin_id()
                 )
                 if running_filter and (
-                    not stored_sensor_state or stored_sensor_state.status == JobStatus.STOPPED
+                    not stored_sensor_state
+                    or stored_sensor_state.status == InstigatorStatus.STOPPED
                 ):
                     continue
-                if stopped_filter and stored_sensor_state and JobStatus.RUNNING:
+                if stopped_filter and stored_sensor_state and InstigatorStatus.RUNNING:
                     continue
 
                 if name_filter:
                     print_fn(external_sensor.name)
                     continue
 
-                status = stored_sensor_state.status if stored_sensor_state else JobStatus.STOPPED
+                status = (
+                    stored_sensor_state.status if stored_sensor_state else InstigatorStatus.STOPPED
+                )
                 sensor_title = f"Sensor: {external_sensor.name} [{status.value}]"
                 if not first:
                     print_fn("*" * len(sensor_title))
@@ -358,11 +365,11 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
             job_state = instance.get_job_state(external_sensor.get_external_origin_id())
             if not job_state:
                 instance.add_job_state(
-                    JobState(
+                    InstigatorState(
                         external_sensor.get_external_origin(),
-                        JobType.SENSOR,
-                        JobStatus.STOPPED,
-                        SensorJobData(
+                        InstigatorType.SENSOR,
+                        InstigatorStatus.STOPPED,
+                        SensorInstigatorData(
                             min_interval=external_sensor.min_interval_seconds, cursor=cursor_value
                         ),
                     )
@@ -370,7 +377,7 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
             else:
                 instance.update_job_state(
                     job_state.with_data(
-                        SensorJobData(
+                        SensorInstigatorData(
                             last_tick_timestamp=job_state.job_specific_data.last_tick_timestamp,
                             last_run_key=job_state.job_specific_data.last_run_key,
                             min_interval=external_sensor.min_interval_seconds,

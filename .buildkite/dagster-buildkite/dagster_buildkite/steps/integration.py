@@ -111,9 +111,9 @@ def build_spec_backcompat_suite():
 def build_spec_celery_k8s_suite():
     tox_env_suffixes = [
         "-default",
-        "-markusercodedeployment",
         "-markusercodedeploymentsubchart",
         "-markdaemon",
+        "-markredis",
     ]
     directory = os.path.join(
         "integration_tests", "test_suites", "celery-k8s-integration-test-suite"
@@ -152,7 +152,11 @@ def build_spec_k8s_suite():
 
 
 def build_steps_integration_suite(
-    directory, tox_env_suffixes, upload_coverage, extra_commands_fn=integration_suite_extra_cmds_fn
+    directory,
+    tox_env_suffixes,
+    upload_coverage,
+    extra_commands_fn=integration_suite_extra_cmds_fn,
+    queue=None,
 ):
     return ModuleBuildSpec(
         directory,
@@ -169,6 +173,8 @@ def build_steps_integration_suite(
         depends_on_fn=test_image_depends_fn,
         tox_env_suffixes=tox_env_suffixes,
         retries=2,
+        timeout_in_minutes=30,
+        queue=queue,
     ).get_tox_build_steps()
 
 

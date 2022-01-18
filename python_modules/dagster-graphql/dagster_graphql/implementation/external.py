@@ -55,10 +55,9 @@ def get_subset_external_pipeline(context, selector):
     check.inst_param(selector, "selector", PipelineSelector)
 
     repository_location = context.get_repository_location(selector.location_name)
-    external_repository = repository_location.get_repository(selector.repository_name)
 
     try:
-        subset_result = repository_location.get_subset_external_pipeline_result(selector)
+        external_pipeline = repository_location.get_external_pipeline(selector)
     except Exception:
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         raise UserFacingGraphQLError(
@@ -73,10 +72,7 @@ def get_subset_external_pipeline(context, selector):
             )
         )
 
-    return ExternalPipeline(
-        subset_result.external_pipeline_data,
-        repository_handle=external_repository.handle,
-    )
+    return external_pipeline
 
 
 def ensure_valid_config(external_pipeline, mode, run_config):

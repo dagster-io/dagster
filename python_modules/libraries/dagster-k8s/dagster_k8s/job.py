@@ -171,6 +171,7 @@ def get_user_defined_k8s_config(tags):
         pod_template_spec_metadata=user_defined_k8s_config.get("pod_template_spec_metadata"),
         pod_spec_config=user_defined_k8s_config.get("pod_spec_config"),
         job_config=user_defined_k8s_config.get("job_config"),
+        job_metadata=user_defined_k8s_config.get("job_metadata"),
         job_spec_config=user_defined_k8s_config.get("job_spec_config"),
     )
 
@@ -301,6 +302,52 @@ class DagsterK8sJobConfig(
                 description="The location of DAGSTER_HOME in the Job container; this is where the "
                 "``dagster.yaml`` file will be mounted from the instance ConfigMap specified here. "
                 "Defaults to /opt/dagster/dagster_home.",
+            ),
+            "env_config_maps": Field(
+                Noneable(Array(StringSource)),
+                is_required=False,
+                description="A list of custom ConfigMapEnvSource names from which to draw "
+                "environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:"
+                "https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container",
+            ),
+            "env_secrets": Field(
+                Noneable(Array(StringSource)),
+                is_required=False,
+                description="A list of custom Secret names from which to draw environment "
+                "variables (using ``envFrom``) for the Job. Default: ``[]``. See:"
+                "https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables",
+            ),
+            "volume_mounts": Field(
+                Array(
+                    Shape(
+                        {
+                            "name": StringSource,
+                            "mountPath": StringSource,
+                            "mountPropagation": Field(StringSource, is_required=False),
+                            "readOnly": Field(BoolSource, is_required=False),
+                            "subPath": Field(StringSource, is_required=False),
+                            "subPathExpr": Field(StringSource, is_required=False),
+                        }
+                    )
+                ),
+                is_required=False,
+                default_value=[],
+                description="A list of volume mounts to include in the job's container. Default: ``[]``. See: "
+                "https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core",
+            ),
+            "volumes": Field(
+                Array(
+                    Permissive(
+                        {
+                            "name": str,
+                        }
+                    )
+                ),
+                is_required=False,
+                default_value=[],
+                description="A list of volumes to include in the Job's Pod. Default: ``[]``. For the many "
+                "possible volume source types that can be included, see: "
+                "https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core",
             ),
         }
 
@@ -438,6 +485,7 @@ def construct_dagster_k8s_job(
     user_defined_k8s_config=None,
     pod_name=None,
     component=None,
+    labels=None,
     env_vars=None,
 ):
     """Constructs a Kubernetes Job object for a dagster-graphql invocation.
@@ -452,6 +500,8 @@ def construct_dagster_k8s_job(
             in length. Defaults to "<job_name>-pod".
         component (str, optional): The name of the component, used to provide the Job label
             app.kubernetes.io/component. Defaults to None.
+        labels(Dict[str, str]): Additional labels to be attached to k8s jobs and pod templates.
+            Long label values are may be truncated.
         env_vars(Dict[str, str]): Additional environment variables to add to the K8s Container.
 
     Returns:
@@ -470,6 +520,7 @@ def construct_dagster_k8s_job(
     pod_name = check.opt_str_param(pod_name, "pod_name", default=job_name + "-pod")
     check.opt_str_param(component, "component")
     check.opt_dict_param(env_vars, "env_vars", key_type=str, value_type=str)
+    check.opt_dict_param(labels, "labels", key_type=str, value_type=str)
 
     check.invariant(
         len(job_name) <= MAX_K8S_NAME_LEN,
@@ -484,7 +535,7 @@ def construct_dagster_k8s_job(
     )
 
     # See: https://kubernetes.io/docs/concepts/overview/working-with-objects/common-labels/
-    dagster_labels = {
+    k8s_common_labels = {
         "app.kubernetes.io/name": "dagster",
         "app.kubernetes.io/instance": "dagster",
         "app.kubernetes.io/version": dagster_version,
@@ -492,7 +543,15 @@ def construct_dagster_k8s_job(
     }
 
     if component:
-        dagster_labels["app.kubernetes.io/component"] = component
+        k8s_common_labels["app.kubernetes.io/component"] = component
+
+    additional_labels = {
+        # Truncate too long label values to fit into 63-characters limit.
+        # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
+        k: v[:63]
+        for k, v in (labels or {}).items()
+    }
+    dagster_labels = merge_dicts(k8s_common_labels, additional_labels)
 
     env = [kubernetes.client.V1EnvVar(name="DAGSTER_HOME", value=job_config.dagster_home)]
     if job_config.postgres_password_secret:

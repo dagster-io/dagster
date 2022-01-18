@@ -16,10 +16,15 @@ export enum IStepState {
   SUCCEEDED = 'succeeded',
   SKIPPED = 'skipped',
   FAILED = 'failed',
-  UNKNOWN = 'unknown',
+  UNKNOWN = 'unknown', // run exited without step reaching a final state
 }
 
-const BOX_EXIT_STATES = [IStepState.RETRY_REQUESTED, IStepState.SUCCEEDED, IStepState.FAILED];
+const BOX_EXIT_STATES = [
+  IStepState.RETRY_REQUESTED,
+  IStepState.SUCCEEDED,
+  IStepState.FAILED,
+  IStepState.UNKNOWN,
+];
 
 interface IMarker {
   key: string;
@@ -93,7 +98,7 @@ export const extractLogCaptureStepsFromLegacySteps = (stepKeys: string[]) => {
   return logCaptureSteps;
 };
 
-const fromTimestamp = (ts: number | null) => (ts ? ts * 1000 : undefined);
+const fromTimestamp = (ts: number | null) => (ts ? Math.floor(ts * 1000) : undefined);
 function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
   const metadata: IRunMetadataDict = {
     firstLogAt: 0,

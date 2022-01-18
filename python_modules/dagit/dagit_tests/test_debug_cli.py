@@ -19,7 +19,7 @@ def pipe_test():
     emit_one()
 
 
-def test_roundtrip(monkeypatch):
+def test_roundtrip(monkeypatch, caplog):
     runner = CliRunner()
     with instance_for_test() as instance:
         run_result = execute_pipeline(pipe_test, instance=instance)
@@ -35,4 +35,4 @@ def test_roundtrip(monkeypatch):
         debug_result = runner.invoke(dagit_debug_command, [file_path])
         assert file_path in debug_result.output
         assert "run_id: {}".format(run_result.run_id) in debug_result.output
-        assert "Serving on" in debug_result.output
+        assert caplog.text.count("Serving dagit on") == 1

@@ -1,22 +1,26 @@
 import {gql, useQuery} from '@apollo/client';
-import qs from 'query-string';
+import {
+  Box,
+  ButtonWIP,
+  ColorsWIP,
+  DialogFooter,
+  DialogWIP,
+  IconWIP,
+  MenuItemWIP,
+  MenuLink,
+  MenuWIP,
+  Popover,
+  TokenizingFieldValue,
+  FontFamily,
+} from '@dagster-io/ui';
+import qs from 'qs';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {AppContext} from '../app/AppContext';
 import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
 import {useViewport} from '../gantt/useViewport';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ColorsWIP} from '../ui/Colors';
-import {DialogFooter, DialogWIP} from '../ui/Dialog';
-import {IconWIP} from '../ui/Icon';
-import {MenuItemWIP, MenuWIP} from '../ui/Menu';
-import {Popover} from '../ui/Popover';
-import {TokenizingFieldValue} from '../ui/TokenizingField';
-import {FontFamily} from '../ui/styles';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -118,7 +122,6 @@ const DisplayOptionsQueryConfig: QueryPersistedStateConfig<DisplayOptions> = {
 };
 
 export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => {
-  const {basePath} = React.useContext(AppContext);
   const {viewport, containerProps} = useViewport();
   const [hovered, setHovered] = React.useState<PartitionRunSelection | null>(null);
   const [focused, setFocused] = useQueryPersistedState(PartitionRunSelectionQueryConfig);
@@ -359,7 +362,6 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
                     options={options}
                     minUnix={minUnix}
                     maxUnix={maxUnix}
-                    basePath={basePath}
                     hovered={hovered}
                     setHovered={setHovered}
                     setFocused={setFocused}
@@ -558,7 +560,6 @@ const PartitionStepSquare: React.FC<{
   runs: PartitionRunMatrixRunFragment[];
   runsLoaded: boolean;
   options: DisplayOptions;
-  basePath: string;
   hovered: PartitionRunSelection | null;
   minUnix: number;
   maxUnix: number;
@@ -575,7 +576,6 @@ const PartitionStepSquare: React.FC<{
   setFocused,
   minUnix,
   maxUnix,
-  basePath,
   partitionName,
 }) => {
   const [opened, setOpened] = React.useState(false);
@@ -610,7 +610,7 @@ const PartitionStepSquare: React.FC<{
     return content;
   }
 
-  const lastRunHref = `${basePath}/instance/runs/${runs[runs.length - 1].runId}?${qs.stringify({
+  const lastRunHref = `/instance/runs/${runs[runs.length - 1].runId}?${qs.stringify({
     selection: name,
     logs: `step:${name}`,
   })}`;
@@ -623,7 +623,7 @@ const PartitionStepSquare: React.FC<{
       onClosed={() => setOpened(false)}
       content={
         <MenuWIP>
-          <MenuItemWIP icon="open_in_new" text="Show Logs From Last Run" href={lastRunHref} />
+          <MenuLink icon="open_in_new" text="Show Logs From Last Run" to={lastRunHref} />
           <MenuItemWIP
             icon="settings_backup_restore"
             text={`View Runs (${runs.length})`}

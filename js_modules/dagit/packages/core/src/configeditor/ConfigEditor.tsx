@@ -15,15 +15,13 @@ import 'codemirror/lib/codemirror.css';
 import './codemirror-yaml/lint'; // Patch lint
 import './codemirror-yaml/mode'; // eslint-disable-line import/no-duplicates
 
+import {ColorsWIP, FontFamily, Icons} from '@dagster-io/ui';
 import {Editor} from 'codemirror';
 import debounce from 'lodash/debounce';
 import * as React from 'react';
 import {Controlled as CodeMirrorReact} from 'react-codemirror2';
 import {createGlobalStyle} from 'styled-components/macro';
 import * as yaml from 'yaml';
-
-import {ColorsWIP} from '../ui/Colors';
-import {FontFamily} from '../ui/styles';
 
 import {ConfigEditorHelpContext} from './ConfigEditorHelpContext';
 import {
@@ -43,6 +41,9 @@ interface ConfigEditorProps {
   onConfigChange: (newValue: string) => void;
   onHelpContextChange: (helpContext: ConfigEditorHelpContext | null) => void;
 }
+
+// Use `default` due to Webpack config.
+const errorIconPath = Icons.error.default;
 
 const AUTO_COMPLETE_AFTER_KEY = /^[a-zA-Z0-9_@(]$/;
 const performLint = debounce((editor: any) => {
@@ -75,7 +76,7 @@ const CodeMirrorShimStyle = createGlobalStyle`
     .CodeMirror-lint-marker-error {
       background-image: none;
       background: ${ColorsWIP.Red500};
-      mask-image: url(${require('../ui/icon-svgs/error.svg').default});
+      mask-image: url(${errorIconPath});
       mask-size: cover;
       margin-bottom: 2px;
     }
@@ -270,10 +271,6 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
               keyMap: 'sublime',
               extraKeys: {
                 'Cmd-Space': (editor: any) => editor.showHint({completeSingle: true}),
-                'Ctrl-A': (editor: any) => {
-                  editor.execCommand('goLineStartSmart');
-                },
-                'Ctrl-E': (editor: any) => editor.execCommand('goLineEnd'),
                 'Ctrl-Space': (editor: any) => editor.showHint({completeSingle: true}),
                 'Alt-Space': (editor: any) => editor.showHint({completeSingle: true}),
                 'Shift-Tab': (editor: any) => editor.execCommand('indentLess'),
@@ -281,8 +278,6 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
                 // Persistent search box in Query Editor
                 'Cmd-F': 'findPersistent',
                 'Ctrl-F': 'findPersistent',
-                'Cmd-Z': (editor: any) => editor.undo(),
-                'Cmd-Y': (editor: any) => editor.redo(),
               },
               gutters: [
                 'CodeMirror-foldgutter',

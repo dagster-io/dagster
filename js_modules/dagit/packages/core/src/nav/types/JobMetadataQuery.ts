@@ -22,9 +22,9 @@ export interface JobMetadataQuery_pipelineOrError_Pipeline_schedules_scheduleSta
 export interface JobMetadataQuery_pipelineOrError_Pipeline_schedules {
   __typename: "Schedule";
   id: string;
-  cronSchedule: string;
   mode: string;
   name: string;
+  cronSchedule: string;
   scheduleState: JobMetadataQuery_pipelineOrError_Pipeline_schedules_scheduleState;
 }
 
@@ -104,6 +104,7 @@ export interface JobMetadataQuery_pipelineRunsOrError_Runs_results {
   id: string;
   status: RunStatus;
   assets: JobMetadataQuery_pipelineRunsOrError_Runs_results_assets[];
+  runId: string;
   stats: JobMetadataQuery_pipelineRunsOrError_Runs_results_stats;
 }
 

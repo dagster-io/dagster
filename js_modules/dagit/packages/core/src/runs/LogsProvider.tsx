@@ -1,10 +1,10 @@
 import {gql, useApolloClient, useQuery, useSubscription} from '@apollo/client';
+import {TokenizingFieldValue} from '@dagster-io/ui';
 import throttle from 'lodash/throttle';
 import * as React from 'react';
 
 import {WebSocketContext} from '../app/WebSocketProvider';
 import {RunStatus} from '../types/globalTypes';
-import {TokenizingFieldValue} from '../ui/TokenizingField';
 
 import {RunFragments} from './RunFragments';
 import {PipelineRunLogsSubscription} from './types/PipelineRunLogsSubscription';
@@ -103,7 +103,7 @@ const useLogsProviderWithSubscription = (runId: string) => {
       const local = client.readFragment<PipelineRunLogsSubscriptionStatusFragment>({
         fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
         fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
-        id: `PipelineRun:${runId}`,
+        id: `Run:${runId}`,
       });
 
       if (local) {
@@ -117,10 +117,11 @@ const useLogsProviderWithSubscription = (runId: string) => {
         ) {
           toWrite.canTerminate = false;
         }
+
         client.writeFragment({
           fragmentName: 'PipelineRunLogsSubscriptionStatusFragment',
           fragment: PIPELINE_RUN_LOGS_SUBSCRIPTION_STATUS_FRAGMENT,
-          id: `PipelineRun:${runId}`,
+          id: `Run:${runId}`,
           data: toWrite,
         });
       }

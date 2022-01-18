@@ -23,6 +23,8 @@ class _Repository:
         self.description = check.opt_str_param(description, "description")
 
     def __call__(self, fn: Callable[[], Any]) -> RepositoryDefinition:
+        from dagster.core.asset_defs import ForeignAsset
+
         check.callable_param(fn, "fn")
 
         if not self.name:
@@ -50,6 +52,7 @@ class _Repository:
                     or isinstance(definition, ScheduleDefinition)
                     or isinstance(definition, SensorDefinition)
                     or isinstance(definition, GraphDefinition)
+                    or isinstance(definition, ForeignAsset)
                 ):
                     bad_definitions.append((i, type(definition)))
             if bad_definitions:
@@ -62,7 +65,7 @@ class _Repository:
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: all elements of list "
                     "must be of type JobDefinition, GraphDefinition, PipelineDefinition, "
-                    "PartitionSetDefinition, ScheduleDefinition, or SensorDefinition. "
+                    "PartitionSetDefinition, ScheduleDefinition, SensorDefinition, or ForeignAsset. "
                     f"Got {bad_definitions_str}."
                 )
             repository_data = CachingRepositoryData.from_list(repository_definitions)
@@ -102,8 +105,8 @@ def repository(
     The decorated function should take no arguments and its return value should one of:
 
     1. ``List[Union[JobDefinition, PipelineDefinition, PartitionSetDefinition, ScheduleDefinition, SensorDefinition]]``.
-        Use this form when you have no need to lazy load pipelines or other definitions. This is the
-        typical use case.
+    Use this form when you have no need to lazy load pipelines or other definitions. This is the
+    typical use case.
 
     2. A dict of the form:
 
@@ -121,9 +124,9 @@ def repository(
     which can be helpful for performance when there are many definitions in a repository, or
     when constructing the definitions is costly.
 
-    3. :py:class:`RepositoryData`. Return this object if you need fine-grained
-        control over the construction and indexing of definitions within the repository, e.g., to
-        create definitions dynamically from .yaml files in a directory.
+    3. A :py:class:`RepositoryData`. Return this object if you need fine-grained
+    control over the construction and indexing of definitions within the repository, e.g., to
+    create definitions dynamically from .yaml files in a directory.
 
     Args:
         name (Optional[str]): The name of the repository. Defaults to the name of the decorated
@@ -208,7 +211,7 @@ def repository(
             def __init__(self, yaml_directory):
                 self._yaml_directory = yaml_directory
 
-            def get_all_jobs(self):
+            def get_all_pipelines(self):
                 return [
                     self._construct_job_def_from_yaml_file(
                       self._yaml_file_for_job_name(file_name)

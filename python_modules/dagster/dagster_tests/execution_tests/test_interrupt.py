@@ -7,10 +7,15 @@ from threading import Thread
 import pytest
 from dagster import (
     DagsterEventType,
+    Failure,
     Field,
     ModeDefinition,
+    RetryPolicy,
     String,
+    execute_pipeline,
     execute_pipeline_iterator,
+    job,
+    op,
     pipeline,
     reconstructable,
     resource,
@@ -294,3 +299,54 @@ def test_calling_raise_execution_interrupts_also_raises_any_captured_interrupts(
 
     assert interrupt_from_raise_execution_interrupts
     assert not interrupt_after_delay
+
+
+@op(config_schema={"path": str})
+def write_and_spin_if_missing(context):
+    target = context.op_config["path"]
+    if os.path.exists(target):
+        return
+
+    with open(target, "w") as ff:
+        ff.write(str(os.getpid()))
+
+    start_time = time.time()
+
+    while (time.time() - start_time) < 3:
+        time.sleep(0.1)
+
+    os.remove(target)
+    raise Failure("Timed out, file removed")
+
+
+@job(op_retry_policy=RetryPolicy(max_retries=1))
+def policy_job():
+    write_and_spin_if_missing()
+
+
+@pytest.mark.skipif(seven.IS_WINDOWS, reason="Interrupts handled differently on windows")
+def test_retry_policy():
+    """
+    Start a thread which will interrupt the subprocess after it writes the file.
+    On the retry the run will succeed since the op returns if the file already exists.
+    """
+
+    def _send_int(path):
+        while not os.path.exists(path):
+            time.sleep(0.05)
+
+        with open(path) as f:
+            pid = int(f.read())
+
+        os.kill(pid, signal.SIGINT)
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        path = os.path.join(tempdir, "target.tmp")
+        Thread(target=_send_int, args=(path,)).start()
+        with instance_for_test(temp_dir=tempdir) as instance:
+            result = execute_pipeline(
+                reconstructable(policy_job),
+                run_config={"ops": {"write_and_spin_if_missing": {"config": {"path": path}}}},
+                instance=instance,
+            )
+            assert result.success

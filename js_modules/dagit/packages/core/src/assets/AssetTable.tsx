@@ -1,20 +1,23 @@
 import {gql, RefetchQueriesFunction} from '@apollo/client';
+import {
+  Box,
+  ButtonWIP,
+  Checkbox,
+  IconWIP,
+  markdownToPlaintext,
+  MenuItemWIP,
+  MenuWIP,
+  Popover,
+  Table,
+} from '@dagster-io/ui';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
 import {usePermissions} from '../app/Permissions';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {Checkbox} from '../ui/Checkbox';
-import {IconWIP} from '../ui/Icon';
-import {markdownToPlaintext} from '../ui/Markdown';
-import {MenuItemWIP, MenuWIP} from '../ui/Menu';
-import {Popover} from '../ui/Popover';
-import {Table} from '../ui/Table';
 
+import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';
 import {AssetTableFragment as Asset} from './types/AssetTableFragment';
 
@@ -91,7 +94,7 @@ export const AssetTable = ({
             <th>Asset Key</th>
             {flagAssetGraph ? <th>Description</th> : null}
             {flagAssetGraph ? <th style={{maxWidth: 250}}>Defined In</th> : null}
-            {canWipeAssets ? <th>Actions</th> : null}
+            {canWipeAssets ? <th style={{width: 80}}>Actions</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -165,23 +168,7 @@ const AssetEntryRow: React.FC<{
           </td>
         ) : null}
         <td>
-          <Link to={linkUrl}>
-            <Box flex={{alignItems: 'center', wrap: 'wrap'}} style={{wordBreak: 'break-word'}}>
-              {path
-                .map((p, i) => <span key={i}>{p}</span>)
-                .reduce(
-                  (accum, curr, ii) => [
-                    ...accum,
-                    ii > 0 ? (
-                      <React.Fragment key={`${ii}-space`}>&nbsp;{`>`}&nbsp;</React.Fragment>
-                    ) : null,
-                    curr,
-                  ],
-                  [] as React.ReactNode[],
-                )}
-              {isAssetEntry ? null : '/'}
-            </Box>
-          </Link>
+          <AssetLink path={path} url={linkUrl} trailingSlash={!isAssetEntry} />
         </td>
         {shouldShowAssetGraphColumns ? (
           <td>
@@ -192,14 +179,20 @@ const AssetEntryRow: React.FC<{
         ) : null}
         {shouldShowAssetGraphColumns ? (
           <td>
-            {first.definition && first.definition.jobName && (
-              <PipelineReference
-                showIcon
-                pipelineName={first.definition.jobName}
-                pipelineHrefContext="repo-unknown"
-                isJob
-              />
-            )}
+            <Box flex={{direction: 'column', gap: 2}}>
+              {(first.definition?.jobs || []).map((job) => (
+                <PipelineReference
+                  key={job.id}
+                  isJob
+                  showIcon
+                  pipelineName={job.name}
+                  pipelineHrefContext={{
+                    name: job.repository.name,
+                    location: job.repository.location.name,
+                  }}
+                />
+              ))}
+            </Box>
           </td>
         ) : null}
         {canWipe ? (
@@ -283,8 +276,19 @@ export const ASSET_TABLE_FRAGMENT = gql`
     definition {
       id
       opName
-      jobName
       description
+      jobs {
+        id
+        name
+        repository {
+          id
+          name
+          location {
+            id
+            name
+          }
+        }
+      }
     }
   }
 `;

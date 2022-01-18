@@ -1,4 +1,4 @@
-from collections import namedtuple
+from typing import List, NamedTuple, Optional
 
 from dagster import check
 from dagster.serdes import whitelist_for_serdes
@@ -6,9 +6,16 @@ from dagster.serdes import whitelist_for_serdes
 
 @whitelist_for_serdes
 class LoadableTargetOrigin(
-    namedtuple(
+    NamedTuple(
         "LoadableTargetOrigin",
-        "executable_path python_file module_name working_directory attribute package_name",
+        [
+            ("executable_path", str),
+            ("python_file", Optional[str]),
+            ("module_name", Optional[str]),
+            ("working_directory", Optional[str]),
+            ("attribute", Optional[str]),
+            ("package_name", Optional[str]),
+        ],
     )
 ):
     def __new__(
@@ -30,27 +37,11 @@ class LoadableTargetOrigin(
             package_name=check.opt_str_param(package_name, "package_name"),
         )
 
-    def get_cli_args(self):
-
-        # Need to ensure that everything that consumes this knows about
-        # --empty-working-directory and --use-python-package
+    def get_cli_args(self) -> List[str]:
         args = (
-            (
-                (
-                    [
-                        "-f",
-                        self.python_file,
-                    ]
-                    + (
-                        ["-d", self.working_directory]
-                        if self.working_directory
-                        else ["--empty-working-directory"]
-                    )
-                )
-                if self.python_file
-                else []
-            )
+            (["-f", self.python_file] if self.python_file else [])
             + (["-m", self.module_name] if self.module_name else [])
+            + (["-d", self.working_directory] if self.working_directory else [])
             + (["-a", self.attribute] if self.attribute else [])
             + (["--package-name", self.package_name] if self.package_name else [])
         )

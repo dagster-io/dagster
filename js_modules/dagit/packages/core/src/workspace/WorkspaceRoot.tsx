@@ -1,12 +1,10 @@
+import {Box, MainContent, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
-import {Route, RouteComponentProps, Switch} from 'react-router-dom';
+import {Route, Switch, useParams} from 'react-router-dom';
 
 import {PipelineRoot} from '../pipelines/PipelineRoot';
 import {ScheduleRoot} from '../schedules/ScheduleRoot';
 import {SensorRoot} from '../sensors/SensorRoot';
-import {Box} from '../ui/Box';
-import {MainContent} from '../ui/MainContent';
-import {NonIdealState} from '../ui/NonIdealState';
 
 import {GraphRoot} from './GraphRoot';
 import {WorkspaceContext} from './WorkspaceContext';
@@ -15,8 +13,8 @@ import {WorkspacePipelineRoot} from './WorkspacePipelineRoot';
 import {WorkspaceRepoRoot} from './WorkspaceRepoRoot';
 import {repoAddressFromPath} from './repoAddressFromPath';
 
-const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
-  const {repoPath} = props;
+const RepoRouteContainer = () => {
+  const {repoPath} = useParams<{repoPath: string}>();
   const workspaceState = React.useContext(WorkspaceContext);
   const addressForPath = repoAddressFromPath(repoPath);
 
@@ -75,65 +73,46 @@ const RepoRouteContainer: React.FC<{repoPath: string}> = (props) => {
 
   return (
     <Switch>
-      <Route
-        path="/workspace/:repoPath/graphs/(/?.*)"
-        render={(props) => <GraphRoot {...props} repoAddress={addressForPath} />}
-      />
+      <Route path="/workspace/:repoPath/graphs/(/?.*)">
+        <GraphRoot repoAddress={addressForPath} />
+      </Route>
       <Route
         path={[
           '/workspace/:repoPath/pipelines/(/?.*)',
           '/workspace/:repoPath/jobs/(/?.*)',
           '/workspace/:repoPath/pipeline_or_job/(/?.*)',
         ]}
-        render={() => <PipelineRoot repoAddress={addressForPath} />}
-      />
-      <Route
-        path="/workspace/:repoPath/schedules/:scheduleName/:runTab?"
-        render={(props: RouteComponentProps<{runTab?: string; scheduleName: string}>) => (
-          <ScheduleRoot
-            scheduleName={props.match.params.scheduleName}
-            repoAddress={addressForPath}
-            runTab={props.match.params.runTab}
-          />
-        )}
-      />
-      <Route
-        path="/workspace/:repoPath/sensors/:sensorName"
-        render={(props: RouteComponentProps<{sensorName: string}>) => (
-          <SensorRoot sensorName={props.match.params.sensorName} repoAddress={addressForPath} />
-        )}
-      />
-      <Route
-        path="/workspace/:repoPath/:tab?"
-        render={(props: RouteComponentProps<{tab?: string}>) => (
-          <WorkspaceRepoRoot tab={props.match.params.tab} repoAddress={addressForPath} />
-        )}
-      />
+      >
+        <PipelineRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/workspace/:repoPath/schedules/:scheduleName/:runTab?">
+        <ScheduleRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/workspace/:repoPath/sensors/:sensorName">
+        <SensorRoot repoAddress={addressForPath} />
+      </Route>
+      <Route path="/workspace/:repoPath/:tab?">
+        <WorkspaceRepoRoot repoAddress={addressForPath} />
+      </Route>
     </Switch>
   );
 };
 
-export const WorkspaceRoot = () => {
-  return (
-    <MainContent>
-      <Switch>
-        <Route path="/workspace" exact component={WorkspaceOverviewRoot} />
-        <Route
-          path={['/workspace/pipelines/:pipelinePath', '/workspace/jobs/:pipelinePath']}
-          render={(props: RouteComponentProps<{pipelinePath: string}>) => (
-            <WorkspacePipelineRoot pipelinePath={props.match.params.pipelinePath} />
-          )}
-        />
-        <Route
-          path="/workspace/:repoPath"
-          render={(props: RouteComponentProps<{repoPath: string}>) => (
-            <RepoRouteContainer repoPath={props.match.params.repoPath} />
-          )}
-        />
-      </Switch>
-    </MainContent>
-  );
-};
+export const WorkspaceRoot = () => (
+  <MainContent>
+    <Switch>
+      <Route path="/workspace" exact>
+        <WorkspaceOverviewRoot />
+      </Route>
+      <Route path={['/workspace/pipelines/:pipelinePath', '/workspace/jobs/:pipelinePath']}>
+        <WorkspacePipelineRoot />
+      </Route>
+      <Route path="/workspace/:repoPath">
+        <RepoRouteContainer />
+      </Route>
+    </Switch>
+  </MainContent>
+);
 
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export

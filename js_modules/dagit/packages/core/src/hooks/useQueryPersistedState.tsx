@@ -1,5 +1,5 @@
 import isEqual from 'lodash/isEqual';
-import querystring from 'query-string';
+import qs from 'qs';
 import React from 'react';
 import {useHistory, useLocation} from 'react-router-dom';
 
@@ -69,7 +69,7 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
 
   // We stash the query string into a ref so that the setter can operate on the /current/
   // location even if the user retains it and calls it after other query string changes.
-  currentQueryString = querystring.parse(location.search);
+  currentQueryString = qs.parse(location.search, {ignoreQueryPrefix: true});
 
   const qsWithDefaults = {...(defaults || {}), ...currentQueryString};
 
@@ -87,14 +87,16 @@ export function useQueryPersistedState<T extends QueryPersistedDataType>(
         ...currentQueryString,
         ...(encode ? encode(updated) : (updated as {[key: string]: any})),
       };
+
       // omit any keys that are equal to the defaults to keep URLs minimal
       for (const [key, value] of Object.entries(next)) {
         if (options.defaults && options.defaults[key] === value) {
           delete next[key];
         }
       }
+
       currentQueryString = next;
-      history.replace(`${location.pathname}?${querystring.stringify(next)}`);
+      history.replace(`${location.pathname}?${qs.stringify(next, {arrayFormat: 'brackets'})}`);
     },
     [history, encode, location.pathname, options],
   );

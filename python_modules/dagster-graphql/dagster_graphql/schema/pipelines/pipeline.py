@@ -1,7 +1,7 @@
 import graphene
 import yaml
 from dagster import check
-from dagster.core.events import StepMaterializationData
+from dagster.core.events import AssetKey, StepMaterializationData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
@@ -19,6 +19,7 @@ from ..asset_key import GrapheneAssetKey
 from ..dagster_types import GrapheneDagsterType, GrapheneDagsterTypeOrError, to_dagster_type
 from ..errors import GrapheneDagsterTypeNotFoundError, GraphenePythonError, GrapheneRunNotFoundError
 from ..execution import GrapheneExecutionPlan
+from ..inputs import GrapheneAssetKeyInput
 from ..logs.compute_logs import GrapheneComputeLogs
 from ..logs.events import (
     GrapheneDagsterRunEvent,
@@ -37,7 +38,7 @@ from ..solids import (
     build_solid_handles,
     build_solids,
 )
-from ..tags import GrapheneAssetTag, GraphenePipelineTag
+from ..tags import GraphenePipelineTag
 from ..util import non_null_list
 from .mode import GrapheneMode
 from .pipeline_ref import GraphenePipelineReference
@@ -80,19 +81,18 @@ class GrapheneAsset(graphene.ObjectType):
     assetMaterializations = graphene.Field(
         non_null_list(GrapheneAssetMaterialization),
         partitions=graphene.List(graphene.String),
+        partitionInLast=graphene.Int(),
         beforeTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
-    tags = non_null_list(GrapheneAssetTag)
     definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
 
     class Meta:
         name = "Asset"
 
-    def __init__(self, key, definition=None, tags=None):
+    def __init__(self, key, definition=None):
         super().__init__(key=key, definition=definition)
-        check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
-        self._tags = tags
+        self._definition = definition
 
     def resolve_id(self, _):
         return self.key
@@ -109,23 +109,22 @@ class GrapheneAsset(graphene.ObjectType):
         except ValueError:
             before_timestamp = None
 
+        limit = kwargs.get("limit")
+        partitions = kwargs.get("partitions")
+        partitionInLast = kwargs.get("partitionInLast")
+        if partitionInLast and self._definition:
+            partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
+
         return [
             GrapheneAssetMaterialization(event=event)
             for event in get_asset_events(
                 graphene_info,
                 self.key,
-                kwargs.get("partitions"),
+                partitions=partitions,
                 before_timestamp=before_timestamp,
-                limit=kwargs.get("limit"),
+                limit=limit,
             )
         ]
-
-    def resolve_tags(self, graphene_info):
-        if self._tags is not None:
-            tags = self._tags
-        else:
-            tags = graphene_info.context.instance.get_asset_tags(self.key)
-        return [GrapheneAssetTag(key=key, value=value) for key, value in tags.items()]
 
 
 class GraphenePipelineRun(graphene.Interface):
@@ -262,20 +261,15 @@ class GrapheneRun(graphene.ObjectType):
             return None
 
         instance = graphene_info.context.instance
-        historical_pipeline = instance.get_historical_pipeline(
-            self._pipeline_run.pipeline_snapshot_id
-        )
+
         execution_plan_snapshot = instance.get_execution_plan_snapshot(
             self._pipeline_run.execution_plan_snapshot_id
         )
         return (
             GrapheneExecutionPlan(
-                ExternalExecutionPlan(
-                    execution_plan_snapshot=execution_plan_snapshot,
-                    represented_pipeline=historical_pipeline,
-                )
+                ExternalExecutionPlan(execution_plan_snapshot=execution_plan_snapshot)
             )
-            if execution_plan_snapshot and historical_pipeline
+            if execution_plan_snapshot
             else None
         )
 
@@ -567,7 +561,12 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     presets = non_null_list(GraphenePipelinePreset)
     isJob = graphene.NonNull(graphene.Boolean)
     isAssetJob = graphene.NonNull(graphene.Boolean)
-    assetNodes = non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
+    repository = graphene.NonNull("dagster_graphql.schema.external.GrapheneRepository")
+    assetNodes = graphene.Field(
+        non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode"),
+        assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
+        loadMaterializations=graphene.Boolean(default_value=False),
+    )
 
     class Meta:
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
@@ -600,16 +599,46 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         repository = location.get_repository(handle.repository_name)
         return bool(repository.get_external_asset_nodes(self._external_pipeline.name))
 
-    def resolve_assetNodes(self, graphene_info):
+    def resolve_repository(self, graphene_info):
+        from ..external import GrapheneRepository
+
+        handle = self._external_pipeline.repository_handle
+        location = graphene_info.context.get_repository_location(handle.location_name)
+        return GrapheneRepository(location.get_repository(handle.repository_name), location)
+
+    def resolve_assetNodes(self, graphene_info, **kwargs):
         from ..asset_graph import GrapheneAssetNode
+
+        load_materializations = kwargs.get("loadMaterializations")
 
         handle = self._external_pipeline.repository_handle
         location = graphene_info.context.get_repository_location(handle.location_name)
         repository = location.get_repository(handle.repository_name)
         asset_nodes = repository.get_external_asset_nodes(self._external_pipeline.name)
+        if not asset_nodes:
+            return []
+        asset_keys = set(
+            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
+        )
+        matching = [node for node in asset_nodes if not asset_keys or node.asset_key in asset_keys]
+        if not matching:
+            return []
+
+        if load_materializations:
+            events_by_key = graphene_info.context.instance.get_latest_materialization_events(
+                [node.asset_key for node in matching]
+            )
+        else:
+            events_by_key = {}
+
         return [
-            GrapheneAssetNode(repository, external_asset_node)
-            for external_asset_node in asset_nodes or []
+            GrapheneAssetNode(
+                repository,
+                node,
+                events_by_key.get(node.asset_key),
+                fetched_materialization=load_materializations,
+            )
+            for node in matching
         ]
 
 
@@ -688,7 +717,8 @@ class GrapheneRunOrError(graphene.Union):
 
 class GrapheneInProgressRunsByStep(graphene.ObjectType):
     stepKey = graphene.NonNull(graphene.String)
-    runs = non_null_list(GrapheneRun)
+    unstartedRuns = non_null_list(GrapheneRun)
+    inProgressRuns = non_null_list(GrapheneRun)
 
     class Meta:
         name = "InProgressRunsByStep"

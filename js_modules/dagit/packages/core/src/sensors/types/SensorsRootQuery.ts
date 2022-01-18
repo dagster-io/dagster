@@ -107,6 +107,16 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results_targets {
   mode: string;
 }
 
+export interface SensorsRootQuery_sensorsOrError_Sensors_results_metadata_assetKeys {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface SensorsRootQuery_sensorsOrError_Sensors_results_metadata {
+  __typename: "SensorMetadata";
+  assetKeys: SensorsRootQuery_sensorsOrError_Sensors_results_metadata_assetKeys[] | null;
+}
+
 export interface SensorsRootQuery_sensorsOrError_Sensors_results {
   __typename: "Sensor";
   id: string;
@@ -117,6 +127,7 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results {
   nextTick: SensorsRootQuery_sensorsOrError_Sensors_results_nextTick | null;
   sensorState: SensorsRootQuery_sensorsOrError_Sensors_results_sensorState;
   targets: SensorsRootQuery_sensorsOrError_Sensors_results_targets[] | null;
+  metadata: SensorsRootQuery_sensorsOrError_Sensors_results_metadata;
 }
 
 export interface SensorsRootQuery_sensorsOrError_Sensors {

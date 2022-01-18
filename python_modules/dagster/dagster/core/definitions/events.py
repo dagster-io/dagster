@@ -357,7 +357,7 @@ class AssetMaterialization(
             materialization.  Used for search and organization of the asset entry in the asset
             catalog in Dagit.
         metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadata]]]):
-            Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
+            Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a EventMetadata static method.
     """

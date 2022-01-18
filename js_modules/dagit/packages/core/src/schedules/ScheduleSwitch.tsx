@@ -1,10 +1,9 @@
 import {gql, useMutation} from '@apollo/client';
+import {Checkbox, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {InstigationStatus} from '../types/globalTypes';
-import {Checkbox} from '../ui/Checkbox';
-import {Tooltip} from '../ui/Tooltip';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -98,6 +97,7 @@ export const SCHEDULE_SWITCH_FRAGMENT = gql`
   fragment ScheduleSwitchFragment on Schedule {
     id
     name
+    cronSchedule
     scheduleState {
       id
       status

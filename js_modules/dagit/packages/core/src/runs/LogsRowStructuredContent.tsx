@@ -1,15 +1,12 @@
 import {Intent} from '@blueprintjs/core';
+import {Box, ColorsWIP, TagWIP} from '@dagster-io/ui';
 import qs from 'qs';
-import querystring from 'query-string';
 import * as React from 'react';
 import {Link, useLocation} from 'react-router-dom';
 
-import {assertUnreachable} from '../app/Util';
+import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {ErrorSource} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {TagWIP} from '../ui/TagWIP';
 
 import {EventTypeColumn} from './LogsRowComponents';
 import {LogRowStructuredContentTable, MetadataEntries, MetadataEntryLink} from './MetadataEntry';
@@ -48,14 +45,14 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       if (!node.stepKey || metadata.logCaptureSteps) {
         return <DefaultContent message={node.message} eventType={eventType} />;
       } else {
-        const currentQuery = querystring.parse(location.search);
+        const currentQuery = qs.parse(location.search);
         const updatedQuery = {
           ...currentQuery,
           logType: 'stdout',
           logs: `query:${node.stepKey}`,
           selection: node.stepKey,
         };
-        const href = `${location.pathname}?${querystring.stringify(updatedQuery)}`;
+        const href = `${location.pathname}?${qs.stringify(updatedQuery)}`;
         return (
           <DefaultContent message={node.message} eventType={eventType}>
             <LogRowStructuredContentTable
@@ -202,9 +199,9 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
     case 'LogMessageEvent':
       return <DefaultContent message={node.message} />;
     case 'LogsCapturedEvent':
-      const currentQuery = querystring.parse(location.search);
+      const currentQuery = qs.parse(location.search, {ignoreQueryPrefix: true});
       const updatedQuery = {...currentQuery, logType: 'stdout', logKey: node.stepKey};
-      const rawLogsUrl = `${location.pathname}?${querystring.stringify(updatedQuery)}`;
+      const rawLogsUrl = `${location.pathname}?${qs.stringify(updatedQuery)}`;
       const rawLogsLink = (
         <Link to={rawLogsUrl} style={{color: 'inherit'}}>
           View stdout / stderr
@@ -374,7 +371,7 @@ const MaterializationContent: React.FC<{
               label: 'asset_key',
               item: (
                 <>
-                  {materialization.assetKey.path.join(' > ')}
+                  {displayNameForAssetKey(materialization.assetKey)}
                   {assetDashboardLink}
                 </>
               ),

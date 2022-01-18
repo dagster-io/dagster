@@ -319,10 +319,13 @@ class PipelineRun(
                 "external_pipeline_origin is required for queued runs",
             )
 
+        if run_id is None:
+            run_id = make_new_run_id()
+
         return super(PipelineRun, cls).__new__(
             cls,
             pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
-            run_id=check.opt_str_param(run_id, "run_id", default=make_new_run_id()),
+            run_id=check.str_param(run_id, "run_id"),
             run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
             mode=check.opt_str_param(mode, "mode"),
             solid_selection=solid_selection,
@@ -431,7 +434,8 @@ register_serdes_tuple_fallbacks({"PipelineRun": DagsterRun})
 @whitelist_for_serdes
 class PipelineRunsFilter(
     namedtuple(
-        "_PipelineRunsFilter", "run_ids pipeline_name statuses tags snapshot_id updated_after mode"
+        "_PipelineRunsFilter",
+        "run_ids pipeline_name statuses tags snapshot_id updated_after mode created_before",
     )
 ):
     def __new__(
@@ -443,6 +447,7 @@ class PipelineRunsFilter(
         snapshot_id=None,
         updated_after=None,
         mode=None,
+        created_before=None,
     ):
         return super(PipelineRunsFilter, cls).__new__(
             cls,
@@ -453,6 +458,7 @@ class PipelineRunsFilter(
             snapshot_id=check.opt_str_param(snapshot_id, "snapshot_id"),
             updated_after=check.opt_inst_param(updated_after, "updated_after", datetime),
             mode=check.opt_str_param(mode, "mode"),
+            created_before=check.opt_inst_param(created_before, "created_before", datetime),
         )
 
     @staticmethod

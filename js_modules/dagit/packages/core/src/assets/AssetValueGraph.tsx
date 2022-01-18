@@ -1,19 +1,26 @@
+import {ColorsWIP} from '@dagster-io/ui';
 import {ActiveElement} from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
-import styled from 'styled-components/macro';
 
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {Subheading} from '../ui/Text';
-
-import {AssetNumericHistoricalData} from './types';
+export interface AssetValueGraphData {
+  minY: number;
+  maxY: number;
+  minXNumeric: number;
+  maxXNumeric: number;
+  xAxis: 'time' | 'partition';
+  values: {
+    x: number | string; // time or partition
+    xNumeric: number; // time or partition index
+    y: number;
+  }[];
+}
 
 export const AssetValueGraph: React.FC<{
   label: string;
   width: string;
-  data: AssetNumericHistoricalData[0];
+  data: AssetValueGraphData;
   xHover: string | number | null;
   onHoverX: (value: string | number | null) => void;
 }> = (props) => {
@@ -56,7 +63,7 @@ export const AssetValueGraph: React.FC<{
     elements: {
       point: {
         radius: ((context: any) =>
-          context.dataset.data[context.dataIndex].x === xHover ? 13 : 2) as any,
+          context.dataset.data[context.dataIndex]?.x === xHover ? 13 : 2) as any,
       },
     },
     scales: {
@@ -101,22 +108,5 @@ export const AssetValueGraph: React.FC<{
     },
   };
 
-  return (
-    <Box
-      style={{width: props.width}}
-      border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
-    >
-      <Container>
-        <Subheading>{props.label}</Subheading>
-      </Container>
-      <Container>
-        <Line type="line" data={graphData} height={100} options={options} key={props.width} />
-      </Container>
-    </Box>
-  );
+  return <Line type="line" data={graphData} height={100} options={options} key={props.width} />;
 };
-
-const Container = styled.div`
-  padding: 16px 24px;
-  box-shadow: ${ColorsWIP.KeylineGray} 0 -1px 0 inset, ${ColorsWIP.KeylineGray} -1px 0 0 inset;
-`;

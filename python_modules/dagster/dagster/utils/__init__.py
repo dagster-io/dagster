@@ -1,4 +1,5 @@
 import contextlib
+import contextvars
 import datetime
 import errno
 import functools
@@ -11,22 +12,12 @@ import subprocess
 import sys
 import tempfile
 import threading
-from collections import namedtuple
+from collections import OrderedDict, defaultdict, namedtuple
 from datetime import timezone
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    ContextManager,
-    Generator,
-    Generic,
-    Iterator,
-    Optional,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Callable, ContextManager, Generator, Generic, Iterator
+from typing import Mapping as TypingMapping
+from typing import Optional, Type, TypeVar, Union, cast
 from warnings import warn
 
 import _thread as thread
@@ -36,7 +27,6 @@ from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvaria
 from dagster.seven import IS_WINDOWS, multiprocessing
 from dagster.seven.abc import Mapping
 
-from .alert import make_email_on_pipeline_failure_sensor, make_email_on_run_failure_sensor
 from .merger import merge_dicts
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
@@ -55,6 +45,20 @@ PICKLE_PROTOCOL = 4
 
 
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
+
+
+# Back-compat after make_email_on_pipeline_failure_sensor and make_email_on_run_failure_sensor
+# were moved to avoid circular-dependency issues
+def make_email_on_pipeline_failure_sensor(*args, **kwargs):
+    from .alert import make_email_on_pipeline_failure_sensor  # pylint: disable=redefined-outer-name
+
+    return make_email_on_pipeline_failure_sensor(*args, **kwargs)
+
+
+def make_email_on_run_failure_sensor(*args, **kwargs):
+    from .alert import make_email_on_run_failure_sensor  # pylint: disable=redefined-outer-name
+
+    return make_email_on_run_failure_sensor(*args, **kwargs)
 
 
 def file_relative_path(dunderfile: str, relative_path: str) -> str:
@@ -559,3 +563,37 @@ def compose(*args):
 
 def dict_without_keys(ddict, *keys):
     return {key: value for key, value in ddict.items() if key not in set(keys)}
+
+
+class Counter:
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._counts = OrderedDict()
+        super(Counter, self).__init__()
+
+    def increment(self, key: str):
+        with self._lock:
+            self._counts[key] = self._counts.get(key, 0) + 1
+
+    def counts(self) -> TypingMapping[str, int]:
+        with self._lock:
+            copy = {k: v for k, v in self._counts.items()}
+        return copy
+
+
+traced_counter = contextvars.ContextVar("traced_counts", default=Counter())
+
+
+def traced(func=None):
+    """
+    A decorator that keeps track of how many times a function is called.
+    """
+
+    def inner(*args, **kwargs):
+        counter = traced_counter.get()
+        if counter and isinstance(counter, Counter):
+            counter.increment(func.__qualname__)
+
+        return func(*args, **kwargs)
+
+    return inner

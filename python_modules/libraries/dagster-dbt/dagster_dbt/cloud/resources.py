@@ -409,7 +409,10 @@ class DbtCloudResourceV2:
         final_run_details = self.poll_run(
             run_id, poll_interval=poll_interval, poll_timeout=poll_timeout, href=href
         )
-        return DbtCloudOutput(run_details=final_run_details, result=self.get_run_results(run_id))
+        output = DbtCloudOutput(run_details=final_run_details, result=self.get_run_results(run_id))
+        if output.docs_url:
+            self._log.info(f"Docs for this run can be viewed here: {output.docs_url}")
+        return output
 
 
 @resource(
@@ -467,7 +470,7 @@ def dbt_cloud_resource(context) -> DbtCloudResourceV2:
         from dagster import job
         from dagster_dbt import dbt_cloud_resource
 
-        my_dbt_cloud_resource = fivetran_resource.configured(
+        my_dbt_cloud_resource = dbt_cloud_resource.configured(
             {
                 "auth_token": {"env": "DBT_CLOUD_AUTH_TOKEN"},
                 "account_id": 30000,

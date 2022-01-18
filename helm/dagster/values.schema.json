@@ -16,6 +16,10 @@
             "title": "Generatepostgresqlpasswordsecret",
             "type": "boolean"
         },
+        "generateCeleryConfigSecret": {
+            "title": "Generateceleryconfigsecret",
+            "type": "boolean"
+        },
         "rabbitmq": {
             "$ref": "#/definitions/RabbitMQ"
         },
@@ -68,6 +72,7 @@
         "dagster-user-deployments",
         "postgresql",
         "generatePostgresqlPasswordSecret",
+        "generateCeleryConfigSecret",
         "rabbitmq",
         "redis",
         "flower",
@@ -163,6 +168,17 @@
                 "port": {
                     "title": "Port",
                     "type": "integer"
+                },
+                "name": {
+                    "title": "Name",
+                    "anyOf": [
+                        {
+                            "type": "string"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -1577,6 +1593,20 @@
                 },
                 "livenessProbe": {
                     "$ref": "#/definitions/LivenessProbe"
+                },
+                "volumeMounts": {
+                    "title": "Volumemounts",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/VolumeMount"
+                    }
+                },
+                "volumes": {
+                    "title": "Volumes",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Volume"
+                    }
                 }
             },
             "required": [
@@ -1594,7 +1624,9 @@
                 "podSecurityContext",
                 "securityContext",
                 "resources",
-                "livenessProbe"
+                "livenessProbe",
+                "volumeMounts",
+                "volumes"
             ],
             "additionalProperties": false
         },
@@ -2182,12 +2214,17 @@
                 "serviceAccountName": {
                     "title": "Serviceaccountname",
                     "type": "string"
+                },
+                "celeryConfigSecretName": {
+                    "title": "Celeryconfigsecretname",
+                    "type": "string"
                 }
             },
             "required": [
                 "postgresqlSecretName",
                 "dagsterHome",
-                "serviceAccountName"
+                "serviceAccountName",
+                "celeryConfigSecretName"
             ]
         }
     }

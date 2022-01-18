@@ -16,9 +16,10 @@ Why not pickle?
 
 from abc import ABC, abstractmethod
 from enum import Enum
-from inspect import Parameter, isclass, signature
+from inspect import Parameter, signature
 from typing import (
     Any,
+    Callable,
     Dict,
     List,
     Mapping,
@@ -28,8 +29,8 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
-    Union,
     cast,
+    overload,
 )
 
 from dagster import check, seven
@@ -95,7 +96,21 @@ class WhitelistMap(NamedTuple):
 _WHITELIST_MAP = WhitelistMap.create()
 
 
-def whitelist_for_serdes(serializer: Union[Type, Type["Serializer"]]):
+@overload
+def whitelist_for_serdes(__cls: Type) -> Type:
+    ...
+
+
+@overload
+def whitelist_for_serdes(
+    __cls: None = None, *, serializer: Type["Serializer"]
+) -> Callable[[Type], Type]:
+    ...
+
+
+def whitelist_for_serdes(
+    __cls: Optional[Type] = None, *, serializer: Optional[Type["Serializer"]] = None
+):
     """
     Decorator to whitelist a named tuple or enum to be serializable.
 
@@ -104,9 +119,10 @@ def whitelist_for_serdes(serializer: Union[Type, Type["Serializer"]]):
 
     """
 
-    if isclass(serializer) and not issubclass(serializer, Serializer):
-        return _whitelist_for_serdes(whitelist_map=_WHITELIST_MAP, serializer=None)(serializer)
-    else:
+    if __cls is not None:  # decorator invoked directly on class
+        check.class_param(__cls, "__cls")
+        return _whitelist_for_serdes(whitelist_map=_WHITELIST_MAP, serializer=None)(__cls)
+    else:  # decorator passed params
         check.subclass_param(serializer, "serializer", Serializer)
         serializer = cast(Type[Serializer], serializer)
         return _whitelist_for_serdes(whitelist_map=_WHITELIST_MAP, serializer=serializer)
@@ -114,14 +130,20 @@ def whitelist_for_serdes(serializer: Union[Type, Type["Serializer"]]):
 
 def _whitelist_for_serdes(
     whitelist_map: WhitelistMap, serializer: Optional[Type["Serializer"]] = None
-):
-    def __whitelist_for_serdes(klass):
-        if issubclass(klass, Enum):
+) -> Callable[[type], type]:
+    def __whitelist_for_serdes(klass: type) -> type:
+        if issubclass(klass, Enum) and (
+            serializer is None or issubclass(serializer, EnumSerializer)
+        ):
             whitelist_map.register_enum(klass.__name__, klass, serializer)
-        elif issubclass(klass, tuple):
+        elif issubclass(klass, tuple) and (
+            serializer is None or issubclass(serializer, NamedTupleSerializer)
+        ):
             sig_params = signature(klass.__new__).parameters
             _check_serdes_tuple_class_invariants(klass, sig_params)
-            whitelist_map.register_tuple(klass.__name__, klass, serializer, sig_params)
+            whitelist_map.register_tuple(
+                klass.__name__, cast(Type[NamedTuple], klass), serializer, sig_params
+            )
         else:
             raise SerdesUsageError(f"Can not whitelist class {klass} for serializer {serializer}")
 

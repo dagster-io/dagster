@@ -14,6 +14,8 @@ from dagster import (
     execute_pipeline_iterator,
     file_relative_path,
     fs_io_manager,
+    job,
+    op,
     pipeline,
     reconstructable,
     solid,
@@ -242,6 +244,9 @@ def test_dask_terminate():
         assert DagsterEventType.PIPELINE_FAILURE in result_types
 
 
+@pytest.mark.skip(
+    "Failing with RuntimeError: This event loop is already running since distributed==2022.1.0"
+)
 def test_existing_scheduler():
     def _execute(scheduler_address, instance):
         return execute_pipeline(
@@ -308,3 +313,24 @@ def test_dask_executor_memoization():
         )
         assert result.success
         assert len(result.step_event_list) == 0
+
+
+@op
+def the_op():
+    return 5
+
+
+@job(executor_def=dask_executor)
+def the_job():
+    the_op()
+
+
+def test_dask_executor_job():
+    with instance_for_test() as instance:
+        result = execute_pipeline(
+            reconstructable(the_job),
+            instance=instance,
+            run_config={"execution": {"config": {"cluster": {"local": {"timeout": 30}}}}},
+        )
+        assert result.success
+        assert result.output_for_solid("the_op") == 5

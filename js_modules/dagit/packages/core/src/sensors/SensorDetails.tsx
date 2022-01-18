@@ -1,18 +1,22 @@
+import {
+  Box,
+  CountdownStatus,
+  useCountdown,
+  Group,
+  MetadataTableWIP,
+  PageHeader,
+  RefreshableCountdown,
+  TagWIP,
+  Heading,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {AssetLink} from '../assets/AssetLink';
 import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {CountdownStatus, useCountdown} from '../ui/Countdown';
-import {Group} from '../ui/Group';
-import {MetadataTableWIP} from '../ui/MetadataTable';
-import {PageHeader} from '../ui/PageHeader';
-import {RefreshableCountdown} from '../ui/RefreshableCountdown';
-import {TagWIP} from '../ui/TagWIP';
-import {Heading} from '../ui/Text';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
@@ -54,6 +58,7 @@ export const SensorDetails: React.FC<{
     name,
     sensorState: {status, ticks},
     targets,
+    metadata,
   } = sensor;
 
   const repo = useRepository(repoAddress);
@@ -144,10 +149,10 @@ export const SensorDetails: React.FC<{
               )}
             </td>
           </tr>
-          <tr>
-            <td>{pipelineOrJobLabel}</td>
-            <td>
-              {sensor.targets && sensor.targets.length ? (
+          {sensor.targets && sensor.targets.length ? (
+            <tr>
+              <td>{pipelineOrJobLabel}</td>
+              <td>
                 <Group direction="column" spacing={2}>
                   {sensor.targets.map((target) =>
                     target.pipelineName ? (
@@ -160,15 +165,25 @@ export const SensorDetails: React.FC<{
                     ) : null,
                   )}
                 </Group>
-              ) : (
-                'Sensor does not target a pipeline'
-              )}
-            </td>
-          </tr>
+              </td>
+            </tr>
+          ) : null}
           <tr>
             <td>Frequency</td>
             <td>{humanizeSensorInterval(sensor.minIntervalSeconds)}</td>
           </tr>
+          {metadata.assetKeys && metadata.assetKeys.length ? (
+            <tr>
+              <td>Monitored Assets</td>
+              <td>
+                <Box flex={{direction: 'column', gap: 2}}>
+                  {metadata.assetKeys.map((key) => (
+                    <AssetLink key={key.path.join('/')} path={key.path} displayIcon={true} />
+                  ))}
+                </Box>
+              </td>
+            </tr>
+          ) : null}
         </tbody>
       </MetadataTableWIP>
     </>

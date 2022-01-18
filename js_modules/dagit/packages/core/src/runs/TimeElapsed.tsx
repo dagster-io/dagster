@@ -1,9 +1,7 @@
+import {ColorsWIP, Group, IconWIP} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {formatElapsedTime} from '../app/Util';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
 
 export interface Props {
   startUnix: number | null;
@@ -44,9 +42,9 @@ export const TimeElapsed = (props: Props) => {
 
   return (
     <Group direction="row" spacing={4} alignItems="center">
-      <IconWIP name="schedule" color={ColorsWIP.Gray400} />
+      <IconWIP name="timer" color={ColorsWIP.Gray400} />
       <span style={{fontVariantNumeric: 'tabular-nums'}}>
-        {startTime ? formatElapsedTime((endTime || Date.now()) - startTime) : ''}
+        {startTime ? formatElapsedTime((endTime || Date.now()) - startTime) : '–'}
       </span>
     </Group>
   );

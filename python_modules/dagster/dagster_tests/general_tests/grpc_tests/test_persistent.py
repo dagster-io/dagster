@@ -1,17 +1,21 @@
 import os
 import re
 import subprocess
+import sys
 import uuid
 
 import pytest
 from dagster import seven
+from dagster.api.list_repositories import sync_list_repositories_grpc
+from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.host_representation.origin import (
     ExternalRepositoryOrigin,
     GrpcServerRepositoryLocationOrigin,
 )
 from dagster.core.test_utils import environ, instance_for_test, new_cwd
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.client import DagsterGrpcClient
-from dagster.grpc.server import wait_for_grpc_server
+from dagster.grpc.server import open_server_process, wait_for_grpc_server
 from dagster.grpc.types import SensorExecutionArgs
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.seven import get_system_temp_directory
@@ -25,7 +29,7 @@ def _get_ipc_output_file():
     )
 
 
-def test_ping():
+def test_load_grpc_server(capfd):
     port = find_free_port()
     python_file = file_relative_path(__file__, "grpc_repo.py")
 
@@ -39,13 +43,95 @@ def test_ping():
         python_file,
     ]
 
-    process = subprocess.Popen(subprocess_args, stdout=subprocess.PIPE)
+    process = subprocess.Popen(subprocess_args)
 
     try:
-        wait_for_grpc_server(
-            process, DagsterGrpcClient(port=port, host="localhost"), subprocess_args
+
+        client = DagsterGrpcClient(port=port, host="localhost")
+
+        wait_for_grpc_server(process, client, subprocess_args)
+        assert client.ping("foobar") == "foobar"
+
+        list_repositories_response = sync_list_repositories_grpc(client)
+        assert list_repositories_response.entry_point == ["dagster"]
+        assert list_repositories_response.executable_path == sys.executable
+
+        subprocess.check_call(["dagster", "api", "grpc-health-check", "--port", str(port)])
+
+        ssl_result = subprocess.run(  # pylint:disable=subprocess-run-check
+            ["dagster", "api", "grpc-health-check", "--port", str(port), "--use-ssl"]
         )
-        assert DagsterGrpcClient(port=port).ping("foobar") == "foobar"
+        assert ssl_result.returncode == 1
+
+    finally:
+        process.terminate()
+
+    out, _err = capfd.readouterr()
+
+    assert f"Started Dagster code server for file {python_file} on port {port} in process" in out
+
+
+def test_python_environment_args():
+    port = find_free_port()
+    python_file = file_relative_path(__file__, "grpc_repo.py")
+    loadable_target_origin = LoadableTargetOrigin(
+        executable_path=sys.executable, python_file=python_file
+    )
+
+    process = None
+    try:
+        process = open_server_process(
+            port, socket=None, loadable_target_origin=loadable_target_origin
+        )
+        assert process.args[:5] == [sys.executable, "-m", "dagster", "api", "grpc"]
+    finally:
+        if process:
+            process.terminate()
+
+
+def test_empty_executable_args():
+    port = find_free_port()
+    python_file = file_relative_path(__file__, "grpc_repo.py")
+    loadable_target_origin = LoadableTargetOrigin(executable_path="", python_file=python_file)
+    # with an empty executable_path, the args change
+    process = None
+    try:
+        process = open_server_process(
+            port, socket=None, loadable_target_origin=loadable_target_origin
+        )
+        assert process.args[:3] == ["dagster", "api", "grpc"]
+    finally:
+        if process:
+            process.terminate()
+
+
+def test_load_grpc_server_python_env():
+    port = find_free_port()
+    python_file = file_relative_path(__file__, "grpc_repo.py")
+
+    subprocess_args = [
+        "dagster",
+        "api",
+        "grpc",
+        "--port",
+        str(port),
+        "--python-file",
+        python_file,
+        "--use-python-environment-entry-point",
+    ]
+
+    process = subprocess.Popen(subprocess_args)
+
+    try:
+
+        client = DagsterGrpcClient(port=port, host="localhost")
+
+        wait_for_grpc_server(process, client, subprocess_args)
+
+        list_repositories_response = sync_list_repositories_grpc(client)
+        assert list_repositories_response.entry_point == [sys.executable, "-m", "dagster"]
+        assert list_repositories_response.executable_path == sys.executable
+
     finally:
         process.terminate()
 
@@ -302,6 +388,10 @@ def test_load_timeout():
     assert "StatusCode.UNAVAILABLE" in str(timeout_exception)
 
 
+@pytest.mark.skipif(
+    sys.version_info.major == 3 and sys.version_info.minor == 6,
+    reason="Sporadically failing with segfault on Python 3.6",
+)
 def test_lazy_load_with_error():
     port = find_free_port()
     python_file = file_relative_path(__file__, "grpc_repo_with_error.py")
@@ -430,7 +520,7 @@ def test_sensor_timeout():
                 ),
                 repository_name="bar_repo",
             )
-            with pytest.raises(Exception, match="Deadline Exceeded"):
+            with pytest.raises(DagsterUserCodeUnreachableError) as exc_info:
                 client.external_sensor_execution(
                     sensor_execution_args=SensorExecutionArgs(
                         repository_origin=repo_origin,
@@ -442,6 +532,8 @@ def test_sensor_timeout():
                     ),
                     timeout=2,
                 )
+
+            assert "Deadline Exceeded" in str(exc_info.getrepr())
 
             # Call succeeds without the timeout
             client.external_sensor_execution(

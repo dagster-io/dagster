@@ -16,18 +16,20 @@ import {
 } from '@apollo/client';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
+import {
+  ColorsWIP,
+  GlobalDialogStyle,
+  GlobalPopoverStyle,
+  GlobalSuggestStyle,
+  GlobalToasterStyle,
+  GlobalTooltipStyle,
+  FontFamily,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {createGlobalStyle} from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
-import {ColorsWIP} from '../ui/Colors';
-import {GlobalDialogStyle} from '../ui/Dialog';
-import {GlobalPopoverStyle} from '../ui/Popover';
-import {GlobalSuggestStyle} from '../ui/Suggest';
-import {GlobalToasterStyle} from '../ui/Toaster';
-import {GlobalTooltipStyle} from '../ui/Tooltip';
-import {FontFamily} from '../ui/styles';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
 import {AppContext} from './AppContext';
@@ -107,19 +109,20 @@ const GlobalStyle = createGlobalStyle`
   }
 `;
 
-interface Props {
+export interface AppProviderProps {
   appCache: InMemoryCache;
   config: {
     apolloLinks: ApolloLink[];
     basePath?: string;
+    telemetryEnabled?: boolean;
     headers?: {[key: string]: string};
     origin: string;
   };
 }
 
-export const AppProvider: React.FC<Props> = (props) => {
+export const AppProvider: React.FC<AppProviderProps> = (props) => {
   const {appCache, config} = props;
-  const {apolloLinks, basePath = '', headers = {}, origin} = config;
+  const {apolloLinks, basePath = '', headers = {}, origin, telemetryEnabled = false} = config;
 
   const graphqlPath = `${basePath}/graphql`;
   const rootServerURI = `${origin}${basePath}`;
@@ -159,8 +162,9 @@ export const AppProvider: React.FC<Props> = (props) => {
     () => ({
       basePath,
       rootServerURI,
+      telemetryEnabled,
     }),
-    [basePath, rootServerURI],
+    [basePath, rootServerURI, telemetryEnabled],
   );
 
   return (

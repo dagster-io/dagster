@@ -77,6 +77,17 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         include (List[str]): List of includes for the Celery workers
         config_source: (Optional[dict]): Additional settings for the Celery app.
         retries: (Optional[dict]): Default retry configuration for Celery tasks.
+        env_config_maps (Optional[List[str]]): A list of custom ConfigMapEnvSource names from which to
+            draw environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:
+            https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container
+        env_secrets (Optional[List[str]]): A list of custom Secret names from which to
+            draw environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:
+            https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
+        volume_mounts (Optional[List[Permissive]]): A list of volume mounts to include in the job's
+            container. Default: ``[]``. See:
+            https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
+        volumes (Optional[List[Permissive]]): A list of volumes to include in the Job's Pod. Default: ``[]``. See:
+            https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
     """
 
     def __init__(
@@ -93,6 +104,10 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         retries=None,
         inst_data=None,
         k8s_client_batch_api=None,
+        env_config_maps=None,
+        env_secrets=None,
+        volume_mounts=None,
+        volumes=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
@@ -120,6 +135,15 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         retries = check.opt_dict_param(retries, "retries") or {"enabled": {}}
         self.retries = RetryMode.from_config(retries)
+
+        self._env_config_maps = check.opt_list_param(
+            env_config_maps, "env_config_maps", of_type=str
+        )
+        self._env_secrets = check.opt_list_param(env_secrets, "env_secrets", of_type=str)
+
+        self._volume_mounts = check.opt_list_param(volume_mounts, "volume_mounts")
+        self._volumes = check.opt_list_param(volumes, "volumes")
+
         super().__init__()
 
     @property
@@ -190,19 +214,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
             job_image = job_image_from_executor_config
 
-        job_config = DagsterK8sJobConfig(
-            dagster_home=self.dagster_home,
-            instance_config_map=self.instance_config_map,
-            postgres_password_secret=self.postgres_password_secret,
-            job_image=check.str_param(job_image, "job_image"),
-            image_pull_policy=exc_config.get("image_pull_policy"),
-            image_pull_secrets=exc_config.get("image_pull_secrets"),
-            service_account_name=exc_config.get("service_account_name"),
-            env_config_maps=exc_config.get("env_config_maps"),
-            env_secrets=exc_config.get("env_secrets"),
-            volume_mounts=exc_config.get("volume_mounts"),
-            volumes=exc_config.get("volumes"),
-        )
+        job_config = self.get_k8s_job_config(job_image, exc_config)
 
         self._instance.add_run_tags(
             run.run_id,
@@ -213,12 +225,10 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         from dagster.cli.api import ExecuteRunArgs
 
-        # depends on DagsterInstance.get() returning the same instance
-        # https://github.com/dagster-io/dagster/issues/2757
         run_args = ExecuteRunArgs(
             pipeline_origin=pipeline_origin,
             pipeline_run_id=run.run_id,
-            instance_ref=None,
+            instance_ref=self._instance.get_ref(),
         )
 
         job = construct_dagster_k8s_job(
@@ -229,6 +239,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
             env_vars=env_vars,
+            labels={
+                "dagster/job": pipeline_origin.pipeline_name,
+            },
         )
 
         job_namespace = exc_config.get("job_namespace")
@@ -258,6 +271,21 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
                 ]
             ),
             cls=self.__class__,
+        )
+
+    def get_k8s_job_config(self, job_image, exc_config):
+        return DagsterK8sJobConfig(
+            dagster_home=self.dagster_home,
+            instance_config_map=self.instance_config_map,
+            postgres_password_secret=self.postgres_password_secret,
+            job_image=check.opt_str_param(job_image, "job_image"),
+            image_pull_policy=exc_config.get("image_pull_policy"),
+            image_pull_secrets=exc_config.get("image_pull_secrets"),
+            service_account_name=exc_config.get("service_account_name"),
+            env_config_maps=exc_config.get("env_config_maps", []) + self._env_config_maps,
+            env_secrets=exc_config.get("env_secrets", []) + self._env_secrets,
+            volume_mounts=exc_config.get("volume_mounts", []) + self._volume_mounts,
+            volumes=exc_config.get("volumes", []) + self._volumes,
         )
 
     # https://github.com/dagster-io/dagster/issues/2741

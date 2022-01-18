@@ -2,7 +2,7 @@ import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
 import {AssetLineageElements} from './AssetLineageElements';
-import {AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage} from './types/AssetQuery';
+import {AssetLineageFragment} from './types/AssetLineageFragment';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -12,7 +12,7 @@ export default {
 
 export const FewParents = () => {
   const timestamp = React.useMemo(() => Date.now(), []);
-  const elements: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage[] = [
+  const elements: AssetLineageFragment[] = [
     {
       __typename: 'AssetLineageInfo',
       partitions: ['2021-01-01'],
@@ -44,7 +44,7 @@ export const FewParents = () => {
 
 export const ManyParents = () => {
   const timestamp = React.useMemo(() => Date.now(), []);
-  const elements: AssetQuery_assetOrError_Asset_assetMaterializations_materializationEvent_assetLineage[] = [];
+  const elements: AssetLineageFragment[] = [];
   for (let ii = 0; ii < 20; ii++) {
     elements.push({
       __typename: 'AssetLineageInfo',

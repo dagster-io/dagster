@@ -111,6 +111,13 @@ def count_letters(word):
 
 @op(
     ins={"word": In(String)},
+)
+def always_fail(context, word):
+    raise Exception("Op Exception Message")
+
+
+@op(
+    ins={"word": In(String)},
     config_schema={"factor": Int},
 )
 def multiply_the_word_op(context, word):
@@ -156,6 +163,17 @@ def hanging_pipeline():
 )
 def demo_pipeline():
     count_letters(multiply_the_word())
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(
+            resource_defs={"io_manager": fs_io_manager},
+        )
+    ]
+)
+def always_fail_pipeline():
+    always_fail(multiply_the_word())
 
 
 @pipeline(
@@ -394,22 +412,6 @@ def define_schedules():
         name="frequent_large_grpc_pipe",
         pipeline_name="large_pipeline_celery",
         cron_schedule="*/5 * * * *",
-        environment_vars={
-            key: os.environ.get(key)
-            for key in [
-                "DAGSTER_PG_PASSWORD",
-                "DAGSTER_K8S_CELERY_BROKER",
-                "DAGSTER_K8S_CELERY_BACKEND",
-                "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE",
-                "DAGSTER_K8S_INSTANCE_CONFIG_MAP",
-                "DAGSTER_K8S_PG_PASSWORD_SECRET",
-                "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP",
-                "DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY",
-                "KUBERNETES_SERVICE_HOST",
-                "KUBERNETES_SERVICE_PORT",
-            ]
-            if key in os.environ
-        },
     )
     def frequent_large_grpc_pipe():
         from dagster_celery_k8s.config import get_celery_engine_grpc_config
@@ -422,23 +424,6 @@ def define_schedules():
         name="frequent_large_pipe",
         pipeline_name="large_pipeline_celery",
         cron_schedule="*/5 * * * *",
-        environment_vars={
-            key: os.environ.get(key)
-            for key in [
-                "DAGSTER_PG_PASSWORD",
-                "DAGSTER_K8S_CELERY_BROKER",
-                "DAGSTER_K8S_CELERY_BACKEND",
-                "DAGSTER_K8S_PIPELINE_RUN_IMAGE",
-                "DAGSTER_K8S_PIPELINE_RUN_NAMESPACE",
-                "DAGSTER_K8S_INSTANCE_CONFIG_MAP",
-                "DAGSTER_K8S_PG_PASSWORD_SECRET",
-                "DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP",
-                "DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY",
-                "KUBERNETES_SERVICE_HOST",
-                "KUBERNETES_SERVICE_PORT",
-            ]
-            if key in os.environ
-        },
     )
     def frequent_large_pipe():
         from dagster_celery_k8s.config import get_celery_engine_config
@@ -646,7 +631,7 @@ def check_volume_mount(context):
 
 def define_volume_mount_pipeline():
     @pipeline(
-        mode_defs=k8s_mode_defs(),
+        mode_defs=k8s_mode_defs(name="k8s") + celery_mode_defs(name="celery"),
     )
     def volume_mount_pipeline():
         check_volume_mount()
@@ -678,6 +663,7 @@ def define_demo_execution_repo():
     def demo_execution_repo():
         return {
             "pipelines": {
+                "always_fail_pipeline": always_fail_pipeline,
                 "demo_pipeline_celery": define_demo_pipeline_celery,
                 "demo_job_celery": define_demo_job_celery,
                 "demo_pipeline_docker": define_demo_pipeline_docker,

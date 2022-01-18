@@ -1,13 +1,10 @@
+import {Box, ColorsWIP, IconWIP, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {DEFAULT_TIME_FORMAT, TimeFormat} from '../app/time/TimestampFormat';
 import {TimezoneContext} from '../app/time/TimezoneContext';
 import {timestampToString} from '../app/time/timestampToString';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
-import {Tooltip} from '../ui/Tooltip';
 
 interface Props {
   timestamp: number;

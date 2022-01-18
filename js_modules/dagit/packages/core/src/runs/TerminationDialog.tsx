@@ -1,16 +1,20 @@
 import {useMutation} from '@apollo/client';
 import {ProgressBar} from '@blueprintjs/core';
+import {
+  Box,
+  ButtonWIP,
+  Checkbox,
+  ColorsWIP,
+  DialogBody,
+  DialogFooter,
+  DialogWIP,
+  Group,
+  IconWIP,
+  Mono,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {TerminateRunPolicy} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {Checkbox} from '../ui/Checkbox';
-import {ColorsWIP} from '../ui/Colors';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
-import {Mono} from '../ui/Text';
 
 import {NavigationBlock} from './NavitationBlock';
 import {TERMINATE_MUTATION} from './RunUtils';
@@ -185,15 +189,14 @@ export const TerminationDialog = (props: Props) => {
               {showCheckbox ? (
                 <Checkbox
                   checked={state.mustForce}
+                  size="small"
                   label={
-                    <Box flex={{display: 'inline-flex'}}>
-                      <Group direction="row" spacing={8}>
-                        <IconWIP name="warning" color={ColorsWIP.Yellow500} />
-                        <div>
-                          Force termination immediately. <strong>Warning:</strong> computational
-                          resources created by runs may not be cleaned up.
-                        </div>
-                      </Group>
+                    <Box flex={{display: 'flex', direction: 'row', gap: 8}}>
+                      <IconWIP name="warning" color={ColorsWIP.Yellow500} />
+                      <div>
+                        Force termination immediately. <strong>Warning:</strong> computational
+                        resources created by runs may not be cleaned up.
+                      </div>
                     </Box>
                   }
                   onChange={onToggleForce}

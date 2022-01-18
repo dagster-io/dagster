@@ -1,3 +1,4 @@
+# yamllint disable rule:line-length
 # README:
 # - If using a fixed tag for images, changing the image pull policy to anything other than "Always"
 #   will use a cached/stale image.
@@ -12,6 +13,11 @@ global:
   # A service account name to use for this chart and all subcharts. If this is set, then
   # dagster subcharts will not create their own service accounts.
   serviceAccountName: ""
+
+  # The name for the secret used to pass Celery broker and backend connection urls. This can
+  # generally be left as the default, but can be useful if setting generateCeleryConfigSecret
+  # to false below.
+  celeryConfigSecretName: "dagster-celery-config-secret"
 
 nameOverride: ""
 fullnameOverride: ""
@@ -47,6 +53,7 @@ dagit:
     servers:
       - host: "k8s-example-user-code-1"
         port: 3030
+        name: "user-code-example"
 
   # Deploy a separate instance of Dagit in --read-only mode (can't launch runs, disable schedules, etc.)
   enableReadOnly: false
@@ -522,13 +529,34 @@ runLauncher:
       #   command:
       #     - /bin/sh
       #     - -c
-      #     - celery status -A dagster_celery_k8s.app -b {{ include "dagster.celery.broker_url" . }} | grep "${HOSTNAME}:.*OK"
+      #     - dagster-celery status -A dagster_celery_k8s.app -y {{ $.Values.global.dagsterHome }}/celery-config.yaml | grep "${HOSTNAME}:.*OK"
       livenessProbe:
         initialDelaySeconds: 15
         periodSeconds: 10
         timeoutSeconds: 10
         successThreshold: 1
         failureThreshold: 3
+
+      # Additional volumes that should be included in the Job's Pod. See:
+      # https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
+      #
+      # Example:
+      #
+      # volumes:
+      #   - name: my-volume
+      #     configMap: my-config-map
+      volumes: []
+
+      # Additional volume mounts that should be included in the container in the Job's Pod. See:
+      # See: https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
+      #
+      # Example:
+      #
+      # volumeMounts:
+      #   - name: test-volume
+      #     mountPath: /opt/dagster/test_folder
+      #     subPath: test_file.yaml
+      volumeMounts: []
 
     ## Uncomment this configuration will only be used if the CustomRunLauncher is selected.
     ## Using this setting requires a custom Dagit image that defines the user specified
@@ -581,6 +609,14 @@ postgresql:
 # Whether to generate a secret resource for the PostgreSQL password. Useful if
 # global.postgresqlSecretName is managed outside of this helm chart.
 generatePostgresqlPasswordSecret: true
+
+# If true, the helm chart will create a secret for you with the Celery broker and backend
+# connection urls, including an optional Redis or RabbitMQ password. Set this to false if you want
+# to manage a secret with the Celery broker/backend connection strings yourself. If you manage
+# the secret yourself, the secret should have the name specified in global.celeryConfigSecretName,
+# and should have the broker URL in a DAGSTER_CELERY_BROKER_URL key and the backend URL in a
+# DAGSTER_CELERY_BACKEND_URL key.
+generateCeleryConfigSecret: true
 
 ####################################################################################################
 # RabbitMQ: Configuration values for rabbitmq. Only one of RabbitMQ / Redis should be enabled.

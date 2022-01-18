@@ -9,7 +9,11 @@ from dagster.core.host_representation.origin import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
 )
-from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster.core.origin import (
+    DEFAULT_DAGSTER_ENTRY_POINT,
+    PipelinePythonOrigin,
+    RepositoryPythonOrigin,
+)
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     NON_IN_PROGRESS_RUN_STATUSES,
@@ -19,8 +23,7 @@ from dagster.core.storage.pipeline_run import (
 
 
 def test_queued_pipeline_origin_check():
-
-    code_pointer = ModuleCodePointer("fake", "fake")
+    code_pointer = ModuleCodePointer("fake", "fake", working_directory=None)
     fake_pipeline_origin = ExternalPipelineOrigin(
         ExternalRepositoryOrigin(
             InProcessRepositoryLocationOrigin(ReconstructableRepository(code_pointer)),
@@ -34,6 +37,7 @@ def test_queued_pipeline_origin_check():
         repository_origin=RepositoryPythonOrigin(
             sys.executable,
             code_pointer,
+            entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
         ),
     )
 

@@ -1,10 +1,10 @@
 import {gql} from '@apollo/client';
+import {ColorsWIP} from '@dagster-io/ui';
 import {isEqual} from 'lodash';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {colorHash} from '../app/Util';
-import {ColorsWIP} from '../ui/Colors';
 
 import {PartitionGraphFragment} from './types/PartitionGraphFragment';
 

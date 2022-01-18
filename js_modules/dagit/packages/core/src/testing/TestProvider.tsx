@@ -28,9 +28,10 @@ export const PERMISSIONS_ALLOW_ALL: PermissionsFromJSON = {
   cancel_partition_backfill: true,
 };
 
-const testValue = {
+const testValue: AppContextValue = {
   basePath: '',
   rootServerURI: '',
+  telemetryEnabled: false,
 };
 
 const websocketValue: WebSocketContextType = {

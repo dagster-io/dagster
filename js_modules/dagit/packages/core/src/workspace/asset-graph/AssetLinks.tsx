@@ -1,7 +1,6 @@
+import {ColorsWIP} from '@dagster-io/ui';
 import React from 'react';
 import styled from 'styled-components/macro';
-
-import {ColorsWIP} from '../../ui/Colors';
 
 import {buildSVGPath, IEdge} from './Utils';
 

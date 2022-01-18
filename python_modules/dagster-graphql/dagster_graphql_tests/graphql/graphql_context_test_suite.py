@@ -1,3 +1,4 @@
+import sys
 import tempfile
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
@@ -5,7 +6,6 @@ from unittest.mock import patch
 
 import pytest
 from dagster import check, file_relative_path
-from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator
@@ -16,6 +16,7 @@ from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import InMemoryRunStorage
 from dagster.core.storage.schedules.sqlite.sqlite_schedule_storage import SqliteScheduleStorage
 from dagster.core.test_utils import ExplodingRunLauncher, instance_for_test
+from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.core.workspace.load_target import (
     GrpcServerTarget,
@@ -31,8 +32,12 @@ from dagster_graphql import DagsterGraphQLClient
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 
-def get_main_recon_repo():
-    return ReconstructableRepository.for_file(file_relative_path(__file__, "setup.py"), "test_repo")
+def get_main_loadable_target_origin():
+    return LoadableTargetOrigin(
+        executable_path=sys.executable,
+        python_file=file_relative_path(__file__, "setup.py"),
+        attribute="test_repo",
+    )
 
 
 @contextmanager
@@ -323,11 +328,9 @@ class EnvironmentManagers:
     @staticmethod
     def managed_grpc():
         @contextmanager
-        def _mgr_fn(recon_repo, instance, read_only):
+        def _mgr_fn(instance, read_only):
             """Goes out of process via grpc"""
-            check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
-
-            loadable_target_origin = recon_repo.get_python_origin().loadable_target_origin
+            loadable_target_origin = get_main_loadable_target_origin()
             with WorkspaceProcessContext(
                 instance,
                 (
@@ -341,6 +344,7 @@ class EnvironmentManagers:
                     else ModuleTarget(
                         module_name=loadable_target_origin.module_name,
                         attribute=loadable_target_origin.attribute,
+                        working_directory=loadable_target_origin.working_directory,
                         location_name="test",
                     )
                 ),
@@ -354,12 +358,10 @@ class EnvironmentManagers:
     @staticmethod
     def deployed_grpc():
         @contextmanager
-        def _mgr_fn(recon_repo, instance, read_only):
-            check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
-
-            loadable_target_origin = recon_repo.get_python_origin().loadable_target_origin
-
-            server_process = GrpcServerProcess(loadable_target_origin=loadable_target_origin)
+        def _mgr_fn(instance, read_only):
+            server_process = GrpcServerProcess(
+                loadable_target_origin=get_main_loadable_target_origin()
+            )
             try:
                 with server_process.create_ephemeral_client() as api_client:
                     with WorkspaceProcessContext(
@@ -382,10 +384,8 @@ class EnvironmentManagers:
     @staticmethod
     def multi_location():
         @contextmanager
-        def _mgr_fn(recon_repo, instance, read_only):
+        def _mgr_fn(instance, read_only):
             """Goes out of process but same process as host process"""
-            check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
-
             with WorkspaceProcessContext(
                 instance,
                 WorkspaceFileTarget(paths=[file_relative_path(__file__, "multi_location.yaml")]),
@@ -399,10 +399,8 @@ class EnvironmentManagers:
     @staticmethod
     def lazy_repository():
         @contextmanager
-        def _mgr_fn(recon_repo, instance, read_only):
+        def _mgr_fn(instance, read_only):
             """Goes out of process but same process as host process"""
-            check.inst_param(recon_repo, "recon_repo", ReconstructableRepository)
-
             with WorkspaceProcessContext(
                 instance,
                 PythonFileTarget(
@@ -744,11 +742,10 @@ def _variants_without_marks(variants, marks):
 
 
 @contextmanager
-def manage_graphql_context(context_variant, recon_repo=None):
-    recon_repo = recon_repo if recon_repo else get_main_recon_repo()
+def manage_graphql_context(context_variant):
     with context_variant.instance_mgr() as instance:
         with context_variant.environment_mgr(
-            recon_repo, instance, context_variant.read_only
+            instance, context_variant.read_only
         ) as workspace_process_context:
             yield workspace_process_context.create_request_context()
 
@@ -758,10 +755,6 @@ class _GraphQLContextTestSuite(ABC):
     def yield_graphql_context(self, request):
         pass
 
-    @abstractmethod
-    def recon_repo(self):
-        pass
-
     @contextmanager
     def graphql_context_for_request(self, request):
         check.param_invariant(
@@ -769,7 +762,7 @@ class _GraphQLContextTestSuite(ABC):
             "request",
             "params in fixture must be List[GraphQLContextVariant]",
         )
-        with manage_graphql_context(request.param, self.recon_repo()) as graphql_context:
+        with manage_graphql_context(request.param) as graphql_context:
             yield graphql_context
 
 
@@ -792,13 +785,11 @@ def graphql_context_variants_fixture(context_variants):
     return _wrap
 
 
-def make_graphql_context_test_suite(context_variants, recon_repo=None):
+def make_graphql_context_test_suite(context_variants):
     """
         Arguments:
 
         runs (List[GraphQLContextVariant]): List of runs to run per test in this class.
-        recon_repo (ReconstructableRepository): Repository to run against. Defaults
-        to "define_repository" in setup.py
 
         This is the base class factory for test suites in the dagster-graphql test.
 
@@ -824,9 +815,6 @@ def make_graphql_context_test_suite(context_variants, recon_repo=None):
             assert graphql_context
     """
     check.list_param(context_variants, "context_variants", of_type=GraphQLContextVariant)
-    recon_repo = check.inst_param(
-        recon_repo if recon_repo else get_main_recon_repo(), "recon_repo", ReconstructableRepository
-    )
 
     class _SpecificTestSuiteBase(_GraphQLContextTestSuite):
         @graphql_context_variants_fixture(context_variants=context_variants)
@@ -847,9 +835,6 @@ def make_graphql_context_test_suite(context_variants, recon_repo=None):
             with patch("dagster_graphql.client.client.Client") as mock_client:
                 mock_client.return_value = MockedGraphQLClient()
                 yield DagsterGraphQLClient("localhost")
-
-        def recon_repo(self):
-            return recon_repo
 
     return _SpecificTestSuiteBase
 

@@ -22,6 +22,9 @@ from dagster import (
     EventMetadataEntry,
     ExpectationResult,
     Field,
+    HourlyPartitionsDefinition,
+    IOManager,
+    IOManagerDefinition,
     InputDefinition,
     Int,
     Materialization,
@@ -37,6 +40,7 @@ from dagster import (
     ScheduleDefinition,
     ScheduleEvaluationContext,
     SolidExecutionContext,
+    StaticPartitionsDefinition,
     String,
     check,
     composite_solid,
@@ -57,8 +61,9 @@ from dagster import (
     usable_as_dagster_type,
     weekly_schedule,
 )
-from dagster.core.asset_defs import asset, build_assets_job
+from dagster.core.asset_defs import ForeignAsset, asset, build_assets_job
 from dagster.core.definitions.decorators.sensor import sensor
+from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster.core.log_manager import coerce_valid_log_level
@@ -1256,8 +1261,24 @@ def hanging_asset_resource(context):
     return context.resource_config.get("file")
 
 
+class DummyIOManager(IOManager):
+    def handle_output(self, context, obj):
+        pass
+
+    def load_input(self, context):
+        pass
+
+
+dummy_foreign_asset = ForeignAsset(key=AssetKey("dummy_foreign_asset"))
+
+
+@asset
+def first_asset(dummy_foreign_asset):  # pylint: disable=redefined-outer-name,unused-argument
+    return 1
+
+
 @asset(required_resource_keys={"hanging_asset_resource"})
-def hanging_asset(context):
+def hanging_asset(context, first_asset):  # pylint: disable=redefined-outer-name,unused-argument
     """
     Asset that hangs forever, used to test in-progress ops.
     """
@@ -1268,10 +1289,87 @@ def hanging_asset(context):
         time.sleep(0.1)
 
 
+@asset
+def never_runs_asset(hanging_asset):  # pylint: disable=redefined-outer-name,unused-argument
+    pass
+
+
 hanging_job = build_assets_job(
     name="hanging_job",
-    assets=[hanging_asset],
-    resource_defs={"hanging_asset_resource": hanging_asset_resource},
+    source_assets=[dummy_foreign_asset],
+    assets=[first_asset, hanging_asset, never_runs_asset],
+    resource_defs={
+        "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),
+        "hanging_asset_resource": hanging_asset_resource,
+    },
+)
+
+
+@asset
+def asset_one():
+    return 1
+
+
+@asset
+def asset_two(asset_one):  # pylint: disable=redefined-outer-name,unused-argument
+    return first_asset + 1
+
+
+two_assets_job = build_assets_job(name="two_assets_job", assets=[asset_one, asset_two])
+
+
+static_partitions_def = StaticPartitionsDefinition(["a", "b", "c", "d"])
+
+
+@asset(partitions_def=static_partitions_def)
+def upstream_static_partitioned_asset():
+    return 1
+
+
+@asset(partitions_def=static_partitions_def)
+def downstream_static_partitioned_asset(
+    upstream_static_partitioned_asset,
+):  # pylint: disable=redefined-outer-name
+    assert upstream_static_partitioned_asset
+
+
+static_partitioned_assets_job = build_assets_job(
+    "static_partitioned_assets_job",
+    assets=[upstream_static_partitioned_asset, downstream_static_partitioned_asset],
+)
+
+
+hourly_partition = HourlyPartitionsDefinition(start_date="2021-05-05-01:00")
+
+
+@asset(partitions_def=hourly_partition)
+def upstream_time_partitioned_asset():
+    return 1
+
+
+@asset(partitions_def=hourly_partition)
+def downstream_time_partitioned_asset(
+    upstream_time_partitioned_asset,
+):  # pylint: disable=redefined-outer-name
+    return upstream_time_partitioned_asset + 1
+
+
+time_partitioned_assets_job = build_assets_job(
+    "time_partitioned_assets_job",
+    [upstream_time_partitioned_asset, downstream_time_partitioned_asset],
+)
+
+
+@asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
+def yield_partition_materialization():
+    yield AssetMaterialization(asset_key=AssetKey("yield_partition_materialization"), partition="c")
+    yield Output(5)
+
+
+partition_materialization_job = build_assets_job(
+    "partition_materialization_job",
+    assets=[yield_partition_materialization],
+    executor_def=in_process_executor,
 )
 
 
@@ -1343,6 +1441,10 @@ def define_pipelines():
         job_with_default_config,
         hanging_job,
         two_ins_job,
+        two_assets_job,
+        static_partitioned_assets_job,
+        time_partitioned_assets_job,
+        partition_materialization_job,
     ]
 
 

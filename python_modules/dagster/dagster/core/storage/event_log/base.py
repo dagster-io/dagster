@@ -1,7 +1,7 @@
 import warnings
 from abc import ABC, abstractmethod, abstractproperty
 from datetime import datetime
-from typing import Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple, Union
+from typing import Callable, Iterable, List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -234,11 +234,9 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
         return asset_keys
 
     @abstractmethod
-    def all_asset_tags(self) -> Dict[AssetKey, Dict[str, str]]:
-        pass
-
-    @abstractmethod
-    def get_asset_tags(self, asset_key: AssetKey) -> Dict[str, str]:
+    def get_latest_materialization_events(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Optional[EventLogEntry]]:
         pass
 
     @abstractmethod
@@ -263,6 +261,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     @abstractmethod
     def wipe_asset(self, asset_key: AssetKey):
         """Remove asset index history from event log for given asset_key"""
+
+    @abstractmethod
+    def get_materialization_count_by_partition(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Mapping[str, int]]:
+        pass
 
 
 def extract_asset_events_cursor(cursor, before_cursor, after_cursor, ascending):

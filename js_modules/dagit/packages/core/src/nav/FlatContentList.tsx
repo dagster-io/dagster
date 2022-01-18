@@ -1,24 +1,21 @@
-import {gql, useQuery} from '@apollo/client';
+import {Box, ColorsWIP, IconWIP, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {InstigationStatus} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
-import {Tooltip} from '../ui/Tooltip';
-import {DagsterRepoOption} from '../workspace/WorkspaceContext';
+import {
+  DagsterRepoOption,
+  WorkspaceRepositorySchedule,
+  WorkspaceRepositorySensor,
+} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {Item, Items} from './RepositoryContentList';
-import {NavQuery} from './types/NavQuery';
-import {NavScheduleFragment} from './types/NavScheduleFragment';
-import {NavSensorFragment} from './types/NavSensorFragment';
 
 interface Props {
   selector?: string;
@@ -32,8 +29,8 @@ type JobItem = {
   isJob: boolean;
   label: React.ReactNode;
   repoAddress: RepoAddress;
-  schedule: NavScheduleFragment | null;
-  sensor: NavSensorFragment | null;
+  schedule: WorkspaceRepositorySchedule | null;
+  sensor: WorkspaceRepositorySensor | null;
 };
 
 export const FlatContentList: React.FC<Props> = (props) => {
@@ -46,65 +43,46 @@ export const FlatContentList: React.FC<Props> = (props) => {
     return new Set(addresses);
   }, [repos]);
 
-  const {loading, data} = useQuery<NavQuery>(NAV_QUERY);
-
   const jobs = React.useMemo(() => {
-    if (
-      loading ||
-      !data ||
-      !data.workspaceOrError ||
-      data.workspaceOrError.__typename !== 'Workspace'
-    ) {
-      return [];
-    }
-
-    const {locationEntries} = data.workspaceOrError;
     const items: JobItem[] = [];
 
-    for (const entry of locationEntries) {
-      const location = entry.locationOrLoadError;
-      if (location?.__typename !== 'RepositoryLocation') {
+    for (const {repository, repositoryLocation} of repos) {
+      const address = buildRepoAddress(repository.name, repositoryLocation.name);
+      if (!activeRepoAddresses.has(address)) {
         continue;
       }
 
-      for (const repo of location.repositories) {
-        const address = buildRepoAddress(repo.name, location.name);
-        if (!activeRepoAddresses.has(address)) {
-          continue;
-        }
-
-        for (const pipeline of repo.pipelines) {
-          const {isJob, name, schedules, sensors} = pipeline;
-          const schedule = schedules[0] || null;
-          const sensor = sensors[0] || null;
-          items.push({
-            name,
-            isJob,
-            label: (
-              <Label $hasIcon={!!(schedule || sensor) || !isJob}>
-                <TruncatingName data-tooltip={name} data-tooltip-style={LabelTooltipStyles}>
-                  {name}
-                </TruncatingName>
-                <div style={{flex: 1}} />
-                {isJob ? null : (
-                  <Tooltip content="Legacy pipeline" placement="top" className="legacy-container">
-                    <LegacyTag>Legacy</LegacyTag>
-                  </Tooltip>
-                )}
-              </Label>
-            ),
-            repoAddress: address,
-            schedule,
-            sensor,
-          });
-        }
+      const {schedules, sensors} = repository;
+      for (const pipeline of repository.pipelines) {
+        const {isJob, name} = pipeline;
+        const schedule = schedules.find((schedule) => schedule.pipelineName === name) || null;
+        const sensor =
+          sensors.find((sensor) =>
+            sensor.targets?.map((target) => target.pipelineName).includes(name),
+          ) || null;
+        items.push({
+          name,
+          isJob,
+          label: (
+            <Label $hasIcon={!!(schedule || sensor) || !isJob}>
+              <TruncatingName data-tooltip={name} data-tooltip-style={LabelTooltipStyles}>
+                {name}
+              </TruncatingName>
+              <div style={{flex: 1}} />
+              {isJob ? null : <LegacyPipelineTag />}
+            </Label>
+          ),
+          repoAddress: address,
+          schedule,
+          sensor,
+        });
       }
     }
 
     return items.sort((a, b) =>
       a.name.toLocaleLowerCase().localeCompare(b.name.toLocaleLowerCase()),
     );
-  }, [loading, data, activeRepoAddresses]);
+  }, [repos, activeRepoAddresses]);
 
   const title = jobs.some((j) => !j.isJob) ? 'Jobs and pipelines' : 'Jobs';
 
@@ -187,81 +165,6 @@ const JobItem: React.FC<JobItemProps> = (props) => {
   );
 };
 
-const NAV_SCHEDULE_FRAGMENT = gql`
-  fragment NavScheduleFragment on Schedule {
-    id
-    mode
-    name
-    scheduleState {
-      id
-      status
-    }
-  }
-`;
-
-const NAV_SENSOR_FRAGMENT = gql`
-  fragment NavSensorFragment on Sensor {
-    id
-    name
-    targets {
-      mode
-      pipelineName
-    }
-    sensorState {
-      id
-      status
-    }
-  }
-`;
-
-const NAV_QUERY = gql`
-  query NavQuery {
-    workspaceOrError {
-      __typename
-      ... on Workspace {
-        locationEntries {
-          __typename
-          id
-          locationOrLoadError {
-            ... on RepositoryLocation {
-              id
-              name
-              repositories {
-                id
-                name
-                pipelines {
-                  id
-                  isJob
-                  name
-                  modes {
-                    id
-                    name
-                  }
-                  schedules {
-                    id
-                    ...NavScheduleFragment
-                  }
-                  sensors {
-                    id
-                    ...NavSensorFragment
-                  }
-                }
-              }
-            }
-            ... on PythonError {
-              ...PythonErrorFragment
-            }
-          }
-        }
-      }
-      ...PythonErrorFragment
-    }
-  }
-  ${PYTHON_ERROR_FRAGMENT}
-  ${NAV_SCHEDULE_FRAGMENT}
-  ${NAV_SENSOR_FRAGMENT}
-`;
-
 const Label = styled.div<{$hasIcon: boolean}>`
   display: flex;
   flex-direction: row;
@@ -269,10 +172,6 @@ const Label = styled.div<{$hasIcon: boolean}>`
   align-items: center;
   gap: 8px;
   width: ${({$hasIcon}) => ($hasIcon ? '260px' : '280px')};
-
-  .legacy-container {
-    flex-shrink: 1;
-  }
 `;
 
 const LabelTooltipStyles = JSON.stringify({
@@ -307,15 +206,4 @@ const IconWithTooltip = styled(Tooltip)`
 
 const ItemContainer = styled.div`
   position: relative;
-`;
-
-const LegacyTag = styled.div`
-  background: ${ColorsWIP.Gray10};
-  color: ${ColorsWIP.Gray600};
-  border-radius: 7px;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  padding: 5px;
-  margin: -3px 0;
-  font-size: 11px;
 `;

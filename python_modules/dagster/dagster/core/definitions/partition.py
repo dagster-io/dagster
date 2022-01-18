@@ -1,12 +1,14 @@
 import copy
 import inspect
 from abc import ABC, abstractmethod
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 from enum import Enum
 from typing import Any, Callable, Dict, Generic, List, NamedTuple, Optional, TypeVar, Union, cast
 
 import pendulum
 from dagster import check
+from dagster.serdes import whitelist_for_serdes
+from dateutil.relativedelta import relativedelta
 
 from ...seven.compat.pendulum import PendulumDateTime, to_timezone
 from ...utils import frozenlist, merge_dicts
@@ -54,6 +56,11 @@ class Partition(Generic[T]):
     @property
     def name(self) -> str:
         return self._name
+
+    def __eq__(self, other) -> bool:
+        return (
+            isinstance(other, Partition) and self.value == other.value and self.name == other.name
+        )
 
 
 def schedule_partition_range(
@@ -123,11 +130,35 @@ def schedule_partition_range(
     return partitions
 
 
+@whitelist_for_serdes
 class ScheduleType(Enum):
     HOURLY = "HOURLY"
     DAILY = "DAILY"
     WEEKLY = "WEEKLY"
     MONTHLY = "MONTHLY"
+
+    @property
+    def ordinal(self):
+        return {"HOURLY": 1, "DAILY": 2, "WEEKLY": 3, "MONTHLY": 4}[self.value]
+
+    @property
+    def delta(self):
+        if self == ScheduleType.HOURLY:
+            return timedelta(hours=1)
+        elif self == ScheduleType.DAILY:
+            return timedelta(days=1)
+        elif self == ScheduleType.WEEKLY:
+            return timedelta(weeks=1)
+        elif self == ScheduleType.MONTHLY:
+            return relativedelta(months=1)
+        else:
+            check.failed(f"Unexpected ScheduleType {self}")
+
+    def __gt__(self, other):
+        return self.ordinal > other.ordinal
+
+    def __lt__(self, other):
+        return self.ordinal < other.ordinal
 
 
 class PartitionsDefinition(ABC, Generic[T]):
@@ -135,15 +166,39 @@ class PartitionsDefinition(ABC, Generic[T]):
     def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition[T]]:
         ...
 
+    def __str__(self) -> str:
+        joined_keys = ", ".join([f"'{key}'" for key in self.get_partition_keys()])
+        return joined_keys
 
-class StaticPartitionsDefinition(PartitionsDefinition[T]):  # pylint: disable=unsubscriptable-object
-    def __init__(self, partitions: List[Partition[T]]):
-        self._partitions = check.list_param(partitions, "partitions", of_type=Partition)
+    def get_partition_keys(self, current_time: Optional[datetime] = None) -> List[str]:
+        return [partition.name for partition in self.get_partitions(current_time)]
+
+    def get_default_partition_mapping(self):
+        from dagster.core.asset_defs.partition_mapping import IdentityPartitionMapping
+
+        return IdentityPartitionMapping()
+
+
+class StaticPartitionsDefinition(
+    PartitionsDefinition[str],
+):  # pylint: disable=unsubscriptable-object
+    def __init__(self, partition_keys: List[str]):
+        check.list_param(partition_keys, "partition_keys", of_type=str)
+        self._partitions = [Partition(key) for key in partition_keys]
 
     def get_partitions(
         self, current_time: Optional[datetime] = None  # pylint: disable=unused-argument
-    ) -> List[Partition[T]]:
+    ) -> List[Partition[str]]:
         return self._partitions
+
+    def __eq__(self, other) -> bool:
+        return (
+            isinstance(other, StaticPartitionsDefinition)
+            and self._partitions == other.get_partitions()
+        )
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(partition_keys={[p.name for p in self._partitions]})"
 
 
 class ScheduleTimeBasedPartitionsDefinition(
@@ -261,16 +316,22 @@ class DynamicPartitionsDefinition(
     PartitionsDefinition,
     NamedTuple(
         "_DynamicPartitionsDefinition",
-        [("partition_fn", Callable[[Optional[datetime]], List[Partition]])],
+        [("partition_fn", Callable[[Optional[datetime]], Union[List[Partition], List[str]]])],
     ),
 ):
-    def __new__(cls, partition_fn: Callable[[Optional[datetime]], List[Partition]]):
+    def __new__(
+        cls, partition_fn: Callable[[Optional[datetime]], Union[List[Partition], List[str]]]
+    ):
         return super(DynamicPartitionsDefinition, cls).__new__(
             cls, check.callable_param(partition_fn, "partition_fn")
         )
 
     def get_partitions(self, current_time: Optional[datetime] = None) -> List[Partition]:
-        return self.partition_fn(current_time)
+        partitions = self.partition_fn(current_time)
+        if all(isinstance(partition, Partition) for partition in partitions):
+            return cast(List[Partition], partitions)
+        else:
+            return [Partition(p) for p in partitions]
 
 
 class PartitionSetDefinition(Generic[T]):
@@ -644,11 +705,13 @@ class PartitionedConfig(Generic[T]):
         self,
         partitions_def: PartitionsDefinition[T],  # pylint: disable=unsubscriptable-object
         run_config_for_partition_fn: Callable[[Partition[T]], Dict[str, Any]],
+        decorated_fn: Optional[Callable[..., Dict[str, Any]]] = None,
     ):
         self._partitions = check.inst_param(partitions_def, "partitions_def", PartitionsDefinition)
         self._run_config_for_partition_fn = check.callable_param(
             run_config_for_partition_fn, "run_config_for_partition_fn"
         )
+        self._decorated_fn = decorated_fn
 
     @property
     def partitions_def(self) -> PartitionsDefinition[T]:  # pylint: disable=unsubscriptable-object
@@ -672,6 +735,15 @@ class PartitionedConfig(Generic[T]):
                 f"Could not find a partition with key `{partition_key}`"
             )
         return self.run_config_for_partition_fn(matching[0])
+
+    def __call__(self, *args, **kwargs):
+        if self._decorated_fn is None:
+            raise DagsterInvalidInvocationError(
+                "Only PartitionedConfig objects created using one of the partitioned config "
+                "decorators can be directly invoked."
+            )
+        else:
+            return self._decorated_fn(*args, **kwargs)
 
 
 def static_partitioned_config(
@@ -702,14 +774,13 @@ def static_partitioned_config(
     def inner(fn: Callable[[str], Dict[str, Any]]) -> PartitionedConfig:
         check.callable_param(fn, "fn")
 
-        partitions_list = [Partition(key) for key in partition_keys]
-
         def _run_config_wrapper(partition: Partition[T]) -> Dict[str, Any]:
             return fn(partition.name)
 
         return PartitionedConfig(
-            partitions_def=StaticPartitionsDefinition(partitions_list),
+            partitions_def=StaticPartitionsDefinition(partition_keys),
             run_config_for_partition_fn=_run_config_wrapper,
+            decorated_fn=fn,
         )
 
     return inner
@@ -738,16 +809,13 @@ def dynamic_partitioned_config(
     check.callable_param(partition_fn, "partition_fn")
 
     def inner(fn: Callable[[str], Dict[str, Any]]) -> PartitionedConfig:
-        def _partitions_wrapper(current_time: Optional[datetime] = None):
-            partition_keys = partition_fn(current_time)
-            return [Partition(key) for key in partition_keys]
-
         def _run_config_wrapper(partition: Partition[T]) -> Dict[str, Any]:
             return fn(partition.name)
 
         return PartitionedConfig(
-            partitions_def=DynamicPartitionsDefinition(_partitions_wrapper),
+            partitions_def=DynamicPartitionsDefinition(partition_fn),
             run_config_for_partition_fn=_run_config_wrapper,
+            decorated_fn=fn,
         )
 
     return inner
@@ -756,19 +824,18 @@ def dynamic_partitioned_config(
 def get_cron_schedule(
     schedule_type: ScheduleType,
     time_of_day: time = time(0, 0),
-    day_of_week: Optional[int] = 0,
+    execution_day: Optional[int] = None,
 ) -> str:
     minute = time_of_day.minute
     hour = time_of_day.hour
-    day = day_of_week
 
     if schedule_type is ScheduleType.HOURLY:
         return f"{minute} * * * *"
     elif schedule_type is ScheduleType.DAILY:
         return f"{minute} {hour} * * *"
     elif schedule_type is ScheduleType.WEEKLY:
-        return f"{minute} {hour} * * {day}"
+        return f"{minute} {hour} * * {execution_day if execution_day != None else 0}"
     elif schedule_type is ScheduleType.MONTHLY:
-        return f"{minute} {hour} {day} * *"
+        return f"{minute} {hour} {execution_day if execution_day != None else 1} * *"
     else:
         check.assert_never(schedule_type)

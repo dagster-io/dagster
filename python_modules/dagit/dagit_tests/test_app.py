@@ -6,6 +6,7 @@ import pytest
 from click.testing import CliRunner
 from dagit.app import create_app_from_workspace_process_context
 from dagit.cli import host_dagit_ui_with_workspace_process_context, ui
+from dagster import seven
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
 from dagster.core.test_utils import instance_for_test
@@ -94,7 +95,10 @@ def test_index_view_at_path_prefix():
             res = client.get("/dagster-path/")
             assert res.status_code == 200
             assert b"You need to enable JavaScript to run this app" in res.data
-            assert b'{"pathPrefix": "/dagster-path"}' in res.data
+            assert b'"pathPrefix": "/dagster-path"' in res.data
+            assert (
+                b'"telemetryEnabled": false' in res.data or b'"telemetryEnabled": true' in res.data
+            )
 
 
 def test_graphql_view():
@@ -275,7 +279,7 @@ def test_dagit_logs(
     caplog,
 ):
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(temp_dir=temp_dir):
+        with instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             workspace_path = file_relative_path(__file__, "telemetry_repository.yaml")
             result = runner.invoke(
@@ -289,8 +293,15 @@ def test_dagit_logs(
                 hash_name("dagster_test_repository"): 4,
             }
             actions = set()
+            records = []
             for record in caplog.records:
-                message = json.loads(record.getMessage())
+                try:
+                    message = json.loads(record.getMessage())
+                except seven.JSONDecodeError:
+                    continue
+
+                records.append(record)
+
                 actions.add(message.get("action"))
                 if message.get("action") == UPDATE_REPO_STATS:
                     assert message.get("pipeline_name_hash") == ""
@@ -319,5 +330,5 @@ def test_dagit_logs(
                 )
 
             assert actions == set([START_DAGIT_WEBSERVER, UPDATE_REPO_STATS])
-            assert len(caplog.records) == 3
+            assert len(records) == 3
             assert server_mock.call_args_list == [mock.call()]

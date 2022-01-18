@@ -18,7 +18,7 @@ class ModuleBuildSpec(
     namedtuple(
         "_ModuleBuildSpec",
         "directory env_vars supported_pythons extra_cmds_fn depends_on_fn tox_file "
-        "tox_env_suffixes buildkite_label retries upload_coverage",
+        "tox_env_suffixes buildkite_label retries upload_coverage timeout_in_minutes queue",
     )
 ):
     """Main spec for testing Dagster Python modules using tox.
@@ -53,6 +53,8 @@ class ModuleBuildSpec(
             Defaults to None (uses the package name as the label).
         retries (int, optional): Whether to retry these tests on failure
         upload_coverage (bool, optional): Whether to copy coverage artifacts. Enabled by default.
+        timeout_in_minutes (int, optional): Fail after this many minutes
+        queue (BuildkiteQueue, optional): Which queue to run on
 
     Returns:
         List[dict]: List of test steps
@@ -70,6 +72,8 @@ class ModuleBuildSpec(
         buildkite_label=None,
         retries=None,
         upload_coverage=True,
+        timeout_in_minutes=None,
+        queue=None,
     ):
         return super(ModuleBuildSpec, cls).__new__(
             cls,
@@ -83,6 +87,8 @@ class ModuleBuildSpec(
             buildkite_label,
             retries,
             upload_coverage,
+            timeout_in_minutes,
+            queue,
         )
 
     def get_tox_build_steps(self):
@@ -115,7 +121,10 @@ class ModuleBuildSpec(
                     ]
 
                 step = (
-                    StepBuilder(f":pytest: {label} {version[:3]}")
+                    StepBuilder(
+                        f":pytest: {label} {version[:3]}",
+                        timeout_in_minutes=self.timeout_in_minutes,
+                    )
                     .run(*cmds)
                     .on_integration_image(version, self.env_vars or [])
                 )
@@ -125,6 +134,9 @@ class ModuleBuildSpec(
 
                 if self.depends_on_fn:
                     step = step.depends_on(self.depends_on_fn(version))
+
+                if self.queue:
+                    step = step.on_queue(self.queue)
 
                 tests.append(step.build())
 

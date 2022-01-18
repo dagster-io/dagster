@@ -14,7 +14,7 @@ from dagster.core.definitions.graph_definition import GraphDefinition
 from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.output import Out, OutputDefinition
-from dagster.core.definitions.partition import PartitionedConfig
+from dagster.core.definitions.partition import PartitionedConfig, PartitionsDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.context.input import InputContext, build_input_context
@@ -79,6 +79,7 @@ def build_assets_job(
 
     op_defs = build_op_deps(assets, source_assets_by_key.keys())
     root_manager = build_root_manager(source_assets_by_key)
+    partitioned_config = build_job_partitions_from_assets(assets)
 
     return GraphDefinition(
         name=name,
@@ -90,10 +91,35 @@ def build_assets_job(
         config=None,
     ).to_job(
         resource_defs=merge_dicts(resource_defs or {}, {"root_manager": root_manager}),
-        config=config,
+        config=config or partitioned_config,
         tags=tags,
         executor_def=executor_def,
     )
+
+
+def build_job_partitions_from_assets(
+    assets: Sequence[AssetsDefinition],
+) -> Optional[PartitionedConfig]:
+    assets_with_partitions_defs = [assets_def for assets_def in assets if assets_def.partitions_def]
+    if assets_with_partitions_defs:
+        for assets_def in assets_with_partitions_defs:
+            if assets_def.partitions_def != assets_with_partitions_defs[0].partitions_def:
+                first_asset_key = next(iter(assets_def.asset_keys)).to_string()
+                second_asset_key = next(iter(assets_with_partitions_defs[0].asset_keys)).to_string()
+                raise DagsterInvalidDefinitionError(
+                    "When an assets job contains multiple partitions assets, they must have the "
+                    f"same partitions definitions, but asset '{first_asset_key}' and asset "
+                    f"'{second_asset_key}' have different partitions definitions. "
+                )
+
+        return PartitionedConfig(
+            partitions_def=cast(
+                PartitionsDefinition, assets_with_partitions_defs[0].partitions_def
+            ),
+            run_config_for_partition_fn=lambda p: {},
+        )
+    else:
+        return None
 
 
 def build_source_assets_by_key(

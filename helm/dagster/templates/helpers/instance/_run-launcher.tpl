@@ -9,11 +9,35 @@ config:
     env: DAGSTER_K8S_INSTANCE_CONFIG_MAP
   postgres_password_secret:
     env: DAGSTER_K8S_PG_PASSWORD_SECRET
-  broker: {{ include "dagster.celery.broker_url" . | quote }}
-  backend: {{ include "dagster.celery.backend_url" . | quote}}
-
+  broker:
+    env: DAGSTER_CELERY_BROKER_URL
+  backend:
+    env: DAGSTER_CELERY_BACKEND_URL
   {{- if $celeryK8sRunLauncherConfig.configSource }}
   config_source: {{- $celeryK8sRunLauncherConfig.configSource | toYaml | nindent 4 }}
+  {{- end }}
+  env_config_maps:
+    - env: DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP
+    {{- range $envConfigMap := $celeryK8sRunLauncherConfig.envConfigMaps }}
+    {{- if hasKey $envConfigMap "name" }}
+    - {{ $envConfigMap.name }}
+    {{- end }}
+    {{- end }}
+  {{- if or $celeryK8sRunLauncherConfig.envSecrets .Values.global.celeryConfigSecretName }}
+  env_secrets:
+    {{- range $envSecret := $celeryK8sRunLauncherConfig.envSecrets }}
+    {{- if hasKey $envSecret "name" }}
+    - {{ $envSecret.name }}
+    {{- end }}
+    {{- end }}
+    - {{ .Values.global.celeryConfigSecretName }}
+  {{- end }}
+  {{- if $celeryK8sRunLauncherConfig.volumeMounts }}
+  volume_mounts: {{- $celeryK8sRunLauncherConfig.volumeMounts | toYaml | nindent 4 }}
+  {{- end }}
+
+  {{- if $celeryK8sRunLauncherConfig.volumes }}
+  volumes: {{- $celeryK8sRunLauncherConfig.volumes | toYaml | nindent 4 }}
   {{- end }}
 {{- end }}
 

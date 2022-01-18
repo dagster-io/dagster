@@ -60,10 +60,13 @@ class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
             self._bucket = (
                 storage.Client()
                 .from_service_account_info(credentials_info)
-                .get_bucket(self._bucket_name)
+                .bucket(self._bucket_name)
             )
         else:
-            self._bucket = storage.Client().get_bucket(self._bucket_name)
+            self._bucket = storage.Client().bucket(self._bucket_name)
+
+        # Check if the bucket exists
+        check.invariant(self._bucket.exists())
 
         # proxy calls to local compute log manager (for subscriptions, etc)
         if not local_dir:

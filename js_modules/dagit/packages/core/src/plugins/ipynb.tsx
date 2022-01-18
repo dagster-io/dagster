@@ -1,10 +1,8 @@
+import {ButtonWIP, DialogBody, DialogFooter, DialogWIP, IconWIP} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
 import {IPluginSidebarProps} from '../plugins';
-import {ButtonWIP} from '../ui/Button';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {IconWIP} from '../ui/Icon';
 
 export const SidebarComponent: React.FC<IPluginSidebarProps> = (props) => {
   const {rootServerURI} = React.useContext(AppContext);

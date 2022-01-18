@@ -1,4 +1,15 @@
 import {useMutation} from '@apollo/client';
+import {
+  Alert,
+  Box,
+  ButtonLink,
+  Checkbox,
+  ColorsWIP,
+  Group,
+  Table,
+  Subheading,
+  Tooltip,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {useConfirmation} from '../app/CustomConfirmationProvider';
@@ -11,15 +22,6 @@ import {StopSchedule} from '../schedules/types/StopSchedule';
 import {displaySensorMutationErrors, STOP_SENSOR_MUTATION} from '../sensors/SensorMutations';
 import {StopSensor} from '../sensors/types/StopSensor';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
-import {Alert} from '../ui/Alert';
-import {Box} from '../ui/Box';
-import {ButtonLink} from '../ui/ButtonLink';
-import {Checkbox} from '../ui/Checkbox';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {Table} from '../ui/Table';
-import {Subheading} from '../ui/Text';
-import {Tooltip} from '../ui/Tooltip';
 import {RepositoryOriginInformation} from '../workspace/RepositoryInformation';
 
 import {TickTag} from './InstigationTick';
@@ -65,8 +67,10 @@ export const UnloadableSchedules: React.FunctionComponent<{
   }
   return (
     <>
-      <Subheading>Unloadable schedules</Subheading>
-      <UnloadableScheduleInfo />
+      <Box padding={{top: 16, horizontal: 24}}>
+        <Subheading>Unloadable schedules</Subheading>
+        <UnloadableScheduleInfo />
+      </Box>
       <Table>
         <thead>
           <tr>
@@ -135,9 +139,17 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
     onCompleted: displaySensorMutationErrors,
   });
   const [showRepositoryOrigin, setShowRepositoryOrigin] = React.useState(false);
+  const confirm = useConfirmation();
 
-  const onChangeSwitch = () => {
+  const onChangeSwitch = async () => {
     if (status === InstigationStatus.RUNNING) {
+      await confirm({
+        title: 'Are you sure you want to turn off this sensor?',
+        description:
+          'The definition for this sensor is not available. ' +
+          'If you turn it off, you will not be able to turn it back on from ' +
+          'the currently loaded workspace.',
+      });
       stopSensor({variables: {jobOriginId: id}});
     }
   };
@@ -205,8 +217,8 @@ const ScheduleStateRow: React.FunctionComponent<{
       await confirm({
         title: 'Are you sure you want to stop this schedule?',
         description:
-          'The schedule definition for this schedule is not available. ' +
-          'If you turn off this schedule, you will not be able to turn it back on from ' +
+          'The definition for this schedule is not available. ' +
+          'If you turn it off, you will not be able to turn it back on from ' +
           'the currently loaded workspace.',
       });
       stopSchedule({variables: {scheduleOriginId: id}});

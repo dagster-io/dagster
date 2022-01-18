@@ -1,27 +1,19 @@
+import {Alert, Box, NonIdealState, Page, PageHeader, Table, Heading} from '@dagster-io/ui';
 import * as React from 'react';
-import {Link, Redirect, useLocation, useRouteMatch} from 'react-router-dom';
+import {Link, Redirect, useLocation, useParams, useRouteMatch} from 'react-router-dom';
 
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
-import {Alert} from '../ui/Alert';
-import {Box} from '../ui/Box';
 import {LoadingSpinner} from '../ui/Loading';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Page} from '../ui/Page';
-import {PageHeader} from '../ui/PageHeader';
-import {Table} from '../ui/Table';
-import {Heading} from '../ui/Text';
 
 import {isThisThingAJob, optionToRepoAddress, useRepositoryOptions} from './WorkspaceContext';
 import {buildRepoPath} from './buildRepoAddress';
 import {findRepoContainingPipeline} from './findRepoContainingPipeline';
 import {workspacePath, workspacePathFromAddress} from './workspacePath';
 
-interface Props {
-  pipelinePath: string;
-}
+export const WorkspacePipelineRoot = () => {
+  const params = useParams<{pipelinePath: string}>();
+  const {pipelinePath} = params;
 
-export const WorkspacePipelineRoot: React.FC<Props> = (props) => {
-  const {pipelinePath} = props;
   const entireMatch = useRouteMatch(['/workspace/pipelines/(/?.*)', '/workspace/jobs/(/?.*)']);
   const location = useLocation();
 

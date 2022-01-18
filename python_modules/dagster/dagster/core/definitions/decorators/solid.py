@@ -11,7 +11,6 @@ from ...decorator_utils import (
     get_function_params,
     get_valid_name_permutations,
     positional_arg_name_list,
-    validate_expected_params,
 )
 from ..inference import infer_input_props, infer_output_props
 from ..input import InputDefinition
@@ -104,7 +103,6 @@ class _Solid:
             fn_name=self.name,
             compute_fn=compute_fn,
             explicit_input_defs=self.input_defs,
-            context_required=bool(self.config_schema),
             exclude_nothing=True,
         )
 
@@ -265,7 +263,6 @@ def resolve_checked_solid_fn_inputs(
     fn_name: str,
     compute_fn: DecoratedSolidFunction,
     explicit_input_defs: List[InputDefinition],
-    context_required: bool,
     exclude_nothing: bool,
 ) -> List[InputDefinition]:
     """
@@ -279,13 +276,9 @@ def resolve_checked_solid_fn_inputs(
             DecoratedSolidFunction wrapper.
         explicit_input_defs (List[InputDefinition]): The input definitions that were explicitly
             provided in the decorator.
-        context_required (bool): True if a context argument is required due to environment
-            information being provided in the decorator (ie: resources, config).
         exclude_nothing (bool): True if Nothing type inputs should be excluded from compute_fn
             arguments.
     """
-
-    expected_positionals = ["context"] if context_required or compute_fn.has_context_arg() else []
 
     if exclude_nothing:
         explicit_names = set(
@@ -304,23 +297,7 @@ def resolve_checked_solid_fn_inputs(
 
     params = get_function_params(compute_fn.decorated_fn)
 
-    if context_required:
-
-        missing_param = validate_expected_params(params, expected_positionals)
-
-        if missing_param:
-            raise DagsterInvalidDefinitionError(
-                "{decorator_name} '{solid_name}' decorated function requires positional parameter "
-                "'{missing_param}', but it was not provided. '{missing_param}' is required because "
-                "'config_schema' was specified.".format(
-                    decorator_name=decorator_name, solid_name=fn_name, missing_param=missing_param
-                )
-            )
-
-        input_args = params[len(expected_positionals) :]
-
-    else:
-        input_args = params[1:] if compute_fn.has_context_arg() else params
+    input_args = params[1:] if compute_fn.has_context_arg() else params
 
     # Validate input arguments
     used_inputs = set()

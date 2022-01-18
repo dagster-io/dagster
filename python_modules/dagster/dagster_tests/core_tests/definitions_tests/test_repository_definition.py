@@ -3,6 +3,7 @@ from collections import defaultdict
 
 import pytest
 from dagster import (
+    AssetKey,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     PipelineDefinition,
@@ -21,11 +22,8 @@ from dagster import (
     sensor,
     solid,
 )
-from dagster.core.definitions.partition import (
-    Partition,
-    PartitionedConfig,
-    StaticPartitionsDefinition,
-)
+from dagster.core.asset_defs import ForeignAsset
+from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 
 
 def create_single_node_pipeline(name, called):
@@ -104,7 +102,7 @@ def test_dupe_solid_repo_definition():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Conflicting definitions found in repository with name 'same'. Solid & Graph/CompositeSolid definition names must be unique within a repository.",
+        match="Conflicting definitions found in repository with name 'same'. Op/Graph/Solid definition names must be unique within a repository.",
     ):
         error_repo.get_all_pipelines()
 
@@ -330,7 +328,7 @@ def test_job_with_partitions():
             bare.to_job(
                 resource_defs={},
                 config=PartitionedConfig(
-                    partitions_def=StaticPartitionsDefinition([Partition("abc")]),
+                    partitions_def=StaticPartitionsDefinition(["abc"]),
                     run_config_for_partition_fn=lambda _: {},
                 ),
             )
@@ -380,14 +378,14 @@ def test_dupe_graph_defs():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Solid & Graph/CompositeSolid definition names must be unique within a repository",
+        match="Op/Graph/Solid definition names must be unique within a repository",
     ):
 
         get_collision_repo().get_all_pipelines()
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Solid & Graph/CompositeSolid definition names must be unique within a repository",
+        match="Op/Graph/Solid definition names must be unique within a repository",
     ):
 
         get_collision_repo().get_all_jobs()
@@ -440,7 +438,7 @@ def test_job_validation():
     ):
 
         @repository
-        def my_repo():
+        def _my_repo():
             return {"jobs": {"my_pipeline": my_pipeline}}
 
 
@@ -475,7 +473,7 @@ def test_list_dupe_graph():
     ):
 
         @repository
-        def jobs():
+        def _jobs():
             return [foo.to_job(name="foo"), foo]
 
 
@@ -562,3 +560,14 @@ def test_bad_coerce():
             return {
                 "jobs": {"bar": bar},
             }
+
+
+def test_foreign_assets():
+    foo = ForeignAsset(key=AssetKey("foo"))
+    bar = ForeignAsset(key=AssetKey("bar"))
+
+    @repository
+    def my_repo():
+        return [foo, bar]
+
+    assert my_repo.foreign_assets_by_key == {AssetKey("foo"): foo, AssetKey("bar"): bar}

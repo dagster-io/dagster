@@ -3,26 +3,35 @@ const path = require('path');
 
 const schemaPath = path.resolve(path.join(__dirname, 'src', 'graphql', 'schema.graphql'));
 const schema = fs.readFileSync(schemaPath).toString();
-
 module.exports = {
-  parser: '@typescript-eslint/parser', // Specifies the ESLint parser
+  parser: '@typescript-eslint/parser',
+  // Specifies the ESLint parser
   extends: [
     'plugin:react/recommended',
-    'plugin:@typescript-eslint/recommended', // Uses the recommended rules from the @typescript-eslint/eslint-plugin
+    'plugin:@typescript-eslint/recommended',
     'prettier',
-    'plugin:prettier/recommended', // Enables eslint-plugin-prettier and displays prettier errors as ESLint errors. Make sure this is always the last configuration in the extends array.
+    'plugin:prettier/recommended',
+    'plugin:storybook/recommended',
   ],
   plugins: ['react-hooks', 'import', 'graphql'],
   parserOptions: {
-    ecmaVersion: 2018, // Allows for the parsing of modern ECMAScript features
-    sourceType: 'module', // Allows for the use of imports
+    ecmaVersion: 2018,
+    // Allows for the parsing of modern ECMAScript features
+    sourceType: 'module',
+    // Allows for the use of imports
     ecmaFeatures: {
       jsx: true, // Allows for the parsing of JSX
     },
   },
   rules: {
     curly: 'error',
-    eqeqeq: ['error', 'always', {null: 'ignore'}],
+    eqeqeq: [
+      'error',
+      'always',
+      {
+        null: 'ignore',
+      },
+    ],
     'graphql/required-fields': [
       'error',
       {
@@ -37,7 +46,10 @@ module.exports = {
     'import/order': [
       'error',
       {
-        alphabetize: {order: 'asc', caseInsensitive: false},
+        alphabetize: {
+          order: 'asc',
+          caseInsensitive: false,
+        },
         'newlines-between': 'always',
       },
     ],
@@ -87,10 +99,6 @@ module.exports = {
             message: 'Please use components in src/ui instead.',
           },
           {
-            name: 'csstype',
-            message: 'Please use React types instead of importing from csstype.',
-          },
-          {
             name: 'graphql-tag',
             message: 'Please import from `@apollo/client`.',
           },
@@ -98,20 +106,21 @@ module.exports = {
             name: 'styled-components',
             message: 'Please import from `styled-components/macro`.',
           },
-          {
-            name: 'react-router',
-            message: 'Please import from `react-router-dom`.',
-          },
         ],
       },
     ],
+    'react/jsx-curly-brace-presence': 'error',
     'react/jsx-no-target-blank': 'error',
     'react/prefer-stateless-function': 'error',
     'react/prop-types': 'off',
     'react/display-name': 'off',
     '@typescript-eslint/no-unused-vars': [
       'error',
-      {argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true},
+      {
+        argsIgnorePattern: '^_',
+        varsIgnorePattern: '^_',
+        ignoreRestSiblings: true,
+      },
     ],
     '@typescript-eslint/interface-name-prefix': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',

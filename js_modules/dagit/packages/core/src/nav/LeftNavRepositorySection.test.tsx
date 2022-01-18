@@ -1,4 +1,3 @@
-import {MockList} from '@graphql-tools/mock';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
@@ -11,13 +10,13 @@ describe('Repository options', () => {
   const defaultMocks = {
     RepositoryLocation: () => ({
       name: () => 'bar',
-      repositories: () => new MockList(1),
+      repositories: () => [...new Array(1)],
     }),
     Schedules: () => ({
-      results: () => new MockList(0),
+      results: () => [],
     }),
     Sensors: () => ({
-      results: () => new MockList(0),
+      results: () => [],
     }),
     LocationStateChangeEvent: () => ({
       eventType: () => LocationStateChangeEventType.LOCATION_UPDATED,
@@ -28,12 +27,13 @@ describe('Repository options', () => {
     const mocks = {
       Repository: () => ({
         name: () => 'foo',
-        pipelines: () => new MockList(1),
+        pipelines: () => [...new Array(1)],
       }),
       Pipeline: () => ({
         id: () => 'my_pipeline',
         name: () => 'my_pipeline',
-        modes: () => new MockList(1),
+        modes: () => [...new Array(1)],
+        isAssetJob: () => false,
       }),
     };
 
@@ -69,14 +69,10 @@ describe('Repository options', () => {
       Workspace: () => ({
         locationEntries: () => [
           {
-            name: locationOne,
             locationOrLoadError: {
+              __typename: 'RepositoryLocation',
               name: locationOne,
-              repositories: () =>
-                new MockList(1, () => ({
-                  name: repoOne,
-                  pipelines: () => new MockList(2),
-                })),
+              repositories: [{name: repoOne, pipelines: [...new Array(2)]}],
             },
           },
         ],
@@ -87,25 +83,17 @@ describe('Repository options', () => {
       Workspace: () => ({
         locationEntries: () => [
           {
-            name: locationOne,
             locationOrLoadError: {
+              __typename: 'RepositoryLocation',
               name: locationOne,
-              repositories: () =>
-                new MockList(1, () => ({
-                  name: repoOne,
-                  pipelines: () => new MockList(2),
-                })),
+              repositories: [{name: repoOne, pipelines: [...new Array(2)]}],
             },
           },
           {
-            name: locationTwo,
             locationOrLoadError: {
+              __typename: 'RepositoryLocation',
               name: locationTwo,
-              repositories: () =>
-                new MockList(1, () => ({
-                  name: repoTwo,
-                  pipelines: () => new MockList(4),
-                })),
+              repositories: [{name: repoTwo, pipelines: [...new Array(4)]}],
             },
           },
         ],

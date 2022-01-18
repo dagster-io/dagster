@@ -5,6 +5,7 @@ from dagster import check
 from dagster.core.launcher.base import (
     CheckRunHealthResult,
     LaunchRunContext,
+    ResumeRunContext,
     RunLauncher,
     WorkerStatus,
 )
@@ -87,12 +88,7 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             )
         return client
 
-    def launch_run(self, context: LaunchRunContext) -> None:
-
-        run = context.pipeline_run
-
-        pipeline_code_origin = context.pipeline_code_origin
-
+    def _get_docker_image(self, pipeline_code_origin):
         docker_image = pipeline_code_origin.repository_origin.container_image
 
         if not docker_image:
@@ -102,20 +98,9 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
             raise Exception("No docker image specified by the instance config or repository")
 
         validate_docker_image(docker_image)
+        return docker_image
 
-        if not context.resume_from_failure:
-            command = ExecuteRunArgs(
-                pipeline_origin=pipeline_code_origin,
-                pipeline_run_id=run.run_id,
-                instance_ref=self._instance.get_ref(),
-            ).get_command_args()
-        else:
-            command = ResumeRunArgs(
-                pipeline_origin=pipeline_code_origin,
-                pipeline_run_id=run.run_id,
-                instance_ref=self._instance.get_ref(),
-            ).get_command_args()
-
+    def _launch_container_with_command(self, run, docker_image, command):
         docker_env = (
             {env_name: os.getenv(env_name) for env_name in self.env_vars} if self.env_vars else {}
         )
@@ -163,6 +148,32 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
         )
 
         container.start()
+
+    def launch_run(self, context: LaunchRunContext) -> None:
+        run = context.pipeline_run
+        pipeline_code_origin = context.pipeline_code_origin
+        docker_image = self._get_docker_image(pipeline_code_origin)
+
+        command = ExecuteRunArgs(
+            pipeline_origin=pipeline_code_origin,
+            pipeline_run_id=run.run_id,
+            instance_ref=self._instance.get_ref(),
+        ).get_command_args()
+
+        self._launch_container_with_command(run, docker_image, command)
+
+    def resume_run(self, context: ResumeRunContext) -> None:
+        run = context.pipeline_run
+        pipeline_code_origin = context.pipeline_code_origin
+        docker_image = self._get_docker_image(pipeline_code_origin)
+
+        command = ResumeRunArgs(
+            pipeline_origin=pipeline_code_origin,
+            pipeline_run_id=run.run_id,
+            instance_ref=self._instance.get_ref(),
+        ).get_command_args()
+
+        self._launch_container_with_command(run, docker_image, command)
 
     def _get_container(self, run):
         if not run or run.is_finished:

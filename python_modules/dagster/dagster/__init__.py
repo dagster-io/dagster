@@ -9,10 +9,12 @@ from dagster.core.definitions import (
     AssetSensorDefinition,
     CompositeSolidDefinition,
     ConfigMapping,
+    DailyPartitionsDefinition,
     DependencyDefinition,
     DynamicOut,
     DynamicOutput,
     DynamicOutputDefinition,
+    DynamicPartitionsDefinition,
     EventMetadata,
     EventMetadataEntry,
     ExecutorDefinition,
@@ -24,6 +26,7 @@ from dagster.core.definitions import (
     GraphIn,
     GraphOut,
     HookDefinition,
+    HourlyPartitionsDefinition,
     In,
     InputDefinition,
     InputMapping,
@@ -34,6 +37,7 @@ from dagster.core.definitions import (
     MarkdownMetadataEntryData,
     Materialization,
     ModeDefinition,
+    MonthlyPartitionsDefinition,
     MultiDependencyDefinition,
     NodeInvocation,
     OpDefinition,
@@ -45,6 +49,7 @@ from dagster.core.definitions import (
     PartitionScheduleDefinition,
     PartitionSetDefinition,
     PartitionedConfig,
+    PartitionsDefinition,
     PathMetadataEntryData,
     PipelineDefinition,
     PipelineFailureSensorContext,
@@ -67,9 +72,11 @@ from dagster.core.definitions import (
     SkipReason,
     SolidDefinition,
     SolidInvocation,
+    StaticPartitionsDefinition,
     TextMetadataEntryData,
     TypeCheck,
     UrlMetadataEntryData,
+    WeeklyPartitionsDefinition,
     asset_sensor,
     build_init_logger_context,
     build_schedule_from_partitioned_job,
@@ -201,6 +208,7 @@ from dagster.core.types.python_dict import Dict
 from dagster.core.types.python_set import Set
 from dagster.core.types.python_tuple import Tuple
 from dagster.utils import file_relative_path
+from dagster.utils.alert import make_email_on_run_failure_sensor
 from dagster.utils.backcompat import ExperimentalWarning
 from dagster.utils.log import get_dagster_logger
 from dagster.utils.partitions import (
@@ -425,8 +433,15 @@ __all__ = [
     "hourly_partitioned_config",
     "monthly_partitioned_config",
     "weekly_partitioned_config",
+    "DynamicPartitionsDefinition",
+    "StaticPartitionsDefinition",
+    "DailyPartitionsDefinition",
+    "HourlyPartitionsDefinition",
+    "MonthlyPartitionsDefinition",
+    "WeeklyPartitionsDefinition",
     "Partition",
     "PartitionedConfig",
+    "PartitionsDefinition",
     "PartitionScheduleDefinition",
     "PartitionSetDefinition",
     "RunRequest",
@@ -449,6 +464,7 @@ __all__ = [
     "create_offset_partition_selector",
     "date_partition_range",
     "identity_partition_selector",
+    "make_email_on_run_failure_sensor",
     # IO managers
     "IOManager",
     "IOManagerDefinition",

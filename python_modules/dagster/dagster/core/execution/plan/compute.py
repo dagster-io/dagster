@@ -156,13 +156,12 @@ def execute_core_compute(
 
     step = step_context.step
 
-    all_results = []
+    emitted_result_names = set()
     for step_output in _yield_compute_results(step_context, inputs, compute_fn):
         yield step_output
         if isinstance(step_output, (DynamicOutput, Output)):
-            all_results.append(step_output)
+            emitted_result_names.add(step_output.output_name)
 
-    emitted_result_names = {r.output_name for r in all_results}
     solid_output_names = {output.name for output in step.step_outputs}
     omitted_outputs = solid_output_names.difference(emitted_result_names)
     if omitted_outputs:

@@ -3,14 +3,14 @@
  * https://webpack.js.org/guides/public-path/#on-the-fly
  */
 
-import {extractPathPrefix} from './extractPathPrefix';
+import {extractInitializationData} from './extractInitializationData';
 
-const extracted = extractPathPrefix();
+const extracted = extractInitializationData();
 
 // Set the webpack path prefix based on DOM value. This will be used
 // for dynamically loaded bundles.
-if (typeof extracted === 'string') {
-  __webpack_public_path__ = `${extracted}/`;
+if (typeof extracted.pathPrefix === 'string') {
+  __webpack_public_path__ = `${extracted.pathPrefix}/`;
 }
 
 export {};

@@ -399,6 +399,10 @@
           {
             "title": "Fully-Featured Example Project",
             "path": "/guides/dagster/example_project"
+          },
+          {
+            "title": "Validating Data with Dagster Type Factories",
+            "path": "/guides/dagster/dagster_type_factories"
           }
         ]
       }
@@ -521,6 +525,10 @@
           {
             "title": "Dagstermill",
             "path": "/_apidocs/libraries/dagstermill"
+          },
+          {
+            "title": "Airbyte (dagster-airbyte)",
+            "path": "/_apidocs/libraries/dagster-airbyte"
           },
           {
             "title": "Airflow (dagster-airflow)",

@@ -1,16 +1,20 @@
 import os
 import sys
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from collections import namedtuple
 from contextlib import contextmanager
-from typing import Set
+from typing import TYPE_CHECKING, Dict, NamedTuple, NoReturn, Optional, Set, cast
 
-import grpc
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import DefaultNamedTupleSerializer, create_snapshot_id, whitelist_for_serdes
+
+if TYPE_CHECKING:
+    from dagster.core.host_representation.repository_location import (
+        GrpcServerRepositoryLocation,
+    )
 
 # This is a hard-coded name for the special "in-process" location.
 # This is typically only used for test, although we may allow
@@ -32,7 +36,7 @@ def _assign_grpc_location_name(port, socket, host):
     )
 
 
-def _assign_loadable_target_origin_name(loadable_target_origin):
+def _assign_loadable_target_origin_name(loadable_target_origin: LoadableTargetOrigin) -> str:
     check.inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
 
     file_or_module = (
@@ -41,7 +45,7 @@ def _assign_loadable_target_origin_name(loadable_target_origin):
         else (
             loadable_target_origin.module_name
             if loadable_target_origin.module_name
-            else os.path.basename(loadable_target_origin.python_file)
+            else os.path.basename(cast(str, loadable_target_origin.python_file))
         )
     )
 
@@ -71,18 +75,15 @@ class RepositoryLocationOrigin(ABC):
         raise NotImplementedError
 
     @abstractmethod
-    def get_cli_args(self):
-        pass
-
-    @abstractmethod
     def get_display_metadata(self):
         pass
 
     def get_id(self):
         return create_snapshot_id(self)
 
-    @abstractproperty
-    def location_name(self):
+    @property
+    @abstractmethod
+    def location_name(self) -> str:
         pass
 
     @abstractmethod
@@ -96,7 +97,8 @@ class RepositoryLocationOrigin(ABC):
 
 @whitelist_for_serdes
 class RegisteredRepositoryLocationOrigin(
-    namedtuple("RegisteredRepositoryLocationOrigin", "location_name"), RepositoryLocationOrigin
+    NamedTuple("RegisteredRepositoryLocationOrigin", [("location_name", str)]),
+    RepositoryLocationOrigin,
 ):
     """Identifies a repository location of a handle managed using metadata stored outside of the
     origin - can only be loaded in an environment that is managing repository locations using
@@ -105,9 +107,6 @@ class RegisteredRepositoryLocationOrigin(
 
     def __new__(cls, location_name):
         return super(RegisteredRepositoryLocationOrigin, cls).__new__(cls, location_name)
-
-    def get_cli_args(self):
-        raise NotImplementedError
 
     def get_display_metadata(self):
         return {}
@@ -121,7 +120,7 @@ class RegisteredRepositoryLocationOrigin(
 
 @whitelist_for_serdes
 class InProcessRepositoryLocationOrigin(
-    namedtuple("_InProcessRepositoryLocationOrigin", "recon_repo"),
+    NamedTuple("_InProcessRepositoryLocationOrigin", [("recon_repo", ReconstructableRepository)]),
     RepositoryLocationOrigin,
 ):
     """Identifies a repository location constructed in the host process. Should only be
@@ -134,11 +133,8 @@ class InProcessRepositoryLocationOrigin(
         )
 
     @property
-    def location_name(self):
+    def location_name(self) -> str:
         return IN_PROCESS_NAME
-
-    def get_cli_args(self):
-        check.invariant(False, "Cannot get CLI args for an in process repository location")
 
     @property
     def is_reload_supported(self):
@@ -157,8 +153,9 @@ class InProcessRepositoryLocationOrigin(
 
 @whitelist_for_serdes
 class ManagedGrpcPythonEnvRepositoryLocationOrigin(
-    namedtuple(
-        "_ManagedGrpcPythonEnvRepositoryLocationOrigin", "loadable_target_origin location_name"
+    NamedTuple(
+        "_ManagedGrpcPythonEnvRepositoryLocationOrigin",
+        [("loadable_target_origin", LoadableTargetOrigin), ("location_name", str)],
     ),
     RepositoryLocationOrigin,
 ):
@@ -177,10 +174,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
             else _assign_loadable_target_origin_name(loadable_target_origin),
         )
 
-    def get_cli_args(self):
-        return " ".join(self.loadable_target_origin.get_cli_args())
-
-    def get_display_metadata(self):
+    def get_display_metadata(self) -> Dict[str, str]:
         metadata = {
             "python_file": self.loadable_target_origin.python_file,
             "module_name": self.loadable_target_origin.module_name,
@@ -195,7 +189,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
         }
         return {key: value for key, value in metadata.items() if value is not None}
 
-    def create_location(self):
+    def create_location(self) -> NoReturn:
         raise DagsterInvariantViolationError(
             "A ManagedGrpcPythonEnvRepositoryLocationOrigin needs a DynamicWorkspace"
             " in order to create a handle."
@@ -228,7 +222,16 @@ class GrpcServerOriginSerializer(DefaultNamedTupleSerializer):
 
 @whitelist_for_serdes(serializer=GrpcServerOriginSerializer)
 class GrpcServerRepositoryLocationOrigin(
-    namedtuple("_GrpcServerRepositoryLocationOrigin", "host port socket location_name use_ssl"),
+    NamedTuple(
+        "_GrpcServerRepositoryLocationOrigin",
+        [
+            ("host", str),
+            ("port", Optional[int]),
+            ("socket", Optional[str]),
+            ("location_name", str),
+            ("use_ssl", Optional[bool]),
+        ],
+    ),
     RepositoryLocationOrigin,
 ):
     """Identifies a repository location hosted in a gRPC server managed by the user. Dagster
@@ -247,15 +250,7 @@ class GrpcServerRepositoryLocationOrigin(
             use_ssl if check.opt_bool_param(use_ssl, "use_ssl") else None,
         )
 
-    def get_cli_args(self):
-        if self.port:
-            return "--grpc-host {host} --grpc-port {port}".format(host=self.host, port=self.port)
-        else:
-            return "--grpc-host {host} --grpc-socket {socket}".format(
-                host=self.host, socket=self.socket
-            )
-
-    def get_display_metadata(self):
+    def get_display_metadata(self) -> Dict[str, str]:
         metadata = {
             "host": self.host,
             "port": str(self.port) if self.port else None,
@@ -263,7 +258,7 @@ class GrpcServerRepositoryLocationOrigin(
         }
         return {key: value for key, value in metadata.items() if value is not None}
 
-    def create_location(self):
+    def create_location(self) -> "GrpcServerRepositoryLocation":
         from dagster.core.host_representation.repository_location import (
             GrpcServerRepositoryLocation,
         )
@@ -291,7 +286,7 @@ class GrpcServerRepositoryLocationOrigin(
     def shutdown_server(self):
         try:
             self.create_client().shutdown_server()
-        except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+        except DagsterUserCodeUnreachableError:
             # Server already shutdown
             pass
 
@@ -325,9 +320,6 @@ class ExternalRepositoryOrigin(
     def get_partition_set_origin(self, partition_set_name):
         return ExternalPartitionSetOrigin(self, partition_set_name)
 
-    def get_cli_args(self):
-        return self.repository_location_origin.get_cli_args() + " -r " + self.repository_name
-
 
 @whitelist_for_serdes
 class ExternalPipelineOrigin(
@@ -347,9 +339,6 @@ class ExternalPipelineOrigin(
             ),
             check.str_param(pipeline_name, "pipeline_name"),
         )
-
-    def get_repo_cli_args(self):
-        return self.external_repository_origin.get_cli_args()
 
     def get_id(self):
         return create_snapshot_id(self)
@@ -371,9 +360,6 @@ class ExternalJobOrigin(namedtuple("_ExternalJobOrigin", "external_repository_or
             ),
             check.str_param(job_name, "job_name"),
         )
-
-    def get_repo_cli_args(self):
-        return self.external_repository_origin.get_cli_args()
 
     def get_id(self):
         return create_snapshot_id(self)
@@ -397,9 +383,6 @@ class ExternalPartitionSetOrigin(
             ),
             check.str_param(partition_set_name, "partition_set_name"),
         )
-
-    def get_repo_cli_args(self):
-        return self.external_repository_origin.get_cli_args()
 
     def get_id(self):
         return create_snapshot_id(self)

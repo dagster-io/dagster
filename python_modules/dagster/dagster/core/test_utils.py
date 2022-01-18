@@ -1,4 +1,6 @@
+import asyncio
 import os
+import re
 import signal
 import sys
 import tempfile
@@ -18,15 +20,15 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
-from dagster.core.telemetry import cleanup_telemetry_logger
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
 from dagster.core.workspace.load_target import WorkspaceLoadTarget
 from dagster.daemon.controller import create_daemon_grpc_server_registry
 from dagster.serdes import ConfigurableClass
 from dagster.seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
-from dagster.utils import merge_dicts
+from dagster.utils import Counter, merge_dicts, traced, traced_counter
 from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils.log import configure_loggers
 
 
 def step_output_event_filter(pipe_iterator):
@@ -106,13 +108,16 @@ def instance_for_test(overrides=None, set_dagster_home=True, temp_dir=None):
                     "config": {
                         "wait_for_processes": True,
                     },
-                }
+                },
+                "telemetry": {"enabled": False},
             },
             (overrides if overrides else {}),
         )
 
         if set_dagster_home:
-            stack.enter_context(environ({"DAGSTER_HOME": temp_dir}))
+            stack.enter_context(
+                environ({"DAGSTER_HOME": temp_dir, "DAGSTER_DISABLE_TELEMETRY": "yes"})
+            )
 
         with open(os.path.join(temp_dir, "dagster.yaml"), "w") as fd:
             yaml.dump(instance_overrides, fd, default_flow_style=False)
@@ -137,8 +142,6 @@ def cleanup_test_instance(instance):
     # all runs to reach a terminal state, and close any subprocesses or threads
     # that might be accessing the run history DB.
     instance.run_launcher.join()
-
-    cleanup_telemetry_logger()
 
 
 def create_run_for_test(
@@ -311,6 +314,7 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
     def __init__(self, inst_data=None, bad_run_ids=None):
         self._inst_data = inst_data
         self._queue = []
+        self._launched_run_ids = set()
         self._bad_run_ids = bad_run_ids
 
         super().__init__()
@@ -324,10 +328,14 @@ class MockedRunLauncher(RunLauncher, ConfigurableClass):
             raise Exception(f"Bad run {run.run_id}")
 
         self._queue.append(run)
+        self._launched_run_ids.add(run.run_id)
         return run
 
     def queue(self):
         return self._queue
+
+    def did_run_launch(self, run_id):
+        return run_id in self._launched_run_ids
 
     @classmethod
     def config_type(cls):
@@ -418,7 +426,7 @@ def get_mocked_system_timezone():
 
 
 # Test utility for creating a test workspace for a function
-class TestInProcessWorkspaceLoadTarget(WorkspaceLoadTarget):
+class InProcessTestWorkspaceLoadTarget(WorkspaceLoadTarget):
     def __init__(self, origin: InProcessRepositoryLocationOrigin):
         self._origin = origin
 
@@ -429,7 +437,7 @@ class TestInProcessWorkspaceLoadTarget(WorkspaceLoadTarget):
 @contextmanager
 def in_process_test_workspace(instance, recon_repo):
     with WorkspaceProcessContext(
-        instance, TestInProcessWorkspaceLoadTarget(InProcessRepositoryLocationOrigin(recon_repo))
+        instance, InProcessTestWorkspaceLoadTarget(InProcessRepositoryLocationOrigin(recon_repo))
     ) as workspace_process_context:
         yield workspace_process_context.create_request_context()
 
@@ -437,6 +445,7 @@ def in_process_test_workspace(instance, recon_repo):
 @contextmanager
 def create_test_daemon_workspace():
     """Creates a DynamicWorkspace suitable for passing into a DagsterDaemon loop when running tests."""
+    configure_loggers()
     with create_daemon_grpc_server_registry() as grpc_server_registry:
         with DynamicWorkspace(grpc_server_registry) as workspace:
             yield workspace
@@ -460,3 +469,48 @@ def remove_none_recursively(obj):
 
 
 default_mode_def_for_test = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
+
+
+def strip_ansi(input_str):
+    ansi_escape = re.compile(r"(\x9B|\x1B\[)[0-?]*[ -\/]*[@-~]")
+    return ansi_escape.sub("", input_str)
+
+
+def get_logger_output_from_capfd(capfd, logger_name):
+    return "\n".join(
+        [
+            line
+            for line in strip_ansi(capfd.readouterr().out.replace("\r\n", "\n")).split("\n")
+            if logger_name in line
+        ]
+    )
+
+
+def test_counter():
+    @traced
+    async def foo():
+        pass
+
+    @traced
+    async def bar():
+        pass
+
+    async def call_foo(num):
+        await asyncio.gather(*[foo() for _ in range(num)])
+
+    async def call_bar(num):
+        await asyncio.gather(*[bar() for _ in range(num)])
+
+    async def run():
+        await call_foo(10)
+        await call_foo(10)
+        await call_bar(10)
+
+    traced_counter.set(Counter())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(run())
+    counter = traced_counter.get()
+    assert isinstance(counter, Counter)
+    counts = counter.counts()
+    assert counts["foo"] == 20
+    assert counts["bar"] == 10

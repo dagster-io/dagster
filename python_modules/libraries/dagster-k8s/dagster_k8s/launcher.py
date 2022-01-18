@@ -4,7 +4,7 @@ import kubernetes
 from dagster import EventMetadataEntry, Field, Noneable, StringSource, check
 from dagster.cli.api import ExecuteRunArgs
 from dagster.core.events import EngineEventData
-from dagster.core.launcher import LaunchRunContext, RunLauncher
+from dagster.core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
 from dagster.core.launcher.base import CheckRunHealthResult, WorkerStatus
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
@@ -266,17 +266,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             volumes=self._volumes,
         )
 
-    def launch_run(self, context: LaunchRunContext) -> None:
-        run = context.pipeline_run
-
-        job_name = get_job_name_from_run_id(
-            run.run_id, resume_attempt_number=context.resume_attempt_number
-        )
+    def _launch_k8s_job_with_args(self, job_name, args, run, pipeline_origin):
         pod_name = job_name
 
         user_defined_k8s_config = get_user_defined_k8s_config(frozentags(run.tags))
-
-        pipeline_origin = context.pipeline_code_origin
         repository_origin = pipeline_origin.repository_origin
 
         job_config = (
@@ -290,26 +283,16 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             {DOCKER_IMAGE_TAG: job_config.job_image},
         )
 
-        if not context.resume_from_failure:
-            run_args = ExecuteRunArgs(
-                pipeline_origin=pipeline_origin,
-                pipeline_run_id=run.run_id,
-                instance_ref=None,
-            ).get_command_args()
-        else:
-            run_args = ResumeRunArgs(
-                pipeline_origin=pipeline_origin,
-                pipeline_run_id=run.run_id,
-                instance_ref=None,
-            ).get_command_args()
-
         job = construct_dagster_k8s_job(
             job_config=job_config,
-            args=run_args,
+            args=args,
             job_name=job_name,
             pod_name=pod_name,
             component="run_worker",
             user_defined_k8s_config=user_defined_k8s_config,
+            labels={
+                "dagster/job": pipeline_origin.pipeline_name,
+            },
         )
 
         self._instance.report_engine_event(
@@ -338,6 +321,34 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             ),
             cls=self.__class__,
         )
+
+    def launch_run(self, context: LaunchRunContext) -> None:
+        run = context.pipeline_run
+        job_name = get_job_name_from_run_id(run.run_id)
+        pipeline_origin = context.pipeline_code_origin
+
+        args = ExecuteRunArgs(
+            pipeline_origin=pipeline_origin,
+            pipeline_run_id=run.run_id,
+            instance_ref=self._instance.get_ref(),
+        ).get_command_args()
+
+        self._launch_k8s_job_with_args(job_name, args, run, pipeline_origin)
+
+    def resume_run(self, context: ResumeRunContext) -> None:
+        run = context.pipeline_run
+        job_name = get_job_name_from_run_id(
+            run.run_id, resume_attempt_number=context.resume_attempt_number
+        )
+        pipeline_origin = context.pipeline_code_origin
+
+        args = ResumeRunArgs(
+            pipeline_origin=pipeline_origin,
+            pipeline_run_id=run.run_id,
+            instance_ref=self._instance.get_ref(),
+        ).get_command_args()
+
+        self._launch_k8s_job_with_args(job_name, args, run, pipeline_origin)
 
     # https://github.com/dagster-io/dagster/issues/2741
     def can_terminate(self, run_id):

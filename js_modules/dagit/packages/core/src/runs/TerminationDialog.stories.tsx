@@ -19,9 +19,9 @@ const Template: Story<TerminationDialogProps> = (props) => (
 );
 
 const runIDs = [
-  faker.random.uuid().slice(0, 8),
-  faker.random.uuid().slice(0, 8),
-  faker.random.uuid().slice(0, 8),
+  faker.datatype.uuid().slice(0, 8),
+  faker.datatype.uuid().slice(0, 8),
+  faker.datatype.uuid().slice(0, 8),
 ];
 
 export const ForceTerminationCheckbox = Template.bind({});

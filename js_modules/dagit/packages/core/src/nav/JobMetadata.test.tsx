@@ -1,4 +1,3 @@
-import {MockList} from '@graphql-tools/mock';
 import {render, screen, waitFor} from '@testing-library/react';
 import * as React from 'react';
 
@@ -21,8 +20,8 @@ describe('JobMetadata', () => {
   const defaultMocks = {
     Pipeline: () => ({
       name: () => 'my_pipeline',
-      schedules: () => new MockList(0),
-      sensors: () => new MockList(0),
+      schedules: () => [],
+      sensors: () => [],
     }),
     PipelineRunStatsSnapshot: () => ({
       startTime: () => START_TIME,
@@ -50,7 +49,7 @@ describe('JobMetadata', () => {
     }),
     Sensor: () => ({
       name: () => 'cool_sensor',
-      targets: () => new MockList(1),
+      targets: () => [...new Array(1)],
     }),
     Target: () => ({
       pipelineName: () => PIPELINE_NAME,
@@ -91,8 +90,8 @@ describe('JobMetadata', () => {
         const mocks = {
           Pipeline: () => ({
             name: () => PIPELINE_NAME,
-            schedules: () => new MockList(1),
-            sensors: () => new MockList(0),
+            schedules: () => [...new Array(1)],
+            sensors: () => [],
           }),
         };
 
@@ -108,8 +107,8 @@ describe('JobMetadata', () => {
         const mocks = {
           Pipeline: () => ({
             name: () => PIPELINE_NAME,
-            schedules: () => new MockList(2),
-            sensors: () => new MockList(0),
+            schedules: () => [...new Array(2)],
+            sensors: () => [],
           }),
         };
 
@@ -123,8 +122,8 @@ describe('JobMetadata', () => {
         const mocks = {
           Pipeline: () => ({
             name: () => PIPELINE_NAME,
-            schedules: () => new MockList(0),
-            sensors: () => new MockList(1),
+            schedules: () => [],
+            sensors: () => [...new Array(1)],
           }),
         };
 
@@ -139,8 +138,8 @@ describe('JobMetadata', () => {
         const mocks = {
           Pipeline: () => ({
             name: () => PIPELINE_NAME,
-            schedules: () => new MockList(0),
-            sensors: () => new MockList(2),
+            schedules: () => [],
+            sensors: () => [...new Array(2)],
           }),
         };
 
@@ -154,8 +153,8 @@ describe('JobMetadata', () => {
         const mocks = {
           Pipeline: () => ({
             name: () => PIPELINE_NAME,
-            schedules: () => new MockList(2),
-            sensors: () => new MockList(2),
+            schedules: () => [...new Array(2)],
+            sensors: () => [...new Array(2)],
           }),
         };
 
@@ -190,8 +189,8 @@ describe('JobMetadata', () => {
         const mocks = {
           Pipeline: () => ({
             name: () => PIPELINE_NAME,
-            schedules: () => new MockList(1),
-            sensors: () => new MockList(1),
+            schedules: () => [...new Array(1)],
+            sensors: () => [...new Array(1)],
           }),
           Schedule: () => ({
             mode: () => 'mismatching_mode',
@@ -217,8 +216,8 @@ describe('JobMetadata', () => {
         const mocks = {
           Pipeline: () => ({
             name: () => PIPELINE_NAME,
-            schedules: () => new MockList(1),
-            sensors: () => new MockList(0),
+            schedules: () => [...new Array(1)],
+            sensors: () => [],
           }),
         };
 
@@ -233,8 +232,8 @@ describe('JobMetadata', () => {
         const mocks = {
           Pipeline: () => ({
             name: () => PIPELINE_NAME,
-            schedules: () => new MockList(2),
-            sensors: () => new MockList(0),
+            schedules: () => [...new Array(2)],
+            sensors: () => [],
           }),
         };
 
@@ -248,8 +247,8 @@ describe('JobMetadata', () => {
         const mocks = {
           Pipeline: () => ({
             name: () => PIPELINE_NAME,
-            schedules: () => new MockList(0),
-            sensors: () => new MockList(1),
+            schedules: () => [],
+            sensors: () => [...new Array(1)],
           }),
         };
 
@@ -264,8 +263,8 @@ describe('JobMetadata', () => {
         const mocks = {
           Pipeline: () => ({
             name: () => PIPELINE_NAME,
-            schedules: () => new MockList(0),
-            sensors: () => new MockList(2),
+            schedules: () => [],
+            sensors: () => [...new Array(2)],
           }),
         };
 
@@ -279,8 +278,8 @@ describe('JobMetadata', () => {
         const mocks = {
           Pipeline: () => ({
             name: () => PIPELINE_NAME,
-            schedules: () => new MockList(2),
-            sensors: () => new MockList(2),
+            schedules: () => [...new Array(2)],
+            sensors: () => [...new Array(2)],
           }),
         };
 

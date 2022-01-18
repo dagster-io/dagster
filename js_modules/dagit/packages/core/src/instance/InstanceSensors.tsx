@@ -1,4 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
+import {Box, ColorsWIP, NonIdealState, PageHeader, Heading, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -8,14 +9,8 @@ import {SENSOR_FRAGMENT} from '../sensors/SensorFragment';
 import {SensorInfo} from '../sensors/SensorInfo';
 import {SensorsTable} from '../sensors/SensorsTable';
 import {InstigationType} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
-import {NonIdealState} from '../ui/NonIdealState';
-import {PageHeader} from '../ui/PageHeader';
-import {Heading, Subheading} from '../ui/Text';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
-import {REPOSITORY_LOCATIONS_FRAGMENT} from '../workspace/WorkspaceContext';
 import {buildRepoPath, buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
@@ -130,9 +125,6 @@ const INSTANCE_SENSORS_QUERY = gql`
     instance {
       ...InstanceHealthFragment
     }
-    workspaceOrError {
-      ...RepositoryLocationsFragment
-    }
     repositoriesOrError {
       __typename
       ... on RepositoryConnection {
@@ -160,7 +152,6 @@ const INSTANCE_SENSORS_QUERY = gql`
   }
 
   ${INSTANCE_HEALTH_FRAGMENT}
-  ${REPOSITORY_LOCATIONS_FRAGMENT}
   ${REPOSITORY_INFO_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${SENSOR_FRAGMENT}

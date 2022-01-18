@@ -1,4 +1,5 @@
 import datetime
+import re
 from typing import Any, Dict
 
 import kubernetes
@@ -9,6 +10,16 @@ from kubernetes.client import ApiClient
 
 
 def _k8s_value(data, classname, attr_name):
+    if classname.startswith("list["):
+        sub_kls = re.match(r"list\[(.*)\]", classname).group(1)
+        return [
+            _k8s_value(data[index], sub_kls, f"{attr_name}[{index}]") for index in range(len(data))
+        ]
+
+    if classname.startswith("dict("):
+        sub_kls = re.match(r"dict\(([^,]*), (.*)\)", classname).group(2)
+        return {k: _k8s_value(v, sub_kls, f"{attr_name}[{k}]") for k, v in data.items()}
+
     if classname in ApiClient.NATIVE_TYPES_MAPPING:
         klass = ApiClient.NATIVE_TYPES_MAPPING[classname]
     else:

@@ -41,7 +41,11 @@ from ..errors import (
 from ..external import GrapheneWorkspace, GrapheneWorkspaceLocationEntry
 from ..inputs import GrapheneAssetKeyInput, GrapheneExecutionParams, GrapheneLaunchBackfillParams
 from ..pipelines.pipeline import GrapheneRun
-from ..runs import GrapheneLaunchRunReexecutionResult, GrapheneLaunchRunResult
+from ..runs import (
+    GrapheneLaunchRunReexecutionResult,
+    GrapheneLaunchRunResult,
+    parse_run_config_input,
+)
 from ..schedules import GrapheneStartScheduleMutation, GrapheneStopRunningScheduleMutation
 from ..sensors import GrapheneStartSensorMutation, GrapheneStopSensorMutation
 from ..util import non_null_list
@@ -93,7 +97,7 @@ def create_execution_params(graphene_info, graphql_execution_params):
 def execution_params_from_graphql(graphql_execution_params):
     return ExecutionParams(
         selector=pipeline_selector_from_graphql(graphql_execution_params.get("selector")),
-        run_config=graphql_execution_params.get("runConfigData") or {},
+        run_config=parse_run_config_input(graphql_execution_params.get("runConfigData") or {}),
         mode=graphql_execution_params.get("mode"),
         execution_metadata=create_execution_metadata(
             graphql_execution_params.get("executionMetadata")

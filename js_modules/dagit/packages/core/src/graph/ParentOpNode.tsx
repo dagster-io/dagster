@@ -1,9 +1,9 @@
+import {ColorsWIP} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {titleOfIO} from '../app/titleOfIO';
 import {OpNameOrPath} from '../ops/OpNameOrPath';
-import {ColorsWIP} from '../ui/Colors';
 
 import {ExternalConnectionNode} from './ExternalConnectionNode';
 import {MappingLine} from './MappingLine';

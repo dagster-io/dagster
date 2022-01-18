@@ -1,46 +1,39 @@
-import {gql, useQuery} from '@apollo/client';
-import {ActiveElement, Chart, TimeUnit} from 'chart.js';
 import 'chartjs-adapter-date-fns';
-import zoomPlugin from 'chartjs-plugin-zoom';
-import moment from 'moment-timezone';
-import * as React from 'react';
-import {Line} from 'react-chartjs-2';
 
-import {showCustomAlert} from '../app/CustomAlertProvider';
+import {gql, useQuery} from '@apollo/client';
+import {
+  Box,
+  Checkbox,
+  ColorsWIP,
+  NonIdealState,
+  Spinner,
+  Tab,
+  Tabs,
+  Subheading,
+} from '@dagster-io/ui';
+import {Chart} from 'chart.js';
+import zoomPlugin from 'chartjs-plugin-zoom';
+import * as React from 'react';
+
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ButtonLink} from '../ui/ButtonLink';
-import {Checkbox} from '../ui/Checkbox';
-import {ColorsWIP} from '../ui/Colors';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {Group} from '../ui/Group';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Spinner} from '../ui/Spinner';
-import {Tab, Tabs} from '../ui/Tabs';
-import {Subheading} from '../ui/Text';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {FailedRunList, RunList, TickTag, TICK_TAG_FRAGMENT} from './InstigationTick';
+import {HistoricalTickTimeline} from './HistoricalTickTimeline';
+import {TICK_TAG_FRAGMENT} from './InstigationTick';
 import {LiveTickTimeline} from './LiveTickTimeline';
+import {TickDetailsDialog} from './TickDetailsDialog';
 import {
   TickHistoryQuery,
+  TickHistoryQueryVariables,
   TickHistoryQuery_instigationStateOrError_InstigationState_ticks,
 } from './types/TickHistoryQuery';
 
 Chart.register(zoomPlugin);
 
-const MIN_ZOOM_RANGE = 30 * 60 * 1000; // 30 minutes
-
-const COLOR_MAP = {
-  [InstigationTickStatus.SUCCESS]: ColorsWIP.Blue500,
-  [InstigationTickStatus.FAILURE]: ColorsWIP.Red500,
-  [InstigationTickStatus.STARTED]: ColorsWIP.Gray400,
-  [InstigationTickStatus.SKIPPED]: ColorsWIP.Yellow500,
-};
+type InstigationTick = TickHistoryQuery_instigationStateOrError_InstigationState_ticks;
 
 interface ShownStatusState {
   [InstigationTickStatus.SUCCESS]: boolean;
@@ -91,7 +84,6 @@ const TABS = [
   {id: 'all', label: 'All'},
 ];
 
-type InstigationTick = TickHistoryQuery_instigationStateOrError_InstigationState_ticks;
 const MILLIS_PER_DAY = 86400 * 1000;
 
 export const TickHistory = ({
@@ -105,26 +97,31 @@ export const TickHistory = ({
   onHighlightRunIds: (runIds: string[]) => void;
   showRecent?: boolean;
 }) => {
-  const [selectedTab, setSelectedTab] = React.useState<string>('recent');
+  const [selectedTab, setSelectedTab] = useQueryPersistedState<string>({
+    queryKey: 'tab',
+    defaults: {tab: 'recent'},
+  });
+  const [selectedTime, setSelectedTime] = useQueryPersistedState<number | undefined>({
+    encode: (timestamp) => ({time: timestamp}),
+    decode: (qs) => (qs['time'] ? Number(qs['time']) : undefined),
+  });
+
   const [shownStates, setShownStates] = React.useState<ShownStatusState>(
     DEFAULT_SHOWN_STATUS_STATE,
   );
   const [pollingPaused, pausePolling] = React.useState<boolean>(false);
-  const [selectedTick, setSelectedTick] = React.useState<
-    TickHistoryQuery_instigationStateOrError_InstigationState_ticks | undefined
-  >();
+
   React.useEffect(() => {
     if (!showRecent && selectedTab === 'recent') {
       setSelectedTab('1d');
     }
-  }, [selectedTab, showRecent]);
+  }, [setSelectedTab, selectedTab, showRecent]);
+
+  const instigationSelector = {...repoAddressToSelector(repoAddress), name};
   const selectedRange = TABS.find((x) => x.id === selectedTab)?.range;
-  const {data} = useQuery<TickHistoryQuery>(JOB_TICK_HISTORY_QUERY, {
+  const {data} = useQuery<TickHistoryQuery, TickHistoryQueryVariables>(JOB_TICK_HISTORY_QUERY, {
     variables: {
-      instigationSelector: {
-        ...repoAddressToSelector(repoAddress),
-        name,
-      },
+      instigationSelector,
       dayRange: selectedRange,
       limit: selectedTab === 'recent' ? 15 : undefined,
     },
@@ -181,16 +178,7 @@ export const TickHistory = ({
     />
   );
   const onTickClick = (tick?: InstigationTick) => {
-    setSelectedTick(tick);
-    if (!tick) {
-      return;
-    }
-    if (tick.error && tick.status === InstigationTickStatus.FAILURE) {
-      showCustomAlert({
-        title: 'Python Error',
-        body: <PythonErrorInfo error={tick.error} />,
-      });
-    }
+    setSelectedTime(tick ? tick.timestamp : undefined);
   };
   const onTickHover = (tick?: InstigationTick) => {
     if (!tick) {
@@ -203,8 +191,14 @@ export const TickHistory = ({
   };
 
   const now = Date.now();
+
   return (
     <>
+      <TickDetailsDialog
+        timestamp={selectedTime}
+        instigationSelector={instigationSelector}
+        onClose={() => onTickClick(undefined)}
+      />
       <Box padding={{top: 16, horizontal: 24}}>
         <Subheading>Tick History</Subheading>
         <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
@@ -229,9 +223,9 @@ export const TickHistory = ({
             onSelectTick={onTickClick}
           />
         ) : ticks.length ? (
-          <TickHistoryGraph
+          <HistoricalTickTimeline
             ticks={displayedTicks}
-            selectedTick={selectedTick}
+            selectedTick={displayedTicks.find((t) => t.timestamp === selectedTime)}
             onSelectTick={onTickClick}
             onHoverTick={onTickHover}
             selectedTab={selectedTab}
@@ -250,295 +244,8 @@ export const TickHistory = ({
             />
           </Box>
         )}
-        <DialogWIP
-          isOpen={
-            !!(
-              selectedTick &&
-              (selectedTick.status === InstigationTickStatus.SUCCESS ||
-                selectedTick.status === InstigationTickStatus.SKIPPED)
-            )
-          }
-          onClose={() => setSelectedTick(undefined)}
-          style={{
-            width:
-              selectedTick && selectedTick.status === InstigationTickStatus.SUCCESS
-                ? '90vw'
-                : '50vw',
-          }}
-          title={selectedTick ? <TimestampDisplay timestamp={selectedTick.timestamp} /> : null}
-        >
-          {selectedTick ? (
-            <DialogBody>
-              {selectedTick.status === InstigationTickStatus.SUCCESS ? (
-                selectedTick.runIds.length ? (
-                  <RunList runIds={selectedTick.runIds} />
-                ) : (
-                  <FailedRunList originRunIds={selectedTick.originRunIds} />
-                )
-              ) : null}
-              {selectedTick.status === InstigationTickStatus.SKIPPED ? (
-                <Group direction="row" spacing={16}>
-                  <TickTag tick={selectedTick} />
-                  <span>{selectedTick.skipReason || 'No skip reason provided'}</span>
-                </Group>
-              ) : null}
-            </DialogBody>
-          ) : null}
-          <DialogFooter>
-            <ButtonWIP intent="primary" onClick={() => setSelectedTick(undefined)}>
-              OK
-            </ButtonWIP>
-          </DialogFooter>
-        </DialogWIP>
       </Box>
     </>
-  );
-};
-
-interface Bounds {
-  min: number;
-  max: number;
-}
-
-const TickHistoryGraph: React.FC<{
-  ticks: InstigationTick[];
-  selectedTick?: InstigationTick;
-  onSelectTick: (tick: InstigationTick) => void;
-  onHoverTick: (tick?: InstigationTick) => void;
-  selectedTab: string;
-  maxBounds?: Bounds;
-}> = ({ticks, selectedTick, onSelectTick, onHoverTick, selectedTab, maxBounds}) => {
-  const [bounds, setBounds] = React.useState<Bounds | null>(null);
-  const [hoveredTick, setHoveredTick] = React.useState<InstigationTick | undefined>();
-  const [now] = React.useState(() => Date.now());
-
-  React.useEffect(() => {
-    setBounds(null);
-  }, [selectedTab]);
-
-  const tickData = ticks.map((tick) => ({x: 1000 * tick.timestamp, y: 0}));
-  const graphData = {
-    labels: ['ticks'],
-    datasets: [
-      {
-        label: 'ticks',
-        data: tickData,
-        borderColor: ColorsWIP.Gray100,
-        borderWidth: 0,
-        backgroundColor: 'rgba(0,0,0,0)',
-        pointBackgroundColor: ticks.map((tick) => COLOR_MAP[tick.status]),
-        pointBorderWidth: 1,
-        pointBorderColor: ticks.map((tick) =>
-          selectedTick && selectedTick.id === tick.id ? ColorsWIP.Gray700 : COLOR_MAP[tick.status],
-        ),
-        pointRadius: ticks.map((tick) => (selectedTick && selectedTick.id === tick.id ? 5 : 3)),
-        pointHoverBorderWidth: 1,
-        pointHoverRadius: 5,
-        showLine: true,
-      },
-    ],
-  };
-
-  const getMaxBounds = () => {
-    if (maxBounds) {
-      return maxBounds;
-    }
-    const dataMin = Math.min(...tickData.map((_) => _.x));
-    const dataMax = Math.max(...tickData.map((_) => _.x));
-    const buffer = (dataMax - dataMin) / 25;
-    return {
-      min: dataMax ? dataMin - buffer : now - MIN_ZOOM_RANGE,
-      max: dataMax ? dataMax + buffer : now,
-    };
-  };
-
-  const calculateBounds = () => {
-    if (bounds) {
-      return bounds;
-    }
-    return getMaxBounds();
-  };
-
-  const calculateUnit: () => TimeUnit = () => {
-    const {min, max} = calculateBounds();
-    const range = max - min;
-    const factor = 2;
-    const hour = 3600000;
-    const day = 24 * hour;
-    const month = 30 * day;
-    const year = 365 * day;
-
-    if (range < factor * hour) {
-      return 'minute';
-    }
-    if (range < factor * day) {
-      return 'hour';
-    }
-    if (range < factor * month) {
-      return 'day';
-    }
-    if (range < factor * year) {
-      return 'month';
-    }
-    return 'year';
-  };
-
-  const dateFormat = (x: number) => moment(x).format('MMM D');
-  const snippet = (x: string, length = 100, buffer = 20) => {
-    const snipped = x.slice(0, length);
-    return snipped.length < x.length - buffer ? `${snipped}...` : x;
-  };
-
-  const title = bounds
-    ? dateFormat(bounds.min) === dateFormat(bounds.max)
-      ? dateFormat(bounds.min)
-      : `${dateFormat(bounds.min)} - ${dateFormat(bounds.max)}`
-    : undefined;
-
-  const options = {
-    indexAxis: 'x',
-    scales: {
-      y: {id: 'y', display: false},
-      x: {
-        id: 'x',
-        type: 'time',
-        title: {
-          display: false,
-        },
-        bounds: 'ticks',
-        grid: {display: true, drawBorder: true},
-        ticks: {
-          source: 'auto',
-        },
-        ...calculateBounds(),
-        time: {
-          minUnit: calculateUnit(),
-        },
-      },
-    },
-
-    onHover: (event: MouseEvent, activeElements: ActiveElement[]) => {
-      if (event?.target instanceof HTMLElement) {
-        event.target.style.cursor = activeElements.length ? 'pointer' : 'default';
-      }
-
-      if (activeElements.length && activeElements[0] && activeElements[0].index < ticks.length) {
-        const tick = ticks[activeElements[0].index];
-        setHoveredTick(tick);
-        onHoverTick(tick);
-      } else {
-        onHoverTick(undefined);
-      }
-    },
-
-    onClick: (_event: MouseEvent, activeElements: ActiveElement[]) => {
-      if (!activeElements.length) {
-        return;
-      }
-      const [item] = activeElements;
-      if (item.datasetIndex === undefined || item.index === undefined) {
-        return;
-      }
-      const tick = ticks[item.index];
-      onSelectTick(tick);
-    },
-
-    plugins: {
-      title: {
-        display: !!title,
-        text: title,
-      },
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        displayColors: false,
-        callbacks: {
-          title: () => {
-            if (!hoveredTick) {
-              return '';
-            }
-            return moment(hoveredTick.timestamp * 1000).format('MMM D, YYYY h:mm:ss A z');
-          },
-          label: () => {
-            if (!hoveredTick) {
-              return '';
-            }
-            if (hoveredTick.status === InstigationTickStatus.SKIPPED && hoveredTick.skipReason) {
-              return snippet(hoveredTick.skipReason);
-            }
-            if (hoveredTick.status === InstigationTickStatus.SUCCESS && hoveredTick.runIds.length) {
-              return hoveredTick.runIds;
-            }
-            if (
-              hoveredTick.status === InstigationTickStatus.FAILURE &&
-              hoveredTick.error?.message
-            ) {
-              return snippet(hoveredTick.error.message);
-            }
-            return '';
-          },
-        },
-      },
-      zoom: {
-        limits: {
-          x: {
-            min: getMaxBounds().min,
-            max: getMaxBounds().max,
-          },
-        },
-        zoom: {
-          mode: 'x',
-          wheel: {
-            enabled: true,
-          },
-          pinch: {
-            enabled: true,
-          },
-          onZoom: ({chart}: {chart: Chart}) => {
-            const {min, max} = chart.scales.x;
-            if (min && max) {
-              const diff = max - min;
-              if (diff > MIN_ZOOM_RANGE) {
-                setBounds({min, max});
-              } else if (bounds) {
-                const offset = (bounds.max - bounds.min - MIN_ZOOM_RANGE) / 2;
-                setBounds({min: bounds.min + offset, max: bounds.max - offset});
-              } else {
-                const offset = (getMaxBounds().max - getMaxBounds().min - MIN_ZOOM_RANGE) / 2;
-                setBounds({min: getMaxBounds().min + offset, max: getMaxBounds().max - offset});
-              }
-            }
-          },
-        },
-        pan: {
-          enabled: true,
-          mode: 'x',
-          onPan: ({chart}: {chart: Chart}) => {
-            const {min, max} = chart.scales.x;
-            if (min && max) {
-              setBounds({min, max});
-            }
-          },
-        },
-      },
-    },
-  };
-
-  return (
-    <div>
-      <Line type="line" data={graphData} options={options} height={30} />
-      <div style={{fontSize: 13, opacity: 0.5}}>
-        <Box flex={{justifyContent: 'center'}} margin={{top: 8}}>
-          Tip: Scroll / pinch to zoom, drag to pan, click to see tick details.
-          {bounds ? (
-            <Box margin={{left: 8}}>
-              <ButtonLink onClick={() => setBounds(null)}>Reset zoom</ButtonLink>
-            </Box>
-          ) : null}
-        </Box>
-      </div>
-    </div>
   );
 };
 

@@ -1,8 +1,7 @@
-import {MockList} from '@graphql-tools/mock';
 import faker from 'faker';
 
 export const hyphenatedName = () => faker.random.words(2).replace(/ /g, '-').toLowerCase();
-const randomId = () => faker.random.uuid();
+const randomId = () => faker.datatype.uuid();
 
 /**
  * A set of default values to use for Jest GraphQL mocks.
@@ -24,12 +23,13 @@ export const defaultMocks = {
   Pipeline: () => ({
     id: randomId,
     isJob: () => false,
+    isAssetJob: () => false,
     name: hyphenatedName,
     pipelineSnapshotId: randomId,
-    schedules: () => new MockList(0),
-    sensors: () => new MockList(0),
-    solids: () => new MockList(2),
-    modes: () => new MockList(1),
+    schedules: () => [],
+    sensors: () => [],
+    solids: () => [...new Array(2)],
+    modes: () => [...new Array(1)],
   }),
   DagitQuery: () => ({
     version: () => 'x.y.z',
@@ -43,20 +43,27 @@ export const defaultMocks = {
     name: hyphenatedName,
   }),
   Workspace: () => ({
-    locationEntries: () => new MockList(1),
+    locationEntries: () => [...new Array(1)],
+  }),
+  WorkspaceLocationEntry: () => ({
+    id: randomId,
   }),
   Schedule: () => ({
     id: hyphenatedName,
     name: hyphenatedName,
-    results: () => new MockList(1),
+    results: () => [...new Array(1)],
   }),
   Sensor: () => ({
     id: hyphenatedName,
     name: hyphenatedName,
-    results: () => new MockList(1),
+    results: () => [...new Array(1)],
   }),
   Solid: () => ({
     name: hyphenatedName,
+  }),
+  PythonError: () => ({
+    message: () => 'A wild python error appeared!',
+    stack: () => [],
   }),
 
   // Disambiguate error unions. If you'd like to mock an error, define a custom mock

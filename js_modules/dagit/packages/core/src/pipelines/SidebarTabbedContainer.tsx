@@ -1,14 +1,13 @@
 import {gql} from '@apollo/client';
+import {Box, ColorsWIP, Tab, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {TypeExplorerContainer} from '../typeexplorer/TypeExplorerContainer';
 import {TypeListContainer} from '../typeexplorer/TypeListContainer';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {Tab, Tabs} from '../ui/Tabs';
 import {RepoAddress} from '../workspace/types';
 
+import {RightInfoPanelContent} from './GraphExplorer';
 import {GraphExplorerJobContext} from './GraphExplorerJobContext';
 import {ExplorerPath} from './PipelinePathUtils';
 import {SidebarOpContainer} from './SidebarOpContainer';
@@ -119,7 +118,9 @@ export const SidebarTabbedContainer: React.FC<ISidebarTabbedContainerProps> = (p
           ))}
         </Tabs>
       </Box>
-      {TabDefinitions.find((t) => t.key === activeTab)?.content()}
+      <RightInfoPanelContent>
+        {TabDefinitions.find((t) => t.key === activeTab)?.content()}
+      </RightInfoPanelContent>
     </>
   );
 };

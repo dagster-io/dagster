@@ -20,6 +20,7 @@ from dagster import (
     execute_pipeline_iterator,
     fs_io_manager,
     graph,
+    job,
     op,
     reconstructable,
     resource,
@@ -1147,6 +1148,63 @@ def test_resource_needs_resource():
         )
         def _fail():
             pass
+
+
+def test_resource_op_subset():
+    @resource(required_resource_keys={"bar"})
+    def foo_resource(_):
+        return "FOO"
+
+    @resource()
+    def bar_resource(_):
+        return "BAR"
+
+    @resource()
+    def baz_resource(_):
+        return "BAZ"
+
+    @op(required_resource_keys={"baz"})
+    def baz_op(_):
+        pass
+
+    @op(required_resource_keys={"foo"})
+    def foo_op(_):
+        pass
+
+    @op(required_resource_keys={"bar"})
+    def bar_op(_):
+        pass
+
+    @job(
+        resource_defs={
+            "foo": foo_resource,
+            "baz": baz_resource,
+            "bar": bar_resource,
+        }
+    )
+    def nested():
+        foo_op()
+        bar_op()
+        baz_op()
+
+    assert set(nested.get_required_resource_defs_for_mode("default").keys()) == {
+        "foo",
+        "bar",
+        "baz",
+        "io_manager",
+    }
+
+    assert nested.get_job_def_for_op_selection(["foo_op"]).get_required_resource_defs_for_mode(
+        "default"
+    ).keys() == {"foo", "bar", "io_manager"}
+
+    assert nested.get_job_def_for_op_selection(["bar_op"]).get_required_resource_defs_for_mode(
+        "default"
+    ).keys() == {"bar", "io_manager"}
+
+    assert nested.get_job_def_for_op_selection(["baz_op"]).get_required_resource_defs_for_mode(
+        "default"
+    ).keys() == {"baz", "io_manager"}
 
 
 def test_config_with_no_schema():

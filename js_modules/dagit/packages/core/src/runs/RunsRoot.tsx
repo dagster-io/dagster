@@ -1,22 +1,27 @@
 import {gql, useQuery} from '@apollo/client';
+import {
+  Alert,
+  Box,
+  ColorsWIP,
+  CursorHistoryControls,
+  NonIdealState,
+  Page,
+  PageHeader,
+  Tab,
+  Tabs,
+  TagWIP,
+  Heading,
+  TokenizingFieldValue,
+} from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import * as React from 'react';
-import {Link, RouteComponentProps} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 
 import {QueryCountdown} from '../app/QueryCountdown';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
+import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 import {RunStatus} from '../types/globalTypes';
-import {Alert} from '../ui/Alert';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {CursorHistoryControls} from '../ui/CursorControls';
 import {Loading} from '../ui/Loading';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Page} from '../ui/Page';
-import {PageHeader} from '../ui/PageHeader';
-import {Tab, Tabs} from '../ui/Tabs';
-import {Heading} from '../ui/Text';
-import {TokenizingFieldValue} from '../ui/TokenizingField';
 
 import {AllScheduledTicks} from './AllScheduledTicks';
 import {doneStatuses, inProgressStatuses, queuedStatuses} from './RunStatuses';
@@ -50,11 +55,12 @@ const selectedTabId = (filterTokens: TokenizingFieldValue[]) => {
   return 'all';
 };
 
-export const RunsRoot: React.FC<RouteComponentProps> = () => {
+export const RunsRoot = () => {
   useDocumentTitle('Runs');
   const [filterTokens, setFilterTokens] = useQueryPersistedRunFilters();
   const filter = runsFilterForSearchTokens(filterTokens);
   const [showScheduled, setShowScheduled] = React.useState(false);
+  const canSeeConfig = useCanSeeConfig();
 
   const {queryResult, paginationProps} = useCursorPaginatedQuery<
     RunsRootQuery,
@@ -81,6 +87,9 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
     pageSize: PAGE_SIZE,
   });
 
+  const selectedTab = showScheduled ? 'scheduled' : selectedTabId(filterTokens);
+  const staticStatusTags = selectedTab !== 'all';
+
   const setStatusFilter = (statuses: RunStatus[]) => {
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
     const statusTokens = statuses.map((status) => ({token: 'status', value: status}));
@@ -88,15 +97,34 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
     setShowScheduled(false);
   };
 
-  const selectedTab = showScheduled ? 'scheduled' : selectedTabId(filterTokens);
-  const enabledFilters: RunFilterTokenType[] = [
-    'status',
-    'tag',
-    'snapshotId',
-    'id',
-    'job',
-    'pipeline',
-  ];
+  const setFilterTokensWithStatus = React.useCallback(
+    (tokens) => {
+      if (staticStatusTags) {
+        const statusTokens = filterTokens.filter((token) => token.token === 'status');
+        setFilterTokens([...statusTokens, ...tokens]);
+      } else {
+        setFilterTokens(tokens);
+      }
+    },
+    [filterTokens, setFilterTokens, staticStatusTags],
+  );
+
+  const enabledFilters = React.useMemo(() => {
+    const filters: RunFilterTokenType[] = ['tag', 'snapshotId', 'id', 'job', 'pipeline'];
+
+    if (!staticStatusTags) {
+      filters.push('status');
+    }
+
+    return filters;
+  }, [staticStatusTags]);
+
+  const mutableTokens = React.useMemo(() => {
+    if (staticStatusTags) {
+      return filterTokens.filter((token) => token.token !== 'status');
+    }
+    return filterTokens;
+  }, [filterTokens, staticStatusTags]);
 
   return (
     <Page>
@@ -139,7 +167,7 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
           </Box>
         }
       />
-      {selectedTab === 'queued' ? (
+      {selectedTab === 'queued' && canSeeConfig ? (
         <Box
           flex={{direction: 'column', gap: 8}}
           padding={{horizontal: 24, vertical: 16}}
@@ -175,15 +203,26 @@ export const RunsRoot: React.FC<RouteComponentProps> = () => {
               <>
                 <RunTable
                   runs={pipelineRunsOrError.results.slice(0, PAGE_SIZE)}
-                  onSetFilter={setFilterTokens}
+                  onSetFilter={setFilterTokensWithStatus}
                   actionBarComponents={
                     showScheduled ? null : (
-                      <RunsFilterInput
-                        tokens={filterTokens}
-                        onChange={setFilterTokens}
-                        loading={queryResult.loading}
-                        enabledFilters={enabledFilters}
-                      />
+                      <Box flex={{direction: 'column', gap: 8}}>
+                        {selectedTab !== 'all' ? (
+                          <Box flex={{direction: 'row', gap: 8}}>
+                            {filterTokens
+                              .filter((token) => token.token === 'status')
+                              .map(({token, value}) => (
+                                <TagWIP key={token}>{`${token}:${value}`}</TagWIP>
+                              ))}
+                          </Box>
+                        ) : null}
+                        <RunsFilterInput
+                          tokens={mutableTokens}
+                          onChange={setFilterTokensWithStatus}
+                          loading={queryResult.loading}
+                          enabledFilters={enabledFilters}
+                        />
+                      </Box>
                     )
                   }
                 />

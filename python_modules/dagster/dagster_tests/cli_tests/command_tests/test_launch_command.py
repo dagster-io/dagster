@@ -48,7 +48,6 @@ def run_job_launch_cli(execution_args, instance, expected_count=None):
 @pytest.mark.parametrize("gen_pipeline_args", launch_command_contexts())
 def test_launch_pipeline(gen_pipeline_args):
     with gen_pipeline_args as (cli_args, instance):
-        print(cli_args)
         run_launch(cli_args, instance, expected_count=1)
 
 
@@ -309,7 +308,7 @@ def test_job_launch_queued(gen_pipeline_args):
             assert run.status == PipelineRunStatus.QUEUED
 
 
-def test_empty_working_directory():
+def test_default_working_directory():
     runner = CliRunner()
     import os
 
@@ -374,8 +373,6 @@ def test_job_launch_only_selects_job():
     }
     pipeline_kwargs = job_kwargs.copy()
     pipeline_kwargs["pipeline_or_job"] = "my_pipeline"
-
-    runner = CliRunner()
 
     with default_cli_test_instance() as instance:
         execute_launch_command(

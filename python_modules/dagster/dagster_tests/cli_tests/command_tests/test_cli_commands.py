@@ -1,4 +1,3 @@
-import json
 import os
 import string
 import sys
@@ -19,6 +18,7 @@ from dagster import (
     String,
     execute_pipeline,
     graph,
+    in_process_executor,
     job,
     lambda_solid,
     op,
@@ -83,14 +83,14 @@ def qux():
 
 qux_job = qux.to_job(
     config=PartitionedConfig(
-        partitions_def=StaticPartitionsDefinition([Partition("abc")]),
-        run_config_for_partition_fn=lambda _: {},
+        partitions_def=StaticPartitionsDefinition(["abc"]), run_config_for_partition_fn=lambda _: {}
     ),
     tags={"foo": "bar"},
+    executor_def=in_process_executor,
 )
 
 
-@job
+@job(executor_def=in_process_executor)
 def quux_job():
     do_something_op()
 
@@ -495,8 +495,24 @@ def valid_pipeline_or_job_python_origin_target_args(using_job_op_graph_apis=Fals
             "workspace": None,
             "pipeline_or_job": pipeline_or_job_name,
             "python_file": None,
+            "module_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "attribute": "bar",
+            "working_directory": os.path.dirname(__file__),
+        },
+        {
+            "workspace": None,
+            "pipeline_or_job": pipeline_or_job_name,
+            "python_file": None,
             "package_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
             "attribute": "bar",
+        },
+        {
+            "workspace": None,
+            "pipeline_or_job": pipeline_or_job_name,
+            "python_file": None,
+            "package_name": "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "attribute": "bar",
+            "working_directory": os.path.dirname(__file__),
         },
         {
             "workspace": None,
@@ -613,6 +629,16 @@ def valid_job_python_origin_target_cli_args():
             "dagster_tests.cli_tests.command_tests.test_cli_commands",
             "-a",
             "bar",
+            "-j",
+            "qux",
+        ],
+        [
+            "-m",
+            "dagster_tests.cli_tests.command_tests.test_cli_commands",
+            "-a",
+            "bar",
+            "-d",
+            os.path.dirname(__file__),
             "-j",
             "qux",
         ],

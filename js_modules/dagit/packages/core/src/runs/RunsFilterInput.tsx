@@ -1,15 +1,15 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import * as React from 'react';
-
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {RunStatus, RunsFilter} from '../types/globalTypes';
 import {
   SuggestionProvider,
   TokenizingField,
   TokenizingFieldValue,
-  stringFromValue,
-  tokenizedValuesFromString,
-} from '../ui/TokenizingField';
+  tokensAsStringArray,
+  tokenizedValuesFromStringArray,
+} from '@dagster-io/ui';
+import * as React from 'react';
+
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {RunStatus, RunsFilter} from '../types/globalTypes';
 import {DagsterRepoOption, useRepositoryOptions} from '../workspace/WorkspaceContext';
 
 import {
@@ -60,9 +60,9 @@ export function useQueryPersistedRunFilters(enabledFilters?: RunFilterTokenType[
   return useQueryPersistedState<TokenizingFieldValue[]>(
     React.useMemo(
       () => ({
-        encode: (tokens) => ({q: stringFromValue(tokens), cursor: undefined}),
-        decode: ({q = ''}) =>
-          tokenizedValuesFromString(q, RUN_PROVIDERS_EMPTY).filter(
+        encode: (tokens) => ({q: tokensAsStringArray(tokens), cursor: undefined}),
+        decode: ({q = []}) =>
+          tokenizedValuesFromStringArray(q, RUN_PROVIDERS_EMPTY).filter(
             (t) =>
               !t.token || !enabledFilters || enabledFilters.includes(t.token as RunFilterTokenType),
           ),
@@ -83,11 +83,10 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     if (item.token === 'pipeline' || item.token === 'job') {
       obj.pipelineName = item.value;
     } else if (item.token === 'id') {
-      obj.runIds = [item.value];
+      obj.runIds = obj.runIds || [];
+      obj.runIds.push(item.value);
     } else if (item.token === 'status') {
-      if (!obj.statuses) {
-        obj.statuses = [];
-      }
+      obj.statuses = obj.statuses || [];
       obj.statuses.push(item.value as RunStatus);
     } else if (item.token === 'snapshotId') {
       obj.snapshotId = item.value;
@@ -183,7 +182,7 @@ export const RunsFilterInput: React.FC<RunsFilterInputProps> = ({
 
   const suggestions = searchSuggestionsForRuns(options, data?.pipelineRunTags, enabledFilters);
 
-  const search = tokenizedValuesFromString(stringFromValue(tokens), suggestions);
+  const search = tokenizedValuesFromStringArray(tokensAsStringArray(tokens), suggestions);
 
   const suggestionProvidersFilter = (
     suggestionProviders: SuggestionProvider[],

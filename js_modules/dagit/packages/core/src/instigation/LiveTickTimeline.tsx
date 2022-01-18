@@ -1,9 +1,9 @@
+import {ColorsWIP} from '@dagster-io/ui';
 import {ActiveElement, TimeUnit, TooltipItem} from 'chart.js';
 import * as React from 'react';
 import {Line} from 'react-chartjs-2';
 
 import {InstigationTickStatus} from '../types/globalTypes';
-import {ColorsWIP} from '../ui/Colors';
 
 import {
   TickHistoryQuery_instigationStateOrError_InstigationState_nextTick,

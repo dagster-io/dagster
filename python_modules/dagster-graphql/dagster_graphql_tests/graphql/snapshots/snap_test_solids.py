@@ -220,6 +220,38 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'asset_one'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'two_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'asset_one'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'asset_two'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'two_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'asset_two'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'backcompat_materialize'
                 },
                 'invocations': [
@@ -333,6 +365,38 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'div_four.div_2'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'downstream_static_partitioned_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'static_partitioned_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'downstream_static_partitioned_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'downstream_time_partitioned_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'time_partitioned_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'downstream_time_partitioned_asset'
                         }
                     }
                 ]
@@ -461,6 +525,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'fail_subset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'first_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'hanging_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'first_asset'
                         }
                     }
                 ]
@@ -629,6 +709,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'multiply_inputs'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'never_runs_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'hanging_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'never_runs_asset'
                         }
                     }
                 ]
@@ -1340,6 +1436,38 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'upstream_static_partitioned_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'static_partitioned_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'upstream_static_partitioned_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'upstream_time_partitioned_asset'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'time_partitioned_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'upstream_time_partitioned_asset'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'will_fail'
                 },
                 'invocations': [
@@ -1349,6 +1477,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'will_fail'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'yield_partition_materialization'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'partition_materialization_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'yield_partition_materialization'
                         }
                     }
                 ]

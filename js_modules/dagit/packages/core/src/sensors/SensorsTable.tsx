@@ -1,15 +1,12 @@
+import {Box, ColorsWIP, IconWIP, Table, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {AssetLink} from '../assets/AssetLink';
 import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {InstigationType} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
-import {Table} from '../ui/Table';
-import {Tooltip} from '../ui/Tooltip';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -31,8 +28,8 @@ export const SensorsTable: React.FC<{
         <tr>
           <th style={{width: '60px'}}></th>
           <th>Sensor Name</th>
-          <th style={{width: '150px'}}>Frequency</th>
-          <th style={{width: '120px'}}>
+          <th style={{width: '15%'}}>Frequency</th>
+          <th style={{width: '15%'}}>
             <Box flex={{gap: 8, alignItems: 'end'}}>
               Last tick
               <Tooltip position="top" content={lastTick}>
@@ -40,7 +37,7 @@ export const SensorsTable: React.FC<{
               </Tooltip>
             </Box>
           </th>
-          <th>
+          <th style={{width: '20%'}}>
             <Box flex={{gap: 8, alignItems: 'end'}}>
               Last Run
               <Tooltip position="top" content={lastRun}>
@@ -89,6 +86,13 @@ const SensorRow: React.FC<{
                   pipelineHrefContext={repoAddress}
                   isJob={!!(repo && isThisThingAJob(repo, target.pipelineName))}
                 />
+              ))}
+            </Box>
+          ) : null}
+          {sensor.metadata.assetKeys && sensor.metadata.assetKeys.length ? (
+            <Box flex={{direction: 'column', gap: 2}}>
+              {sensor.metadata.assetKeys.map((key) => (
+                <AssetLink key={key.path.join('/')} path={key.path} displayIcon={true} />
               ))}
             </Box>
           ) : null}

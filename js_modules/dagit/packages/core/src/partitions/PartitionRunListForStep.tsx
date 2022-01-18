@@ -1,5 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
-import qs from 'query-string';
+import {ColorsWIP, NonIdealState, Spinner, Tooltip} from '@dagster-io/ui';
+import qs from 'qs';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -8,10 +9,6 @@ import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {DagsterTag} from '../runs/RunTag';
 import {StepEventStatus} from '../types/globalTypes';
-import {ColorsWIP} from '../ui/Colors';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Spinner} from '../ui/Spinner';
-import {Tooltip} from '../ui/Tooltip';
 
 import {STEP_STATUS_COLORS} from './RunMatrixUtils';
 import {

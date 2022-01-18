@@ -6,7 +6,10 @@ from dagster import AssetKey
 from dagster.core.asset_defs import ForeignAsset, asset
 from pandas import DataFrame
 
-sfo_q2_weather_sample = ForeignAsset(key=AssetKey("sfo_q2_weather_sample"))
+sfo_q2_weather_sample = ForeignAsset(
+    key=AssetKey("sfo_q2_weather_sample"),
+    description="Weather samples, taken every five minutes at SFO",
+)
 
 
 @asset

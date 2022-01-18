@@ -4,32 +4,69 @@ import '@blueprintjs/select/lib/css/blueprint-select.css';
 import '@blueprintjs/table/lib/css/table.css';
 import '@blueprintjs/popover2/lib/css/blueprint-popover2.css';
 
-import {FontFamily} from '../src/ui/styles';
-import {GlobalDialogStyle} from '../src/ui/Dialog';
-import {GlobalPopoverStyle} from '../src/ui/Popover';
+import {
+  FontFamily,
+  GlobalDialogStyle,
+  GlobalPopoverStyle,
+  GlobalSuggestStyle,
+  GlobalToasterStyle,
+  GlobalTooltipStyle,
+  ColorsWIP,
+} from '@dagster-io/ui';
 
 import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {createGlobalStyle} from 'styled-components/macro';
 
-
 const GlobalStyle = createGlobalStyle`
   * {
     box-sizing: border-box;
-    -webkit-font-smoothing: antialiased;
   }
 
-  body, input, textarea, button, select {
+  html, body {
+    color: ${ColorsWIP.Gray800};
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  a,
+  a:hover,
+  a:active {
+    color: ${ColorsWIP.Link};
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body, input, select, textarea {
     font-family: ${FontFamily.default};
   }
 
-  body ul, body li {
-    margin: 0;
+  button {
+    font-family: inherit;
+  }
+
+  code, pre {
+    font-family: ${FontFamily.monospace};
+    font-size: 16px;
   }
 
   .material-icons {
     display: block;
+  }
+
+  /* todo dish: Remove these when we have buttons updated. */
+
+  .bp3-button .material-icons {
+    position: relative;
+    top: 1px;
+  }
+
+  .bp3-button:disabled .material-icons {
+    color: ${ColorsWIP.Gray300}
   }
 `;
 
@@ -38,8 +75,11 @@ export const decorators = [
   (Story) => (
     <MemoryRouter>
       <GlobalStyle />
+      <GlobalToasterStyle />
+      <GlobalTooltipStyle />
       <GlobalPopoverStyle />
       <GlobalDialogStyle />
+      <GlobalSuggestStyle />
       <Story />
     </MemoryRouter>
   ),

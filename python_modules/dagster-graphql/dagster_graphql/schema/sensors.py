@@ -1,11 +1,12 @@
 import graphene
 from dagster import check
 from dagster.core.host_representation import ExternalSensor, ExternalTargetData, SensorSelector
-from dagster.core.scheduler.job import JobState
+from dagster.core.scheduler.instigation import InstigatorState
 from dagster.core.workspace.permissions import Permissions
 from dagster_graphql.implementation.utils import capture_error, check_permission
 
 from ..implementation.fetch_sensors import get_sensor_next_tick, start_sensor, stop_sensor
+from .asset_key import GrapheneAssetKey
 from .errors import (
     GraphenePythonError,
     GrapheneRepositoryNotFoundError,
@@ -36,6 +37,13 @@ class GrapheneTarget(graphene.ObjectType):
         )
 
 
+class GrapheneSensorMetadata(graphene.ObjectType):
+    assetKeys = graphene.List(graphene.NonNull(GrapheneAssetKey))
+
+    class Meta:
+        name = "SensorMetadata"
+
+
 class GrapheneSensor(graphene.ObjectType):
     id = graphene.NonNull(graphene.ID)
     jobOriginId = graphene.NonNull(graphene.String)
@@ -45,22 +53,17 @@ class GrapheneSensor(graphene.ObjectType):
     minIntervalSeconds = graphene.NonNull(graphene.Int)
     description = graphene.String()
     nextTick = graphene.Field(GrapheneFutureInstigationTick)
+    metadata = graphene.NonNull(GrapheneSensorMetadata)
 
     class Meta:
         name = "Sensor"
 
-    def __init__(self, graphene_info, external_sensor):
+    def __init__(self, external_sensor, sensor_state):
         self._external_sensor = check.inst_param(external_sensor, "external_sensor", ExternalSensor)
-        self._sensor_state = graphene_info.context.instance.get_job_state(
-            self._external_sensor.get_external_origin_id()
-        )
+        self._sensor_state = check.opt_inst_param(sensor_state, "sensor_state", InstigatorState)
 
         if not self._sensor_state:
-            # Also include a SensorState for a stopped sensor that may not
-            # have a stored database row yet
-            self._sensor_state = self._external_sensor.get_default_instigation_state(
-                graphene_info.context.instance
-            )
+            self._sensor_state = self._external_sensor.get_default_instigation_state()
 
         super().__init__(
             name=external_sensor.name,
@@ -68,6 +71,9 @@ class GrapheneSensor(graphene.ObjectType):
             minIntervalSeconds=external_sensor.min_interval_seconds,
             description=external_sensor.description,
             targets=[GrapheneTarget(target) for target in external_sensor.get_external_targets()],
+            metadata=GrapheneSensorMetadata(
+                assetKeys=external_sensor.metadata.asset_keys if external_sensor.metadata else None
+            ),
         )
 
     def resolve_id(self, _):
@@ -127,7 +133,7 @@ class GrapheneStopSensorMutationResult(graphene.ObjectType):
 
     def __init__(self, job_state):
         super().__init__()
-        self._job_state = check.inst_param(job_state, "job_state", JobState)
+        self._job_state = check.inst_param(job_state, "job_state", InstigatorState)
 
     def resolve_instigationState(self, _graphene_info):
         if not self._job_state:

@@ -30,7 +30,7 @@ from .events import AssetKey
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .mode import DEFAULT_MODE_NAME
-from .run_request import JobType, PipelineRunReaction, RunRequest, SkipReason
+from .run_request import InstigatorType, PipelineRunReaction, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
 
@@ -275,8 +275,8 @@ class SensorDefinition:
         return self._name
 
     @property
-    def job_type(self) -> JobType:
-        return JobType.SENSOR
+    def job_type(self) -> InstigatorType:
+        return InstigatorType.SENSOR
 
     @property
     def description(self) -> Optional[str]:
@@ -303,10 +303,12 @@ class SensorDefinition:
         check.inst_param(context, "context", SensorEvaluationContext)
         result = list(ensure_gen(self._evaluation_fn(context)))
 
+        skip_message: Optional[str] = None
+
         if not result or result == [None]:
             run_requests = []
             pipeline_run_reactions = []
-            skip_message = None
+            skip_message = "Sensor function returned an empty result"
         elif len(result) == 1:
             item = result[0]
             check.inst(item, (SkipReason, RunRequest, PipelineRunReaction))
@@ -318,7 +320,6 @@ class SensorDefinition:
             has_skip = any(map(lambda x: isinstance(x, SkipReason), result))
             has_run_request = any(map(lambda x: isinstance(x, RunRequest), result))
             has_run_reaction = any(map(lambda x: isinstance(x, PipelineRunReaction), result))
-            skip_message = None
 
             if has_skip:
                 if has_run_request:
@@ -326,7 +327,7 @@ class SensorDefinition:
                         "Expected a single SkipReason or one or more RunRequests: received both "
                         "RunRequest and SkipReason"
                     )
-                if has_run_reaction:
+                elif has_run_reaction:
                     check.failed(
                         "Expected a single SkipReason or one or more PipelineRunReaction: "
                         "received both PipelineRunReaction and SkipReason"
@@ -370,7 +371,7 @@ class SensorDefinition:
         target_names = [target.pipeline_name for target in self._targets]
 
         if run_requests and not self._targets:
-            raise DagsterInvariantViolationError(
+            raise Exception(
                 f"Error in sensor {self._name}: Sensor evaluation function returned a RunRequest "
                 "for a sensor without a specified target. Targets can be specified by providing "
                 "a job or pipeline_name."
@@ -378,12 +379,12 @@ class SensorDefinition:
 
         for run_request in run_requests:
             if run_request.job_name is None and has_multiple_targets:
-                raise DagsterInvariantViolationError(
+                raise Exception(
                     f"Error in sensor {self._name}: Sensor returned a RunRequest that did not "
                     f"specify job_name for the requested run. Expected one of: {target_names}"
                 )
             elif run_request.job_name and run_request.job_name not in target_names:
-                raise DagsterInvariantViolationError(
+                raise Exception(
                     f"Error in sensor {self._name}: Sensor returned a RunRequest with job_name "
                     f"{run_request.job_name}. Expected one of: {target_names}"
                 )
@@ -457,7 +458,7 @@ def wrap_sensor_evaluation(
             yield result
 
         elif result is not None:
-            raise DagsterInvariantViolationError(
+            raise Exception(
                 (
                     "Error in sensor {sensor_name}: Sensor unexpectedly returned output "
                     "{result} of type {type_}.  Should only return SkipReason or "

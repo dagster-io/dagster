@@ -24,6 +24,7 @@ class DbtCloudOutput(DbtOutput):
         job_id (int): The integer ID of the dbt Cloud job
         job_name (Optional[str]): The name of the dbt Cloud job (if present in the run details)
         run_id (int): The integer ID of the run that was initiated
+        docs_url (str): URL of the docs generated for this run (if it exists)
     """
 
     def __init__(
@@ -46,6 +47,13 @@ class DbtCloudOutput(DbtOutput):
     def job_name(self) -> Optional[str]:
         job = self.run_details["job"]
         return job.get("name") if job else None
+
+    @property
+    def docs_url(self) -> Optional[str]:
+        job = self.run_details["job"]
+        if not job or not job.get("generate_docs"):
+            return None
+        return f"https://cloud.getdbt.com/accounts/{self.run_details['account_id']}/runs/{self.run_id}/docs/"
 
     @property
     def run_id(self) -> int:

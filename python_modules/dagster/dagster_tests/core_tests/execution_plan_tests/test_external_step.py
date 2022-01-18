@@ -6,15 +6,21 @@ from threading import Thread
 
 import pytest
 from dagster import (
+    DynamicOut,
+    DynamicOutput,
     Field,
     ModeDefinition,
+    ResourceDefinition,
     RetryRequested,
     String,
     execute_pipeline,
     execute_pipeline_iterator,
     fs_io_manager,
+    job,
+    op,
     pipeline,
     reconstructable,
+    reexecute_pipeline,
     resource,
     solid,
 )
@@ -31,6 +37,7 @@ from dagster.core.execution.plan.external_step import (
 from dagster.core.execution.retries import RetryMode
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.test_utils import instance_for_test
 from dagster.utils import safe_tempfile_path, send_interrupt
 from dagster.utils.merger import deep_merge_dicts, merge_dicts
 
@@ -69,6 +76,81 @@ class RequestRetryLocalExternalStepLauncher(LocalExternalStepLauncher):
 @resource(config_schema=local_external_step_launcher.config_schema)
 def request_retry_local_external_step_launcher(context):
     return RequestRetryLocalExternalStepLauncher(**context.resource_config)
+
+
+def define_dynamic_job():
+    from typing import List
+
+    @op(required_resource_keys={"first_step_launcher"}, out=DynamicOut(int))
+    def dynamic_outs():
+        for i in range(0, 3):
+            yield DynamicOutput(value=i, mapping_key=f"num_{i}")
+
+    @op(required_resource_keys={"second_step_launcher"})
+    def increment(i):
+        return i + 1
+
+    @op
+    def total(ins: List[int]):
+        return sum(ins)
+
+    @job(
+        resource_defs={
+            "first_step_launcher": local_external_step_launcher,
+            "second_step_launcher": local_external_step_launcher,
+            "io_manager": fs_io_manager,
+        }
+    )
+    def my_job():
+        all_incs = dynamic_outs().map(increment)
+        total(all_incs.collect())
+
+    return my_job
+
+
+def _define_basic_job(launch_initial, launch_final):
+    initial_launcher = (
+        local_external_step_launcher if launch_initial else ResourceDefinition.mock_resource()
+    )
+    final_launcher = (
+        local_external_step_launcher if launch_final else ResourceDefinition.mock_resource()
+    )
+
+    @op(required_resource_keys={"initial_launcher"})
+    def op1():
+        return 1
+
+    @op(required_resource_keys={"initial_launcher"})
+    def op2():
+        return 2
+
+    @op(required_resource_keys={"final_launcher"})
+    def combine(a, b):
+        return a + b
+
+    @job(
+        resource_defs={
+            "initial_launcher": initial_launcher,
+            "final_launcher": final_launcher,
+            "io_manager": fs_io_manager,
+        }
+    )
+    def my_job():
+        combine(op1(), op2())
+
+    return my_job
+
+
+def define_basic_job_all_launched():
+    return _define_basic_job(True, True)
+
+
+def define_basic_job_first_launched():
+    return _define_basic_job(True, False)
+
+
+def define_basic_job_last_launched():
+    return _define_basic_job(False, True)
 
 
 def define_basic_pipeline():
@@ -215,6 +297,71 @@ def test_pipeline(mode):
         )
         assert result.result_for_solid("return_two").output_value() == 2
         assert result.result_for_solid("add_one").output_value() == 3
+
+
+def test_dynamic_job():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        with instance_for_test() as instance:
+            result = execute_pipeline(
+                pipeline=reconstructable(define_dynamic_job),
+                run_config={
+                    "resources": {
+                        "first_step_launcher": {
+                            "config": {"scratch_dir": tmpdir},
+                        },
+                        "second_step_launcher": {
+                            "config": {"scratch_dir": tmpdir},
+                        },
+                        "io_manager": {"config": {"base_dir": tmpdir}},
+                    }
+                },
+                instance=instance,
+            )
+            assert result.result_for_solid("total").output_value() == 6
+
+
+@pytest.mark.skip(
+    reason="Reexecution will fail with step launchers because it relies on querying event log "
+    "storage which is not present on the external step"
+)
+@pytest.mark.parametrize(
+    "job_fn",
+    [
+        define_basic_job_all_launched,
+        define_basic_job_first_launched,
+        define_basic_job_last_launched,
+    ],
+)
+def test_reexecution(job_fn):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        run_config = {
+            "resources": {
+                "initial_launcher": {
+                    "config": {"scratch_dir": tmpdir},
+                },
+                "final_launcher": {
+                    "config": {"scratch_dir": tmpdir},
+                },
+                "io_manager": {"config": {"base_dir": tmpdir}},
+            }
+        }
+        with instance_for_test() as instance:
+            run1 = execute_pipeline(
+                pipeline=reconstructable(job_fn),
+                run_config=run_config,
+                instance=instance,
+            )
+            assert run1.success
+            assert run1.result_for_solid("combine").output_value() == 3
+            run2 = reexecute_pipeline(
+                pipeline=reconstructable(job_fn),
+                parent_run_id=run1.run_id,
+                run_config=run_config,
+                instance=instance,
+                step_selection=["combine"],
+            )
+            assert run2.success
+            assert run2.result_for_solid("combine").output_value() == 3
 
 
 def test_launcher_requests_retry():

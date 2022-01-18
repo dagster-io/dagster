@@ -53,9 +53,15 @@ spec:
                 name: {{ template "dagster.fullname" . }}-flower-env
           env:
             - name: CELERY_BROKER_URL
-              value: "{{ include "dagster.celery.broker_url" . }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.global.celeryConfigSecretName }}
+                  key: DAGSTER_CELERY_BROKER_URL
             - name: CELERY_RESULT_BACKEND
-              value: "{{ include "dagster.celery.backend_url" . }}"
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Values.global.celeryConfigSecretName }}
+                  key: DAGSTER_CELERY_BACKEND_URL
           volumeMounts: []
           ports:
             - name: flower

@@ -1,21 +1,20 @@
+from pathlib import Path
 from typing import Dict
 
 from setuptools import find_packages, setup  # type: ignore
 
 
-def long_description() -> str:
-    return """
-## Dagster
-Dagster is a data orchestrator for machine learning, analytics, and ETL.
+def get_description() -> str:
+    readme_path = Path(__file__).parent.parent.parent / "README.md"
 
-Dagster lets you define pipelines in terms of the data flow between reusable, logical components,
-then test locally and run anywhere. With a unified view of pipelines and the assets they produce,
-Dagster can schedule and orchestrate Pandas, Spark, SQL, or anything else that Python can invoke.
+    if not readme_path.exists():
+        return """
+        # Dagster
 
-Dagster is designed for data platform engineers, data engineers, and full-stack data scientists.
-Building a data platform with Dagster makes your stakeholders more independent and your systems
-more robust. Developing data pipelines with Dagster makes testing easier and deploying faster.
-""".strip()
+        The data orchestration platform built for productivity.
+        """.strip()
+
+    return readme_path.read_text()
 
 
 def get_version() -> str:
@@ -33,8 +32,8 @@ if __name__ == "__main__":
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
-        description="A data orchestrator for machine learning, analytics, and ETL.",
-        long_description=long_description(),
+        description="The data orchestration platform built for productivity.",
+        long_description=get_description(),
         long_description_content_type="text/markdown",
         url="https://github.com/dagster-io/dagster",
         classifiers=[
@@ -59,6 +58,7 @@ if __name__ == "__main__":
             # cli
             "click>=5.0",
             "coloredlogs>=6.1, <=14.0",
+            "contextvars; python_version < '3.7'",
             # https://github.com/dagster-io/dagster/issues/4167
             "Jinja2<3.0",
             "PyYAML>=5.1",
@@ -98,6 +98,7 @@ if __name__ == "__main__":
                 "grpcio-tools==1.32.0",
                 "isort>=4.3.21,<5",
                 "mock==3.0.5",
+                "objgraph",
                 "protobuf==3.13.0",  # without this, pip will install the most up-to-date protobuf
                 "pylint==2.6.0",
                 "pytest-cov==2.10.1",
@@ -112,6 +113,13 @@ if __name__ == "__main__":
                 "tox==3.14.2",
                 "tox-pip-version==0.0.7",
                 "tqdm==4.48.0",  # pylint crash 48.1+
+                "types-croniter",  # version will be resolved against croniter
+                "types-mock",  # version will be resolved against mock
+                "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)
+                "types-python-dateutil",  # version will be resolved against python-dateutil
+                "types-PyYAML",  # version will be resolved against PyYAML
+                "types-pytz",  # version will be resolved against pytz
+                "types-tabulate",  # version will be resolved against tabulate
                 "yamllint",
             ],
         },

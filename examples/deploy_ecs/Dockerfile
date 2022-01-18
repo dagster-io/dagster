@@ -1,10 +1,14 @@
 # Dagster
 FROM python:3.7-slim as dagster
 
+RUN apt-get update && apt-get upgrade -yqq
+RUN apt-get install git -y
 ENV DAGSTER_HOME=/opt/dagster/dagster_home/
 RUN mkdir -p $DAGSTER_HOME
 WORKDIR $DAGSTER_HOME
 COPY dagster.yaml workspace.yaml $DAGSTER_HOME
+RUN git clone https://github.com/dagster-io/dagster.git
+
 # Install:
 # - dagster so we can run `dagster-daemon run`
 # - dagster-aws so we can use EcsRunLauncher

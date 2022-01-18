@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Dict, cast
 
 from dagster.core.errors import DagsterInvalidConfigError
 
@@ -33,13 +33,13 @@ def _resolve_bound_config(logger_config: Any, logger_def: "LoggerDefinition") ->
             config_evr.errors,
             logger_config,
         )
-    validated_config = config_evr.value.get("config")
+    validated_config = cast(Dict, config_evr.value).get("config")
     mapped_config_evr = logger_def.apply_config_mapping({"config": validated_config})
     if not mapped_config_evr.success:
         raise DagsterInvalidConfigError(
             "Error in config mapping for logger ", mapped_config_evr.errors, validated_config
         )
-    validated_config = mapped_config_evr.value.get("config")
+    validated_config = cast(Dict, mapped_config_evr.value).get("config")
     return validated_config
 
 

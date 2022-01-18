@@ -4,15 +4,13 @@ import {MemoryRouter, Route} from 'react-router-dom';
 
 import {useQueryPersistedState} from './useQueryPersistedState';
 
-const Test: React.FunctionComponent<{options: Parameters<typeof useQueryPersistedState>[0]}> = ({
-  options,
-}) => {
+const Test: React.FC<{options: Parameters<typeof useQueryPersistedState>[0]}> = ({options}) => {
   const [query, setQuery] = useQueryPersistedState(options);
   return <div onClick={() => setQuery('Navigated')}>{`[${query}]`}</div>;
 };
 
 describe('useQueryPersistedState', () => {
-  it('populates state from the query string', async () => {
+  it('populates state from the query string', () => {
     render(
       <MemoryRouter initialEntries={['/page?q=c']}>
         <Test options={{queryKey: 'q', defaults: {q: 'a'}}} />
@@ -21,7 +19,7 @@ describe('useQueryPersistedState', () => {
     expect(screen.getByText(`[c]`)).toBeVisible();
   });
 
-  it('populates from defaults if query params are not present', async () => {
+  it('populates from defaults if query params are not present', () => {
     render(
       <MemoryRouter initialEntries={['/page']}>
         <Test options={{queryKey: 'q', defaults: {q: 'a'}}} />
@@ -30,7 +28,7 @@ describe('useQueryPersistedState', () => {
     expect(screen.getByText(`[a]`)).toBeVisible();
   });
 
-  it('populates with undefined values if defaults are not provided and query params are not present', async () => {
+  it('populates with undefined values if defaults are not provided and query params are not present', () => {
     render(
       <MemoryRouter initialEntries={['/page']}>
         <Test options={{queryKey: 'q'}} />
@@ -39,7 +37,7 @@ describe('useQueryPersistedState', () => {
     expect(screen.getByText(`[undefined]`)).toBeVisible();
   });
 
-  it('updates the URL query string when its exposed setter is called', async () => {
+  it('updates the URL query string when its exposed setter is called', () => {
     // from https://reactrouter.com/web/guides/testing/checking-location-in-tests
     let querySearch;
     render(
@@ -50,13 +48,13 @@ describe('useQueryPersistedState', () => {
     );
     expect(querySearch).toEqual('?q=B');
 
-    await screen.getByText(`[B]`).click();
+    screen.getByText(`[B]`).click();
 
     expect(screen.getByText(`[Navigated]`)).toBeVisible();
     expect(querySearch).toEqual('?q=Navigated');
   });
 
-  it('ignores and preserves other params present in the query string', async () => {
+  it('ignores and preserves other params present in the query string', () => {
     // from https://reactrouter.com/web/guides/testing/checking-location-in-tests
     let querySearch;
     render(
@@ -65,11 +63,11 @@ describe('useQueryPersistedState', () => {
         <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
       </MemoryRouter>,
     );
-    await screen.getByText(`[B]`).click();
-    expect(querySearch).toEqual('?cursor=basdasd&limit=100&q=Navigated');
+    screen.getByText(`[B]`).click();
+    expect(querySearch).toEqual('?q=Navigated&cursor=basdasd&limit=100');
   });
 
-  it('omits query params when their values are set to the default', async () => {
+  it('omits query params when their values are set to the default', () => {
     // from https://reactrouter.com/web/guides/testing/checking-location-in-tests
     let querySearch;
     render(
@@ -78,11 +76,11 @@ describe('useQueryPersistedState', () => {
         <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
       </MemoryRouter>,
     );
-    await screen.getByText(`[B]`).click();
+    screen.getByText(`[B]`).click();
     expect(querySearch).toEqual('?cursor=basdasd&limit=100');
   });
 
-  it('can coexist with other instances of the same hook', async () => {
+  it('can coexist with other instances of the same hook', () => {
     let querySearch;
     render(
       <MemoryRouter initialEntries={['/page?param1=A1&param2=A2']}>
@@ -93,15 +91,15 @@ describe('useQueryPersistedState', () => {
     );
 
     expect(querySearch).toEqual('?param1=A1&param2=A2');
-    await screen.getByText(`[A1]`).click();
+    screen.getByText(`[A1]`).click();
     expect(querySearch).toEqual('?param1=Navigated&param2=A2');
-    await screen.getByText(`[A2]`).click();
+    screen.getByText(`[A2]`).click();
     expect(querySearch).toEqual('?param1=Navigated&param2=Navigated');
     expect(screen.queryAllByText(`[Navigated]`).length).toEqual(2);
   });
 
-  it('can coexist, even if you errantly retain the setter (just like setState)', async () => {
-    const TestWithBug: React.FunctionComponent = () => {
+  it('can coexist, even if you errantly retain the setter (just like setState)', () => {
+    const TestWithBug = () => {
       const [word, setWord] = useQueryPersistedState({queryKey: 'word'});
       const onCapturedForever = React.useCallback(() => {
         setWord('world');
@@ -120,14 +118,14 @@ describe('useQueryPersistedState', () => {
       </MemoryRouter>,
     );
 
-    await screen.getByText(`[A]`).click();
-    expect(querySearch).toEqual('?param1=Navigated&word=hello');
-    await screen.getByText(`[hello]`).click();
-    expect(querySearch).toEqual('?param1=Navigated&word=world'); // would reset param1=A in case of bug
+    screen.getByText(`[A]`).click();
+    expect(querySearch).toEqual('?word=hello&param1=Navigated');
+    screen.getByText(`[hello]`).click();
+    expect(querySearch).toEqual('?word=world&param1=Navigated'); // would reset param1=A in case of bug
   });
 
-  it('can be used to represent arbitrary state shapes via custom encode/decode methods', async () => {
-    const TestEncoding: React.FunctionComponent = () => {
+  it('can be used to represent arbitrary state shapes via custom encode/decode methods', () => {
+    const TestEncoding = () => {
       const [items, setItems] = useQueryPersistedState<string[]>({
         encode: (items) => ({value: items.join(',')}),
         decode: (q) => q.value.split(',').filter(Boolean),
@@ -147,15 +145,15 @@ describe('useQueryPersistedState', () => {
       </MemoryRouter>,
     );
 
-    await screen.getByText(`[]`).click();
+    screen.getByText(`[]`).click();
     expect(querySearch).toEqual('?value=Added0');
-    await screen.getByText(`["Added0"]`).click();
-    await screen.getByText(`["Added0","Added1"]`).click();
+    screen.getByText(`["Added0"]`).click();
+    screen.getByText(`["Added0","Added1"]`).click();
     expect(querySearch).toEqual('?value=Added0%2CAdded1%2CAdded2');
   });
 
-  it('can be used to represent objects with optional / non-optional keys', async () => {
-    const TestWithObject: React.FunctionComponent = () => {
+  it('can be used to represent objects with optional / non-optional keys', () => {
+    const TestWithObject = () => {
       const [filters, setFilters] = useQueryPersistedState<{
         pipeline?: string;
         solid?: string;
@@ -177,13 +175,13 @@ describe('useQueryPersistedState', () => {
       </MemoryRouter>,
     );
 
-    await screen.getByText(`{"view":"grid"}`).click();
-    await screen.getByText(`{"view":"grid","pipeline":"my_pipeline"}`).click();
+    screen.getByText(`{"view":"grid"}`).click();
+    screen.getByText(`{"view":"grid","pipeline":"my_pipeline"}`).click();
     expect(querySearch).toEqual('?pipeline=my_pipeline');
   });
 
-  it('automatically coerces true/false if no encode/decode methods are provided', async () => {
-    const TestWithObject: React.FunctionComponent = () => {
+  it('automatically coerces true/false if no encode/decode methods are provided', () => {
+    const TestWithObject = () => {
       const [filters, setFilters] = useQueryPersistedState<{
         enableA?: boolean;
         enableB?: boolean;
@@ -204,16 +202,16 @@ describe('useQueryPersistedState', () => {
       </MemoryRouter>,
     );
 
-    await screen.getByText(`{"enableA":true,"enableB":false}`).click();
+    screen.getByText(`{"enableA":true,"enableB":false}`).click();
     expect(querySearch).toEqual('?enableA=false&enableB=true');
-    await screen.getByText(`{"enableA":false,"enableB":true}`).click();
+    screen.getByText(`{"enableA":false,"enableB":true}`).click();
     expect(querySearch).toEqual('');
   });
 
-  it('emits the same setFilters on each render if memoized options are provided, matching React.useState', async () => {
+  it('emits the same setFilters on each render if memoized options are provided, matching React.useState', () => {
     let firstSetFunction: (v: any) => void;
 
-    const TestWithObject: React.FunctionComponent = () => {
+    const TestWithObject = () => {
       const [_, setFilters] = useQueryPersistedState<{isOn: boolean}>(
         React.useMemo(
           () => ({
@@ -241,7 +239,65 @@ describe('useQueryPersistedState', () => {
       </MemoryRouter>,
     );
 
-    await screen.getByText(`Functions Same: true`).click();
-    await screen.getByText(`Functions Same: true`).click();
+    screen.getByText(`Functions Same: true`).click();
+    screen.getByText(`Functions Same: true`).click();
+  });
+
+  it('correctly encodes arrays, using bracket syntax', () => {
+    const TestArray = () => {
+      const [state, setState] = useQueryPersistedState<{value: string[]}>({defaults: {value: []}});
+      return (
+        <div onClick={() => setState({value: [...state.value, `Added${state.value.length}`]})}>
+          {JSON.stringify(state.value)}
+        </div>
+      );
+    };
+
+    let querySearch;
+    render(
+      <MemoryRouter initialEntries={['/page']}>
+        <TestArray />
+        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+      </MemoryRouter>,
+    );
+
+    screen.getByText(`[]`).click();
+    expect(querySearch).toEqual('?value%5B%5D=Added0');
+    screen.getByText(`["Added0"]`).click();
+    screen.getByText(`["Added0","Added1"]`).click();
+    expect(querySearch).toEqual('?value%5B%5D=Added0&value%5B%5D=Added1&value%5B%5D=Added2');
+  });
+
+  it('correctly encodes arrays alongside other values, using bracket syntax', () => {
+    const TestArray = () => {
+      const [state, setState] = useQueryPersistedState<{hello: boolean; items: string[]}>({
+        defaults: {hello: false, items: []},
+      });
+      return (
+        <div
+          onClick={() =>
+            setState({hello: true, items: [...state.items, `Added${state.items.length}`]})
+          }
+        >
+          {JSON.stringify(state)}
+        </div>
+      );
+    };
+
+    let querySearch;
+    render(
+      <MemoryRouter initialEntries={['/page']}>
+        <TestArray />
+        <Route path="*" render={({location}) => (querySearch = location.search) && <span />} />
+      </MemoryRouter>,
+    );
+
+    screen.getByText(`{"hello":false,"items":[]}`).click();
+    expect(querySearch).toEqual('?hello=true&items%5B%5D=Added0');
+    screen.getByText(`{"hello":true,"items":["Added0"]}`).click();
+    screen.getByText(`{"hello":true,"items":["Added0","Added1"]}`).click();
+    expect(querySearch).toEqual(
+      '?hello=true&items%5B%5D=Added0&items%5B%5D=Added1&items%5B%5D=Added2',
+    );
   });
 });

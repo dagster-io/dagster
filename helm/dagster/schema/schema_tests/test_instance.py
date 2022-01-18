@@ -171,6 +171,24 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
         {"name": "extra-queue-1", "replicaCount": 1},
     ]
 
+    volume_mounts = [
+        {
+            "mountPath": "/opt/dagster/dagster_home/dagster.yaml",
+            "name": "dagster-instance",
+            "subPath": "dagster.yaml",
+        },
+        {
+            "name": "test-volume",
+            "mountPath": "/opt/dagster/test_mount_path/volume_mounted_file.yaml",
+            "subPath": "volume_mounted_file.yaml",
+        },
+    ]
+
+    volumes = [
+        {"name": "test-volume", "configMap": {"name": "test-volume-configmap"}},
+        {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
+    ]
+
     helm_values = DagsterHelmValues.construct(
         runLauncher=RunLauncher.construct(
             type=RunLauncherType.CELERY,
@@ -179,6 +197,8 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
                     image=image,
                     configSource=configSource,
                     workerQueues=workerQueues,
+                    volumeMounts=volume_mounts,
+                    volumes=volumes,
                 )
             ),
         )
@@ -192,6 +212,13 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
     assert run_launcher_config["class"] == "CeleryK8sRunLauncher"
 
     assert run_launcher_config["config"]["config_source"] == configSource
+
+    assert run_launcher_config["config"]["broker"] == {"env": "DAGSTER_CELERY_BROKER_URL"}
+
+    assert run_launcher_config["config"]["backend"] == {"env": "DAGSTER_CELERY_BACKEND_URL"}
+
+    assert run_launcher_config["config"]["volume_mounts"] == volume_mounts
+    assert run_launcher_config["config"]["volumes"] == volumes
 
 
 @pytest.mark.parametrize("enabled", [True, False])

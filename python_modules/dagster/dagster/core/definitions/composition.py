@@ -50,7 +50,7 @@ from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
     from dagster.core.instance import DagsterInstance
-    from .partition import PartitionedConfig
+    from .partition import PartitionedConfig, PartitionsDefinition
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
@@ -69,7 +69,7 @@ def _not_invoked_warning(
     context_name: str,
 ) -> None:
     warning_message = (
-        "While in {context} context '{name}', received an uninvoked solid '{solid_name}'.\n"
+        "While in {context} context '{name}', received an uninvoked {node_type} '{solid_name}'.\n"
     )
     if solid.given_alias:
         warning_message += "'{solid_name}' was aliased as '{given_alias}'.\n"
@@ -85,6 +85,7 @@ def _not_invoked_warning(
         given_alias=solid.given_alias,
         tags=solid.tags,
         hooks=[hook.name for hook in solid.hook_defs],
+        node_type=solid.node_def.node_type_str,
     )
 
     warnings.warn(warning_message.strip())
@@ -569,6 +570,7 @@ class PendingNodeInvocation:
         hooks: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
+        partitions_def: Optional["PartitionsDefinition"] = None,
     ) -> "JobDefinition":
         if not isinstance(self.node_def, GraphDefinition):
             raise DagsterInvalidInvocationError(
@@ -593,6 +595,7 @@ class PendingNodeInvocation:
             hooks=job_hooks,
             op_retry_policy=op_retry_policy,
             version_strategy=version_strategy,
+            partitions_def=partitions_def,
         )
 
     def execute_in_process(
@@ -993,7 +996,6 @@ def do_composition(
         fn_name=graph_name,
         compute_fn=compute_fn,
         explicit_input_defs=provided_input_defs,
-        context_required=False,
         exclude_nothing=False,
     )
 

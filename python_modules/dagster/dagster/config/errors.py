@@ -1,6 +1,6 @@
 from collections import namedtuple
 from enum import Enum
-from typing import NamedTuple
+from typing import Dict, List, NamedTuple
 
 from dagster import check
 from dagster.utils.error import SerializableErrorInfo
@@ -23,8 +23,10 @@ class DagsterEvaluationErrorReason(Enum):
     FIELD_ALIAS_COLLISION = "FIELD_ALIAS_COLLISION"
 
 
-class FieldsNotDefinedErrorData(namedtuple("_FieldsNotDefinedErrorData", "field_names")):
-    def __new__(cls, field_names):
+class FieldsNotDefinedErrorData(
+    NamedTuple("_FieldsNotDefinedErrorData", [("field_names", List[str])])
+):
+    def __new__(cls, field_names: List[str]):
         return super(FieldsNotDefinedErrorData, cls).__new__(
             cls, check.list_param(field_names, "field_names", of_type=str)
         )
@@ -35,14 +37,16 @@ class FieldAliasCollisionErrorData(NamedTuple):
     aliased_field_name: str
 
 
-class FieldNotDefinedErrorData(namedtuple("_FieldNotDefinedErrorData", "field_name")):
-    def __new__(cls, field_name):
+class FieldNotDefinedErrorData(NamedTuple("_FieldNotDefinedErrorData", [("field_name", str)])):
+    def __new__(cls, field_name: str):
         return super(FieldNotDefinedErrorData, cls).__new__(
             cls, check.str_param(field_name, "field_name")
         )
 
 
-class MissingFieldErrorData(namedtuple("_MissingFieldErrorData", "field_name field_snap")):
+class MissingFieldErrorData(
+    NamedTuple("_MissingFieldErrorData", [("field_name", str), ("field_snap", ConfigFieldSnap)])
+):
     def __new__(cls, field_name, field_snap):
         return super(MissingFieldErrorData, cls).__new__(
             cls,
@@ -51,7 +55,12 @@ class MissingFieldErrorData(namedtuple("_MissingFieldErrorData", "field_name fie
         )
 
 
-class MissingFieldsErrorData(namedtuple("_MissingFieldErrorData", "field_names field_snaps")):
+class MissingFieldsErrorData(
+    NamedTuple(
+        "_MissingFieldErrorData",
+        [("field_names", List[str]), ("field_snaps", List[ConfigFieldSnap])],
+    )
+):
     def __new__(cls, field_names, field_snaps):
         return super(MissingFieldsErrorData, cls).__new__(
             cls,
@@ -61,7 +70,9 @@ class MissingFieldsErrorData(namedtuple("_MissingFieldErrorData", "field_names f
 
 
 class RuntimeMismatchErrorData(
-    namedtuple("_RuntimeMismatchErrorData", "config_type_snap value_rep")
+    NamedTuple(
+        "_RuntimeMismatchErrorData", [("config_type_snap", ConfigTypeSnap), ("value_rep", str)]
+    )
 ):
     def __new__(cls, config_type_snap, value_rep):
         check.inst_param(config_type_snap, "config_type", ConfigTypeSnap)
@@ -73,7 +84,10 @@ class RuntimeMismatchErrorData(
 
 
 class SelectorTypeErrorData(
-    namedtuple("_SelectorTypeErrorData", "config_type_snap incoming_fields")
+    NamedTuple(
+        "_SelectorTypeErrorData",
+        [("config_type_snap", ConfigTypeSnap), ("incoming_fields", List[str])],
+    )
 ):
     def __new__(cls, config_type_snap, incoming_fields):
         check.inst_param(config_type_snap, "config_type_snap", ConfigTypeSnap)
@@ -115,7 +129,7 @@ def _get_type_msg(type_in_context):
         return ' on type "{type_name}"'.format(type_name=type_in_context.given_name)
 
 
-def create_dict_type_mismatch_error(context, config_value):
+def create_dict_type_mismatch_error(context: ContextData, config_value: object) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
 
     path_msg, _path = get_friendly_path_info(context.stack)
@@ -135,7 +149,9 @@ def create_dict_type_mismatch_error(context, config_value):
     )
 
 
-def create_field_substitution_collision_error(context, name, aliased_name):
+def create_field_substitution_collision_error(
+    context: ContextData, name: str, aliased_name: str
+) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
     check_config_type_in_context_has_fields(context, "context")
     return EvaluationError(
@@ -169,7 +185,7 @@ def create_fields_not_defined_error(context, undefined_fields):
     )
 
 
-def create_enum_type_mismatch_error(context, config_value):
+def create_enum_type_mismatch_error(context: ContextData, config_value: object) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
 
     return EvaluationError(
@@ -183,7 +199,7 @@ def create_enum_type_mismatch_error(context, config_value):
     )
 
 
-def create_enum_value_missing_error(context, config_value):
+def create_enum_value_missing_error(context: ContextData, config_value: object) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
 
     return EvaluationError(
@@ -198,11 +214,11 @@ def create_enum_value_missing_error(context, config_value):
     )
 
 
-def check_config_type_in_context_has_fields(context, param_name):
+def check_config_type_in_context_has_fields(context: ContextData, param_name: str) -> None:
     check.param_invariant(ConfigTypeKind.has_fields(context.config_type_snap.kind), param_name)
 
 
-def create_field_not_defined_error(context, received_field):
+def create_field_not_defined_error(context: ContextData, received_field: str) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
     check_config_type_in_context_has_fields(context, "context")
     check.str_param(received_field, "received_field")
@@ -238,7 +254,9 @@ def create_array_error(context, config_value):
     )
 
 
-def create_missing_required_field_error(context, expected_field):
+def create_missing_required_field_error(
+    context: ContextData, expected_field: str
+) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
     check_config_type_in_context_has_fields(context, "context")
 
@@ -266,7 +284,9 @@ def create_missing_required_field_error(context, expected_field):
     )
 
 
-def create_missing_required_fields_error(context, missing_fields):
+def create_missing_required_fields_error(
+    context: ContextData, missing_fields: List[str]
+) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
     check_config_type_in_context_has_fields(context, "context")
 
@@ -293,7 +313,7 @@ def create_missing_required_fields_error(context, missing_fields):
     )
 
 
-def create_scalar_error(context, config_value):
+def create_scalar_error(context: ContextData, config_value: object) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
 
     return EvaluationError(
@@ -310,7 +330,9 @@ def create_scalar_error(context, config_value):
     )
 
 
-def create_selector_multiple_fields_error(context, config_value):
+def create_selector_multiple_fields_error(
+    context: ContextData, config_value: Dict[str, object]
+) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
 
     defined_fields = sorted(context.config_type_snap.field_names)
@@ -333,7 +355,9 @@ def create_selector_multiple_fields_error(context, config_value):
     )
 
 
-def create_selector_multiple_fields_no_field_selected_error(context):
+def create_selector_multiple_fields_no_field_selected_error(
+    context: ContextData,
+) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
 
     defined_fields = sorted(context.config_type_snap.field_names)
@@ -351,7 +375,7 @@ def create_selector_multiple_fields_no_field_selected_error(context):
     )
 
 
-def create_selector_type_error(context, config_value):
+def create_selector_type_error(context: ContextData, config_value: object) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
 
     return EvaluationError(
@@ -366,10 +390,10 @@ def create_selector_type_error(context, config_value):
     )
 
 
-def create_selector_unspecified_value_error(context):
+def create_selector_unspecified_value_error(context: ContextData) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
 
-    defined_fields = sorted(list(context.config_type.fields.keys()))
+    defined_fields = sorted(context.config_type_snap.field_names)
 
     return EvaluationError(
         stack=context.stack,
@@ -383,7 +407,7 @@ def create_selector_unspecified_value_error(context):
     )
 
 
-def create_none_not_allowed_error(context):
+def create_none_not_allowed_error(context: ContextData) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
 
     return EvaluationError(
@@ -399,7 +423,9 @@ def create_none_not_allowed_error(context):
     )
 
 
-def create_failed_post_processing_error(context, original_value, error_data):
+def create_failed_post_processing_error(
+    context: ContextData, original_value: object, error_data: SerializableErrorInfo
+) -> EvaluationError:
     check.inst_param(context, "context", ContextData)
     check.inst_param(error_data, "error_data", SerializableErrorInfo)
 

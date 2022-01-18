@@ -1,5 +1,6 @@
 import logging
 import time
+from typing import Any, Dict, List, NamedTuple, Optional
 
 from dagster import DagsterEvent, DagsterEventType, IntSource, String, check
 from dagster.builtins import Bool
@@ -11,6 +12,15 @@ from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
 from .base import RunCoordinator, SubmitRunContext
+
+
+class RunQueueConfig(
+    NamedTuple(
+        "_RunQueueConfig",
+        [("max_concurrent_runs", int), ("tag_concurrency_limits", Optional[List[Dict[str, Any]]])],
+    )
+):
+    pass
 
 
 class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
@@ -44,13 +54,11 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
     def inst_data(self):
         return self._inst_data
 
-    @property
-    def max_concurrent_runs(self):
-        return self._max_concurrent_runs
-
-    @property
-    def tag_concurrency_limits(self):
-        return self._tag_concurrency_limits
+    def get_run_queue_config(self):
+        return RunQueueConfig(
+            max_concurrent_runs=self._max_concurrent_runs,
+            tag_concurrency_limits=self._tag_concurrency_limits,
+        )
 
     @property
     def dequeue_interval_seconds(self):

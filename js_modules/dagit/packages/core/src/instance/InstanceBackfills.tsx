@@ -1,4 +1,24 @@
 import {gql, useQuery, useMutation} from '@apollo/client';
+import {
+  Alert,
+  Box,
+  ButtonWIP,
+  ButtonLink,
+  ColorsWIP,
+  CursorPaginationControls,
+  Group,
+  IconWIP,
+  MenuItemWIP,
+  MenuWIP,
+  NonIdealState,
+  PageHeader,
+  Popover,
+  Table,
+  TagWIP,
+  Heading,
+  Mono,
+  stringFromValue,
+} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {useHistory, Link} from 'react-router-dom';
@@ -22,23 +42,7 @@ import {TerminationDialog} from '../runs/TerminationDialog';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {BulkActionStatus, RunStatus} from '../types/globalTypes';
-import {Alert} from '../ui/Alert';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ButtonLink} from '../ui/ButtonLink';
-import {ColorsWIP} from '../ui/Colors';
-import {CursorPaginationControls} from '../ui/CursorControls';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
 import {Loading} from '../ui/Loading';
-import {MenuItemWIP, MenuWIP} from '../ui/Menu';
-import {NonIdealState} from '../ui/NonIdealState';
-import {PageHeader} from '../ui/PageHeader';
-import {Popover} from '../ui/Popover';
-import {Table} from '../ui/Table';
-import {TagWIP} from '../ui/TagWIP';
-import {Heading, Mono} from '../ui/Text';
-import {stringFromValue} from '../ui/TokenizingField';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
@@ -231,12 +235,12 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
       <Table>
         <thead>
           <tr>
-            <th style={{width: '120px'}}>Backfill Id</th>
+            <th style={{width: 120}}>Backfill Id</th>
             <th>Partition Set</th>
             <th style={{textAlign: 'right'}}>Progress</th>
             <th>Status</th>
             <th>Created</th>
-            <th></th>
+            <th style={{width: 80}} />
           </tr>
         </thead>
         <tbody>
@@ -278,7 +282,7 @@ const BackfillRow = ({
   const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissions();
   const counts = React.useMemo(() => getProgressCounts(backfill), [backfill]);
   const runsUrl = `/instance/runs?${qs.stringify({
-    q: stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}]),
+    q: [stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}])],
   })}`;
 
   const repoAddress = backfill.partitionSet
@@ -301,7 +305,7 @@ const BackfillRow = ({
         pipelineName: backfill.partitionSet.pipelineName,
         path: `/partitions?${qs.stringify({
           partitionSet: backfill.partitionSet.name,
-          q: stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}]),
+          q: [stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}])],
         })}`,
         isJob,
       })
@@ -348,7 +352,7 @@ const BackfillRow = ({
         <BackfillStatusTable backfill={backfill} />
       </td>
       <td>{backfill.timestamp ? <TimestampDisplay timestamp={backfill.timestamp} /> : '-'}</td>
-      <td style={{width: '100px'}}>
+      <td>
         <Popover
           content={
             <MenuWIP>

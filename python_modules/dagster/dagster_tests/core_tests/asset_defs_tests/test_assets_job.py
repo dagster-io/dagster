@@ -1,5 +1,20 @@
-from dagster import AssetKey, DependencyDefinition, IOManager, io_manager
-from dagster.core.asset_defs import ForeignAsset, asset, build_assets_job
+import os
+
+import pytest
+from dagster import (
+    AssetKey,
+    DagsterInvalidDefinitionError,
+    DependencyDefinition,
+    IOManager,
+    io_manager,
+)
+from dagster.core.asset_defs import AssetIn, ForeignAsset, asset, build_assets_job
+from dagster.core.snap import DependencyStructureIndex
+from dagster.core.snap.dep_snapshot import (
+    OutputHandleSnap,
+    build_dep_structure_snapshot_from_icontains_solids,
+)
+from dagster.utils import safe_tempfile_path
 
 
 def test_single_asset_pipeline():
@@ -80,6 +95,88 @@ def test_join():
     assert job.execute_in_process().success
 
 
+def test_asset_key_output():
+    @asset
+    def asset1():
+        return 1
+
+    @asset(ins={"hello": AssetIn(asset_key=AssetKey("asset1"))})
+    def asset2(hello):
+        return hello
+
+    job = build_assets_job("boo", [asset1, asset2])
+    result = job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("asset2") == 1
+
+
+def test_asset_key_matches_input_name():
+    @asset
+    def asset_foo():
+        return "foo"
+
+    @asset
+    def asset_bar():
+        return "bar"
+
+    @asset(
+        ins={"asset_bar": AssetIn(asset_key=AssetKey("asset_foo"))}
+    )  # should still use output from asset_foo
+    def last_asset(asset_bar):
+        return asset_bar
+
+    job = build_assets_job("lol", [asset_foo, asset_bar, last_asset])
+    result = job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("last_asset") == "foo"
+
+
+def test_asset_key_and_inferred():
+    @asset
+    def asset_foo():
+        return 2
+
+    @asset
+    def asset_bar():
+        return 5
+
+    @asset(ins={"foo": AssetIn(asset_key=AssetKey("asset_foo"))})
+    def asset_baz(foo, asset_bar):
+        return foo + asset_bar
+
+    job = build_assets_job("hello", [asset_foo, asset_bar, asset_baz])
+    result = job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("asset_baz") == 7
+
+
+def test_asset_key_for_asset_with_namespace():
+    @asset(namespace="hello")
+    def asset_foo():
+        return "foo"
+
+    @asset(
+        ins={"foo": AssetIn(asset_key=AssetKey("asset_foo"))}
+    )  # Should fail because asset_foo is defined with namespace, so has asset key ["hello", "asset_foo"]
+    def failing_asset(foo):
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+    ):
+        build_assets_job("lol", [asset_foo, failing_asset])
+
+    @asset(ins={"foo": AssetIn(asset_key=AssetKey(["hello", "asset_foo"]))})
+    def success_asset(foo):
+        return foo
+
+    job = build_assets_job("lol", [asset_foo, success_asset])
+
+    result = job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("success_asset") == "foo"
+
+
 def test_foreign_asset():
     @asset
     def asset1(source1):
@@ -136,3 +233,57 @@ def test_source_op_asset():
     )
     assert job.graph.node_defs == [asset1.op]
     assert job.execute_in_process().success
+
+
+def test_non_argument_deps():
+    with safe_tempfile_path() as path:
+
+        @asset
+        def foo():
+            with open(path, "w") as ff:
+                ff.write("yup")
+
+        @asset(non_argument_deps={AssetKey("foo")})
+        def bar():
+            # assert that the foo asset already executed
+            assert os.path.exists(path)
+
+        job = build_assets_job("a", [foo, bar])
+        assert job.execute_in_process().success
+
+
+def test_multiple_non_argument_deps():
+    @asset
+    def foo():
+        pass
+
+    @asset
+    def bar():
+        pass
+
+    @asset
+    def baz():
+        return 1
+
+    @asset(non_argument_deps={AssetKey("foo"), AssetKey("bar")})
+    def qux(baz):
+        return baz
+
+    job = build_assets_job("a", [foo, bar, baz, qux])
+
+    dep_structure_snapshot = build_dep_structure_snapshot_from_icontains_solids(job.graph)
+    index = DependencyStructureIndex(dep_structure_snapshot)
+
+    assert index.get_invocation("foo")
+    assert index.get_invocation("bar")
+    assert index.get_invocation("baz")
+
+    assert index.get_upstream_outputs("qux", "foo") == [
+        OutputHandleSnap("foo", "result"),
+    ]
+    assert index.get_upstream_outputs("qux", "bar") == [OutputHandleSnap("bar", "result")]
+    assert index.get_upstream_outputs("qux", "baz") == [OutputHandleSnap("baz", "result")]
+
+    result = job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("qux") == 1

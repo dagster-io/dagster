@@ -49,7 +49,7 @@ def _scheduler_ran(caplog):
         logger_name, _level, text = log_tuple
 
         if (
-            logger_name == "SchedulerDaemon"
+            logger_name == "dagster.daemon.SchedulerDaemon"
             and "Not checking for any runs since no schedules have been started." in text
         ):
             count = count + 1
@@ -62,7 +62,10 @@ def _run_coordinator_ran(caplog):
     for log_tuple in caplog.record_tuples:
         logger_name, _level, text = log_tuple
 
-        if logger_name == "QueuedRunCoordinatorDaemon" and "Poll returned no queued runs." in text:
+        if (
+            logger_name == "dagster.daemon.QueuedRunCoordinatorDaemon"
+            and "Poll returned no queued runs." in text
+        ):
             count = count + 1
 
     return count
@@ -74,7 +77,7 @@ def _sensor_ran(caplog):
         logger_name, _level, text = log_tuple
 
         if (
-            logger_name == "SensorDaemon"
+            logger_name == "dagster.daemon.SensorDaemon"
             and "Not checking for any runs since no sensors have been started." in text
         ):
             count = count + 1
@@ -118,14 +121,3 @@ def test_different_intervals(caplog):
                 time.sleep(0.5)
 
             init_time = pendulum.now("UTC")
-            while True:
-                now = pendulum.now("UTC")
-
-                if _scheduler_ran(caplog) == 2:
-                    assert _run_coordinator_ran(caplog) > 2
-                    break
-
-                if (now - init_time).total_seconds() > 45:
-                    raise Exception("Timed out waiting for schedule daemon to execute twice")
-
-                time.sleep(0.5)

@@ -37,7 +37,7 @@ type DagitQuery {
   assetNodes: [AssetNode!]!
   assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
-  partitionBackfillsOrError(cursor: String, limit: Int): PartitionBackfillsOrError!
+  partitionBackfillsOrError(status: BulkActionStatus, cursor: String, limit: Int): PartitionBackfillsOrError!
   permissions: [GraphenePermission!]!
 }
 
@@ -93,7 +93,8 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
-  assetNodes: [AssetNode!]!
+  repository: Repository!
+  assetNodes(assetKeys: [AssetKeyInput!], loadMaterializations: Boolean = false): [AssetNode!]!
 }
 
 interface SolidContainer {
@@ -203,6 +204,84 @@ type SolidHandle {
   handleID: String!
   solid: Solid!
   parent: SolidHandle
+  stepStats(limit: Int): SolidStepStatsOrError
+}
+
+union SolidStepStatsOrError = SolidStepStatsConnection | SolidStepStatusUnavailableError
+
+type SolidStepStatsConnection {
+  nodes: [RunStepStats!]!
+}
+
+type RunStepStats implements PipelineRunStepStats {
+  runId: String!
+  stepKey: String!
+  status: StepEventStatus
+  startTime: Float
+  endTime: Float
+  materializations: [Materialization!]!
+  expectationResults: [ExpectationResult!]!
+  attempts: [RunMarker!]!
+  markers: [RunMarker!]!
+}
+
+interface PipelineRunStepStats {
+  runId: String!
+  stepKey: String!
+  status: StepEventStatus
+  startTime: Float
+  endTime: Float
+  materializations: [Materialization!]!
+  expectationResults: [ExpectationResult!]!
+}
+
+enum StepEventStatus {
+  SKIPPED
+  SUCCESS
+  FAILURE
+  IN_PROGRESS
+}
+
+type Materialization implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  assetKey: AssetKey
+}
+
+interface DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+}
+
+interface EventMetadataEntry {
+  label: String!
+  description: String
+}
+
+type AssetKey {
+  path: [String!]!
+}
+
+type ExpectationResult implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  success: Boolean!
+}
+
+type RunMarker {
+  startTime: Float
+  endTime: Float
+}
+
+type SolidStepStatusUnavailableError implements Error {
+  message: String!
+}
+
+interface Error {
+  message: String!
 }
 
 type Mode {
@@ -264,10 +343,6 @@ type PipelineNotFoundError implements Error {
   pipelineName: String!
   repositoryName: String!
   repositoryLocationName: String!
-}
-
-interface Error {
-  message: String!
 }
 
 type DagsterTypeNotFoundError implements Error {
@@ -397,69 +472,6 @@ interface PipelineRunStatsSnapshot {
   endTime: Float
 }
 
-type RunStepStats implements PipelineRunStepStats {
-  runId: String!
-  stepKey: String!
-  status: StepEventStatus
-  startTime: Float
-  endTime: Float
-  materializations: [Materialization!]!
-  expectationResults: [ExpectationResult!]!
-  attempts: [RunMarker!]!
-  markers: [RunMarker!]!
-}
-
-interface PipelineRunStepStats {
-  runId: String!
-  stepKey: String!
-  status: StepEventStatus
-  startTime: Float
-  endTime: Float
-  materializations: [Materialization!]!
-  expectationResults: [ExpectationResult!]!
-}
-
-enum StepEventStatus {
-  SKIPPED
-  SUCCESS
-  FAILURE
-  IN_PROGRESS
-}
-
-type Materialization implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  assetKey: AssetKey
-}
-
-interface DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-}
-
-interface EventMetadataEntry {
-  label: String!
-  description: String
-}
-
-type AssetKey {
-  path: [String!]!
-}
-
-type ExpectationResult implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  success: Boolean!
-}
-
-type RunMarker {
-  startTime: Float
-  endTime: Float
-}
-
 type ComputeLogs {
   runId: String!
   stepKey: String!
@@ -491,13 +503,11 @@ type ExecutionStep {
 
 type ExecutionStepInput {
   name: String!
-  type: DagsterType!
   dependsOn: [ExecutionStep!]!
 }
 
 type ExecutionStepOutput {
   name: String!
-  type: DagsterType!
 }
 
 enum StepKind {
@@ -511,8 +521,7 @@ scalar RunConfigData
 type Asset {
   id: String!
   key: AssetKey!
-  assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
-  tags: [AssetTag!]!
+  assetMaterializations(partitions: [String], partitionInLast: Int, beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
   definition: AssetNode
 }
 
@@ -616,24 +625,26 @@ interface PipelineRunNotFoundError {
   message: String!
 }
 
-type AssetTag {
-  key: String!
-  value: String!
-}
-
 type AssetNode {
   id: ID!
   assetKey: AssetKey!
   description: String
   opName: String
-  jobName: String
+  jobs: [Pipeline!]!
+  repository: Repository!
   dependencies: [AssetDependency!]!
+  dependedBy: [AssetDependency!]!
+  dependencyKeys: [AssetKey!]!
+  dependedByKeys: [AssetKey!]!
   assetMaterializations(partitions: [String], beforeTimestampMillis: String, limit: Int): [AssetMaterialization!]!
+  partitionKeys: [String!]!
+  partitionDefinition: String
+  latestMaterializationByPartition(partitions: [String]): [AssetMaterialization]!
 }
 
 type AssetDependency {
   inputName: String!
-  upstreamAsset: AssetNode!
+  asset: AssetNode!
 }
 
 union DagsterRunEvent = ExecutionStepFailureEvent | ExecutionStepInputEvent | ExecutionStepOutputEvent | ExecutionStepSkippedEvent | ExecutionStepStartEvent | ExecutionStepSuccessEvent | ExecutionStepUpForRetryEvent | ExecutionStepRestartEvent | LogMessageEvent | RunFailureEvent | RunStartEvent | RunEnqueuedEvent | RunDequeuedEvent | RunStartingEvent | RunCancelingEvent | RunCanceledEvent | RunSuccessEvent | HandledOutputEvent | LoadedInputEvent | LogsCapturedEvent | ObjectStoreOperationEvent | StepExpectationResultEvent | StepMaterializationEvent | EngineEvent | HookCompletedEvent | HookSkippedEvent | HookErroredEvent | AlertStartEvent | AlertSuccessEvent
@@ -1013,7 +1024,7 @@ type Schedule {
   description: String
   scheduleState: InstigationState!
   partitionSet: PartitionSet
-  futureTicks(cursor: Float, limit: Int): FutureInstigationTicks!
+  futureTicks(cursor: Float, limit: Int, until: Float): FutureInstigationTicks!
   futureTick(tickTimestamp: Int!): FutureInstigationTick!
 }
 
@@ -1026,6 +1037,7 @@ type InstigationState {
   typeSpecificData: InstigationTypeSpecificData
   runs(limit: Int): [Run!]!
   runsCount: Int!
+  tick(timestamp: Float): InstigationTick
   ticks(dayRange: Int, dayOffset: Int, limit: Int): [InstigationTick!]!
   nextTick: FutureInstigationTick
   runningCount: Int!
@@ -1135,7 +1147,8 @@ input RunsFilter {
   tags: [ExecutionTag!]
   statuses: [RunStatus!]
   snapshotId: String
-  updatedAfter: String
+  updatedAfter: Float
+  createdBefore: Float
   mode: String
 }
 
@@ -1170,6 +1183,7 @@ type Sensor {
   minIntervalSeconds: Int!
   description: String
   nextTick: FutureInstigationTick
+  metadata: SensorMetadata!
 }
 
 type Target {
@@ -1178,12 +1192,20 @@ type Target {
   solidSelection: [String!]
 }
 
+type SensorMetadata {
+  assetKeys: [AssetKey!]
+}
+
 type PipelinePreset {
   name: String!
   solidSelection: [String!]
   runConfigYaml: String!
   mode: String!
   tags: [PipelineTag!]!
+}
+
+input AssetKeyInput {
+  path: [String!]!
 }
 
 type Job implements SolidContainer & IPipelineSnapshot {
@@ -1206,7 +1228,8 @@ type Job implements SolidContainer & IPipelineSnapshot {
   presets: [PipelinePreset!]!
   isJob: Boolean!
   isAssetJob: Boolean!
-  assetNodes: [AssetNode!]!
+  repository: Repository!
+  assetNodes(assetKeys: [AssetKeyInput!], loadMaterializations: Boolean = false): [AssetNode!]!
 }
 
 type UsedSolid {
@@ -1221,7 +1244,8 @@ type NodeInvocationSite {
 
 type InProgressRunsByStep {
   stepKey: String!
-  runs: [Run!]!
+  unstartedRuns: [Run!]!
+  inProgressRuns: [Run!]!
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
@@ -1541,10 +1565,6 @@ union AssetOrError = Asset | AssetNotFoundError
 
 type AssetNotFoundError implements Error {
   message: String!
-}
-
-input AssetKeyInput {
-  path: [String!]!
 }
 
 union AssetNodeOrError = AssetNode | AssetNotFoundError

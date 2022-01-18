@@ -246,7 +246,10 @@ class DaskExecutor(Executor):
                         for key in step_input.dependency_keys:
                             dependencies.append(execution_futures_dict[key])
 
-                    run_config = dict(plan_context.run_config, execution={"in_process": {}})
+                    if plan_context.pipeline.get_definition().is_job:
+                        run_config = plan_context.run_config
+                    else:
+                        run_config = dict(plan_context.run_config, execution={"in_process": {}})
 
                     dask_task_name = "%s.%s" % (pipeline_name, step.key)
 

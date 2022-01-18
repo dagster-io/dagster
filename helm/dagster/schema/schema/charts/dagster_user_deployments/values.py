@@ -12,6 +12,7 @@ class DagsterUserDeploymentsHelmValues(BaseModel):
 
     dagsterHome: str
     postgresqlSecretName: str
+    celeryConfigSecretName: str
     deployments: List[UserDeployment]
     imagePullSecrets: List[kubernetes.SecretRef]
     serviceAccount: ServiceAccount

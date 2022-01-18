@@ -1,19 +1,16 @@
 import {gql, useQuery} from '@apollo/client';
+import {Box, ColorsWIP, NonIdealState, Table} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Table} from '../ui/Table';
+import {displayNameForAssetKey} from '../app/Util';
+import {PipelineReference} from '../pipelines/PipelineReference';
 
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
 import {RepositoryAssetsListQuery} from './types/RepositoryAssetsListQuery';
-import {workspacePath} from './workspacePath';
 
 const REPOSITORY_ASSETS_LIST_QUERY = gql`
   query RepositoryAssetsListQuery($repositorySelector: RepositorySelector!) {
@@ -28,7 +25,10 @@ const REPOSITORY_ASSETS_LIST_QUERY = gql`
           }
           opName
           description
-          jobName
+          jobs {
+            id
+            name
+          }
         }
       }
       ... on RepositoryNotFoundError {
@@ -52,21 +52,13 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
   });
 
   const repo = data?.repositoryOrError;
-  const assetsForTable = React.useMemo(() => {
-    if (!repo || repo.__typename !== 'Repository') {
-      return null;
-    }
-    const items = repo.assetNodes.map((asset) => ({
-      name: asset.assetKey.path.join(' > '),
-      path: `/jobs/${asset.jobName}:default/${asset.assetKey.path
-        .map(encodeURIComponent)
-        .join('/')}`,
-      description: asset.description,
-      repoAddress,
-    }));
-
-    return items.sort((a, b) => a.name.localeCompare(b.name));
-  }, [repo, repoAddress]);
+  const assetsForTable = React.useMemo(
+    () =>
+      (repo?.__typename === 'Repository' ? [...repo.assetNodes] : []).sort((a, b) =>
+        displayNameForAssetKey(a.assetKey).localeCompare(displayNameForAssetKey(b.assetKey)),
+      ),
+    [repo],
+  );
 
   if (loading) {
     return null;
@@ -98,14 +90,35 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
 
   return (
     <Table>
+      <thead>
+        <tr>
+          <th>Asset Key</th>
+          <th>Defined In</th>
+        </tr>
+      </thead>
       <tbody>
-        {assetsForTable.map(({name, description, path, repoAddress}) => (
-          <tr key={`${name}-${repoAddressAsString(repoAddress)}`}>
+        {assetsForTable.map((asset) => (
+          <tr key={asset.id}>
             <td>
-              <Group direction="column" spacing={4}>
-                <Link to={workspacePath(repoAddress.name, repoAddress.location, path)}>{name}</Link>
-                <Description>{description}</Description>
-              </Group>
+              <Box flex={{direction: 'column', gap: 4}}>
+                <Link to={`/instance/assets/${asset.assetKey.path.join('/')}`}>
+                  {displayNameForAssetKey(asset.assetKey)}
+                </Link>
+                <Description>{asset.description}</Description>
+              </Box>
+            </td>
+            <td>
+              <Box flex={{direction: 'column', gap: 2}}>
+                {asset.jobs.map(({name}) => (
+                  <PipelineReference
+                    showIcon
+                    isJob
+                    key={name}
+                    pipelineName={name}
+                    pipelineHrefContext={repoAddress}
+                  />
+                ))}
+              </Box>
             </td>
           </tr>
         ))}

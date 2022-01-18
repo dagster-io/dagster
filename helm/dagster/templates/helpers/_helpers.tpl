@@ -156,7 +156,7 @@ Celery options
 pyamqp://{{ .Values.rabbitmq.rabbitmq.username }}:{{ .Values.rabbitmq.rabbitmq.password }}@{{ include "dagster.rabbitmq.fullname" . }}:{{ .Values.rabbitmq.service.port }}//
 {{- else if .Values.redis.enabled -}}
 {{- $password := ternary (printf ":%s@" .Values.redis.password) "" .Values.redis.usePassword -}}
-{{- $connectionUrl := printf "redis://%s%s:%g/%g" $password .Values.redis.host .Values.redis.port (.Values.redis.brokerDbNumber | default 0) -}}
+{{- $connectionUrl := printf "redis://%s%s:%g/%g" $password .Values.redis.host .Values.redis.port (.Values.redis.brokerDbNumber | default (float64 0)) -}}
 {{- ternary .Values.redis.brokerUrl $connectionUrl (not (empty .Values.redis.brokerUrl)) }}
 {{- end -}}
 {{- end -}}
@@ -166,8 +166,8 @@ pyamqp://{{ .Values.rabbitmq.rabbitmq.username }}:{{ .Values.rabbitmq.rabbitmq.p
 rpc://
 {{- else if .Values.redis.enabled -}}
 {{- $password := ternary (printf ":%s@" .Values.redis.password) "" .Values.redis.usePassword -}}
-{{- $connectionUrl := printf "redis://%s%s:%g/%g" $password .Values.redis.host .Values.redis.port (.Values.redis.backendDbNumber | default 0) -}}
-{{- ternary .Values.redis.backendUrl $connectionUrl (not (empty .Values.redis.brokerUrl)) }}
+{{- $connectionUrl := printf "redis://%s%s:%g/%g" $password .Values.redis.host .Values.redis.port (.Values.redis.backendDbNumber | default (float64 0)) -}}
+{{- ternary .Values.redis.backendUrl $connectionUrl (not (empty .Values.redis.backendUrl)) }}
 {{- end -}}
 {{- end -}}
 
@@ -178,12 +178,10 @@ until wget http://{{ .Values.rabbitmq.rabbitmq.username }}:{{ .Values.rabbitmq.r
 {{/*
 This environment shared across all containers.
 
-This includes Dagit, Celery Workers, Run Master, and Step Execution containers.
+This includes Dagit, Celery Workers, Run Worker, and Step Worker containers.
 */}}
 {{- define "dagster.shared_env" -}}
 DAGSTER_HOME: {{ .Values.global.dagsterHome | quote }}
-DAGSTER_K8S_CELERY_BROKER: "{{ template "dagster.celery.broker_url" . }}"
-DAGSTER_K8S_CELERY_BACKEND: "{{ template "dagster.celery.backend_url" . }}"
 DAGSTER_K8S_PG_PASSWORD_SECRET: {{ include "dagster.postgresql.secretName" . | quote }}
 DAGSTER_K8S_INSTANCE_CONFIG_MAP: "{{ template "dagster.fullname" .}}-instance"
 DAGSTER_K8S_PIPELINE_RUN_NAMESPACE: "{{ .Release.Namespace }}"

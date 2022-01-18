@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { RepositoryLocationLoadStatus, InstigationType, InstigationStatus, RunStatus, InstigationTickStatus } from "./../../types/globalTypes";
+import { InstigationType, InstigationStatus, RunStatus, InstigationTickStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: InstanceSensorsQuery
@@ -43,57 +43,6 @@ export interface InstanceSensorsQuery_instance {
   daemonHealth: InstanceSensorsQuery_instance_daemonHealth;
   hasInfo: boolean;
 }
-
-export interface InstanceSensorsQuery_workspaceOrError_Workspace_locationEntries_displayMetadata {
-  __typename: "RepositoryMetadata";
-  key: string;
-  value: string;
-}
-
-export interface InstanceSensorsQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation {
-  __typename: "RepositoryLocation";
-  id: string;
-  isReloadSupported: boolean;
-  serverId: string | null;
-  name: string;
-}
-
-export interface InstanceSensorsQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError {
-  __typename: "PythonError";
-  message: string;
-}
-
-export type InstanceSensorsQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError = InstanceSensorsQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation | InstanceSensorsQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_PythonError;
-
-export interface InstanceSensorsQuery_workspaceOrError_Workspace_locationEntries {
-  __typename: "WorkspaceLocationEntry";
-  id: string;
-  name: string;
-  loadStatus: RepositoryLocationLoadStatus;
-  displayMetadata: InstanceSensorsQuery_workspaceOrError_Workspace_locationEntries_displayMetadata[];
-  updatedTimestamp: number;
-  locationOrLoadError: InstanceSensorsQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError | null;
-}
-
-export interface InstanceSensorsQuery_workspaceOrError_Workspace {
-  __typename: "Workspace";
-  locationEntries: InstanceSensorsQuery_workspaceOrError_Workspace_locationEntries[];
-}
-
-export interface InstanceSensorsQuery_workspaceOrError_PythonError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface InstanceSensorsQuery_workspaceOrError_PythonError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: InstanceSensorsQuery_workspaceOrError_PythonError_cause | null;
-}
-
-export type InstanceSensorsQuery_workspaceOrError = InstanceSensorsQuery_workspaceOrError_Workspace | InstanceSensorsQuery_workspaceOrError_PythonError;
 
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_location {
   __typename: "RepositoryLocation";
@@ -188,6 +137,16 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
   mode: string;
 }
 
+export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_metadata_assetKeys {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_metadata {
+  __typename: "SensorMetadata";
+  assetKeys: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_metadata_assetKeys[] | null;
+}
+
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors {
   __typename: "Sensor";
   id: string;
@@ -198,6 +157,7 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
   nextTick: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_nextTick | null;
   sensorState: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState;
   targets: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_targets[] | null;
+  metadata: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_metadata;
 }
 
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes {
@@ -320,7 +280,6 @@ export type InstanceSensorsQuery_unloadableInstigationStatesOrError = InstanceSe
 
 export interface InstanceSensorsQuery {
   instance: InstanceSensorsQuery_instance;
-  workspaceOrError: InstanceSensorsQuery_workspaceOrError;
   repositoriesOrError: InstanceSensorsQuery_repositoriesOrError;
   unloadableInstigationStatesOrError: InstanceSensorsQuery_unloadableInstigationStatesOrError;
 }

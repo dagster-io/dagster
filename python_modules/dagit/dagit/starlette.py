@@ -4,21 +4,34 @@ import uuid
 from os import path
 from typing import List
 
+import nbformat
 from dagster import DagsterInstance
 from dagster import __version__ as dagster_version
+from dagster import check
 from dagster.cli.workspace.cli_target import get_workspace_process_context_from_kwargs
 from dagster.core.debug import DebugRunPayload
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
+from dagster.seven import json
+from dagster.utils import Counter, traced_counter
 from dagster_graphql import __version__ as dagster_graphql_version
 from dagster_graphql.schema import create_schema
 from graphene import Schema
+from nbconvert import HTMLExporter
+from starlette.datastructures import MutableHeaders
 from starlette.exceptions import HTTPException
 from starlette.middleware import Middleware
 from starlette.requests import HTTPConnection, Request
-from starlette.responses import FileResponse, HTMLResponse, JSONResponse, StreamingResponse
+from starlette.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    PlainTextResponse,
+    StreamingResponse,
+)
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
+from starlette.types import Message
 
 from .graphql import GraphQLServer
 from .version import __version__
@@ -54,7 +67,7 @@ class DagitWebserver(GraphQLServer):
         return self._process_context.create_request_context(conn)
 
     def build_middleware(self) -> List[Middleware]:
-        return []
+        return [Middleware(DagsterTracedCounterMiddleware)]
 
     async def dagit_info_endpoint(self, _request: Request):
         return JSONResponse(
@@ -79,6 +92,25 @@ class DagitWebserver(GraphQLServer):
         result.seek(0)  # be kind, please rewind
 
         return StreamingResponse(result, media_type="application/gzip")
+
+    async def download_notebook(self, request: Request):
+        context = self.make_request_context(request)
+        repo_location_name = request.query_params["repoLocName"]
+
+        nb_path = request.query_params["path"]
+        if not nb_path.endswith(".ipynb"):
+            return PlainTextResponse("Invalid Path", status_code=400)
+
+        # get ipynb content from grpc call
+        notebook_content = context.get_external_notebook_data(repo_location_name, nb_path)
+        check.inst_param(notebook_content, "notebook_content", bytes)
+
+        # parse content to HTML
+        notebook = nbformat.reads(notebook_content, as_version=4)
+        html_exporter = HTMLExporter()
+        html_exporter.template_file = "basic"
+        (body, resources) = html_exporter.from_notebook_node(notebook)
+        return HTMLResponse("<style>" + resources["inlining"]["css"][0] + "</style>" + body)
 
     async def download_compute_logs_endpoint(self, request: Request):
         run_id = request.path_params["run_id"]
@@ -187,6 +219,10 @@ class DagitWebserver(GraphQLServer):
                     self.download_compute_logs_endpoint,
                 ),
                 Route(
+                    "/dagit/notebook",
+                    self.download_notebook,
+                ),
+                Route(
                     "/download_debug/{run_id:str}",
                     self.download_debug_file_endpoint,
                 ),
@@ -212,3 +248,27 @@ def default_app(debug=False):
 
 def debug_app():
     return default_app(debug=True)
+
+
+class DagsterTracedCounterMiddleware:
+    """Middleware for counting traced dagster calls
+    Args:
+      app (ASGI application): ASGI application
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        traced_counter.set(Counter())
+
+        def send_wrapper(message: Message):
+            if message["type"] == "http.response.start":
+                counter = traced_counter.get()
+                if counter and isinstance(counter, Counter):
+                    headers = MutableHeaders(scope=message)
+                    headers.append("x-dagster-call-counts", json.dumps(counter.counts()))
+
+            return send(message)
+
+        await self.app(scope, receive, send_wrapper)

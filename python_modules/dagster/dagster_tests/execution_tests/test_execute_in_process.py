@@ -1,5 +1,7 @@
 import pytest
 from dagster import (
+    AssetKey,
+    AssetMaterialization,
     DagsterInvariantViolationError,
     DynamicOut,
     DynamicOutput,
@@ -246,3 +248,18 @@ def test_partitions_key():
         my_op()
 
     assert my_job.execute_in_process(partition_key="2020-01-01").success
+
+
+def test_asset_materialization():
+    @op(out={})
+    def my_op():
+        yield AssetMaterialization("abc")
+
+    @job
+    def my_job():
+        my_op()
+
+    result = my_job.execute_in_process()
+    assert result.asset_materializations_for_node("my_op") == [
+        AssetMaterialization(asset_key=AssetKey(["abc"]))
+    ]

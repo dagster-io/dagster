@@ -1,15 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
+import {Box, NonIdealState, PageHeader, Popover, TagWIP, Heading, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
-import {RouteComponentProps} from 'react-router-dom';
+import {useParams} from 'react-router-dom';
 
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {Box} from '../ui/Box';
-import {NonIdealState} from '../ui/NonIdealState';
-import {PageHeader} from '../ui/PageHeader';
-import {Popover} from '../ui/Popover';
-import {TagWIP} from '../ui/TagWIP';
-import {Heading} from '../ui/Text';
-import {FontFamily} from '../ui/styles';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
@@ -20,8 +14,8 @@ import {RunFragments} from './RunFragments';
 import {RunStatusTag} from './RunStatusTag';
 import {RunRootQuery} from './types/RunRootQuery';
 
-export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
-  const {runId} = props.match.params;
+export const RunRoot = () => {
+  const {runId} = useParams<{runId: string}>();
 
   const {data, loading} = useQuery<RunRootQuery>(RUN_ROOT_QUERY, {
     fetchPolicy: 'cache-and-network',
@@ -38,7 +32,7 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
     : null;
 
   const isJob = React.useMemo(
-    () => !!(run && repoMatch && isThisThingAJob(repoMatch.match, run.pipeline.name)),
+    () => !!(run && repoMatch && isThisThingAJob(repoMatch.match, run.pipelineName)),
     [run, repoMatch],
   );
 
@@ -83,7 +77,7 @@ export const RunRoot = (props: RouteComponentProps<{runId: string}>) => {
                 <TagWIP icon="run">
                   Run of{' '}
                   <PipelineReference
-                    pipelineName={run?.pipeline.name}
+                    pipelineName={run?.pipelineName}
                     pipelineHrefContext={repoAddress || 'repo-unknown'}
                     snapshotId={snapshotID}
                     size="small"
@@ -130,13 +124,6 @@ const RUN_ROOT_QUERY = gql`
       __typename
       ... on Run {
         id
-        pipeline {
-          __typename
-          ... on PipelineReference {
-            name
-            solidSelection
-          }
-        }
         ...RunFragment
       }
     }

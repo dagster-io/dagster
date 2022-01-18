@@ -1,9 +1,8 @@
+import {ColorsWIP, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {formatElapsedTime} from '../app/Util';
-import {ColorsWIP} from '../ui/Colors';
-import {FontFamily} from '../ui/styles';
 
 import {CSS_DURATION, GanttViewport, LEFT_INSET} from './Constants';
 
@@ -121,7 +120,7 @@ export const GanttChartTimescale = ({
         {ticks}
         {highlightedMs.length === 2 && (
           <div
-            key={`highlight-duration`}
+            key="highlight-duration"
             className="tick duration"
             style={{
               left: (highlightedMs[0] - startMs) * pxPerMs + 2,

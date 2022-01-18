@@ -8,9 +8,12 @@ from dagster import __version__ as dagster_version
 from dagster import check
 from dagster.core.debug import DebugRunPayload
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
+from dagster.core.instance import is_dagit_telemetry_enabled
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.telemetry import log_workspace_stats
 from dagster.core.workspace.context import IWorkspaceProcessContext, WorkspaceProcessContext
+from dagster.seven import json
+from dagster.utils import Counter, traced_counter
 from dagster_graphql.schema import create_schema
 from dagster_graphql.version import __version__ as dagster_graphql_version
 from flask import Blueprint, Flask, jsonify, redirect, render_template_string, request, send_file
@@ -147,7 +150,7 @@ def instantiate_app_with_views(
     target_dir=os.path.dirname(__file__),
     graphql_middleware=None,
     include_notebook_route=False,
-):
+) -> Flask:
     app = Flask(
         "dagster-ui",
         static_url_path=app_path_prefix,
@@ -201,6 +204,8 @@ def instantiate_app_with_views(
 
     index_path = os.path.join(target_dir, "./webapp/build/index.html")
 
+    telemetry_enabled = is_dagit_telemetry_enabled(context.instance)
+
     def index_view(*args, **kwargs):  # pylint: disable=unused-argument
         try:
             with open(index_path) as f:
@@ -209,6 +214,7 @@ def instantiate_app_with_views(
                     rendered_template.replace('href="/', f'href="{app_path_prefix}/')
                     .replace('src="/', f'src="{app_path_prefix}/')
                     .replace("__PATH_PREFIX__", app_path_prefix)
+                    .replace('"__TELEMETRY_ENABLED__"', str(telemetry_enabled).lower())
                     .replace("NONCE-PLACEHOLDER", uuid.uuid4().hex)
                 )
         except FileNotFoundError:
@@ -227,18 +233,31 @@ def instantiate_app_with_views(
     bp.context_processor(lambda: {"app_path_prefix": app_path_prefix})
 
     app.app_protocol = lambda environ_path_info: "graphql-ws"
+    app.before_request(initialize_counts)
     app.register_blueprint(bp)
     app.register_error_handler(404, index_view)
+    app.after_request(return_counts)
 
     CORS(app)
 
     return app
 
 
+def initialize_counts():
+    traced_counter.set(Counter())
+
+
+def return_counts(response):
+    counter = traced_counter.get()
+    if counter and isinstance(counter, Counter):
+        response.headers["x-dagster-call-counts"] = json.dumps(counter.counts())
+    return response
+
+
 def create_app_from_workspace_process_context(
     workspace_process_context: WorkspaceProcessContext,
     path_prefix: str = "",
-):
+) -> Flask:
     check.inst_param(
         workspace_process_context, "workspace_process_context", WorkspaceProcessContext
     )
@@ -253,8 +272,6 @@ def create_app_from_workspace_process_context(
             raise Exception(f'The path prefix should not include a trailing "/": got {path_prefix}')
 
     warn_if_compute_logs_disabled()
-
-    print("Loading repository...")  # pylint: disable=print-call
 
     log_workspace_stats(instance, workspace_process_context)
 

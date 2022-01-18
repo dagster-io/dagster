@@ -1,5 +1,6 @@
 # pylint: disable=redefined-outer-name
 import json
+import logging
 import os
 import subprocess
 from contextlib import contextmanager
@@ -71,11 +72,7 @@ def docker_compose_down(docker_compose_yml, context, service):
     else:
         compose_command = ["docker-compose"]
 
-    compose_command += [
-        "--file",
-        str(docker_compose_yml),
-        "down",
-    ]
+    compose_command += ["--file", str(docker_compose_yml), "down", "--volumes", "--remove-orphans"]
 
     if service:
         compose_command.append(service)
@@ -101,11 +98,43 @@ def current_container():
 
 
 def connect_container_to_network(container, network):
-    subprocess.check_call(["docker", "network", "connect", network, container])
+    # subprocess.run instead of subprocess.check_call so we don't fail when
+    # trying to connect a container to a network that it's already connected to
+    try:
+        subprocess.check_call(  # pylint: disable=subprocess-run-check
+            ["docker", "network", "connect", network, container]
+        )
+        logging.info(
+            "Connected {container} to network {network}.".format(
+                container=container,
+                network=network,
+            )
+        )
+    except subprocess.CalledProcessError:
+        logging.warning(
+            "Unable to connect {container} to network {network}.".format(
+                container=container,
+                network=network,
+            )
+        )
 
 
 def disconnect_container_from_network(container, network):
-    subprocess.check_call(["docker", "network", "disconnect", network, container])
+    try:
+        subprocess.check_call(["docker", "network", "disconnect", network, container])
+        logging.info(
+            "Disconnected {container} from network {network}.".format(
+                container=container,
+                network=network,
+            )
+        )
+    except subprocess.CalledProcessError:
+        logging.warning(
+            "Unable to disconnect {container} from network {network}.".format(
+                container=container,
+                network=network,
+            )
+        )
 
 
 def hostnames(network):

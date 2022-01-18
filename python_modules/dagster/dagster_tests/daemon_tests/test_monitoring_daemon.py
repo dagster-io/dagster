@@ -24,6 +24,7 @@ class TestRunLauncher(RunLauncher, ConfigurableClass):
     def __init__(self, inst_data=None):
         self._inst_data = inst_data
         self.launch_run_calls = 0
+        self.resume_run_calls = 0
         super().__init__()
 
     @property
@@ -40,6 +41,9 @@ class TestRunLauncher(RunLauncher, ConfigurableClass):
 
     def launch_run(self, context):
         self.launch_run_calls += 1
+
+    def resume_run(self, context):
+        self.resume_run_calls += 1
 
     def join(self, timeout=30):
         pass
@@ -138,20 +142,25 @@ def test_monitor_started(instance, workspace, logger):
         monitor_started_run(instance, workspace, run, logger)
         assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.STARTED
         assert instance.run_launcher.launch_run_calls == 0
+        assert instance.run_launcher.resume_run_calls == 0
 
     monitor_started_run(instance, workspace, run, logger)
     assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.STARTED
-    assert instance.run_launcher.launch_run_calls == 1
+    assert instance.run_launcher.launch_run_calls == 0
+    assert instance.run_launcher.resume_run_calls == 1
 
     monitor_started_run(instance, workspace, run, logger)
     assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.STARTED
-    assert instance.run_launcher.launch_run_calls == 2
+    assert instance.run_launcher.launch_run_calls == 0
+    assert instance.run_launcher.resume_run_calls == 2
 
     monitor_started_run(instance, workspace, run, logger)
     assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.STARTED
-    assert instance.run_launcher.launch_run_calls == 3
+    assert instance.run_launcher.launch_run_calls == 0
+    assert instance.run_launcher.resume_run_calls == 3
 
     # exausted the 3 attempts
     monitor_started_run(instance, workspace, run, logger)
     assert instance.get_run_by_id(run.run_id).status == PipelineRunStatus.FAILURE
-    assert instance.run_launcher.launch_run_calls == 3
+    assert instance.run_launcher.launch_run_calls == 0
+    assert instance.run_launcher.resume_run_calls == 3

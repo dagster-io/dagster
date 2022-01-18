@@ -1,4 +1,5 @@
 import {useQuery, gql} from '@apollo/client';
+import {Box, NonIdealState} from '@dagster-io/ui';
 import React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -7,9 +8,7 @@ import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSensors} from '../instigation/Unloadable';
 import {InstigationType} from '../types/globalTypes';
-import {Box} from '../ui/Box';
 import {Loading} from '../ui/Loading';
-import {NonIdealState} from '../ui/NonIdealState';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 

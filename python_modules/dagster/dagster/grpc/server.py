@@ -17,9 +17,11 @@ from dagster.core.definitions.reconstructable import (
     ReconstructableRepository,
     repository_def_from_target_def,
 )
+from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.host_representation.external_data import external_repository_data_from_def
 from dagster.core.host_representation.origin import ExternalPipelineOrigin, ExternalRepositoryOrigin
 from dagster.core.instance import DagsterInstance
+from dagster.core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
@@ -28,7 +30,7 @@ from dagster.serdes import (
 )
 from dagster.serdes.ipc import IPCErrorMessage, ipc_write_stream, open_ipc_subprocess
 from dagster.seven import multiprocessing
-from dagster.utils import find_free_port, safe_tempfile_path_unmanaged
+from dagster.utils import find_free_port, frozenlist, safe_tempfile_path_unmanaged
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
@@ -67,7 +69,7 @@ from .types import (
     ShutdownServerResult,
     StartRunResult,
 )
-from .utils import get_loadable_targets
+from .utils import get_loadable_targets, max_rx_bytes, max_send_bytes
 
 EVENT_QUEUE_POLL_INTERVAL = 0.1
 
@@ -142,6 +144,7 @@ def build_code_pointers_by_repo_name(loadable_target_origin, loadable_repository
             ] = CodePointer.from_python_package(
                 loadable_target_origin.package_name,
                 loadable_repository_symbol.attribute,
+                loadable_target_origin.working_directory,
             )
         else:
             repository_code_pointer_dict[
@@ -149,6 +152,7 @@ def build_code_pointers_by_repo_name(loadable_target_origin, loadable_repository
             ] = CodePointer.from_module(
                 loadable_target_origin.module_name,
                 loadable_repository_symbol.attribute,
+                loadable_target_origin.working_directory,
             )
 
     return repository_code_pointer_dict
@@ -166,6 +170,7 @@ class DagsterApiServer(DagsterApiServicer):
         heartbeat_timeout=30,
         lazy_load_user_code=False,
         fixed_server_id=None,
+        entry_point=None,
     ):
         super(DagsterApiServer, self).__init__()
 
@@ -197,6 +202,12 @@ class DagsterApiServer(DagsterApiServicer):
         self._execution_lock = threading.Lock()
 
         self._serializable_load_error = None
+
+        self._entry_point = (
+            frozenlist(check.list_param(entry_point, "entry_point", of_type=str))
+            if entry_point != None
+            else DEFAULT_DAGSTER_ENTRY_POINT
+        )
 
         self._repository_symbols_and_code_pointers = RepositorySymbolsAndCodePointers(
             loadable_target_origin
@@ -299,6 +310,7 @@ class DagsterApiServer(DagsterApiServicer):
             ],
             self._get_current_image(),
             sys.executable,
+            entry_point=self._entry_point,
         )
 
     def _recon_pipeline_from_origin(self, external_pipeline_origin):
@@ -360,6 +372,7 @@ class DagsterApiServer(DagsterApiServicer):
             repository_code_pointer_dict=(
                 self._repository_symbols_and_code_pointers.code_pointers_by_repo_name
             ),
+            entry_point=self._entry_point,
         )
 
         return api_pb2.ListRepositoriesReply(
@@ -779,6 +792,7 @@ class DagsterGrpcServer:
         lazy_load_user_code=False,
         ipc_output_file=None,
         fixed_server_id=None,
+        entry_point=None,
     ):
         check.opt_str_param(host, "host")
         check.opt_int_param(port, "port")
@@ -812,6 +826,10 @@ class DagsterGrpcServer:
         self.server = grpc.server(
             ThreadPoolExecutor(max_workers=max_workers),
             compression=grpc.Compression.Gzip,
+            options=[
+                ("grpc.max_send_message_length", max_send_bytes()),
+                ("grpc.max_receive_message_length", max_rx_bytes()),
+            ],
         )
         self._server_termination_event = threading.Event()
 
@@ -823,6 +841,7 @@ class DagsterGrpcServer:
                 heartbeat_timeout=heartbeat_timeout,
                 lazy_load_user_code=lazy_load_user_code,
                 fixed_server_id=fixed_server_id,
+                entry_point=entry_point,
             )
         except Exception:
             if self._ipc_output_file:
@@ -932,7 +951,7 @@ def wait_for_grpc_server(server_process, client, subprocess_args, timeout=60):
         try:
             client.ping("")
             return
-        except grpc._channel._InactiveRpcError:  # pylint: disable=protected-access
+        except DagsterUserCodeUnreachableError:
             last_error = serializable_error_info_from_exc_info(sys.exc_info())
 
         if time.time() - start_time > timeout:
@@ -966,14 +985,15 @@ def open_server_process(
 
     mocked_system_timezone = get_mocked_system_timezone()
 
+    executable_path = loadable_target_origin.executable_path if loadable_target_origin else None
+
     subprocess_args = (
-        [
-            loadable_target_origin.executable_path
-            if loadable_target_origin and loadable_target_origin.executable_path
-            else sys.executable,
-            "-m",
-            "dagster.grpc",
-        ]
+        (
+            get_python_environment_entry_point(executable_path)
+            if executable_path
+            else DEFAULT_DAGSTER_ENTRY_POINT
+        )
+        + ["api", "grpc"]
         + ["--lazy-load-user-code"]
         + (["--port", str(port)] if port else [])
         + (["--socket", socket] if socket else [])
@@ -982,6 +1002,8 @@ def open_server_process(
         + (["--heartbeat-timeout", str(heartbeat_timeout)] if heartbeat_timeout else [])
         + (["--fixed-server-id", fixed_server_id] if fixed_server_id else [])
         + (["--override-system-timezone", mocked_system_timezone] if mocked_system_timezone else [])
+        + (["--log-level", "WARNING"])  # don't log INFO messages for automatically spun up servers
+        + (["--use-python-environment-entry-point"] if executable_path else [])
     )
 
     if loadable_target_origin:

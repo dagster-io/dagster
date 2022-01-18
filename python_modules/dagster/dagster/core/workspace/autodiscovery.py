@@ -18,15 +18,19 @@ def loadable_targets_from_python_file(python_file, working_directory=None):
     return loadable_targets_from_loaded_module(loaded_module)
 
 
-def loadable_targets_from_python_module(module_name, remove_from_path_fn=None):
+def loadable_targets_from_python_module(module_name, working_directory, remove_from_path_fn=None):
     module = load_python_module(
-        module_name, warn_only=True, remove_from_path_fn=remove_from_path_fn
+        module_name,
+        working_directory=working_directory,
+        remove_from_path_fn=remove_from_path_fn,
     )
     return loadable_targets_from_loaded_module(module)
 
 
-def loadable_targets_from_python_package(package_name, remove_from_path_fn=None):
-    module = load_python_module(package_name, remove_from_path_fn=remove_from_path_fn)
+def loadable_targets_from_python_package(package_name, working_directory, remove_from_path_fn=None):
+    module = load_python_module(
+        package_name, working_directory, remove_from_path_fn=remove_from_path_fn
+    )
     return loadable_targets_from_loaded_module(module)
 
 

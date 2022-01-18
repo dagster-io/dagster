@@ -24,9 +24,9 @@ A _schedule_ is a definition in Dagster that is used to execute a job at a fixed
 Each schedule:
 
 - Targets a single job.
-- Optionally defines a function that returns run configuration for the targeted job.
-- Optionally defines tags and an op selection for the targeted job.
-- Optionally defines a `should_execute` function, which can be used to skip some ticks.
+- Optionally defines a function that returns either:
+  - One or more <PyObject object="RunRequest"/> objects. Each run request launches a run.
+  - An optional <PyObject object="SkipReason"/>, which specifies a message which describes why no runs were requested.
 
 Dagster includes a scheduler, which runs as part of the dagster-daemon process. Once you have defined a schedule, see the [dagster-daemon](/deployment/dagster-daemon) page for instructions on how to run the daemon in order to execute your schedules.
 
@@ -38,7 +38,7 @@ You define a schedule by constructing a <PyObject object="ScheduleDefinition" />
 
 ### A basic schedule
 
-Here's a simple schedule that runs a job every day, at midnight. The `cron_schedule` accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron). It also accepts `"@hourly"`, `"@daily"`, `"@weekly"`, and "@monthly" if your croniter dependency's version is >= 1.0.12.
+Here's a simple schedule that runs a job every day, at midnight. The `cron_schedule` accepts standard [cron expressions](https://en.wikipedia.org/wiki/Cron).
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_basic_schedule endbefore=end_basic_schedule
 @job
@@ -49,7 +49,7 @@ def my_job():
 basic_schedule = ScheduleDefinition(job=my_job, cron_schedule="0 0 * * *")
 ```
 
-### A schedule that provides run config
+### A schedule that provides custom run config and tags
 
 If you want to vary the behavior of your job based on the time it's scheduled to run, you can use the <PyObject object="schedule" decorator /> decorator, which decorates a function that returns run config based on a provided <PyObject object="ScheduleEvaluationContext" />.
 
@@ -67,7 +67,11 @@ def configurable_job():
 @schedule(job=configurable_job, cron_schedule="0 0 * * *")
 def configurable_job_schedule(context: ScheduleEvaluationContext):
     scheduled_date = context.scheduled_execution_time.strftime("%Y-%m-%d")
-    return {"ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}}
+    return RunRequest(
+        run_key=None,
+        run_config={"ops": {"configurable_op": {"config": {"scheduled_date": scheduled_date}}}},
+        tags={"date": scheduled_date},
+    )
 ```
 
 If you don't need access to the context parameter, you can omit it from the decorated function.
@@ -124,7 +128,7 @@ Once your schedule is started, if you're running the [dagster-daemon](/deploymen
 
 ## Testing Schedules
 
-To test a function decorated by the <PyObject object="schedule" decorator /> decorator, you can invoke the schedule definition like it's a regular Python function. The invocation will return run config, which can then be validated using the <PyObject object="validate_run_config" /> function. Below is a test for the `configurable_job_schedule` that we defined in [an earlier section](#a-schedule-that-provides-run-config).
+To test a function decorated by the <PyObject object="schedule" decorator /> decorator, you can invoke the schedule definition like it's a regular Python function. The invocation will return run config, which can then be validated using the <PyObject object="validate_run_config" /> function. Below is a test for the `configurable_job_schedule` that we defined in [an earlier section](#a-schedule-that-provides-custom-run-config-and-tags).
 
 It uses <PyObject object="build_schedule_context" /> to construct a <PyObject object="ScheduleEvaluationContext" /> to provide for the `context` parameter.
 
@@ -134,8 +138,8 @@ from dagster import build_schedule_context, validate_run_config
 
 def test_configurable_job_schedule():
     context = build_schedule_context(scheduled_execution_time=datetime.datetime(2020, 1, 1))
-    run_config = configurable_job_schedule(context)
-    assert validate_run_config(configurable_job, run_config)
+    run_request = configurable_job_schedule(context)
+    assert validate_run_config(configurable_job, run_request.run_config)
 ```
 
 If your `@schedule`-decorated function doesn't have a context parameter, you don't need to provide one when invoking it.

@@ -1,17 +1,22 @@
 import {gql, useLazyQuery, useMutation} from '@apollo/client';
-import * as qs from 'query-string';
+import {
+  ButtonWIP,
+  HighlightedCodeBlock,
+  IconWIP,
+  MenuDividerWIP,
+  MenuItemWIP,
+  MenuLink,
+  MenuWIP,
+  Popover,
+  Tooltip,
+} from '@dagster-io/ui';
+import qs from 'qs';
 import * as React from 'react';
 import * as yaml from 'yaml';
 
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissions} from '../app/Permissions';
-import {ButtonWIP} from '../ui/Button';
-import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
-import {IconWIP} from '../ui/Icon';
-import {MenuDividerWIP, MenuItemWIP, MenuWIP} from '../ui/Menu';
-import {Popover} from '../ui/Popover';
-import {Tooltip} from '../ui/Tooltip';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
@@ -66,7 +71,7 @@ export const RunActionsMenu: React.FC<{
   const isFinished = doneStatuses.has(run.status);
   const isJob = !!(repoMatch && isThisThingAJob(repoMatch?.match, run.pipelineName));
 
-  const playgroundPath = () => {
+  const launchpadPath = () => {
     const path = `/playground/setup?${qs.stringify({
       config: runConfigYaml,
       solidSelection: run.solidSelection,
@@ -105,22 +110,20 @@ export const RunActionsMenu: React.FC<{
             <MenuDividerWIP />
             <>
               <Tooltip
-                content={OPEN_PLAYGROUND_UNKNOWN}
+                content={OPEN_LAUNCHPAD_UNKNOWN}
                 position="bottom"
                 disabled={infoReady}
                 targetTagName="div"
               >
-                <MenuItemWIP
+                <MenuLink
                   text="Open in Launchpad..."
                   disabled={!infoReady}
                   icon="edit"
-                  href={playgroundPath()}
+                  to={launchpadPath()}
                 />
               </Tooltip>
               <Tooltip
-                content={
-                  'Re-execute is unavailable because the pipeline is not present in the current workspace.'
-                }
+                content="Re-execute is unavailable because the pipeline is not present in the current workspace."
                 position="bottom"
                 disabled={infoReady && !!repoMatch}
                 targetTagName="div"
@@ -140,7 +143,7 @@ export const RunActionsMenu: React.FC<{
                           repositoryName: repoMatch.match.repository.name,
                         }),
                       });
-                      handleLaunchResult(basePath, run.pipelineName, result);
+                      handleLaunchResult(basePath, run.pipelineName, result, {});
                     }
                   }}
                 />
@@ -154,11 +157,11 @@ export const RunActionsMenu: React.FC<{
               )}
               <MenuDividerWIP />
             </>
-            <MenuItemWIP
+            <MenuLink
               text="Download Debug File"
               icon="download_for_offline"
               download
-              href={`${rootServerURI}/download_debug/${run.runId}`}
+              to={`${rootServerURI}/download_debug/${run.runId}`}
             />
             {canDeletePipelineRun ? (
               <MenuItemWIP
@@ -284,7 +287,7 @@ export const RunBulkActionsMenu: React.FC<{
   );
 });
 
-const OPEN_PLAYGROUND_UNKNOWN =
+const OPEN_LAUNCHPAD_UNKNOWN =
   'Launchpad is unavailable because the pipeline is not present in the current repository.';
 
 // Avoid fetching envYaml on load in Runs page. It is slow.
