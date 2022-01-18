@@ -15,7 +15,7 @@ from dagster.core.errors import (
     DagsterRunNotFoundError,
     DagsterSnapshotDoesNotExist,
 )
-from dagster.core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent
+from dagster.core.events import EVENT_TYPE_TO_PIPELINE_RUN_STATUS, DagsterEvent, DagsterEventType
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.snap import (
     ExecutionPlanSnapshot,
@@ -31,7 +31,7 @@ from dagster.serdes import (
     serialize_dagster_namedtuple,
 )
 from dagster.seven import JSONDecodeError
-from dagster.utils import merge_dicts, utc_datetime_from_timestamp
+from dagster.utils import datetime_as_float, merge_dicts, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
 from .base import RunStorage
@@ -136,7 +136,21 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         new_pipeline_status = EVENT_TYPE_TO_PIPELINE_RUN_STATUS[event.event_type]
 
+        run_stats_cols_in_index = self.has_run_stats_index_cols()
+
+        kwargs = {}
+        if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:
+            kwargs["start_time"] = datetime_as_float(datetime.now())
+
+        if run_stats_cols_in_index and event.event_type in {
+            DagsterEventType.PIPELINE_CANCELED,
+            DagsterEventType.PIPELINE_FAILURE,
+            DagsterEventType.PIPELINE_SUCCESS,
+        }:
+            kwargs["end_time"] = datetime_as_float(datetime.now())
+
         with self.connect() as conn:
+
             conn.execute(
                 RunsTable.update()  # pylint: disable=no-value-for-parameter
                 .where(RunsTable.c.run_id == run_id)
@@ -144,6 +158,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     status=new_pipeline_status.value,
                     run_body=serialize_dagster_namedtuple(run.with_status(new_pipeline_status)),
                     update_timestamp=pendulum.now("UTC"),
+                    **kwargs,
                 )
             )
 
@@ -295,23 +310,28 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         limit: int = None,
         order_by: str = None,
         ascending: bool = False,
+        cursor: str = None,
     ) -> List[RunRecord]:
         filters = check.opt_inst_param(
             filters, "filters", PipelineRunsFilter, default=PipelineRunsFilter()
         )
         limit = check.opt_int_param(limit, "limit")
 
+        columns = ["id", "run_body", "create_timestamp", "update_timestamp"]
+
+        if self.has_run_stats_index_cols():
+            columns += ["start_time", "end_time"]
         # only fetch columns we use to build RunRecord
         query = self._runs_query(
             filters=filters,
             limit=limit,
-            columns=["id", "run_body", "create_timestamp", "update_timestamp"],
+            columns=columns,
             order_by=order_by,
             ascending=ascending,
+            cursor=cursor,
         )
 
         rows = self.fetchall(query)
-
         return [
             RunRecord(
                 storage_id=check.int_param(row["id"], "id"),
@@ -320,6 +340,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 ),
                 create_timestamp=check.inst(row["create_timestamp"], datetime),
                 update_timestamp=check.inst(row["update_timestamp"], datetime),
+                start_time=check.opt_inst(row["start_time"], float)
+                if "start_time" in row
+                else None,
+                end_time=check.opt_inst(row["end_time"], float) if "end_time" in row else None,
             )
             for row in rows
         ]
@@ -726,6 +750,13 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     .where(SecondaryIndexMigrationTable.c.name == migration_name)
                     .values(migration_completed=datetime.now())
                 )
+
+    # Checking for migrations
+
+    def has_run_stats_index_cols(self):
+        with self.connect() as conn:
+            column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
+            return "start_time" in column_names and "end_time" in column_names
 
     # Daemon heartbeats
 
