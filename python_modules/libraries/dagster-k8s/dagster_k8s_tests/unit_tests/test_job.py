@@ -439,3 +439,22 @@ def test_construct_dagster_k8s_job_with_job_op_labels():
     )
     assert job2["metadata"]["labels"] == expected_labels2
     assert job2["spec"]["template"]["metadata"]["labels"] == expected_labels2
+
+
+def test_sanitize_labels():
+    cfg = DagsterK8sJobConfig(
+        job_image="test/foo:latest",
+        dagster_home="/opt/dagster/dagster_home",
+        instance_config_map="test",
+    )
+
+    job = construct_dagster_k8s_job(
+        cfg,
+        [],
+        "job456",
+        labels={
+            "dagster/op": "-get_f\o.o[bar-0]-",  # pylint: disable=anomalous-backslash-in-string
+        },
+    ).to_dict()
+
+    assert job["metadata"]["labels"]["dagster/op"] == "get_f-o.o-bar-0"

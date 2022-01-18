@@ -17,6 +17,7 @@ from dagster.serdes import whitelist_for_serdes
 from dagster.utils import frozentags, merge_dicts
 
 from .models import k8s_model_from_dict
+from .utils import sanitize_k8s_label
 
 # To retry step job, users should raise RetryRequested() so that the dagster system is aware of the
 # retry. As an example, see retry_pipeline in dagster_test.test_project.test_pipelines.repo
@@ -545,12 +546,7 @@ def construct_dagster_k8s_job(
     if component:
         k8s_common_labels["app.kubernetes.io/component"] = component
 
-    additional_labels = {
-        # Truncate too long label values to fit into 63-characters limit.
-        # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#syntax-and-character-set
-        k: v[:63]
-        for k, v in (labels or {}).items()
-    }
+    additional_labels = {k: sanitize_k8s_label(v) for k, v in (labels or {}).items()}
     dagster_labels = merge_dicts(k8s_common_labels, additional_labels)
 
     env = [kubernetes.client.V1EnvVar(name="DAGSTER_HOME", value=job_config.dagster_home)]
