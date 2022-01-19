@@ -56,6 +56,9 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             env_config_maps: ...
             env_secrets: ...
             job_image: ... # leave out if using userDeployments
+
+    Configuration set on the Kubernetes Jobs and Pods created by the `K8sRunLauncher` will also be
+    set on Kubernetes Jobs and Pods created by the `k8s_job_executor`.
     """
 
     run_launcher = init_context.instance.run_launcher
