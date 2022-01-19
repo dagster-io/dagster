@@ -181,6 +181,16 @@ def add_asset_details_column():
     op.add_column("asset_keys", db.Column("asset_details", db.Text))
 
 
+def add_last_observation_timestamp_column():
+    if not has_table("asset_keys"):
+        return
+
+    if has_column("asset_keys", "last_observation_timestamp"):
+        return
+
+    op.add_column("asset_keys", db.Column("last_observation_timestamp", db.types.TIMESTAMP))
+
+
 def extract_asset_keys_idx_columns():
     if not has_table("asset_keys"):
         return
