@@ -40,6 +40,7 @@ AssetKeyTable = db.Table(
     ),  # guarded by secondary index check
     db.Column("tags", db.TEXT),  # guarded by secondary index check
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("last_observation_timestamp", db.types.TIMESTAMP),
 )
 
 db.Index("idx_run_id", SqlEventLogStorageTable.c.run_id)
