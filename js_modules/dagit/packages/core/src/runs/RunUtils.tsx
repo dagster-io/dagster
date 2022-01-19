@@ -271,14 +271,14 @@ export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
   }
 
   const content = () => {
-    if (stats.startTime) {
-      return <Timestamp timestamp={{unix: stats.startTime}} />;
-    }
-    if (stats.launchTime) {
-      return <Timestamp timestamp={{unix: stats.launchTime}} />;
-    }
-    if (stats.enqueuedTime) {
-      return <Timestamp timestamp={{unix: stats.enqueuedTime}} />;
+    const showTimeUnix = stats.startTime || stats.launchTime || stats.enqueuedTime;
+    if (showTimeUnix) {
+      return (
+        <Timestamp
+          timeFormat={{showSeconds: true, showTimezone: true}}
+          timestamp={{unix: showTimeUnix}}
+        />
+      );
     }
 
     switch (run.status) {

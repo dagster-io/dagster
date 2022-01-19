@@ -123,7 +123,7 @@ export const RunTable = (props: RunTableProps) => {
             <th style={{width: 90}}>Run ID</th>
             <th>{anyPipelines ? 'Job / Pipeline' : 'Job'}</th>
             <th style={{width: 90}}>Snapshot ID</th>
-            <th style={{width: 180}}>Timing</th>
+            <th style={{width: 200}}>Timing</th>
             {props.additionalColumnHeaders}
             <th style={{width: 52}} />
           </tr>
