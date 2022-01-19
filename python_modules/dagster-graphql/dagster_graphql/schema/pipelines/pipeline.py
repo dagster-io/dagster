@@ -349,7 +349,9 @@ class GrapheneRun(graphene.ObjectType):
 
     def _get_run_record(self, instance):
         if not self._run_record:
-            self._run_record = instance.get_run_records(run_ids=[self.runId])[0]
+            self._run_record = instance.get_run_records(PipelineRunsFilter(run_ids=[self.run_id]))[
+                0
+            ]
         return self._run_record
 
     def resolve_startTime(self, graphene_info):
