@@ -62,7 +62,7 @@ class DagsterDaemon(AbstractContextManager):
         error_interval_seconds,
         until=None,
     ):
-        from dagit.cli import uploading_logging_thread
+        from dagster.core.telemetry_upload import uploading_logging_thread
 
         # Each loop runs in its own thread with its own instance and IWorkspace
         with DagsterInstance.from_ref(instance_ref) as instance:
