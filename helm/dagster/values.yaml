@@ -306,7 +306,6 @@ dagster-user-deployments:
       podSecurityContext: {}
       securityContext: {}
       resources: {}
-      replicaCount: 1
       # Liveness Probe and Startup Probe are optional. For more configuration docs, see:
       # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
       # Note that Startup Probe is only available as a kubernetes v1.16+ feature.
@@ -607,7 +606,6 @@ runLauncher:
       # labels:
       #   my_label_key: my_label_value
       labels: {}
-
 
     ## Uncomment this configuration will only be used if the CustomRunLauncher is selected.
     ## Using this setting requires a custom Dagit image that defines the user specified
