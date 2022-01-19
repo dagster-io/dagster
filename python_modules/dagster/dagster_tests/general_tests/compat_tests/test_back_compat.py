@@ -606,3 +606,18 @@ def test_start_time_end_time():
         instance._run_storage._alembic_downgrade(rev="7f2b1a4ca7a5")
 
         assert get_current_alembic_version(db_path) == "7f2b1a4ca7a5"
+
+
+def test_last_observation_timestamp():
+    src_dir = file_relative_path(
+        __file__, "snapshot_0_13_14_pre_add_last_observation_timestamp_col/sqlite"
+    )
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "history", "runs", "index.db")
+        assert get_current_alembic_version(db_path) == "05844c702676"
+        assert "last_observation_timestamp" not in set(get_sqlite3_columns(db_path, "asset_keys"))
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
+            assert "last_observation_timestamp" in set(get_sqlite3_columns(db_path, "asset_keys"))

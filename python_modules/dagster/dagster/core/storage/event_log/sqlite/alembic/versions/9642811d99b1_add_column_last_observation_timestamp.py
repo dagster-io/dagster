@@ -1,8 +1,8 @@
 """add column last_observation_timestamp
 
-Revision ID: bdbe397c0843
-Revises: f4eed4c26e2c
-Create Date: 2022-01-18 20:53:59.093876
+Revision ID: 9642811d99b1
+Revises: 05844c702676
+Create Date: 2022-01-19 11:14:54.048737
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 from dagster.core.storage.migration.utils import has_column, has_table
 
 # revision identifiers, used by Alembic.
-revision = 'bdbe397c0843'
-down_revision = 'f4eed4c26e2c'
+revision = '9642811d99b1'
+down_revision = '05844c702676'
 branch_labels = None
 depends_on = None
 
@@ -25,6 +25,6 @@ def upgrade():
 
 def downgrade():
     if has_table("asset_keys"):
-        if has_column("asset_keys", "last_observaiton_timestamp"):
+        if has_column("asset_keys", "last_observation_timestamp"):
             with op.batch_alter_table("asset_keys") as batch_op:
                 batch_op.drop_column("last_observation_timestamp")
