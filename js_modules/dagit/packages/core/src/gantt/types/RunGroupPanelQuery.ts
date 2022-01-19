@@ -24,30 +24,6 @@ export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_tags {
   value: string;
 }
 
-export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_RunStatsSnapshot {
-  __typename: "RunStatsSnapshot";
-  id: string;
-  enqueuedTime: number | null;
-  launchTime: number | null;
-  startTime: number | null;
-  endTime: number | null;
-}
-
-export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PythonError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PythonError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PythonError_cause | null;
-}
-
-export type RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats = RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_RunStatsSnapshot | RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats_PythonError;
-
 export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs {
   __typename: "Run";
   id: string;
@@ -57,7 +33,9 @@ export interface RunGroupPanelQuery_runGroupOrError_RunGroup_runs {
   stepKeysToExecute: string[] | null;
   pipelineName: string;
   tags: RunGroupPanelQuery_runGroupOrError_RunGroup_runs_tags[];
-  stats: RunGroupPanelQuery_runGroupOrError_RunGroup_runs_stats;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface RunGroupPanelQuery_runGroupOrError_RunGroup {

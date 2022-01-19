@@ -171,16 +171,9 @@ const OverviewContent = () => {
       const aRun = a.job.runs[0] || null;
       const bRun = b.job.runs[0] || null;
 
-      if (aRun?.stats.__typename === 'RunStatsSnapshot') {
-        if (bRun?.stats.__typename === 'RunStatsSnapshot') {
-          const aStart = aRun.stats.startTime;
-          const bStart = bRun.stats.startTime;
-          if (aStart) {
-            return bStart ? bStart - aStart : -1;
-          }
-          return 1;
-        }
-      } else if (bRun?.stats.__typename === 'RunStatsSnapshot') {
+      if (aRun.startTime) {
+        return bRun.startTime ? bRun.startTime - aRun.startTime : -1;
+      } else if (bRun.startTime) {
         return -1;
       }
 
@@ -343,14 +336,8 @@ const OverviewContent = () => {
           runs: runs.map((run) => ({
             id: run.id,
             status: run.status,
-            startTime:
-              run.stats?.__typename === 'RunStatsSnapshot' && run.stats.startTime
-                ? run.stats.startTime * 1000
-                : null,
-            endTime:
-              run.stats?.__typename === 'RunStatsSnapshot' && run.stats.endTime
-                ? run.stats.endTime * 1000
-                : null,
+            startTime: run.startTime ? run.startTime * 1000 : null,
+            endTime: run.endTime ? run.endTime * 1000 : null,
           })),
         };
       }

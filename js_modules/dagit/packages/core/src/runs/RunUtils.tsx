@@ -1,9 +1,8 @@
 import {gql} from '@apollo/client';
-import {ColorsWIP, Group, IconWIP, Popover} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
 import {ExecutionParams, RunStatus} from '../types/globalTypes';
 
@@ -257,28 +256,17 @@ interface RunTimeProps {
 }
 
 export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
-  const {stats} = run;
-
-  if (stats.__typename !== 'RunStatsSnapshot') {
-    return (
-      <Popover content={<PythonErrorInfo error={stats} />}>
-        <Group direction="row" spacing={4} alignItems="center">
-          <IconWIP name="error" color={ColorsWIP.Red500} />
-          <div>Failed to load times</div>
-        </Group>
-      </Popover>
-    );
-  }
+  const {startTime, updateTime} = run;
 
   const content = () => {
-    if (stats.startTime) {
-      return <Timestamp timestamp={{unix: stats.startTime}} />;
+    if (startTime) {
+      return <Timestamp timestamp={{unix: startTime}} />;
     }
-    if (stats.launchTime) {
-      return <Timestamp timestamp={{unix: stats.launchTime}} />;
+    if (run.status === RunStatus.STARTING && updateTime) {
+      return <Timestamp timestamp={{unix: updateTime}} />;
     }
-    if (stats.enqueuedTime) {
-      return <Timestamp timestamp={{unix: stats.enqueuedTime}} />;
+    if (run.status === RunStatus.QUEUED && updateTime) {
+      return <Timestamp timestamp={{unix: updateTime}} />;
     }
 
     switch (run.status) {
@@ -297,18 +285,7 @@ export const RunTime: React.FC<RunTimeProps> = React.memo(({run}) => {
 });
 
 export const RunElapsed: React.FC<RunTimeProps> = React.memo(({run}) => {
-  if (run.stats.__typename !== 'RunStatsSnapshot') {
-    return (
-      <Popover content={<PythonErrorInfo error={run.stats} />}>
-        <Group direction="row" spacing={4} alignItems="center">
-          <IconWIP name="error" color={ColorsWIP.Red500} />
-          <div>Failed to load times</div>
-        </Group>
-      </Popover>
-    );
-  }
-
-  return <TimeElapsed startUnix={run.stats.startTime} endUnix={run.stats.endTime} />;
+  return <TimeElapsed startUnix={run.startTime} endUnix={run.endTime} />;
 });
 
 export const RUN_TIME_FRAGMENT = gql`
@@ -316,18 +293,8 @@ export const RUN_TIME_FRAGMENT = gql`
     id
     runId
     status
-    stats {
-      ... on RunStatsSnapshot {
-        id
-        enqueuedTime
-        launchTime
-        startTime
-        endTime
-      }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
-    }
+    startTime
+    endTime
+    updateTime
   }
-  ${PYTHON_ERROR_FRAGMENT}
 `;

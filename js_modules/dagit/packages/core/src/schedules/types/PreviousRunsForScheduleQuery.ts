@@ -26,30 +26,6 @@ export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_t
   value: string;
 }
 
-export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot {
-  __typename: "RunStatsSnapshot";
-  id: string;
-  enqueuedTime: number | null;
-  launchTime: number | null;
-  startTime: number | null;
-  endTime: number | null;
-}
-
-export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_PythonError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause | null;
-}
-
-export type PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats = PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot | PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
-
 export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results {
   __typename: "Run";
   id: string;
@@ -65,7 +41,9 @@ export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results {
   repositoryOrigin: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_repositoryOrigin | null;
   solidSelection: string[] | null;
   tags: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_tags[];
-  stats: PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs_results_stats;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface PreviousRunsForScheduleQuery_pipelineRunsOrError_Runs {

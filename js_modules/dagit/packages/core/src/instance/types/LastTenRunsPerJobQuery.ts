@@ -9,36 +9,14 @@ import { RunStatus } from "./../../types/globalTypes";
 // GraphQL query operation: LastTenRunsPerJobQuery
 // ====================================================
 
-export interface LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_stats_RunStatsSnapshot {
-  __typename: "RunStatsSnapshot";
-  id: string;
-  enqueuedTime: number | null;
-  launchTime: number | null;
-  startTime: number | null;
-  endTime: number | null;
-}
-
-export interface LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_stats_PythonError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_stats_PythonError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_stats_PythonError_cause | null;
-}
-
-export type LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_stats = LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_stats_RunStatsSnapshot | LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_stats_PythonError;
-
 export interface LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs {
   __typename: "Run";
   id: string;
   runId: string;
   status: RunStatus;
-  stats: LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines_runs_stats;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface LastTenRunsPerJobQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_pipelines {
