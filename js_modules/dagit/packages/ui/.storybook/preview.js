@@ -14,6 +14,7 @@ import {
   ColorsWIP,
 } from '../src';
 
+import {MemoryRouter} from 'react-router-dom';
 import * as React from 'react';
 
 import {createGlobalStyle} from 'styled-components/macro';
@@ -72,7 +73,7 @@ const GlobalStyle = createGlobalStyle`
 // Global decorator to apply the styles to all stories
 export const decorators = [
   (Story) => (
-    <>
+    <MemoryRouter>
       <GlobalStyle />
       <GlobalToasterStyle />
       <GlobalTooltipStyle />
@@ -80,7 +81,7 @@ export const decorators = [
       <GlobalDialogStyle />
       <GlobalSuggestStyle />
       <Story />
-    </>
+    </MemoryRouter>
   ),
 ];
 
