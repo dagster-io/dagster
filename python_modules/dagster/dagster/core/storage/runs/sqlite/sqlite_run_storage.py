@@ -85,7 +85,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
 
         if should_mark_indexes:
             # mark all secondary indexes
-            run_storage.build_missing_indexes()
+            run_storage.execute_required_migrations()
 
         return run_storage
 

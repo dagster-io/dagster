@@ -11,8 +11,10 @@ from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 RUN_PARTITIONS = "run_partitions"
 RUN_START_END = "run_start_end"
 
-RUN_DATA_MIGRATIONS = {
+REQUIRED_DATA_MIGRATIONS = {
     RUN_PARTITIONS: lambda: migrate_run_partition,
+}
+OPTIONAL_DATA_MIGRATIONS = {
     RUN_START_END: lambda: migrate_run_start_end,
 }
 

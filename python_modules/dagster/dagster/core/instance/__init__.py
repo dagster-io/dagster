@@ -641,7 +641,7 @@ class DagsterInstance:
             if print_fn:
                 print_fn("Updating run storage...")
             self._run_storage.upgrade()
-            self._run_storage.build_missing_indexes(print_fn=print_fn)
+            self._run_storage.execute_required_migrations(print_fn)
 
             if print_fn:
                 print_fn("Updating event storage...")
@@ -662,6 +662,7 @@ class DagsterInstance:
         print_fn("Checking for reindexing...")
         self._event_storage.reindex_events(print_fn)
         self._event_storage.reindex_assets(print_fn)
+        self._run_storage.execute_optional_migrations(print_fn)
         print_fn("Done.")
 
     def dispose(self):
