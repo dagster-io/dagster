@@ -5,7 +5,12 @@ from dagster.core.events import AssetKey, StepMaterializationData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import (
+    PipelineRun,
+    PipelineRunStatus,
+    PipelineRunsFilter,
+    RunRecord,
+)
 from dagster.core.storage.tags import TagType, get_tag_type
 
 from ...implementation.events import construct_basic_params, from_event_record
@@ -44,6 +49,19 @@ from .mode import GrapheneMode
 from .pipeline_ref import GraphenePipelineReference
 from .pipeline_run_stats import GrapheneRunStatsSnapshotOrError
 from .status import GrapheneRunStatus
+
+STARTED_STATUSES = {
+    PipelineRunStatus.STARTED,
+    PipelineRunStatus.SUCCESS,
+    PipelineRunStatus.FAILURE,
+    PipelineRunStatus.CANCELED,
+}
+
+COMPLETED_STATUSES = {
+    PipelineRunStatus.FAILURE,
+    PipelineRunStatus.SUCCESS,
+    PipelineRunStatus.CANCELED,
+}
 
 
 class GrapheneAssetMaterialization(graphene.ObjectType):
@@ -209,18 +227,23 @@ class GrapheneRun(graphene.ObjectType):
         non_null_list(GrapheneDagsterRunEvent),
         after=graphene.Argument(GrapheneCursor),
     )
+    startTime = graphene.Float()
+    endTime = graphene.Float()
 
     class Meta:
         interfaces = (GraphenePipelineRun,)
         name = "Run"
 
-    def __init__(self, pipeline_run):
+    def __init__(self, run):
+        pipeline_run = run.pipeline_run if isinstance(run, RunRecord) else run
         super().__init__(
             runId=pipeline_run.run_id,
             status=PipelineRunStatus(pipeline_run.status),
             mode=pipeline_run.mode,
         )
         self._pipeline_run = check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+        self._run_record = run if isinstance(run, RunRecord) else None
+        self._run_stats = None
 
     def resolve_id(self, _graphene_info):
         return self._pipeline_run.run_id
@@ -321,6 +344,28 @@ class GrapheneRun(graphene.ObjectType):
     def resolve_events(self, graphene_info, after=-1):
         events = graphene_info.context.instance.logs_after(self.run_id, cursor=after)
         return [from_event_record(event, self._pipeline_run.pipeline_name) for event in events]
+
+    def _get_run_record(self, instance):
+        if not self._run_record:
+            self._run_record = instance.get_run_records(run_ids=[self.runId])[0]
+        return self._run_record
+
+    def resolve_startTime(self, graphene_info):
+        run_record = self._get_run_record(graphene_info.context.instance)
+        # If a user has not migrated in 0.13.15, then run_record will not have start_time and end_time. So it will be necessary to fill this data using the run_stats. Since we potentially make this call multiple times, we cache the result.
+        if run_record.start_time is None and self._pipeline_run.status in STARTED_STATUSES:
+            if self._run_stats is None or self._run_stats.start_time is None:
+                self._run_stats = graphene_info.context.instance.get_run_stats(self.runId)
+            return self._run_stats.start_time
+        return run_record.start_time
+
+    def resolve_endTime(self, graphene_info):
+        run_record = self._get_run_record(graphene_info.context.instance)
+        if run_record.end_time is None and self._pipeline_run.status in COMPLETED_STATUSES:
+            if self._run_stats is None or self._run_stats.end_time is None:
+                self._run_stats = graphene_info.context.instance.get_run_stats(self.runId)
+            return self._run_stats.end_time
+        return run_record.end_time
 
 
 class GrapheneIPipelineSnapshotMixin:
