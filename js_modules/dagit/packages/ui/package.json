@@ -51,6 +51,7 @@
     "@types/eslint": "^8",
     "@types/jest": "^27.4.0",
     "@types/mdx-js__react": "^1",
+    "@types/prettier": "^2",
     "@types/styled-components": "^5",
     "@types/testing-library__jest-dom": "^5.14.2",
     "babel-jest": "^27.4.6",
@@ -60,6 +61,7 @@
     "eslint-plugin-storybook": "^0.5.5",
     "jest": "^27.4.7",
     "nearest-color": "^0.4.4",
+    "prettier": "2.2.1",
     "react-router": "^5.2.1",
     "react-router-dom": "^5.3.0",
     "typescript": "^4.5.4"

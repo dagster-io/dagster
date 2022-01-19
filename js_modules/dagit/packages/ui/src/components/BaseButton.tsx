@@ -1,7 +1,7 @@
 import * as React from 'react';
 
 import {ColorsWIP} from './Colors';
-import {StyledButton} from './StyledButton';
+import {StyledButton, StyledButtonText} from './StyledButton';
 
 interface CommonButtonProps {
   icon?: React.ReactNode;
@@ -40,7 +40,7 @@ export const BaseButton = React.forwardRef(
         ref={ref}
       >
         {icon || null}
-        {label ? <span>{label}</span> : null}
+        {label ? <StyledButtonText>{label}</StyledButtonText> : null}
         {rightIcon || null}
       </StyledButton>
     );

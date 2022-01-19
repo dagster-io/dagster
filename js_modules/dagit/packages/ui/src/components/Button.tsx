@@ -6,7 +6,7 @@ import {Link, LinkProps} from 'react-router-dom';
 import {BaseButton} from './BaseButton';
 import {ColorsWIP} from './Colors';
 import {Spinner} from './Spinner';
-import {StyledButton} from './StyledButton';
+import {StyledButton, StyledButtonText} from './StyledButton';
 
 type BlueprintIntent = React.ComponentProps<typeof BlueprintButton>['intent'];
 type BlueprintOutlined = React.ComponentProps<typeof BlueprintButton>['outlined'];
@@ -142,7 +142,7 @@ export const AnchorButton = React.forwardRef(
         ref={ref}
       >
         {icon || null}
-        {children ? <span>{children}</span> : null}
+        {children ? <StyledButtonText>{children}</StyledButtonText> : null}
         {rightIcon || null}
       </StyledButton>
     );
@@ -169,7 +169,7 @@ export const ExternalAnchorButton = React.forwardRef(
         ref={ref}
       >
         {icon || null}
-        {children ? <span>{children}</span> : null}
+        {children ? <StyledButtonText>{children}</StyledButtonText> : null}
         {rightIcon || null}
       </StyledButton>
     );
