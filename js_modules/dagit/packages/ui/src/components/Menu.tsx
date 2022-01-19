@@ -96,6 +96,28 @@ export const MenuLink: React.FC<MenuLinkProps> = (props) => {
   );
 };
 
+interface MenuExternalLinkProps
+  extends CommonMenuItemProps,
+    Omit<React.ComponentProps<typeof MenuItem>, 'href' | 'icon'> {
+  href: string;
+}
+
+/**
+ * If you want to use a menu item as a link, use `MenuLink` and provide a `to` prop.
+ */
+export const MenuExternalLink: React.FC<MenuExternalLinkProps> = (props) => {
+  const {icon, intent, ...rest} = props;
+  return (
+    <StyledMenuItem
+      {...rest}
+      target="_blank"
+      rel="noreferrer nofollow"
+      $textColor={intentToTextColor(intent)}
+      icon={iconWithColor(icon, intent)}
+    />
+  );
+};
+
 export const MenuDividerWIP = styled(MenuDivider)`
   border-top: 1px solid ${ColorsWIP.Gray100};
   margin: 2px 0;
