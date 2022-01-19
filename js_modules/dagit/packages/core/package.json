@@ -5,7 +5,6 @@
   "description": "Dagit Application Core",
   "license": "Apache-2.0",
   "scripts": {
-    "prettier": "prettier --write \"./src/**/*.tsx\"",
     "find-dead-code": "yarn ts-prune | grep -Ev '/types/\\|stories.tsx'",
     "jest": "jest",
     "jest:debug": "node --inspect-brk ./node_modules/.bin/jest --runInBand --no-cache",

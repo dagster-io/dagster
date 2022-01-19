@@ -5,6 +5,8 @@ import {buildClientSchema, getIntrospectionQuery, printSchema} from 'graphql';
 
 console.log('Downloading schema...');
 
+const TARGET_FILE = './src/graphql/schema.graphql';
+
 // https://github.com/dagster-io/dagster/issues/2623
 const result = execSync(
   `dagster-graphql --ephemeral-instance --empty-workspace -t '${getIntrospectionQuery({
@@ -20,7 +22,7 @@ const sdl = printSchema(buildClientSchema(schemaJson));
 
 console.log('Generating schema.graphql...');
 
-writeFileSync('./src/graphql/schema.graphql', sdl);
+writeFileSync(TARGET_FILE, sdl);
 
 // Write `possibleTypes.generated.json`, used in prod for `AppCache` and in tests for creating
 // a mocked schema.
@@ -39,8 +41,10 @@ writeFileSync('./src/graphql/possibleTypes.generated.json', JSON.stringify(possi
 console.log('Generating TypeScript types...');
 
 execSync(
-  'find src -type d -name types | xargs rm -r && yarn apollo codegen:generate --includes "./src/**/*.tsx" --target typescript types --localSchemaFile ./src/graphql/schema.graphql --globalTypesFile ./src/types/globalTypes.ts',
+  `find src -type d -name types | xargs rm -r && yarn apollo codegen:generate --includes "./src/**/*.tsx" --target typescript types --localSchemaFile ${TARGET_FILE} --globalTypesFile ./src/types/globalTypes.ts`,
   {stdio: 'inherit'},
 );
+
+execSync(`yarn prettier --loglevel silent --write ${TARGET_FILE}`, {stdio: 'inherit'});
 
 console.log('Done!');
