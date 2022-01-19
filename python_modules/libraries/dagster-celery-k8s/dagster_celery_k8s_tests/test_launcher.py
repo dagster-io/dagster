@@ -31,7 +31,6 @@ def test_empty_celery_config():
     assert res == {
         "backend": "rpc://",
         "retries": {"enabled": {}},
-        "image_pull_policy": "IfNotPresent",
         "volume_mounts": [],
         "volumes": [],
         "load_incluster_config": True,
@@ -50,7 +49,6 @@ def test_get_validated_celery_k8s_executor_config():
         "backend": "rpc://",
         "retries": {"enabled": {}},
         "job_image": "foo",
-        "image_pull_policy": "IfNotPresent",
         "load_incluster_config": True,
         "job_namespace": "default",
         "repo_location_name": "<<in_process>>",
@@ -167,7 +165,6 @@ def test_get_validated_celery_k8s_executor_config_for_job():
         "backend": "rpc://",
         "retries": {"enabled": {}},
         "job_image": "foo",
-        "image_pull_policy": "IfNotPresent",
         "load_incluster_config": True,
         "job_namespace": "default",
         "repo_location_name": "<<in_process>>",

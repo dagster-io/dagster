@@ -47,13 +47,13 @@ from dagster_k8s.utils import (
     wait_for_job_success,
 )
 
-from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_config
+from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
 from .launcher import CeleryK8sRunLauncher
 
 
 @executor(
     name=CELERY_K8S_CONFIG_KEY,
-    config_schema=celery_k8s_config(),
+    config_schema=celery_k8s_executor_config(),
     requirements=multiple_process_executor_requirements(),
 )
 def celery_k8s_job_executor(init_context):

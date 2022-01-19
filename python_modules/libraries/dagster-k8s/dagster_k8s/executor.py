@@ -26,7 +26,7 @@ from .utils import delete_job
 @executor(
     name="k8s",
     config_schema=merge_dicts(
-        DagsterK8sJobConfig.config_type_pipeline_run(),
+        DagsterK8sJobConfig.config_type_job(),
         {"job_namespace": Field(StringSource, is_required=False)},
         {"retries": get_retries_config()},
     ),

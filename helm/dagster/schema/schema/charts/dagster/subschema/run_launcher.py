@@ -27,6 +27,7 @@ class CeleryWorkerQueue(BaseModel):
 
 class CeleryK8sRunLauncherConfig(BaseModel):
     image: kubernetes.Image
+    imagePullPolicy: Optional[kubernetes.PullPolicy]
     nameOverride: str
     configSource: dict
     workerQueues: List[CeleryWorkerQueue] = Field(min_items=1)
