@@ -1,17 +1,32 @@
 # start-snippet
 from pathlib import Path
 
-from dagster import graph, make_python_type_usable_as_dagster_type, op, repository
+from dagster import IOManager, graph, io_manager, op, repository
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster_aws.emr import emr_pyspark_step_launcher
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
-from dagster_pyspark import DataFrame as DagsterPySparkDataFrame
+from dagster_aws.s3 import s3_resource
 from dagster_pyspark import pyspark_resource
 from pyspark.sql import DataFrame, Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
-# Make pyspark.sql.DataFrame map to dagster_pyspark.DataFrame
-make_python_type_usable_as_dagster_type(python_type=DataFrame, dagster_type=DagsterPySparkDataFrame)
+
+class ParquetIOManager(IOManager):
+    def _get_path(self, context):
+        return "/".join(
+            [context.resource_config["path_prefix"], context.run_id, context.step_key, context.name]
+        )
+
+    def handle_output(self, context, obj):
+        obj.write.parquet(self._get_path(context))
+
+    def load_input(self, context):
+        spark = context.resources.pyspark.spark_session
+        return spark.read.parquet(self._get_path(context.upstream_output))
+
+
+@io_manager(required_resource_keys={"pyspark"}, config_schema={"path_prefix": str})
+def parquet_io_manager():
+    return ParquetIOManager()
 
 
 @op(required_resource_keys={"pyspark", "pyspark_step_launcher"})
@@ -24,11 +39,6 @@ def make_people(context) -> DataFrame:
 @op(required_resource_keys={"pyspark_step_launcher"})
 def filter_over_50(people: DataFrame) -> DataFrame:
     return people.filter(people["age"] > 50)
-
-
-@op(required_resource_keys={"pyspark_step_launcher"})
-def count_people(people: DataFrame) -> int:
-    return people.count()
 
 
 emr_resource_defs = {
@@ -44,31 +54,30 @@ emr_resource_defs = {
     ),
     "pyspark": pyspark_resource.configured({"spark_conf": {"spark.executor.memory": "2g"}}),
     "s3": s3_resource,
-    "io_manager": s3_pickle_io_manager.configured(
-        {"s3_bucket": "my_staging_bucket", "s3_prefix": "simple-pyspark"}
-    ),
+    "io_manager": parquet_io_manager.configured({"path_prefix": "s3://my-s3-bucket"}),
 }
 
 local_resource_defs = {
     "pyspark_step_launcher": no_step_launcher,
     "pyspark": pyspark_resource.configured({"spark_conf": {"spark.default.parallelism": 1}}),
+    "io_manager": parquet_io_manager.configured({"path_prefix": "."}),
 }
 
 
 @graph
-def count_people_over_50():
-    count_people(filter_over_50(make_people()))
+def make_and_filter_data():
+    filter_over_50(make_people())
 
 
-count_people_over_50_local = count_people_over_50.to_job(
+make_and_filter_data_local = make_and_filter_data.to_job(
     name="local", resource_defs=local_resource_defs
 )
 
-count_people_over_50_emr = count_people_over_50.to_job(name="prod", resource_defs=emr_resource_defs)
+make_and_filter_data_emr = make_and_filter_data.to_job(name="prod", resource_defs=emr_resource_defs)
 
 # end-snippet
 
 
 @repository
 def emr_pyspark_example():
-    return [count_people_over_50_emr, count_people_over_50_local]
+    return [make_and_filter_data_emr, make_and_filter_data_local]

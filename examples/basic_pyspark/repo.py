@@ -6,7 +6,7 @@ from pyspark.sql import DataFrame, Row, SparkSession
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 
-class LocalParquetStore(IOManager):
+class LocalParquetIOManager(IOManager):
     def _get_path(self, context):
         return os.path.join(context.run_id, context.step_key, context.name)
 
@@ -19,8 +19,8 @@ class LocalParquetStore(IOManager):
 
 
 @io_manager
-def local_parquet_store():
-    return LocalParquetStore()
+def local_parquet_io_manager():
+    return LocalParquetIOManager()
 
 
 @op
@@ -42,7 +42,7 @@ def make_and_filter_data():
 
 
 make_and_filter_data_job = make_and_filter_data.to_job(
-    resource_defs={"io_manager": local_parquet_store}
+    resource_defs={"io_manager": local_parquet_io_manager}
 )
 
 
