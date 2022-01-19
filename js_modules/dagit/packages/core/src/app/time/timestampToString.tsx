@@ -29,3 +29,7 @@ export const timestampToString = (config: Config) => {
     timeZoneName: timeFormat.showTimezone ? 'short' : undefined,
   });
 };
+
+export const timeZoneAbbr = (tzIn: string) => {
+  return moment().tz(tzIn).zoneAbbr();
+};
