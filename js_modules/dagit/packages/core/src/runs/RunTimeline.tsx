@@ -10,14 +10,18 @@ import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {InstigationStatus, RunStatus} from '../types/globalTypes';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {repoAddressAsString} from '../workspace/repoAddressAsString';
+import {RepoAddress} from '../workspace/types';
+import {workspacePipelinePath} from '../workspace/workspacePath';
 
 import {RunStatusDot} from './RunStatusDots';
 import {
+  doneStatuses,
   failedStatuses,
   inProgressStatuses,
   queuedStatuses,
   successStatuses,
-  doneStatuses,
 } from './RunStatuses';
 import {TimeElapsed} from './TimeElapsed';
 import {RunTimelineQuery, RunTimelineQueryVariables} from './types/RunTimelineQuery';
@@ -27,31 +31,151 @@ const TIME_HEADER_HEIGHT = 36;
 const LABEL_WIDTH = 232;
 
 const ONE_HOUR_MSEC = 60 * 60 * 1000;
-const POLL_INTERVAL = 15 * 1000;
 
-export type RunForJob = {
+export type TimelineRun = {
   id: string;
-  jobName: string | undefined;
   status: RunStatus | 'SCHEDULED';
   startTime: number;
   endTime: number;
 };
 
-export type JobMap = {
-  [jobKey: string]: {
-    name: string;
-    path: string;
-    runs: RunForJob[];
-  };
+export type TimelineJob = {
+  key: string;
+  jobName: string;
+  path: string;
+  runs: TimelineRun[];
 };
 
-interface Props {
-  jobs: JobMap;
-  range: [number, number];
-}
+const makeJobKey = (repoAddress: RepoAddress, jobName: string) => {
+  return `${jobName}-${repoAddressAsString(repoAddress)}`;
+};
 
-export const RunTimeline = (props: Props) => {
-  const {jobs, range} = props;
+export const RunTimelineContainer = ({range}: {range: [number, number]}) => {
+  const [start, end] = React.useMemo(() => {
+    const [unvalidatedStart, unvalidatedEnd] = range;
+    return unvalidatedEnd < unvalidatedStart
+      ? [unvalidatedEnd, unvalidatedStart]
+      : [unvalidatedStart, unvalidatedEnd];
+  }, [range]);
+
+  const {data} = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(RUN_TIMELINE_QUERY, {
+    fetchPolicy: 'network-only',
+    notifyOnNetworkStatusChange: true,
+    variables: {
+      inProgressFilter: {
+        statuses: [RunStatus.CANCELING, RunStatus.STARTED],
+        createdBefore: end / 1000.0,
+      },
+      terminatedFilter: {
+        statuses: Array.from(doneStatuses),
+        createdBefore: end / 1000.0,
+        updatedAfter: start / 1000.0,
+      },
+    },
+  });
+
+  const jobs = React.useMemo(() => {
+    const {unterminated, terminated, workspaceOrError} = data || {};
+
+    const runsByJob: {[jobName: string]: TimelineRun[]} = {};
+    const now = Date.now();
+
+    // fetch all the runs in the given range
+    [
+      ...(unterminated?.__typename === 'Runs' ? unterminated.results : []),
+      ...(terminated?.__typename === 'Runs' ? terminated.results : []),
+    ].forEach((run) => {
+      if (!run.stats || run.stats.__typename === 'PythonError' || !run.stats.startTime) {
+        return;
+      }
+      if (
+        !overlap(
+          {start, end},
+          {
+            start: run.stats.startTime * 1000,
+            end: run.stats.endTime ? run.stats.endTime * 1000 : now,
+          },
+        )
+      ) {
+        return;
+      }
+      runsByJob[run.pipelineName] = [
+        ...(runsByJob[run.pipelineName] || []),
+        {
+          id: run.id,
+          status: run.status,
+          startTime: run.stats.startTime * 1000,
+          endTime: run.stats.endTime ? run.stats.endTime * 1000 : now,
+        },
+      ];
+    });
+
+    const jobs = [];
+    if (workspaceOrError && workspaceOrError.__typename === 'Workspace') {
+      for (const locationEntry of workspaceOrError.locationEntries) {
+        if (
+          locationEntry.__typename === 'WorkspaceLocationEntry' &&
+          locationEntry.locationOrLoadError?.__typename === 'RepositoryLocation'
+        ) {
+          for (const repository of locationEntry.locationOrLoadError.repositories) {
+            const repoAddress = buildRepoAddress(
+              repository.name,
+              locationEntry.locationOrLoadError.name,
+            );
+            for (const pipeline of repository.pipelines) {
+              const schedules = (repository.schedules || []).filter(
+                (schedule) => schedule.pipelineName === pipeline.name,
+              );
+
+              const jobTicks: TimelineRun[] = [];
+              for (const schedule of schedules) {
+                if (schedule.scheduleState.status === InstigationStatus.RUNNING) {
+                  schedule.futureTicks.results.forEach(({timestamp}) => {
+                    const startTime = timestamp * 1000;
+                    if (overlap({start, end}, {start: startTime, end: startTime})) {
+                      jobTicks.push({
+                        id: `${schedule.pipelineName}-future-run-${timestamp}`,
+                        status: 'SCHEDULED',
+                        startTime,
+                        endTime: startTime + 10 * 1000,
+                      });
+                    }
+                  });
+                }
+              }
+
+              const jobRuns = runsByJob[pipeline.name] || [];
+              if (jobTicks.length || jobRuns.length) {
+                jobs.push({
+                  key: makeJobKey(repoAddress, pipeline.name),
+                  jobName: pipeline.name,
+                  path: workspacePipelinePath({
+                    repoName: repoAddress.name,
+                    repoLocation: repoAddress.location,
+                    pipelineName: pipeline.name,
+                    isJob: pipeline.isJob,
+                  }),
+                  runs: [...jobRuns, ...jobTicks],
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
+    const earliest = jobs.reduce((accum, job) => {
+      const startTimes = job.runs.map((job) => job.startTime);
+      return {...accum, [job.key]: Math.min(...startTimes)};
+    }, {} as {[jobKey: string]: number});
+
+    return jobs.sort((a, b) => earliest[a.key] - earliest[b.key]);
+  }, [data, start, end]);
+
+  return <RunTimeline range={[start, end]} jobs={jobs} />;
+};
+
+export const RunTimeline = ({jobs, range}: {jobs: TimelineJob[]; range: [number, number]}) => {
   const [width, setWidth] = React.useState<number | null>(null);
   const observer = React.useRef<ResizeObserver | null>(null);
 
@@ -67,123 +191,7 @@ export const RunTimeline = (props: Props) => {
     }
   }, []);
 
-  const [unvalidatedStart, unvalidatedEnd] = range;
-  // Ensure that `start` is earlier than `end`.
-  const [start, end] = React.useMemo(() => {
-    return unvalidatedEnd < unvalidatedStart
-      ? [unvalidatedEnd, unvalidatedStart]
-      : [unvalidatedStart, unvalidatedEnd];
-  }, [unvalidatedStart, unvalidatedEnd]);
-
-  const queryResult = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(RUN_TIMELINE_QUERY, {
-    fetchPolicy: 'network-only',
-    pollInterval: POLL_INTERVAL,
-    notifyOnNetworkStatusChange: true,
-    variables: {
-      inProgressFilter: {
-        statuses: [RunStatus.CANCELING, RunStatus.STARTED],
-        createdBefore: end / 1000.0,
-      },
-      terminatedFilter: {
-        statuses: Array.from(doneStatuses),
-        createdBefore: end / 1000.0,
-        updatedAfter: start / 1000.0,
-      },
-    },
-  });
-  const {data} = queryResult;
-
-  const jobList = React.useMemo(() => {
-    const {unterminated, terminated, workspaceOrError} = data || {};
-    const runs: RunForJob[] = [
-      ...(unterminated && unterminated.__typename === 'Runs' ? unterminated.results : []),
-      ...(terminated && terminated.__typename === 'Runs' ? terminated.results : []),
-    ].map((run) => ({
-      id: run.id,
-      status: run.status,
-      jobName: run.pipelineName,
-      startTime:
-        run.stats && run.stats.__typename !== 'PythonError' && run.stats.startTime
-          ? run.stats.startTime * 1000
-          : 0,
-      endTime:
-        run.stats && run.stats.__typename !== 'PythonError' && run.stats.endTime
-          ? run.stats.endTime * 1000
-          : Date.now(),
-    }));
-    const runsByJob = {};
-    runs.forEach((run) => {
-      if (
-        run.jobName &&
-        run.startTime &&
-        overlap(
-          {start, end},
-          {
-            start: run.startTime,
-            end: run.endTime,
-          },
-        )
-      ) {
-        runsByJob[run.jobName] = [...(runsByJob[run.jobName] || []), run];
-      }
-    });
-    const ticksByJob = {};
-    if (workspaceOrError && workspaceOrError.__typename === 'Workspace') {
-      for (const locationEntry of workspaceOrError.locationEntries) {
-        if (
-          locationEntry.__typename === 'WorkspaceLocationEntry' &&
-          locationEntry.locationOrLoadError?.__typename === 'RepositoryLocation'
-        ) {
-          for (const repository of locationEntry.locationOrLoadError.repositories) {
-            for (const pipeline of repository.pipelines) {
-              const schedules = (repository.schedules || []).filter(
-                (schedule) => schedule.pipelineName === pipeline.name,
-              );
-              for (const schedule of schedules) {
-                if (schedule.scheduleState.status === InstigationStatus.RUNNING) {
-                  schedule.futureTicks.results.forEach(({timestamp}) => {
-                    const startTime = timestamp * 1000;
-                    if (overlap({start, end}, {start: startTime, end: startTime})) {
-                      ticksByJob[schedule.pipelineName] = [
-                        ...(ticksByJob[schedule.pipelineName] || []),
-                        {
-                          id: `${schedule.pipelineName}-future-run-${timestamp}`,
-                          jobName: schedule.pipelineName,
-                          status: 'SCHEDULED',
-                          startTime,
-                          endTime: startTime + 10 * 1000,
-                        },
-                      ];
-                    }
-                  });
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-
-    const jobKeys = Object.keys(jobs);
-    const runsByJobKey = jobKeys.reduce((accum, jobKey) => {
-      const job = jobs[jobKey];
-      const jobRuns = [...(runsByJob[job.name] || []), ...(ticksByJob[job.name] || [])];
-      return !jobRuns.length ? accum : {...accum, [jobKey]: jobRuns};
-    }, {});
-
-    const jobsInRange = Object.keys(runsByJobKey);
-
-    const earliest = jobsInRange.reduce((accum, jobKey) => {
-      const startTimes = runsByJobKey[jobKey].map((run: any) => run.startTime);
-      return {...accum, [jobKey]: Math.min(...startTimes)};
-    }, {} as {[jobName: string]: number});
-
-    return jobsInRange
-      .sort((a, b) => earliest[a] - earliest[b])
-      .map((jobKey) => ({...jobs[jobKey], jobKey, runs: runsByJobKey[jobKey]}));
-  }, [jobs, data, start, end]);
-
-  const height = ROW_HEIGHT * jobList.length;
+  const height = ROW_HEIGHT * jobs.length;
 
   return (
     <Timeline $height={TIME_HEADER_HEIGHT + height} ref={containerRef}>
@@ -191,13 +199,10 @@ export const RunTimeline = (props: Props) => {
         <>
           <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={height} />
           <div>
-            {jobList.map(({jobKey, name, path, runs}, ii) => (
+            {jobs.map((job, ii) => (
               <RunTimelineRow
-                key={jobKey}
-                jobKey={jobKey}
-                jobLabel={name}
-                jobPath={path}
-                runs={runs}
+                key={job.key}
+                job={job}
                 top={ii * ROW_HEIGHT + TIME_HEADER_HEIGHT}
                 range={range}
                 width={width}
@@ -317,24 +322,14 @@ const overlap = (a: {start: number; end: number}, b: {start: number; end: number
   !(a.end < b.start || b.end < a.start);
 
 type RunBatch = {
-  runs: RunForJob[];
+  runs: TimelineRun[];
   startTime: number;
   endTime: number;
   left: number;
   width: number;
 };
 
-interface RowProps {
-  jobKey: string;
-  jobLabel: string;
-  jobPath: string;
-  runs: RunForJob[];
-  top: number;
-  range: [number, number];
-  width: number;
-}
-
-const mergeStatusToColor = (runs: RunForJob[]) => {
+const mergeStatusToColor = (runs: TimelineRun[]) => {
   let anyInProgress = false;
   let anyQueued = false;
   let anyFailed = false;
@@ -377,19 +372,29 @@ const mergeStatusToColor = (runs: RunForJob[]) => {
 const MIN_CHUNK_WIDTH = 2;
 const MIN_WIDTH_FOR_MULTIPLE = 16;
 
-const RunTimelineRow = (props: RowProps) => {
-  const {jobKey, jobLabel, jobPath, runs, top, range, width: containerWidth} = props;
+const RunTimelineRow = ({
+  job,
+  top,
+  range,
+  width: containerWidth,
+}: {
+  job: TimelineJob;
+  top: number;
+  range: [number, number];
+  width: number;
+}) => {
+  // const {jobKey, jobLabel, jobPath, runs, top, range, width: containerWidth} = props;
   const [start, end] = range;
   const rangeLength = end - start;
   const width = containerWidth - LABEL_WIDTH;
 
   // Batch overlapping runs in this row.
   const batched = React.useMemo(() => {
-    const batches: RunBatch[] = runs
+    const batches: RunBatch[] = job.runs
       .map((run) => {
         const startTime = run.startTime;
         const endTime = run.endTime || Date.now();
-        const left = Math.floor(((startTime - start) / rangeLength) * width);
+        const left = Math.max(0, Math.floor(((startTime - start) / rangeLength) * width));
         const runWidth = Math.max(
           MIN_CHUNK_WIDTH,
           Math.min(
@@ -446,16 +451,16 @@ const RunTimelineRow = (props: RowProps) => {
     }
 
     return consolidated;
-  }, [rangeLength, runs, start, width]);
+  }, [rangeLength, job, start, width]);
 
-  if (!runs.length) {
+  if (!job.runs.length) {
     return null;
   }
 
   return (
     <Row $top={top}>
       <JobName>
-        <Link to={jobPath}>{jobLabel}</Link>
+        <Link to={job.path}>{job.jobName}</Link>
       </JobName>
       <RunChunks>
         {batched.map((batch) => {
@@ -472,7 +477,7 @@ const RunTimelineRow = (props: RowProps) => {
               }}
             >
               <Popover
-                content={<RunHoverContent jobKey={jobKey} batch={batch} />}
+                content={<RunHoverContent jobKey={job.key} batch={batch} />}
                 position="top"
                 interactionKind="hover"
                 className="chunk-popover-target"
@@ -657,6 +662,7 @@ const RUN_TIMELINE_QUERY = gql`
                 pipelines {
                   id
                   name
+                  isJob
                 }
                 schedules {
                   id

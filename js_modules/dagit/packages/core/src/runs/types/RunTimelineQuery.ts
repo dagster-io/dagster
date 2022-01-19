@@ -115,6 +115,7 @@ export interface RunTimelineQuery_workspaceOrError_Workspace_locationEntries_loc
   __typename: "Pipeline";
   id: string;
   name: string;
+  isJob: boolean;
 }
 
 export interface RunTimelineQuery_workspaceOrError_Workspace_locationEntries_locationOrLoadError_RepositoryLocation_repositories_schedules_scheduleState {

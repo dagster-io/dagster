@@ -35,18 +35,17 @@ import {
   queuedStatuses,
   successStatuses,
 } from '../runs/RunStatuses';
-import {JobMap, RunTimeline} from '../runs/RunTimeline';
+import {RunTimelineContainer} from '../runs/RunTimeline';
 import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {RunTimeFragment} from '../runs/types/RunTimeFragment';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
-import {InstigationStatus, RunStatus} from '../types/globalTypes';
+import {RunStatus} from '../types/globalTypes';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {useRepositoryOptions} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
-import {workspacePipelinePath} from '../workspace/workspacePath';
 
 import {InstanceTabs} from './InstanceTabs';
 import {JobMenu} from './JobMenu';
@@ -165,7 +164,6 @@ const OverviewContent = () => {
     const succeeded = [];
     const queued = [];
     const neverRan = [];
-    const scheduled = [];
 
     const sortFn = (a: JobItem, b: JobItem) => {
       const aRun = a.job.runs[0] || null;
@@ -220,22 +218,6 @@ const OverviewContent = () => {
                   neverRan.push(item);
                 }
               }
-
-              if (schedules.length) {
-                const anyFutureTicks = schedules.some(
-                  ({scheduleState, futureTicks}) =>
-                    scheduleState.status === InstigationStatus.RUNNING &&
-                    futureTicks.results.length > 0,
-                );
-                if (anyFutureTicks) {
-                  scheduled.push({
-                    job: pipeline,
-                    repoAddress,
-                    schedules,
-                    sensors,
-                  });
-                }
-              }
             }
           }
         }
@@ -247,9 +229,8 @@ const OverviewContent = () => {
     queued.sort(sortFn);
     succeeded.sort(sortFn);
     neverRan.sort(sortFn);
-    scheduled.sort(sortFn);
 
-    return {failed, inProgress, queued, succeeded, neverRan, scheduled};
+    return {failed, inProgress, queued, succeeded, neverRan};
   }, [data]);
 
   const filteredJobs = React.useMemo(() => {
@@ -260,14 +241,13 @@ const OverviewContent = () => {
       return !hiddenRepos.has(repoAddress) && name.toLocaleLowerCase().includes(searchToLower);
     };
 
-    const {failed, inProgress, queued, succeeded, neverRan, scheduled} = bucketed;
+    const {failed, inProgress, queued, succeeded, neverRan} = bucketed;
     return {
       failed: failed.filter(filterJobs),
       inProgress: inProgress.filter(filterJobs),
       queued: queued.filter(filterJobs),
       succeeded: succeeded.filter(filterJobs),
       neverRan: neverRan.filter(filterJobs),
-      scheduled: scheduled.filter(filterJobs),
     };
   }, [bucketed, hiddenRepos, searchValue]);
 
@@ -316,51 +296,6 @@ const OverviewContent = () => {
       neverRan: neverRan.map(appendRuns),
     };
   }, [lastTenRunsFlattened, filteredJobs]);
-
-  const {scheduled} = filteredJobs;
-  const jobMapForTimeline: JobMap = React.useMemo(() => {
-    const jobMap = Object.keys(filteredJobsWithRuns).reduce((accum, status) => {
-      const jobsForStatus: JobItemWithRuns[] = filteredJobsWithRuns[status];
-      const toAppend = {};
-      for (const jobItem of jobsForStatus) {
-        const {repoAddress, job} = jobItem;
-        const jobKey = makeJobKey(repoAddress, job.name);
-        toAppend[jobKey] = {
-          name: job.name,
-          path: workspacePipelinePath({
-            repoName: repoAddress.name,
-            repoLocation: repoAddress.location,
-            pipelineName: job.name,
-            isJob: job.isJob,
-          }),
-          runs: [],
-        };
-      }
-      return {...accum, ...toAppend};
-    }, {} as JobMap);
-
-    for (const jobItem of scheduled) {
-      const {job, repoAddress} = jobItem;
-      const jobKey = makeJobKey(repoAddress, job.name);
-
-      // If there are no runs tracked for this job yet because they're only scheduled,
-      // add an entry.
-      if (!jobMap.hasOwnProperty(jobKey)) {
-        jobMap[jobKey] = {
-          name: job.name,
-          path: workspacePipelinePath({
-            repoName: repoAddress.name,
-            repoLocation: repoAddress.location,
-            pipelineName: job.name,
-            isJob: job.isJob,
-          }),
-          runs: [],
-        };
-      }
-    }
-
-    return jobMap;
-  }, [filteredJobsWithRuns, scheduled]);
 
   if (!data && loading) {
     return (
@@ -431,7 +366,7 @@ const OverviewContent = () => {
           style={{width: '340px'}}
         />
       </Box>
-      <RunTimelineSection jobs={jobMapForTimeline} />
+      <RunTimelineSection />
       {inProgress.length ? (
         <JobSection
           icon={<IconWIP name="hourglass_bottom" color={ColorsWIP.Blue500} size={24} />}
@@ -475,16 +410,11 @@ const OverviewContent = () => {
   );
 };
 
-interface RunTimelineSectionProps {
-  jobs: JobMap;
-}
-
 type HourWindow = '1' | '6' | '12' | '24';
 const LOOKAHEAD_HOURS = 1;
 const ONE_HOUR = 60 * 60 * 1000;
 
-const RunTimelineSection = (props: RunTimelineSectionProps) => {
-  const {jobs} = props;
+const RunTimelineSection = () => {
   const [shown, setShown] = React.useState(true);
   const [hourWindow, setHourWindow] = React.useState<HourWindow>('6');
   const now = Date.now();
@@ -527,7 +457,7 @@ const RunTimelineSection = (props: RunTimelineSectionProps) => {
           </ButtonWIP>
         </Box>
       </Box>
-      {shown ? <RunTimeline jobs={jobs} range={range} /> : null}
+      {shown ? <RunTimelineContainer range={range} /> : null}
     </>
   );
 };
