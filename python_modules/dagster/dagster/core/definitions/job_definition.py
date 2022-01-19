@@ -212,10 +212,9 @@ class JobDefinition(PipelineDefinition):
             version_strategy=self.version_strategy,
             _op_selection_data=OpSelectionData(
                 op_selection=op_selection,
-                # TODO thread nested graph selection
                 resolved_op_selection=set(
                     resolved_op_selection_dict.keys()
-                ),  # equivalent to solids_to_execute
+                ),  # equivalent to solids_to_execute. currently only gets top level nodes.
                 ignored_solids=ignored_solids,  # used by config resolution
                 parent_job_def=self,  # used by pipeline snapshot lineage
             ),
@@ -359,7 +358,6 @@ def _get_subselected_graph_definition(
                     if (
                         isinstance(output_handle, SolidOutputHandle)
                         and output_handle.solid.name in resolved_op_selection_dict
-                        # TODO: handle graph subset with dynamic outs
                     )
                 ]
                 deps[_dep_key_of(node)][input_handle.input_def.name] = MultiDependencyDefinition(

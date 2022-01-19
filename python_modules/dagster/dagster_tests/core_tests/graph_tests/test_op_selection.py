@@ -1,7 +1,17 @@
 from typing import List
 
 import pytest
-from dagster import ConfigMapping, DynamicOut, DynamicOutput, In, graph, job, op, root_input_manager
+from dagster import (
+    ConfigMapping,
+    DynamicOut,
+    DynamicOutput,
+    In,
+    graph,
+    job,
+    op,
+    repository,
+    root_input_manager,
+)
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
@@ -38,6 +48,16 @@ def _success_step_keys(result: ExecuteInProcessResult):
         for evt in result.all_node_events
         if evt.event_type == DagsterEventType.STEP_SUCCESS
     ]
+
+
+def test_repo_can_load():
+    my_subset_job = do_it_all.to_job(name="subset_job", op_selection=["add_one"])
+
+    @repository
+    def my_repo():
+        return [do_it_all, my_subset_job]
+
+    assert {job.name for job in my_repo.get_all_jobs()} == {"do_it_all", "subset_job"}
 
 
 def test_simple_op_selection_on_graph_def():
@@ -398,8 +418,6 @@ def test_nested_graph_selection_both_inside_and_outside_disconnected():
 def test_nested_graph_selection_unsatisfied_subgraph_inputs():
     # output mapping
     result_sub_1 = supergraph.execute_in_process(
-        # TODO query not working yet
-        # op_selection=["subgraph.return_one*"],
         op_selection=["subgraph.return_one", "subgraph.adder", "subgraph.add_one", "add_one"],
         run_config={"ops": {"subgraph": {"ops": {"adder": {"inputs": {"num2": 0}}}}}},
     )
