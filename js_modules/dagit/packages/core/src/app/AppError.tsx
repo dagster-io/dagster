@@ -12,34 +12,61 @@ interface DagsterGraphQLError extends GraphQLError {
 
 const ErrorToaster = Toaster.create({position: 'top-right'});
 
-const showGraphQLError = (error: DagsterGraphQLError, operationName?: string) => {
+const showGraphQLError = (
+  error: DagsterGraphQLError,
+  operationName?: string,
+  networkPathPrefix?: string,
+) => {
   const message = (
     <div>
       Unexpected GraphQL error
-      <AppStackTraceLink error={error} operationName={operationName} />
+      <AppStackTraceLink
+        error={error}
+        operationName={operationName}
+        networkPathPrefix={networkPathPrefix}
+      />
     </div>
   );
   ErrorToaster.show({message, intent: 'danger'});
   console.error('[GraphQL error]', error);
 };
 
-export const errorLink = onError((response: ErrorResponse) => {
-  if (response.graphQLErrors) {
-    const {graphQLErrors, operation} = response;
-    const {operationName} = operation;
-    graphQLErrors.forEach((error) => showGraphQLError(error as DagsterGraphQLError, operationName));
-  }
-  if (response.networkError) {
-    console.error('[Network error]', response.networkError);
-  }
-});
+export const errorLink = (pathPrefix: string) =>
+  onError((response: ErrorResponse) => {
+    if (response.graphQLErrors) {
+      const {graphQLErrors, operation} = response;
+      const {operationName} = operation;
+      graphQLErrors.forEach((error) =>
+        showGraphQLError(error as DagsterGraphQLError, operationName, pathPrefix),
+      );
+    }
+    if (response.networkError) {
+      console.error('[Network error]', response.networkError);
+    }
+  });
 
 interface AppStackTraceLinkProps {
   error: DagsterGraphQLError;
   operationName?: string;
+  networkPathPrefix?: string;
 }
 
-const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps) => {
+const AppStackTraceLink = ({error, operationName, networkPathPrefix}: AppStackTraceLinkProps) => {
+  const [versions, setVersions] = React.useState<
+    {dagit_version: string; dagster_graphql_version: string; dagster_version: string} | undefined
+  >();
+
+  React.useEffect(() => {
+    const loadVersions = async () => {
+      const versionsResponse = await fetch(`${networkPathPrefix || ''}/dagit_info`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      setVersions(await versionsResponse.json());
+    };
+    loadVersions();
+  }, [setVersions, networkPathPrefix]);
+
   const title = 'Error';
   const stackTraceContent = error.stack_trace ? (
     <>
@@ -114,6 +141,9 @@ const AppStackTraceLink = ({error, operationName}: AppStackTraceLinkProps) => {
         Locations: {JSON.stringify(error.locations)}
         {stackTraceContent}
         {causeContent}
+        {'\n\n'}
+        {!!versions &&
+          `Dagit Version: ${versions?.dagit_version}\nDagster Version: ${versions?.dagster_version}\nGraphQL Version: ${versions?.dagster_graphql_version}`}
       </div>
     </div>
   );

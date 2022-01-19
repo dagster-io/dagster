@@ -19,7 +19,7 @@ import {telemetryLink} from './telemetryLink';
 
 const {pathPrefix, telemetryEnabled} = extractInitializationData();
 
-const apolloLinks = [logLink, errorLink, timeStartLink];
+const apolloLinks = [logLink, errorLink(pathPrefix), timeStartLink];
 
 if (telemetryEnabled) {
   apolloLinks.unshift(telemetryLink(pathPrefix));
