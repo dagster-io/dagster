@@ -12,6 +12,7 @@ from dagster.core.storage.pipeline_run import (
     RunRecord,
 )
 from dagster.core.storage.tags import TagType, get_tag_type
+from dagster.utils import datetime_as_float
 
 from ...implementation.events import construct_basic_params, from_event_record
 from ...implementation.fetch_assets import get_assets_for_run_id
@@ -229,6 +230,7 @@ class GrapheneRun(graphene.ObjectType):
     )
     startTime = graphene.Float()
     endTime = graphene.Float()
+    updateTime = graphene.Float()
 
     class Meta:
         interfaces = (GraphenePipelineRun,)
@@ -366,6 +368,10 @@ class GrapheneRun(graphene.ObjectType):
                 self._run_stats = graphene_info.context.instance.get_run_stats(self.runId)
             return self._run_stats.end_time
         return run_record.end_time
+
+    def resolve_updateTime(self, graphene_info):
+        run_record = self._get_run_record(graphene_info.context.instance)
+        return datetime_as_float(run_record.update_timestamp)
 
 
 class GrapheneIPipelineSnapshotMixin:

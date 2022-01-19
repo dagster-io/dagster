@@ -87,24 +87,27 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
     check.opt_int_param(limit, "limit")
 
     instance = graphene_info.context.instance
-    runs = []
 
     if filters and filters.run_ids and len(filters.run_ids) == 1:
         run = instance.get_run_by_id(filters.run_ids[0])
         if run:
-            runs = [run]
-    elif filters and (
+            return [GrapheneRun(run)]
+        else:
+            return []
+
+    if filters and (
         filters.pipeline_name
         or filters.tags
         or filters.statuses
         or filters.snapshot_id
         or filters.run_ids
     ):
-        runs = instance.get_runs(filters, cursor, limit)
-    else:
-        runs = instance.get_runs(cursor=cursor, limit=limit)
+        return [
+            GrapheneRun(record)
+            for record in instance.get_run_records(filters=filters, cursor=cursor, limit=limit)
+        ]
 
-    return [GrapheneRun(run) for run in runs]
+    return [GrapheneRun(record) for record in instance.get_run_records(cursor=cursor, limit=limit)]
 
 
 def get_in_progress_runs_for_job(graphene_info, job_name):
