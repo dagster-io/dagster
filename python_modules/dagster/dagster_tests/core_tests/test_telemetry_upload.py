@@ -5,9 +5,9 @@ import mock
 import pytest
 import responses
 from click.testing import CliRunner
-from dagit.telemetry import DAGSTER_TELEMETRY_URL, upload_logs
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.core.telemetry import cleanup_telemetry_logger
+from dagster.core.telemetry_upload import DAGSTER_TELEMETRY_URL, upload_logs
 from dagster.core.test_utils import environ, instance_for_test
 from dagster.utils import pushd, script_relative_path
 

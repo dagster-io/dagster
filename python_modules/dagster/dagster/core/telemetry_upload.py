@@ -1,8 +1,10 @@
 import datetime
 import os
+import threading
 import zlib
+from contextlib import contextmanager
 
-from dagster.core.telemetry import MAX_BYTES, get_dir_from_dagster_home
+from .telemetry import MAX_BYTES, get_dir_from_dagster_home
 
 DAGSTER_TELEMETRY_URL = "http://telemetry.dagster.io/actions"
 
@@ -13,6 +15,21 @@ def is_running_in_test():
         or os.getenv("TF_BUILD") is not None
         or os.getenv("DAGSTER_DISABLE_TELEMETRY") is not None
     )
+
+
+@contextmanager
+def uploading_logging_thread():
+
+    stop_event = threading.Event()
+    logging_thread = threading.Thread(
+        target=upload_logs, args=([stop_event]), name="telemetry-upload"
+    )
+    try:
+        logging_thread.start()
+        yield
+    finally:
+        stop_event.set()
+        logging_thread.join()
 
 
 def upload_logs(stop_event, raise_errors=False):
