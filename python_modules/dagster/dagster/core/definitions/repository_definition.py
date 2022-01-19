@@ -874,6 +874,7 @@ class CachingRepositoryData(RepositoryData):
         solid_to_pipeline = {}
         for pipeline in self._all_pipelines:
             for solid_def in pipeline.all_node_defs + [pipeline.graph]:
+                # skip checks for subselected graphs because they don't have their own names
                 if isinstance(solid_def, SubselectedGraphDefinition):
                     break
 

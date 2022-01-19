@@ -226,7 +226,6 @@ def parse_op_selection(job_def: "JobDefinition", op_selection: List[str]) -> Dic
         ["top_level_op_1+"]
         => {"top_level_op_1": LeafNodeSelection, "top_level_op_2": LeafNodeSelection}
     """
-    # TODO: better parse so it works both for dot and none dot syntax
     if any(["." in item for item in op_selection]):
         resolved_op_selection_dict: Dict = {}
         for item in op_selection:

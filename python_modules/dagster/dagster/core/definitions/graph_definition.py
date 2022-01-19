@@ -625,6 +625,27 @@ class GraphDefinition(NodeDefinition):
 
 
 class SubselectedGraphDefinition(GraphDefinition):
+    """Defines a subselected graph.
+
+    Args:
+        parent_graph_def (GraphDefinition): The parent graph that this current graph is subselected
+            from. This is used for tracking where the subselected graph originally comes from.
+            Note that we allow subselecting a subselected graph, and this field refers to the direct
+            parent graph of the current subselection, rather than the original root graph.
+        node_defs (Optional[List[NodeDefinition]]): A list of all top level nodes in the graph. A
+            node can be an op or a graph that contains other nodes.
+        dependencies (Optional[Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]]):
+            A structure that declares the dependencies of each op's inputs on the outputs of other
+            ops in the subselected graph. Keys of the top level dict are either the string names of
+            ops in the graph or, in the case of aliased solids, :py:class:`NodeInvocations <NodeInvocation>`.
+            Values of the top level dict are themselves dicts, which map input names belonging to
+            the op or aliased op to :py:class:`DependencyDefinitions <DependencyDefinition>`.
+        input_mappings (Optional[List[InputMapping]]): Define the inputs to the nested graph, and
+            how they map to the inputs of its constituent ops.
+        output_mappings (Optional[List[OutputMapping]]): Define the outputs of the nested graph, and
+            how they map from the outputs of its constituent ops.
+    """
+
     def __init__(
         self,
         parent_graph_def: GraphDefinition,
@@ -751,9 +772,10 @@ def _validate_in_mappings(
             target_type = target_input.dagster_type
             fan_in_msg = ""
 
-        if target_type != mapping.definition.dagster_type and class_name not in (
-            "GraphDefinition",
-            "SubselectedGraphDefinition",  # TODO better
+        if (
+            # no need to check mapping type for graphs because users can't specify ins/out type on graphs
+            class_name not in (GraphDefinition.__name__, SubselectedGraphDefinition.__name__)
+            and target_type != mapping.definition.dagster_type
         ):
             raise DagsterInvalidDefinitionError(
                 "In {class_name} '{name}' input "
