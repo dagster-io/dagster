@@ -37,9 +37,6 @@ class SqlitePollingEventLogStorage(SqliteEventLogStorage):
         check.callable_param(handler, "handler")
         self._watcher.unwatch_run(run_id, handler)
 
-    def __del__(self):
-        self.dispose()
-
     def dispose(self):
         if not self._disposed:
             self._disposed = True

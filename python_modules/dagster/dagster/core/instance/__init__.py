@@ -325,6 +325,8 @@ class DagsterInstance:
                 "Run monitoring only supports select RunLaunchers",
             )
 
+        self._disposed = False
+
     # ctors
 
     @staticmethod
@@ -665,11 +667,13 @@ class DagsterInstance:
         print_fn("Done.")
 
     def dispose(self):
-        self._run_storage.dispose()
-        self.run_coordinator.dispose()
-        self._run_launcher.dispose()
-        self._event_storage.dispose()
-        self._compute_log_manager.dispose()
+        if not self._disposed:
+            self._disposed = True
+            self._run_storage.dispose()
+            self.run_coordinator.dispose()
+            self._run_launcher.dispose()
+            self._event_storage.dispose()
+            self._compute_log_manager.dispose()
 
     # run storage
     @traced
@@ -1794,6 +1798,15 @@ records = instance.get_event_records(
         self.dispose()
         if DagsterInstance._EXIT_STACK:
             DagsterInstance._EXIT_STACK.close()
+
+    def __del__(self):
+        if not self._disposed:
+            warnings.warn(
+                "Deleting a DagsterInstance object without disposing it first - DagsterInstance "
+                "should be created in a contextmanager to ensure that any resources that it "
+                "creates are always cleaned up"
+            )
+            self.dispose()
 
     def get_addresses_for_step_output_versions(self, step_output_versions):
         """

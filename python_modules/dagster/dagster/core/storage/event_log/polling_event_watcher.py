@@ -70,9 +70,6 @@ class SqlPollingEventWatcher:
                 if self._run_id_to_watcher_dict[run_id].should_thread_exit.is_set():
                     del self._run_id_to_watcher_dict[run_id]
 
-    def __del__(self):
-        self.close()
-
     def close(self):
         if not self._disposed:
             self._disposed = True

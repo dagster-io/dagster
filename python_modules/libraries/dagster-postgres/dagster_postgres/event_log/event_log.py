@@ -239,10 +239,6 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def end_watch(self, run_id, handler):
         self._event_watcher.unwatch_run(run_id, handler)
 
-    def __del__(self):
-        # Keep the inherent limitations of __del__ in Python in mind!
-        self.dispose()
-
     def dispose(self):
         if not self._disposed:
             self._disposed = True

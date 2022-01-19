@@ -196,9 +196,6 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def event_watcher(self):
         return self._event_watcher
 
-    def __del__(self):
-        self.dispose()
-
     def dispose(self):
         if not self._disposed:
             self._disposed = True
