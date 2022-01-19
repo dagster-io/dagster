@@ -50,19 +50,6 @@ export interface RunActionButtonsTestQuery_pipelineRunOrError_Run_repositoryOrig
   repositoryLocationName: string;
 }
 
-export interface RunActionButtonsTestQuery_pipelineRunOrError_Run_stats_PythonError {
-  __typename: "PythonError";
-}
-
-export interface RunActionButtonsTestQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot {
-  __typename: "RunStatsSnapshot";
-  id: string;
-  endTime: number | null;
-  startTime: number | null;
-}
-
-export type RunActionButtonsTestQuery_pipelineRunOrError_Run_stats = RunActionButtonsTestQuery_pipelineRunOrError_Run_stats_PythonError | RunActionButtonsTestQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot;
-
 export interface RunActionButtonsTestQuery_pipelineRunOrError_Run_stepStats_attempts {
   __typename: "RunMarker";
   startTime: number | null;
@@ -102,7 +89,8 @@ export interface RunActionButtonsTestQuery_pipelineRunOrError_Run {
   executionPlan: RunActionButtonsTestQuery_pipelineRunOrError_Run_executionPlan | null;
   stepKeysToExecute: string[] | null;
   repositoryOrigin: RunActionButtonsTestQuery_pipelineRunOrError_Run_repositoryOrigin | null;
-  stats: RunActionButtonsTestQuery_pipelineRunOrError_Run_stats;
+  startTime: number | null;
+  endTime: number | null;
   stepStats: RunActionButtonsTestQuery_pipelineRunOrError_Run_stepStats[];
 }
 
