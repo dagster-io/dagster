@@ -153,7 +153,7 @@ class GrapheneAsset(graphene.ObjectType):
         return self.key
 
     def resolve_assetMaterializations(self, graphene_info, **kwargs):
-        from ...implementation.fetch_assets import get_asset_events
+        from ...implementation.fetch_assets import get_asset_materializations
 
         try:
             before_timestamp = (
@@ -172,7 +172,7 @@ class GrapheneAsset(graphene.ObjectType):
 
         return [
             GrapheneAssetMaterialization(event=event)
-            for event in get_asset_events(
+            for event in get_asset_materializations(
                 graphene_info,
                 self.key,
                 partitions=partitions,

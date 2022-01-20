@@ -139,7 +139,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_assetMaterializations(self, graphene_info, **kwargs):
-        from ..implementation.fetch_assets import get_asset_events
+        from ..implementation.fetch_assets import get_asset_materializations
 
         try:
             before_timestamp = (
@@ -161,7 +161,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         return [
             GrapheneAssetMaterialization(event=event)
-            for event in get_asset_events(
+            for event in get_asset_materializations(
                 graphene_info,
                 self._external_asset_node.asset_key,
                 partitions,
@@ -201,7 +201,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         return None
 
     def resolve_latestMaterializationByPartition(self, _graphene_info, **kwargs):
-        from ..implementation.fetch_assets import get_asset_events
+        from ..implementation.fetch_assets import get_asset_materializations
 
         get_partition = (
             lambda event: event.dagster_event.step_materialization_data.materialization.partition
@@ -209,7 +209,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         partitions = kwargs.get("partitions") or self.get_partition_keys()
 
-        events_for_partitions = get_asset_events(
+        events_for_partitions = get_asset_materializations(
             _graphene_info,
             self._external_asset_node.asset_key,
             partitions,
