@@ -16,6 +16,7 @@
 * In the “Launch Backfill” dialog on the Partitions page in Dagit, the range input sometimes discarded user input due to page updates. This has been fixed. Additionally, pressing the return key now commits changes to the input.
 * When using a mouse wheel or touchpad gestures to zoom on a DAG view for a job or graph in Dagit, the zoom behavior sometimes was applied to the entire browser instead of just the DAG. This has been fixed.
 * Dagit fonts now load correctly when using the `--path-prefix` option.
+* Date strings in tool tips on time-based charts no longer duplicate the meridiem indicator.
 
 ### Experimental
 
