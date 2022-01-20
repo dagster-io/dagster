@@ -19,7 +19,7 @@ from .config_schema import DagsterTypeLoader, DagsterTypeMaterializer
 if t.TYPE_CHECKING:
     from dagster.core.execution.context.system import StepExecutionContext, TypeCheckContext
 
-TypeCheckFn = t.Callable[[TypeCheckContext, object], t.Union[TypeCheck, bool]]
+TypeCheckFn = t.Callable[["TypeCheckContext", object], t.Union[TypeCheck, bool]]
 
 
 @whitelist_for_serdes
@@ -505,12 +505,12 @@ class PythonObjectDagsterType(DagsterType):
             self.type_str = "Union[{}]".format(
                 ", ".join(python_type.__name__ for python_type in python_type)
             )
-            typing_type = t.Union[python_type]
+            typing_type = t.Union[python_type]  # type: ignore
 
         else:
             self.python_type = check.type_param(python_type, "python_type")  # type: ignore
             self.type_str = cast(str, python_type.__name__)
-            typing_type = python_type
+            typing_type = self.python_type  # type: ignore
         name = check.opt_str_param(name, "name", self.type_str)
         key = check.opt_str_param(key, "key", name)
         super(PythonObjectDagsterType, self).__init__(
