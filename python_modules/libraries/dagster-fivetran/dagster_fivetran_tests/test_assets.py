@@ -1,5 +1,6 @@
+import pytest
 import responses
-from dagster import AssetKey
+from dagster import AssetKey, DagsterStepOutputNotFoundError
 from dagster.core.asset_defs import build_assets_job
 from dagster_fivetran import fivetran_resource
 from dagster_fivetran.assets import fivetran_assets_factory
@@ -22,7 +23,17 @@ def test_fivetran_asset_keys():
     assert ft_asset.asset_keys == {AssetKey("foo"), AssetKey("bar")}
 
 
-def test_fivetran_asset_run():
+@pytest.mark.parametrize(
+    "asset_keys,should_error",
+    [
+        ([], False),
+        ([AssetKey(["xyz1", "abc1"])], False),
+        ([AssetKey(["xyz1", "abc1"]), AssetKey(["abc", "xyz"])], False),
+        ([AssetKey(["does", "notexist"])], True),
+        ([AssetKey(["xyz1", "abc1"]), AssetKey(["does", "notexist"])], True),
+    ],
+)
+def test_fivetran_asset_run(asset_keys, should_error):
 
     ft_resource = fivetran_resource.configured({"api_key": "foo", "api_secret": "bar"})
     final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
@@ -34,7 +45,7 @@ def test_fivetran_asset_run():
             fivetran_assets_factory(
                 name="my_cool_ft_assets",
                 connector_id=DEFAULT_CONNECTOR_ID,
-                asset_keys=[AssetKey(["xyz1", "abc1"]), AssetKey(["abc", "xyz"])],
+                asset_keys=asset_keys,
                 poll_interval=0.1,
                 poll_timeout=10,
             )
@@ -55,21 +66,25 @@ def test_fivetran_asset_run():
         # final state will be updated
         rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response(data=final_data))
 
-        result = fivetran_assets_job.execute_in_process()
-        assert result.success
-        asset_materializations = [
-            event
-            for event in result.events_for_node("my_cool_ft_assets")
-            if event.event_type_value == "ASSET_MATERIALIZATION"
-        ]
-        assert len(asset_materializations) == 3
-        asset_keys = set(
-            mat.event_specific_data.materialization.asset_key for mat in asset_materializations
-        )
-        assert asset_keys == set(
-            [
-                AssetKey(["xyz1", "abc1"]),
-                AssetKey(["xyz1", "abc2"]),
-                AssetKey(["abc", "xyz"]),
+        if should_error:
+            with pytest.raises(DagsterStepOutputNotFoundError):
+                fivetran_assets_job.execute_in_process()
+        else:
+            result = fivetran_assets_job.execute_in_process()
+            assert result.success
+            asset_materializations = [
+                event
+                for event in result.events_for_node("my_cool_ft_assets")
+                if event.event_type_value == "ASSET_MATERIALIZATION"
             ]
-        )
+            assert len(asset_materializations) == 3
+            asset_keys = set(
+                mat.event_specific_data.materialization.asset_key for mat in asset_materializations
+            )
+            assert asset_keys == set(
+                [
+                    AssetKey(["xyz1", "abc1"]),
+                    AssetKey(["xyz1", "abc2"]),
+                    AssetKey(["abc", "xyz"]),
+                ]
+            )

@@ -1,7 +1,8 @@
 from typing import List, Optional
 
-from dagster import AssetKey, Out, Output, experimental
+from dagster import AssetKey, Out, Output
 from dagster.core.asset_defs import AssetsDefinition, multi_asset
+from dagster.utils.backcompat import experimental
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
 from dagster_fivetran.utils import generate_materializations
 
