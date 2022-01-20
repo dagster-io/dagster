@@ -121,6 +121,7 @@ def get_asset_observations(
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
+    check.opt_list_param(partitions, "partitions", of_type=str)
     instance = graphene_info.context.instance
     event_records = instance.get_event_records(
         EventRecordsFilter(

@@ -175,7 +175,6 @@ GET_ASSET_OBSERVATIONS = """
                 assetNodes {
                     opName
                     description
-                    jobName
                     assetObservations {
                         observationEvent {
                             observation {
@@ -623,6 +622,12 @@ class TestAssetAwareEventLog(
         ][0]
 
         assert asset_node["assetObservations"]
+
+        asset_key_path = asset_node["assetObservations"][0]["observationEvent"]["observation"][
+            "assetKey"
+        ]["path"]
+        assert asset_key_path
+        assert asset_key_path == ['asset_yields_observation']
 
         metadata = asset_node["assetObservations"][0]["observationEvent"]["observation"][
             "metadataEntries"
