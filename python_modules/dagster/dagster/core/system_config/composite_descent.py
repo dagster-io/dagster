@@ -4,7 +4,7 @@ from dagster import check
 from dagster.config.evaluate_value_result import EvaluateValueResult
 from dagster.config.validate import process_config
 from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.definitions.graph_definition import GraphDefinition, SubselectedGraphDefinition
+from dagster.core.definitions.graph_definition import GraphDefinition
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.definitions.run_config import define_solid_dictionary_cls
