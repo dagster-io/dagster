@@ -276,8 +276,16 @@ def str_param(obj: Any, param_name: str) -> str:
         raise _param_type_mismatch_exception(obj, str, param_name)
     return obj
 
+@overload
+def opt_str_param(obj: object, param_name: str, default: str) -> str:
+    ...
 
-def opt_str_param(obj: Any, param_name: str, default: str = None) -> Optional[str]:
+@overload
+def opt_str_param(obj: object, param_name: str) -> Optional[str]:
+    ...
+
+def opt_str_param(obj, param_name, default = None):
+# def opt_str_param(obj: Any, param_name: str, default: str = None) -> Optional[str]:
     if obj is not None and not isinstance(obj, str):
         raise _param_type_mismatch_exception(obj, str, param_name)
     return default if obj is None else obj

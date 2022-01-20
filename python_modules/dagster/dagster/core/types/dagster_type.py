@@ -511,17 +511,14 @@ class PythonObjectDagsterType(DagsterType):
             typing_type = object
         else:
             self.python_type = check.type_param(python_type, "python_type")  # type: ignore
-            self.type_str = python_type.__name__
+            self.type_str = cast(str, python_type.__name__)
             typing_type = python_type
-
-        # We have to set these here rather than in the superclass constructor to make sure
-        # `display_name` is defined.
-        self._name = check.opt_str_param(name, "name", self.type_str)
-        self.key = check.opt_str_param(key, "key", name)  # type: ignore
+        name = check.opt_str_param(name, "name", self.type_str)
+        key = check.opt_str_param(key, "key", name)
         super(PythonObjectDagsterType, self).__init__(
             key=key,
             name=name,
-            type_check_fn=isinstance_type_check_fn(python_type, self.display_name, self.type_str),
+            type_check_fn=isinstance_type_check_fn(python_type, name, self.type_str),
             typing_type=typing_type,
             **kwargs,
         )
@@ -911,8 +908,8 @@ def construct_dagster_type_dictionary(solid_defs):
 
 
 class DagsterOptionalApi:
-    def __getitem__(self, inner_type: DagsterType) -> OptionalType:
-        check.not_none_param(inner_type, "inner_type")
+    def __getitem__(self, inner_type: t.Union[t.Type, DagsterType]) -> OptionalType:
+        inner_type = resolve_dagster_type(check.not_none_param(inner_type, "inner_type"))
         return OptionalType(inner_type)
 
 
