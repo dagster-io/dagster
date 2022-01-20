@@ -1,5 +1,5 @@
 import graphene
-from dagster import AssetKey, check
+from dagster import AssetKey, DagsterEventType, check
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.host_representation.external_data import (
@@ -139,7 +139,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_assetMaterializations(self, graphene_info, **kwargs):
-        from ..implementation.fetch_assets import get_asset_materializations
+        from ..implementation.fetch_assets import get_asset_events
 
         try:
             before_timestamp = (
@@ -161,9 +161,10 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         return [
             GrapheneAssetMaterialization(event=event)
-            for event in get_asset_materializations(
+            for event in get_asset_events(
                 graphene_info,
                 self._external_asset_node.asset_key,
+                DagsterEventType.ASSET_MATERIALIZATION,
                 partitions,
                 before_timestamp=before_timestamp,
                 limit=limit,
@@ -201,7 +202,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         return None
 
     def resolve_latestMaterializationByPartition(self, _graphene_info, **kwargs):
-        from ..implementation.fetch_assets import get_asset_materializations
+        from ..implementation.fetch_assets import get_asset_events
 
         get_partition = (
             lambda event: event.dagster_event.step_materialization_data.materialization.partition
@@ -209,9 +210,10 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         partitions = kwargs.get("partitions") or self.get_partition_keys()
 
-        events_for_partitions = get_asset_materializations(
+        events_for_partitions = get_asset_events(
             _graphene_info,
             self._external_asset_node.asset_key,
+            DagsterEventType.ASSET_MATERIALIZATION,
             partitions,
         )
 
@@ -248,7 +250,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_assetObservations(self, graphene_info, **kwargs):
-        from ..implementation.fetch_assets import get_asset_observations
+        from ..implementation.fetch_assets import get_asset_events
 
         try:
             before_timestamp = (
@@ -261,9 +263,10 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         return [
             GrapheneAssetObservation(event=event)
-            for event in get_asset_observations(
+            for event in get_asset_events(
                 graphene_info,
                 self._external_asset_node.asset_key,
+                DagsterEventType.ASSET_OBSERVATION,
                 kwargs.get("partitions"),
                 before_timestamp=before_timestamp,
                 limit=kwargs.get("limit"),
