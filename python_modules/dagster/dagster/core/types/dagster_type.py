@@ -505,7 +505,7 @@ class PythonObjectDagsterType(DagsterType):
             self.type_str = "Union[{}]".format(
                 ", ".join(python_type.__name__ for python_type in python_type)
             )
-            typing_type = object
+            typing_type = t.Union[python_type]
         else:
             self.python_type = check.type_param(python_type, "python_type")  # type: ignore
             self.type_str = cast(str, python_type.__name__)
