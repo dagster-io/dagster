@@ -512,7 +512,7 @@ class GraphDefinition(NodeDefinition):
 
         return JobDefinition(
             name=job_name,
-            description=description,
+            description=description or self.description,
             graph_def=self,
             mode_def=ModeDefinition(
                 resource_defs=resource_defs_with_defaults,
