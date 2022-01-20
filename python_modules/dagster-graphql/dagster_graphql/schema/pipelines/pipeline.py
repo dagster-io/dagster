@@ -28,7 +28,6 @@ from ..inputs import GrapheneAssetKeyInput
 from ..logs.compute_logs import GrapheneComputeLogs
 from ..logs.events import (
     GrapheneDagsterRunEvent,
-    GrapheneObservationEvent,
     GrapheneRunStepStats,
     GrapheneStepMaterializationEvent,
 )
@@ -100,34 +99,6 @@ class GrapheneMaterializationCount(graphene.ObjectType):
 
     class Meta:
         name = "MaterializationCountByPartition"
-
-
-class GrapheneAssetObservation(graphene.ObjectType):
-    observationEvent = graphene.NonNull(GrapheneObservationEvent)
-    runOrError = graphene.NonNull(lambda: GrapheneRunOrError)
-    partition = graphene.Field(graphene.String)
-
-    class Meta:
-        name = "AssetObservation"
-
-    def __init__(self, event):
-        super().__init__()
-        self._event = check.inst_param(event, "event", EventLogEntry)
-        check.invariant(
-            isinstance(event.dagster_event.asset_observation_data, AssetObservationData)
-        )
-
-    def resolve_observationEvent(self, _graphene_info):
-        return GrapheneObservationEvent(
-            observation=self._event.dagster_event.asset_observation_data.asset_observation,
-            **construct_basic_params(self._event),
-        )
-
-    def resolve_runOrError(self, graphene_info):
-        return get_run_by_id(graphene_info, self._event.run_id)
-
-    def resolve_partition(self, _graphene_info):
-        return self._event.dagster_event.asset_observation_data.asset_observation.partition
 
 
 class GrapheneAsset(graphene.ObjectType):

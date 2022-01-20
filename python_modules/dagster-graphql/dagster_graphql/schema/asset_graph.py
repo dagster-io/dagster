@@ -8,12 +8,13 @@ from dagster.core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 
+from ..implementation.events import construct_basic_params
 from . import external
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
+from .logs.events import GrapheneObservationEvent
 from .pipelines.pipeline import (
     GrapheneAssetMaterialization,
-    GrapheneAssetObservation,
     GrapheneMaterializationCount,
     GraphenePipeline,
 )
@@ -65,7 +66,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         partitions=graphene.List(graphene.String),
     )
     materializationCountByPartition = non_null_list(GrapheneMaterializationCount)
-    assetObservations = non_null_list(GrapheneAssetObservation)
+    assetObservations = non_null_list(GrapheneObservationEvent)
 
     class Meta:
         name = "AssetNode"
@@ -260,7 +261,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             before_timestamp = None
 
         return [
-            GrapheneAssetObservation(event=event)
+            GrapheneObservationEvent(event=event, **construct_basic_params(event))
             for event in get_asset_observations(
                 graphene_info,
                 self._external_asset_node.asset_key,

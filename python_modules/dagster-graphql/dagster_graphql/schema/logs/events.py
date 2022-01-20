@@ -4,7 +4,7 @@ from dagster.core.events import AssetLineageInfo, DagsterEventType
 from dagster.core.execution.plan.objects import ErrorSource
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot
 
-from ...implementation.fetch_runs import get_step_stats
+from ...implementation.fetch_runs import get_run_by_id, get_step_stats
 from ..asset_key import GrapheneAssetKey, GrapheneAssetLineageInfo
 from ..errors import GraphenePythonError
 from ..runs import GrapheneStepEventStatus
@@ -439,15 +439,26 @@ class GrapheneObservationEvent(graphene.ObjectType):
 
     observation = graphene.NonNull(GrapheneObservation)
     stepStats = graphene.NonNull(lambda: GrapheneRunStepStats)
+    runOrError = graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GrapheneRunOrError")
 
-    def __init__(self, observation, **basic_params):
-        super().__init__(observation=observation, **basic_params)
+    def __init__(self, event, **basic_params):
+        self._event = event
+        super().__init__(
+            observation=event.dagster_event.asset_observation_data.asset_observation,
+            **basic_params,
+        )
 
     def resolve_stepStats(self, graphene_info):
         run_id = self.runId  # pylint: disable=no-member
         step_key = self.stepKey  # pylint: disable=no-member
         stats = get_step_stats(graphene_info, run_id, step_keys=[step_key])
         return stats[0]
+
+    def resolve_runOrError(self, graphene_info):
+        return get_run_by_id(graphene_info, self._event.run_id)
+
+    def resolve_partition(self, _graphene_info):
+        return self._event.dagster_event.asset_observation_data.asset_observation.partition
 
 
 class GrapheneHandledOutputEvent(graphene.ObjectType):

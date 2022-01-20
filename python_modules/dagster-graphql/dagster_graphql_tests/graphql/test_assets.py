@@ -176,17 +176,20 @@ GET_ASSET_OBSERVATIONS = """
                     opName
                     description
                     assetObservations {
-                        observationEvent {
-                            observation {
-                                assetKey {
-                                    path
-                                }
-                                metadataEntries {
-                                    label
-                                    description
-                                    ... on EventTextMetadataEntry {
-                                        text
-                                    }
+                        runOrError {
+                            ... on Run {
+                                jobName
+                            }
+                        }
+                        observation {
+                            assetKey {
+                                path
+                            }
+                            metadataEntries {
+                                label
+                                description
+                                ... on EventTextMetadataEntry {
+                                    text
                                 }
                             }
                         }
@@ -622,15 +625,13 @@ class TestAssetAwareEventLog(
 
         assert asset_node["assetObservations"]
 
-        asset_key_path = asset_node["assetObservations"][0]["observationEvent"]["observation"][
-            "assetKey"
-        ]["path"]
+        assert asset_node["assetObservations"][0]["runOrError"]["jobName"] == "observation_job"
+
+        asset_key_path = asset_node["assetObservations"][0]["observation"]["assetKey"]["path"]
         assert asset_key_path
         assert asset_key_path == ["asset_yields_observation"]
 
-        metadata = asset_node["assetObservations"][0]["observationEvent"]["observation"][
-            "metadataEntries"
-        ]
+        metadata = asset_node["assetObservations"][0]["observation"]["metadataEntries"]
         assert metadata
         assert metadata[0]["text"] == "FOO"
 
