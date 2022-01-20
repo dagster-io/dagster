@@ -78,23 +78,31 @@ If you don't need access to the context parameter, you can omit it from the deco
 
 ### A schedule from a partitioned job
 
-When you have [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job.
+When you have a [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job.
 
-For example, if you have a date-partitioned job that fills in a date-partition of a table each time it runs, you likely want to run that job every day, on the partition for that day.
+For example, if you have a daily partitioned job that fills in a date partition of a table each time it runs, you likely want to run that job every day.
 
-The Partitioned Jobs concepts page includes an [example of how to define a date-partitioned job](/concepts/partitions-schedules-sensors/partitions#date-partitioned-job). Having defined that job - callled `do_stuff_partitioned`, you can construct a schedule for it using <PyObject object="build_schedule_from_partitioned_job"/>.
+The Partitioned Jobs concepts page includes an [example of how to define a date-partitioned job](/concepts/partitions-schedules-sensors/partitions#date-partitioned-job). Having defined that job, you can construct a schedule for it using <PyObject object="build_schedule_from_partitioned_job"/>. For example:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
-from dagster import build_schedule_from_partitioned_job
+from dagster import build_schedule_from_partitioned_job, job
 
-do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(do_stuff_partitioned)
+
+@job(config=my_partitioned_config)
+def do_stuff_partitioned():
+    ...
+
+
+do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
+    do_stuff_partitioned,
+)
 ```
 
-Note that when the schedule submits a run on a particular day, it will typically be for the partition whose key corresponds to previous day. For example, the schedule would kick off the `2020-04-01` partition on `2020-04-02`. That's because each partition corresponds to a time window. The key of the partition is the start of the time window, but the schedule waits until the end of the time window to kick off the run. Kicking off a run at the end of a time window means the run can process data from within that time window.
+Each schedule tick of a partitioned job fills in the latest partition in the partition set that exists as of the tick time. Note that this implies that when the schedule submits a run on a particular day, it will typically be for the partition whose key corresponds to the previous day. For example, the schedule will fill in the `2020-04-01` partition on `2020-04-02`. That's because each partition corresponds to a time window. The key of the partition is the start of the time window, but the partition isn't included in the list until its time window has completed. Waiting until the time window has finished before Kicking off a run means the run can process data from within that entire time window.
 
-Similar is true for hourly-, weekly-, and monthly- partitioned jobs.
+However, you can use the `end_offset` parameter of <PyObject object="daily_partitioned_config" decorator /> to change which partition is the most recent partition that is filled in at each schedule tick. Setting `end_offset` to `1` will extend the partitions forward so that the schedule tick that runs on day `N` will fill in day `N`'s partition instead of day `N-1`, and setting `end_offset` to a negative number will cause the schedule to fill in earlier days' partitions. In general, setting `end_offset` to `X` will cause the partition that runs on day `N` to fill in the partition for day `N - 1 + X`. The same holds true for hourly, weekly, and monthly partitioned jobs, for their respective partition sizes.
 
-You can use the `minute_of_hour`, `hour_of_day`, `day_of_week`, and `day_of_month` parameters of `build_schedule_from_partitioned_job` to control the timing of the schedule. For example, if you have a job that's partitioned by date, and you set `minute_of_hour` to 30 and `hour_of_day` to 1, the schedule would submit the run for partition `2020-04-01` at 1:30 AM on `2020-04-02`
+You can use the `minute_of_hour`, `hour_of_day`, `day_of_week`, and `day_of_month` parameters of `build_schedule_from_partitioned_job` to control the timing of the schedule. For example, if you have a job that's partitioned by date, and you set `minute_of_hour` to `30` and `hour_of_day` to `1`, the schedule would submit the run for partition `2020-04-01` at 1:30 AM on `2020-04-02`.
 
 ### Timezones
 
@@ -108,7 +116,7 @@ my_timezone_schedule = ScheduleDefinition(
 )
 ```
 
-The <PyObject object="schedule" decorator /> decorator accepts the same argument.
+The <PyObject object="schedule" decorator /> decorator accepts the same argument. Schedules from partitioned jobs execute in the timezone defined on the partitioned config.
 
 ### Daylight Savings Time
 
