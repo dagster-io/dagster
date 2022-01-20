@@ -160,7 +160,10 @@ class ModuleBuildSpec(
                 StepBuilder(f":mypy: {package}")
                 .run(
                     "pip install -e python_modules/dagster[mypy]",
-                    f"mypy --config-file mypy/config {self.directory}",
+                    # mypy raises an error for missing stubs. We try to specify them in
+                    # dependencies, but inclusion of `--install-types
+                    # --non-interactive` will cause mypy to automatically download any missing ones.
+                    f"mypy --config-file mypy/config --install-types --non-interactive {self.directory}",
                 )
                 .on_integration_image(SupportedPython.V3_8)
                 .build()
