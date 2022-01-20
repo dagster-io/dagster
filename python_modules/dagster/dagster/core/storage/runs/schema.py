@@ -88,3 +88,10 @@ db.Index("idx_run_partitions", RunsTable.c.partition_set, RunsTable.c.partition,
 db.Index("idx_bulk_actions", BulkActionsTable.c.key, mysql_length=32)
 db.Index("idx_bulk_actions_status", BulkActionsTable.c.status, mysql_length=32)
 db.Index("idx_run_status", RunsTable.c.status, mysql_length=32)
+db.Index(
+    "idx_run_range",
+    RunsTable.c.create_timestamp,
+    RunsTable.c.update_timestamp,
+    RunsTable.c.status,
+    mysql_length=32,
+)
