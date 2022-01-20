@@ -1,4 +1,4 @@
-from collections import namedtuple
+from typing import Dict, List, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
@@ -6,14 +6,16 @@ from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.serdes import whitelist_for_serdes
 
 
-def build_dagster_type_namespace_snapshot(pipeline_def):
+def build_dagster_type_namespace_snapshot(
+    pipeline_def: PipelineDefinition,
+) -> "DagsterTypeNamespaceSnapshot":
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     return DagsterTypeNamespaceSnapshot(
         {dt.key: build_dagster_type_snap(dt) for dt in pipeline_def.all_dagster_types()}
     )
 
 
-def build_dagster_type_snap(dagster_type):
+def build_dagster_type_snap(dagster_type: DagsterType) -> "DagsterTypeSnap":
     check.inst_param(dagster_type, "dagster_type", DagsterType)
     return DagsterTypeSnap(
         kind=dagster_type.kind,
@@ -30,9 +32,12 @@ def build_dagster_type_snap(dagster_type):
 
 @whitelist_for_serdes
 class DagsterTypeNamespaceSnapshot(
-    namedtuple("_DagsterTypeNamespaceSnapshot", "all_dagster_type_snaps_by_key")
+    NamedTuple(
+        "_DagsterTypeNamespaceSnapshot",
+        [("all_dagster_type_snaps_by_key", Dict[str, "DagsterTypeSnap"])],
+    )
 ):
-    def __new__(cls, all_dagster_type_snaps_by_key):
+    def __new__(cls, all_dagster_type_snaps_by_key: Dict[str, "DagsterTypeSnap"]):
         return super(DagsterTypeNamespaceSnapshot, cls).__new__(
             cls,
             all_dagster_type_snaps_by_key=check.dict_param(
@@ -43,17 +48,26 @@ class DagsterTypeNamespaceSnapshot(
             ),
         )
 
-    def get_dagster_type_snap(self, key):
+    def get_dagster_type_snap(self, key: str) -> "DagsterTypeSnap":
         check.str_param(key, "key")
         return self.all_dagster_type_snaps_by_key[key]
 
 
 @whitelist_for_serdes
 class DagsterTypeSnap(
-    namedtuple(
+    NamedTuple(
         "_DagsterTypeSnap",
-        "kind key name description display_name is_builtin type_param_keys "
-        "loader_schema_key materializer_schema_key ",
+        [
+            ("kind", DagsterTypeKind),
+            ("key", str),
+            ("name", Optional[str]),
+            ("description", Optional[str]),
+            ("display_name", str),
+            ("is_builtin", bool),
+            ("type_param_keys", List[str]),
+            ("loader_schema_key", Optional[str]),
+            ("materializer_schema_key", Optional[str]),
+        ],
     )
 ):
     def __new__(

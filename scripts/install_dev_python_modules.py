@@ -46,7 +46,7 @@ def main(quiet):
 
     install_targets += [
         "awscli",
-        "-e python_modules/dagster[test]",
+        "-e python_modules/dagster[mypy,test]",
         "-e python_modules/dagster-graphql",
         "-e python_modules/dagster-test",
         "-e python_modules/dagit[test]",
