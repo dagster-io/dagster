@@ -677,7 +677,7 @@ type AssetNode {
   partitionDefinition: String
   latestMaterializationByPartition(partitions: [String]): [AssetMaterialization]!
   materializationCountByPartition: [MaterializationCountByPartition!]!
-  assetObservations: [AssetObservation!]!
+  assetObservations: [ObservationEvent!]!
 }
 
 type AssetDependency {
@@ -690,12 +690,6 @@ type MaterializationCountByPartition {
   materializationCount: Int!
 }
 
-type AssetObservation {
-  observationEvent: ObservationEvent!
-  runOrError: RunOrError!
-  partition: String
-}
-
 type ObservationEvent implements MessageEvent & StepEvent {
   runId: String!
   message: String!
@@ -706,6 +700,8 @@ type ObservationEvent implements MessageEvent & StepEvent {
   eventType: DagsterEventType
   observation: Observation!
   stepStats: RunStepStats!
+  runOrError: RunOrError!
+  partition: String
 }
 
 type Observation implements DisplayableEvent {

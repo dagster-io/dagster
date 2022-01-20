@@ -440,6 +440,7 @@ class GrapheneObservationEvent(graphene.ObjectType):
     observation = graphene.NonNull(GrapheneObservation)
     stepStats = graphene.NonNull(lambda: GrapheneRunStepStats)
     runOrError = graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GrapheneRunOrError")
+    partition = graphene.Field(graphene.String)
 
     def __init__(self, event, **basic_params):
         self._event = event

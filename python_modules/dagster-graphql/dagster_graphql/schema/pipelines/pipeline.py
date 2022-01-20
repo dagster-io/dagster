@@ -1,7 +1,7 @@
 import graphene
 import yaml
 from dagster import check
-from dagster.core.events import AssetKey, AssetObservationData, StepMaterializationData
+from dagster.core.events import AssetKey, StepMaterializationData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
