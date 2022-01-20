@@ -24,9 +24,7 @@ class HistoricalPipeline(RepresentedPipeline):
             identifying_pipeline_snapshot_id, "identifying_pipeline_snapshot_id"
         )
         super(HistoricalPipeline, self).__init__(
-            pipeline_index=PipelineIndex(
-                pipeline_snapshot, parent_pipeline_snapshot, is_historical=True
-            ),
+            pipeline_index=PipelineIndex(pipeline_snapshot, parent_pipeline_snapshot),
         )
 
     @property
