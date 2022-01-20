@@ -189,7 +189,7 @@ class DagsterK8sJobConfig(
         "_K8sJobTaskConfig",
         "job_image dagster_home image_pull_policy image_pull_secrets service_account_name "
         "instance_config_map postgres_password_secret env_config_maps env_secrets env_vars "
-        "volume_mounts volumes",
+        "volume_mounts volumes labels",
     )
 ):
     """Configuration parameters for launching Dagster Jobs on Kubernetes.
@@ -231,6 +231,8 @@ class DagsterK8sJobConfig(
             https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
         volumes (Optional[List[Permissive]]): A list of volumes to include in the Job's Pod. Default: ``[]``. See:
             https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
+        labels (Optional[Dict[str, str]]): Additional labels that should be included in the Job's Pod. See:
+            https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
     """
 
     def __new__(
@@ -247,6 +249,7 @@ class DagsterK8sJobConfig(
         env_vars=None,
         volume_mounts=None,
         volumes=None,
+        labels=None,
     ):
         return super(DagsterK8sJobConfig, cls).__new__(
             cls,
@@ -268,6 +271,7 @@ class DagsterK8sJobConfig(
             env_vars=check.opt_list_param(env_vars, "env_secrets", of_type=str),
             volume_mounts=check.opt_list_param(volume_mounts, "volume_mounts"),
             volumes=check.opt_list_param(volumes, "volumes"),
+            labels=check.opt_dict_param(labels, "labels", key_type=str, value_type=str),
         )
 
     @classmethod
@@ -385,6 +389,12 @@ class DagsterK8sJobConfig(
                 description="A list of volumes to include in the Job's Pod. Default: ``[]``. For the many "
                 "possible volume source types that can be included, see: "
                 "https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core",
+            ),
+            "labels": Field(
+                dict,
+                is_required=False,
+                description="Additional labels that should be included in the Job's Pod. See: "
+                "https://kubernetes.io/docs/concepts/overview/working-with-objects/labels",
             ),
         }
 
@@ -606,7 +616,7 @@ def construct_dagster_k8s_job(
     template = kubernetes.client.V1PodTemplateSpec(
         metadata=kubernetes.client.V1ObjectMeta(
             name=pod_name,
-            labels=merge_dicts(dagster_labels, user_defined_pod_template_labels),
+            labels=merge_dicts(dagster_labels, user_defined_pod_template_labels, job_config.labels),
             **user_defined_k8s_config.pod_template_spec_metadata,
         ),
         spec=kubernetes.client.V1PodSpec(

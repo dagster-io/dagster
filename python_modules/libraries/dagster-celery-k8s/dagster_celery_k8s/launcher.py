@@ -100,6 +100,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         image_pull_policy (Optional[str]): Allows the image pull policy to be overridden, e.g. to
             facilitate local testing with `kind <https://kind.sigs.k8s.io/>`_. Default:
             ``"IfNotPresent"``. See: https://kubernetes.io/docs/concepts/containers/images/#updating-images.
+        labels (Optional[Dict[str, str]]): Additional labels that should be included in the Job's Pod. See:
+            https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
     """
 
     def __init__(
@@ -123,6 +125,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         service_account_name=None,
         image_pull_policy=None,
         image_pull_secrets=None,
+        labels=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
@@ -168,6 +171,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         self._image_pull_secrets = check.opt_list_param(
             image_pull_secrets, "image_pull_secrets", of_type=dict
         )
+        self._labels = check.opt_dict_param(labels, "labels", key_type=str, value_type=str)
 
         super().__init__()
 
@@ -300,6 +304,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             env_secrets=exc_config.get("env_secrets", []) + self._env_secrets,
             volume_mounts=exc_config.get("volume_mounts", []) + self._volume_mounts,
             volumes=exc_config.get("volumes", []) + self._volumes,
+            labels=merge_dicts(self._labels, exc_config.get("labels", {})),
         )
 
     # https://github.com/dagster-io/dagster/issues/2741

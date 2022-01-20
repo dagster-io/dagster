@@ -44,6 +44,7 @@ class CeleryK8sRunLauncherConfig(BaseModel):
     livenessProbe: kubernetes.LivenessProbe
     volumeMounts: List[kubernetes.VolumeMount]
     volumes: List[kubernetes.Volume]
+    labels: Optional[Dict[str, str]]
 
     class Config:
         extra = Extra.forbid
@@ -60,6 +61,7 @@ class K8sRunLauncherConfig(BaseModel):
     envVars: List[str]
     volumeMounts: List[kubernetes.VolumeMount]
     volumes: List[kubernetes.Volume]
+    labels: Optional[Dict[str, str]]
 
     class Config:
         extra = Extra.forbid

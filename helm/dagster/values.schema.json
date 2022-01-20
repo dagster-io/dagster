@@ -1617,6 +1617,20 @@
                     "items": {
                         "$ref": "#/definitions/Volume"
                     }
+                },
+                "labels": {
+                    "title": "Labels",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -1718,6 +1732,20 @@
                     "items": {
                         "$ref": "#/definitions/Volume"
                     }
+                },
+                "labels": {
+                    "title": "Labels",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [

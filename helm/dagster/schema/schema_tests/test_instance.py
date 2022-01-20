@@ -120,6 +120,8 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
         {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
     ]
 
+    labels = {"my_label_key": "my_label_value"}
+
     helm_values = DagsterHelmValues.construct(
         runLauncher=RunLauncher.construct(
             type=RunLauncherType.K8S,
@@ -133,6 +135,7 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
                     envVars=env_vars,
                     volumeMounts=volume_mounts,
                     volumes=volumes,
+                    labels=labels,
                 )
             ),
         )
@@ -156,6 +159,7 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
     assert run_launcher_config["config"]["env_vars"] == env_vars
     assert run_launcher_config["config"]["volume_mounts"] == volume_mounts
     assert run_launcher_config["config"]["volumes"] == volumes
+    assert run_launcher_config["config"]["labels"] == labels
 
 
 def test_celery_k8s_run_launcher_config(template: HelmTemplate):
@@ -189,6 +193,8 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
         {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
     ]
 
+    labels = {"my_label_key": "my_label_value"}
+
     image_pull_secrets = [{"name": "IMAGE_PULL_SECRET"}]
 
     helm_values = DagsterHelmValues.construct(
@@ -202,6 +208,7 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
                     workerQueues=workerQueues,
                     volumeMounts=volume_mounts,
                     volumes=volumes,
+                    labels=labels,
                 )
             ),
         ),
@@ -222,6 +229,7 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
 
     assert run_launcher_config["config"]["volume_mounts"] == volume_mounts
     assert run_launcher_config["config"]["volumes"] == volumes
+    assert run_launcher_config["config"]["labels"] == labels
 
     assert run_launcher_config["config"]["image_pull_secrets"] == image_pull_secrets
 

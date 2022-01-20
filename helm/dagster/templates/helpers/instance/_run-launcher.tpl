@@ -40,6 +40,10 @@ config:
   volumes: {{- $celeryK8sRunLauncherConfig.volumes | toYaml | nindent 4 }}
   {{- end }}
 
+  {{- if $celeryK8sRunLauncherConfig.labels }}
+  labels: {{- $celeryK8sRunLauncherConfig.labels | toYaml | nindent 4 }}
+  {{- end }}
+
   {{- if .Values.imagePullSecrets }}
   image_pull_secrets: {{- .Values.imagePullSecrets | toYaml | nindent 4 }}
   {{- end }}
@@ -106,6 +110,10 @@ config:
 
   {{- if $k8sRunLauncherConfig.volumes }}
   volumes: {{- $k8sRunLauncherConfig.volumes | toYaml | nindent 4 }}
+  {{- end }}
+
+  {{- if $k8sRunLauncherConfig.labels }}
+  labels: {{- $k8sRunLauncherConfig.labels | toYaml | nindent 4 }}
   {{- end }}
 
 {{- end }}
