@@ -7,10 +7,10 @@ export const useSuggestionsForString = (
   const tokens = value.toLocaleLowerCase().trim().split(/\s+/);
   const queryString = tokens.length ? tokens[tokens.length - 1] : '';
 
-  const suggestions = React.useMemo(
-    () => buildSuggestions(queryString),
-    [buildSuggestions, queryString],
-  );
+  const suggestions = React.useMemo(() => buildSuggestions(queryString), [
+    buildSuggestions,
+    queryString,
+  ]);
 
   const onSelectSuggestion = React.useCallback(
     (suggestion: string) => {
