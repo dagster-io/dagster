@@ -1,6 +1,6 @@
 import graphene
 import yaml
-from dagster import DagsterEventType, check
+from dagster import check
 from dagster.core.events import AssetKey, AssetObservationData, StepMaterializationData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
@@ -153,7 +153,7 @@ class GrapheneAsset(graphene.ObjectType):
         return self.key
 
     def resolve_assetMaterializations(self, graphene_info, **kwargs):
-        from ...implementation.fetch_assets import get_asset_events
+        from ...implementation.fetch_assets import get_asset_materializations
 
         try:
             before_timestamp = (
@@ -172,10 +172,9 @@ class GrapheneAsset(graphene.ObjectType):
 
         return [
             GrapheneAssetMaterialization(event=event)
-            for event in get_asset_events(
+            for event in get_asset_materializations(
                 graphene_info,
                 self.key,
-                DagsterEventType.ASSET_MATERIALIZATION,
                 partitions=partitions,
                 before_timestamp=before_timestamp,
                 limit=limit,
