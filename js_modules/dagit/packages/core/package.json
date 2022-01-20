@@ -43,6 +43,7 @@
     "color": "^3.0.0",
     "cronstrue": "^1.84.0",
     "dagre": "^0.8.2",
+    "date-fns": "^2.28.0",
     "deepmerge": "^4.2.2",
     "fuse.js": "^6.4.2",
     "graphql": "^15.5.0",
