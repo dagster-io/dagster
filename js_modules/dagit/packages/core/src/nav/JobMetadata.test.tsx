@@ -23,6 +23,18 @@ describe('JobMetadata', () => {
       schedules: () => [],
       sensors: () => [],
     }),
+    Run: () => ({
+      id: () => 'abc',
+      startTime: () => START_TIME,
+      updateTime: () => START_TIME,
+      endTime: () => START_TIME + 1,
+    }),
+    PipelineRun: () => ({
+      id: () => 'abc',
+      startTime: () => START_TIME,
+      updateTime: () => START_TIME,
+      endTime: () => START_TIME + 1,
+    }),
     PipelineRunStatsSnapshot: () => ({
       startTime: () => START_TIME,
       launchTime: () => START_TIME,

@@ -49,6 +49,8 @@ describe('RunDetails', () => {
       PipelineRun: () => ({
         id: () => 'abc',
         status: () => status,
+        startTime: () => startTime,
+        endTime: () => endTime,
       }),
       Run: () => ({
         id: () => 'abc',
