@@ -36,6 +36,7 @@ class ElementCheckError(CheckError):
 class NotImplementedCheckError(CheckError):
     pass
 
+
 def _param_type_mismatch_exception(
     obj: Any, ttype: Type, param_name: str, additional_message: str = None
 ) -> ParameterCheckError:

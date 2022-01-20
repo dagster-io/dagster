@@ -305,6 +305,8 @@ class SensorDefinition:
 
         skip_message: Optional[str] = None
 
+        run_requests: List[Any]
+        pipeline_run_reactions: List[Any]
         if not result or result == [None]:
             run_requests = []
             pipeline_run_reactions = []

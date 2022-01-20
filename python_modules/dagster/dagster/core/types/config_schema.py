@@ -1,19 +1,18 @@
-from abc import ABC, abstractmethod
 import hashlib
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Generator, Optional, Set
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Generator, Optional
 
 from dagster import check
 from dagster.config.config_type import ConfigType
 from dagster.core.decorator_utils import get_function_params, validate_expected_params
 from dagster.core.definitions.events import AssetMaterialization
 from dagster.core.errors import DagsterInvalidDefinitionError
-if TYPE_CHECKING:
-    from dagster.core.execution.context.system import StepExecutionContext
 from dagster.utils import ensure_gen
 from dagster.utils.backcompat import experimental_arg_warning
 
+if TYPE_CHECKING:
+    from dagster.core.execution.context.system import StepExecutionContext
 
-from typing import cast, Type
 
 class DagsterTypeLoader(ABC):
     """
@@ -268,5 +267,5 @@ def dagster_type_materializer(
 
     config_type = resolve_to_config_type(config_schema)
     return lambda func: _create_output_materializer_for_decorator(
-        config_type, func, required_resource_keys
+        config_type, func, required_resource_keys  # type: ignore
     )
