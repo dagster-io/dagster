@@ -81,6 +81,10 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
                 stamp_alembic_rev(alembic_config, connection)
                 should_mark_indexes = True
 
+            table_names = db.inspect(engine).get_table_names()
+            if "telemetry_info" not in table_names:
+                RunStorageSqlMetadata.create_all(engine)
+
         run_storage = SqliteRunStorage(conn_string, inst_data)
 
         if should_mark_indexes:
