@@ -39,7 +39,7 @@ export interface PartitionGraphSetRunFragment_stats_PythonError {
 export type PartitionGraphSetRunFragment_stats = PartitionGraphSetRunFragment_stats_RunStatsSnapshot | PartitionGraphSetRunFragment_stats_PythonError;
 
 export interface PartitionGraphSetRunFragment_stepStats_materializations {
-  __typename: "Materialization";
+  __typename: "MaterializationOrObservation";
 }
 
 export interface PartitionGraphSetRunFragment_stepStats_expectationResults {

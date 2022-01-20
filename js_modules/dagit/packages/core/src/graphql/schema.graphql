@@ -240,7 +240,7 @@ type RunStepStats implements PipelineRunStepStats {
   status: StepEventStatus
   startTime: Float
   endTime: Float
-  materializations: [Materialization!]!
+  materializations: [MaterializationOrObservation!]!
   expectationResults: [ExpectationResult!]!
   attempts: [RunMarker!]!
   markers: [RunMarker!]!
@@ -252,7 +252,7 @@ interface PipelineRunStepStats {
   status: StepEventStatus
   startTime: Float
   endTime: Float
-  materializations: [Materialization!]!
+  materializations: [MaterializationOrObservation!]!
   expectationResults: [ExpectationResult!]!
 }
 
@@ -263,7 +263,7 @@ enum StepEventStatus {
   IN_PROGRESS
 }
 
-type Materialization implements DisplayableEvent {
+type MaterializationOrObservation implements DisplayableEvent {
   label: String!
   description: String
   metadataEntries: [EventMetadataEntry!]!
@@ -571,7 +571,7 @@ type StepMaterializationEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  materialization: Materialization!
+  materialization: MaterializationOrObservation!
   stepStats: RunStepStats!
   assetLineage: [AssetLineageInfo!]!
 }
@@ -704,15 +704,8 @@ type ObservationEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  observation: Observation!
+  observation: MaterializationOrObservation!
   stepStats: RunStepStats!
-}
-
-type Observation implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  assetKey: AssetKey
 }
 
 union DagsterRunEvent =

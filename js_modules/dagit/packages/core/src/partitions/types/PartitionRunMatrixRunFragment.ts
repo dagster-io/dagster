@@ -28,7 +28,7 @@ export interface PartitionRunMatrixRunFragment_stats_RunStatsSnapshot {
 export type PartitionRunMatrixRunFragment_stats = PartitionRunMatrixRunFragment_stats_PythonError | PartitionRunMatrixRunFragment_stats_RunStatsSnapshot;
 
 export interface PartitionRunMatrixRunFragment_stepStats_materializations {
-  __typename: "Materialization";
+  __typename: "MaterializationOrObservation";
 }
 
 export interface PartitionRunMatrixRunFragment_stepStats_expectationResults {
