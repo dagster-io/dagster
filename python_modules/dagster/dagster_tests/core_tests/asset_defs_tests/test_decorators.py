@@ -1,6 +1,6 @@
 import pytest
-from dagster import AssetKey, DagsterInvalidDefinitionError, String, check
-from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset
+from dagster import AssetKey, DagsterInvalidDefinitionError, String, check, Out, Output
+from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, multi_asset
 
 
 def test_asset_no_decorator_args():
@@ -30,6 +30,37 @@ def test_asset_with_compute_kind():
         return arg1
 
     assert my_asset.op.tags == {"kind": "sql"}
+
+
+def test_multi_asset_with_compute_kind():
+    @multi_asset(outs={"o1": Out(asset_key=AssetKey("o1"))}, compute_kind="sql")
+    def my_asset(arg1):
+        return arg1
+
+    assert my_asset.op.tags == {"kind": "sql"}
+
+
+def test_multi_asset_out_name_diff_from_asset_key():
+    @multi_asset(
+        outs={
+            "my_out_name": Out(asset_key=AssetKey("my_asset_name")),
+            "my_other_out_name": Out(asset_key=AssetKey("my_other_asset")),
+        }
+    )
+    def my_asset():
+        yield Output(1, "my_out_name")
+        yield Output(2, "my_other_out_name")
+
+    assert my_asset.asset_keys == {AssetKey("my_asset_name"), AssetKey("my_other_asset")}
+
+
+def test_multi_asset_infer_from_empty_asset_key():
+    @multi_asset(outs={"my_out_name": Out(), "my_other_out_name": Out()})
+    def my_asset():
+        yield Output(1, "my_out_name")
+        yield Output(2, "my_other_out_name")
+
+    assert my_asset.asset_keys == {AssetKey("my_out_name"), AssetKey("my_other_out_name")}
 
 
 def test_asset_with_dagster_type():
