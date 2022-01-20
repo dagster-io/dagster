@@ -269,33 +269,12 @@ class GrapheneObjectStoreOperationResult(graphene.ObjectType):
         return _to_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
 
 
-class GrapheneMaterialization(graphene.ObjectType):
+class GrapheneMaterializationOrObservation(graphene.ObjectType):
     assetKey = graphene.Field(GrapheneAssetKey)
 
     class Meta:
         interfaces = (GrapheneDisplayableEvent,)
-        name = "Materialization"
-
-    def resolve_metadataEntries(self, _graphene_info):
-        from ...implementation.events import _to_metadata_entries
-
-        return _to_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
-
-    def resolve_assetKey(self, _graphene_info):
-        asset_key = self.asset_key  # pylint: disable=no-member
-
-        if not asset_key:
-            return None
-
-        return GrapheneAssetKey(path=asset_key.path)
-
-
-class GrapheneObservation(graphene.ObjectType):
-    assetKey = graphene.Field(GrapheneAssetKey)
-
-    class Meta:
-        interfaces = (GrapheneDisplayableEvent,)
-        name = "Observation"
+        name = "MaterializationOrObservation"
 
     def resolve_metadataEntries(self, _graphene_info):
         from ...implementation.events import _to_metadata_entries
@@ -417,7 +396,7 @@ class GrapheneStepMaterializationEvent(graphene.ObjectType):
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
         name = "StepMaterializationEvent"
 
-    materialization = graphene.NonNull(GrapheneMaterialization)
+    materialization = graphene.NonNull(GrapheneMaterializationOrObservation)
     stepStats = graphene.NonNull(lambda: GrapheneRunStepStats)
     assetLineage = non_null_list(GrapheneAssetLineageInfo)
 
@@ -446,7 +425,7 @@ class GrapheneObservationEvent(graphene.ObjectType):
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
         name = "ObservationEvent"
 
-    observation = graphene.NonNull(GrapheneObservation)
+    observation = graphene.NonNull(GrapheneMaterializationOrObservation)
     stepStats = graphene.NonNull(lambda: GrapheneRunStepStats)
 
     def __init__(self, observation, **basic_params):
@@ -548,7 +527,7 @@ class GraphenePipelineRunStepStats(graphene.Interface):
     status = graphene.Field(GrapheneStepEventStatus)
     startTime = graphene.Field(graphene.Float)
     endTime = graphene.Field(graphene.Float)
-    materializations = non_null_list(GrapheneMaterialization)
+    materializations = non_null_list(GrapheneMaterializationOrObservation)
     expectationResults = non_null_list(GrapheneExpectationResult)
 
     class Meta:
@@ -569,7 +548,7 @@ class GrapheneRunStepStats(graphene.ObjectType):
     status = graphene.Field(GrapheneStepEventStatus)
     startTime = graphene.Field(graphene.Float)
     endTime = graphene.Field(graphene.Float)
-    materializations = non_null_list(GrapheneMaterialization)
+    materializations = non_null_list(GrapheneMaterializationOrObservation)
     expectationResults = non_null_list(GrapheneExpectationResult)
     attempts = non_null_list(GrapheneRunMarker)
     markers = non_null_list(GrapheneRunMarker)
