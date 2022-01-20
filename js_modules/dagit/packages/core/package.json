@@ -102,7 +102,6 @@
     "@types/lru-cache": "^5.1.0",
     "@types/mdx-js__react": "^1",
     "@types/moment-timezone": "^0.5.30",
-    "@types/node": "^12.12.6",
     "@types/qs": "^6.9.6",
     "@types/react": "^17.0.3",
     "@types/react-dom": "^17.0.3",
