@@ -605,7 +605,6 @@ class TestAssetAwareEventLog(
 
     def test_asset_observations(self, graphql_context):
         _create_run(graphql_context, "observation_job")
-        selector = infer_pipeline_selector(graphql_context, "observation_job")
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_OBSERVATIONS,
@@ -627,7 +626,7 @@ class TestAssetAwareEventLog(
             "assetKey"
         ]["path"]
         assert asset_key_path
-        assert asset_key_path == ['asset_yields_observation']
+        assert asset_key_path == ["asset_yields_observation"]
 
         metadata = asset_node["assetObservations"][0]["observationEvent"]["observation"][
             "metadataEntries"

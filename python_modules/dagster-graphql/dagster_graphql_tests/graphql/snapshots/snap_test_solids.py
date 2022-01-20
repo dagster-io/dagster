@@ -252,6 +252,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'asset_yields_observation'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'observation_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'asset_yields_observation'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'backcompat_materialize'
                 },
                 'invocations': [

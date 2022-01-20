@@ -34,6 +34,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[asset_aware_instance_in_pr
             {
                 'key': {
                     'path': [
+                        'asset_yields_observation'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'b'
                     ]
                 }
@@ -140,6 +147,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
             {
                 'key': {
                     'path': [
+                        'asset_yields_observation'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
                         'b'
                     ]
                 }
@@ -240,6 +254,13 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
                 'key': {
                     'path': [
                         'asset_two'
+                    ]
+                }
+            },
+            {
+                'key': {
+                    'path': [
+                        'asset_yields_observation'
                     ]
                 }
             },
