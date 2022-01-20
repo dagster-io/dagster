@@ -18,7 +18,7 @@ from .graphql_context_test_suite import (
     ReadonlyGraphQLContextTestMatrix,
 )
 from .setup import csv_hello_world_solids_config
-from .utils import sync_execute_get_run_log_data
+from .utils import step_did_not_run, step_did_succeed, sync_execute_get_run_log_data
 
 
 class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
@@ -673,6 +673,28 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
                 "op_with_2_ins",
             ]
         )
+
+    def test_nested_graph_op_selection_and_config(self, graphql_context):
+        selector = infer_pipeline_selector(
+            graphql_context, "nested_job", ["subgraph.adder", "subgraph.op_1"]
+        )
+        run_config = {"ops": {"subgraph": {"ops": {"adder": {"inputs": {"num2": 20}}}}}}
+        result = sync_execute_get_run_log_data(
+            context=graphql_context,
+            variables={
+                "executionParams": {
+                    "selector": selector,
+                    "runConfigData": run_config,
+                    "mode": "default",
+                }
+            },
+        )
+        logs = result["messages"]
+        assert isinstance(logs, list)
+        assert step_did_succeed(logs, "subgraph.adder")
+        assert step_did_succeed(logs, "subgraph.op_1")
+        assert step_did_not_run(logs, "plus_one")
+        assert step_did_not_run(logs, "subgraph.op_2")
 
 
 def _get_step_run_log_entry(pipeline_run_logs, step_key, typename):

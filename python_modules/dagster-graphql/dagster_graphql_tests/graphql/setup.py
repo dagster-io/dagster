@@ -1373,21 +1373,40 @@ partition_materialization_job = build_assets_job(
 )
 
 
+@op
+def op_1():
+    return 1
+
+
+@op
+def op_2():
+    return 2
+
+
 @job
 def two_ins_job():
-    @op
-    def op_1():
-        return 1
-
-    @op
-    def op_2():
-        return 1
-
     @op
     def op_with_2_ins(in_1, in_2):
         return in_1 + in_2
 
     op_with_2_ins(op_1(), op_2())
+
+
+@job
+def nested_job():
+    @op
+    def adder(num1: int, num2: int):
+        return num1 + num2
+
+    @op
+    def plus_one(num: int):
+        return num + 1
+
+    @graph
+    def subgraph():
+        return plus_one(adder(op_1(), op_2()))
+
+    plus_one(subgraph())
 
 
 @repository
@@ -1414,6 +1433,7 @@ def define_pipelines():
         multi_mode_with_loggers,
         multi_mode_with_resources,
         naughty_programmer_pipeline,
+        nested_job,
         no_config_chain_pipeline,
         no_config_pipeline,
         noop_pipeline,
