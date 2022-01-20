@@ -68,7 +68,6 @@ class DagsterTypeMaterializer(ABC):
         """
         How to materialize a runtime value given configuration.
         """
-        pass
 
     def required_resource_keys(self) -> AbstractSet[str]:
         return frozenset()

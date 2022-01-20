@@ -19,7 +19,7 @@ from .config_schema import DagsterTypeLoader, DagsterTypeMaterializer
 if t.TYPE_CHECKING:
     from dagster.core.execution.context.system import StepExecutionContext, TypeCheckContext
 
-TypeCheckFn = t.Callable[["TypeCheckContext", object], t.Union[TypeCheck, bool]]
+TypeCheckFn = t.Callable[[TypeCheckContext, object], t.Union[TypeCheck, bool]]
 
 
 @whitelist_for_serdes
@@ -506,6 +506,7 @@ class PythonObjectDagsterType(DagsterType):
                 ", ".join(python_type.__name__ for python_type in python_type)
             )
             typing_type = t.Union[python_type]
+
         else:
             self.python_type = check.type_param(python_type, "python_type")  # type: ignore
             self.type_str = cast(str, python_type.__name__)
@@ -792,7 +793,6 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     from .python_set import PythonSet, DagsterSetApi
     from .python_tuple import PythonTuple, DagsterTupleApi
     from .transform_typing import transform_typing_type
-    from dagster.config.config_type import ConfigType
     from dagster.primitive_mapping import (
         remap_python_builtin_for_runtime,
         is_supported_runtime_python_builtin,
