@@ -46,7 +46,7 @@ def _get_node_name(node_info: Mapping[str, Any]):
 
 
 def _dbt_nodes_to_asset(
-    node_infos: Sequence[Mapping[str, Any]],
+    node_infos: Sequence[Mapping[str, Any]], io_manager_key: Optional[str] = None
 ):
     outs = {}
     sources = set()
@@ -79,6 +79,7 @@ def _dbt_nodes_to_asset(
             out_deps=out_deps,
             is_required=False,
             description=description,
+            io_manager_key=io_manager_key,
         )
 
     @multi_asset(
@@ -92,7 +93,7 @@ def _dbt_nodes_to_asset(
         # TODO: this should not be implemented through tags
         asset_key = context.get_tag("dagster/asset_key")
         if asset_key:
-            dbt_output = context.resources.dbt.run(models=asset_key[2:-2])
+            dbt_output = context.resources.dbt.run(models=asset_key)
         else:
             dbt_output = context.resources.dbt.run()
         # TODO: this is a hack, also would be cool to stream this during the run
@@ -195,6 +196,7 @@ def load_asset_from_dbt_project(
     profiles_dir: Optional[str] = None,
     target_dir: Optional[str] = None,
     select: Optional[str] = None,
+    io_manager_key: Optional[str] = None,
 ):
     check.str_param(project_dir, "project_dir")
     profiles_dir = check.opt_str_param(
@@ -205,11 +207,14 @@ def load_asset_from_dbt_project(
     return load_asset_from_dbt_manifest(manifest_json)
 
 
-def load_asset_from_dbt_manifest(manifest_json: Mapping[str, Any]):
+def load_asset_from_dbt_manifest(
+    manifest_json: Mapping[str, Any], io_manager_key: Optional[str] = None
+):
     check.dict_param(manifest_json, "manifest_json", key_type=str)
     dbt_nodes = list(manifest_json["nodes"].values())
     return _dbt_nodes_to_asset(
-        [node_info for node_info in dbt_nodes if node_info["resource_type"] == "model"]
+        [node_info for node_info in dbt_nodes if node_info["resource_type"] == "model"],
+        io_manager_key=io_manager_key,
     )
 
 

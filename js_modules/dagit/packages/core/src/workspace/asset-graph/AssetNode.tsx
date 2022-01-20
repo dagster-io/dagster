@@ -53,7 +53,7 @@ export const AssetNode: React.FC<{
             <MenuItemWIP
               icon="open_in_new"
               onClick={(e) => {
-                launch(repoAddress, jobName, definition.opName);
+                launch(repoAddress, jobName, definition.opName, definition.assetKey.path.join("."));
                 e.stopPropagation();
               }}
               text={

@@ -73,7 +73,7 @@ const SettingsRoot = () => {
               ),
             },
             {
-              key: 'Experimental Asset APIs',
+              key: 'Enable Asset APIs',
               value: (
                 <Checkbox
                   format="switch"

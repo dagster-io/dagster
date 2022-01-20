@@ -16,7 +16,7 @@ export const useLaunchSingleAssetJob = () => {
   );
 
   return React.useCallback(
-    async (repoAddress: RepoAddress, jobName: string | null, opName: string | null) => {
+    async (repoAddress: RepoAddress, jobName: string | null, opName: string | null, assetKey: string | null) => {
       if (!jobName || !opName) {
         return;
       }
@@ -32,7 +32,7 @@ export const useLaunchSingleAssetJob = () => {
                 tags: [
                   {
                     key: "dagster/asset_key",
-                    value: "TODO"
+                    value: assetKey
                   }
                 ]
 
