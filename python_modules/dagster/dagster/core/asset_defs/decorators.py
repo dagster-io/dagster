@@ -184,6 +184,7 @@ def multi_asset(
     non_argument_deps: Optional[Set[AssetKey]] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
+    compute_kind: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -200,6 +201,8 @@ def multi_asset(
         io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
             output of the op as an asset, and for loading it in downstream ops
             (default: "io_manager").
+        compute_kind (Optional[str]): A string to represent the kind of computation that produces
+            the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
     """
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
@@ -216,13 +219,17 @@ def multi_asset(
             },  # convert Mapping object to dict
             out=outs,
             required_resource_keys=required_resource_keys,
+            tags={"kind": compute_kind} if compute_kind else None,
         )(fn)
 
         return AssetsDefinition(
             input_names_by_asset_key={
                 in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
             },
-            output_names_by_asset_key={AssetKey([name]): name for name in outs.keys()},
+            output_names_by_asset_key={
+                out.asset_key if isinstance(out.asset_key, AssetKey) else AssetKey([name]): name
+                for name, out in outs.items()
+            },
             op=op,
         )
 
