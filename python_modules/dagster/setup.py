@@ -74,6 +74,7 @@ if __name__ == "__main__":
             "protobuf>=3.13.0",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
             "python-dateutil",
             "pytz",
+            "requests",
             "rx>=1.6,<2",  # https://github.com/dagster-io/dagster/issues/4089
             "tabulate",
             "tqdm",
@@ -119,6 +120,7 @@ if __name__ == "__main__":
                 "types-python-dateutil",  # version will be resolved against python-dateutil
                 "types-PyYAML",  # version will be resolved against PyYAML
                 "types-pytz",  # version will be resolved against pytz
+                "types-requests",  # version will be resolved against requests
                 "types-tabulate",  # version will be resolved against tabulate
                 "yamllint",
             ],
