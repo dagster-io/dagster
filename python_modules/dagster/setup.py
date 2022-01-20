@@ -114,6 +114,10 @@ if __name__ == "__main__":
                 "tox==3.14.2",
                 "tox-pip-version==0.0.7",
                 "tqdm==4.48.0",  # pylint crash 48.1+
+                "yamllint",
+            ],
+            "mypy": [
+                "mypy==0.931",
                 "types-croniter",  # version will be resolved against croniter
                 "types-mock",  # version will be resolved against mock
                 "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)
@@ -122,7 +126,6 @@ if __name__ == "__main__":
                 "types-pytz",  # version will be resolved against pytz
                 "types-requests",  # version will be resolved against requests
                 "types-tabulate",  # version will be resolved against tabulate
-                "yamllint",
             ],
         },
         entry_points={

@@ -158,7 +158,7 @@ class ModuleBuildSpec(
         if self.directory not in MYPY_EXCLUDES:
             tests.append(
                 StepBuilder(f":mypy: {package}")
-                .run("pip install mypy==0.931", f"mypy --config-file mypy/config {self.directory}")
+                .run("pip install -e python_modules/dagster[mypy]", f"mypy --config-file mypy/config {self.directory}")
                 .on_integration_image(SupportedPython.V3_8)
                 .build()
             )
