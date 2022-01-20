@@ -189,7 +189,10 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
         {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
     ]
 
+    image_pull_secrets = [{"name": "IMAGE_PULL_SECRET"}]
+
     helm_values = DagsterHelmValues.construct(
+        imagePullSecrets=image_pull_secrets,
         runLauncher=RunLauncher.construct(
             type=RunLauncherType.CELERY,
             config=RunLauncherConfig.construct(
@@ -201,7 +204,7 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
                     volumes=volumes,
                 )
             ),
-        )
+        ),
     )
 
     configmaps = template.render(helm_values)
@@ -219,6 +222,33 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
 
     assert run_launcher_config["config"]["volume_mounts"] == volume_mounts
     assert run_launcher_config["config"]["volumes"] == volumes
+
+    assert run_launcher_config["config"]["image_pull_secrets"] == image_pull_secrets
+
+    assert run_launcher_config["config"]["image_pull_policy"] == "Always"
+
+    assert run_launcher_config["config"]["service_account_name"] == "RELEASE-NAME-dagster"
+
+    helm_values_with_image_pull_policy = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.CELERY,
+            config=RunLauncherConfig.construct(
+                celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct(
+                    image=image,
+                    configSource=configSource,
+                    workerQueues=workerQueues,
+                    volumeMounts=volume_mounts,
+                    volumes=volumes,
+                    imagePullPolicy="IfNotPresent",
+                )
+            ),
+        ),
+    )
+
+    configmaps = template.render(helm_values_with_image_pull_policy)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+    assert run_launcher_config["config"]["image_pull_policy"] == "IfNotPresent"
 
 
 @pytest.mark.parametrize("enabled", [True, False])

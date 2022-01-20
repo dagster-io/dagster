@@ -1,7 +1,7 @@
 import sys
 
 import kubernetes
-from dagster import EventMetadataEntry, Field, Noneable, StringSource, check
+from dagster import EventMetadataEntry, Field, StringSource, check
 from dagster.cli.api import ExecuteRunArgs
 from dagster.core.events import EngineEventData
 from dagster.core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
@@ -47,7 +47,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
     Args:
         service_account_name (str): The name of the Kubernetes service account under which to run
-            the Job.
+            the Job. Defaults to "default"
         job_image (Optional[str]): The ``name`` of the image to use for the Job's Dagster container.
             This image will be run with the command
             ``dagster api execute_run``.
@@ -195,12 +195,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         """Include all arguments required for DagsterK8sJobConfig along with additional arguments
         needed for the RunLauncher itself.
         """
-        job_cfg = DagsterK8sJobConfig.config_type()
+        job_cfg = DagsterK8sJobConfig.config_type_run_launcher()
 
         run_launcher_extra_cfg = {
             "job_namespace": Field(StringSource, is_required=False, default_value="default"),
-            "load_incluster_config": Field(bool, is_required=False, default_value=True),
-            "kubeconfig_file": Field(Noneable(str), is_required=False, default_value=None),
         }
         return merge_dicts(job_cfg, run_launcher_extra_cfg)
 
