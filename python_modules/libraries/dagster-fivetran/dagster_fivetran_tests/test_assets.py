@@ -2,8 +2,8 @@ import responses
 from dagster import AssetKey
 from dagster.core.asset_defs import build_assets_job
 from dagster_fivetran import fivetran_resource
-from dagster_fivetran.resources import FIVETRAN_API_BASE, FIVETRAN_CONNECTOR_PATH
 from dagster_fivetran.assets import fivetran_assets_factory
+from dagster_fivetran.resources import FIVETRAN_API_BASE, FIVETRAN_CONNECTOR_PATH
 
 from .utils import (
     DEFAULT_CONNECTOR_ID,
