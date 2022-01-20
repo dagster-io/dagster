@@ -46,18 +46,18 @@ export type TimelineJob = {
   runs: TimelineRun[];
 };
 
-const makeJobKey = (repoAddress: RepoAddress, jobName: string) => {
+export const makeJobKey = (repoAddress: RepoAddress, jobName: string) => {
   return `${jobName}-${repoAddressAsString(repoAddress)}`;
 };
 
-export const RunTimelineContainer = ({range}: {range: [number, number]}) => {
-  const [start, end] = React.useMemo(() => {
-    const [unvalidatedStart, unvalidatedEnd] = range;
-    return unvalidatedEnd < unvalidatedStart
-      ? [unvalidatedEnd, unvalidatedStart]
-      : [unvalidatedStart, unvalidatedEnd];
-  }, [range]);
-
+export const RunTimelineContainer = ({
+  range,
+  jobs,
+}: {
+  range: [number, number];
+  jobs: TimelineJob[];
+}) => {
+  const [start, end] = range;
   const {data} = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(RUN_TIMELINE_QUERY, {
     fetchPolicy: 'network-only',
     notifyOnNetworkStatusChange: true,
@@ -73,8 +73,13 @@ export const RunTimelineContainer = ({range}: {range: [number, number]}) => {
       },
     },
   });
+  const jobsByKey = React.useMemo(() => {
+    return jobs.reduce((accum, job: TimelineJob) => {
+      return {...accum, [job.key]: job};
+    }, {} as {[key: string]: TimelineJob});
+  }, [jobs]);
 
-  const jobs = React.useMemo(() => {
+  const jobsWithRuns = React.useMemo(() => {
     const {unterminated, terminated, workspaceOrError} = data || {};
 
     const runsByJob: {[jobName: string]: TimelineRun[]} = {};
@@ -123,6 +128,11 @@ export const RunTimelineContainer = ({range}: {range: [number, number]}) => {
               locationEntry.locationOrLoadError.name,
             );
             for (const pipeline of repository.pipelines) {
+              const jobKey = makeJobKey(repoAddress, pipeline.name);
+              if (!(jobKey in jobsByKey)) {
+                continue;
+              }
+
               const schedules = (repository.schedules || []).filter(
                 (schedule) => schedule.pipelineName === pipeline.name,
               );
@@ -147,7 +157,7 @@ export const RunTimelineContainer = ({range}: {range: [number, number]}) => {
               const jobRuns = runsByJob[pipeline.name] || [];
               if (jobTicks.length || jobRuns.length) {
                 jobs.push({
-                  key: makeJobKey(repoAddress, pipeline.name),
+                  key: jobKey,
                   jobName: pipeline.name,
                   path: workspacePipelinePath({
                     repoName: repoAddress.name,
@@ -170,9 +180,9 @@ export const RunTimelineContainer = ({range}: {range: [number, number]}) => {
     }, {} as {[jobKey: string]: number});
 
     return jobs.sort((a, b) => earliest[a.key] - earliest[b.key]);
-  }, [data, start, end]);
+  }, [data, start, end, jobsByKey]);
 
-  return <RunTimeline range={[start, end]} jobs={jobs} />;
+  return <RunTimeline range={[start, end]} jobs={jobsWithRuns} />;
 };
 
 export const RunTimeline = ({jobs, range}: {jobs: TimelineJob[]; range: [number, number]}) => {
