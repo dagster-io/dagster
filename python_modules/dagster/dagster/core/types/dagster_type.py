@@ -17,7 +17,10 @@ from .builtin_config_schemas import BuiltinSchemas
 from .config_schema import DagsterTypeLoader, DagsterTypeMaterializer
 
 if t.TYPE_CHECKING:
-    from dagster.core.execution.context.system import StepExecutionContext, TypeCheckContext
+    from dagster.core.execution.context.system import (   # pylint: disable=unused-import
+        StepExecutionContext,
+        TypeCheckContext,
+    )
 
 TypeCheckFn = t.Callable[["TypeCheckContext", object], t.Union[TypeCheck, bool]]
 
