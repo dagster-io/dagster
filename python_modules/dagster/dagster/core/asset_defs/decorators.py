@@ -227,7 +227,7 @@ def multi_asset(
                 in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
             },
             output_names_by_asset_key={
-                out.to_definition(Any, name).hardcoded_asset_key or AssetKey([name]): name
+                out.asset_key if isinstance(out.asset_key, AssetKey) else AssetKey([name]): name
                 for name, out in outs.items()
             },
             op=op,

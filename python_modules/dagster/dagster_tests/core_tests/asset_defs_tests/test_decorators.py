@@ -1,5 +1,5 @@
 import pytest
-from dagster import AssetKey, DagsterInvalidDefinitionError, String, check, Out, Output
+from dagster import AssetKey, DagsterInvalidDefinitionError, Out, Output, String, check
 from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, multi_asset
 
 
@@ -114,7 +114,7 @@ def test_input_asset_key_and_namespace():
     with pytest.raises(check.CheckError, match="key and namespace cannot both be set"):
 
         @asset(ins={"arg1": AssetIn(asset_key=AssetKey("foo"), namespace="bar")})
-        def my_asset(arg1):
+        def _my_asset(arg1):
             assert arg1
 
 
