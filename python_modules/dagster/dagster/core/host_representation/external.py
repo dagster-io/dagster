@@ -36,27 +36,18 @@ class ExternalRepository:
         self.external_repository_data = check.inst_param(
             external_repository_data, "external_repository_data", ExternalRepositoryData
         )
-        self._pipeline_index_map = OrderedDict(
-            (
-                external_pipeline_data.pipeline_snapshot.name,
-                PipelineIndex(
-                    external_pipeline_data.pipeline_snapshot,
-                    external_pipeline_data.parent_pipeline_snapshot,
-                ),
+        self._pipeline_index_map = OrderedDict()
+        self._job_index_map = OrderedDict()
+        for external_pipeline_data in external_repository_data.external_pipeline_datas:
+            key = external_pipeline_data.pipeline_snapshot.name
+            index = PipelineIndex(
+                external_pipeline_data.pipeline_snapshot,
+                external_pipeline_data.parent_pipeline_snapshot,
             )
-            for external_pipeline_data in external_repository_data.external_pipeline_datas
-        )
-        self._job_index_map = OrderedDict(
-            (
-                external_pipeline_data.pipeline_snapshot.name,
-                PipelineIndex(
-                    external_pipeline_data.pipeline_snapshot,
-                    external_pipeline_data.parent_pipeline_snapshot,
-                ),
-            )
-            for external_pipeline_data in external_repository_data.external_pipeline_datas
-            if external_pipeline_data.is_job
-        )
+            self._pipeline_index_map[key] = index
+            if external_pipeline_data.is_job:
+                self._job_index_map[key] = index
+
         self._handle = check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
 
         instigation_list = (
