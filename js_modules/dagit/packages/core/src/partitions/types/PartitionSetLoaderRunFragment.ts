@@ -39,7 +39,7 @@ export interface PartitionSetLoaderRunFragment_stats_PythonError {
 export type PartitionSetLoaderRunFragment_stats = PartitionSetLoaderRunFragment_stats_RunStatsSnapshot | PartitionSetLoaderRunFragment_stats_PythonError;
 
 export interface PartitionSetLoaderRunFragment_stepStats_materializations {
-  __typename: "MaterializationOrObservation";
+  __typename: "Materialization";
 }
 
 export interface PartitionSetLoaderRunFragment_stepStats_expectationResults {
