@@ -2,6 +2,7 @@ import pytest
 from dagster import __version__ as dagster_version
 from dagster import graph
 from dagster.core.test_utils import environ, remove_none_recursively
+from dagster.utils import merge_dicts
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
 from dagster_k8s.job import (
     DAGSTER_PG_PASSWORD_ENV_VAR,
@@ -388,7 +389,7 @@ def test_construct_dagster_k8s_job_with_ttl():
     assert job["spec"]["ttl_seconds_after_finished"] == 0
 
 
-def test_construct_dagster_k8s_job_with_job_op_labels():
+def test_construct_dagster_k8s_job_with_labels():
     common_labels = {
         "app.kubernetes.io/name": "dagster",
         "app.kubernetes.io/instance": "dagster",
@@ -396,10 +397,15 @@ def test_construct_dagster_k8s_job_with_job_op_labels():
         "app.kubernetes.io/part-of": "dagster",
     }
 
+    job_config_labels = {
+        "foo_label_key": "bar_label_value",
+    }
+
     cfg = DagsterK8sJobConfig(
         job_image="test/foo:latest",
         dagster_home="/opt/dagster/dagster_home",
         instance_config_map="test",
+        labels=job_config_labels,
     )
     job1 = construct_dagster_k8s_job(
         cfg,
@@ -417,8 +423,12 @@ def test_construct_dagster_k8s_job_with_job_op_labels():
             "dagster/op": "some_op",
         },
     )
+
     assert job1["metadata"]["labels"] == expected_labels1
-    assert job1["spec"]["template"]["metadata"]["labels"] == expected_labels1
+    assert job1["spec"]["template"]["metadata"]["labels"] == merge_dicts(
+        expected_labels1,
+        job_config_labels,
+    )
 
     job2 = construct_dagster_k8s_job(
         cfg,
@@ -438,7 +448,10 @@ def test_construct_dagster_k8s_job_with_job_op_labels():
         },
     )
     assert job2["metadata"]["labels"] == expected_labels2
-    assert job2["spec"]["template"]["metadata"]["labels"] == expected_labels2
+    assert job2["spec"]["template"]["metadata"]["labels"] == merge_dicts(
+        expected_labels2,
+        job_config_labels,
+    )
 
 
 def test_sanitize_labels():
