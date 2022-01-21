@@ -1,10 +1,7 @@
-from typing import Dict
-
 import pytest
-from dagster import AssetKey, DagsterInvariantViolationError, In, Out, job, pipeline
-from dagster.core.asset_defs import ForeignAsset, asset, build_assets_job
-from dagster.core.decorator_utils import get_function_params
-from dagster.core.definitions.decorators.op import _Op
+from dagster import AssetKey, DagsterInvariantViolationError, Out
+from dagster.check import CheckError
+from dagster.core.asset_defs import ForeignAsset, asset, build_assets_job, multi_asset
 from dagster.core.host_representation.external_data import (
     ExternalAssetDependedBy,
     ExternalAssetDependency,
@@ -211,11 +208,181 @@ def test_same_asset_in_multiple_pipelines():
 
 
 def test_basic_multi_asset():
-    pass
+    @multi_asset(
+        outs={
+            f"out{i}": Out(description=f"foo: {i}", asset_key=AssetKey(f"asset{i}"))
+            for i in range(10)
+        }
+    )
+    def assets():
+        pass
+
+    assets_job = build_assets_job("assets_job", [assets])
+
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], foreign_assets_by_key={})
+
+    assert external_asset_nodes == [
+        ExternalAssetNode(
+            asset_key=AssetKey(f"asset{i}"),
+            dependencies=[],
+            depended_by=[],
+            op_name="assets",
+            op_description=None,
+            job_names=["assets_job"],
+            output_name=f"out{i}",
+            output_description=f"foo: {i}",
+        )
+        for i in range(10)
+    ]
 
 
 def test_inter_op_dependency():
-    pass
+    @asset
+    def in1():
+        pass
+
+    @asset
+    def in2():
+        pass
+
+    @asset
+    def downstream(only_in, mixed, only_out):  # pylint: disable=unused-argument
+        pass
+
+    @multi_asset(
+        outs={
+            "only_in": Out(),
+            "mixed": Out(in_deps=["in1"], out_deps=["only_in"]),
+            "only_out": Out(in_deps=[], out_deps=["only_in", "mixed"]),
+        }
+    )
+    def assets(in1, in2):  # pylint: disable=unused-argument
+        pass
+
+    assets_job = build_assets_job("assets_job", [in1, in2, assets, downstream])
+
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], foreign_assets_by_key={})
+    # sort so that test is deterministic
+    sorted_nodes = sorted(
+        [
+            node._replace(
+                dependencies=sorted(node.dependencies, key=lambda d: d.upstream_asset_key),
+                depended_by=sorted(node.depended_by, key=lambda d: d.downstream_asset_key),
+            )
+            for node in external_asset_nodes
+        ],
+        key=lambda n: n.asset_key,
+    )
+
+    assert sorted_nodes == [
+        ExternalAssetNode(
+            asset_key=AssetKey(["downstream"]),
+            dependencies=[
+                ExternalAssetDependency(upstream_asset_key=AssetKey(["mixed"]), input_name="mixed"),
+                ExternalAssetDependency(
+                    upstream_asset_key=AssetKey(["only_in"]), input_name="only_in"
+                ),
+                ExternalAssetDependency(
+                    upstream_asset_key=AssetKey(["only_out"]), input_name="only_out"
+                ),
+            ],
+            depended_by=[],
+            op_name="downstream",
+            op_description=None,
+            job_names=["assets_job"],
+            output_name="result",
+        ),
+        ExternalAssetNode(
+            asset_key=AssetKey(["in1"]),
+            dependencies=[],
+            depended_by=[
+                ExternalAssetDependedBy(downstream_asset_key=AssetKey(["mixed"]), input_name="in1"),
+                ExternalAssetDependedBy(
+                    downstream_asset_key=AssetKey(["only_in"]), input_name="in1"
+                ),
+            ],
+            op_name="in1",
+            op_description=None,
+            job_names=["assets_job"],
+            output_name="result",
+        ),
+        ExternalAssetNode(
+            asset_key=AssetKey(["in2"]),
+            dependencies=[],
+            depended_by=[
+                ExternalAssetDependedBy(
+                    downstream_asset_key=AssetKey(["only_in"]), input_name="in2"
+                )
+            ],
+            op_name="in2",
+            op_description=None,
+            job_names=["assets_job"],
+            output_name="result",
+        ),
+        ExternalAssetNode(
+            asset_key=AssetKey(["mixed"]),
+            dependencies=[
+                ExternalAssetDependency(upstream_asset_key=AssetKey(["in1"]), input_name="in1"),
+                ExternalAssetDependency(
+                    upstream_asset_key=AssetKey(["only_in"]), output_name="only_in"
+                ),
+            ],
+            depended_by=[
+                ExternalAssetDependedBy(
+                    downstream_asset_key=AssetKey(["downstream"]), input_name="mixed"
+                ),
+                ExternalAssetDependedBy(
+                    downstream_asset_key=AssetKey(["only_out"]), output_name="mixed"
+                ),
+            ],
+            op_name="assets",
+            op_description=None,
+            job_names=["assets_job"],
+            output_name="mixed",
+        ),
+        ExternalAssetNode(
+            asset_key=AssetKey(["only_in"]),
+            dependencies=[
+                ExternalAssetDependency(upstream_asset_key=AssetKey(["in1"]), input_name="in1"),
+                ExternalAssetDependency(upstream_asset_key=AssetKey(["in2"]), input_name="in2"),
+            ],
+            depended_by=[
+                ExternalAssetDependedBy(
+                    downstream_asset_key=AssetKey(["downstream"]), input_name="only_in"
+                ),
+                ExternalAssetDependedBy(
+                    downstream_asset_key=AssetKey(["mixed"]), output_name="only_in"
+                ),
+                ExternalAssetDependedBy(
+                    downstream_asset_key=AssetKey(["only_out"]), output_name="only_in"
+                ),
+            ],
+            op_name="assets",
+            op_description=None,
+            job_names=["assets_job"],
+            output_name="only_in",
+        ),
+        ExternalAssetNode(
+            asset_key=AssetKey(["only_out"]),
+            dependencies=[
+                ExternalAssetDependency(
+                    upstream_asset_key=AssetKey(["mixed"]), output_name="mixed"
+                ),
+                ExternalAssetDependency(
+                    upstream_asset_key=AssetKey(["only_in"]), output_name="only_in"
+                ),
+            ],
+            depended_by=[
+                ExternalAssetDependedBy(
+                    downstream_asset_key=AssetKey(["downstream"]), input_name="only_out"
+                ),
+            ],
+            op_name="assets",
+            op_description=None,
+            job_names=["assets_job"],
+            output_name="only_out",
+        ),
+    ]
 
 
 def test_unused_foreign_asset():
@@ -292,6 +459,28 @@ def test_foreign_asset_conflicts_with_asset():
     with pytest.raises(DagsterInvariantViolationError):
         external_asset_graph_from_defs(
             [job1], foreign_assets_by_key={AssetKey("bar"): bar_foreign_asset}
+        )
+
+
+def test_input_name_or_output_name_dep_by():
+    with pytest.raises(CheckError, match="Exactly one"):
+        ExternalAssetDependedBy(
+            downstream_asset_key=AssetKey("bar"), input_name="foo", output_name="foo"
+        )
+    with pytest.raises(CheckError, match="Exactly one"):
+        ExternalAssetDependedBy(
+            downstream_asset_key=AssetKey("bar"), input_name=None, output_name=None
+        )
+
+
+def test_input_name_or_output_name_dependency():
+    with pytest.raises(CheckError, match="Exactly one"):
+        ExternalAssetDependency(
+            upstream_asset_key=AssetKey("bar"), input_name="foo", output_name="foo"
+        )
+    with pytest.raises(CheckError, match="Exactly one"):
+        ExternalAssetDependency(
+            upstream_asset_key=AssetKey("bar"), input_name=None, output_name=None
         )
 
 

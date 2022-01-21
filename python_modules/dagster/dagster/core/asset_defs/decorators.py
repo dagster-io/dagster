@@ -212,19 +212,33 @@ def multi_asset(
             the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
     """
 
+    check.invariant(
+        all(out.asset_key is None or isinstance(out.asset_key, AssetKey) for out in outs.values()),
+        "The asset_key argument for Outs supplied to a multi_asset must be a constant or None, not a function. ",
+    )
+    # if an AssetKey is not supplied, create one based off of the out's name
+    asset_keys_by_out_name = {
+        out_name: out.asset_key if isinstance(out.asset_key, AssetKey) else AssetKey([out_name])
+        for out_name, out in outs.items()
+    }
+
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         asset_name = name or fn.__name__
         ins_by_input_names: Mapping[str, In] = build_asset_ins(
             fn, None, ins or {}, non_argument_deps
         )
 
+        # for any Outs that do not specify an AssetKey, create one matching the name of the Out
         op = _Op(
             name=asset_name,
             description=description,
             ins={
                 input_name: in_def for input_name, in_def in ins_by_input_names.items()
             },  # convert Mapping object to dict
-            out=outs,
+            out={
+                out_name: out._replace(asset_key=asset_keys_by_out_name[out_name])
+                for out_name, out in outs.items()
+            },  # update asset_key if necessary
             required_resource_keys=required_resource_keys,
             tags={"kind": compute_kind} if compute_kind else None,
         )(fn)
@@ -234,8 +248,7 @@ def multi_asset(
                 in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
             },
             output_names_by_asset_key={
-                out.asset_key if isinstance(out.asset_key, AssetKey) else AssetKey([name]): name
-                for name, out in outs.items()
+                asset_key: out_name for out_name, asset_key in asset_keys_by_out_name.items()
             },
             op=op,
         )

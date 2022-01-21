@@ -63,6 +63,21 @@ def test_multi_asset_infer_from_empty_asset_key():
     assert my_asset.asset_keys == {AssetKey("my_out_name"), AssetKey("my_other_out_name")}
 
 
+def test_multi_asset_no_lambdas():
+
+    with pytest.raises(check.CheckError, match="must be a constant or None"):
+
+        @multi_asset(
+            outs={
+                "my_out_name": Out(asset_key=lambda context: AssetKey("123")),
+                "my_other_out_name": Out(),
+            }
+        )
+        def _my_asset():
+            yield Output(1, "my_out_name")
+            yield Output(2, "my_other_out_name")
+
+
 def test_asset_with_dagster_type():
     @asset(dagster_type=String)
     def my_asset(arg1):
