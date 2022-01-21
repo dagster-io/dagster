@@ -9,15 +9,17 @@ import {
   Spinner,
   Tooltip,
   FontFamily,
+  MenuLink,
 } from '@dagster-io/ui';
 import {isEqual} from 'lodash';
 import qs from 'qs';
 import React, {CSSProperties} from 'react';
-import {Link, useHistory} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../../app/Util';
 import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
+import {NodeHighlightColors} from '../../graph/OpNode';
 import {OpTags} from '../../graph/OpTags';
 import {METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
 import {titleForRun} from '../../runs/RunUtils';
@@ -41,7 +43,6 @@ export const AssetNode: React.FC<{
 }> = React.memo(
   ({definition, metadata, selected, liveData, repoAddress, jobName, inAssetCatalog}) => {
     const launch = useLaunchSingleAssetJob();
-    const history = useHistory();
 
     const {materializationEvent: event, runOrError} = liveData?.lastMaterialization || {};
     const kind = metadata.find((m) => m.key === 'kind')?.value;
@@ -66,12 +67,10 @@ export const AssetNode: React.FC<{
               }
             />
             {!inAssetCatalog && (
-              <MenuItemWIP
+              <MenuLink
                 icon="link"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  history.push(`/instance/assets/${definition.assetKey.path.join('/')}`);
-                }}
+                to={`/instance/assets/${definition.assetKey.path.join('/')}`}
+                onClick={(e) => e.stopPropagation()}
                 text="View in Asset Catalog"
               />
             )}
@@ -257,8 +256,14 @@ export const getNodeDimensions = (def: {
   return {width: Math.max(250, displayNameForAssetKey(def.assetKey).length * 9.5) + 25, height};
 };
 
+const BoxColors = {
+  Divider: 'rgba(219, 219, 244, 1)',
+  Description: 'rgba(245, 245, 250, 1)',
+  Stats: 'rgba(236, 236, 248, 1)',
+};
+
 const RunLinkTooltipStyle = JSON.stringify({
-  background: 'rgba(236,236,248,1)',
+  background: BoxColors.Stats,
   padding: '4px 8px',
   marginLeft: -10,
   marginTop: -8,
@@ -269,7 +274,7 @@ const RunLinkTooltipStyle = JSON.stringify({
 } as CSSProperties);
 
 const AssetNodeContainer = styled.div<{$selected: boolean}>`
-  outline: ${(p) => (p.$selected ? `2px dashed rgba(255, 69, 0, 1)` : 'none')};
+  outline: ${(p) => (p.$selected ? `2px dashed ${NodeHighlightColors.Border}` : 'none')};
   border-radius: 6px;
   outline-offset: -1px;
   padding: 4px;
@@ -277,7 +282,7 @@ const AssetNodeContainer = styled.div<{$selected: boolean}>`
   margin-right: 4px;
   margin-left: 4px;
   margin-bottom: 2px;
-  background: ${(p) => (p.$selected ? 'rgba(255, 69, 0, 0.2)' : 'white')};
+  background: ${(p) => (p.$selected ? NodeHighlightColors.Background : 'white')};
   inset: 0;
 `;
 
@@ -303,19 +308,19 @@ const Name = styled.div`
 `;
 
 const Description = styled.div`
-  background: rgba(245, 245, 250, 1);
+  background: ${BoxColors.Description};
   padding: 4px 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-top: 1px solid rgba(219, 219, 244, 1);
+  border-top: 1px solid ${BoxColors.Divider};
   font-size: 12px;
 `;
 
 const Stats = styled.div`
-  background: rgba(236, 236, 248, 1);
+  background: ${BoxColors.Stats};
   padding: 4px 8px;
-  border-top: 1px solid rgba(219, 219, 244, 1);
+  border-top: 1px solid ${BoxColors.Divider};
   font-size: 12px;
   line-height: 18px;
 `;
