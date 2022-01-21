@@ -27,10 +27,10 @@ def test_fivetran_asset_keys():
     "asset_keys,should_error",
     [
         ([], False),
-        ([AssetKey(["schema1", "table1"])], False),
-        ([AssetKey(["schema1", "table1"]), AssetKey(["schema2", "table1"])], False),
+        ([AssetKey(["schema1", "tracked"])], False),
+        ([AssetKey(["schema1", "tracked"]), AssetKey(["schema2", "tracked"])], False),
         ([AssetKey(["does", "notexist"])], True),
-        ([AssetKey(["schema1", "table1"]), AssetKey(["does", "notexist"])], True),
+        ([AssetKey(["schema1", "tracked"]), AssetKey(["does", "notexist"])], True),
     ],
 )
 def test_fivetran_asset_run(asset_keys, should_error):
@@ -66,9 +66,9 @@ def test_fivetran_asset_run(asset_keys, should_error):
             f"{api_prefix}/schemas",
             json=get_sample_connector_schema_config(
                 tables=[
-                    ("schema1", "table1"),
-                    ("schema1", "table2"),
-                    ("schema2", "table1"),
+                    ("schema1", "tracked"),
+                    ("schema1", "untracked"),
+                    ("schema2", "tracked"),
                 ]
             ),
         )
@@ -102,7 +102,7 @@ def test_fivetran_asset_run(asset_keys, should_error):
                 mat.event_specific_data.materialization.asset_key for mat in asset_materializations
             )
             assert found_asset_keys == {
-                AssetKey(["schema1", "table1"]),
-                AssetKey(["schema1", "table2"]),
-                AssetKey(["schema2", "table1"]),
+                AssetKey(["schema1", "tracked"]),
+                AssetKey(["schema1", "untracked"]),
+                AssetKey(["schema2", "tracked"]),
             }
