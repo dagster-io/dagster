@@ -6,7 +6,6 @@ from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
 from dagster.core.storage.pipeline_run import (
-    PipelineRun,
     PipelineRunStatus,
     PipelineRunsFilter,
     RunRecord,
