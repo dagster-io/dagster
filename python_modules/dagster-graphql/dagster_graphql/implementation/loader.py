@@ -1,5 +1,6 @@
 from collections import defaultdict
 from enum import Enum
+from typing import Any, Dict, List
 
 from dagster import DagsterInstance, check
 from dagster.core.host_representation import ExternalRepository
@@ -17,13 +18,26 @@ class RepositoryDataType(Enum):
 
 
 class RepositoryScopedBatchLoader:
-    def __init__(self, instance, external_repository):
-        self._instance = check.inst_param(instance, "instance", DagsterInstance)
-        self._repository = check.inst_param(
-            external_repository, "external_repository", ExternalRepository
-        )
-        self._data = {}
-        self._limits = {}
+    """
+    A batch loader that fetches an assortment of data for a given repository.  This loader is
+    expected to be instantiated once per repository, and then passed to various child graphene
+    objects to batch calls to the DB.
+
+    We can instantiate this loader without knowing which data we will end up requesting deeper in
+    the graphql nested schema, which means we can batch DB requests without changing the structure
+     of our graphql request.
+
+    Example: When the last 10 runs are requested for a job in the repository, we know that they will
+    be fetched for every job in the repository.  We can batch fetch the last 10 runs for every job,
+    reducing the number of roundtrips to the DB, and then access them using the in-memory loader
+    cache.
+    """
+
+    def __init__(self, instance: DagsterInstance, external_repository: ExternalRepository):
+        self._instance = instance
+        self._repository = external_repository
+        self._data: Dict[RepositoryDataType, Dict[str, List[Any]]] = {}
+        self._limits: Dict[RepositoryDataType, int] = {}
 
     def _get(self, data_type, key, limit):
         check.inst_param(data_type, "data_type", RepositoryDataType)

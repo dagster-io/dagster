@@ -13,6 +13,7 @@ from dagster.core.scheduler.instigation import (
     ScheduleInstigatorData,
 )
 from dagster.seven.compat.pendulum import create_pendulum_time
+from dagster.utils import Counter, traced_counter
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_repository_selector,
@@ -173,6 +174,27 @@ query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float, $tic
       }
     }
   }
+}
+"""
+
+REPOSITORY_SCHEDULES_QUERY = """
+query RepositorySchedulesQuery($repositorySelector: RepositorySelector!) {
+    repositoryOrError(repositorySelector: $repositorySelector) {
+        ... on Repository {
+            id
+            schedules {
+                id
+                name
+                scheduleState {
+                    id
+                    runs(limit: 1) {
+                      id
+                      runId
+                    }
+                }
+            }
+        }
+    }
 }
 """
 
@@ -468,3 +490,22 @@ def test_future_ticks_until(graphql_context):
         create_pendulum_time(2019, 2, 28, tz="US/Central").timestamp(),
         create_pendulum_time(2019, 3, 1, tz="US/Central").timestamp(),
     ]
+
+
+def test_repository_batching(graphql_context):
+    traced_counter.set(Counter())
+    selector = infer_repository_selector(graphql_context)
+    result = execute_dagster_graphql(
+        graphql_context,
+        REPOSITORY_SCHEDULES_QUERY,
+        variables={"repositorySelector": selector},
+    )
+    assert result.data
+    assert "repositoryOrError" in result.data
+    assert "schedules" in result.data["repositoryOrError"]
+    counter = traced_counter.get()
+    counts = counter.counts()
+    assert counts
+    assert len(counts) == 2
+    assert counts.get("DagsterInstance.get_runs") == 1
+    assert counts.get("DagsterInstance.all_stored_job_state") == 1
