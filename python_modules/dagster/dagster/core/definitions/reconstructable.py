@@ -176,7 +176,7 @@ class ReconstructablePipeline(
                 pipeline_name=self.pipeline_name,
             )
 
-        from dagster.core.definitions.job_definition import JobDefinition
+        from dagster.core.definitions import PipelineDefinition, JobDefinition
 
         pipeline_def = self.get_definition()
         if isinstance(pipeline_def, JobDefinition):
@@ -193,7 +193,7 @@ class ReconstructablePipeline(
                 solid_selection_str=seven.json.dumps(solid_selection),
                 solids_to_execute=None,
             )
-        else:
+        elif isinstance(pipeline_def, PipelineDefinition):
             # when subselecting a pipeline
             # * pipeline subselection depend on solids_to_excute rather than solid_selection
             # * we resolve a list of solid selection queries to a frozenset of qualified solid names
@@ -207,6 +207,8 @@ class ReconstructablePipeline(
                 solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
                 solids_to_execute=frozenset(solids_to_execute) if solids_to_execute else None,
             )
+        else:
+            raise Exception(f"Unexpected pipeline/job type {pipeline_def.__class__.__name__}")
 
     def subset_for_execution(
         self, solid_selection: Optional[List[str]]
