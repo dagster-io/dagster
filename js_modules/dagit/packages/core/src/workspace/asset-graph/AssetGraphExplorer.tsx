@@ -414,6 +414,9 @@ const ASSETS_GRAPH_QUERY = gql`
           dependencyKeys {
             path
           }
+          dependedByKeys {
+            path
+          }
         }
       }
     }

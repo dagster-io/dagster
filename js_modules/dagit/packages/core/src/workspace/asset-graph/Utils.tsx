@@ -51,19 +51,26 @@ export const buildGraphData = (assetNodes: AssetNode[]) => {
     upstream: {},
   };
 
+  const addEdge = (upstreamKeyJson: string, downstreamKeyJson: string) => {
+    data.downstream[upstreamKeyJson] = {
+      ...(data.downstream[upstreamKeyJson] || {}),
+      [downstreamKeyJson]: true,
+    };
+    data.upstream[downstreamKeyJson] = {
+      ...(data.upstream[downstreamKeyJson] || {}),
+      [upstreamKeyJson]: true,
+    };
+  };
+
   assetNodes.forEach((definition: AssetNode) => {
     const assetKeyJson = JSON.stringify(definition.assetKey.path);
     definition.dependencyKeys.forEach(({path}) => {
-      const upstreamAssetKeyJson = JSON.stringify(path);
-      data.downstream[upstreamAssetKeyJson] = {
-        ...(data.downstream[upstreamAssetKeyJson] || {}),
-        [assetKeyJson]: true,
-      };
-      data.upstream[assetKeyJson] = {
-        ...(data.upstream[assetKeyJson] || {}),
-        [upstreamAssetKeyJson]: true,
-      };
+      addEdge(JSON.stringify(path), assetKeyJson);
     });
+    definition.dependedByKeys.forEach(({path}) => {
+      addEdge(assetKeyJson, JSON.stringify(path));
+    });
+
     data.nodes[assetKeyJson] = {
       id: assetKeyJson,
       assetKey: definition.assetKey,
@@ -83,7 +90,7 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
       [assetNode.id]: {
         id: assetNode.id,
         assetKey: assetNode.assetKey,
-        definition: {...assetNode, dependencyKeys: []},
+        definition: {...assetNode, dependencyKeys: [], dependedByKeys: []},
       },
     },
     upstream: {
@@ -97,7 +104,7 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
     graphData.nodes[asset.id] = {
       id: asset.id,
       assetKey: asset.assetKey,
-      definition: {...asset, dependencyKeys: []},
+      definition: {...asset, dependencyKeys: [], dependedByKeys: []},
     };
   }
   for (const {asset} of assetNode.dependedBy) {
@@ -106,7 +113,7 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
     graphData.nodes[asset.id] = {
       id: asset.id,
       assetKey: asset.assetKey,
-      definition: {...asset, dependencyKeys: []},
+      definition: {...asset, dependencyKeys: [], dependedByKeys: []},
     };
   }
   return graphData;
