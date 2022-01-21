@@ -1,6 +1,5 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
     "paths": {
       "@dagster-io/dagit-core/*": ["../core/src/*"],
       "@dagster-io/ui": ["../ui"]
