@@ -458,7 +458,7 @@ class ExternalPartitionExecutionErrorData(
 
 @whitelist_for_serdes
 class ExternalAssetDependency(
-    namedtuple("_ExternalAssetDependency", "upstream_asset_key input_name")
+    namedtuple("_ExternalAssetDependency", "upstream_asset_key input_name output_name")
 ):
     """A definition of a directed edge in the logical asset graph.
 
@@ -466,17 +466,18 @@ class ExternalAssetDependency(
     that depends on it.
     """
 
-    def __new__(cls, upstream_asset_key: AssetKey, input_name: str):
+    def __new__(cls, upstream_asset_key: AssetKey, input_name: str, output_name: str = None):
         return super(ExternalAssetDependency, cls).__new__(
             cls,
             upstream_asset_key=upstream_asset_key,
             input_name=input_name,
+            output_name=output_name,
         )
 
 
 @whitelist_for_serdes
 class ExternalAssetDependedBy(
-    namedtuple("_ExternalAssetDependedBy", "downstream_asset_key input_name")
+    namedtuple("_ExternalAssetDependedBy", "downstream_asset_key input_name output_name")
 ):
     """A definition of a directed edge in the logical asset graph.
 
@@ -484,11 +485,12 @@ class ExternalAssetDependedBy(
     asset that it depends on.
     """
 
-    def __new__(cls, downstream_asset_key: AssetKey, input_name: str):
+    def __new__(cls, downstream_asset_key: AssetKey, input_name: str, output_name: str = None):
         return super(ExternalAssetDependedBy, cls).__new__(
             cls,
             downstream_asset_key=downstream_asset_key,
             input_name=input_name,
+            output_name=output_name,
         )
 
 
@@ -496,7 +498,7 @@ class ExternalAssetDependedBy(
 class ExternalAssetNode(
     namedtuple(
         "_ExternalAssetNode",
-        "asset_key dependencies depended_by op_name op_description job_names partitions_def_data",
+        "asset_key dependencies depended_by op_name op_description job_names partitions_def_data output_description",
     )
 ):
     """A definition of a node in the logical asset graph.
@@ -513,6 +515,7 @@ class ExternalAssetNode(
         op_description: Optional[str] = None,
         job_names: Optional[List[str]] = None,
         partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None,
+        output_description: Optional[str] = None,
     ):
         return super(ExternalAssetNode, cls).__new__(
             cls,
@@ -523,6 +526,7 @@ class ExternalAssetNode(
             op_description=op_description,
             job_names=job_names,
             partitions_def_data=partitions_def_data,
+            output_description=output_description,
         )
 
 
@@ -567,28 +571,54 @@ def external_asset_graph_from_defs(
 
     for pipeline in pipelines:
         for node_def in pipeline.all_node_defs:
-            node_asset_keys: Set[AssetKey] = set()
+            node_upstream_asset_keys = set(
+                filter(lambda id: id.hardcoded_asset_key, node_def.input_defs)
+            )
+            all_upstream_asset_keys.union(node_upstream_asset_keys)
+
+            node_asset_keys = set(filter(lambda od: od.hardcoded_asset_key, node_def.output_defs))
+
             for output_def in node_def.output_defs:
                 asset_key = output_def.hardcoded_asset_key
+                if asset_key is None:
+                    continue
 
-                if asset_key:
-                    node_asset_keys.add(asset_key)
-                    node_defs_by_asset_key[asset_key].append((node_def, pipeline))
+                node_defs_by_asset_key[asset_key].append((node_def, pipeline))
 
-            for input_def in node_def.input_defs:
-                upstream_asset_key = input_def.hardcoded_asset_key
-
-                if upstream_asset_key:
-                    all_upstream_asset_keys.add(upstream_asset_key)
-                    for node_asset_key in node_asset_keys:
-                        deps[node_asset_key][input_def.name] = ExternalAssetDependency(
-                            upstream_asset_key=upstream_asset_key,
-                            input_name=input_def.name,
+                # if not specified, assume depends on all inputs
+                in_deps = output_def.in_deps
+                if in_deps is None:
+                    in_deps = [id.name for id in node_def.input_defs]
+                for input_name in in_deps:
+                    upstream_asset_key = node_def.input_def_named(input_name).hardcoded_asset_key
+                    if upstream_asset_key:
+                        deps[asset_key][input_name] = ExternalAssetDependency(
+                            upstream_asset_key=upstream_asset_key, input_name=input_name
                         )
                         dep_by[upstream_asset_key].append(
                             ExternalAssetDependedBy(
-                                downstream_asset_key=node_asset_key,
-                                input_name=input_def.name,
+                                downstream_asset_key=asset_key, input_name=input_name
+                            )
+                        )
+
+                # if not specified, assume it does not depend on any other outputs
+                out_deps = output_def.out_deps or []
+                for output_name in out_deps:
+                    internal_upstream_asset_key = node_def.output_def_named(
+                        output_name
+                    ).hardcoded_asset_key
+                    if internal_upstream_asset_key:
+                        # FIXME: this will break if an input shares a name with an output
+                        deps[asset_key][output_name] = ExternalAssetDependency(
+                            upstream_asset_key=internal_upstream_asset_key,
+                            input_name=None,
+                            output_name=output_name,
+                        )
+                        dep_by[internal_upstream_asset_key].append(
+                            ExternalAssetDependedBy(
+                                downstream_asset_key=asset_key,
+                                input_name=None,
+                                output_name=output_name,
                             )
                         )
 

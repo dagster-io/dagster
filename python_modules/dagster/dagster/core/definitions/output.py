@@ -10,6 +10,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    Sequence,
 )
 
 from dagster import check
@@ -74,8 +75,10 @@ class OutputDefinition:
         metadata=None,
         asset_key=None,
         asset_partitions=None,
-        asset_partitions_def=None
+        asset_partitions_def=None,
         # make sure new parameters are updated in combine_with_inferred below
+        in_deps=None,
+        out_deps=None,
     ):
         from dagster.core.definitions.partition import PartitionsDefinition
 
@@ -92,6 +95,8 @@ class OutputDefinition:
             io_manager_key, "io_manager_key", default="io_manager"
         )
         self._metadata = metadata
+        self._in_deps = in_deps
+        self._out_deps = out_deps
 
         if asset_key:
             experimental_arg_warning("asset_key", "OutputDefinition.__init__")
@@ -122,6 +127,14 @@ class OutputDefinition:
         self._asset_partitions_def = check.opt_inst_param(
             asset_partitions_def, "asset_partition_def", PartitionsDefinition
         )
+
+    @property
+    def in_deps(self) -> Sequence[str]:
+        return self._in_deps
+
+    @property
+    def out_deps(self) -> Sequence[str]:
+        return self._out_deps
 
     @property
     def name(self):
@@ -236,6 +249,8 @@ class OutputDefinition:
             asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
             asset_partitions_def=self._asset_partitions_def,
+            in_deps=self._in_deps,
+            out_deps=self._out_deps,
         )
 
 
@@ -330,6 +345,8 @@ class Out(
             ("asset_key", Optional[Union[AssetKey, Callable[..., AssetKey]]]),
             ("asset_partitions", Optional[Union[Set[str], Callable[..., Set[str]]]]),
             ("asset_partitions_def", Optional["PartitionsDefinition"]),
+            ("in_deps", Optional[Sequence[str]]),
+            ("out_deps", Optional[Sequence[str]]),
         ],
     )
 ):
@@ -374,6 +391,8 @@ class Out(
         asset_partitions=None,
         asset_partitions_def=None,
         # make sure new parameters are updated in combine_with_inferred below
+        in_deps=None,
+        out_deps=None,
     ):
         if asset_partitions_def:
             experimental_arg_warning("assets_definition", "Out.__new__")
@@ -387,6 +406,8 @@ class Out(
             asset_key=asset_key,
             asset_partitions=asset_partitions,
             asset_partitions_def=asset_partitions_def,
+            in_deps=in_deps,
+            out_deps=out_deps,
         )
 
     @staticmethod
@@ -400,6 +421,8 @@ class Out(
             asset_key=output_def._asset_key,  # pylint: disable=protected-access
             asset_partitions=output_def._asset_partitions_fn,  # pylint: disable=protected-access
             asset_partitions_def=output_def._asset_partitions_def,  # pylint: disable=protected-access
+            in_deps=output_def.in_deps,
+            out_deps=output_def.out_deps,
         )
 
     def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
@@ -417,6 +440,8 @@ class Out(
             asset_key=self.asset_key,
             asset_partitions=self.asset_partitions,
             asset_partitions_def=self.asset_partitions_def,
+            in_deps=self.in_deps,
+            out_deps=self.out_deps,
         )
 
 
