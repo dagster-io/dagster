@@ -270,7 +270,7 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
           {launching
             ? 'Launching...'
             : selected.length !== 1
-            ? `Launch ${selected.length} Run Backfill`
+            ? `Launch ${selected.length}-Run Backfill`
             : `Launch 1 Run`}
         </ButtonWIP>
       </DialogFooter>
