@@ -8,7 +8,7 @@ from dagster_fivetran.utils import generate_materializations
 
 
 @experimental
-def fivetran_assets_factory(
+def build_fivetran_assets(
     connector_id: str,
     asset_keys: List[AssetKey],
     name: Optional[str] = None,
@@ -29,13 +29,14 @@ def fivetran_assets_factory(
     Args:
         connector_id (str): The Fivetran Connector ID that this op will sync. You can retrieve this
             value from the "Setup" tab of a given connector in the Fivetran UI.
-        asset_keys (str): The set of asset keys that Dagster will expect this asset to produce.
+        asset_keys (List[AssetKey]): The set of asset keys that Dagster will expect this asset to produce.
             These should be of the form ``AssetKey([<schema_name>, <table_name>])`` where
             ``<schema_name>`` and ``<table_name>`` represent the location of the tables in the
             Fivetran destination. Any AssetKey listed here MUST be sync'd every time this computation
             is executed, otherwise an exception will be raised. Additional tables that are updated
             during the sync but not listed here will be recorded with runtime AssetMaterialization
-            events.
+            events. The set of tables that are sync'd by Fivetran but are not explicitly set in the
+            asset_keys argument may change over time as the Fivetran connector is updated.
         name (Optional[str]): A name for the underlying computation.
         poll_interval (float): The time (in seconds) that will be waited between successive polls.
         poll_timeout (Optional[float]): The maximum time that will waited before this operation is
@@ -50,7 +51,7 @@ def fivetran_assets_factory(
         from dagster.core.asset_defs import build_assets_job
 
         from dagster_fivetran import fivetran_resource
-        from dagster_fivetran.assets import fivetran_assets_factory
+        from dagster_fivetran.assets import build_fivetran_assets
 
         my_fivetran_resource = fivetran_resource.configured(
             {
@@ -59,7 +60,7 @@ def fivetran_assets_factory(
             }
         )
 
-        fivetran_assets = fivetran_assets_factory(connector_id="foobar", asset_keys=[
+        fivetran_assets = build_fivetran_assets(connector_id="foobar", asset_keys=[
             AssetKey(["schema1", "table1"]), AssetKey(["schema2", "table2"])
         ])
 
@@ -74,7 +75,8 @@ def fivetran_assets_factory(
     @multi_asset(
         name=name or f"fivetran_sync_{connector_id}",
         outs={
-            key.path[-1]: Out(io_manager_key=io_manager_key, asset_key=key) for key in asset_keys
+            "_".join(key.path): Out(io_manager_key=io_manager_key, asset_key=key)
+            for key in asset_keys
         },
         required_resource_keys={"fivetran"},
     )
@@ -90,7 +92,7 @@ def fivetran_assets_factory(
             if materialization.asset_key in asset_keys:
                 yield Output(
                     value=None,
-                    output_name=materialization.asset_key.path[-1],
+                    output_name="_".join(materialization.asset_key.path),
                     metadata_entries=materialization.metadata_entries,
                 )
             else:
