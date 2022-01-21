@@ -93,10 +93,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def solid_config(self) -> Any:
-        solid_config = self._step_execution_context.resolved_run_config.solids.get(
-            str(self.solid_handle)
-        )
-        return solid_config.config if solid_config else None
+        return self._step_execution_context.op_config
 
     @property
     def pipeline_run(self) -> PipelineRun:
@@ -211,6 +208,12 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         Raises an error if the current run is not a partitioned run.
         """
         return self._step_execution_context.partition_key
+
+    def output_asset_partition_key(self, output_name: str = "result") -> str:
+        """Returns the asset partition key for the given output. Defaults to "result", which is the
+        name of the default output.
+        """
+        return self._step_execution_context.asset_partition_key_for_output(output_name)
 
     def has_tag(self, key: str) -> bool:
         """Check if a logging tag is set.
