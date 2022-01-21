@@ -93,5 +93,9 @@ db.Index(
     RunsTable.c.create_timestamp,
     RunsTable.c.update_timestamp,
     RunsTable.c.status,
-    mysql_length=32,
+    mysql_length={
+        "create_timestamp": 8,
+        "update_timestamp": 8,
+        "status": 32,
+    },
 )

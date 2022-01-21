@@ -29,6 +29,11 @@ def upgrade():
                 "runs",
                 ["create_timestamp", "update_timestamp", "status"],
                 unique=False,
+                mysql_length={
+                    "create_timestamp": 8,
+                    "update_timestamp": 8,
+                    "status": 32,
+                },
             )
 
 
