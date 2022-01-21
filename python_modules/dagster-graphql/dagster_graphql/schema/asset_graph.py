@@ -130,7 +130,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             for dep in self._external_asset_node.dependencies
         ]
 
-    def resolve_dependencyByKeys(self, _graphene_info):
+    def resolve_dependedByKeys(self, _graphene_info):
         return [
             GrapheneAssetKey(path=dep.downstream_asset_key.path)
             for dep in self._external_asset_node.depended_by

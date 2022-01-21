@@ -1,5 +1,7 @@
-import {Box, ColorsWIP} from '@dagster-io/ui';
+import {Box, ColorsWIP, IconWIP} from '@dagster-io/ui';
 import React from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../../app/Util';
 import {AssetMaterializations} from '../../assets/AssetMaterializations';
@@ -24,14 +26,18 @@ export const SidebarAssetInfo: React.FC<{
 
   return (
     <>
-      <SidebarSection title="Definition">
+      <Box flex={{gap: 4, direction: 'column'}} margin={{left: 24, right: 12, vertical: 16}}>
+        <SidebarTitle style={{marginBottom: 0}}>
+          {displayNameForAssetKey(node.assetKey)}
+        </SidebarTitle>
+        <AssetCatalogLink to={`/instance/assets/${node.assetKey.path.join('/')}`}>
+          {'View in Asset Catalog '}
+          <IconWIP name="open_in_new" color={ColorsWIP.Link} />
+        </AssetCatalogLink>
+      </Box>
+
+      <SidebarSection title="Description">
         <Box padding={{vertical: 16, horizontal: 24}}>
-          <Box
-            flex={{gap: 8, justifyContent: 'space-between', alignItems: 'baseline'}}
-            margin={{bottom: 8}}
-          >
-            <SidebarTitle>{displayNameForAssetKey(node.assetKey)}</SidebarTitle>
-          </Box>
           <Description description={node.description || null} />
         </Box>
 
@@ -64,3 +70,12 @@ export const SidebarAssetInfo: React.FC<{
     </>
   );
 };
+
+const AssetCatalogLink = styled(Link)`
+  display: flex;
+  gap: 5px;
+  padding: 6px;
+  margin: -6px;
+  align-items: center;
+  white-space: nowrap;
+`;

@@ -100,7 +100,17 @@ const AssetMaterializationRow: React.FC<{
 
   return (
     <>
-      <HoverableRow onClick={() => setFocused?.(group)}>
+      <HoverableRow
+        onClick={(e) => {
+          // If you're interacting with something in the row, don't trigger a focus change.
+          // Since focus is stored in the URL bar this overwrites any link click navigation.
+          // We could alternatively e.preventDefault() on every link but it's easy to forget.
+          if (e.target instanceof HTMLAnchorElement) {
+            return;
+          }
+          setFocused?.(group);
+        }}
+      >
         {hasPartitions && (
           <td style={{whiteSpace: 'nowrap', ...focusCss}}>
             <Group direction="row" spacing={2}>

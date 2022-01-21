@@ -167,10 +167,12 @@ const AssetGraphExplorerWithData: React.FC<
   const findAssetInWorkspace = useFindAssetInWorkspace();
 
   const selectedDefinitions = selectedHandles.map((h) => h.solid.definition);
-  const selectedGraphNodes = selectedDefinitions.map(
-    (def) => Object.values(graphData.nodes).find((node) => node.definition.opName === def.name)!,
-  );
-  const focusedGraphNode = selectedGraphNodes[selectedGraphNodes.length - 1];
+  const selectedGraphNodes = selectedDefinitions
+    .map(
+      (def) => Object.values(graphData.nodes).find((node) => node.definition.opName === def.name)!,
+    )
+    .filter(Boolean);
+  const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1];
 
   const onSelectNode = React.useCallback(
     async (e: React.MouseEvent<any>, assetKey: {path: string[]}, node: Node | null) => {
@@ -201,8 +203,8 @@ const AssetGraphExplorerWithData: React.FC<
       } else if (e.shiftKey || e.metaKey) {
         const existing = explorerPath.opNames[0].split(',');
         const added =
-          e.shiftKey && focusedGraphNode && node
-            ? opsInRange({graph: graphData, from: focusedGraphNode, to: node})
+          e.shiftKey && lastSelectedNode && node
+            ? opsInRange({graph: graphData, from: lastSelectedNode, to: node})
             : [clicked.opName];
 
         nextOpsNameSelection = (existing.includes(clicked.opName)
@@ -226,7 +228,7 @@ const AssetGraphExplorerWithData: React.FC<
       onChangeExplorerPath,
       findAssetInWorkspace,
       history,
-      focusedGraphNode,
+      lastSelectedNode,
       graphData,
     ],
   );
@@ -302,10 +304,9 @@ const AssetGraphExplorerWithData: React.FC<
                             handles.find((h) => h.handleID === graphNode.definition.opName)!.solid
                               .definition.metadata
                           }
-                          selected={focusedGraphNode === graphNode}
+                          selected={selectedGraphNodes.includes(graphNode)}
                           jobName={explorerPath.pipelineName}
                           repoAddress={repoAddress}
-                          secondaryHighlight={selectedGraphNodes.includes(graphNode)}
                         />
                       )}
                     </foreignObject>
@@ -412,6 +413,9 @@ const ASSETS_GRAPH_QUERY = gql`
           id
           ...AssetNodeFragment
           dependencyKeys {
+            path
+          }
+          dependedByKeys {
             path
           }
         }
