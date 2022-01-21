@@ -162,6 +162,7 @@ from dagster.core.execution.api import (
     reexecute_pipeline,
     reexecute_pipeline_iterator,
 )
+from dagster.core.execution.build_resources import build_resources
 from dagster.core.execution.context.compute import OpExecutionContext, SolidExecutionContext
 from dagster.core.execution.context.hook import HookContext, build_hook_context
 from dagster.core.execution.context.init import InitResourceContext, build_init_resource_context

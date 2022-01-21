@@ -67,6 +67,19 @@ def build_resources(
             teardown, this must be provided, or initialization will fail.
         log_manager (Optional[DagsterLogManager]): Log Manager to use during resource
             initialization. Defaults to system log manager.
+
+    Examples:
+        .. code-block:: python
+            from dagster import resource, build_resources
+
+            @resource
+            def the_resource():
+                return "foo"
+
+            with build_resources(resources={"from_def": the_resource, "from_val": "foo"}) as resources:
+                assert resources.from_def == "foo"
+                assert resources.from_val == "foo"
+
     """
 
     resources = check.dict_param(resources, "resource_defs", key_type=str)
