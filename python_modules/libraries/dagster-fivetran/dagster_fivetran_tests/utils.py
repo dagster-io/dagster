@@ -39,7 +39,30 @@ def get_sample_connector_response(**kwargs):
     )
 
 
-def get_sample_connector_schema_config():
+def get_sample_connector_schema_config(tables):
+    schemas = {schema_name for schema_name, table_name in tables}
+
+    return {
+        "code": "Success",
+        "data": {
+            "enable_new_by_default": False,
+            "schemas": {
+                schema: {
+                    "name_in_destination": schema,
+                    "enabled": True,
+                    "tables": {
+                        t: {"name_in_destination": t, "enabled": True}
+                        for s, t in tables
+                        if s == schema
+                    },
+                }
+                for schema in schemas
+            },
+        },
+    }
+
+
+def get_complex_sample_connector_schema_config():
 
     return {
         "code": "Success",

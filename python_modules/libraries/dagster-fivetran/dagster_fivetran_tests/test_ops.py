@@ -5,8 +5,8 @@ from dagster_fivetran.resources import FIVETRAN_API_BASE, FIVETRAN_CONNECTOR_PAT
 
 from .utils import (
     DEFAULT_CONNECTOR_ID,
+    get_complex_sample_connector_schema_config,
     get_sample_connector_response,
-    get_sample_connector_schema_config,
     get_sample_sync_response,
     get_sample_update_response,
 )
@@ -43,7 +43,9 @@ def test_fivetran_sync_op():
         rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())
         rsps.add(rsps.POST, f"{api_prefix}/force", json=get_sample_sync_response())
         # connector schema
-        rsps.add(rsps.GET, f"{api_prefix}/schemas", json=get_sample_connector_schema_config())
+        rsps.add(
+            rsps.GET, f"{api_prefix}/schemas", json=get_complex_sample_connector_schema_config()
+        )
         # initial state
         rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
         # n polls before updating
@@ -55,7 +57,7 @@ def test_fivetran_sync_op():
         result = fivetran_sync_job.execute_in_process()
         assert result.output_for_node("fivetran_sync_op") == FivetranOutput(
             connector_details=get_sample_connector_response(data=final_data)["data"],
-            schema_config=get_sample_connector_schema_config()["data"],
+            schema_config=get_complex_sample_connector_schema_config()["data"],
         )
         asset_materializations = [
             event
