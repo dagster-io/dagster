@@ -37,9 +37,9 @@ export const AssetNode: React.FC<{
   selected: boolean;
   jobName: string;
   repoAddress: RepoAddress;
-  secondaryHighlight: boolean;
+  inAssetCatalog?: boolean;
 }> = React.memo(
-  ({definition, metadata, selected, liveData, repoAddress, jobName, secondaryHighlight}) => {
+  ({definition, metadata, selected, liveData, repoAddress, jobName, inAssetCatalog}) => {
     const launch = useLaunchSingleAssetJob();
     const history = useHistory();
 
@@ -65,22 +65,26 @@ export const AssetNode: React.FC<{
                 </span>
               }
             />
-            <MenuItemWIP
-              icon="link"
-              onClick={(e) => {
-                e.stopPropagation();
-                history.push(`/instance/assets/${definition.assetKey.path.join('/')}`);
-              }}
-              text="View in Asset Catalog"
-            />
+            {!inAssetCatalog && (
+              <MenuItemWIP
+                icon="link"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  history.push(`/instance/assets/${definition.assetKey.path.join('/')}`);
+                }}
+                text="View in Asset Catalog"
+              />
+            )}
           </MenuWIP>
         }
       >
-        <AssetNodeContainer $selected={selected} $secondaryHighlight={secondaryHighlight}>
+        <AssetNodeContainer $selected={selected}>
           <AssetNodeBox>
             <Name>
-              <IconWIP name="asset" />
-              <div style={{overflow: 'hidden', textOverflow: 'ellipsis'}}>
+              <span style={{marginTop: 1}}>
+                <IconWIP name="asset" />
+              </span>
+              <div style={{overflow: 'hidden', textOverflow: 'ellipsis', marginTop: -1}}>
                 {displayNameForAssetKey(definition.assetKey)}
               </div>
               <div style={{flex: 1}} />
@@ -102,7 +106,7 @@ export const AssetNode: React.FC<{
                 </UpstreamNotice>
               )}
             </Name>
-            {definition.description && (
+            {definition.description && !inAssetCatalog && (
               <Description>
                 {markdownToPlaintext(definition.description).split('\n')[0]}
               </Description>
@@ -220,7 +224,6 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
           runId
           status
           pipelineName
-          mode
         }
       }
     }
@@ -254,7 +257,7 @@ export const getNodeDimensions = (def: {
 };
 
 const RunLinkTooltipStyle = JSON.stringify({
-  background: '#E1EAF0',
+  background: 'rgba(236,236,248,1)',
   padding: '4px 8px',
   marginLeft: -10,
   marginTop: -8,
@@ -264,13 +267,8 @@ const RunLinkTooltipStyle = JSON.stringify({
   borderRadius: 4,
 } as CSSProperties);
 
-const AssetNodeContainer = styled.div<{$selected: boolean; $secondaryHighlight: boolean}>`
-  outline: ${(p) =>
-    p.$selected
-      ? `2px dashed rgba(255, 69, 0, 1)`
-      : p.$secondaryHighlight
-      ? `2px dashed rgba(255, 69, 0, 0.5)`
-      : 'none'};
+const AssetNodeContainer = styled.div<{$selected: boolean}>`
+  outline: ${(p) => (p.$selected ? `2px dashed rgba(255, 69, 0, 1)` : 'none')};
   border-radius: 6px;
   outline-offset: -1px;
   padding: 4px;
@@ -278,7 +276,6 @@ const AssetNodeContainer = styled.div<{$selected: boolean; $secondaryHighlight: 
   margin-right: 4px;
   margin-left: 4px;
   margin-bottom: 2px;
-  position: absolute;
   background: ${(p) => (p.$selected ? 'rgba(255, 69, 0, 0.2)' : 'white')};
   inset: 0;
 `;
@@ -288,12 +285,15 @@ const AssetNodeBox = styled.div`
   background: ${ColorsWIP.White};
   border-radius: 5px;
   position: relative;
+  &:hover {
+    box-shadow: ${ColorsWIP.Blue200} inset 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
+  }
 `;
 
 const Name = styled.div`
   display: flex;
   padding: 4px 6px;
-  align-items: center;
+  background: ${ColorsWIP.White};
   font-family: ${FontFamily.monospace};
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
