@@ -104,7 +104,7 @@ class ReconstructablePipeline(
             ("repository", ReconstructableRepository),
             ("pipeline_name", str),
             ("solid_selection_str", Optional[str]),
-            ("solids_to_execute", FrozenSet[str]),
+            ("solids_to_execute", Optional[FrozenSet[str]]),
         ],
     ),
     IPipeline,
@@ -119,7 +119,7 @@ class ReconstructablePipeline(
         solid_selection_str (Optional[str]): The string value of a comma separated list of user-input
             solid/op selection. None if no selection is specified, i.e. the entire pipeline/job will
             be run.
-        solids_to_execute (FrozenSet[str]): A set of solid/op names to execute. None if no selection
+        solids_to_execute (Optional[FrozenSet[str]]): A set of solid/op names to execute. None if no selection
             is specified, i.e. the entire pipeline/job will be run.
     """
 
@@ -130,14 +130,13 @@ class ReconstructablePipeline(
         solid_selection_str=None,
         solids_to_execute=None,
     ):
+        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         return super(ReconstructablePipeline, cls).__new__(
             cls,
             repository=check.inst_param(repository, "repository", ReconstructableRepository),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             solid_selection_str=check.opt_str_param(solid_selection_str, "solid_selection_str"),
-            solids_to_execute=frozenset(
-                check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
-            ),
+            solids_to_execute=solids_to_execute,
         )
 
     @property
@@ -167,11 +166,11 @@ class ReconstructablePipeline(
 
     def _subset_for_execution(
         self,
-        solids_to_execute: Optional[FrozenSet[str]],
+        solids_to_execute: Optional[Optional[FrozenSet[str]]],
         solid_selection: Optional[List[str]],
     ) -> "ReconstructablePipeline":
         # no selection
-        if not solid_selection and not solids_to_execute:
+        if solid_selection is None and solids_to_execute is None:
             return ReconstructablePipeline(
                 repository=self.repository,
                 pipeline_name=self.pipeline_name,
@@ -184,7 +183,7 @@ class ReconstructablePipeline(
             # when subselecting a job
             # * job subselection depend on solid_selection rather than solids_to_execute
             # * we'll resolve the op selection later in the stack
-            if not solid_selection:
+            if solid_selection is None:
                 # when the pre-resolution info is unavailable (e.g. subset from existing run),
                 # we need to fill the solid_selection in order to pass the value down to deeper stack.
                 solid_selection = list(solids_to_execute) if solids_to_execute else None
@@ -199,14 +198,14 @@ class ReconstructablePipeline(
             # * pipeline subselection depend on solids_to_excute rather than solid_selection
             # * we resolve a list of solid selection queries to a frozenset of qualified solid names
             #   e.g. ['foo_solid+'] to {'foo_solid', 'bar_solid'}
-            if solid_selection and not solids_to_execute:
+            if solid_selection and solids_to_execute is None:
                 # when post-resolution query is unavailable, resolve the query
                 solids_to_execute = parse_solid_selection(pipeline_def, solid_selection)
             return ReconstructablePipeline(
                 repository=self.repository,
                 pipeline_name=self.pipeline_name,
                 solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
-                solids_to_execute=solids_to_execute,
+                solids_to_execute=frozenset(solids_to_execute) if solids_to_execute else None,
             )
 
     def subset_for_execution(
@@ -218,7 +217,7 @@ class ReconstructablePipeline(
         return self._subset_for_execution(solids_to_execute=None, solid_selection=solid_selection)
 
     def subset_for_execution_from_existing_pipeline(
-        self, solids_to_execute: FrozenSet[str]
+        self, solids_to_execute: Optional[FrozenSet[str]]
     ) -> "ReconstructablePipeline":
         # take a frozenset of resolved solid names from an existing pipeline
         # so there's no need to parse the selection
