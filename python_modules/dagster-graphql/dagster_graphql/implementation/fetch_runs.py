@@ -178,7 +178,7 @@ def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
 
     instance = graphene_info.context.instance
     run_groups = instance.get_run_groups(filters=filters, cursor=cursor, limit=limit)
-    run_ids = {run.run_id for runs in run_groups.values() for run in runs}
+    run_ids = {run.run_id for run_group in run_groups.values() for run in run_group.get("runs", [])}
     records_by_ids = {
         record.pipeline_run.run_id: record
         for record in instance.get_run_records(PipelineRunsFilter(run_ids=list(run_ids)))

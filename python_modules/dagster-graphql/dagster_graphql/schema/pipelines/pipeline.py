@@ -5,11 +5,7 @@ from dagster.core.events import AssetKey, StepMaterializationData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
-from dagster.core.storage.pipeline_run import (
-    PipelineRunStatus,
-    PipelineRunsFilter,
-    RunRecord,
-)
+from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter, RunRecord
 from dagster.core.storage.tags import TagType, get_tag_type
 from dagster.utils import datetime_as_float
 
