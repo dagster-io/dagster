@@ -1376,7 +1376,9 @@ partition_materialization_job = build_assets_job(
 
 @asset
 def asset_yields_observation():
-    yield AssetObservation(asset_key=AssetKey("asset_yields_observation"), metadata={"text": "FOO"})
+    yield AssetObservation(
+        asset_key=AssetKey("asset_yields_observation"), metadata={"text": "FOO"}, description="BAR"
+    )
     yield AssetMaterialization(asset_key=AssetKey("asset_yields_observation"))
     yield Output(5)
 

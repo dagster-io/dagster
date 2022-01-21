@@ -12,12 +12,8 @@ from ..implementation.events import construct_basic_params
 from . import external
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
-from .logs.events import GrapheneObservationEvent
-from .pipelines.pipeline import (
-    GrapheneAssetMaterialization,
-    GrapheneMaterializationCount,
-    GraphenePipeline,
-)
+from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
+from .pipelines.pipeline import GrapheneMaterializationCount, GraphenePipeline
 from .util import non_null_list
 
 
@@ -54,7 +50,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     dependencyKeys = non_null_list(GrapheneAssetKey)
     dependedByKeys = non_null_list(GrapheneAssetKey)
     assetMaterializations = graphene.Field(
-        non_null_list(GrapheneAssetMaterialization),
+        non_null_list(GrapheneMaterializationEvent),
         partitions=graphene.List(graphene.String),
         beforeTimestampMillis=graphene.String(),
         limit=graphene.Int(),
@@ -62,11 +58,16 @@ class GrapheneAssetNode(graphene.ObjectType):
     partitionKeys = non_null_list(graphene.String)
     partitionDefinition = graphene.String()
     latestMaterializationByPartition = graphene.Field(
-        graphene.NonNull(graphene.List(GrapheneAssetMaterialization)),
+        graphene.NonNull(graphene.List(GrapheneMaterializationEvent)),
         partitions=graphene.List(graphene.String),
     )
     materializationCountByPartition = non_null_list(GrapheneMaterializationCount)
-    assetObservations = non_null_list(GrapheneObservationEvent)
+    assetObservations = graphene.Field(
+        non_null_list(GrapheneObservationEvent),
+        partitions=graphene.List(graphene.String),
+        beforeTimestampMillis=graphene.String(),
+        limit=graphene.Int(),
+    )
 
     class Meta:
         name = "AssetNode"
@@ -155,13 +156,17 @@ class GrapheneAssetNode(graphene.ObjectType):
         partitions = kwargs.get("partitions")
         if self._fetched_materialization and limit == 1 and not partitions and not before_timestamp:
             return (
-                [GrapheneAssetMaterialization(event=self._latest_materialization)]
+                [
+                    GrapheneMaterializationEvent(
+                        event=self._latest_materialization,
+                    )
+                ]
                 if self._latest_materialization
                 else []
             )
 
         return [
-            GrapheneAssetMaterialization(event=event)
+            GrapheneMaterializationEvent(event=event)
             for event in get_asset_materializations(
                 graphene_info,
                 self._external_asset_node.asset_key,
@@ -231,7 +236,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
         return [
-            GrapheneAssetMaterialization(event=event) if event else None
+            GrapheneMaterializationEvent(event=event) if event else None
             for event in ordered_materializations
         ]
 
@@ -261,7 +266,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             before_timestamp = None
 
         return [
-            GrapheneObservationEvent(event=event, **construct_basic_params(event))
+            GrapheneObservationEvent(event=event)
             for event in get_asset_observations(
                 graphene_info,
                 self._external_asset_node.asset_key,

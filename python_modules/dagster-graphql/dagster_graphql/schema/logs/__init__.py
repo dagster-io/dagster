@@ -30,7 +30,6 @@ def types():
         GrapheneHookSkippedEvent,
         GrapheneLoadedInputEvent,
         GrapheneLogMessageEvent,
-        GrapheneMaterialization,
         GrapheneMessageEvent,
         GrapheneMissingRunIdErrorEvent,
         GrapheneObjectStoreOperationEvent,
@@ -50,7 +49,7 @@ def types():
         GrapheneRunSuccessEvent,
         GrapheneStepEvent,
         GrapheneStepExpectationResultEvent,
-        GrapheneStepMaterializationEvent,
+        GrapheneMaterializationEvent,
         GrapheneTypeCheck,
     )
     from .log_level import GrapheneLogLevel
@@ -88,7 +87,6 @@ def types():
         GrapheneLoadedInputEvent,
         GrapheneLogLevel,
         GrapheneLogMessageEvent,
-        GrapheneMaterialization,
         GrapheneMessageEvent,
         GrapheneMissingRunIdErrorEvent,
         GrapheneObjectStoreOperationEvent,
@@ -109,6 +107,6 @@ def types():
         GrapheneRunSuccessEvent,
         GrapheneStepEvent,
         GrapheneStepExpectationResultEvent,
-        GrapheneStepMaterializationEvent,
+        GrapheneMaterializationEvent,
         GrapheneTypeCheck,
     ]
