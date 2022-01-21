@@ -13,6 +13,7 @@ from dagster import StaticPartitionsDefinition, check
 from dagster.core.asset_defs import ForeignAsset
 from dagster.core.definitions import (
     JobDefinition,
+    OutputDefinition,
     PartitionSetDefinition,
     PartitionsDefinition,
     PipelineDefinition,
@@ -466,7 +467,11 @@ class ExternalAssetDependency(
     that depends on it.
     """
 
-    def __new__(cls, upstream_asset_key: AssetKey, input_name: str, output_name: str = None):
+    def __new__(cls, upstream_asset_key: AssetKey, input_name: str = None, output_name: str = None):
+        check.invariant(
+            (input_name is None) ^ (output_name is None),
+            "Exactly one of `input_name` and `output_name` should be supplied",
+        )
         return super(ExternalAssetDependency, cls).__new__(
             cls,
             upstream_asset_key=upstream_asset_key,
@@ -485,7 +490,13 @@ class ExternalAssetDependedBy(
     asset that it depends on.
     """
 
-    def __new__(cls, downstream_asset_key: AssetKey, input_name: str, output_name: str = None):
+    def __new__(
+        cls, downstream_asset_key: AssetKey, input_name: str = None, output_name: str = None
+    ):
+        check.invariant(
+            (input_name is None) ^ (output_name is None),
+            "Exactly one of `input_name` and `output_name` should be supplied",
+        )
         return super(ExternalAssetDependedBy, cls).__new__(
             cls,
             downstream_asset_key=downstream_asset_key,
@@ -498,7 +509,7 @@ class ExternalAssetDependedBy(
 class ExternalAssetNode(
     namedtuple(
         "_ExternalAssetNode",
-        "asset_key dependencies depended_by op_name op_description job_names partitions_def_data output_description",
+        "asset_key dependencies depended_by op_name op_description job_names partitions_def_data output_name output_description",
     )
 ):
     """A definition of a node in the logical asset graph.
@@ -515,6 +526,7 @@ class ExternalAssetNode(
         op_description: Optional[str] = None,
         job_names: Optional[List[str]] = None,
         partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None,
+        output_name: Optional[str] = None,
         output_description: Optional[str] = None,
     ):
         return super(ExternalAssetNode, cls).__new__(
@@ -526,6 +538,7 @@ class ExternalAssetNode(
             op_description=op_description,
             job_names=job_names,
             partitions_def_data=partitions_def_data,
+            output_name=output_name,
             output_description=output_description,
         )
 
@@ -562,17 +575,17 @@ def external_asset_graph_from_defs(
     pipelines: Sequence[PipelineDefinition], foreign_assets_by_key: Mapping[AssetKey, ForeignAsset]
 ) -> Sequence[ExternalAssetNode]:
     node_defs_by_asset_key: Dict[
-        AssetKey, List[Tuple[NodeDefinition, PipelineDefinition]]
+        AssetKey, List[Tuple[OutputDefinition, NodeDefinition, PipelineDefinition]]
     ] = defaultdict(list)
 
     deps: Dict[AssetKey, Dict[str, ExternalAssetDependency]] = defaultdict(dict)
     dep_by: Dict[AssetKey, List[ExternalAssetDependedBy]] = defaultdict(list)
-    all_upstream_asset_keys = set()
+    all_upstream_asset_keys: Set[AssetKey] = set()
 
     for pipeline in pipelines:
         for node_def in pipeline.all_node_defs:
             node_upstream_asset_keys = set(
-                filter(lambda id: id.hardcoded_asset_key, node_def.input_defs)
+                filter(None, (id.hardcoded_asset_key for id in node_def.input_defs))
             )
             all_upstream_asset_keys.union(node_upstream_asset_keys)
 
@@ -583,7 +596,7 @@ def external_asset_graph_from_defs(
                 if asset_key is None:
                     continue
 
-                node_defs_by_asset_key[asset_key].append((node_def, pipeline))
+                node_defs_by_asset_key[asset_key].append((output_def, node_def, pipeline))
 
                 # if not specified, assume depends on all inputs
                 in_deps = output_def.in_deps
@@ -611,13 +624,11 @@ def external_asset_graph_from_defs(
                         # FIXME: this will break if an input shares a name with an output
                         deps[asset_key][output_name] = ExternalAssetDependency(
                             upstream_asset_key=internal_upstream_asset_key,
-                            input_name=None,
                             output_name=output_name,
                         )
                         dep_by[internal_upstream_asset_key].append(
                             ExternalAssetDependedBy(
                                 downstream_asset_key=asset_key,
-                                input_name=None,
                                 output_name=output_name,
                             )
                         )
@@ -654,15 +665,14 @@ def external_asset_graph_from_defs(
         )
 
     for asset_key, node_tuple_list in node_defs_by_asset_key.items():
-        node_def = node_tuple_list[0][0]
-        job_names = [node_tuple[1].name for node_tuple in node_tuple_list]
+        output_def, node_def, _ = node_tuple_list[0]
+        job_names = [job_def.name for _, _, job_def in node_tuple_list]
 
         # temporary workaround to retrieve asset partition definition from job
-        output = node_def.output_dict.get("result", None)
         partitions_def_data = None
 
-        if output and output._asset_partitions_def:  # pylint: disable=protected-access
-            partitions_def = output._asset_partitions_def  # pylint: disable=protected-access
+        if output_def:
+            partitions_def = output_def._asset_partitions_def  # pylint: disable=protected-access
             if partitions_def:
                 if isinstance(partitions_def, TimeWindowPartitionsDefinition):
                     partitions_def_data = external_time_window_partitions_definition_from_def(
@@ -686,6 +696,8 @@ def external_asset_graph_from_defs(
                 op_description=node_def.description,
                 job_names=job_names,
                 partitions_def_data=partitions_def_data,
+                output_name=output_def.name,
+                output_description=output_def.description,
             )
         )
 
