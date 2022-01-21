@@ -74,19 +74,29 @@ def execute_run_iterator(
         return gen_execute_on_cancel()
 
     if not resume_from_failure:
-        # this should be the first run worker to start
-        check.invariant(
-            pipeline_run.status == PipelineRunStatus.NOT_STARTED
-            or pipeline_run.status == PipelineRunStatus.STARTING,
-            desc="Pipeline run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
-                pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
-            ),
-        )
+        if pipeline_run.status not in (PipelineRunStatus.NOT_STARTED, PipelineRunStatus.STARTING):
+            if instance.run_monitoring_enabled:
+                # This can happen if the pod was unexpectedly restarted by the cluster - ignore it since
+                # the run monitoring daemon will also spin up a new pod
+                def gen_ignore_duplicate_run_worker():
+                    yield instance.report_engine_event(
+                        "Ignoring a duplicate run that was started from somewhere other than the run monitor daemon",
+                        pipeline_run,
+                    )
+
+                return gen_ignore_duplicate_run_worker()
+            else:
+                raise Exception(
+                    f"{pipeline_run.pipeline_name} ({pipeline_run.run_id}) started "
+                    f"a new run while the run was already in state {pipeline_run.status}. "
+                    "This most frequently happens when the run worker unexpectedly stops and is "
+                    "restarted by the cluster.",
+                )
     else:
         check.invariant(
             pipeline_run.status == PipelineRunStatus.STARTED
             or pipeline_run.status == PipelineRunStatus.STARTING,
-            desc="Pipeline run {} ({}) in state {}, expected STARTED or STARTING because it's "
+            desc="Run of {} ({}) in state {}, expected STARTED or STARTING because it's "
             "resuming from a run worker failure".format(
                 pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
             ),
@@ -181,7 +191,7 @@ def execute_run(
     check.invariant(
         pipeline_run.status == PipelineRunStatus.NOT_STARTED
         or pipeline_run.status == PipelineRunStatus.STARTING,
-        desc="Pipeline run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
+        desc="Run {} ({}) in state {}, expected NOT_STARTED or STARTING".format(
             pipeline_run.pipeline_name, pipeline_run.run_id, pipeline_run.status
         ),
     )
