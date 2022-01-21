@@ -18,32 +18,33 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@apollo/client@npm:^3.5.7":
-  version: 3.5.7
-  resolution: "@apollo/client@npm:3.5.7"
+"@apollo/client@npm:3.3.16":
+  version: 3.3.16
+  resolution: "@apollo/client@npm:3.3.16"
   dependencies:
     "@graphql-typed-document-node/core": ^3.0.0
+    "@types/zen-observable": ^0.8.0
     "@wry/context": ^0.6.0
-    "@wry/equality": ^0.5.0
-    "@wry/trie": ^0.3.0
-    graphql-tag: ^2.12.3
+    "@wry/equality": ^0.4.0
+    fast-json-stable-stringify: ^2.0.0
+    graphql-tag: ^2.12.0
     hoist-non-react-statics: ^3.3.2
-    optimism: ^0.16.1
+    optimism: ^0.15.0
     prop-types: ^15.7.2
-    symbol-observable: ^4.0.0
-    ts-invariant: ^0.9.4
-    tslib: ^2.3.0
-    zen-observable-ts: ^1.2.0
+    symbol-observable: ^2.0.0
+    ts-invariant: ^0.7.0
+    tslib: ^1.10.0
+    zen-observable: ^0.8.14
   peerDependencies:
-    graphql: ^14.0.0 || ^15.0.0 || ^16.0.0
+    graphql: ^14.0.0 || ^15.0.0
     react: ^16.8.0 || ^17.0.0
-    subscriptions-transport-ws: ^0.9.0 || ^0.11.0
+    subscriptions-transport-ws: ^0.9.0
   peerDependenciesMeta:
     react:
       optional: true
     subscriptions-transport-ws:
       optional: true
-  checksum: ddecf62b4bf402948892bf993d58933432fc743b6859ef557fcd137e9b9398c081279dce75e037396f9b22fd54bf578cb88819b4b55bd5e2c30428f100c519b6
+  checksum: 550de09063a070bc8771e7e787166fe54c29a046173a3a85eb3d5e43bdce67e873a19773710699968f0e617246396c4443f28b3c581c7fb24ae391c1c030a1bc
   languageName: node
   linkType: hard
 
@@ -5236,7 +5237,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@dagster-io/dagit-app@workspace:packages/app"
   dependencies:
-    "@apollo/client": ^3.5.7
+    "@apollo/client": 3.3.16
     "@blueprintjs/core": ^3.45.0
     "@blueprintjs/icons": ^3.26.1
     "@blueprintjs/popover2": 0.10.1
@@ -5393,7 +5394,7 @@ __metadata:
     worker-loader: ^3.0.8
     yaml: 2.0.0-10
   peerDependencies:
-    "@apollo/client": ^3.5.7
+    "@apollo/client": 3.3.16
     "@blueprintjs/core": ^3.45.0
     "@blueprintjs/icons": ^3.26.1
     "@blueprintjs/popover2": 0.10.1
@@ -9434,6 +9435,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/zen-observable@npm:^0.8.0":
+  version: 0.8.3
+  resolution: "@types/zen-observable@npm:0.8.3"
+  checksum: 08c88354abcf03a2176a2ec32e07da1f25fdad94fbc2f419bea53d77deb04ad4759518b4fe3fc695e61065dd4bdf7c8bd26b5211a6cd5be2233872806bdee48d
+  languageName: node
+  linkType: hard
+
 "@typescript-eslint/eslint-plugin@npm:5.8.0, @typescript-eslint/eslint-plugin@npm:^5.5.0":
   version: 5.8.0
   resolution: "@typescript-eslint/eslint-plugin@npm:5.8.0"
@@ -9990,12 +9998,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@wry/equality@npm:^0.5.0":
-  version: 0.5.2
-  resolution: "@wry/equality@npm:0.5.2"
+"@wry/equality@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "@wry/equality@npm:0.4.0"
   dependencies:
-    tslib: ^2.3.0
-  checksum: 19a01043a0583663924ed9f4ea109818b9b4cb540877ca75ea49545689f54c6bfc69e725a8b3b129a2ac15ea368fd40bbb94c22e7a5e4ec370f7c4697e64b8b1
+    tslib: ^2.1.0
+  checksum: f8e5f47724cd068a0e4e848c59f9980989d89042b9b388b355e095dedf1109d0e83f4eec8a03225c44fafd10fd490e7eff6adc75b2ccfb78e84b15a6766838e1
   languageName: node
   linkType: hard
 
@@ -17303,7 +17311,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"graphql-tag@npm:^2.12.3":
+"graphql-tag@npm:^2.12.0":
   version: 2.12.6
   resolution: "graphql-tag@npm:2.12.6"
   dependencies:
@@ -22622,13 +22630,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"optimism@npm:^0.16.1":
-  version: 0.16.1
-  resolution: "optimism@npm:0.16.1"
+"optimism@npm:^0.15.0":
+  version: 0.15.0
+  resolution: "optimism@npm:0.15.0"
   dependencies:
     "@wry/context": ^0.6.0
     "@wry/trie": ^0.3.0
-  checksum: 7506a3e5e37b8945059ffacd68039e920ad121aab3eeff27483b7a8b594f6f694f2a3b61a198aeecc43b81753d35c8cb32b7f662d2b5e2d2449fe7068da678e1
+  checksum: f1b00ef6b5c50eeb3928d0d1cfc8d23f89ea2021fc77c7bb40f614afe4803a5ea570713bebc6f06d1bde4ca0e8eb62dc3534b5a6670b221cbbbc4fc8a2ae1271
   languageName: node
   linkType: hard
 
@@ -27583,10 +27591,10 @@ resolve@^2.0.0-next.3:
   languageName: node
   linkType: hard
 
-"symbol-observable@npm:^4.0.0":
-  version: 4.0.0
-  resolution: "symbol-observable@npm:4.0.0"
-  checksum: 212c7edce6186634d671336a88c0e0bbd626c2ab51ed57498dc90698cce541839a261b969c2a1e8dd43762133d47672e8b62e0b1ce9cf4157934ba45fd172ba8
+"symbol-observable@npm:^2.0.0":
+  version: 2.0.3
+  resolution: "symbol-observable@npm:2.0.3"
+  checksum: 533dcf7a7925bada60dbaa06d678e7c4966dbf0959ccba7f60c22b0494ba5d9160d6a66f2951d45a80bf20e655a89f8b91c5f0458dd12faef28716b54f91f49c
   languageName: node
   linkType: hard
 
@@ -28139,12 +28147,12 @@ resolve@^2.0.0-next.3:
   languageName: node
   linkType: hard
 
-"ts-invariant@npm:^0.9.4":
-  version: 0.9.4
-  resolution: "ts-invariant@npm:0.9.4"
+"ts-invariant@npm:^0.7.0":
+  version: 0.7.5
+  resolution: "ts-invariant@npm:0.7.5"
   dependencies:
     tslib: ^2.1.0
-  checksum: c9e5726361fa266916966b2070605f8664b6dd1d8b0ef7565dbf056abb6a87be26195985ef62dd97aeb0894cf2f4ad5b7f0d89dadadc197eaa38e99222afa29c
+  checksum: 596b78152de009ddb1f3c689c3cbf8b3a48900038fccf9915c0dc91901378a69f3134cc80a63705ef24ddb40692d82077577634623716672cc336d22f361a280
   languageName: node
   linkType: hard
 
@@ -30261,16 +30269,7 @@ typescript@~3.9.7:
   languageName: node
   linkType: hard
 
-"zen-observable-ts@npm:^1.2.0":
-  version: 1.2.3
-  resolution: "zen-observable-ts@npm:1.2.3"
-  dependencies:
-    zen-observable: 0.8.15
-  checksum: 0548b555c67671f1240fb416755d2c27abf095b74a9e25c1abf23b2e15de40e6b076c678a162021358fe62914864eb9f0a57cd65e203d66c4988a08b220e6172
-  languageName: node
-  linkType: hard
-
-"zen-observable@npm:0.8.15, zen-observable@npm:^0.8.0":
+"zen-observable@npm:^0.8.0, zen-observable@npm:^0.8.14":
   version: 0.8.15
   resolution: "zen-observable@npm:0.8.15"
   checksum: b7289084bc1fc74a559b7259faa23d3214b14b538a8843d2b001a35e27147833f4107590b1b44bf5bc7f6dfe6f488660d3a3725f268e09b3925b3476153b7821
