@@ -167,9 +167,11 @@ const AssetGraphExplorerWithData: React.FC<
   const findAssetInWorkspace = useFindAssetInWorkspace();
 
   const selectedDefinitions = selectedHandles.map((h) => h.solid.definition);
-  const selectedGraphNodes = selectedDefinitions.map(
-    (def) => Object.values(graphData.nodes).find((node) => node.definition.opName === def.name)!,
-  );
+  const selectedGraphNodes = selectedDefinitions
+    .map(
+      (def) => Object.values(graphData.nodes).find((node) => node.definition.opName === def.name)!,
+    )
+    .filter(Boolean);
   const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1];
 
   const onSelectNode = React.useCallback(
