@@ -112,28 +112,22 @@ export const AssetNode: React.FC<{
                 {runOrError?.__typename === 'Run' && (
                   <StatsRow>
                     <Link
-                      data-tooltip={`${runOrError.pipelineName}${
-                        runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''
-                      }`}
+                      data-tooltip={runOrError.pipelineName}
                       data-tooltip-style={RunLinkTooltipStyle}
                       style={{overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 8}}
+                      target={inAssetCatalog ? '_blank' : undefined}
+                      onClick={(e) => e.stopPropagation()}
                       to={
                         repoAddress.name
                           ? workspacePath(
                               repoAddress.name,
                               repoAddress.location,
-                              `jobs/${runOrError.pipelineName}:${runOrError.mode}`,
+                              `jobs/${runOrError.pipelineName}`,
                             )
-                          : workspacePipelinePathGuessRepo(
-                              `${runOrError.pipelineName}:${runOrError.mode}`,
-                              true,
-                              '',
-                            )
+                          : workspacePipelinePathGuessRepo(runOrError.pipelineName, true, '')
                       }
                     >
-                      {`${runOrError.pipelineName}${
-                        runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''
-                      }`}
+                      {runOrError.pipelineName}
                     </Link>
                     <Link
                       style={{fontFamily: FontFamily.monospace, fontSize: 14}}
