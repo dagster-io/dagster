@@ -64,7 +64,12 @@ async def _coerce_async_solid_to_async_gen(awaitable, context, output_defs):
 def _coerce_solid_compute_fn_to_iterator(fn, output_defs, context, context_arg_provided, kwargs):
     result = fn(context, **kwargs) if context_arg_provided else fn(**kwargs)
     for event in _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
+        if context.has_events():
+            yield from context.retrieve_events()
         yield event
+
+    if context.has_events():
+        yield from context.retrieve_events()
 
 
 def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):

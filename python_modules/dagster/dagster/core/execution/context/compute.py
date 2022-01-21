@@ -1,13 +1,20 @@
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Any, Optional
+from typing import Any, Iterator, List, Optional
 
 from dagster import check
 from dagster.core.definitions.dependency import Node, NodeHandle
+from dagster.core.definitions.events import (
+    AssetMaterialization,
+    AssetObservation,
+    ExpectationResult,
+    Materialization,
+)
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import DagsterInvalidPropertyError
+from dagster.core.events import DagsterEvent
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -90,6 +97,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
             StepExecutionContext,
         )
         self._pdb: Optional[ForkedPdb] = None
+        self._events: List[DagsterEvent] = []
 
     @property
     def solid_config(self) -> Any:
@@ -236,6 +244,27 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
             Optional[str]: The value of the tag, if present.
         """
         return self._step_execution_context.get_tag(key)
+
+    def has_events(self) -> bool:
+        return bool(self._events)
+
+    def retrieve_events(self) -> Iterator[DagsterEvent]:
+        while self._events:
+            yield self._events.pop()
+
+    def log_event(self, event) -> None:
+        if isinstance(event, (AssetMaterialization, Materialization)):
+            self._events.append(
+                DagsterEvent.asset_materialization(self._step_execution_context, event)
+            )
+        elif isinstance(event, AssetObservation):
+            self._events.append(DagsterEvent.asset_observation(self._step_execution_context, event))
+        elif isinstance(event, ExpectationResult):
+            self._events.append(
+                DagsterEvent.step_expectation_result(self._step_execution_context, event)
+            )
+        else:
+            check.failed("Unexpected event {event}".format(event=event))
 
     def get_step_execution_context(self) -> StepExecutionContext:
         """Allows advanced users (e.g. framework authors) to punch through to the underlying

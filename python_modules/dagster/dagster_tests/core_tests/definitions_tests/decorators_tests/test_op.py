@@ -2,6 +2,7 @@ from typing import Dict, Generator, Tuple
 
 import pytest
 from dagster import (
+    AssetMaterialization,
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
     DagsterType,
@@ -487,3 +488,13 @@ def test_error_message_mixed_ops_and_solids():
         "{'config': {'foo': '...'}}}}}",
     ):
         nested_job.execute_in_process()
+
+
+def test_log_materialization():
+    @op
+    def basic_op(context):
+        context.log_event(AssetMaterialization("first"))
+
+    result = execute_op_in_graph(basic_op)
+    asset_materialization = result.asset_materializations_for_node("basic_op")[0]
+    assert asset_materialization.label == "first"

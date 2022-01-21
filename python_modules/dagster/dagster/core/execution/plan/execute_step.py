@@ -325,8 +325,9 @@ def core_dagster_event_sequence_for_step(
         for user_event in check.generator(
             _step_output_error_checked_user_event_sequence(step_context, user_event_sequence)
         ):
-
-            if isinstance(user_event, (Output, DynamicOutput)):
+            if isinstance(user_event, DagsterEvent):
+                yield user_event
+            elif isinstance(user_event, (Output, DynamicOutput)):
                 for evt in _type_check_and_store_output(step_context, user_event, input_lineage):
                     yield evt
             # for now, I'm ignoring AssetMaterializations yielded manually, but we might want
