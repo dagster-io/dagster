@@ -481,7 +481,7 @@ def test_nested_graph_selection_input_mapping():
 def test_sub_sub_graph_selection():
     @graph
     def subsubgraph():
-        return return_one()
+        return add_one(return_one())
 
     @graph
     def _subgraph():
@@ -494,10 +494,11 @@ def test_sub_sub_graph_selection():
     result_full = _super.execute_in_process()
     assert set(_success_step_keys(result_full)) == {
         "_subgraph.subsubgraph.return_one",
+        "_subgraph.subsubgraph.add_one",
         "_subgraph.add_one",
         "add_one",
     }
-    assert result_full.output_for_node("add_one") == 3
+    assert result_full.output_for_node("add_one") == 4
 
     # select sub sub
     result_sub_1 = _super.execute_in_process(op_selection=["_subgraph.subsubgraph.return_one"])
@@ -510,9 +511,10 @@ def test_sub_sub_graph_selection():
     result_sub_2 = _super.execute_in_process(op_selection=["_subgraph"])
     assert set(_success_step_keys(result_sub_2)) == {
         "_subgraph.subsubgraph.return_one",
+        "_subgraph.subsubgraph.add_one",
         "_subgraph.add_one",
     }
-    assert result_sub_2.output_for_node("_subgraph") == 2
+    assert result_sub_2.output_for_node("_subgraph") == 3
 
     # select sub with unsatisfied input
     result_sub_3 = _super.execute_in_process(
@@ -523,6 +525,22 @@ def test_sub_sub_graph_selection():
         "_subgraph.add_one",
     }
     assert result_sub_3.output_for_node("_subgraph.add_one") == 101
+
+    # select sub sub with unsatisfied input
+    result_sub_4 = _super.execute_in_process(
+        op_selection=["_subgraph.subsubgraph.add_one"],
+        run_config={
+            "ops": {
+                "_subgraph": {
+                    "ops": {"subsubgraph": {"ops": {"add_one": {"inputs": {"num": 200}}}}}
+                }
+            }
+        },
+    )
+    assert set(_success_step_keys(result_sub_4)) == {
+        "_subgraph.subsubgraph.add_one",
+    }
+    assert result_sub_4.output_for_node("_subgraph.subsubgraph.add_one") == 201
 
 
 def test_nested_op_selection_fan_in():
@@ -592,11 +610,34 @@ def test_nested_op_selection_with_config_mapping():
     assert result_sub_1.success
     assert result_sub_1.output_for_node("my_nested_graph.concat") == "hellohello"
 
-    # TODO config mapping - ignore unselected nodes
-    # result_sub_2 = my_graph.to_job().execute_in_process(
-    #     op_selection=["my_nested_graph.my_op"],
-    #     # fail bc "Received unexpected config entry "concat" at the root"
-    #     run_config={"ops": {"config": "hello"}},
-    # )
-    # assert result_sub_2.success
-    # assert result_sub_2.output_for_node("my_nested_graph.my_op") == "hello"
+    # when config mapping generates values for unselected nodes, the excess values are ignored
+    result_sub_2 = my_graph.to_job().execute_in_process(
+        op_selection=["my_nested_graph.my_op"],
+        run_config={"ops": {"config": "hello"}},
+    )
+    assert result_sub_2.success
+    assert result_sub_2.output_for_node("my_nested_graph.my_op") == "hello"
+
+    # sub sub graph
+    @graph
+    def my_super_graph():
+        my_graph()
+
+    my_subselected_super_job = my_super_graph.to_job(
+        op_selection=["my_graph.my_nested_graph.my_op"]
+    )
+    result_sub_3_1 = my_subselected_super_job.execute_in_process(
+        run_config={"ops": {"my_graph": {"config": "hello"}}},
+    )
+    assert result_sub_3_1.success
+    assert set(_success_step_keys(result_sub_3_1)) == {"my_graph.my_nested_graph.my_op"}
+    assert result_sub_3_1.output_for_node("my_graph.my_nested_graph.my_op") == "hello"
+
+    # execute a subselected job with op_selection
+    result_sub_3_2 = my_subselected_super_job.execute_in_process(
+        op_selection=["*"],
+        run_config={"ops": {"my_graph": {"config": "hello"}}},
+    )
+    assert result_sub_3_2.success
+    assert set(_success_step_keys(result_sub_3_2)) == {"my_graph.my_nested_graph.my_op"}
+    assert result_sub_3_2.output_for_node("my_graph.my_nested_graph.my_op") == "hello"
