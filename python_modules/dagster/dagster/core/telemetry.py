@@ -18,9 +18,9 @@ import os
 import platform
 import sys
 import uuid
-from collections import namedtuple
 from functools import wraps
 from logging.handlers import RotatingFileHandler
+from typing import Dict, NamedTuple, Optional
 
 import click
 import yaml
@@ -128,10 +128,27 @@ def get_python_version():
 
 
 class TelemetryEntry(
-    namedtuple(
-        "TelemetryEntry",
-        "action client_time elapsed_time event_id instance_id pipeline_name_hash "
-        "num_pipelines_in_repo num_schedules_in_repo num_sensors_in_repo repo_hash python_version metadata version dagster_version os_desc os_platform run_storage_id",
+    NamedTuple(
+        "_TelemetryEntry",
+        [
+            ("action", str),
+            ("client_time", str),
+            ("event_id", str),
+            ("elapsed_time", str),
+            ("instance_id", str),
+            ("metadata", Dict[str, str]),
+            ("pipeline_name_hash", str),
+            ("num_pipelines_in_repo", str),
+            ("num_schedules_in_repo", str),
+            ("num_sensors_in_repo", str),
+            ("repo_hash", str),
+            ("python_version", str),
+            ("version", str),
+            ("dagster_version", str),
+            ("os_desc", str),
+            ("os_platform", str),
+            ("run_storage_id", str),
+        ],
     )
 ):
     """
@@ -164,18 +181,18 @@ class TelemetryEntry(
 
     def __new__(
         cls,
-        action,
-        client_time,
-        event_id,
-        instance_id,
-        elapsed_time=None,
-        pipeline_name_hash=None,
-        num_pipelines_in_repo=None,
-        num_schedules_in_repo=None,
-        num_sensors_in_repo=None,
-        repo_hash=None,
-        metadata=None,
-        run_storage_id=None,
+        action: str,
+        client_time: str,
+        event_id: str,
+        instance_id: str,
+        elapsed_time: Optional[str] = None,
+        pipeline_name_hash: Optional[str] = None,
+        num_pipelines_in_repo: Optional[str] = None,
+        num_schedules_in_repo: Optional[str] = None,
+        num_sensors_in_repo: Optional[str] = None,
+        repo_hash: Optional[str] = None,
+        metadata: Optional[str] = None,
+        run_storage_id: Optional[str] = None,
     ):
         action = check.str_param(action, "action")
         client_time = check.str_param(client_time, "action")
