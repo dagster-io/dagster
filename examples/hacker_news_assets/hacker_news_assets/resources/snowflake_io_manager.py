@@ -14,6 +14,7 @@ from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import
 from sqlalchemy import create_engine
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+DB_SCHEMA = "hackernews"
 
 
 def spark_field_to_snowflake_type(spark_field: StructField):
@@ -87,7 +88,12 @@ class SnowflakeIOManager(IOManager):
             )
 
         yield EventMetadataEntry.text(
-            self._get_select_statement(table, schema, context.metadata.get("columns"), time_window),
+            self._get_select_statement(
+                table,
+                schema,
+                None,
+                time_window,
+            ),
             "Query",
         )
 
@@ -135,16 +141,15 @@ class SnowflakeIOManager(IOManager):
             return f"DELETE FROM {schema}.{table}"
 
     def load_input(self, context: InputContext) -> PandasDataFrame:
-        metadata = context.upstream_output.metadata
         asset_key = context.upstream_output.asset_key
 
-        schema, table = "hackernews", asset_key.path[-1]
+        schema, table = DB_SCHEMA, asset_key.path[-1]
         with connect_snowflake(config=self._config) as con:
             result = read_sql(
                 sql=self._get_select_statement(
                     table,
                     schema,
-                    metadata.get("columns"),
+                    (context.metadata or {}).get("columns"),
                     context.asset_partitions_time_window if context.has_asset_partitions else None,
                 ),
                 con=con,
