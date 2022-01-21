@@ -257,15 +257,20 @@ export const buildLiveData = (
 ) => {
   const data: LiveData = {};
 
-  for (const node of nodes) {
-    const lastMaterialization = node.assetMaterializations[0] || null;
+  for (const liveNode of nodes) {
+    const graphNode = graph.nodes[liveNode.id];
+    if (!graphNode) {
+      continue;
+    }
+
+    const lastMaterialization = liveNode.assetMaterializations[0] || null;
     const lastStepStart = lastMaterialization?.materializationEvent.stepStats?.startTime || 0;
-    const isForeignNode = !node.opName;
-    const isPartitioned = graph.nodes[node.id].definition.partitionDefinition;
+    const isForeignNode = !liveNode.opName;
+    const isPartitioned = graphNode.definition.partitionDefinition;
 
-    const runs = inProgressRunsByStep.find((r) => r.stepKey === node.opName);
+    const runs = inProgressRunsByStep.find((r) => r.stepKey === liveNode.opName);
 
-    data[node.id] = {
+    data[liveNode.id] = {
       lastStepStart,
       lastMaterialization,
       inProgressRunIds: runs?.inProgressRuns.map((r) => r.id) || [],
@@ -282,8 +287,8 @@ export const buildLiveData = (
     };
   }
 
-  for (const asset of nodes) {
-    data[asset.id].computeStatus = findComputeStatusForId(data, graph.upstream, asset.id);
+  for (const liveNodeId of Object.keys(data)) {
+    data[liveNodeId].computeStatus = findComputeStatusForId(data, graph.upstream, liveNodeId);
   }
 
   return data;
