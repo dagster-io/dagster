@@ -61,7 +61,7 @@ def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
         return GrapheneRunNotFoundError(run_id)
 
     record = records[0]
-    run = records.pipeline_run
+    run = record.pipeline_run
     graphene_run = GrapheneRun(record)
 
     valid_status = not run.is_finished and (
