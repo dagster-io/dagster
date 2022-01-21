@@ -107,10 +107,11 @@ def build_job_partitions_from_assets(
     if len(assets_with_partitions_defs) == 0:
         return None
 
+    first_assets_with_partitions_def = assets_with_partitions_defs[0]
     for assets_def in assets_with_partitions_defs:
-        if assets_def.partitions_def != assets_with_partitions_defs[0].partitions_def:
+        if assets_def.partitions_def != first_assets_with_partitions_def.partitions_def:
             first_asset_key = next(iter(assets_def.asset_keys)).to_string()
-            second_asset_key = next(iter(assets_with_partitions_defs[0].asset_keys)).to_string()
+            second_asset_key = next(iter(first_assets_with_partitions_def.asset_keys)).to_string()
             raise DagsterInvalidDefinitionError(
                 "When an assets job contains multiple partitions assets, they must have the "
                 f"same partitions definitions, but asset '{first_asset_key}' and asset "
@@ -172,7 +173,7 @@ def build_job_partitions_from_assets(
         return {"ops": ops_config}
 
     return PartitionedConfig(
-        partitions_def=cast(PartitionsDefinition, assets_with_partitions_defs[0].partitions_def),
+        partitions_def=cast(PartitionsDefinition, first_assets_with_partitions_def.partitions_def),
         run_config_for_partition_fn=lambda p: run_config_for_partition_fn(p.name),
     )
 
