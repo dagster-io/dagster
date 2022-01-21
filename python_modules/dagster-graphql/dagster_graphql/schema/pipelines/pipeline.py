@@ -236,15 +236,15 @@ class GrapheneRun(graphene.ObjectType):
         interfaces = (GraphenePipelineRun,)
         name = "Run"
 
-    def __init__(self, run):
-        pipeline_run = run.pipeline_run if isinstance(run, RunRecord) else run
+    def __init__(self, record: RunRecord):
+        pipeline_run = record.pipeline_run
         super().__init__(
             runId=pipeline_run.run_id,
             status=PipelineRunStatus(pipeline_run.status),
             mode=pipeline_run.mode,
         )
-        self._pipeline_run = check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-        self._run_record = run if isinstance(run, RunRecord) else None
+        self._pipeline_run = pipeline_run
+        self._run_record = record
         self._run_stats = None
 
     def resolve_id(self, _graphene_info):

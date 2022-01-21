@@ -46,11 +46,11 @@ def get_run_by_id(graphene_info, run_id):
     from ..schema.pipelines.pipeline import GrapheneRun
 
     instance = graphene_info.context.instance
-    run = instance.get_run_by_id(run_id)
-    if not run:
+    records = instance.get_run_records(PipelineRunsFilter(run_ids=[run_id]))
+    if not records:
         return GrapheneRunNotFoundError(run_id)
     else:
-        return GrapheneRun(run)
+        return GrapheneRun(records[0])
 
 
 def get_run_tags(graphene_info):
@@ -76,7 +76,15 @@ def get_run_group(graphene_info, run_id):
     except DagsterRunNotFoundError:
         return GrapheneRunGroupNotFoundError(run_id)
     root_run_id, run_group = result
-    return GrapheneRunGroup(root_run_id=root_run_id, runs=[GrapheneRun(run) for run in run_group])
+    run_group_run_ids = [run.run_id for run in run_group]
+    records_by_id = {
+        record.pipeline_run.run_id: record
+        for record in instance.get_run_records(PipelineRunsFilter(run_ids=run_group_run_ids))
+    }
+    return GrapheneRunGroup(
+        root_run_id=root_run_id,
+        runs=[GrapheneRun(records_by_id.get(run_id)) for run_id in run_group_run_ids],
+    )
 
 
 def get_runs(graphene_info, filters, cursor=None, limit=None):
@@ -88,59 +96,46 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
 
     instance = graphene_info.context.instance
 
-    if filters and filters.run_ids and len(filters.run_ids) == 1:
-        run = instance.get_run_by_id(filters.run_ids[0])
-        if run:
-            return [GrapheneRun(run)]
-        else:
-            return []
-
-    if filters and (
-        filters.pipeline_name
-        or filters.tags
-        or filters.statuses
-        or filters.snapshot_id
-        or filters.run_ids
-    ):
-        return [
-            GrapheneRun(record)
-            for record in instance.get_run_records(filters=filters, cursor=cursor, limit=limit)
-        ]
-
-    return [GrapheneRun(record) for record in instance.get_run_records(cursor=cursor, limit=limit)]
+    return [
+        GrapheneRun(record)
+        for record in instance.get_run_records(filters=filters, cursor=cursor, limit=limit)
+    ]
 
 
-def get_in_progress_runs_for_job(graphene_info, job_name):
+IN_PROGRESS_STATUSES = [
+    PipelineRunStatus.STARTING,
+    PipelineRunStatus.MANAGED,
+    PipelineRunStatus.NOT_STARTED,
+    PipelineRunStatus.QUEUED,
+    PipelineRunStatus.STARTED,
+    PipelineRunStatus.CANCELING,
+]
+
+
+def get_in_progress_runs_by_step(graphene_info, job_names, step_keys):
+    from ..schema.pipelines.pipeline import GrapheneInProgressRunsByStep, GrapheneRun
+
     instance = graphene_info.context.instance
 
-    in_progress_runs_filter = PipelineRunsFilter(
-        pipeline_name=job_name,
-        statuses=[
-            PipelineRunStatus.STARTING,
-            PipelineRunStatus.MANAGED,
-            PipelineRunStatus.NOT_STARTED,
-            PipelineRunStatus.QUEUED,
-            PipelineRunStatus.STARTED,
-            PipelineRunStatus.CANCELING,
-        ],
-    )
-
-    return instance.get_runs(in_progress_runs_filter)
-
-
-def get_in_progress_runs_by_step(graphene_info, in_progress_runs, step_keys):
-    from ..schema.pipelines.pipeline import GrapheneInProgressRunsByStep, GrapheneRun
+    in_progress_records = []
+    for job_name in job_names:
+        in_progress_records.extend(
+            instance.get_run_records(
+                PipelineRunsFilter(pipeline_name=job_name, statuses=IN_PROGRESS_STATUSES)
+            )
+        )
 
     in_progress_runs_by_step = {}
     unstarted_runs_by_step = {}
 
-    for run in in_progress_runs:
+    for record in in_progress_records:
+        run = record.pipeline_run
         step_stats = graphene_info.context.instance.get_run_step_stats(run.run_id, step_keys)
         for step_stat in step_stats:
             if step_stat.status == StepEventStatus.IN_PROGRESS:
                 if step_stat.step_key not in in_progress_runs_by_step:
                     in_progress_runs_by_step[step_stat.step_key] = []
-                in_progress_runs_by_step[step_stat.step_key].append(GrapheneRun(run))
+                in_progress_runs_by_step[step_stat.step_key].append(GrapheneRun(record))
 
         asset_names = graphene_info.context.instance.get_execution_plan_snapshot(
             run.execution_plan_snapshot_id
@@ -154,7 +149,7 @@ def get_in_progress_runs_by_step(graphene_info, in_progress_runs, step_keys):
             if is_unstarted:
                 if step_key not in unstarted_runs_by_step:
                     unstarted_runs_by_step[step_key] = []
-                unstarted_runs_by_step[step_key].append(GrapheneRun(run))
+                unstarted_runs_by_step[step_key].append(GrapheneRun(record))
 
     step_runs = []
     for key in in_progress_runs_by_step.keys() | unstarted_runs_by_step.keys():
@@ -183,10 +178,15 @@ def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
 
     instance = graphene_info.context.instance
     run_groups = instance.get_run_groups(filters=filters, cursor=cursor, limit=limit)
+    run_ids = {run.run_id for runs in run_groups.values() for run in runs}
+    records_by_ids = {
+        record.pipeline_run.run_id: record
+        for record in instance.get_run_records(PipelineRunsFilter(run_ids=list(run_ids)))
+    }
 
     for root_run_id in run_groups:
         run_groups[root_run_id]["runs"] = [
-            GrapheneRun(run) for run in run_groups[root_run_id]["runs"]
+            GrapheneRun(records_by_ids.get(run.run_id)) for run in run_groups[root_run_id]["runs"]
         ]
 
     return [
