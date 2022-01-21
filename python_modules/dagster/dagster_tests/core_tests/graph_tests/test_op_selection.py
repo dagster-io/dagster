@@ -1,4 +1,18 @@
-from dagster import ConfigMapping, DynamicOut, DynamicOutput, In, graph, job, op, root_input_manager
+from typing import List
+
+import pytest
+from dagster import (
+    ConfigMapping,
+    DynamicOut,
+    DynamicOutput,
+    In,
+    graph,
+    job,
+    op,
+    repository,
+    root_input_manager,
+)
+from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
 
@@ -34,6 +48,16 @@ def _success_step_keys(result: ExecuteInProcessResult):
         for evt in result.all_node_events
         if evt.event_type == DagsterEventType.STEP_SUCCESS
     ]
+
+
+def test_repo_can_load():
+    my_subset_job = do_it_all.to_job(name="subset_job", op_selection=["add_one"])
+
+    @repository
+    def my_repo():
+        return [do_it_all, my_subset_job]
+
+    assert {job.name for job in my_repo.get_all_jobs()} == {"do_it_all", "subset_job"}
 
 
 def test_simple_op_selection_on_graph_def():
@@ -257,7 +281,7 @@ def test_op_selection_on_alias():
     assert result_for_subset_def.success
     assert len(_success_step_keys(result_for_subset_def)) == 2
 
-    result_for_subset = subsetted_job.execute_in_process(op_selection=["return_one_2*"])
+    result_for_subset = subsetted_job.execute_in_process(op_selection=["*"])
     assert result_for_subset.success
     assert len(_success_step_keys(result_for_subset)) == 2
 
@@ -322,3 +346,257 @@ def test_disconnected_selection():
     executed_step_keys = _success_step_keys(result)
     assert len(executed_step_keys) == 2
     assert set(executed_step_keys) == {"return_two", "add_one"}
+
+
+@graph
+def subgraph():
+    return add_one(adder(return_one(), return_two()))
+
+
+@job
+def supergraph():
+    add_one(subgraph())
+
+
+def test_nested_graph_selection_all():
+    result = supergraph.execute_in_process()
+    assert result.success
+    assert result.output_for_node("add_one") == 5
+
+    # select the entire subgraph
+    result_graph = supergraph.execute_in_process(op_selection=["subgraph"])
+    assert result_graph.success
+    assert set(_success_step_keys(result_graph)) == {
+        "subgraph.return_one",
+        "subgraph.return_two",
+        "subgraph.adder",
+        "subgraph.add_one",
+    }
+    assert result_graph.output_for_node("subgraph") == 4
+
+
+def test_nested_graph_selection_single_op():
+    # select single op inside graph
+    result_graph = supergraph.execute_in_process(op_selection=["subgraph.return_one"])
+    assert result_graph.success
+    assert set(_success_step_keys(result_graph)) == {
+        "subgraph.return_one",
+    }
+    assert result_graph.output_for_node("subgraph.return_one") == 1
+
+
+def test_nested_graph_selection_inside_graph():
+    # select inside subgraph
+    result_graph = supergraph.execute_in_process(
+        op_selection=[
+            "subgraph.return_one",
+            "subgraph.return_two",
+            "subgraph.adder",
+        ]
+    )
+    assert result_graph.success
+    assert set(_success_step_keys(result_graph)) == {
+        "subgraph.return_one",
+        "subgraph.return_two",
+        "subgraph.adder",
+    }
+    assert result_graph.output_for_node("subgraph.adder") == 3
+
+
+def test_nested_graph_selection_both_inside_and_outside_disconnected():
+    # select inside subgraph (disconnected to the outside) and outside
+    with pytest.raises(DagsterInvalidSubsetError):
+        # can't build graph bc "subgraph" won't have output mapping but "add_one" expect output
+        supergraph.execute_in_process(
+            op_selection=["subgraph.adder", "add_one"],
+            run_config={
+                "ops": {"subgraph": {"ops": {"adder": {"inputs": {"num1": 10, "num2": 20}}}}}
+            },
+        )
+
+
+def test_nested_graph_selection_unsatisfied_subgraph_inputs():
+    # output mapping
+    result_sub_1 = supergraph.execute_in_process(
+        op_selection=["subgraph.return_one", "subgraph.adder", "subgraph.add_one", "add_one"],
+        run_config={"ops": {"subgraph": {"ops": {"adder": {"inputs": {"num2": 0}}}}}},
+    )
+    assert result_sub_1.success
+    assert set(_success_step_keys(result_sub_1)) == {
+        "subgraph.return_one",
+        "subgraph.adder",
+        "subgraph.add_one",
+        "add_one",
+    }
+    assert result_sub_1.output_for_node("add_one") == 3
+
+    # no output mapping
+    result_sub_2 = supergraph.execute_in_process(
+        op_selection=["subgraph.return_one", "subgraph.adder", "subgraph.add_one"],
+        run_config={"ops": {"subgraph": {"ops": {"adder": {"inputs": {"num2": 100}}}}}},
+    )
+    assert result_sub_2.success
+    assert set(_success_step_keys(result_sub_2)) == {
+        "subgraph.return_one",
+        "subgraph.adder",
+        "subgraph.add_one",
+    }
+    assert result_sub_2.output_for_node("subgraph.add_one") == 102
+
+
+def test_nested_graph_selection_input_mapping():
+    @graph
+    def _subgraph(x):
+        return add_one(adder.alias("aliased_adder")(return_one(), x))
+
+    @job
+    def _super():
+        add_one(_subgraph(return_two()))
+
+    # graph subset has input mapping
+    result_sub_1 = _super.execute_in_process(
+        op_selection=["return_two", "_subgraph.return_one", "_subgraph.aliased_adder"],
+    )
+    assert result_sub_1.success
+    assert set(_success_step_keys(result_sub_1)) == {
+        "return_two",
+        "_subgraph.return_one",
+        "_subgraph.aliased_adder",
+    }
+    assert result_sub_1.output_for_node("_subgraph.aliased_adder") == 3
+
+    # graph subset doesn't have input mapping
+    result_sub_2 = _super.execute_in_process(
+        op_selection=["_subgraph.return_one", "_subgraph.aliased_adder"],
+        run_config={"ops": {"_subgraph": {"inputs": {"x": {"value": 100}}}}},
+    )
+    assert result_sub_2.success
+    assert set(_success_step_keys(result_sub_2)) == {
+        "_subgraph.return_one",
+        "_subgraph.aliased_adder",
+    }
+    assert result_sub_2.output_for_node("_subgraph.aliased_adder") == 101
+
+
+def test_sub_sub_graph_selection():
+    @graph
+    def subsubgraph():
+        return return_one()
+
+    @graph
+    def _subgraph():
+        return add_one(subsubgraph())
+
+    @job
+    def _super():
+        add_one(_subgraph())
+
+    result_full = _super.execute_in_process()
+    assert set(_success_step_keys(result_full)) == {
+        "_subgraph.subsubgraph.return_one",
+        "_subgraph.add_one",
+        "add_one",
+    }
+    assert result_full.output_for_node("add_one") == 3
+
+    # select sub sub
+    result_sub_1 = _super.execute_in_process(op_selection=["_subgraph.subsubgraph.return_one"])
+    assert set(_success_step_keys(result_sub_1)) == {
+        "_subgraph.subsubgraph.return_one",
+    }
+    assert result_sub_1.output_for_node("_subgraph.subsubgraph.return_one") == 1
+
+    # select sub all
+    result_sub_2 = _super.execute_in_process(op_selection=["_subgraph"])
+    assert set(_success_step_keys(result_sub_2)) == {
+        "_subgraph.subsubgraph.return_one",
+        "_subgraph.add_one",
+    }
+    assert result_sub_2.output_for_node("_subgraph") == 2
+
+    # select sub with unsatisfied input
+    result_sub_3 = _super.execute_in_process(
+        op_selection=["_subgraph.add_one"],
+        run_config={"ops": {"_subgraph": {"ops": {"add_one": {"inputs": {"num": 100}}}}}},
+    )
+    assert set(_success_step_keys(result_sub_3)) == {
+        "_subgraph.add_one",
+    }
+    assert result_sub_3.output_for_node("_subgraph.add_one") == 101
+
+
+def test_nested_op_selection_fan_in():
+    @op
+    def sum_fan_in(nums: List[int]) -> int:
+        return sum(nums)
+
+    @graph
+    def fan_in_graph():
+        fan_outs = []
+        for i in range(0, 10):
+            fan_outs.append(return_one.alias(f"return_one_{i}")())
+        return sum_fan_in(fan_outs)
+
+    @job
+    def _super():
+        add_one(fan_in_graph())
+
+    result_full = _super.execute_in_process()
+    assert result_full.success
+    assert result_full.output_for_node("add_one") == 11
+
+    result_sub_1 = _super.execute_in_process(
+        op_selection=[
+            "fan_in_graph.return_one_0",
+            "fan_in_graph.return_one_1",
+            "fan_in_graph.return_one_2",
+            "fan_in_graph.sum_fan_in",
+            "add_one",
+        ]
+    )
+    assert result_sub_1.success
+    assert result_sub_1.output_for_node("add_one") == 4
+
+
+def test_nested_op_selection_with_config_mapping():
+    @op(config_schema=str)
+    def concat(context, x: str):
+        return x + context.op_config
+
+    @op(config_schema=str)
+    def my_op(context):
+        return context.op_config
+
+    def _nested_config_fn(outer):
+        return {"my_op": {"config": outer}, "concat": {"config": outer}}
+
+    @graph(config=ConfigMapping(config_fn=_nested_config_fn, config_schema=str))
+    def my_nested_graph():
+        concat(my_op())
+
+    def _config_fn(outer):
+        return {"my_nested_graph": {"config": outer}}
+
+    @graph(config=ConfigMapping(config_fn=_config_fn, config_schema=str))
+    def my_graph():
+        my_nested_graph()
+
+    result = my_graph.to_job().execute_in_process(run_config={"ops": {"config": "foo"}})
+    assert result.success
+    assert result.output_for_node("my_nested_graph.concat") == "foofoo"
+
+    result_sub_1 = my_graph.to_job().execute_in_process(
+        op_selection=["my_nested_graph.my_op", "my_nested_graph.concat"],
+        run_config={"ops": {"config": "hello"}},
+    )
+    assert result_sub_1.success
+    assert result_sub_1.output_for_node("my_nested_graph.concat") == "hellohello"
+
+    # TODO config mapping - ignore unselected nodes
+    # result_sub_2 = my_graph.to_job().execute_in_process(
+    #     op_selection=["my_nested_graph.my_op"],
+    #     # fail bc "Received unexpected config entry "concat" at the root"
+    #     run_config={"ops": {"config": "hello"}},
+    # )
+    # assert result_sub_2.success
+    # assert result_sub_2.output_for_node("my_nested_graph.my_op") == "hello"

@@ -1,7 +1,7 @@
 import re
 import sys
 from collections import defaultdict
-from typing import TYPE_CHECKING, AbstractSet, List, NamedTuple
+from typing import TYPE_CHECKING, AbstractSet, Dict, List, NamedTuple
 
 from dagster.core.definitions.dependency import DependencyStructure, Node
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
@@ -195,6 +195,47 @@ def clause_to_subset(graph, clause):
     subset_list += traverser.fetch_downstream(item_name, down_depth)
 
     return subset_list
+
+
+class LeafNodeSelection:
+    """Marker for no further nesting selection needed."""
+
+
+def convert_dot_seperated_string_to_dict(tree, splits):
+    # For example:
+    # "subgraph.subsubgraph.return_one" => {"subgraph": {"subsubgraph": {"return_one": None}}}
+    key = splits[0]
+    if len(splits) == 1:
+        tree[key] = LeafNodeSelection
+    else:
+        tree[key] = convert_dot_seperated_string_to_dict(
+            tree[key] if key in tree else {}, splits[1:]
+        )
+    return tree
+
+
+def parse_op_selection(job_def: "JobDefinition", op_selection: List[str]) -> Dict:
+    """
+    Examples:
+        ["subgraph.return_one", "subgraph.adder", "subgraph.add_one", "add_one"]
+        => {"subgraph": {{"return_one": LeafNodeSelection}, {"adder": LeafNodeSelection}, {"add_one": LeafNodeSelection}}, "add_one": LeafNodeSelection}
+
+        ["subgraph.subsubgraph.return_one"]
+        => {"subgraph": {"subsubgraph": {"return_one": LeafNodeSelection}}}
+
+        ["top_level_op_1+"]
+        => {"top_level_op_1": LeafNodeSelection, "top_level_op_2": LeafNodeSelection}
+    """
+    if any(["." in item for item in op_selection]):
+        resolved_op_selection_dict: Dict = {}
+        for item in op_selection:
+            convert_dot_seperated_string_to_dict(resolved_op_selection_dict, splits=item.split("."))
+        return resolved_op_selection_dict
+
+    return {
+        top_level_op: LeafNodeSelection
+        for top_level_op in parse_solid_selection(job_def, op_selection)
+    }
 
 
 def parse_solid_selection(pipeline_def, solid_selection):
