@@ -104,7 +104,7 @@ class ReconstructablePipeline(
             ("repository", ReconstructableRepository),
             ("pipeline_name", str),
             ("solid_selection_str", Optional[str]),
-            ("solids_to_execute", Optional[FrozenSet[str]]),
+            ("solids_to_execute", FrozenSet[str]),
         ],
     ),
     IPipeline,
@@ -119,7 +119,7 @@ class ReconstructablePipeline(
         solid_selection_str (Optional[str]): The string value of a comma separated list of user-input
             solid/op selection. None if no selection is specified, i.e. the entire pipeline/job will
             be run.
-        solids_to_execute (AbstractSet[str]): A set of solid/op names to execute. None if no selection
+        solids_to_execute (FrozenSet[str]): A set of solid/op names to execute. None if no selection
             is specified, i.e. the entire pipeline/job will be run.
     """
 
@@ -130,13 +130,14 @@ class ReconstructablePipeline(
         solid_selection_str=None,
         solids_to_execute=None,
     ):
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         return super(ReconstructablePipeline, cls).__new__(
             cls,
             repository=check.inst_param(repository, "repository", ReconstructableRepository),
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             solid_selection_str=check.opt_str_param(solid_selection_str, "solid_selection_str"),
-            solids_to_execute=solids_to_execute,
+            solids_to_execute=frozenset(
+                check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
+            ),
         )
 
     @property
@@ -155,18 +156,19 @@ class ReconstructablePipeline(
                 # jobs use pre-resolved selection
                 .get_job_def_for_op_selection(self.solid_selection)
             )
-        else:
-            return (
-                self.repository.get_definition().get_pipeline(self.pipeline_name)
-                # pipelines use post-resolved selection
-                .get_pipeline_subset_def(self.solids_to_execute)
-            )
+        return (
+            self.repository.get_definition().get_pipeline(self.pipeline_name)
+            # pipelines use post-resolved selection
+            .get_pipeline_subset_def(self.solids_to_execute)
+        )
 
     def get_reconstructable_repository(self):
         return self.repository
 
     def _subset_for_execution(
-        self, solids_to_execute: Optional[List[str]], solid_selection: Optional[List[str]] = None
+        self,
+        solids_to_execute: Optional[FrozenSet[str]],
+        solid_selection: Optional[List[str]],
     ) -> "ReconstructablePipeline":
         # no selection
         if not solid_selection and not solids_to_execute:
@@ -178,7 +180,6 @@ class ReconstructablePipeline(
         from dagster.core.definitions.job_definition import JobDefinition
 
         pipeline_def = self.get_definition()
-
         if isinstance(pipeline_def, JobDefinition):
             # when subselecting a job
             # * job subselection depend on solid_selection rather than solids_to_execute
@@ -216,7 +217,9 @@ class ReconstructablePipeline(
 
         return self._subset_for_execution(solids_to_execute=None, solid_selection=solid_selection)
 
-    def subset_for_execution_from_existing_pipeline(self, solids_to_execute):
+    def subset_for_execution_from_existing_pipeline(
+        self, solids_to_execute: FrozenSet[str]
+    ) -> "ReconstructablePipeline":
         # take a frozenset of resolved solid names from an existing pipeline
         # so there's no need to parse the selection
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)

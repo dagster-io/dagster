@@ -423,9 +423,7 @@ class PipelineDefinition:
     def get_pipeline_subset_def(
         self, solids_to_execute: Optional[AbstractSet[str]]
     ) -> "PipelineDefinition":
-        return (
-            self if solids_to_execute is None else _get_pipeline_subset_def(self, solids_to_execute)
-        )
+        return self if not solids_to_execute else _get_pipeline_subset_def(self, solids_to_execute)
 
     def has_preset(self, name: str) -> bool:
         check.str_param(name, "name")
