@@ -140,6 +140,7 @@ export const AssetNode: React.FC<{
                         selection: event.stepStats.stepKey,
                         logs: `step:${event.stepStats.stepKey}`,
                       })}`}
+                      onClick={(e) => e.stopPropagation()}
                       target="_blank"
                     >
                       {titleForRun({runId: runOrError.runId})}
