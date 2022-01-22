@@ -260,7 +260,10 @@ class OutputContext:
 
     @property
     def has_asset_partitions(self) -> bool:
-        return self.step_context.has_asset_partitions_for_output(self.name)
+        if self._step_context is not None:
+            return self._step_context.has_asset_partitions_for_output(self.name)
+        else:
+            return False
 
     @property
     def asset_partition_key(self) -> str:
