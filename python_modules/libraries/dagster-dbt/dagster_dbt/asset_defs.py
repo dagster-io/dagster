@@ -5,8 +5,7 @@ import textwrap
 from typing import Any, Callable, List, Mapping, Optional, Sequence
 
 from dagster import AssetKey, OpDefinition, Out, Output, SolidExecutionContext, check
-from dagster.core.asset_defs import multi_asset, AssetsDefinition
-
+from dagster.core.asset_defs import AssetsDefinition, multi_asset
 from dagster_dbt.utils import generate_materializations
 
 

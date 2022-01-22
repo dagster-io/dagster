@@ -1,7 +1,7 @@
 import json
 from unittest.mock import MagicMock
 
-from dagster import EventMetadataEntry, ResourceDefinition, OutputDefinition, AssetKey
+from dagster import AssetKey, EventMetadataEntry, ResourceDefinition
 from dagster.core.asset_defs import build_assets_job
 from dagster.utils import file_relative_path
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
