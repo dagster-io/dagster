@@ -2,6 +2,7 @@
 
 import os
 import sys
+from typing import List, Optional
 
 import pendulum
 from dagster import check
@@ -189,8 +190,11 @@ def start_run_in_subprocess(
         )
 
 
-def get_external_pipeline_subset_result(recon_pipeline, solid_selection):
+def get_external_pipeline_subset_result(
+    recon_pipeline: ReconstructablePipeline, solid_selection: Optional[List[str]]
+):
     check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
+    check.opt_list_param(solid_selection, "solid_selection", str)
 
     if solid_selection:
         try:
