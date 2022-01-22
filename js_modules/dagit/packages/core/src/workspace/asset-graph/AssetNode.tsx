@@ -43,7 +43,8 @@ export const AssetNode: React.FC<{
     const launch = useLaunchSingleAssetJob();
     const history = useHistory();
 
-    const {materializationEvent: event, runOrError} = liveData?.lastMaterialization || {};
+    const {runOrError} = liveData?.lastMaterialization || {};
+    const event = liveData?.lastMaterialization
     const kind = metadata.find((m) => m.key === 'kind')?.value;
 
     return (
@@ -208,17 +209,13 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     assetMaterializations(limit: 1) {
       ...LatestMaterializationMetadataFragment
 
-      materializationEvent {
-        materialization {
-          metadataEntries {
-            ...MetadataEntryFragment
-          }
-        }
-        stepStats {
-          stepKey
-          startTime
-          endTime
-        }
+      metadataEntries {
+        ...MetadataEntryFragment
+      }
+      stepStats {
+        stepKey
+        startTime
+        endTime
       }
       runOrError {
         ... on PipelineRun {

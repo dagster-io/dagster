@@ -480,6 +480,7 @@ class GrapheneObservationEvent(graphene.ObjectType, AssetEventMixin):
         name = "ObservationEvent"
 
     def __init__(self, event):
+        print(event)
         observation = event.dagster_event.asset_observation_data.asset_observation
         super().__init__(**_construct_asset_event_metadata_params(event, observation))
         AssetEventMixin.__init__(
@@ -562,6 +563,7 @@ class GrapheneDagsterRunEvent(graphene.Union):
             GrapheneObjectStoreOperationEvent,
             GrapheneStepExpectationResultEvent,
             GrapheneMaterializationEvent,
+            GrapheneObservationEvent,
             GrapheneEngineEvent,
             GrapheneHookCompletedEvent,
             GrapheneHookSkippedEvent,

@@ -194,10 +194,10 @@ def from_dagster_event_record(event_record, pipeline_name):
         )
     elif dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
         asset_lineage = dagster_event.step_materialization_data.asset_lineage
-        return GrapheneMaterializationEvent(event=dagster_event, assetLineage=asset_lineage)
+        return GrapheneMaterializationEvent(event=event_record, assetLineage=asset_lineage)
     elif dagster_event.event_type == DagsterEventType.ASSET_OBSERVATION:
         return GrapheneObservationEvent(
-            event=dagster_event,
+            event=event_record,
         )
     elif dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
         expectation_result = dagster_event.event_specific_data.expectation_result

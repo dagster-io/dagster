@@ -1,31 +1,31 @@
-import {gql, useQuery} from '@apollo/client';
-import {Alert, Box, ButtonLink, ColorsWIP, Spinner} from '@dagster-io/ui';
+import { gql, useQuery } from '@apollo/client';
+import { Alert, Box, ButtonLink, ColorsWIP, Spinner } from '@dagster-io/ui';
 import * as React from 'react';
 
-import {QueryCountdown} from '../app/QueryCountdown';
-import {displayNameForAssetKey} from '../app/Util';
-import {Timestamp} from '../app/time/Timestamp';
-import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {useDidLaunchEvent} from '../runs/RunUtils';
-import {LaunchAssetExecutionButton} from '../workspace/asset-graph/LaunchAssetExecutionButton';
+import { QueryCountdown } from '../app/QueryCountdown';
+import { displayNameForAssetKey } from '../app/Util';
+import { Timestamp } from '../app/time/Timestamp';
+import { useDocumentTitle } from '../hooks/useDocumentTitle';
+import { useQueryPersistedState } from '../hooks/useQueryPersistedState';
+import { useDidLaunchEvent } from '../runs/RunUtils';
+import { LaunchAssetExecutionButton } from '../workspace/asset-graph/LaunchAssetExecutionButton';
 import {
   buildGraphDataFromSingleNode,
   buildLiveData,
   IN_PROGRESS_RUNS_FRAGMENT,
   LiveData,
 } from '../workspace/asset-graph/Utils';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import { buildRepoAddress } from '../workspace/buildRepoAddress';
 
-import {AssetMaterializations} from './AssetMaterializations';
-import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
-import {AssetPageHeader} from './AssetPageHeader';
-import {AssetKey} from './types';
+import { AssetMaterializations } from './AssetMaterializations';
+import { AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT } from './AssetNodeDefinition';
+import { AssetPageHeader } from './AssetPageHeader';
+import { AssetKey } from './types';
 import {
   AssetNodeDefinitionRunsQuery,
   AssetNodeDefinitionRunsQueryVariables,
 } from './types/AssetNodeDefinitionRunsQuery';
-import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
+import { AssetQuery, AssetQueryVariables } from './types/AssetQuery';
 
 interface Props {
   assetKey: AssetKey;
@@ -37,13 +37,13 @@ export interface AssetViewParams {
   asOf?: string;
 }
 
-export const AssetView: React.FC<Props> = ({assetKey}) => {
+export const AssetView: React.FC<Props> = ({ assetKey }) => {
   useDocumentTitle(`Asset: ${displayNameForAssetKey(assetKey)}`);
 
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
 
   const queryResult = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
-    variables: {assetKey: {path: assetKey.path}},
+    variables: { assetKey: { path: assetKey.path } },
     notifyOnNetworkStatusChange: true,
     pollInterval: 5 * 1000,
   });
@@ -51,9 +51,9 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   // Refresh immediately when a run is launched from this page
   useDidLaunchEvent(queryResult.refetch);
 
-  const {assetOrError} = queryResult.data || queryResult.previousData || {};
+  const { assetOrError } = queryResult.data || queryResult.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
-  const lastMaterializedAt = asset?.assetMaterializations[0]?.materializationEvent.timestamp;
+  const lastMaterializedAt = asset?.assetMaterializations[0]?.timestamp;
   const definition = asset?.definition;
 
   const repoAddress = definition
@@ -105,8 +105,8 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         assetKey={assetKey}
         repoAddress={repoAddress}
         right={
-          <Box style={{margin: '-4px 0'}} flex={{gap: 8, alignItems: 'baseline'}}>
-            <Box margin={{top: 4}}>
+          <Box style={{ margin: '-4px 0' }} flex={{ gap: 8, alignItems: 'baseline' }}>
+            <Box margin={{ top: 4 }}>
               <QueryCountdown pollInterval={5 * 1000} queryResult={queryResult} />
             </Box>
             {definition && definition.jobs.length > 0 && repoAddress && (
@@ -124,19 +124,19 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       <div>
         {queryResult.loading && !queryResult.previousData ? (
           <Box
-            style={{height: 390}}
-            flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
+            style={{ height: 390 }}
+            flex={{ direction: 'row', justifyContent: 'center', alignItems: 'center' }}
           >
             <Spinner purpose="section" />
           </Box>
         ) : params.asOf ? (
           <Box
-            padding={{vertical: 16, horizontal: 24}}
-            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+            padding={{ vertical: 16, horizontal: 24 }}
+            border={{ side: 'bottom', width: 1, color: ColorsWIP.KeylineGray }}
           >
             <HistoricalViewAlert
               asOf={params.asOf}
-              onClick={() => setParams({asOf: undefined, time: params.asOf})}
+              onClick={() => setParams({ asOf: undefined, time: params.asOf })}
               hasDefinition={!!definition}
             />
           </Box>
@@ -173,9 +173,7 @@ const ASSET_QUERY = gql`
         }
 
         assetMaterializations(limit: 1) {
-          materializationEvent {
-            timestamp
-          }
+          timestamp
         }
 
         definition {
@@ -217,16 +215,16 @@ const HistoricalViewAlert: React.FC<{
   asOf: string | undefined;
   onClick: () => void;
   hasDefinition: boolean;
-}> = ({asOf, onClick, hasDefinition}) => (
+}> = ({ asOf, onClick, hasDefinition }) => (
   <Alert
     intent="info"
     title={
       <span>
         This is a historical view of materializations as of{' '}
-        <span style={{fontWeight: 600}}>
+        <span style={{ fontWeight: 600 }}>
           <Timestamp
-            timestamp={{ms: Number(asOf)}}
-            timeFormat={{showSeconds: true, showTimezone: true}}
+            timestamp={{ ms: Number(asOf) }}
+            timeFormat={{ showSeconds: true, showTimezone: true }}
           />
         </span>
         .

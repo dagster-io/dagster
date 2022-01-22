@@ -10,7 +10,7 @@ import { LogLevel, DagsterEventType, ErrorSource, ObjectStoreOperationType } fro
 // ====================================================
 
 export interface RunDagsterRunEventFragment_ExecutionStepSkippedEvent {
-  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent";
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "ObservationEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
@@ -18,47 +18,47 @@ export interface RunDagsterRunEventFragment_ExecutionStepSkippedEvent {
   eventType: DagsterEventType | null;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_assetKey {
+export interface RunDagsterRunEventFragment_MaterializationEvent_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventPathMetadataEntry {
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventPathMetadataEntry {
   __typename: "EventPathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventJsonMetadataEntry {
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventJsonMetadataEntry {
   __typename: "EventJsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventUrlMetadataEntry {
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventUrlMetadataEntry {
   __typename: "EventUrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventTextMetadataEntry {
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventTextMetadataEntry {
   __typename: "EventTextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventMarkdownMetadataEntry {
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventMarkdownMetadataEntry {
   __typename: "EventMarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventPythonArtifactMetadataEntry {
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventPythonArtifactMetadataEntry {
   __typename: "EventPythonArtifactMetadataEntry";
   label: string;
   description: string | null;
@@ -66,14 +66,14 @@ export interface RunDagsterRunEventFragment_StepMaterializationEvent_materializa
   name: string;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventFloatMetadataEntry {
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventFloatMetadataEntry {
   __typename: "EventFloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventIntMetadataEntry {
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventIntMetadataEntry {
   __typename: "EventIntMetadataEntry";
   label: string;
   description: string | null;
@@ -81,43 +81,38 @@ export interface RunDagsterRunEventFragment_StepMaterializationEvent_materializa
   intRepr: string;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventPipelineRunMetadataEntry {
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventPipelineRunMetadataEntry {
   __typename: "EventPipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventAssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventAssetMetadataEntry {
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventAssetMetadataEntry {
   __typename: "EventAssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventAssetMetadataEntry_assetKey;
 }
 
-export type RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries = RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventPathMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventJsonMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventUrlMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventTextMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventMarkdownMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventPythonArtifactMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventFloatMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventIntMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventPipelineRunMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventAssetMetadataEntry;
+export type RunDagsterRunEventFragment_MaterializationEvent_metadataEntries = RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventPathMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventJsonMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventUrlMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventTextMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventMarkdownMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventPythonArtifactMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventFloatMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventIntMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventPipelineRunMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_EventAssetMetadataEntry;
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization {
-  __typename: "Materialization";
-  assetKey: RunDagsterRunEventFragment_StepMaterializationEvent_materialization_assetKey | null;
-  label: string;
-  description: string | null;
-  metadataEntries: RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries[];
-}
-
-export interface RunDagsterRunEventFragment_StepMaterializationEvent {
-  __typename: "StepMaterializationEvent";
+export interface RunDagsterRunEventFragment_MaterializationEvent {
+  __typename: "MaterializationEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
   eventType: DagsterEventType | null;
-  materialization: RunDagsterRunEventFragment_StepMaterializationEvent_materialization;
+  assetKey: RunDagsterRunEventFragment_MaterializationEvent_assetKey | null;
+  label: string;
+  description: string | null;
+  metadataEntries: RunDagsterRunEventFragment_MaterializationEvent_metadataEntries[];
 }
 
 export interface RunDagsterRunEventFragment_RunFailureEvent_pipelineFailureError_cause {
@@ -964,4 +959,4 @@ export interface RunDagsterRunEventFragment_LogsCapturedEvent {
   pid: number | null;
 }
 
-export type RunDagsterRunEventFragment = RunDagsterRunEventFragment_ExecutionStepSkippedEvent | RunDagsterRunEventFragment_StepMaterializationEvent | RunDagsterRunEventFragment_RunFailureEvent | RunDagsterRunEventFragment_ExecutionStepFailureEvent | RunDagsterRunEventFragment_ExecutionStepInputEvent | RunDagsterRunEventFragment_ExecutionStepOutputEvent | RunDagsterRunEventFragment_StepExpectationResultEvent | RunDagsterRunEventFragment_ObjectStoreOperationEvent | RunDagsterRunEventFragment_HandledOutputEvent | RunDagsterRunEventFragment_LoadedInputEvent | RunDagsterRunEventFragment_EngineEvent | RunDagsterRunEventFragment_HookErroredEvent | RunDagsterRunEventFragment_LogsCapturedEvent;
+export type RunDagsterRunEventFragment = RunDagsterRunEventFragment_ExecutionStepSkippedEvent | RunDagsterRunEventFragment_MaterializationEvent | RunDagsterRunEventFragment_RunFailureEvent | RunDagsterRunEventFragment_ExecutionStepFailureEvent | RunDagsterRunEventFragment_ExecutionStepInputEvent | RunDagsterRunEventFragment_ExecutionStepOutputEvent | RunDagsterRunEventFragment_StepExpectationResultEvent | RunDagsterRunEventFragment_ObjectStoreOperationEvent | RunDagsterRunEventFragment_HandledOutputEvent | RunDagsterRunEventFragment_LoadedInputEvent | RunDagsterRunEventFragment_EngineEvent | RunDagsterRunEventFragment_HookErroredEvent | RunDagsterRunEventFragment_LogsCapturedEvent;
