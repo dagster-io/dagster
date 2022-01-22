@@ -228,7 +228,6 @@ def multi_asset(
             fn, None, ins or {}, non_argument_deps
         )
 
-        # for any Outs that do not specify an AssetKey, create one matching the name of the Out
         op = _Op(
             name=asset_name,
             description=description,

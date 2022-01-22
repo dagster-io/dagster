@@ -2,10 +2,12 @@ import json
 import os
 import subprocess
 import textwrap
-from typing import Any, Callable, List, Mapping, Optional
+from typing import Any, Callable, List, Mapping, Optional, Sequence
 
-from dagster import AssetKey, OpDefinition, Output, SolidExecutionContext, check
-from dagster.core.asset_defs import asset
+from dagster import AssetKey, OpDefinition, Out, Output, SolidExecutionContext, check
+from dagster.core.asset_defs import multi_asset, AssetsDefinition
+
+from dagster_dbt.utils import generate_materializations
 
 
 def _load_manifest_for_project(
@@ -35,42 +37,74 @@ def _get_node_name(node_info: Mapping[str, Any]):
     return "__".join([node_info["resource_type"], node_info["package_name"], node_info["name"]])
 
 
-def _dbt_node_to_asset(
-    node_info: Mapping[str, Any],
+def _dbt_nodes_to_assets(
+    node_infos: Sequence[Mapping[str, Any]],
     runtime_metadata_fn: Optional[
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
     io_manager_key: Optional[str] = None,
-) -> OpDefinition:
-    code_block = textwrap.indent(node_info["raw_sql"], "    ")
-    description_sections = [
-        node_info["description"],
-        "#### Columns:\n" + _columns_to_markdown(node_info["columns"])
-        if len(node_info["columns"]) > 0
-        else None,
-        f"#### Raw SQL:\n```\n{code_block}\n```",
-    ]
-    description = "\n\n".join(filter(None, description_sections))
+) -> AssetsDefinition:
+    outs = {}
+    sources = set()
+    out_name_to_node_info = {}
+    for node_info in node_infos:
+        node_name = node_info["name"]
+        in_deps = []
+        out_deps = []
+        for dep in node_info["depends_on"]["nodes"]:
+            dep_type = dep.split(".")[0]
+            dep_name = dep.split(".")[-1]
+            if dep_type == "source":
+                sources.add(AssetKey(dep_name))
+                in_deps.append(dep_name)
+            elif dep_type == "model":
+                out_deps.append(dep_name)
+        code_block = textwrap.indent(node_info["raw_sql"], "    ")
+        description_sections = [
+            node_info["description"],
+            "#### Columns:\n" + _columns_to_markdown(node_info["columns"])
+            if len(node_info["columns"]) > 0
+            else None,
+            f"#### Raw SQL:\n```\n{code_block}\n```",
+        ]
+        description = "\n\n".join(filter(None, description_sections))
 
-    @asset(
-        name=node_info["name"],
-        description=description,
-        non_argument_deps={
-            AssetKey(dep_name.split(".")[-1]) for dep_name in node_info["depends_on"]["nodes"]
-        },
+        outs[node_name] = Out(
+            dagster_type=None,
+            asset_key=AssetKey(node_name),
+            in_deps=in_deps,
+            out_deps=out_deps,
+            description=description,
+            io_manager_key=io_manager_key,
+        )
+        out_name_to_node_info[node_name] = node_info
+
+    @multi_asset(
+        name="dbt_project",
+        non_argument_deps=sources,
+        outs=outs,
         required_resource_keys={"dbt"},
-        io_manager_key=io_manager_key,
         compute_kind="dbt",
     )
-    def _node_asset(context):
-        context.resources.dbt.run(models=[".".join([node_info["package_name"], node_info["name"]])])
-        if runtime_metadata_fn:
-            metadata = runtime_metadata_fn(context, node_info)
-            yield Output(None, metadata=metadata)
-        else:
-            yield Output(None)
+    def _dbt_project_multi_assset(context):
+        dbt_output = context.resources.dbt.run()
+        # yield an Output for each materialization generated in the run
+        for materialization in generate_materializations(dbt_output):
+            output_name = materialization.asset_key.path[-1]
+            if runtime_metadata_fn:
+                yield Output(
+                    value=None,
+                    output_name=output_name,
+                    metadata=runtime_metadata_fn(context, out_name_to_node_info[output_name]),
+                )
+            else:
+                yield Output(
+                    value=None,
+                    output_name=output_name,
+                    metadata_entries=materialization.metadata_entries,
+                )
 
-    return _node_asset
+    return _dbt_project_multi_assset
 
 
 def _columns_to_markdown(columns: Mapping[str, Any]) -> str:
@@ -129,7 +163,7 @@ def load_assets_from_dbt_manifest(
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
     io_manager_key: Optional[str] = None,
-) -> List[OpDefinition]:
+) -> AssetsDefinition:
     """
     Loads a set of DBT models, described in a manifest.json, into Dagster assets.
 
@@ -147,10 +181,8 @@ def load_assets_from_dbt_manifest(
     """
     check.dict_param(manifest_json, "manifest_json", key_type=str)
     dbt_nodes = list(manifest_json["nodes"].values())
-    return [
-        _dbt_node_to_asset(
-            node_info, runtime_metadata_fn=runtime_metadata_fn, io_manager_key=io_manager_key
-        )
-        for node_info in dbt_nodes
-        if node_info["resource_type"] == "model"
-    ]
+    return _dbt_nodes_to_assets(
+        [node_info for node_info in dbt_nodes if node_info["resource_type"] == "model"],
+        runtime_metadata_fn=runtime_metadata_fn,
+        io_manager_key=io_manager_key,
+    )
