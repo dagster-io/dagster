@@ -54,7 +54,8 @@ DataFrameReadTypes = {
             "assume_missing": (
                 Bool,
                 False,
-                "If True, all integer columns that aren’t specified in `dtype` are assumed to contain missing values, and are converted to floats.",
+                "If True, all integer columns that aren’t specified in `dtype` are assumed to contain missing values, "
+                "and are converted to floats.",
             ),
             "storage_options": (
                 Permissive(),
@@ -79,7 +80,8 @@ DataFrameReadTypes = {
             "categories": (
                 Any,
                 False,
-                "For any fields listed here, if the parquet encoding is Dictionary, the column will be created with dtype category.",
+                "For any fields listed here, if the parquet encoding is Dictionary, the column will be created with "
+                "dtype category.",
             ),
             "storage_options": (
                 Permissive(),
@@ -159,7 +161,8 @@ DataFrameReadTypes = {
             "schema": (
                 String,
                 False,
-                "If using a table name, pass this to sqlalchemy to select which DB schema to use within the URI connection.",
+                "If using a table name, pass this to sqlalchemy to select which DB schema to use within the URI "
+                "connection.",
             ),
         },
     },
@@ -173,7 +176,8 @@ DataFrameReadTypes = {
             "assume_missing": (
                 Bool,
                 False,
-                "If True, all integer columns that aren’t specified in dtype are assumed to contain missing values, and are converted to floats.",
+                "If True, all integer columns that aren’t specified in dtype are assumed to contain missing values, "
+                "and are converted to floats.",
             ),
             "storage_options": (
                 Permissive(),
@@ -197,7 +201,8 @@ DataFrameReadTypes = {
             "assume_missing": (
                 Bool,
                 False,
-                "If True, all integer columns that aren’t specified in dtype are assumed to contain missing values, and are converted to floats.",
+                "If True, all integer columns that aren’t specified in dtype are assumed to contain missing values, "
+                "and are converted to floats.",
             ),
             "storage_options": (
                 Permissive(),
@@ -261,7 +266,8 @@ DataFrameToTypes = {
             "compression": (
                 Any,
                 False,
-                'Either a string like ``"snappy"`` or a dictionary mapping column names to compressors like ``{"name": "gzip", "values": "snappy"}``.',
+                'Either a string like ``"snappy"`` or a dictionary mapping column names to compressors like ``{'
+                '"name": "gzip", "values": "snappy"}``.',
             ),
             "write_index": (Bool, False, "Whether or not to write the index."),
             "append": (Bool, False, "Whether to add new row-group(s) to an existing data-set."),
@@ -489,10 +495,11 @@ def df_type_check(_, value):
 
 DataFrame = DagsterType(
     name="DaskDataFrame",
-    description="""A Dask DataFrame is a large parallel DataFrame composed of many smaller Pandas DataFrames, split along the index.
-    These Pandas DataFrames may live on disk for larger-than-memory computing on a single machine, or on many different machines in a cluster.
-    One Dask DataFrame operation triggers many operations on the constituent Pandas DataFrames.
-    See https://docs.dask.org/en/latest/dataframe.html""",
+    description="""A Dask Dataframe is essentially a structure of multiple pandas
+     dataframes sectioned by the indices . The Pandas Dataframes that compose the structure may be 
+     localised on a disk to avoid memory constraints on local machines or on non-localised clusters.
+     One Dask Operation triggers a multiplicity of Sub-Processes on the Constituent Dataframes. See 
+    https://docs.dask.org/en/latest/dataframe.html""",
     loader=dataframe_loader,
     materializer=dataframe_materializer,
     type_check_fn=df_type_check,
