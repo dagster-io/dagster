@@ -1,6 +1,6 @@
 from dagster import repository
 
-from {{ repo_name }}.graphs.say_hello import say_hello_job
+from {{ repo_name }}.jobs.say_hello import say_hello_job
 from {{ repo_name }}.schedules.my_hourly_schedule import my_hourly_schedule
 from {{ repo_name }}.sensors.my_sensor import my_sensor
 

@@ -17,5 +17,6 @@ export interface AssetNodeFragment {
   id: string;
   opName: string | null;
   description: string | null;
+  partitionDefinition: string | null;
   assetKey: AssetNodeFragment_assetKey;
 }

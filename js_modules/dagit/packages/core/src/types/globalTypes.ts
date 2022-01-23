@@ -23,6 +23,7 @@ export enum DagsterEventType {
   ALERT_START = "ALERT_START",
   ALERT_SUCCESS = "ALERT_SUCCESS",
   ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION",
+  ASSET_OBSERVATION = "ASSET_OBSERVATION",
   ASSET_STORE_OPERATION = "ASSET_STORE_OPERATION",
   ENGINE_EVENT = "ENGINE_EVENT",
   HANDLED_OUTPUT = "HANDLED_OUTPUT",
@@ -226,7 +227,8 @@ export interface RunsFilter {
   tags?: ExecutionTag[] | null;
   statuses?: RunStatus[] | null;
   snapshotId?: string | null;
-  updatedAfter?: string | null;
+  updatedAfter?: number | null;
+  createdBefore?: number | null;
   mode?: string | null;
 }
 

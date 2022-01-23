@@ -1,4 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
+import {Box, ButtonWIP, Group, IconWIP, stringFromValue, Tooltip} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -18,12 +19,6 @@ import {DagsterTag} from '../runs/RunTag';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
 import {RunStatus} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
-import {stringFromValue} from '../ui/TokenizingField';
-import {Tooltip} from '../ui/Tooltip';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -190,9 +185,11 @@ export const PartitionProgress = (props: Props) => {
                       to={workspacePathFromAddress(
                         repoAddress,
                         `/pipeline_or_job/${pipelineName}/runs?${qs.stringify({
-                          q: stringFromValue([
-                            {token: 'tag', value: `dagster/backfill=${backfillId}`},
-                          ]),
+                          q: [
+                            stringFromValue([
+                              {token: 'tag', value: `dagster/backfill=${backfillId}`},
+                            ]),
+                          ],
                         })}`,
                       )}
                     >

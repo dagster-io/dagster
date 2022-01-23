@@ -1,7 +1,8 @@
 import {gql, QueryResult, useQuery} from '@apollo/client';
+import {Box, ColorsWIP, IconWIP, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import _, {uniq, without} from 'lodash';
 import React from 'react';
-import {useHistory} from 'react-router';
+import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../../app/GraphQueryImpl';
@@ -16,15 +17,14 @@ import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplo
 import {useDidLaunchEvent} from '../../runs/RunUtils';
 import {GraphQueryInput} from '../../ui/GraphQueryInput';
 import {Loading} from '../../ui/Loading';
-import {NonIdealState} from '../../ui/NonIdealState';
-import {SplitPanelContainer} from '../../ui/SplitPanelContainer';
 import {buildPipelineSelector} from '../WorkspaceContext';
 import {RepoAddress} from '../types';
 
 import {AssetLinks} from './AssetLinks';
 import {AssetNode, ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
 import {ForeignNode} from './ForeignNode';
-import {SidebarAssetInfo, SidebarAssetsInfo} from './SidebarAssetInfo';
+import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
+import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {
   buildGraphData,
   buildLiveData,
@@ -167,10 +167,12 @@ const AssetGraphExplorerWithData: React.FC<
   const findAssetInWorkspace = useFindAssetInWorkspace();
 
   const selectedDefinitions = selectedHandles.map((h) => h.solid.definition);
-  const selectedGraphNodes = selectedDefinitions.map(
-    (def) => Object.values(graphData.nodes).find((node) => node.definition.opName === def.name)!,
-  );
-  const focusedGraphNode = selectedGraphNodes[selectedGraphNodes.length - 1];
+  const selectedGraphNodes = selectedDefinitions
+    .map(
+      (def) => Object.values(graphData.nodes).find((node) => node.definition.opName === def.name)!,
+    )
+    .filter(Boolean);
+  const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1];
 
   const onSelectNode = React.useCallback(
     async (e: React.MouseEvent<any>, assetKey: {path: string[]}, node: Node | null) => {
@@ -201,8 +203,8 @@ const AssetGraphExplorerWithData: React.FC<
       } else if (e.shiftKey || e.metaKey) {
         const existing = explorerPath.opNames[0].split(',');
         const added =
-          e.shiftKey && focusedGraphNode && node
-            ? opsInRange({graph: graphData, from: focusedGraphNode, to: node})
+          e.shiftKey && lastSelectedNode && node
+            ? opsInRange({graph: graphData, from: lastSelectedNode, to: node})
             : [clicked.opName];
 
         nextOpsNameSelection = (existing.includes(clicked.opName)
@@ -226,7 +228,7 @@ const AssetGraphExplorerWithData: React.FC<
       onChangeExplorerPath,
       findAssetInWorkspace,
       history,
-      focusedGraphNode,
+      lastSelectedNode,
       graphData,
     ],
   );
@@ -302,10 +304,9 @@ const AssetGraphExplorerWithData: React.FC<
                             handles.find((h) => h.handleID === graphNode.definition.opName)!.solid
                               .definition.metadata
                           }
-                          selected={focusedGraphNode === graphNode}
+                          selected={selectedGraphNodes.includes(graphNode)}
                           jobName={explorerPath.pipelineName}
                           repoAddress={repoAddress}
-                          secondaryHighlight={selectedGraphNodes.includes(graphNode)}
                         />
                       )}
                     </foreignObject>
@@ -321,7 +322,18 @@ const AssetGraphExplorerWithData: React.FC<
             <LargeDAGNotice nodeType="asset" />
           ) : undefined}
 
-          <div style={{position: 'absolute', right: 8, top: 6}}>
+          <div style={{position: 'absolute', right: 12, top: 12}}>
+            <LaunchAssetExecutionButton
+              title={titleForLaunch(selectedGraphNodes, liveDataByNode)}
+              repoAddress={repoAddress}
+              assetJobName={explorerPath.pipelineName}
+              assets={(selectedGraphNodes.length
+                ? selectedGraphNodes
+                : Object.values(graphData.nodes)
+              ).map((n) => n.definition)}
+            />
+          </div>
+          <div style={{position: 'absolute', left: 24, top: 16}}>
             <QueryCountdown pollInterval={5 * 1000} queryResult={liveDataQueryResult} />
           </div>
           <AssetQueryInputContainer>
@@ -338,14 +350,15 @@ const AssetGraphExplorerWithData: React.FC<
         <RightInfoPanel>
           <RightInfoPanelContent>
             {selectedGraphNodes.length > 1 ? (
-              <SidebarAssetsInfo
-                jobName={explorerPath.pipelineName}
-                nodes={selectedGraphNodes.map((n) => n.definition)}
-                repoAddress={repoAddress}
-              />
+              <Box
+                style={{height: '70%', color: ColorsWIP.Gray400}}
+                flex={{justifyContent: 'center', alignItems: 'center', gap: 4, direction: 'column'}}
+              >
+                <IconWIP size={48} name="asset" color={ColorsWIP.Gray400} />
+                {`${selectedGraphNodes.length} Assets Selected`}
+              </Box>
             ) : selectedGraphNodes.length === 1 && selectedGraphNodes[0] ? (
               <SidebarAssetInfo
-                jobName={explorerPath.pipelineName}
                 node={selectedGraphNodes[0].definition}
                 liveData={liveDataByNode[selectedGraphNodes[0].id]}
                 definition={selectedDefinitions[0]}
@@ -400,6 +413,9 @@ const ASSETS_GRAPH_QUERY = gql`
           id
           ...AssetNodeFragment
           dependencyKeys {
+            path
+          }
+          dependedByKeys {
             path
           }
         }
@@ -471,4 +487,15 @@ const opsInRange = (
     }
   }
   return uniq(ledToTarget);
+};
+
+const titleForLaunch = (nodes: Node[], liveDataByNode: LiveData) => {
+  const isRematerializeForAll = (nodes.length
+    ? nodes.map((n) => liveDataByNode[n.id])
+    : Object.values(liveDataByNode)
+  ).every((e) => !!e?.lastMaterialization);
+
+  return `${isRematerializeForAll ? 'Rematerialize' : 'Materialize'} ${
+    nodes.length === 0 ? `All` : nodes.length === 1 ? `Selected` : `Selected (${nodes.length})`
+  }`;
 };

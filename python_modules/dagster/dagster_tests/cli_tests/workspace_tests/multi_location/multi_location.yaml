@@ -8,3 +8,4 @@ load_from:
   - python_package:
       package_name: dagster.utils.test.hello_world_repository
       location_name: loaded_from_package
+      working_directory: ./

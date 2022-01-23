@@ -1,4 +1,4 @@
-import {Toaster} from '../ui/Toaster';
+import {Toaster} from '@dagster-io/ui';
 
 export const SharedToaster = Toaster.create({position: 'top'}, document.body);
 

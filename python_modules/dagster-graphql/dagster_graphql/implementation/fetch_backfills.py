@@ -10,10 +10,12 @@ def get_backfill(graphene_info, backfill_id):
 
 
 @capture_error
-def get_backfills(graphene_info, cursor=None, limit=None):
+def get_backfills(graphene_info, status=None, cursor=None, limit=None):
     from ..schema.backfill import GraphenePartitionBackfill, GraphenePartitionBackfills
 
-    backfills = graphene_info.context.instance.get_backfills(cursor=cursor, limit=limit)
+    backfills = graphene_info.context.instance.get_backfills(
+        status=status, cursor=cursor, limit=limit
+    )
     return GraphenePartitionBackfills(
         results=[GraphenePartitionBackfill(backfill) for backfill in backfills]
     )

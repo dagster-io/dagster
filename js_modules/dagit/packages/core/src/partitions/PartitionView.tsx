@@ -1,3 +1,12 @@
+import {
+  Box,
+  ButtonWIP,
+  CursorHistoryControls,
+  DialogWIP,
+  IconWIP,
+  Spinner,
+  Tooltip,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -6,13 +15,6 @@ import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {OptionsContainer} from '../gantt/VizComponents';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useQueryPersistedRunFilters} from '../runs/RunsFilterInput';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {CursorHistoryControls} from '../ui/CursorControls';
-import {DialogWIP} from '../ui/Dialog';
-import {IconWIP} from '../ui/Icon';
-import {Spinner} from '../ui/Spinner';
-import {Tooltip} from '../ui/Tooltip';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 

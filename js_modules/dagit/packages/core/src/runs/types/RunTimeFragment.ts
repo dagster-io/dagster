@@ -36,6 +36,7 @@ export type RunTimeFragment_stats = RunTimeFragment_stats_RunStatsSnapshot | Run
 export interface RunTimeFragment {
   __typename: "Run";
   id: string;
+  runId: string;
   status: RunStatus;
   stats: RunTimeFragment_stats;
 }

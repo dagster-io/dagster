@@ -4,12 +4,12 @@ from datetime import datetime
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 import pendulum
-from croniter import croniter
 from dagster import check
 from dagster.seven import funcsigs
 
 from ...serdes import whitelist_for_serdes
 from ...utils import ensure_gen, merge_dicts
+from ...utils.schedules import is_valid_cron_string
 from ..decorator_utils import get_function_params
 from ..errors import (
     DagsterInvalidDefinitionError,
@@ -197,9 +197,10 @@ class ScheduleDefinition:
 
         self._cron_schedule = check.str_param(cron_schedule, "cron_schedule")
 
-        if not croniter.is_valid(self._cron_schedule):
+        if not is_valid_cron_string(self._cron_schedule):
             raise DagsterInvalidDefinitionError(
-                f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''."
+                f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''.  "
+                "Dagster recognizes cron expressions consisting of 5 space-separated fields."
             )
 
         if job is not None:
@@ -423,21 +424,25 @@ class ScheduleDefinition:
             execution_fn = cast(Callable[[ScheduleEvaluationContext], Any], self._execution_fn)
         result = list(ensure_gen(execution_fn(context)))
 
+        skip_message: Optional[str] = None
+
         if not result or result == [None]:
             run_requests = []
-            skip_message = None
+            skip_message = "Schedule function returned an empty result"
         elif len(result) == 1:
             item = result[0]
             check.inst(item, (SkipReason, RunRequest))
             run_requests = [item] if isinstance(item, RunRequest) else []
             skip_message = item.skip_message if isinstance(item, SkipReason) else None
         else:
-            check.is_list(result, of_type=RunRequest)
+            # NOTE: mypy is not correctly reading this cast-- not sure why
+            # (pyright reads it fine). Hence the type-ignores below.
+            result = cast(List[RunRequest], check.is_list(result, of_type=RunRequest))  # type: ignore
             check.invariant(
-                not any(not request.run_key for request in result),
+                not any(not request.run_key for request in result),  # type: ignore
                 "Schedules that return multiple RunRequests must specify a run_key in each RunRequest",
             )
-            run_requests = result
+            run_requests = result  # type: ignore
             skip_message = None
 
         # clone all the run requests with the required schedule tags

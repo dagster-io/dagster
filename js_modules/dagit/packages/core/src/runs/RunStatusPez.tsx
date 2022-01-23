@@ -1,10 +1,8 @@
+import {Box, ColorsWIP, Popover} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {RunStatus} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {Popover} from '../ui/Popover';
 
 import {RunStats} from './RunStats';
 
@@ -22,6 +20,7 @@ const RUN_STATUS_COLORS = {
 
 const MIN_OPACITY = 0.2;
 const MAX_OPACITY = 1.0;
+const MIN_OPACITY_STEPS = 3;
 
 interface Props {
   opacity?: number;
@@ -43,7 +42,9 @@ interface ListProps {
 
 export const RunStatusPezList = (props: ListProps) => {
   const {fade, runs} = props;
-  const step = (MAX_OPACITY - MIN_OPACITY) / (runs.length || 1);
+  const count = runs.length;
+  const countForStep = Math.max(MIN_OPACITY_STEPS, count);
+  const step = (MAX_OPACITY - MIN_OPACITY) / countForStep;
   return (
     <Box flex={{direction: 'row', alignItems: 'center', gap: 2}}>
       {runs.map((run, ii) => (
@@ -58,7 +59,7 @@ export const RunStatusPezList = (props: ListProps) => {
             key={run.runId}
             runId={run.runId}
             status={run.status}
-            opacity={fade ? MIN_OPACITY + ii * step : 1.0}
+            opacity={fade ? MAX_OPACITY - (count - ii - 1) * step : 1.0}
           />
         </Popover>
       ))}

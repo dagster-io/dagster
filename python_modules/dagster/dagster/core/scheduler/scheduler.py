@@ -61,9 +61,7 @@ class Scheduler(abc.ABC):
             external_schedule.get_external_origin(),
             InstigatorType.SCHEDULE,
             InstigatorStatus.STOPPED,
-            ScheduleInstigatorData(
-                external_schedule.cron_schedule, scheduler=self.__class__.__name__
-            ),
+            ScheduleInstigatorData(external_schedule.cron_schedule),
         )
 
         instance.add_job_state(schedule_state)
@@ -102,7 +100,6 @@ class Scheduler(abc.ABC):
             ScheduleInstigatorData(
                 external_schedule.cron_schedule,
                 get_current_datetime_in_utc().timestamp(),
-                scheduler=self.__class__.__name__,
             )
         )
         instance.update_job_state(started_schedule)
@@ -127,7 +124,6 @@ class Scheduler(abc.ABC):
         stopped_schedule = schedule_state.with_status(InstigatorStatus.STOPPED).with_data(
             ScheduleInstigatorData(
                 cron_schedule=schedule_state.job_specific_data.cron_schedule,
-                scheduler=self.__class__.__name__,
             )
         )
         instance.update_job_state(stopped_schedule)

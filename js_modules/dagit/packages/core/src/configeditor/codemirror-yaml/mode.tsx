@@ -693,12 +693,9 @@ CodeMirror.registerHelper(
     let lastMarkLocation: CodeMirror.Position | undefined;
 
     yamlDoc.errors.slice(0, 10).forEach((error) => {
-      const from = codeMirrorDoc.posFromIndex(
-        error.source?.range ? error.source.range.start : 0,
-      ) as CodeMirror.Position;
-      const to = codeMirrorDoc.posFromIndex(
-        error.source?.range ? error.source.range.end : Number.MAX_SAFE_INTEGER,
-      ) as CodeMirror.Position;
+      const [fromPos, toPos] = error.pos;
+      const from = codeMirrorDoc.posFromIndex(fromPos) as CodeMirror.Position;
+      const to = codeMirrorDoc.posFromIndex(toPos) as CodeMirror.Position;
 
       if (!lastMarkLocation || lastMarkLocation.line < from.line) {
         lastMarkLocation = from;

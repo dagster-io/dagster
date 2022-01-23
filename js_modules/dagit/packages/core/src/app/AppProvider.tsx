@@ -1,11 +1,3 @@
-import '../fonts/fonts.css';
-
-import '@blueprintjs/core/lib/css/blueprint.css';
-import '@blueprintjs/icons/lib/css/blueprint-icons.css';
-import '@blueprintjs/select/lib/css/blueprint-select.css';
-import '@blueprintjs/table/lib/css/table.css';
-import '@blueprintjs/popover2/lib/css/blueprint-popover2.css';
-
 import {
   ApolloLink,
   ApolloClient,
@@ -16,18 +8,20 @@ import {
 } from '@apollo/client';
 import {WebSocketLink} from '@apollo/client/link/ws';
 import {getMainDefinition} from '@apollo/client/utilities';
+import {
+  ColorsWIP,
+  GlobalDialogStyle,
+  GlobalPopoverStyle,
+  GlobalSuggestStyle,
+  GlobalToasterStyle,
+  GlobalTooltipStyle,
+  FontFamily,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
 import {createGlobalStyle} from 'styled-components/macro';
 import {SubscriptionClient} from 'subscriptions-transport-ws';
 
-import {ColorsWIP} from '../ui/Colors';
-import {GlobalDialogStyle} from '../ui/Dialog';
-import {GlobalPopoverStyle} from '../ui/Popover';
-import {GlobalSuggestStyle} from '../ui/Suggest';
-import {GlobalToasterStyle} from '../ui/Toaster';
-import {GlobalTooltipStyle} from '../ui/Tooltip';
-import {FontFamily} from '../ui/styles';
 import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 
 import {AppContext} from './AppContext';

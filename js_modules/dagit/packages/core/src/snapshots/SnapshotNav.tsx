@@ -1,13 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
+import {PageHeader, Tab, Tabs, TagWIP, Heading, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {explorerPathToString, ExplorerPath} from '../pipelines/PipelinePathUtils';
-import {PageHeader} from '../ui/PageHeader';
-import {Tab, Tabs} from '../ui/Tabs';
-import {TagWIP} from '../ui/TagWIP';
-import {Heading} from '../ui/Text';
-import {FontFamily} from '../ui/styles';
 import {useActivePipelineForName} from '../workspace/WorkspaceContext';
 import {workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 

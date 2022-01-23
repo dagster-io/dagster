@@ -35,7 +35,7 @@ configured_pyspark = pyspark_resource.configured(
 snowflake_io_manager_prod = snowflake_io_manager.configured({"database": "DEMO_DB"})
 
 RESOURCES_PROD = {
-    "s3_bucket": ResourceDefinition.hardcoded_resource("hackernews-elementl-prod"),
+    "s3_bucket": ResourceDefinition.hardcoded_resource("hackernews-elementl-prod-oss"),
     "io_manager": common_bucket_s3_pickle_io_manager,
     "s3": s3_resource,
     "parquet_io_manager": s3_partitioned_parquet_io_manager,
@@ -49,7 +49,7 @@ snowflake_io_manager_staging = snowflake_io_manager.configured({"database": "DEM
 
 
 RESOURCES_STAGING = {
-    "s3_bucket": ResourceDefinition.hardcoded_resource("hackernews-elementl-dev"),
+    "s3_bucket": ResourceDefinition.hardcoded_resource("hackernews-elementl-dev-oss"),
     "io_manager": common_bucket_s3_pickle_io_manager,
     "s3": s3_resource,
     "parquet_io_manager": s3_partitioned_parquet_io_manager,

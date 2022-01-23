@@ -1,25 +1,30 @@
 import {gql} from '@apollo/client';
 import {ContextMenu2 as ContextMenu} from '@blueprintjs/popover2';
+import {
+  ColorsWIP,
+  IconWIP,
+  markdownToPlaintext,
+  MenuItemWIP,
+  MenuWIP,
+  Spinner,
+  Tooltip,
+  FontFamily,
+  MenuLink,
+} from '@dagster-io/ui';
 import {isEqual} from 'lodash';
 import qs from 'qs';
 import React, {CSSProperties} from 'react';
-import {Link, useHistory} from 'react-router-dom';
+import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../../app/Util';
 import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
+import {NodeHighlightColors} from '../../graph/OpNode';
 import {OpTags} from '../../graph/OpTags';
 import {METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
 import {titleForRun} from '../../runs/RunUtils';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {ColorsWIP} from '../../ui/Colors';
-import {IconWIP} from '../../ui/Icon';
-import {markdownToPlaintext} from '../../ui/Markdown';
-import {MenuItemWIP, MenuWIP} from '../../ui/Menu';
-import {Spinner} from '../../ui/Spinner';
-import {Tooltip} from '../../ui/Tooltip';
-import {FontFamily} from '../../ui/styles';
 import {RepoAddress} from '../types';
 import {workspacePath, workspacePipelinePathGuessRepo} from '../workspacePath';
 
@@ -34,11 +39,10 @@ export const AssetNode: React.FC<{
   selected: boolean;
   jobName: string;
   repoAddress: RepoAddress;
-  secondaryHighlight: boolean;
+  inAssetCatalog?: boolean;
 }> = React.memo(
-  ({definition, metadata, selected, liveData, repoAddress, jobName, secondaryHighlight}) => {
+  ({definition, metadata, selected, liveData, repoAddress, jobName, inAssetCatalog}) => {
     const launch = useLaunchSingleAssetJob();
-    const history = useHistory();
 
     const {materializationEvent: event, runOrError} = liveData?.lastMaterialization || {};
     const kind = metadata.find((m) => m.key === 'kind')?.value;
@@ -55,38 +59,40 @@ export const AssetNode: React.FC<{
               }}
               text={
                 <span>
-                  Refresh{' '}
+                  {event ? 'Rematerialize ' : 'Materialize '}
                   <span style={{fontFamily: 'monospace', fontWeight: 600}}>
                     {displayNameForAssetKey(definition.assetKey)}
                   </span>
                 </span>
               }
             />
-            <MenuItemWIP
-              icon="link"
-              onClick={(e) => {
-                e.stopPropagation();
-                history.push(`/instance/assets/${definition.assetKey.path.join('/')}`);
-              }}
-              text="View in Asset Catalog"
-            />
+            {!inAssetCatalog && (
+              <MenuLink
+                icon="link"
+                to={`/instance/assets/${definition.assetKey.path.join('/')}`}
+                onClick={(e) => e.stopPropagation()}
+                text="View in Asset Catalog"
+              />
+            )}
           </MenuWIP>
         }
       >
-        <AssetNodeContainer $selected={selected} $secondaryHighlight={secondaryHighlight}>
+        <AssetNodeContainer $selected={selected}>
           <AssetNodeBox>
             <Name>
-              <IconWIP name="asset" />
-              <div style={{overflow: 'hidden', textOverflow: 'ellipsis'}}>
+              <span style={{marginTop: 1}}>
+                <IconWIP name="asset" />
+              </span>
+              <div style={{overflow: 'hidden', textOverflow: 'ellipsis', marginTop: -1}}>
                 {displayNameForAssetKey(definition.assetKey)}
               </div>
               <div style={{flex: 1}} />
               {liveData && liveData.inProgressRunIds.length > 0 ? (
-                <Tooltip content={'A run is currently refreshing this asset.'}>
+                <Tooltip content="A run is currently refreshing this asset.">
                   <Spinner purpose="body-text" />
                 </Tooltip>
               ) : liveData && liveData.unstartedRunIds.length > 0 ? (
-                <Tooltip content={'A run has started that will refresh this asset soon.'}>
+                <Tooltip content="A run has started that will refresh this asset soon.">
                   <Spinner purpose="body-text" stopped />
                 </Tooltip>
               ) : undefined}
@@ -99,7 +105,7 @@ export const AssetNode: React.FC<{
                 </UpstreamNotice>
               )}
             </Name>
-            {definition.description && (
+            {definition.description && !inAssetCatalog && (
               <Description>
                 {markdownToPlaintext(definition.description).split('\n')[0]}
               </Description>
@@ -109,28 +115,22 @@ export const AssetNode: React.FC<{
                 {runOrError?.__typename === 'Run' && (
                   <StatsRow>
                     <Link
-                      data-tooltip={`${runOrError.pipelineName}${
-                        runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''
-                      }`}
+                      data-tooltip={runOrError.pipelineName}
                       data-tooltip-style={RunLinkTooltipStyle}
                       style={{overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 8}}
+                      target={inAssetCatalog ? '_blank' : undefined}
+                      onClick={(e) => e.stopPropagation()}
                       to={
                         repoAddress.name
                           ? workspacePath(
                               repoAddress.name,
                               repoAddress.location,
-                              `jobs/${runOrError.pipelineName}:${runOrError.mode}`,
+                              `jobs/${runOrError.pipelineName}`,
                             )
-                          : workspacePipelinePathGuessRepo(
-                              `${runOrError.pipelineName}:${runOrError.mode}`,
-                              true,
-                              '',
-                            )
+                          : workspacePipelinePathGuessRepo(runOrError.pipelineName, true, '')
                       }
                     >
-                      {`${runOrError.pipelineName}${
-                        runOrError.mode !== 'default' ? `:${runOrError.mode}` : ''
-                      }`}
+                      {runOrError.pipelineName}
                     </Link>
                     <Link
                       style={{fontFamily: FontFamily.monospace, fontSize: 14}}
@@ -139,6 +139,7 @@ export const AssetNode: React.FC<{
                         selection: event.stepStats.stepKey,
                         logs: `step:${event.stepStats.stepKey}`,
                       })}`}
+                      onClick={(e) => e.stopPropagation()}
                       target="_blank"
                     >
                       {titleForRun({runId: runOrError.runId})}
@@ -223,7 +224,6 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
           runId
           status
           pipelineName
-          mode
         }
       }
     }
@@ -238,6 +238,7 @@ export const ASSET_NODE_FRAGMENT = gql`
     id
     opName
     description
+    partitionDefinition
     assetKey {
       path
     }
@@ -255,8 +256,14 @@ export const getNodeDimensions = (def: {
   return {width: Math.max(250, displayNameForAssetKey(def.assetKey).length * 9.5) + 25, height};
 };
 
+const BoxColors = {
+  Divider: 'rgba(219, 219, 244, 1)',
+  Description: 'rgba(245, 245, 250, 1)',
+  Stats: 'rgba(236, 236, 248, 1)',
+};
+
 const RunLinkTooltipStyle = JSON.stringify({
-  background: '#E1EAF0',
+  background: BoxColors.Stats,
   padding: '4px 8px',
   marginLeft: -10,
   marginTop: -8,
@@ -266,13 +273,8 @@ const RunLinkTooltipStyle = JSON.stringify({
   borderRadius: 4,
 } as CSSProperties);
 
-const AssetNodeContainer = styled.div<{$selected: boolean; $secondaryHighlight: boolean}>`
-  outline: ${(p) =>
-    p.$selected
-      ? `2px dashed rgba(255, 69, 0, 1)`
-      : p.$secondaryHighlight
-      ? `2px dashed rgba(255, 69, 0, 0.5)`
-      : 'none'};
+const AssetNodeContainer = styled.div<{$selected: boolean}>`
+  outline: ${(p) => (p.$selected ? `2px dashed ${NodeHighlightColors.Border}` : 'none')};
   border-radius: 6px;
   outline-offset: -1px;
   padding: 4px;
@@ -280,8 +282,7 @@ const AssetNodeContainer = styled.div<{$selected: boolean; $secondaryHighlight: 
   margin-right: 4px;
   margin-left: 4px;
   margin-bottom: 2px;
-  position: absolute;
-  background: ${(p) => (p.$selected ? 'rgba(255, 69, 0, 0.2)' : 'white')};
+  background: ${(p) => (p.$selected ? NodeHighlightColors.Background : 'white')};
   inset: 0;
 `;
 
@@ -290,12 +291,15 @@ const AssetNodeBox = styled.div`
   background: ${ColorsWIP.White};
   border-radius: 5px;
   position: relative;
+  &:hover {
+    box-shadow: ${ColorsWIP.Blue200} inset 0px 0px 0px 1px, rgba(0, 0, 0, 0.12) 0px 2px 12px 0px;
+  }
 `;
 
 const Name = styled.div`
   display: flex;
   padding: 4px 6px;
-  align-items: center;
+  background: ${ColorsWIP.White};
   font-family: ${FontFamily.monospace};
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
@@ -304,19 +308,19 @@ const Name = styled.div`
 `;
 
 const Description = styled.div`
-  background: rgba(245, 245, 250, 1);
+  background: ${BoxColors.Description};
   padding: 4px 8px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-top: 1px solid rgba(219, 219, 244, 1);
+  border-top: 1px solid ${BoxColors.Divider};
   font-size: 12px;
 `;
 
 const Stats = styled.div`
-  background: rgba(236, 236, 248, 1);
+  background: ${BoxColors.Stats};
   padding: 4px 8px;
-  border-top: 1px solid rgba(219, 219, 244, 1);
+  border-top: 1px solid ${BoxColors.Divider};
   font-size: 12px;
   line-height: 18px;
 `;

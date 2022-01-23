@@ -1,8 +1,7 @@
+import {ColorsWIP} from '@dagster-io/ui';
 import {LinkVertical as Link} from '@vx/shape';
 import * as React from 'react';
 import styled from 'styled-components/macro';
-
-import {ColorsWIP} from '../ui/Colors';
 
 import {Edge} from './OpLinks';
 import {SVGMonospaceText} from './SVGComponents';

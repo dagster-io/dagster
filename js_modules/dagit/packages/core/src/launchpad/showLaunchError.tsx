@@ -1,7 +1,7 @@
+import {FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {FontFamily} from '../ui/styles';
 
 export const showLaunchError = (error: Error) => {
   console.error('Error launching run:', error);

@@ -262,6 +262,12 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     def wipe_asset(self, asset_key: AssetKey):
         """Remove asset index history from event log for given asset_key"""
 
+    @abstractmethod
+    def get_materialization_count_by_partition(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Mapping[str, int]]:
+        pass
+
 
 def extract_asset_events_cursor(cursor, before_cursor, after_cursor, ascending):
     if cursor:

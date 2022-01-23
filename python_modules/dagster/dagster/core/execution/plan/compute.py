@@ -5,6 +5,7 @@ from typing import Any, AsyncGenerator, Callable, Dict, Iterator, List, Set, Uni
 from dagster import check
 from dagster.core.definitions import (
     AssetMaterialization,
+    AssetObservation,
     DynamicOutput,
     ExpectationResult,
     Materialization,
@@ -22,7 +23,12 @@ from .outputs import StepOutput, StepOutputProperties
 from .utils import solid_execution_error_boundary
 
 SolidOutputUnion = Union[
-    DynamicOutput, Output, AssetMaterialization, Materialization, ExpectationResult
+    DynamicOutput,
+    Output,
+    AssetMaterialization,
+    Materialization,
+    ExpectationResult,
+    AssetObservation,
 ]
 
 
@@ -59,7 +65,14 @@ def create_step_outputs(
 def _validate_event(event: Any, step_context: StepExecutionContext) -> SolidOutputUnion:
     if not isinstance(
         event,
-        (DynamicOutput, Output, AssetMaterialization, Materialization, ExpectationResult),
+        (
+            DynamicOutput,
+            Output,
+            AssetMaterialization,
+            Materialization,
+            ExpectationResult,
+            AssetObservation,
+        ),
     ):
         raise DagsterInvariantViolationError(
             (
@@ -143,13 +156,12 @@ def execute_core_compute(
 
     step = step_context.step
 
-    all_results = []
+    emitted_result_names = set()
     for step_output in _yield_compute_results(step_context, inputs, compute_fn):
         yield step_output
         if isinstance(step_output, (DynamicOutput, Output)):
-            all_results.append(step_output)
+            emitted_result_names.add(step_output.output_name)
 
-    emitted_result_names = {r.output_name for r in all_results}
     solid_output_names = {output.name for output in step.step_outputs}
     omitted_outputs = solid_output_names.difference(emitted_result_names)
     if omitted_outputs:

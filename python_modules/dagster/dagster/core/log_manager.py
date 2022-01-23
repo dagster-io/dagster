@@ -249,7 +249,8 @@ class DagsterLogHandler(logging.Handler):
         dagster_record = self._convert_record(record)
         # built-in handlers
         for handler in self._handlers:
-            handler.handle(dagster_record)
+            if dagster_record.levelno >= handler.level:
+                handler.handle(dagster_record)
         # user-defined @loggers
         for logger in self._loggers:
             logger.log(

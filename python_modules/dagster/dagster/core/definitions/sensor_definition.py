@@ -303,10 +303,14 @@ class SensorDefinition:
         check.inst_param(context, "context", SensorEvaluationContext)
         result = list(ensure_gen(self._evaluation_fn(context)))
 
+        skip_message: Optional[str] = None
+
+        run_requests: List[Any]
+        pipeline_run_reactions: List[Any]
         if not result or result == [None]:
             run_requests = []
             pipeline_run_reactions = []
-            skip_message = None
+            skip_message = "Sensor function returned an empty result"
         elif len(result) == 1:
             item = result[0]
             check.inst(item, (SkipReason, RunRequest, PipelineRunReaction))
@@ -318,7 +322,6 @@ class SensorDefinition:
             has_skip = any(map(lambda x: isinstance(x, SkipReason), result))
             has_run_request = any(map(lambda x: isinstance(x, RunRequest), result))
             has_run_reaction = any(map(lambda x: isinstance(x, PipelineRunReaction), result))
-            skip_message = None
 
             if has_skip:
                 if has_run_request:
@@ -326,7 +329,7 @@ class SensorDefinition:
                         "Expected a single SkipReason or one or more RunRequests: received both "
                         "RunRequest and SkipReason"
                     )
-                if has_run_reaction:
+                elif has_run_reaction:
                     check.failed(
                         "Expected a single SkipReason or one or more PipelineRunReaction: "
                         "received both PipelineRunReaction and SkipReason"

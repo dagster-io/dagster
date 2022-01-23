@@ -1,4 +1,16 @@
 import {gql, useQuery} from '@apollo/client';
+import {
+  Box,
+  ColorsWIP,
+  NonIdealState,
+  SplitPanelContainer,
+  SuggestionProvider,
+  TokenizingField,
+  TokenizingFieldValue,
+  stringFromValue,
+  tokenizedValuesFromString,
+  FontFamily,
+} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import {useHistory, useLocation, useParams} from 'react-router-dom';
@@ -6,19 +18,7 @@ import {AutoSizer, CellMeasurer, CellMeasurerCache, List} from 'react-virtualize
 import styled from 'styled-components/macro';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
-import {NonIdealState} from '../ui/NonIdealState';
-import {SplitPanelContainer} from '../ui/SplitPanelContainer';
-import {
-  SuggestionProvider,
-  TokenizingField,
-  TokenizingFieldValue,
-  stringFromValue,
-  tokenizedValuesFromString,
-} from '../ui/TokenizingField';
-import {FontFamily} from '../ui/styles';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -209,7 +209,7 @@ const OpsRootWithData: React.FC<Props & {name?: string; usedSolids: Solid[]}> = 
                 values={search}
                 onChange={(search) => onSearch(search)}
                 suggestionProviders={suggestions}
-                placeholder={'Filter by name or input/output type...'}
+                placeholder="Filter by name or input/output type..."
               />
             </Box>
             <div style={{flex: 1}}>

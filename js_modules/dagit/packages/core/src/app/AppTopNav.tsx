@@ -1,3 +1,4 @@
+import {Box, ColorsWIP, IconWIP, IconWrapper, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -6,10 +7,6 @@ import {InstanceWarningIcon} from '../nav/InstanceWarningIcon';
 import {VersionNumber} from '../nav/VersionNumber';
 import {WorkspaceWarningIcon} from '../nav/WorkspaceWarningIcon';
 import {SearchDialog} from '../search/SearchDialog';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP, IconWrapper} from '../ui/Icon';
-import {Tooltip} from '../ui/Tooltip';
 
 import {LayoutContext} from './LayoutProvider';
 import {ShortcutHandler} from './ShortcutHandler';
@@ -32,21 +29,21 @@ export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
         <Box flex={{direction: 'row', alignItems: 'center', gap: 16}}>
           <ShortcutHandler
             onShortcut={() => history.push('/instance/runs')}
-            shortcutLabel={`⌥1`}
+            shortcutLabel="⌥1"
             shortcutFilter={(e) => e.code === 'Digit1' && e.altKey}
           >
             <TopNavLink to="/instance/runs">Runs</TopNavLink>
           </ShortcutHandler>
           <ShortcutHandler
             onShortcut={() => history.push('/instance/assets')}
-            shortcutLabel={`⌥2`}
+            shortcutLabel="⌥2"
             shortcutFilter={(e) => e.code === 'Digit2' && e.altKey}
           >
             <TopNavLink to="/instance/assets">Assets</TopNavLink>
           </ShortcutHandler>
           <ShortcutHandler
             onShortcut={() => history.push('/instance')}
-            shortcutLabel={`⌥3`}
+            shortcutLabel="⌥3"
             shortcutFilter={(e) => e.code === 'Digit3' && e.altKey}
           >
             <TopNavLink to="/instance">
@@ -58,7 +55,7 @@ export const AppTopNav: React.FC<Props> = ({children, searchPlaceholder}) => {
           </ShortcutHandler>
           <ShortcutHandler
             onShortcut={() => history.push('/workspace')}
-            shortcutLabel={`⌥4`}
+            shortcutLabel="⌥4"
             shortcutFilter={(e) => e.code === 'Digit4' && e.altKey}
           >
             <TopNavLink to="/workspace">

@@ -11,6 +11,7 @@ from dagster import check
 from dagster.core.definitions.hook_definition import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.policy import RetryPolicy
@@ -356,7 +357,13 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             self._step_launcher = step_launcher_resources[0]
 
         self._step_exception: Optional[BaseException] = None
-        self._step_output_capture: Dict[StepOutputHandle, Any] = {}
+
+        self._step_output_capture: Optional[Dict[StepOutputHandle, Any]] = None
+        # Enable step output capture if there are any hooks which will receive them.
+        # Expect in the future that hooks may control whether or not they get outputs,
+        # but for now presence of any will cause output capture.
+        if self.pipeline_def.get_all_hooks_for_handle(self.solid_handle):
+            self._step_output_capture = {}
 
     @property
     def step(self) -> ExecutionStep:
@@ -541,12 +548,85 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         return self._step_exception
 
     @property
-    def step_output_capture(self) -> Dict[StepOutputHandle, Any]:
+    def step_output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
         return self._step_output_capture
 
     @property
     def previous_attempt_count(self) -> int:
         return self._previous_attempt_count
+
+    @property
+    def op_config(self) -> Any:
+        solid_config = self.resolved_run_config.solids.get(str(self.solid_handle))
+        return solid_config.config if solid_config else None
+
+    def has_asset_partitions_for_input(self, input_name: str) -> bool:
+        op_config = self.op_config
+        if op_config is not None and "assets" in op_config:
+            all_input_asset_partitions = op_config["assets"].get("input_partitions")
+            if all_input_asset_partitions is not None:
+                this_input_asset_partitions = all_input_asset_partitions.get(input_name)
+                if this_input_asset_partitions is not None:
+                    return True
+
+        return False
+
+    def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
+        op_config = self.op_config
+        if op_config is not None and "assets" in op_config:
+            all_input_asset_partitions = op_config["assets"].get("input_partitions")
+            if all_input_asset_partitions is not None:
+                this_input_asset_partitions = all_input_asset_partitions.get(input_name)
+                if this_input_asset_partitions is not None:
+                    return PartitionKeyRange(
+                        this_input_asset_partitions["start"], this_input_asset_partitions["end"]
+                    )
+
+        check.failed("The input has no asset partitions")
+
+    def asset_partition_key_for_input(self, input_name: str) -> str:
+        start, end = self.asset_partition_key_range_for_input(input_name)
+        if start == end:
+            return start
+        else:
+            check.failed(
+                f"Tried to access partition key for input '{input_name}' of step '{self.step.key}', "
+                f"but the step input has a partition range: '{start}' to '{end}'."
+            )
+
+    def has_asset_partitions_for_output(self, output_name: str) -> bool:
+        op_config = self.op_config
+        if op_config is not None and "assets" in op_config:
+            all_output_asset_partitions = op_config["assets"].get("output_partitions")
+            if all_output_asset_partitions is not None:
+                this_output_asset_partitions = all_output_asset_partitions.get(output_name)
+                if this_output_asset_partitions is not None:
+                    return True
+
+        return False
+
+    def asset_partition_key_range_for_output(self, output_name: str) -> PartitionKeyRange:
+        op_config = self.op_config
+        if op_config is not None and "assets" in op_config:
+            all_output_asset_partitions = op_config["assets"].get("output_partitions")
+            if all_output_asset_partitions is not None:
+                this_output_asset_partitions = all_output_asset_partitions.get(output_name)
+                if this_output_asset_partitions is not None:
+                    return PartitionKeyRange(
+                        this_output_asset_partitions["start"], this_output_asset_partitions["end"]
+                    )
+
+        check.failed("The output has no asset partitions")
+
+    def asset_partition_key_for_output(self, output_name: str) -> str:
+        start, end = self.asset_partition_key_range_for_output(output_name)
+        if start == end:
+            return start
+        else:
+            check.failed(
+                f"Tried to access partition key for output '{output_name}' of step '{self.step.key}', "
+                f"but the step output has a partition range: '{start}' to '{end}'."
+            )
 
 
 class TypeCheckContext:

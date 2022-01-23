@@ -13,6 +13,13 @@ from dagster import (
 from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
 
 
+def reset_logging():
+    # resets top level logging constructs to default value
+    logging.root = logging.RootLogger(logging.WARNING)
+    logging.Logger.root = logging.root
+    logging.Logger.manager = logging.Manager(logging.Logger.root)
+
+
 def get_log_records(pipe, managed_loggers=None, python_logging_level=None, run_config=None):
     python_logs_overrides = {}
     if managed_loggers is not None:
@@ -41,6 +48,9 @@ def get_log_records(pipe, managed_loggers=None, python_logging_level=None, run_c
     ],
 )
 def test_logging_capture_logger_defined_outside(managed_logs, expect_output):
+
+    reset_logging()
+
     logger = logging.getLogger("python_logger")
     logger.setLevel(logging.INFO)
 
@@ -76,6 +86,8 @@ def test_logging_capture_logger_defined_outside(managed_logs, expect_output):
     ],
 )
 def test_logging_capture_logger_defined_inside(managed_logs, expect_output):
+    reset_logging()
+
     @solid
     def my_solid():
         logger = logging.getLogger("python_logger")
@@ -110,6 +122,8 @@ def test_logging_capture_logger_defined_inside(managed_logs, expect_output):
     ],
 )
 def test_logging_capture_resource(managed_logs, expect_output):
+
+    reset_logging()
 
     python_log = logging.getLogger("python_logger")
     python_log.setLevel(logging.DEBUG)
@@ -216,6 +230,7 @@ def multilevel_logging_builtin_outside():
     ],
 )
 def test_logging_capture_level_defined_outside(log_level, expected_msgs):
+    reset_logging()
     log_event_records = [
         lr
         for lr in get_log_records(
@@ -241,6 +256,7 @@ def test_logging_capture_level_defined_outside(log_level, expected_msgs):
     ],
 )
 def test_logging_capture_level_defined_inside(log_level, expected_msgs):
+    reset_logging()
     log_event_records = [
         lr
         for lr in get_log_records(
@@ -265,7 +281,7 @@ def test_logging_capture_level_defined_inside(log_level, expected_msgs):
     ],
 )
 def test_logging_capture_builtin_outside(log_level, expected_msgs):
-
+    reset_logging()
     log_event_records = [
         lr
         for lr in get_log_records(
@@ -288,7 +304,7 @@ def test_logging_capture_builtin_outside(log_level, expected_msgs):
     ],
 )
 def test_logging_capture_builtin_inside(log_level, expected_msgs):
-
+    reset_logging()
     log_event_records = [
         lr
         for lr in get_log_records(
@@ -326,6 +342,7 @@ def define_logging_pipeline():
 
 @pytest.mark.parametrize("managed_loggers", [["root"], ["loggerA", "loggerB"]])
 def test_multiprocess_logging(managed_loggers):
+    reset_logging()
 
     log_records = get_log_records(
         reconstructable(define_logging_pipeline),

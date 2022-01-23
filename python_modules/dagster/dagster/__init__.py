@@ -5,6 +5,7 @@ from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.definitions import (
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     AssetSensorDefinition,
     CompositeSolidDefinition,
     ConfigMapping,
@@ -207,6 +208,7 @@ from dagster.core.types.python_dict import Dict
 from dagster.core.types.python_set import Set
 from dagster.core.types.python_tuple import Tuple
 from dagster.utils import file_relative_path
+from dagster.utils.alert import make_email_on_run_failure_sensor
 from dagster.utils.backcompat import ExperimentalWarning
 from dagster.utils.log import get_dagster_logger
 from dagster.utils.partitions import (
@@ -230,6 +232,7 @@ __all__ = [
     # Definition
     "AssetKey",
     "AssetMaterialization",
+    "AssetObservation",
     "AssetSensorDefinition",
     "CompositeSolidDefinition",
     "ConfigMapping",
@@ -461,6 +464,7 @@ __all__ = [
     "create_offset_partition_selector",
     "date_partition_range",
     "identity_partition_selector",
+    "make_email_on_run_failure_sensor",
     # IO managers
     "IOManager",
     "IOManagerDefinition",

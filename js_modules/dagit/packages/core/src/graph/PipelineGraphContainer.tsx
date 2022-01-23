@@ -1,10 +1,9 @@
+import {Box, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {GraphExplorerSolidHandleFragment} from '../pipelines/types/GraphExplorerSolidHandleFragment';
-import {Box} from '../ui/Box';
-import {Spinner} from '../ui/Spinner';
 
 import {PipelineGraph} from './PipelineGraph';
 import {asyncDagrePipelineLayout, getDagrePipelineLayout} from './getFullOpLayout';

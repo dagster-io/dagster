@@ -1,14 +1,20 @@
 import hashlib
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Generator, Optional
 
 from dagster import check
 from dagster.config.config_type import ConfigType
 from dagster.core.decorator_utils import get_function_params, validate_expected_params
+from dagster.core.definitions.events import AssetMaterialization
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.utils import ensure_gen
 from dagster.utils.backcompat import experimental_arg_warning
 
+if TYPE_CHECKING:
+    from dagster.core.execution.context.system import StepExecutionContext
 
-class DagsterTypeLoader:
+
+class DagsterTypeLoader(ABC):
     """
     Dagster type loaders are used to load unconnected inputs of the dagster type they are attached
     to.
@@ -18,29 +24,30 @@ class DagsterTypeLoader:
     """
 
     @property
-    def schema_type(self):
-        check.not_implemented(
-            "Must override schema_type in {klass}".format(klass=type(self).__name__)
-        )
+    @abstractmethod
+    def schema_type(self) -> ConfigType:
+        pass
 
     @property
-    def loader_version(self):
+    def loader_version(self) -> Optional[str]:
         return None
 
-    def compute_loaded_input_version(self, _config_value):
+    def compute_loaded_input_version(self, _config_value: object) -> Optional[str]:
         return None
 
-    def construct_from_config_value(self, _context, config_value):
+    def construct_from_config_value(
+        self, _context: "StepExecutionContext", config_value: object
+    ) -> object:
         """
         How to create a runtime value from config data.
         """
         return config_value
 
-    def required_resource_keys(self):
+    def required_resource_keys(self) -> AbstractSet[str]:
         return frozenset()
 
 
-class DagsterTypeMaterializer:
+class DagsterTypeMaterializer(ABC):
     """
     Dagster type materializers are used to materialize outputs of the dagster type they are attached
     to.
@@ -50,18 +57,19 @@ class DagsterTypeMaterializer:
     """
 
     @property
-    def schema_type(self):
-        check.not_implemented(
-            "Must override schema_type in {klass}".format(klass=type(self).__name__)
-        )
+    @abstractmethod
+    def schema_type(self) -> ConfigType:
+        pass
 
-    def materialize_runtime_values(self, _context, _config_value, _runtime_value):
+    @abstractmethod
+    def materialize_runtime_values(
+        self, _context: "StepExecutionContext", _config_value: object, _runtime_value: object
+    ) -> object:
         """
         How to materialize a runtime value given configuration.
         """
-        check.not_implemented("Must implement")
 
-    def required_resource_keys(self):
+    def required_resource_keys(self) -> AbstractSet[str]:
         return frozenset()
 
 
@@ -91,18 +99,18 @@ class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
             )
 
     @property
-    def schema_type(self):
+    def schema_type(self) -> ConfigType:
         return self._config_type
 
     @property
-    def loader_version(self):
+    def loader_version(self) -> Optional[str]:
         return self._loader_version
 
-    def compute_loaded_input_version(self, config_value):
+    def compute_loaded_input_version(self, config_value: object) -> Optional[str]:
         """Compute the type-loaded input from a given config_value.
 
         Args:
-            config_value (Union[Any, Dict]): Config value to be ingested by the external version
+            config_value (object): Config value to be ingested by the external version
                 loading function.
         Returns:
             Optional[str]: Hash of concatenated loader version and external input version if both
@@ -120,7 +128,7 @@ class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
         else:
             return hashlib.sha1(version.encode("utf-8")).hexdigest()
 
-    def construct_from_config_value(self, context, config_value):
+    def construct_from_config_value(self, context: "StepExecutionContext", config_value: object):
         return self._func(context, config_value)
 
     def required_resource_keys(self):
@@ -128,9 +136,9 @@ class DagsterTypeLoaderFromDecorator(DagsterTypeLoader):
 
 
 def _create_type_loader_for_decorator(
-    config_type,
+    config_type: ConfigType,
     func,
-    required_resource_keys,
+    required_resource_keys: AbstractSet[str],
     loader_version=None,
     external_version_fn=None,
 ):
@@ -140,7 +148,7 @@ def _create_type_loader_for_decorator(
 
 
 def dagster_type_loader(
-    config_schema,
+    config_schema: object,
     required_resource_keys=None,
     loader_version=None,
     external_version_fn=None,
@@ -202,30 +210,41 @@ class DagsterTypeMaterializerForDecorator(DagsterTypeMaterializer):
         )
 
     @property
-    def schema_type(self):
+    def schema_type(self) -> ConfigType:
         return self._config_type
 
-    def materialize_runtime_values(self, context, config_value, runtime_value):
+    def materialize_runtime_values(
+        self, context: "StepExecutionContext", config_value: object, runtime_value: object
+    ) -> Generator[AssetMaterialization, Any, Any]:
         return ensure_gen(self._func(context, config_value, runtime_value))
 
-    def required_resource_keys(self):
+    def required_resource_keys(self) -> AbstractSet[str]:
         return frozenset(self._required_resource_keys)
 
 
-def _create_output_materializer_for_decorator(config_type, func, required_resource_keys):
+def _create_output_materializer_for_decorator(
+    config_type: ConfigType,
+    func: Callable[["StepExecutionContext", object, object], AssetMaterialization],
+    required_resource_keys: Optional[AbstractSet[str]],
+) -> DagsterTypeMaterializerForDecorator:
     return DagsterTypeMaterializerForDecorator(config_type, func, required_resource_keys)
 
 
-def dagster_type_materializer(config_schema, required_resource_keys=None):
+def dagster_type_materializer(
+    config_schema: object, required_resource_keys: Optional[AbstractSet[str]] = None
+) -> Callable[
+    [Callable[["StepExecutionContext", object, object], AssetMaterialization]],
+    DagsterTypeMaterializerForDecorator,
+]:
     """Create an output materialization hydration config that configurably materializes a runtime
     value.
 
     The decorated function should take the execution context, the parsed config value, and the
-    runtime value and the parsed config data, should materialize the runtime value, and should
+    runtime value. It should materialize the runtime value, and should
     return an appropriate :py:class:`AssetMaterialization`.
 
     Args:
-        config_schema (Any): The type of the config data expected by the decorated function.
+        config_schema (object): The type of the config data expected by the decorated function.
 
     Examples:
 
@@ -247,5 +266,5 @@ def dagster_type_materializer(config_schema, required_resource_keys=None):
 
     config_type = resolve_to_config_type(config_schema)
     return lambda func: _create_output_materializer_for_decorator(
-        config_type, func, required_resource_keys
+        config_type, func, required_resource_keys  # type: ignore
     )

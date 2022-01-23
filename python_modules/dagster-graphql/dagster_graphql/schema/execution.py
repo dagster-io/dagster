@@ -1,56 +1,39 @@
 import graphene
 from dagster import check
 from dagster.core.host_representation import ExternalExecutionPlan
-from dagster.core.snap import (
-    ExecutionStepInputSnap,
-    ExecutionStepOutputSnap,
-    ExecutionStepSnap,
-    PipelineSnapshot,
-)
+from dagster.core.snap import ExecutionStepInputSnap, ExecutionStepOutputSnap, ExecutionStepSnap
 
-from .dagster_types import GrapheneDagsterType, to_dagster_type
 from .metadata import GrapheneMetadataItemDefinition
 from .util import non_null_list
 
 
 class GrapheneExecutionStepOutput(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
-    type = graphene.Field(graphene.NonNull(GrapheneDagsterType))
 
     class Meta:
         name = "ExecutionStepOutput"
 
-    def __init__(self, pipeline_snapshot, step_output_snap):
+    def __init__(self, step_output_snap):
         super().__init__()
         self._step_output_snap = check.inst_param(
             step_output_snap, "step_output_snap", ExecutionStepOutputSnap
-        )
-        self._pipeline_snapshot = check.inst_param(
-            pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot
         )
 
     def resolve_name(self, _graphene_info):
         return self._step_output_snap.name
 
-    def resolve_type(self, _graphene_info):
-        return to_dagster_type(self._pipeline_snapshot, self._step_output_snap.dagster_type_key)
-
 
 class GrapheneExecutionStepInput(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
-    type = graphene.Field(graphene.NonNull(GrapheneDagsterType))
     dependsOn = non_null_list(lambda: GrapheneExecutionStep)
 
     class Meta:
         name = "ExecutionStepInput"
 
-    def __init__(self, pipeline_snapshot, step_input_snap, external_execution_plan):
+    def __init__(self, step_input_snap, external_execution_plan):
         super().__init__()
         self._step_input_snap = check.inst_param(
             step_input_snap, "step_input_snap", ExecutionStepInputSnap
-        )
-        self._pipeline_snapshot = check.inst_param(
-            pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot
         )
         self._external_execution_plan = check.inst_param(
             external_execution_plan, "external_execution_plan", ExternalExecutionPlan
@@ -58,9 +41,6 @@ class GrapheneExecutionStepInput(graphene.ObjectType):
 
     def resolve_name(self, _graphene_info):
         return self._step_input_snap.name
-
-    def resolve_type(self, _graphene_info):
-        return to_dagster_type(self._pipeline_snapshot, self._step_input_snap.dagster_type_key)
 
     def resolve_dependsOn(self, _graphene_info):
         return [
@@ -126,22 +106,12 @@ class GrapheneExecutionStep(graphene.ObjectType):
 
     def resolve_inputs(self, _graphene_info):
         return [
-            GrapheneExecutionStepInput(
-                self._external_execution_plan.represented_pipeline.pipeline_snapshot,
-                inp,
-                self._external_execution_plan,
-            )
+            GrapheneExecutionStepInput(inp, self._external_execution_plan)
             for inp in self._step_snap.inputs
         ]
 
     def resolve_outputs(self, _graphene_info):
-        return [
-            GrapheneExecutionStepOutput(
-                self._external_execution_plan.represented_pipeline.pipeline_snapshot,
-                out,
-            )
-            for out in self._step_snap.outputs
-        ]
+        return [GrapheneExecutionStepOutput(out) for out in self._step_snap.outputs]
 
     def resolve_key(self, _graphene_info):
         return self._step_snap.key

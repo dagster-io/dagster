@@ -1,10 +1,7 @@
+import {ColorsWIP, IconWIP, NonIdealState} from '@dagster-io/ui';
 import {capitalize} from 'lodash';
 import * as React from 'react';
 import styled from 'styled-components/macro';
-
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
-import {NonIdealState} from '../ui/NonIdealState';
 
 export const LargeDAGNotice = ({nodeType}: {nodeType: 'op' | 'asset'}) => (
   <LargeDAGContainer>

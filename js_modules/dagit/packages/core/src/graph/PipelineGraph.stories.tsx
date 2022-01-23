@@ -1,8 +1,8 @@
+import {ColorsWIP} from '@dagster-io/ui';
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
 import {OpNameOrPath} from '../ops/OpNameOrPath';
-import {ColorsWIP} from '../ui/Colors';
 
 import {PipelineGraph} from './PipelineGraph';
 import {SVGViewport} from './SVGViewport';
@@ -105,7 +105,7 @@ export const Basic = () => {
   return (
     <PipelineGraph
       backgroundColor={ColorsWIP.White}
-      pipelineName={'Test Pipeline'}
+      pipelineName="Test Pipeline"
       ops={ops}
       layout={getDagrePipelineLayout(ops)}
       interactor={SVGViewport.Interactors.PanAndZoom}
@@ -134,7 +134,7 @@ export const FanOut = () => {
   return (
     <PipelineGraph
       backgroundColor={ColorsWIP.White}
-      pipelineName={'Test Pipeline'}
+      pipelineName="Test Pipeline"
       ops={ops}
       layout={getDagrePipelineLayout(ops)}
       interactor={SVGViewport.Interactors.PanAndZoom}
@@ -160,7 +160,7 @@ export const Tagged = () => {
   return (
     <PipelineGraph
       backgroundColor={ColorsWIP.White}
-      pipelineName={'Test Pipeline'}
+      pipelineName="Test Pipeline"
       ops={ops}
       layout={getDagrePipelineLayout(ops)}
       interactor={SVGViewport.Interactors.PanAndZoom}
@@ -217,7 +217,7 @@ export const Composite = () => {
   return (
     <PipelineGraph
       backgroundColor={ColorsWIP.White}
-      pipelineName={'Test Pipeline'}
+      pipelineName="Test Pipeline"
       ops={parentOp ? childOps : ops}
       parentOp={parentOp}
       parentHandleID={parentOpName}

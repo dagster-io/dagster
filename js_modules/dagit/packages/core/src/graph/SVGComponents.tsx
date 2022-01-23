@@ -1,6 +1,5 @@
+import {FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
-
-import {FontFamily} from '../ui/styles';
 
 const PX_TO_UNITS = 0.53;
 
@@ -109,7 +108,7 @@ export const SVGLabeledRect: React.FC<{
       height={undefined}
       size={minified ? 30 : 16}
       text={label}
-      fill={'#979797'}
+      fill="#979797"
     />
   </g>
 );

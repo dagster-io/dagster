@@ -1,15 +1,9 @@
 import {gql, useQuery} from '@apollo/client';
+import {Box, NonIdealState, PageHeader, Popover, TagWIP, Heading, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {Box} from '../ui/Box';
-import {NonIdealState} from '../ui/NonIdealState';
-import {PageHeader} from '../ui/PageHeader';
-import {Popover} from '../ui/Popover';
-import {TagWIP} from '../ui/TagWIP';
-import {Heading} from '../ui/Text';
-import {FontFamily} from '../ui/styles';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';

@@ -1,13 +1,11 @@
 import {gql} from '@apollo/client';
+import {ButtonWIP, IconWIP, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {MetadataEntries} from '../runs/MetadataEntry';
 import {MetadataEntryFragment} from '../runs/types/MetadataEntryFragment';
 import {ErrorSource} from '../types/globalTypes';
-import {ButtonWIP} from '../ui/Button';
-import {IconWIP} from '../ui/Icon';
-import {FontFamily} from '../ui/styles';
 
 import {PythonErrorFragment} from './types/PythonErrorFragment';
 

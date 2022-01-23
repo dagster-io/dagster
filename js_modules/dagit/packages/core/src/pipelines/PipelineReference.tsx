@@ -1,15 +1,13 @@
+import {Box, ColorsWIP, IconWIP} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP} from '../ui/Icon';
 import {RepoAddress} from '../workspace/types';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {PipelineSnapshotLink} from './PipelinePathUtils';
 
-interface Props {
+export interface Props {
   pipelineName: string;
   pipelineHrefContext: 'repo-unknown' | RepoAddress | 'no-link';
   isJob: boolean;
@@ -17,6 +15,9 @@ interface Props {
   showIcon?: boolean;
   size?: 'small' | 'normal';
 }
+
+const TRUNCATION_THRESHOLD = 40;
+const TRUNCATION_BUFFER = 5;
 
 export const PipelineReference: React.FC<Props> = ({
   pipelineName,
@@ -26,11 +27,16 @@ export const PipelineReference: React.FC<Props> = ({
   showIcon,
   size = 'normal',
 }) => {
+  const truncatedName =
+    pipelineName.length > TRUNCATION_THRESHOLD
+      ? `${pipelineName.slice(0, TRUNCATION_THRESHOLD - TRUNCATION_BUFFER)}…`
+      : pipelineName;
+
   const pipeline =
     pipelineHrefContext === 'repo-unknown' ? (
-      <Link to={workspacePipelinePathGuessRepo(pipelineName, isJob)}>{pipelineName}</Link>
+      <Link to={workspacePipelinePathGuessRepo(pipelineName, isJob)}>{truncatedName}</Link>
     ) : pipelineHrefContext === 'no-link' ? (
-      <>{pipelineName}</>
+      <>{truncatedName}</>
     ) : (
       <Link
         to={workspacePipelinePath({
@@ -40,7 +46,7 @@ export const PipelineReference: React.FC<Props> = ({
           isJob,
         })}
       >
-        {pipelineName}
+        {truncatedName}
       </Link>
     );
 
@@ -48,7 +54,7 @@ export const PipelineReference: React.FC<Props> = ({
     <Box flex={{direction: 'row', alignItems: 'center', display: 'inline-flex'}}>
       {showIcon && (
         <Box margin={{right: 8}}>
-          <IconWIP color={ColorsWIP.Gray400} name={'job'} />
+          <IconWIP color={ColorsWIP.Gray400} name="job" />
         </Box>
       )}
       <span>

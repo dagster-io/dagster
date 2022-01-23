@@ -1,3 +1,4 @@
+import {Popover, Spinner, TextInput} from '@dagster-io/ui';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
@@ -5,9 +6,6 @@ import {useHistory} from 'react-router-dom';
 import {SearchResults} from '../search/SearchResults';
 import {SearchResult} from '../search/types';
 import {useAssetSearch} from '../search/useRepoSearch';
-import {Popover} from '../ui/Popover';
-import {Spinner} from '../ui/Spinner';
-import {TextInput} from '../ui/TextInput';
 
 type State = {
   open: boolean;
@@ -108,7 +106,7 @@ export const AssetSearch = () => {
         minimal
         fill={true}
         isOpen={open && results.length > 0}
-        position={'bottom-left'}
+        position="bottom-left"
         content={
           <div style={{maxWidth: 600, minWidth: 600}}>
             {loading ? <Spinner purpose="body-text" /> : null}
@@ -124,7 +122,7 @@ export const AssetSearch = () => {
         <TextInput
           value={queryString}
           style={{width: '600px'}}
-          placeholder={`Search all asset_keys...`}
+          placeholder="Search all asset_keys..."
           onChange={(e: React.ChangeEvent<any>) =>
             dispatch({type: 'change-query', queryString: e.target.value})
           }

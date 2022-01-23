@@ -1,15 +1,14 @@
 // Before anything else, set the webpack public path.
 import './publicPath';
 
-import {App} from '@dagit/core/app/App';
-import {createAppCache} from '@dagit/core/app/AppCache';
-import {errorLink} from '@dagit/core/app/AppError';
-import {AppProvider} from '@dagit/core/app/AppProvider';
-import {AppTopNav} from '@dagit/core/app/AppTopNav';
-import {ContentRoot} from '@dagit/core/app/ContentRoot';
-import {logLink, timeStartLink} from '@dagit/core/app/apolloLinks';
-import {ColorsWIP} from '@dagit/core/ui/Colors';
-import {IconWIP, IconWrapper} from '@dagit/core/ui/Icon';
+import {App} from '@dagster-io/dagit-core/app/App';
+import {createAppCache} from '@dagster-io/dagit-core/app/AppCache';
+import {errorLink} from '@dagster-io/dagit-core/app/AppError';
+import {AppProvider} from '@dagster-io/dagit-core/app/AppProvider';
+import {AppTopNav} from '@dagster-io/dagit-core/app/AppTopNav';
+import {ContentRoot} from '@dagster-io/dagit-core/app/ContentRoot';
+import {logLink, timeStartLink} from '@dagster-io/dagit-core/app/apolloLinks';
+import {ColorsWIP, IconWIP, IconWrapper} from '@dagster-io/ui';
 import * as React from 'react';
 import ReactDOM from 'react-dom';
 import {Link} from 'react-router-dom';

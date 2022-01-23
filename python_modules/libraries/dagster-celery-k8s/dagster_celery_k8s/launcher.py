@@ -1,7 +1,7 @@
 import sys
 
 import kubernetes
-from dagster import DagsterInvariantViolationError, EventMetadataEntry, Field, Noneable, check
+from dagster import DagsterInvariantViolationError, EventMetadataEntry, check
 from dagster.config.field import resolve_to_config_type
 from dagster.config.validate import process_config
 from dagster.core.events import EngineEventData
@@ -20,7 +20,7 @@ from dagster_k8s.job import (
 )
 from dagster_k8s.utils import delete_job
 
-from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_config
+from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
 
 
 class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
@@ -88,6 +88,20 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
         volumes (Optional[List[Permissive]]): A list of volumes to include in the Job's Pod. Default: ``[]``. See:
             https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
+        service_account_name (Optional[str]): The name of the Kubernetes service account under which to run
+            the Job. Defaults to "default"
+        image_pull_secrets (Optional[List[Dict[str, str]]]): Optionally, a list of dicts, each of
+            which corresponds to a Kubernetes ``LocalObjectReference`` (e.g.,
+            ``{'name': 'myRegistryName'}``). This allows you to specify the ```imagePullSecrets`` on
+            a pod basis. Typically, these will be provided through the service account, when needed,
+            and you will not need to pass this argument. See:
+            https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod
+            and https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#podspec-v1-core.
+        image_pull_policy (Optional[str]): Allows the image pull policy to be overridden, e.g. to
+            facilitate local testing with `kind <https://kind.sigs.k8s.io/>`_. Default:
+            ``"IfNotPresent"``. See: https://kubernetes.io/docs/concepts/containers/images/#updating-images.
+        labels (Optional[Dict[str, str]]): Additional labels that should be included in the Job's Pod. See:
+            https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
     """
 
     def __init__(
@@ -108,6 +122,10 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         env_secrets=None,
         volume_mounts=None,
         volumes=None,
+        service_account_name=None,
+        image_pull_policy=None,
+        image_pull_secrets=None,
+        labels=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
@@ -144,6 +162,17 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         self._volume_mounts = check.opt_list_param(volume_mounts, "volume_mounts")
         self._volumes = check.opt_list_param(volumes, "volumes")
 
+        self._service_account_name = check.opt_str_param(
+            service_account_name, "service_account_name"
+        )
+        self._image_pull_policy = check.opt_str_param(
+            image_pull_policy, "image_pull_policy", "IfNotPresent"
+        )
+        self._image_pull_secrets = check.opt_list_param(
+            image_pull_secrets, "image_pull_secrets", of_type=dict
+        )
+        self._labels = check.opt_dict_param(labels, "labels", key_type=str, value_type=str)
+
         super().__init__()
 
     @property
@@ -152,20 +181,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
     @classmethod
     def config_type(cls):
-        """Include all arguments required for DagsterK8sJobConfig along with additional arguments
-        needed for the RunLauncher itself.
-        """
         from dagster_celery.executor import CELERY_CONFIG
 
-        job_cfg = DagsterK8sJobConfig.config_type_run_launcher()
-
-        run_launcher_extra_cfg = {
-            "load_incluster_config": Field(bool, is_required=False, default_value=True),
-            "kubeconfig_file": Field(Noneable(str), is_required=False, default_value=None),
-        }
-
-        res = merge_dicts(job_cfg, run_launcher_extra_cfg)
-        return merge_dicts(res, CELERY_CONFIG)
+        return merge_dicts(DagsterK8sJobConfig.config_type_run_launcher(), CELERY_CONFIG)
 
     @classmethod
     def from_config_value(cls, inst_data, config_value):
@@ -279,13 +297,14 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             instance_config_map=self.instance_config_map,
             postgres_password_secret=self.postgres_password_secret,
             job_image=check.opt_str_param(job_image, "job_image"),
-            image_pull_policy=exc_config.get("image_pull_policy"),
-            image_pull_secrets=exc_config.get("image_pull_secrets"),
-            service_account_name=exc_config.get("service_account_name"),
+            image_pull_policy=exc_config.get("image_pull_policy", self._image_pull_policy),
+            image_pull_secrets=exc_config.get("image_pull_secrets", []) + self._image_pull_secrets,
+            service_account_name=exc_config.get("service_account_name", self._service_account_name),
             env_config_maps=exc_config.get("env_config_maps", []) + self._env_config_maps,
             env_secrets=exc_config.get("env_secrets", []) + self._env_secrets,
             volume_mounts=exc_config.get("volume_mounts", []) + self._volume_mounts,
             volumes=exc_config.get("volumes", []) + self._volumes,
+            labels=merge_dicts(self._labels, exc_config.get("labels", {})),
         )
 
     # https://github.com/dagster-io/dagster/issues/2741
@@ -365,7 +384,7 @@ def _get_validated_celery_k8s_executor_config(run_config):
     check.dict_param(run_config, "run_config")
 
     executor_config = run_config.get("execution", {})
-    execution_config_schema = resolve_to_config_type(celery_k8s_config())
+    execution_config_schema = resolve_to_config_type(celery_k8s_executor_config())
 
     # In run config on jobs, we don't have an executor key
     if not CELERY_K8S_CONFIG_KEY in executor_config:

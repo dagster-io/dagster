@@ -1,18 +1,21 @@
 import {gql, RefetchQueriesFunction} from '@apollo/client';
+import {
+  Box,
+  ButtonWIP,
+  Checkbox,
+  IconWIP,
+  markdownToPlaintext,
+  MenuItemWIP,
+  MenuWIP,
+  Popover,
+  Table,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {useFeatureFlags} from '../app/Flags';
 import {usePermissions} from '../app/Permissions';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {Checkbox} from '../ui/Checkbox';
-import {IconWIP} from '../ui/Icon';
-import {markdownToPlaintext} from '../ui/Markdown';
-import {MenuItemWIP, MenuWIP} from '../ui/Menu';
-import {Popover} from '../ui/Popover';
-import {Table} from '../ui/Table';
 
 import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';

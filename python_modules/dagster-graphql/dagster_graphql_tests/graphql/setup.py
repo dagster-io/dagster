@@ -63,6 +63,7 @@ from dagster import (
 )
 from dagster.core.asset_defs import ForeignAsset, asset, build_assets_job
 from dagster.core.definitions.decorators.sensor import sensor
+from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster.core.log_manager import coerce_valid_log_level
@@ -1359,21 +1360,53 @@ time_partitioned_assets_job = build_assets_job(
 )
 
 
+@asset(partitions_def=StaticPartitionsDefinition(["a", "b", "c", "d"]))
+def yield_partition_materialization():
+    yield AssetMaterialization(asset_key=AssetKey("yield_partition_materialization"), partition="c")
+    yield Output(5)
+
+
+partition_materialization_job = build_assets_job(
+    "partition_materialization_job",
+    assets=[yield_partition_materialization],
+    executor_def=in_process_executor,
+)
+
+
+@op
+def op_1():
+    return 1
+
+
+@op
+def op_2():
+    return 2
+
+
 @job
 def two_ins_job():
-    @op
-    def op_1():
-        return 1
-
-    @op
-    def op_2():
-        return 1
-
     @op
     def op_with_2_ins(in_1, in_2):
         return in_1 + in_2
 
     op_with_2_ins(op_1(), op_2())
+
+
+@job
+def nested_job():
+    @op
+    def adder(num1: int, num2: int):
+        return num1 + num2
+
+    @op
+    def plus_one(num: int):
+        return num + 1
+
+    @graph
+    def subgraph():
+        return plus_one(adder(op_1(), op_2()))
+
+    plus_one(subgraph())
 
 
 @repository
@@ -1400,6 +1433,7 @@ def define_pipelines():
         multi_mode_with_loggers,
         multi_mode_with_resources,
         naughty_programmer_pipeline,
+        nested_job,
         no_config_chain_pipeline,
         no_config_pipeline,
         noop_pipeline,
@@ -1430,6 +1464,7 @@ def define_pipelines():
         two_assets_job,
         static_partitioned_assets_job,
         time_partitioned_assets_job,
+        partition_materialization_job,
     ]
 
 

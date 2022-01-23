@@ -5,7 +5,7 @@ description: Dagster comes with a convenient CLI command for creating a new proj
 
 # Create a New Project
 
-This section will show you how to a create a new Dagster project and organize your files as you build larger and larger pipelines. Dagster comes with a convenient CLI command for generating a project skeleton, but you can also choose to organize your files differently as your project evolves.
+This section will show you how to a create a new Dagster project and organize your files as you build larger and larger jobs. Dagster comes with a convenient CLI command for generating a project skeleton, but you can also choose to organize your files differently as your project evolves.
 
 If you're completely new to Dagster, we recommend that you visit our [Tutorial](/tutorial) to learn all the basic concepts of Dagster.
 
@@ -18,29 +18,29 @@ dagster new-project PROJECT_NAME
 cd PROJECT_NAME
 ```
 
-The newly generated `PROJECT_NAME` directory is in fact a fully functioning [Python package](https://docs.python.org/3/tutorial/modules.html#packages) and can be installed with `pip`. This Python package is considered a _repository location_ in Dagster. A single Python file can also be a repository location, like in the [Hello World](/getting-started#writing-a-job) example. For more details about different types of repository locations, visit the [Repositories overview](/concepts/repositories-workspaces/repositories).
+The newly generated `PROJECT_NAME` directory is in fact a fully functioning [Python package](https://docs.python.org/3/tutorial/modules.html#packages) and can be installed with `pip`. A `workspace.yaml` file is also created that tells Dagit to load your code from this package. See the [Workspaces](/concepts/repositories-workspaces/workspaces) page for more information on how to tell Dagster how to load your code.
 
 Here's a breakdown of the files and directories that are generated:
 
-| File/Directory        | Description                                                                                                                                                                        |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PROJECT_NAME/`       | A Python package that contains code for your new Dagster repository                                                                                                                |
-| `PROJECT_NAME_tests/` | A Python package that contains tests for `PROJECT_NAME`                                                                                                                            |
-| `workspace.yaml`      | A file that specifies the location of the user code for Dagit and the Dagster CLI. Visit the [Workspaces overview](/concepts/repositories-workspaces/workspaces) for more details. |
-| `README.md`           | A description and guide for your new code repository                                                                                                                               |
-| `setup.py`            | A build script with Python package dependencies for your new code repository                                                                                                       |
+| File/Directory        | Description                                                                                                                                                                    |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `PROJECT_NAME/`       | A Python package that contains code for your new Dagster repository                                                                                                            |
+| `PROJECT_NAME_tests/` | A Python package that contains tests for `PROJECT_NAME`                                                                                                                        |
+| `workspace.yaml`      | A file that specifies the location of your code for Dagit and the Dagster CLI. Visit the [Workspaces overview](/concepts/repositories-workspaces/workspaces) for more details. |
+| `README.md`           | A description and guide for your new code repository                                                                                                                           |
+| `setup.py`            | A build script with Python package dependencies for your new code repository                                                                                                   |
 
 Inside of the directory `PROJECT_NAME/`, the following files and directories are generated:
 
-| File/Directory               | Description                                                                                                                               |
-| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `PROJECT_NAME/solids/`       | A Python package that contains SolidDefinitions, which represent individual units of computation                                          |
-| `PROJECT_NAME/pipelines/`    | A Python package that contains PipelineDefinitions, which are built up from solids                                                        |
-| `PROJECT_NAME/schedules/`    | A Python package that contains ScheduleDefinitions, to trigger recurring pipeline runs based on time                                      |
-| `PROJECT_NAME/sensors/`      | A Python package that contains SensorDefinitions, to trigger pipeline runs based on external state                                        |
-| `PROJECT_NAME/repository.py` | A Python module that contains a RepositoryDefinition, to specify which pipelines, schedules, and sensors are available in your repository |
+| File/Directory               | Description                                                                                                                          |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `PROJECT_NAME/ops/`          | A Python package that contains OpDefinitions, which represent individual units of computation                                        |
+| `PROJECT_NAME/jobs/`         | A Python package that contains JobDefinitions, which are built up from ops                                                           |
+| `PROJECT_NAME/schedules/`    | A Python package that contains ScheduleDefinitions, to trigger recurring job runs based on time                                      |
+| `PROJECT_NAME/sensors/`      | A Python package that contains SensorDefinitions, to trigger job runs based on external state                                        |
+| `PROJECT_NAME/repository.py` | A Python module that contains a RepositoryDefinition, to specify which jbos, schedules, and sensors are available in your repository |
 
-This file structure is a good starting point and suitable for most Dagster projects. As you build more and more pipelines, you may eventually find your own way of structuring your code that works best for you.
+This file structure is a good starting point and suitable for most Dagster projects. As you build more and more jobs, you may eventually find your own way of structuring your code that works best for you.
 
 ## Local Development
 
@@ -56,15 +56,15 @@ pip install --editable .
 dagit
 ```
 
-The Dagit process automatically uses the file `workspace.yaml` to find your repository location(s), from which Dagster will load your pipelines, schedules, and sensors. To see how you can customize the Dagit process, run `dagit --help`.
+The Dagit process automatically uses the file `workspace.yaml` to find your repositories, from which Dagster will load your jobs, schedules, and sensors. To see how you can customize the Dagit process, run `dagit --help`.
 
-3. (Optional) If you want to enable Dagster [Schedules](/concepts/partitions-schedules-sensors/schedules) or [Sensors](/concepts/partitions-schedules-sensors/sensors) for your pipelines, start the [Dagster Daemon process](/deployment/dagster-daemon) **in a different shell or terminal**:
+3. (Optional) If you want to enable Dagster [Schedules](/concepts/partitions-schedules-sensors/schedules) or [Sensors](/concepts/partitions-schedules-sensors/sensors) for your jobs, start the [Dagster Daemon process](/deployment/dagster-daemon) **in a different shell or terminal**:
 
 ```bash
 dagster-daemon run
 ```
 
-Once your Dagster Daemon process is running, you should be able to enable schedules and sensors for your Dagster pipelines in your repository.
+Once your Dagster Daemon process is running, you should be able to enable schedules and sensors for your Dagster jobs.
 
 ## Local Testing
 
@@ -74,9 +74,9 @@ Once you have created a new Dagster repository with the CLI command `dagster new
 pytest PROJECT_NAME_tests
 ```
 
-As you create Dagster solids and pipelines, add tests in `PROJECT_NAME_tests/` to check that your code behaves as desired and does not break over time.
+As you create Dagster ops and jobs, add tests in `PROJECT_NAME_tests/` to check that your code behaves as desired and does not break over time.
 
-For hints on how to write tests for solids and pipelines in Dagster, [see our documentation tutorial on Testing](/tutorial/intro-tutorial/testable).
+For hints on how to write tests for ops and jobs in Dagster, [see our documentation tutorial on Testing](/tutorial/intro-tutorial/testable).
 
 ## Deployment
 

@@ -1,9 +1,8 @@
 import {Intent} from '@blueprintjs/core';
+import {MultiSlider} from '@dagster-io/ui';
 import moment from 'moment-timezone';
 import React from 'react';
 import styled from 'styled-components/macro';
-
-import {MultiSlider} from '../ui/Slider';
 
 export const SliceSlider: React.FunctionComponent<{
   maxUnix: number;

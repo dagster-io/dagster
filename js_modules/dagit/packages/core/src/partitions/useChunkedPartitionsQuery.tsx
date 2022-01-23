@@ -1,4 +1,5 @@
 import {gql, useApolloClient, ApolloClient} from '@apollo/client';
+import {TokenizingFieldValue} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -6,7 +7,6 @@ import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {DagsterTag} from '../runs/RunTag';
 import {RunStatus} from '../types/globalTypes';
-import {TokenizingFieldValue} from '../ui/TokenizingField';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 

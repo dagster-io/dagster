@@ -1,13 +1,11 @@
+import {Box, ExternalAnchorButton, ColorsWIP, NonIdealState, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
 
-import {Box} from '../ui/Box';
-import {ExternalAnchorButton} from '../ui/Button';
-import {ColorsWIP} from '../ui/Colors';
-import {NonIdealState} from '../ui/NonIdealState';
-import {Spinner} from '../ui/Spinner';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {workspacePipelinePath} from '../workspace/workspacePath';
+
+import {useFeatureFlags} from './Flags';
 
 const InstanceRedirect = () => {
   const location = useLocation();
@@ -31,6 +29,12 @@ export const FallthroughRoot = () => {
 const FinalRedirectOrLoadingRoot = () => {
   const workspaceContext = React.useContext(WorkspaceContext);
   const {allRepos, loading, locationEntries} = workspaceContext;
+
+  const {flagInstanceOverview} = useFeatureFlags();
+
+  if (flagInstanceOverview) {
+    return <Redirect to="/instance" />;
+  }
 
   if (loading) {
     return (

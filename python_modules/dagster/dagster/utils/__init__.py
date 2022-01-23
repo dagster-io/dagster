@@ -15,9 +15,9 @@ import threading
 from collections import OrderedDict, defaultdict, namedtuple
 from datetime import timezone
 from enum import Enum
-from typing import TYPE_CHECKING, Callable, ContextManager, Generator, Generic, Iterator
+from typing import TYPE_CHECKING, Any, Callable, ContextManager, Generator, Generic, Iterator
 from typing import Mapping as TypingMapping
-from typing import Optional, Type, TypeVar, Union, cast
+from typing import Optional, Type, TypeVar, Union, cast, overload
 from warnings import warn
 
 import _thread as thread
@@ -27,7 +27,6 @@ from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvaria
 from dagster.seven import IS_WINDOWS, multiprocessing
 from dagster.seven.abc import Mapping
 
-from .alert import make_email_on_pipeline_failure_sensor, make_email_on_run_failure_sensor
 from .merger import merge_dicts
 from .yaml_utils import load_yaml_from_glob_list, load_yaml_from_globs, load_yaml_from_path
 
@@ -39,6 +38,7 @@ else:
 if TYPE_CHECKING:
     from dagster.core.events import DagsterEvent
 
+T = TypeVar("T")
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)
 
@@ -46,6 +46,20 @@ PICKLE_PROTOCOL = 4
 
 
 DEFAULT_WORKSPACE_YAML_FILENAME = "workspace.yaml"
+
+
+# Back-compat after make_email_on_pipeline_failure_sensor and make_email_on_run_failure_sensor
+# were moved to avoid circular-dependency issues
+def make_email_on_pipeline_failure_sensor(*args, **kwargs):
+    from .alert import make_email_on_pipeline_failure_sensor  # pylint: disable=redefined-outer-name
+
+    return make_email_on_pipeline_failure_sensor(*args, **kwargs)
+
+
+def make_email_on_run_failure_sensor(*args, **kwargs):
+    from .alert import make_email_on_run_failure_sensor  # pylint: disable=redefined-outer-name
+
+    return make_email_on_run_failure_sensor(*args, **kwargs)
 
 
 def file_relative_path(dunderfile: str, relative_path: str) -> str:
@@ -296,6 +310,16 @@ def safe_tempfile_path() -> Iterator[str]:
             os.unlink(path)
 
 
+@overload
+def ensure_gen(thing_or_gen: Generator[T, Any, Any]) -> Generator[T, Any, Any]:
+    pass
+
+
+@overload
+def ensure_gen(thing_or_gen: T) -> Generator[T, Any, Any]:
+    pass
+
+
 def ensure_gen(thing_or_gen):
     if not inspect.isgenerator(thing_or_gen):
 
@@ -359,8 +383,6 @@ def start_termination_thread(termination_event):
     int_thread.daemon = True
     int_thread.start()
 
-
-T = TypeVar("T")
 
 # Executes the next() function within an instance of the supplied context manager class
 # (leaving the context before yielding each result)

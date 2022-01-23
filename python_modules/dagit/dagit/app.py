@@ -150,7 +150,7 @@ def instantiate_app_with_views(
     target_dir=os.path.dirname(__file__),
     graphql_middleware=None,
     include_notebook_route=False,
-):
+) -> Flask:
     app = Flask(
         "dagster-ui",
         static_url_path=app_path_prefix,
@@ -257,7 +257,7 @@ def return_counts(response):
 def create_app_from_workspace_process_context(
     workspace_process_context: WorkspaceProcessContext,
     path_prefix: str = "",
-):
+) -> Flask:
     check.inst_param(
         workspace_process_context, "workspace_process_context", WorkspaceProcessContext
     )

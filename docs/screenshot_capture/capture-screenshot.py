@@ -27,38 +27,41 @@ def load_screenshot_specs():
 def capture_screenshots(screenshot_specs: Sequence[Mapping[str, str]]):
     for screenshot_spec in screenshot_specs:
         dagit_process = None
-        defs_file = screenshot_spec.get("defs_file")
-        if defs_file:
-            if defs_file.endswith(".py"):
-                command = ["dagit", "-f", defs_file]
-            elif defs_file.endswith(".yaml"):
-                command = ["dagit", "-w", defs_file]
-            else:
-                assert False, "defs_file must be .py or .yaml"
+        try:
+            defs_file = screenshot_spec.get("defs_file")
+            if defs_file:
+                if defs_file.endswith(".py"):
+                    command = ["dagit", "-f", defs_file]
+                elif defs_file.endswith(".yaml"):
+                    command = ["dagit", "-w", defs_file]
+                else:
+                    assert False, "defs_file must be .py or .yaml"
 
-            print("Running this command:")
-            print(" ".join(command))
-            dagit_process = subprocess.Popen(command)
-            sleep(6)
+                print("Running this command:")
+                print(" ".join(command))
+                dagit_process = subprocess.Popen(command)
+                sleep(6)
 
-        driver = webdriver.Chrome()
-        driver.set_window_size(1024 * 1.3, 768 * 1.3)
-        driver.get(screenshot_spec["url"])
-        sleep(1)
+            driver = webdriver.Chrome()
+            driver.set_window_size(
+                screenshot_spec.get("width", 1024 * 1.3), screenshot_spec.get("height", 768 * 1.3)
+            )
+            driver.get(screenshot_spec["url"])
+            sleep(1)
 
-        if "steps" in screenshot_spec:
-            for step in screenshot_spec["steps"]:
-                print(step)
-            input("Press Enter to continue...")
+            if "steps" in screenshot_spec:
+                for step in screenshot_spec["steps"]:
+                    print(step)
+                input("Press Enter to continue...")
 
-        screenshot_path = os.path.join("docs/next/public/images", screenshot_spec["path"])
-        driver.get_screenshot_as_file(screenshot_path)
-        print(f"Saved screenshot to {screenshot_path}")
-        driver.quit()
-
-        if dagit_process:
-            dagit_process.send_signal(signal.SIGINT)
-            dagit_process.wait()
+            screenshot_path = os.path.join("docs/next/public/images", screenshot_spec["path"])
+            driver.get_screenshot_as_file(screenshot_path)
+            print(f"Saved screenshot to {screenshot_path}")
+            driver.quit()
+        finally:
+            if dagit_process:
+                dagit_process.send_signal(signal.SIGINT)
+                dagit_process.wait()
 
 
 def main():

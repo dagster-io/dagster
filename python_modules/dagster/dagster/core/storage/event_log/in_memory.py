@@ -1,7 +1,7 @@
 import logging
 import time
 from collections import OrderedDict, defaultdict
-from typing import Iterable, Mapping, Optional, Sequence
+from typing import Dict, Iterable, Mapping, Optional, Sequence
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -29,7 +29,6 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         self._logs = defaultdict(list)
         self._handlers = defaultdict(set)
         self._inst_data = inst_data
-        self._asset_tags = defaultdict(dict)
         self._wiped_asset_keys = defaultdict(float)
         if preload:
             for payload in preload:
@@ -85,10 +84,6 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
         check.inst_param(event, "event", EventLogEntry)
         run_id = event.run_id
         self._logs[run_id].append(event)
-
-        if event.is_dagster_event and event.dagster_event.asset_key:
-            materialization = event.dagster_event.step_materialization_data.materialization
-            self._asset_tags[event.dagster_event.asset_key] = materialization.tags or {}
 
         # snapshot handlers
         handlers = list(self._handlers[run_id])
@@ -314,5 +309,38 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
     def wipe_asset(self, asset_key):
         check.inst_param(asset_key, "asset_key", AssetKey)
         self._wiped_asset_keys[asset_key] = time.time()
-        if asset_key in self._asset_tags:
-            del self._asset_tags[asset_key]
+
+    def get_materialization_count_by_partition(
+        self, asset_keys: Sequence[AssetKey]
+    ) -> Mapping[AssetKey, Mapping[str, int]]:
+        check.list_param(asset_keys, "asset_keys", of_type=AssetKey)
+
+        materialization_count_by_key_partition: Dict[AssetKey, Dict[str, int]] = {}
+        for records in self._logs.values():
+            for record in records:
+                if (
+                    record.is_dagster_event
+                    and record.dagster_event.asset_key
+                    and record.dagster_event.asset_key in asset_keys
+                    and record.dagster_event.event_type_value
+                    == DagsterEventType.ASSET_MATERIALIZATION.value
+                    and record.dagster_event.partition
+                    and self._wiped_asset_keys[record.dagster_event.asset_key] < record.timestamp
+                ):
+                    asset_key = record.dagster_event.asset_key
+                    if asset_key not in materialization_count_by_key_partition:
+                        materialization_count_by_partition: Dict[str, int] = {}
+                        materialization_count_by_key_partition[
+                            asset_key
+                        ] = materialization_count_by_partition
+
+                    partition = record.dagster_event.partition
+                    if partition not in materialization_count_by_key_partition[asset_key]:
+                        materialization_count_by_key_partition[asset_key][partition] = 0
+                    materialization_count_by_key_partition[asset_key][partition] += 1
+
+        for asset_key in asset_keys:
+            if asset_key not in materialization_count_by_key_partition:
+                materialization_count_by_key_partition[asset_key] = {}
+
+        return materialization_count_by_key_partition

@@ -18,6 +18,7 @@ from dagster.core.scheduler.instigation import (
 from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG, check_tags
+from dagster.core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster.core.workspace import IWorkspace
 from dagster.seven.compat.pendulum import to_timezone
 from dagster.utils import merge_dicts
@@ -36,7 +37,14 @@ class _ScheduleLaunchContext:
         return self._tick.job_tick_data.failure_count
 
     def update_state(self, status, error=None, **kwargs):
+        skip_reason = kwargs.get("skip_reason")
+        if "skip_reason" in kwargs:
+            del kwargs["skip_reason"]
+
         self._tick = self._tick.with_status(status=status, error=error, **kwargs)
+
+        if skip_reason:
+            self._tick = self._tick.with_reason(skip_reason=skip_reason)
 
     def add_run(self, run_id, run_key=None):
         self._tick = self._tick.with_run(run_id, run_key)
@@ -199,10 +207,11 @@ def launch_scheduled_runs_for_schedule(
     timezone_str = external_schedule.execution_timezone
     if not timezone_str:
         timezone_str = "UTC"
-        logger.warn(
-            f"Using UTC as the timezone for {external_schedule.name} as it did not specify "
-            "an execution_timezone in its definition."
-        )
+        if log_verbose_checks:
+            logger.warn(
+                f"Using UTC as the timezone for {external_schedule.name} as it did not specify "
+                "an execution_timezone in its definition."
+            )
 
     tick_times = []
     for next_time in external_schedule.execution_time_iterator(start_timestamp_utc):
@@ -341,10 +350,17 @@ def _schedule_runs_at_time(
     yield
 
     if not schedule_execution_data.run_requests:
-        logger.info(f"No run requests returned for {external_schedule.name}, skipping")
+        if schedule_execution_data.skip_message:
+            logger.info(
+                f"Schedule {external_schedule.name} skipped: {schedule_execution_data.skip_message}"
+            )
+        else:
+            logger.info(f"No run requests returned for {external_schedule.name}, skipping")
 
         # Update tick to skipped state and return
-        tick_context.update_state(TickStatus.SKIPPED)
+        tick_context.update_state(
+            TickStatus.SKIPPED, skip_reason=schedule_execution_data.skip_message
+        )
         return
 
     for run_request in schedule_execution_data.run_requests:
@@ -421,6 +437,8 @@ def _create_scheduler_run(
     external_pipeline,
     run_request,
 ):
+    from dagster.daemon.daemon import get_telemetry_daemon_session_id
+
     run_config = run_request.run_config
     schedule_tags = run_request.tags
 
@@ -440,6 +458,17 @@ def _create_scheduler_run(
     tags[SCHEDULED_EXECUTION_TIME_TAG] = to_timezone(schedule_time, "UTC").isoformat()
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key
+
+    log_action(
+        instance,
+        SCHEDULED_RUN_CREATED,
+        repo_hash=hash_name(repo_location.name),
+        pipeline_name_hash=hash_name(external_pipeline.name),
+        metadata={
+            "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
+            "SCHEDULE_NAME_HASH": hash_name(external_schedule.name),
+        },
+    )
 
     return instance.create_run(
         pipeline_name=external_schedule.pipeline_name,

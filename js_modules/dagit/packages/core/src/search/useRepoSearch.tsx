@@ -14,7 +14,7 @@ import {
 import {SearchSecondaryQuery} from './types/SearchSecondaryQuery';
 
 const fuseOptions = {
-  keys: ['label', 'tags', 'type'],
+  keys: ['label', 'segments', 'tags', 'type'],
   limit: 10,
   threshold: 0.5,
   useExtendedSearch: true,
@@ -118,6 +118,7 @@ const secondaryDataToSearchResults = (data?: SearchSecondaryQuery) => {
     return {
       key: path,
       label: path,
+      segments: key.path,
       description: 'Asset',
       href: `/instance/assets/${key.path.map(encodeURIComponent).join('/')}`,
       type: SearchResultType.Asset,
@@ -165,22 +166,15 @@ export const useRepoSearch = () => {
 };
 
 export const useAssetSearch = () => {
-  const [performQuery, {data, loading, called}] = useLazyQuery<SearchSecondaryQuery>(
-    SEARCH_SECONDARY_QUERY,
-    {
-      fetchPolicy: 'cache-and-network',
-    },
-  );
+  const {data, loading} = useQuery<SearchSecondaryQuery>(SEARCH_SECONDARY_QUERY, {
+    fetchPolicy: 'cache-and-network',
+  });
 
   const fuse = React.useMemo(() => secondaryDataToSearchResults(data), [data]);
+
   const performSearch = React.useCallback(
-    (queryString: string): Fuse.FuseResult<SearchResult>[] => {
-      if (!called) {
-        performQuery();
-      }
-      return fuse.search(queryString);
-    },
-    [fuse, performQuery, called],
+    (queryString: string): Fuse.FuseResult<SearchResult>[] => fuse.search(queryString),
+    [fuse],
   );
 
   return {loading, performSearch};

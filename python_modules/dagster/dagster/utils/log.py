@@ -197,27 +197,6 @@ def _mockable_formatTime(record, datefmt=None):  # pylint: disable=unused-argume
     return pendulum.now().strftime(datefmt if datefmt else default_date_format_string())
 
 
-def default_system_logger(logger_name: str, level: str = "INFO"):
-    """ Logger for Dagster system processes like dagit, the daemon, and code servers."""
-    handler = logging.StreamHandler(sys.stdout)
-    system_logger = logging.getLogger(logger_name)
-    system_logger.setLevel(level)
-    system_logger.handlers = [handler]
-
-    formatter = coloredlogs.ColoredFormatter(
-        fmt=default_format_string(),
-        datefmt=default_date_format_string(),
-        field_styles={"levelname": {"color": "blue"}, "asctime": {"color": "green"}},
-        level_styles={"debug": {}, "error": {"color": "red"}},
-    )
-
-    formatter.formatTime = _mockable_formatTime
-
-    handler.setFormatter(formatter)
-
-    return system_logger
-
-
 def default_format_string():
     return "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 
@@ -239,3 +218,46 @@ def quieten(quiet=True, level=logging.WARNING):
     finally:
         if quiet:
             logging.disable(logging.NOTSET)
+
+
+def configure_loggers(handler="default", log_level="INFO"):
+    LOGGING_CONFIG = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "colored": {
+                "()": coloredlogs.ColoredFormatter,
+                "fmt": default_format_string(),
+                "datefmt": default_date_format_string(),
+                "field_styles": {"levelname": {"color": "blue"}, "asctime": {"color": "green"}},
+                "level_styles": {"debug": {}, "error": {"color": "red"}},
+            },
+        },
+        "handlers": {
+            "default": {
+                "formatter": "colored",
+                "class": "logging.StreamHandler",
+                "stream": sys.stdout,
+                "level": log_level,
+            },
+            "null": {
+                "class": "logging.NullHandler",
+            },
+        },
+        "loggers": {
+            "dagster": {
+                "handlers": [handler],
+                "level": "INFO",
+            },
+            "dagit": {
+                "handlers": [handler],
+                "level": "INFO",
+            },
+        },
+    }
+
+    logging.config.dictConfig(LOGGING_CONFIG)
+
+    if handler == "default":
+        for name in ["dagster", "dagit"]:
+            logging.getLogger(name).handlers[0].formatter.formatTime = _mockable_formatTime

@@ -1,4 +1,13 @@
 import {gql, useApolloClient, useQuery} from '@apollo/client';
+import {
+  Box,
+  ButtonWIP,
+  ColorsWIP,
+  Group,
+  IconWIP,
+  SecondPanelToggle,
+  SplitPanelContainer,
+} from '@dagster-io/ui';
 import merge from 'deepmerge';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -25,12 +34,6 @@ import {
 import {isHelpContextEqual} from '../configeditor/isHelpContextEqual';
 import {DagsterTag} from '../runs/RunTag';
 import {RepositorySelector} from '../types/globalTypes';
-import {Box} from '../ui/Box';
-import {ButtonWIP} from '../ui/Button';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
-import {SecondPanelToggle, SplitPanelContainer} from '../ui/SplitPanelContainer';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -49,6 +52,10 @@ import {SessionSettingsBar} from './SessionSettingsBar';
 import {TagContainer, TagEditor} from './TagEditor';
 import {scaffoldPipelineConfig} from './scaffoldType';
 import {ConfigEditorGeneratorPipelineFragment_presets} from './types/ConfigEditorGeneratorPipelineFragment';
+import {
+  ConfigPartitionSelectionQuery,
+  ConfigPartitionSelectionQueryVariables,
+} from './types/ConfigPartitionSelectionQuery';
 import {LaunchpadSessionContainerPartitionSetsFragment} from './types/LaunchpadSessionContainerPartitionSetsFragment';
 import {LaunchpadSessionContainerPipelineFragment} from './types/LaunchpadSessionContainerPipelineFragment';
 import {PipelineExecutionConfigSchemaQuery} from './types/PipelineExecutionConfigSchemaQuery';
@@ -389,7 +396,10 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     onConfigLoading();
     try {
       const {base} = currentSession;
-      const {data} = await client.query({
+      const {data} = await client.query<
+        ConfigPartitionSelectionQuery,
+        ConfigPartitionSelectionQueryVariables
+      >({
         query: CONFIG_PARTITION_SELECTION_QUERY,
         variables: {repositorySelector, partitionSetName, partitionName},
       });
@@ -397,7 +407,8 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
       if (
         !data ||
         !data.partitionSetOrError ||
-        data.partitionSetOrError.__typename !== 'PartitionSet'
+        data.partitionSetOrError.__typename !== 'PartitionSet' ||
+        !data.partitionSetOrError.partition
       ) {
         onConfigLoaded();
         return;
@@ -522,8 +533,8 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     <>
       <LaunchpadTabs data={data} onCreate={onCreateSession} onSave={onSave} />
       <SplitPanelContainer
-        axis={'vertical'}
-        identifier={'execution'}
+        axis="vertical"
+        identifier="execution"
         firstMinSize={100}
         firstInitialPercent={75}
         first={
@@ -576,7 +587,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
               {tagsFromSession.length ? null : (
                 <>
                   <ShortcutHandler
-                    shortcutLabel={'⌥T'}
+                    shortcutLabel="⌥T"
                     shortcutFilter={(e) => e.keyCode === 84 && e.altKey}
                     onShortcut={openTagEditor}
                   >

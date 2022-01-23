@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from typing import Any, Dict, Generator, Optional
+from typing import Any, Dict, Generator, Optional, cast
 
 from dagster import check
 from dagster.config.validate import process_config
@@ -34,7 +34,7 @@ def _get_mapped_resource_config(
             config_evr.errors,
             resource_config,
         )
-    config_value = config_evr.value
+    config_value = cast(Dict[str, Any], config_evr.value)
     return config_map_resources(resource_defs, config_value)
 
 

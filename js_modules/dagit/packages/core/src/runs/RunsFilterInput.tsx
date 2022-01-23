@@ -1,15 +1,15 @@
 import {gql, useLazyQuery} from '@apollo/client';
-import * as React from 'react';
-
-import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
-import {RunStatus, RunsFilter} from '../types/globalTypes';
 import {
   SuggestionProvider,
   TokenizingField,
   TokenizingFieldValue,
   tokensAsStringArray,
   tokenizedValuesFromStringArray,
-} from '../ui/TokenizingField';
+} from '@dagster-io/ui';
+import * as React from 'react';
+
+import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {RunStatus, RunsFilter} from '../types/globalTypes';
 import {DagsterRepoOption, useRepositoryOptions} from '../workspace/WorkspaceContext';
 
 import {
@@ -83,11 +83,10 @@ export function runsFilterForSearchTokens(search: TokenizingFieldValue[]) {
     if (item.token === 'pipeline' || item.token === 'job') {
       obj.pipelineName = item.value;
     } else if (item.token === 'id') {
-      obj.runIds = [item.value];
+      obj.runIds = obj.runIds || [];
+      obj.runIds.push(item.value);
     } else if (item.token === 'status') {
-      if (!obj.statuses) {
-        obj.statuses = [];
-      }
+      obj.statuses = obj.statuses || [];
       obj.statuses.push(item.value as RunStatus);
     } else if (item.token === 'snapshotId') {
       obj.snapshotId = item.value;

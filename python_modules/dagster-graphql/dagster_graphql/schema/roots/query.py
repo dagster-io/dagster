@@ -1,6 +1,7 @@
 import graphene
 from dagster import check
 from dagster.core.definitions.events import AssetKey
+from dagster.core.execution.backfill import BulkActionStatus
 from dagster.core.host_representation import (
     InstigationSelector,
     RepositorySelector,
@@ -37,7 +38,11 @@ from ...implementation.fetch_solids import get_graph_or_error
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
 from ...implementation.utils import graph_selector_from_graphql, pipeline_selector_from_graphql
 from ..asset_graph import GrapheneAssetNode, GrapheneAssetNodeOrError
-from ..backfill import GraphenePartitionBackfillOrError, GraphenePartitionBackfillsOrError
+from ..backfill import (
+    GrapheneBulkActionStatus,
+    GraphenePartitionBackfillOrError,
+    GraphenePartitionBackfillsOrError,
+)
 from ..external import (
     GrapheneRepositoriesOrError,
     GrapheneRepositoryOrError,
@@ -71,6 +76,7 @@ from ..runs import (
     GrapheneRunGroupsOrError,
     GrapheneRuns,
     GrapheneRunsOrError,
+    parse_run_config_input,
 )
 from ..schedules import GrapheneScheduleOrError, GrapheneSchedulerOrError, GrapheneSchedulesOrError
 from ..sensors import GrapheneSensorOrError, GrapheneSensorsOrError
@@ -239,6 +245,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     partitionBackfillsOrError = graphene.Field(
         graphene.NonNull(GraphenePartitionBackfillsOrError),
+        status=graphene.Argument(GrapheneBulkActionStatus),
         cursor=graphene.String(),
         limit=graphene.Int(),
     )
@@ -387,7 +394,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return validate_pipeline_config(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
-            kwargs.get("runConfigData"),
+            parse_run_config_input(kwargs.get("runConfigData", {})),
             kwargs.get("mode"),
         )
 
@@ -395,7 +402,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return get_execution_plan(
             graphene_info,
             pipeline_selector_from_graphql(pipeline),
-            kwargs.get("runConfigData"),
+            parse_run_config_input(kwargs.get("runConfigData", {})),
             kwargs.get("mode"),
         )
 
@@ -430,8 +437,10 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return get_backfill(graphene_info, backfillId)
 
     def resolve_partitionBackfillsOrError(self, graphene_info, **kwargs):
+        status = kwargs.get("status")
         return get_backfills(
             graphene_info,
+            status=BulkActionStatus.from_graphql_input(status) if status else None,
             cursor=kwargs.get("cursor"),
             limit=kwargs.get("limit"),
         )

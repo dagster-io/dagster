@@ -1,18 +1,21 @@
+import {
+  Box,
+  Checkbox,
+  ColorsWIP,
+  Group,
+  IconWIP,
+  IconWrapper,
+  Spinner,
+  Table,
+  Caption,
+  Tooltip,
+  FontFamily,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
-import {Box} from '../ui/Box';
-import {Checkbox} from '../ui/Checkbox';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {IconWIP, IconWrapper} from '../ui/Icon';
-import {Spinner} from '../ui/Spinner';
-import {Table} from '../ui/Table';
-import {Caption} from '../ui/Text';
-import {Tooltip} from '../ui/Tooltip';
-import {FontFamily} from '../ui/styles';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';

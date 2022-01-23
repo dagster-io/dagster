@@ -107,10 +107,10 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
             assert instance.get_runs_count() == 1
             run = instance.get_runs()[0]
             assert (
-                get_logger_output_from_capfd(capfd, "SensorDaemon")
-                == f"""2019-02-27 18:01:03 -0600 - SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
-2019-02-27 18:01:03 -0600 - SensorDaemon - INFO - Launching run for simple_sensor
-2019-02-27 18:01:03 -0600 - SensorDaemon - INFO - Completed launch of run {run.run_id} for simple_sensor"""
+                get_logger_output_from_capfd(capfd, "dagster.daemon.SensorDaemon")
+                == f"""2019-02-27 18:01:03 -0600 - dagster.daemon.SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
+2019-02-27 18:01:03 -0600 - dagster.daemon.SensorDaemon - INFO - Launching run for simple_sensor
+2019-02-27 18:01:03 -0600 - dagster.daemon.SensorDaemon - INFO - Completed launch of run {run.run_id} for simple_sensor"""
             )
 
             ticks = instance.get_job_ticks(external_sensor.get_external_origin_id())

@@ -1,6 +1,7 @@
 import pytest
 from dagster import (
     AssetMaterialization,
+    AssetObservation,
     DagsterEventType,
     EventMetadata,
     FloatMetadataEntryData,
@@ -24,7 +25,7 @@ def solid_events_for_type(result, solid_name, event_type):
     ]
 
 
-def test_event_metadata():
+def test_event_metadata_asset_materialization():
     @solid(output_defs=[])
     def the_solid(_context):
         yield AssetMaterialization(
@@ -56,6 +57,43 @@ def test_event_metadata():
     entry_map = {
         entry.label: entry.entry_data.__class__ for entry in materialization.metadata_entries
     }
+    assert entry_map["text"] == TextMetadataEntryData
+    assert entry_map["int"] == IntMetadataEntryData
+    assert entry_map["url"] == UrlMetadataEntryData
+    assert entry_map["float"] == FloatMetadataEntryData
+    assert entry_map["python"] == PythonArtifactMetadataEntryData
+
+
+def test_event_metadata_asset_observation():
+    @solid(output_defs=[])
+    def the_solid(_context):
+        yield AssetObservation(
+            asset_key="foo",
+            metadata={
+                "text": "FOO",
+                "int": 22,
+                "url": EventMetadata.url("http://fake.com"),
+                "float": 0.1,
+                "python": EventMetadata.python_artifact(EventMetadata),
+            },
+        )
+
+    @pipeline
+    def the_pipeline():
+        the_solid()
+
+    result = execute_pipeline(the_pipeline)
+
+    assert result
+    assert result.success
+
+    observation_events = solid_events_for_type(
+        result, "the_solid", DagsterEventType.ASSET_OBSERVATION
+    )
+    assert len(observation_events) == 1
+    observation = observation_events[0].event_specific_data.asset_observation
+    assert len(observation.metadata_entries) == 5
+    entry_map = {entry.label: entry.entry_data.__class__ for entry in observation.metadata_entries}
     assert entry_map["text"] == TextMetadataEntryData
     assert entry_map["int"] == IntMetadataEntryData
     assert entry_map["url"] == UrlMetadataEntryData

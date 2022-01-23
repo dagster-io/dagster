@@ -23,6 +23,7 @@ from dagster.core.storage.tags import (
     RESUME_RETRY_TAG,
     ROOT_RUN_ID_TAG,
 )
+from dagster.core.telemetry import BACKFILL_RUN_CREATED, hash_name, log_action
 from dagster.core.utils import make_new_run_id
 from dagster.core.workspace.workspace import IWorkspace
 from dagster.serdes import whitelist_for_serdes
@@ -36,6 +37,10 @@ class BulkActionStatus(Enum):
     COMPLETED = "COMPLETED"
     FAILED = "FAILED"
     CANCELED = "CANCELED"
+
+    @staticmethod
+    def from_graphql_input(graphql_str):
+        return BulkActionStatus(graphql_str)
 
 
 @whitelist_for_serdes
@@ -173,6 +178,8 @@ def submit_backfill_runs(instance, workspace, repo_location, backfill_job, parti
 def create_backfill_run(
     instance, repo_location, external_pipeline, external_partition_set, backfill_job, partition_data
 ):
+    from dagster.daemon.daemon import get_telemetry_daemon_session_id
+
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(repo_location, "repo_location", RepositoryLocation)
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
@@ -246,6 +253,14 @@ def create_backfill_run(
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
         instance=instance,
+    )
+
+    log_action(
+        instance,
+        BACKFILL_RUN_CREATED,
+        metadata={"DAEMON_SESSION_ID": get_telemetry_daemon_session_id()},
+        repo_hash=hash_name(repo_location.name),
+        pipeline_name_hash=hash_name(external_pipeline.name),
     )
 
     return instance.create_run(

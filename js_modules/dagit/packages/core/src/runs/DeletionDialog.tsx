@@ -1,13 +1,16 @@
 import {useMutation} from '@apollo/client';
 import {ProgressBar} from '@blueprintjs/core';
+import {
+  ButtonWIP,
+  ColorsWIP,
+  DialogBody,
+  DialogFooter,
+  DialogWIP,
+  Group,
+  IconWIP,
+  Mono,
+} from '@dagster-io/ui';
 import * as React from 'react';
-
-import {ButtonWIP} from '../ui/Button';
-import {ColorsWIP} from '../ui/Colors';
-import {DialogBody, DialogFooter, DialogWIP} from '../ui/Dialog';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
-import {Mono} from '../ui/Text';
 
 import {NavigationBlock} from './NavitationBlock';
 import {DELETE_MUTATION} from './RunUtils';

@@ -10,8 +10,8 @@ module.exports = {
     'plugin:react/recommended',
     'plugin:@typescript-eslint/recommended',
     'prettier',
-    'plugin:prettier/recommended',
     'plugin:storybook/recommended',
+    'plugin:prettier/recommended', // Prettier plugin must be last!
   ],
   plugins: ['react-hooks', 'import', 'graphql'],
   parserOptions: {
@@ -109,6 +109,7 @@ module.exports = {
         ],
       },
     ],
+    'react/jsx-curly-brace-presence': 'error',
     'react/jsx-no-target-blank': 'error',
     'react/prefer-stateless-function': 'error',
     'react/prop-types': 'off',

@@ -155,6 +155,27 @@ mutation(
 }
 """
 
+GET_SCHEDULE_FUTURE_TICKS_UNTIL = """
+query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float, $ticksUntil: Float) {
+  scheduleOrError(scheduleSelector: $scheduleSelector) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on Schedule {
+      name
+      futureTicks(cursor: $ticksAfter, until: $ticksUntil) {
+        results {
+          timestamp
+        }
+        cursor
+      }
+    }
+  }
+}
+"""
+
 
 def default_execution_params():
     return {
@@ -382,7 +403,6 @@ def test_get_unloadable_job(graphql_context):
                 ScheduleInstigatorData(
                     "0 0 * * *",
                     pendulum.now("UTC").timestamp(),
-                    graphql_context.instance.scheduler.__class__.__name__,
                 ),
             )
         )
@@ -395,7 +415,6 @@ def test_get_unloadable_job(graphql_context):
                 ScheduleInstigatorData(
                     "0 0 * * *",
                     pendulum.now("UTC").timestamp(),
-                    graphql_context.instance.scheduler.__class__.__name__,
                 ),
             )
         )
@@ -406,3 +425,46 @@ def test_get_unloadable_job(graphql_context):
         result.data["unloadableInstigationStatesOrError"]["results"][0]["name"]
         == "unloadable_running"
     )
+
+
+def test_future_ticks_until(graphql_context):
+    schedule_selector = infer_schedule_selector(graphql_context, "timezone_schedule")
+
+    future_ticks_start_time = create_pendulum_time(2019, 2, 27, tz="US/Central").timestamp()
+
+    # Start a single schedule, future tick run requests only available for running schedules
+    start_result = execute_dagster_graphql(
+        graphql_context,
+        START_SCHEDULES_QUERY,
+        variables={"scheduleSelector": schedule_selector},
+    )
+    assert (
+        start_result.data["startSchedule"]["scheduleState"]["status"]
+        == InstigatorStatus.RUNNING.value
+    )
+
+    future_ticks_start_time = create_pendulum_time(2019, 2, 27, tz="US/Central").timestamp()
+    future_ticks_end_time = create_pendulum_time(2019, 3, 2, tz="US/Central").timestamp()
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SCHEDULE_FUTURE_TICKS_UNTIL,
+        variables={
+            "scheduleSelector": schedule_selector,
+            "ticksAfter": future_ticks_start_time,
+            "ticksUntil": future_ticks_end_time,
+        },
+    )
+
+    future_ticks = result.data["scheduleOrError"]["futureTicks"]
+
+    assert future_ticks
+    assert len(future_ticks["results"]) == 3
+
+    timestamps = [future_tick["timestamp"] for future_tick in future_ticks["results"]]
+
+    assert timestamps == [
+        create_pendulum_time(2019, 2, 27, tz="US/Central").timestamp(),
+        create_pendulum_time(2019, 2, 28, tz="US/Central").timestamp(),
+        create_pendulum_time(2019, 3, 1, tz="US/Central").timestamp(),
+    ]

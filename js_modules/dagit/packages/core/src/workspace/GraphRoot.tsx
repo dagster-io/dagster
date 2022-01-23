@@ -1,4 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
+import {Box, ColorsWIP, NonIdealState, PageHeader, TagWIP, Heading} from '@dagster-io/ui';
 import React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
@@ -12,13 +13,7 @@ import {
   GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT,
 } from '../pipelines/GraphExplorer';
 import {explorerPathFromString, explorerPathToString} from '../pipelines/PipelinePathUtils';
-import {Box} from '../ui/Box';
-import {ColorsWIP} from '../ui/Colors';
 import {Loading} from '../ui/Loading';
-import {NonIdealState} from '../ui/NonIdealState';
-import {PageHeader} from '../ui/PageHeader';
-import {TagWIP} from '../ui/TagWIP';
-import {Heading} from '../ui/Text';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {RepoAddress} from './types';
@@ -96,7 +91,7 @@ const GraphExplorerRoot: React.FC<Props> = (props) => {
       {({graphOrError: result}) => {
         if (result.__typename === 'GraphNotFoundError') {
           return (
-            <NonIdealState icon="error" title={'Graph not found'} description={result.message} />
+            <NonIdealState icon="error" title="Graph not found" description={result.message} />
           );
         }
         if (result.__typename === 'PythonError') {

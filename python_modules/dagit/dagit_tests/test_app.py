@@ -279,7 +279,7 @@ def test_dagit_logs(
     caplog,
 ):
     with tempfile.TemporaryDirectory() as temp_dir:
-        with instance_for_test(temp_dir=temp_dir):
+        with instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             workspace_path = file_relative_path(__file__, "telemetry_repository.yaml")
             result = runner.invoke(
@@ -326,6 +326,9 @@ def test_dagit_logs(
                         "python_version",
                         "metadata",
                         "version",
+                        "dagster_version",
+                        "os_desc",
+                        "os_platform",
                     ]
                 )
 

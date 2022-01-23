@@ -13,6 +13,7 @@ from dagster import (
     Any,
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     Field,
     Output,
     graph,
@@ -26,11 +27,7 @@ from dagster.core.definitions.decorators.sensor import asset_sensor, sensor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.run_status_sensor_definition import run_status_sensor
-from dagster.core.definitions.sensor_definition import (
-    DEFAULT_SENSOR_DAEMON_INTERVAL,
-    RunRequest,
-    SkipReason,
-)
+from dagster.core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.api import execute_pipeline
@@ -102,6 +99,17 @@ def foo_solid():
 @pipeline
 def foo_pipeline():
     foo_solid()
+
+
+@solid
+def foo_observation_solid():
+    yield AssetObservation(asset_key=AssetKey("foo"), metadata={"text": "FOO"})
+    yield Output(5)
+
+
+@pipeline
+def foo_observation_pipeline():
+    foo_observation_solid()
 
 
 @solid
@@ -452,9 +460,9 @@ def test_simple_sensor(external_repo_context, capfd):
             )
 
             assert (
-                get_logger_output_from_capfd(capfd, "SensorDaemon")
-                == """2019-02-27 17:59:59 -0600 - SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
-2019-02-27 17:59:59 -0600 - SensorDaemon - INFO - Sensor returned false for simple_sensor, skipping"""
+                get_logger_output_from_capfd(capfd, "dagster.daemon.SensorDaemon")
+                == """2019-02-27 17:59:59 -0600 - dagster.daemon.SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
+2019-02-27 17:59:59 -0600 - dagster.daemon.SensorDaemon - INFO - No run requests returned for simple_sensor, skipping"""
             )
 
             freeze_datetime = freeze_datetime.add(seconds=30)
@@ -480,10 +488,10 @@ def test_simple_sensor(external_repo_context, capfd):
             )
 
             assert (
-                get_logger_output_from_capfd(capfd, "SensorDaemon")
-                == """2019-02-27 18:00:29 -0600 - SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
-2019-02-27 18:00:29 -0600 - SensorDaemon - INFO - Launching run for simple_sensor
-2019-02-27 18:00:29 -0600 - SensorDaemon - INFO - Completed launch of run {run_id} for simple_sensor""".format(
+                get_logger_output_from_capfd(capfd, "dagster.daemon.SensorDaemon")
+                == """2019-02-27 18:00:29 -0600 - dagster.daemon.SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
+2019-02-27 18:00:29 -0600 - dagster.daemon.SensorDaemon - INFO - Launching run for simple_sensor
+2019-02-27 18:00:29 -0600 - dagster.daemon.SensorDaemon - INFO - Completed launch of run {run_id} for simple_sensor""".format(
                     run_id=run.run_id
                 )
             )
@@ -931,7 +939,7 @@ def test_custom_interval_sensor_with_offset(external_repo_context, monkeypatch):
                 execute_sensor_iteration_loop(
                     instance,
                     workspace,
-                    get_default_daemon_logger("SensorDaemon"),
+                    get_default_daemon_logger("dagster.daemon.SensorDaemon"),
                     until=freeze_datetime.add(seconds=65).timestamp(),
                 )
             )
@@ -986,9 +994,9 @@ def test_error_sensor_daemon(external_repo_context, monkeypatch):
                     InstigatorStatus.RUNNING,
                 )
             )
-            sensor_daemon = SensorDaemon(interval_seconds=DEFAULT_SENSOR_DAEMON_INTERVAL)
+            sensor_daemon = SensorDaemon()
             daemon_shutdown_event = threading.Event()
-            sensor_daemon.run_loop(
+            sensor_daemon.run_daemon_loop(
                 instance.get_ref(),
                 "my_uuid",
                 daemon_shutdown_event,
@@ -1250,6 +1258,58 @@ def test_asset_job_sensor(external_repo_context):
             assert run.run_config == {}
             assert run.tags
             assert run.tags.get("dagster/sensor_name") == "asset_job_sensor"
+
+
+@pytest.mark.parametrize("external_repo_context", repos())
+def test_asset_sensor_not_triggered_on_observation(external_repo_context):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors(external_repo_context) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            foo_sensor = external_repo.get_external_sensor("asset_foo_sensor")
+            instance.start_sensor(foo_sensor)
+
+            # generates the foo asset observation
+            execute_pipeline(foo_observation_pipeline, instance=instance)
+
+            # observation should not fire the asset sensor
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_job_ticks(foo_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                foo_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+
+            # should generate the foo asset
+            execute_pipeline(foo_pipeline, instance=instance)
+
+            # materialization should fire the asset sensor
+            evaluate_sensors(instance, workspace)
+            ticks = instance.get_job_ticks(foo_sensor.get_external_origin_id())
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                foo_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+            run = instance.get_runs()[0]
+            assert run.run_config == {}
+            assert run.tags
+            assert run.tags.get("dagster/sensor_name") == "asset_foo_sensor"
 
 
 @pytest.mark.parametrize("external_repo_context", repos())

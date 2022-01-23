@@ -1,4 +1,16 @@
 import {gql, useLazyQuery, useMutation} from '@apollo/client';
+import {
+  ButtonWIP,
+  HighlightedCodeBlock,
+  IconWIP,
+  MenuDividerWIP,
+  MenuExternalLink,
+  MenuItemWIP,
+  MenuLink,
+  MenuWIP,
+  Popover,
+  Tooltip,
+} from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
 import * as yaml from 'yaml';
@@ -6,12 +18,6 @@ import * as yaml from 'yaml';
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissions} from '../app/Permissions';
-import {ButtonWIP} from '../ui/Button';
-import {HighlightedCodeBlock} from '../ui/HighlightedCodeBlock';
-import {IconWIP} from '../ui/Icon';
-import {MenuDividerWIP, MenuItemWIP, MenuLink, MenuWIP} from '../ui/Menu';
-import {Popover} from '../ui/Popover';
-import {Tooltip} from '../ui/Tooltip';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
@@ -118,9 +124,7 @@ export const RunActionsMenu: React.FC<{
                 />
               </Tooltip>
               <Tooltip
-                content={
-                  'Re-execute is unavailable because the pipeline is not present in the current workspace.'
-                }
+                content="Re-execute is unavailable because the pipeline is not present in the current workspace."
                 position="bottom"
                 disabled={infoReady && !!repoMatch}
                 targetTagName="div"
@@ -140,7 +144,7 @@ export const RunActionsMenu: React.FC<{
                           repositoryName: repoMatch.match.repository.name,
                         }),
                       });
-                      handleLaunchResult(basePath, run.pipelineName, result);
+                      handleLaunchResult(basePath, run.pipelineName, result, {});
                     }
                   }}
                 />
@@ -154,11 +158,11 @@ export const RunActionsMenu: React.FC<{
               )}
               <MenuDividerWIP />
             </>
-            <MenuLink
+            <MenuExternalLink
               text="Download Debug File"
               icon="download_for_offline"
               download
-              to={`${rootServerURI}/download_debug/${run.runId}`}
+              href={`${rootServerURI}/download_debug/${run.runId}`}
             />
             {canDeletePipelineRun ? (
               <MenuItemWIP

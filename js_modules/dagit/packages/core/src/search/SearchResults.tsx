@@ -1,10 +1,8 @@
+import {ColorsWIP, IconName, IconWIP} from '@dagster-io/ui';
 import Fuse from 'fuse.js';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
-
-import {ColorsWIP} from '../ui/Colors';
-import {IconName, IconWIP} from '../ui/Icon';
 
 import {SearchResult, SearchResultType} from './types';
 

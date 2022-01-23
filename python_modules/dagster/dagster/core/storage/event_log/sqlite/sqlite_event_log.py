@@ -230,7 +230,11 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         with self.run_connection(run_id) as conn:
             conn.execute(insert_event_statement)
 
-        if event.is_dagster_event and event.dagster_event.asset_key:
+        if (
+            event.is_dagster_event
+            and event.dagster_event.is_step_materialization
+            and event.dagster_event.asset_key
+        ):
             # mirror the event in the cross-run index database
             with self.index_connection() as conn:
                 conn.execute(insert_event_statement)
@@ -265,7 +269,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         query = db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
         if event_records_filter and event_records_filter.asset_key:
-            asset_details = self._get_asset_details(event_records_filter.asset_key)
+            asset_details = next(iter(self._get_assets_details([event_records_filter.asset_key])))
         else:
             asset_details = None
 

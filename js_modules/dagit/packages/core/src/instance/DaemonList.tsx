@@ -1,11 +1,10 @@
 import {gql} from '@apollo/client';
+import {Group, Table} from '@dagster-io/ui';
 import moment from 'moment-timezone';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
-import {Group} from '../ui/Group';
-import {Table} from '../ui/Table';
 
 import {DaemonHealth} from './DaemonHealth';
 import {DaemonHealthFragment_allDaemonStatuses as DaemonStatus} from './types/DaemonHealthFragment';

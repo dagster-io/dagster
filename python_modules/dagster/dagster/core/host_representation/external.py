@@ -6,7 +6,6 @@ from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.sensor_definition import DEFAULT_SENSOR_DAEMON_INTERVAL
-from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap import ExecutionPlanSnapshot
@@ -37,27 +36,18 @@ class ExternalRepository:
         self.external_repository_data = check.inst_param(
             external_repository_data, "external_repository_data", ExternalRepositoryData
         )
-        self._pipeline_index_map = OrderedDict(
-            (
-                external_pipeline_data.pipeline_snapshot.name,
-                PipelineIndex(
-                    external_pipeline_data.pipeline_snapshot,
-                    external_pipeline_data.parent_pipeline_snapshot,
-                ),
+        self._pipeline_index_map = OrderedDict()
+        self._job_index_map = OrderedDict()
+        for external_pipeline_data in external_repository_data.external_pipeline_datas:
+            key = external_pipeline_data.pipeline_snapshot.name
+            index = PipelineIndex(
+                external_pipeline_data.pipeline_snapshot,
+                external_pipeline_data.parent_pipeline_snapshot,
             )
-            for external_pipeline_data in external_repository_data.external_pipeline_datas
-        )
-        self._job_index_map = OrderedDict(
-            (
-                external_pipeline_data.pipeline_snapshot.name,
-                PipelineIndex(
-                    external_pipeline_data.pipeline_snapshot,
-                    external_pipeline_data.parent_pipeline_snapshot,
-                ),
-            )
-            for external_pipeline_data in external_repository_data.external_pipeline_datas
-            if external_pipeline_data.is_job
-        )
+            self._pipeline_index_map[key] = index
+            if external_pipeline_data.is_job:
+                self._job_index_map[key] = index
+
         self._handle = check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
 
         instigation_list = (
@@ -352,24 +342,12 @@ class ExternalExecutionPlan:
     was compiled in another process or persisted in an instance.
     """
 
-    def __init__(self, execution_plan_snapshot, represented_pipeline):
+    def __init__(self, execution_plan_snapshot):
         self.execution_plan_snapshot = check.inst_param(
             execution_plan_snapshot, "execution_plan_snapshot", ExecutionPlanSnapshot
         )
-        self.represented_pipeline = check.inst_param(
-            represented_pipeline, "represented_pipeline", RepresentedPipeline
-        )
 
         self._step_index = {step.key: step for step in self.execution_plan_snapshot.steps}
-
-        if (
-            execution_plan_snapshot.pipeline_snapshot_id
-            != represented_pipeline.identifying_pipeline_snapshot_id
-        ):
-            raise DagsterInvariantViolationError(
-                "The target snapshot ID from the execution plan snapshot does not match the "
-                "passed in target snapshot. "
-            )
 
         self._step_keys_in_plan = (
             set(execution_plan_snapshot.step_keys_to_execute)
@@ -502,7 +480,7 @@ class ExternalSchedule:
     # ScheduleState that represents the state of the schedule
     # when there is no row in the schedule DB (for example, when
     # the schedule is first created in code)
-    def get_default_instigation_state(self, instance):
+    def get_default_instigation_state(self):
         from dagster.core.scheduler.instigation import (
             InstigatorState,
             InstigatorStatus,
@@ -513,9 +491,7 @@ class ExternalSchedule:
             self.get_external_origin(),
             InstigatorType.SCHEDULE,
             InstigatorStatus.STOPPED,
-            ScheduleInstigatorData(
-                self.cron_schedule, start_timestamp=None, scheduler=instance.scheduler_class
-            ),
+            ScheduleInstigatorData(self.cron_schedule, start_timestamp=None),
         )
 
     def execution_time_iterator(self, start_timestamp):
@@ -586,7 +562,7 @@ class ExternalSensor:
     def get_external_origin_id(self):
         return self.get_external_origin().get_id()
 
-    def get_default_instigation_state(self, _instance):
+    def get_default_instigation_state(self):
         from dagster.core.scheduler.instigation import (
             InstigatorState,
             InstigatorStatus,

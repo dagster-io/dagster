@@ -1,9 +1,5 @@
+import {ButtonWIP, IconWIP, MenuItemWIP, MenuWIP, Popover} from '@dagster-io/ui';
 import * as React from 'react';
-
-import {ButtonWIP} from '../ui/Button';
-import {IconWIP} from '../ui/Icon';
-import {MenuItemWIP, MenuWIP} from '../ui/Menu';
-import {Popover} from '../ui/Popover';
 
 import {PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results} from './types/PipelinePartitionsRootQuery';
 

@@ -1,3 +1,5 @@
+import json
+
 from dagster import check
 from dagster.config.config_type import ALL_CONFIG_BUILTINS
 from dagster.utils import file_relative_path
@@ -125,6 +127,19 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
             graphql_context,
             pipeline_name="csv_hello_world",
             run_config=csv_hello_world_solids_config(),
+            mode="default",
+        )
+
+        assert not result.errors
+        assert result.data
+        assert result.data["isPipelineConfigValid"]["__typename"] == "PipelineConfigValidationValid"
+        assert result.data["isPipelineConfigValid"]["pipelineName"] == "csv_hello_world"
+
+    def test_basic_valid_config_serialized_config(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name="csv_hello_world",
+            run_config=json.dumps(csv_hello_world_solids_config()),
             mode="default",
         )
 

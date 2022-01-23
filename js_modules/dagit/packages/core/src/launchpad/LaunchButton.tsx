@@ -1,14 +1,18 @@
+import {
+  ButtonWIP,
+  ColorsWIP,
+  IconWIP,
+  IconName,
+  MenuWIP,
+  MenuItemWIP,
+  Popover,
+  Spinner,
+  Tooltip,
+} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {ButtonWIP} from '../ui/Button';
-import {ColorsWIP} from '../ui/Colors';
-import {IconWIP, IconName} from '../ui/Icon';
-import {MenuWIP, MenuItemWIP} from '../ui/Menu';
-import {Popover} from '../ui/Popover';
-import {Spinner} from '../ui/Spinner';
-import {Tooltip} from '../ui/Tooltip';
 
 export interface LaunchButtonConfiguration {
   title: string;
@@ -69,7 +73,7 @@ export const LaunchButton = ({config, runCount}: LaunchButtonProps) => {
   return (
     <ShortcutHandler
       onShortcut={onClick}
-      shortcutLabel={`⌥L`}
+      shortcutLabel="⌥L"
       shortcutFilter={(e) => e.keyCode === 76 && e.altKey}
     >
       <ButtonWithConfiguration
@@ -103,15 +107,17 @@ export const LaunchButtonDropdown = ({
   runCount,
 }: LaunchButtonDropdownProps) => {
   const [isOpen, setIsOpen] = React.useState(false);
+  const allOptionsDisabled = options.every((d) => d.disabled);
   const {forced, status, onConfigSelected} = useLaunchButtonCommonState({
     runCount,
-    disabled: disabled || options.every((d) => d.disabled),
+    disabled: disabled || allOptionsDisabled,
   });
+  const popoverDisabled = status === LaunchButtonStatus.Disabled;
 
   return (
     <ShortcutHandler
       onShortcut={() => onConfigSelected(primary)}
-      shortcutLabel={`⌥L`}
+      shortcutLabel="⌥L"
       shortcutFilter={(e) => e.keyCode === 76 && e.altKey}
     >
       <ButtonWithConfiguration
@@ -127,7 +133,7 @@ export const LaunchButtonDropdown = ({
       <Popover
         isOpen={isOpen}
         onInteraction={(nextOpen) => setIsOpen(nextOpen)}
-        disabled={status === LaunchButtonStatus.Disabled}
+        disabled={popoverDisabled}
         position="bottom-right"
         content={
           <MenuWIP>
@@ -157,7 +163,8 @@ export const LaunchButtonDropdown = ({
           style={{minWidth: 'initial'}}
           icon={<IconWIP name="arrow_drop_down" />}
           intent="primary"
-          joined={'left'}
+          joined="left"
+          disabled={popoverDisabled}
         />
       </Popover>
     </ShortcutHandler>

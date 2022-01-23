@@ -140,6 +140,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'adder'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'nested_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'subgraph.adder'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'after_failure'
                 },
                 'invocations': [
@@ -854,6 +870,14 @@ snapshots['test_query_all_solids 1'] = {
                         'solidHandle': {
                             'handleID': 'op_1'
                         }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'nested_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'subgraph.op_1'
+                        }
                     }
                 ]
             },
@@ -869,6 +893,14 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'op_2'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'nested_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'subgraph.op_2'
                         }
                     }
                 ]
@@ -933,6 +965,30 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'child_fail'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'plus_one'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'nested_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'plus_one'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'nested_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'subgraph.plus_one'
                         }
                     }
                 ]
@@ -1284,6 +1340,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'subgraph'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'nested_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'subgraph'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'sum_inputs'
                 },
                 'invocations': [
@@ -1477,6 +1549,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'will_fail'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'yield_partition_materialization'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'partition_materialization_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'yield_partition_materialization'
                         }
                     }
                 ]

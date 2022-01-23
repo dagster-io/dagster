@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 
@@ -11,6 +12,7 @@ from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.run_cancellation_thread import start_run_cancellation_thread
 from dagster.core.instance import DagsterInstance
+from dagster.core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.test_utils import mock_system_timezone
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -22,10 +24,10 @@ from dagster.serdes import deserialize_as, serialize_dagster_namedtuple
 from dagster.seven import nullcontext
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.interrupts import capture_interrupts
-from dagster.utils.log import default_system_logger
+from dagster.utils.log import configure_loggers
 
 
-@click.group(name="api")
+@click.group(name="api", hidden=True)
 def api_cli():
     """
     [INTERNAL] These commands are intended to support internal use cases. Users should generally
@@ -350,6 +352,25 @@ def execute_step_command(input_json):
 )
 @python_origin_target_argument
 @click.option(
+    "--use-python-environment-entry-point",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="If this flag is set, the server will signal to clients that they should launch "
+    "dagster commands using `<this server's python executable> -m dagster`, instead of the "
+    "default `dagster` entry point. This is useful when there are multiple Python environments "
+    "running in the same machine, so a single `dagster` entry point is not enough to uniquely "
+    "determine the environment.",
+)
+@click.option(
+    "--empty-working-directory",
+    is_flag=True,
+    required=False,
+    default=False,
+    help="Indicates that the working directory should be empty and should not set to the current "
+    "directory as a default",
+)
+@click.option(
     "--ipc-output-file",
     type=click.Path(),
     help="[INTERNAL] This option should generally not be used by users. Internal param used by "
@@ -389,6 +410,7 @@ def grpc_command(
     fixed_server_id=None,
     override_system_timezone=None,
     log_level="INFO",
+    use_python_environment_entry_point=False,
     **kwargs,
 ):
     if seven.IS_WINDOWS and port is None:
@@ -398,7 +420,8 @@ def grpc_command(
     if not (port or socket and not (port and socket)):
         raise click.UsageError("You must pass one and only one of --port/-p or --socket/-s.")
 
-    logger = default_system_logger("dagster-code-server", coerce_valid_log_level(log_level))
+    configure_loggers(log_level=coerce_valid_log_level(log_level))
+    logger = logging.getLogger("dagster.code_server")
 
     loadable_target_origin = None
     if any(
@@ -415,7 +438,11 @@ def grpc_command(
         loadable_target_origin = LoadableTargetOrigin(
             executable_path=sys.executable,
             attribute=kwargs["attribute"],
-            working_directory=get_working_directory_from_kwargs(kwargs),
+            working_directory=(
+                None
+                if kwargs.get("empty_working_directory")
+                else get_working_directory_from_kwargs(kwargs)
+            ),
             module_name=kwargs["module_name"],
             python_file=kwargs["python_file"],
             package_name=kwargs["package_name"],
@@ -437,6 +464,11 @@ def grpc_command(
             lazy_load_user_code=lazy_load_user_code,
             ipc_output_file=ipc_output_file,
             fixed_server_id=fixed_server_id,
+            entry_point=(
+                get_python_environment_entry_point(sys.executable)
+                if use_python_environment_entry_point
+                else DEFAULT_DAGSTER_ENTRY_POINT
+            ),
         )
 
         code_desc = " "

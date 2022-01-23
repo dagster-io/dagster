@@ -1,4 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
+import {Alert, Box, ButtonLink, ColorsWIP, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {QueryCountdown} from '../app/QueryCountdown';
@@ -7,11 +8,6 @@ import {Timestamp} from '../app/time/Timestamp';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {useDidLaunchEvent} from '../runs/RunUtils';
-import {Alert} from '../ui/Alert';
-import {Box} from '../ui/Box';
-import {ButtonLink} from '../ui/ButtonLink';
-import {ColorsWIP} from '../ui/Colors';
-import {Spinner} from '../ui/Spinner';
 import {LaunchAssetExecutionButton} from '../workspace/asset-graph/LaunchAssetExecutionButton';
 import {
   buildGraphDataFromSingleNode,
@@ -36,7 +32,8 @@ interface Props {
 }
 
 export interface AssetViewParams {
-  xAxis?: 'partition' | 'time';
+  partition?: string;
+  time?: string;
   asOf?: string;
 }
 
@@ -44,9 +41,6 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   useDocumentTitle(`Asset: ${displayNameForAssetKey(assetKey)}`);
 
   const [params, setParams] = useQueryPersistedState<AssetViewParams>({});
-  const [navigatedDirectlyToTime, setNavigatedDirectlyToTime] = React.useState(() =>
-    Boolean(params.asOf),
-  );
 
   const queryResult = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
@@ -59,33 +53,34 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   const {assetOrError} = queryResult.data || queryResult.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
-  const definition = asset?.definition;
   const lastMaterializedAt = asset?.assetMaterializations[0]?.materializationEvent.timestamp;
+  const definition = asset?.definition;
+
   const repoAddress = definition
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;
 
-  const bonusResult = useQuery<AssetNodeDefinitionRunsQuery, AssetNodeDefinitionRunsQueryVariables>(
-    ASSET_NODE_DEFINITION_RUNS_QUERY,
-    {
-      skip: !repoAddress,
-      variables: {
-        repositorySelector: {
-          repositoryLocationName: repoAddress ? repoAddress.location : '',
-          repositoryName: repoAddress ? repoAddress.name : '',
-        },
+  const inProgressRunsQuery = useQuery<
+    AssetNodeDefinitionRunsQuery,
+    AssetNodeDefinitionRunsQueryVariables
+  >(ASSET_NODE_DEFINITION_RUNS_QUERY, {
+    skip: !repoAddress,
+    variables: {
+      repositorySelector: {
+        repositoryLocationName: repoAddress ? repoAddress.location : '',
+        repositoryName: repoAddress ? repoAddress.name : '',
       },
-      notifyOnNetworkStatusChange: true,
-      pollInterval: 5 * 1000,
     },
-  );
+    notifyOnNetworkStatusChange: true,
+    pollInterval: 5 * 1000,
+  });
 
   let liveDataByNode: LiveData = {};
 
   if (definition) {
     const inProgressRuns =
-      bonusResult.data?.repositoryOrError.__typename === 'Repository'
-        ? bonusResult.data.repositoryOrError.inProgressRunsByStep
+      inProgressRunsQuery.data?.repositoryOrError.__typename === 'Repository'
+        ? inProgressRunsQuery.data.repositoryOrError.inProgressRunsByStep
         : [];
 
     const nodesWithLatestMaterialization = [
@@ -99,6 +94,10 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       inProgressRuns,
     );
   }
+
+  // Avoid thrashing the materializations UI (which chooses a different default query based on whether
+  // data is partitioned) by waiting for the definition to be loaded. (null OR a valid definition)
+  const isDefinitionLoaded = definition !== undefined;
 
   return (
     <div>
@@ -114,6 +113,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               <LaunchAssetExecutionButton
                 assets={[definition]}
                 assetJobName={definition.jobs[0].name}
+                title={lastMaterializedAt ? 'Rematerialize' : 'Materialize'}
                 repoAddress={repoAddress}
               />
             )}
@@ -129,14 +129,14 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           >
             <Spinner purpose="section" />
           </Box>
-        ) : navigatedDirectlyToTime ? (
+        ) : params.asOf ? (
           <Box
             padding={{vertical: 16, horizontal: 24}}
             border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
           >
             <HistoricalViewAlert
               asOf={params.asOf}
-              onClick={() => setNavigatedDirectlyToTime(false)}
+              onClick={() => setParams({asOf: undefined, time: params.asOf})}
               hasDefinition={!!definition}
             />
           </Box>
@@ -148,14 +148,17 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           />
         ) : undefined}
       </div>
-      <AssetMaterializations
-        assetKey={assetKey}
-        assetLastMaterializedAt={lastMaterializedAt}
-        params={params}
-        paramsTimeWindowOnly={navigatedDirectlyToTime}
-        setParams={setParams}
-        liveData={definition ? liveDataByNode[definition.id] : undefined}
-      />
+      {isDefinitionLoaded && (
+        <AssetMaterializations
+          assetKey={assetKey}
+          assetLastMaterializedAt={lastMaterializedAt}
+          assetHasDefinedPartitions={!!definition?.partitionDefinition}
+          params={params}
+          paramsTimeWindowOnly={!!params.asOf}
+          setParams={setParams}
+          liveData={definition ? liveDataByNode[definition.id] : undefined}
+        />
+      )}
     </div>
   );
 };
@@ -177,6 +180,7 @@ const ASSET_QUERY = gql`
 
         definition {
           id
+          partitionDefinition
           repository {
             id
             name

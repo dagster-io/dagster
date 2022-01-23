@@ -1,4 +1,5 @@
 from enum import Enum as PythonEnum
+from typing import Dict, List, Optional
 
 from dagster import check
 from dagster.builtins import BuiltinEnum
@@ -17,7 +18,7 @@ class ConfigTypeKind(PythonEnum):
     SCALAR_UNION = "SCALAR_UNION"
 
     @staticmethod
-    def has_fields(kind):
+    def has_fields(kind: "ConfigTypeKind") -> bool:
         check.inst_param(kind, "kind", ConfigTypeKind)
         return kind == ConfigTypeKind.SELECTOR or ConfigTypeKind.is_shape(kind)
 
@@ -26,7 +27,7 @@ class ConfigTypeKind(PythonEnum):
     NONEABLE = "NONEABLE"
 
     @staticmethod
-    def is_closed_generic(kind):
+    def is_closed_generic(kind: "ConfigTypeKind") -> bool:
         check.inst_param(kind, "kind", ConfigTypeKind)
         return (
             kind == ConfigTypeKind.ARRAY
@@ -35,12 +36,12 @@ class ConfigTypeKind(PythonEnum):
         )
 
     @staticmethod
-    def is_shape(kind):
+    def is_shape(kind: "ConfigTypeKind") -> bool:
         check.inst_param(kind, "kind", ConfigTypeKind)
         return kind == ConfigTypeKind.STRICT_SHAPE or kind == ConfigTypeKind.PERMISSIVE_SHAPE
 
     @staticmethod
-    def is_selector(kind):
+    def is_selector(kind: "ConfigTypeKind") -> bool:
         check.inst_param(kind, "kind", ConfigTypeKind)
         return kind == ConfigTypeKind.SELECTOR
 
@@ -59,22 +60,22 @@ class ConfigType:
         type_params=None,
     ):
 
-        self.key = check.str_param(key, "key")
-        self.kind = check.inst_param(kind, "kind", ConfigTypeKind)
-        self.given_name = check.opt_str_param(given_name, "given_name")
-        self._description = check.opt_str_param(description, "description")
-        self.type_params = (
+        self.key: str = check.str_param(key, "key")
+        self.kind: ConfigTypeKind = check.inst_param(kind, "kind", ConfigTypeKind)
+        self.given_name: Optional[str] = check.opt_str_param(given_name, "given_name")
+        self._description: Optional[str] = check.opt_str_param(description, "description")
+        self.type_params: Optional[List[ConfigType]] = (
             check.list_param(type_params, "type_params", of_type=ConfigType)
             if type_params
             else None
         )
 
     @property
-    def description(self):
+    def description(self) -> Optional[str]:
         return self._description
 
     @staticmethod
-    def from_builtin_enum(builtin_enum):
+    def from_builtin_enum(builtin_enum) -> "ConfigType":
         check.invariant(BuiltinEnum.contains(builtin_enum), "param must be member of BuiltinEnum")
         return _CONFIG_MAP[builtin_enum]
 
@@ -168,7 +169,7 @@ class Noneable(ConfigType):
        config={}                 # Error
     """
 
-    def __init__(self, inner_type):
+    def __init__(self, inner_type: ConfigType):
         from .field import resolve_to_config_type
 
         self.inner_type = resolve_to_config_type(inner_type)
@@ -389,7 +390,8 @@ ConfigBoolInstance = Bool()
 ConfigFloatInstance = Float()
 ConfigIntInstance = Int()
 ConfigStringInstance = String()
-_CONFIG_MAP = {
+
+_CONFIG_MAP: Dict[check.Type, ConfigType] = {
     BuiltinEnum.ANY: ConfigAnyInstance,
     BuiltinEnum.BOOL: ConfigBoolInstance,
     BuiltinEnum.FLOAT: ConfigFloatInstance,
@@ -398,7 +400,7 @@ _CONFIG_MAP = {
 }
 
 
-_CONFIG_MAP_BY_NAME = {
+_CONFIG_MAP_BY_NAME: Dict[str, ConfigType] = {
     "Any": ConfigAnyInstance,
     "Bool": ConfigBoolInstance,
     "Float": ConfigFloatInstance,

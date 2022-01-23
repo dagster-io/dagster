@@ -1,12 +1,8 @@
 import {gql, useApolloClient, useSubscription} from '@apollo/client';
+import {ButtonLink, ColorsWIP, Group, IconWIP, Caption} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {LocationStateChangeEventType} from '../types/globalTypes';
-import {ButtonLink} from '../ui/ButtonLink';
-import {ColorsWIP} from '../ui/Colors';
-import {Group} from '../ui/Group';
-import {IconWIP} from '../ui/Icon';
-import {Caption} from '../ui/Text';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 
 import {LocationStateChangeSubscription} from './types/LocationStateChangeSubscription';
