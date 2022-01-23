@@ -35,7 +35,6 @@ def types():
         GrapheneObjectStoreOperationEvent,
         GrapheneObjectStoreOperationResult,
         GrapheneObjectStoreOperationType,
-        GrapheneObservation,
         GrapheneRunCanceledEvent,
         GrapheneRunCancelingEvent,
         GrapheneRunDequeuedEvent,
@@ -50,6 +49,7 @@ def types():
         GrapheneStepEvent,
         GrapheneStepExpectationResultEvent,
         GrapheneMaterializationEvent,
+        GrapheneObservationEvent,
         GrapheneTypeCheck,
     )
     from .log_level import GrapheneLogLevel
@@ -92,7 +92,6 @@ def types():
         GrapheneObjectStoreOperationEvent,
         GrapheneObjectStoreOperationResult,
         GrapheneObjectStoreOperationType,
-        GrapheneObservation,
         GrapheneRunCanceledEvent,
         GrapheneRunCancelingEvent,
         GrapheneRunDequeuedEvent,
@@ -108,5 +107,6 @@ def types():
         GrapheneStepEvent,
         GrapheneStepExpectationResultEvent,
         GrapheneMaterializationEvent,
+        # GrapheneObservationEvent,
         GrapheneTypeCheck,
     ]

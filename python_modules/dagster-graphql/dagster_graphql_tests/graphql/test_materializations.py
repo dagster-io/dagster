@@ -18,9 +18,9 @@ class TestMaterializations(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        materializations = [log for log in logs if log["__typename"] == "StepMaterializationEvent"]
+        materializations = [log for log in logs if log["__typename"] == "MaterializationEvent"]
         assert len(materializations) == 1
-        mat = materializations[0]["materialization"]
+        mat = materializations[0]
         assert mat["label"] == "all_types"
 
         text_entry = mat["metadataEntries"][0]

@@ -603,7 +603,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             step_mat_event = None
 
             for message in run_logs["messages"]:
-                if message["__typename"] == "StepMaterializationEvent":
+                if message["__typename"] == "MaterializationEvent":
                     # ensure only one event
                     assert step_mat_event is None
                     step_mat_event = message

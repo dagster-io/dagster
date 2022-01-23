@@ -1,8 +1,7 @@
 import graphene
 import yaml
 from dagster import check
-from dagster.core.events import AssetKey, StepMaterializationData
-from dagster.core.events.log import EventLogEntry
+from dagster.core.events import AssetKey
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
 from dagster.core.storage.pipeline_run import (
@@ -13,10 +12,10 @@ from dagster.core.storage.pipeline_run import (
 )
 from dagster.core.storage.tags import TagType, get_tag_type
 
-from ...implementation.events import construct_basic_params, from_event_record
+from ...implementation.events import from_event_record
 from ...implementation.fetch_assets import get_assets_for_run_id
 from ...implementation.fetch_pipelines import get_pipeline_reference_or_raise
-from ...implementation.fetch_runs import get_run_by_id, get_runs, get_stats, get_step_stats
+from ...implementation.fetch_runs import get_runs, get_stats, get_step_stats
 from ...implementation.fetch_schedules import get_schedules_for_pipeline
 from ...implementation.fetch_sensors import get_sensors_for_pipeline
 from ...implementation.utils import UserFacingGraphQLError, capture_error

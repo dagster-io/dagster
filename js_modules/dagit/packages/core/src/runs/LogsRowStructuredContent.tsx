@@ -129,6 +129,12 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
           timestamp={node.timestamp}
         />
       );
+    case 'ObservationEvent':
+      return <DefaultContent
+        message={node.message}
+        eventType={eventType}
+        eventColor="rgba(173, 185, 152, 0.3)"
+      />
     case 'ObjectStoreOperationEvent':
       return (
         <DefaultContent message={node.message} eventType={eventType}>

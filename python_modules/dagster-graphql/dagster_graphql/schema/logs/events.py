@@ -416,7 +416,7 @@ class AssetEventMixin:
     stepStats = graphene.NonNull(lambda: GrapheneRunStepStats)
     partition = graphene.Field(graphene.String)
 
-    def __init__(self, event, metadata, **basic_params):
+    def __init__(self, event, metadata):
         self._event = event
         self._metadata = metadata
 
@@ -480,7 +480,6 @@ class GrapheneObservationEvent(graphene.ObjectType, AssetEventMixin):
         name = "ObservationEvent"
 
     def __init__(self, event):
-        print(event)
         observation = event.dagster_event.asset_observation_data.asset_observation
         super().__init__(**_construct_asset_event_metadata_params(event, observation))
         AssetEventMixin.__init__(
