@@ -165,7 +165,7 @@ def snowflake_resource(context):
             get_one()
 
         my_snowflake_graph.to_job(
-            resources={'snowflake': snowflake_resource}
+            resource_defs={'snowflake': snowflake_resource}
         ).execute_in_process(
             run_config={
                 'resources': {
