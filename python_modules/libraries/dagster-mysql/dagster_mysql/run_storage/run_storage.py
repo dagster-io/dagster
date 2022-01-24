@@ -1,6 +1,11 @@
 import sqlalchemy as db
 from dagster import check
-from dagster.core.storage.runs import DaemonHeartbeatsTable, RunStorageSqlMetadata, SqlRunStorage
+from dagster.core.storage.runs import (
+    DaemonHeartbeatsTable,
+    InstanceInfo,
+    RunStorageSqlMetadata,
+    SqlRunStorage,
+)
 from dagster.core.storage.sql import stamp_alembic_rev  # pylint: disable=unused-import
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
@@ -53,9 +58,12 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
 
         # Stamp and create tables if the main table does not exist (we can't check alembic
         # revision because alembic config may be shared with other storage classes)
-        if "runs" not in table_names or "telemetry_info" not in table_names:
+        if "runs" not in table_names:
             retry_mysql_creation_fn(self._init_db)
             self.build_missing_indexes()
+
+        if "instance_info" not in table_names:
+            InstanceInfo.create(self._engine)
 
         super().__init__()
 

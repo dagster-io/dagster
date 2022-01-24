@@ -78,7 +78,7 @@ BulkActionsTable = db.Table(
 )
 
 InstanceInfo = db.Table(
-    "telemetry_info",
+    "instance_info",
     RunStorageSqlMetadata,
     db.Column("telemetry_id", db.Text),
 )
