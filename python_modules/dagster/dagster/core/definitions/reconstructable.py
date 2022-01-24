@@ -307,7 +307,7 @@ def reconstructable(target):
     call), or in interactive environments such as the Python REPL or Jupyter notebooks.
 
     If you need to reconstruct objects constructed in these ways, you should use
-    :py:func:`~dagster.core.definitions.reconstructable.build_reconstructable_pipeline` instead,
+    :py:func:`~dagster.core.definitions.reconstructable.build_reconstructable_target` instead,
     which allows you to specify your own reconstruction strategy.
 
     Examples:
@@ -361,7 +361,7 @@ def reconstructable(target):
             'Reconstructable target "{target.__name__}" has a different '
             '__qualname__ "{target.__qualname__}" indicating it is not '
             "defined at module scope. Use a function or decorated function "
-            "defined at module scope instead, or use build_reconstructable_pipeline.".format(
+            "defined at module scope instead, or use build_reconstructable_target.".format(
                 target=target
             )
         )
@@ -403,28 +403,28 @@ def build_reconstructable_target(
     """
     Create a :py:class:`dagster.core.definitions.reconstructable.ReconstructablePipeline`.
 
-    When your pipeline must cross process boundaries, e.g., for execution on multiple nodes or
-    in different systems (like ``dagstermill``), Dagster must know how to reconstruct the pipeline
+    When your job must cross process boundaries, e.g., for execution on multiple nodes or in
+    different systems (like ``dagstermill``), Dagster must know how to reconstruct the job
     on the other side of the process boundary.
 
-    This function allows you to use the strategy of your choice for reconstructing pipelines, so
-    that you can reconstruct certain kinds of pipelines that are not supported by
+    This function allows you to use the strategy of your choice for reconstructing jobs, so
+    that you can reconstruct certain kinds of jobs that are not supported by
     :py:func:`~dagster.reconstructable`, such as those defined by lambdas, in nested scopes (e.g.,
     dynamically within a method call), or in interactive environments such as the Python REPL or
     Jupyter notebooks.
 
-    If you need to reconstruct pipelines constructed in these ways, use this function instead of
+    If you need to reconstruct jobs constructed in these ways, use this function instead of
     :py:func:`~dagster.reconstructable`.
 
     Args:
         reconstructor_module_name (str): The name of the module containing the function to use to
-            reconstruct the pipeline.
+            reconstruct the job.
         reconstructor_function_name (str): The name of the function to use to reconstruct the
-            pipeline.
-        reconstructable_args (Tuple): Args to the function to use to reconstruct the pipeline.
+            job.
+        reconstructable_args (Tuple): Args to the function to use to reconstruct the job.
             Values of the tuple must be JSON serializable.
         reconstructable_kwargs (Dict[str, Any]): Kwargs to the function to use to reconstruct the
-            pipeline. Values of the dict must be JSON serializable.
+            job. Values of the dict must be JSON serializable.
 
     Examples:
 
@@ -432,34 +432,34 @@ def build_reconstructable_target(
 
         # module: mymodule
 
-        from dagster import PipelineDefinition, pipeline, build_reconstructable_pipeline
+        from dagster import JobDefinition, job, build_reconstructable_target
 
-        class PipelineFactory:
-            def make_pipeline(*args, **kwargs):
+        class JobFactory:
+            def make_job(*args, **kwargs):
 
-                @pipeline
-                def _pipeline(...):
+                @job
+                def _job(...):
                     ...
 
-                return _pipeline
+                return _job
 
-        def reconstruct_pipeline(*args):
-            factory = PipelineFactory()
-            return factory.make_pipeline(*args)
+        def reconstruct_job(*args):
+            factory = JobFactory()
+            return factory.make_job(*args)
 
-        factory = PipelineFactory()
+        factory = JobFactory()
 
-        foo_pipeline_args = (...,...)
+        foo_job_args = (...,...)
 
-        foo_pipeline_kwargs = {...:...}
+        foo_job_kwargs = {...:...}
 
-        foo_pipeline = factory.make_pipeline(*foo_pipeline_args, **foo_pipeline_kwargs)
+        foo_job = factory.make_job(*foo_job_args, **foo_job_kwargs)
 
-        reconstructable_foo_pipeline = build_reconstructable_pipeline(
+        reconstructable_foo_job = build_reconstructable_target(
             'mymodule',
-            'reconstruct_pipeline',
-            foo_pipeline_args,
-            foo_pipeline_kwargs,
+            'reconstruct_job',
+            foo_job_args,
+            foo_job_kwargs,
         )
     """
     check.str_param(reconstructor_module_name, "reconstructor_module_name")
