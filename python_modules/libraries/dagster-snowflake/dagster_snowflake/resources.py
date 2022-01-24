@@ -153,20 +153,18 @@ def snowflake_resource(context):
 
     .. code-block:: python
 
-        from dagster import execute_pipeline, pipeline, DependencyDefinition, ModeDefinition
+        from dagster import job, op
         from dagster_snowflake import snowflake_resource
 
         @op(required_resource_keys={'snowflake'})
         def get_one(context):
             context.resources.snowflake.execute_query('SELECT 1')
 
-        @graph
-        def my_snowflake_graph():
+        @job(resource_defs={'snowflake': snowflake_resource})
+        def my_snowflake_job():
             get_one()
 
-        my_snowflake_graph.to_job(
-            resource_defs={'snowflake': snowflake_resource}
-        ).execute_in_process(
+        my_snowflake_job.execute_in_process(
             run_config={
                 'resources': {
                     'snowflake': {
