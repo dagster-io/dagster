@@ -121,17 +121,16 @@ class GrapheneInstigationTick(graphene.ObjectType):
         from .pipelines.pipeline import GrapheneRun
 
         instance = graphene_info.context.instance
-        if self._job_tick.origin_run_ids:
-            return [
-                GrapheneRun(instance.get_run_by_id(run_id))
-                for run_id in self._job_tick.origin_run_ids
-                if instance.has_run(run_id)
-            ]
-        return [
-            GrapheneRun(instance.get_run_by_id(run_id))
-            for run_id in self._job_tick.run_ids
-            if instance.has_run(run_id)
-        ]
+        run_ids = self._job_tick.origin_run_ids or self._job_tick.run_ids
+        if not run_ids:
+            return []
+
+        records_by_id = {
+            record.pipeline_run.run_id: record
+            for record in instance.get_run_records(PipelineRunsFilter(run_ids=run_ids))
+        }
+
+        return [GrapheneRun(records_by_id[run_id]) for run_id in run_ids if run_id in records_by_id]
 
 
 class GrapheneFutureInstigationTick(graphene.ObjectType):
@@ -307,8 +306,8 @@ class GrapheneInstigationState(graphene.ObjectType):
         else:
             filters = PipelineRunsFilter.for_schedule(self._job_state)
         return [
-            GrapheneRun(r)
-            for r in graphene_info.context.instance.get_runs(
+            GrapheneRun(record)
+            for record in graphene_info.context.instance.get_run_records(
                 filters=filters,
                 limit=kwargs.get("limit"),
             )

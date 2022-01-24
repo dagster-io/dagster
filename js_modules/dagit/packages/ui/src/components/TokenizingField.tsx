@@ -69,17 +69,14 @@ export function tokenizedValueFromString(
   str: string,
   providers: SuggestionProvider[],
 ): TokenizingFieldValue {
-  const parts = str.split(':');
-  const token = parts[0];
+  const [token = '', value = ''] = str.split(':');
+
   if (findProviderByToken(token, providers)) {
-    if (parts.length === 2) {
-      return {token, value: parts[1]};
-    }
-    // Jobs can be `pipeline:mode` tuples, so join the "value" tokens back together.
-    if (token === 'job') {
-      return {token, value: parts.slice(1).join(':')};
+    if (token && value) {
+      return {token, value};
     }
   }
+
   return {value: str};
 }
 
@@ -124,7 +121,8 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
   // Build the set of suggestions that should be displayed for the current input value.
   // Note: "typed" is the text that has not yet been submitted, separate from values[].
   const parts = typed.split(':');
-  const lastPart = parts[parts.length - 1].toLowerCase();
+  const lastPart = (parts[parts.length - 1] || '').toLowerCase();
+
   const suggestions = React.useMemo(() => {
     if (atMaxValues) {
       return [];
@@ -167,9 +165,12 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
     }
 
     if (parts.length === 2) {
-      // Suggest values from the chosen provider (eg: `pipeline:abc`)
-      const provider = findProviderByToken(parts[0], filteredSuggestionProviders);
-      suggestionsArr = provider ? availableSuggestionsForProvider(provider) : [];
+      const firstPart = parts[0];
+      if (firstPart) {
+        // Suggest values from the chosen provider (eg: `pipeline:abc`)
+        const provider = findProviderByToken(firstPart, filteredSuggestionProviders);
+        suggestionsArr = provider ? availableSuggestionsForProvider(provider) : [];
+      }
     }
 
     // Truncate suggestions to the ones currently matching the typed text,
@@ -191,7 +192,10 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
     // If suggestions are present, autoselect the first one so the user can press
     // enter to complete their search. (Esc + enter is how you enter your raw text.)
     if (!active && suggestions.length) {
-      setActive({text: suggestions[0].text, idx: 0});
+      const item = suggestions[0];
+      if (item) {
+        setActive({text: item.text, idx: 0});
+      }
       return;
     }
     if (!active) {
@@ -209,10 +213,10 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
     // is now at it's location if it's gone, bounded to the array.
     let nextIdx = pos !== -1 ? pos : active.idx;
     nextIdx = Math.max(0, Math.min(suggestions.length - 1, nextIdx));
-    const nextText = suggestions[nextIdx] && suggestions[nextIdx].text;
+    const nextItem = suggestions[nextIdx];
 
-    if (nextIdx !== active.idx || nextText !== active.text) {
-      setActive({text: nextText, idx: nextIdx});
+    if (nextItem && (nextIdx !== active.idx || nextItem.text !== active.text)) {
+      setActive({text: nextItem.text, idx: nextIdx});
     }
   }, [active, suggestions]);
 
@@ -298,7 +302,10 @@ export const TokenizingField: React.FC<TokenizingFieldProps> = ({
       e.preventDefault();
       let idx = (active ? active.idx : -1) + shift;
       idx = Math.max(0, Math.min(idx, suggestions.length - 1));
-      setActive({text: suggestions[idx].text, idx});
+      const item = suggestions[idx];
+      if (item) {
+        setActive({text: item.text, idx});
+      }
     }
   };
 

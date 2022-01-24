@@ -255,9 +255,13 @@ def _get_mapped_solids_dict(
     # Dynamically construct the type that the output of the config mapping function will
     # be evaluated against
 
+    # diff original graph and the subselected graph to find nodes to ignore so the system knows to
+    # skip the validation then when config mapping generates values where the nodes are not selected
+    ignored_solids = graph_def.get_top_level_omitted_nodes() if graph_def.is_subselected else None
+
     type_to_evaluate_against = define_solid_dictionary_cls(
         solids=graph_def.solids,
-        ignored_solids=None,
+        ignored_solids=ignored_solids,
         dependency_structure=graph_def.dependency_structure,
         parent_handle=current_stack.handle,
         resource_defs=resource_defs,

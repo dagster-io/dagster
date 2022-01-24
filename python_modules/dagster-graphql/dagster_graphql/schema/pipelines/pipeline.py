@@ -5,12 +5,7 @@ from dagster.core.events import AssetKey, StepMaterializationData
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
-from dagster.core.storage.pipeline_run import (
-    PipelineRun,
-    PipelineRunStatus,
-    PipelineRunsFilter,
-    RunRecord,
-)
+from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter, RunRecord
 from dagster.core.storage.tags import TagType, get_tag_type
 from dagster.utils import datetime_as_float
 
@@ -236,15 +231,16 @@ class GrapheneRun(graphene.ObjectType):
         interfaces = (GraphenePipelineRun,)
         name = "Run"
 
-    def __init__(self, run):
-        pipeline_run = run.pipeline_run if isinstance(run, RunRecord) else run
+    def __init__(self, record):
+        check.inst_param(record, "record", RunRecord)
+        pipeline_run = record.pipeline_run
         super().__init__(
             runId=pipeline_run.run_id,
             status=PipelineRunStatus(pipeline_run.status),
             mode=pipeline_run.mode,
         )
-        self._pipeline_run = check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-        self._run_record = run if isinstance(run, RunRecord) else None
+        self._pipeline_run = pipeline_run
+        self._run_record = record
         self._run_stats = None
 
     def resolve_id(self, _graphene_info):

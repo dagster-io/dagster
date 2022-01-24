@@ -5,7 +5,7 @@ import styled from 'styled-components/macro';
 
 export interface SVGViewportInteractor {
   onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>): void;
-  onWheel(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>): void;
+  onWheel(viewport: SVGViewport, event: WheelEvent): void;
   render?(viewport: SVGViewport): React.ReactElement<any> | null;
 }
 
@@ -91,7 +91,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
     event.stopPropagation();
   },
 
-  onWheel(viewport: SVGViewport, event: React.WheelEvent<HTMLDivElement>) {
+  onWheel(viewport: SVGViewport, event: WheelEvent) {
     const cursorPosition = viewport.getOffsetXY(event);
     if (!cursorPosition) {
       return;
@@ -214,7 +214,24 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
 
   componentDidMount() {
     this.autocenter();
+    // The wheel event cannot be prevented via the `onWheel` handler.
+    document.addEventListener('wheel', this.onWheel, {passive: false});
   }
+
+  componentWillUnmount() {
+    document.removeEventListener('wheel', this.onWheel);
+  }
+
+  onWheel = (e: WheelEvent) => {
+    const container = this.element.current;
+    // If the wheel event occurs within our SVG container, prevent it from zooming
+    // the document, and handle it with the interactor.
+    if (container && e.target instanceof Node && container.contains(e.target)) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.props.interactor.onWheel(this, e);
+    }
+  };
 
   cancelAnimations() {
     if (this._animation) {
@@ -363,7 +380,6 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
         ref={this.element}
         style={Object.assign({backgroundColor}, SVGViewportStyles)}
         onMouseDown={(e) => interactor.onMouseDown(this, e)}
-        onWheel={(e) => interactor.onWheel(this, e)}
         onDoubleClick={this.onDoubleClick}
         onClick={onClick}
         onKeyDown={onKeyDown}

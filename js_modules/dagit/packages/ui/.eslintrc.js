@@ -5,8 +5,8 @@ module.exports = {
     'plugin:react/recommended',
     'plugin:@typescript-eslint/recommended',
     'prettier',
-    'plugin:prettier/recommended',
     'plugin:storybook/recommended',
+    'plugin:prettier/recommended', // Prettier plugin must be last!
   ],
   plugins: ['react-hooks', 'import'],
   parserOptions: {

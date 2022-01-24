@@ -189,7 +189,7 @@ class DagsterK8sJobConfig(
         "_K8sJobTaskConfig",
         "job_image dagster_home image_pull_policy image_pull_secrets service_account_name "
         "instance_config_map postgres_password_secret env_config_maps env_secrets env_vars "
-        "volume_mounts volumes",
+        "volume_mounts volumes labels",
     )
 ):
     """Configuration parameters for launching Dagster Jobs on Kubernetes.
@@ -231,6 +231,8 @@ class DagsterK8sJobConfig(
             https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
         volumes (Optional[List[Permissive]]): A list of volumes to include in the Job's Pod. Default: ``[]``. See:
             https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
+        labels (Optional[Dict[str, str]]): Additional labels that should be included in the Job's Pod. See:
+            https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
     """
 
     def __new__(
@@ -247,6 +249,7 @@ class DagsterK8sJobConfig(
         env_vars=None,
         volume_mounts=None,
         volumes=None,
+        labels=None,
     ):
         return super(DagsterK8sJobConfig, cls).__new__(
             cls,
@@ -268,100 +271,52 @@ class DagsterK8sJobConfig(
             env_vars=check.opt_list_param(env_vars, "env_secrets", of_type=str),
             volume_mounts=check.opt_list_param(volume_mounts, "volume_mounts"),
             volumes=check.opt_list_param(volumes, "volumes"),
+            labels=check.opt_dict_param(labels, "labels", key_type=str, value_type=str),
         )
-
-    @classmethod
-    def config_type(cls):
-        """Combined config type which includes both run launcher and pipeline run config."""
-        cfg_run_launcher = DagsterK8sJobConfig.config_type_run_launcher()
-        cfg_pipeline_run = DagsterK8sJobConfig.config_type_pipeline_run()
-        return merge_dicts(cfg_run_launcher, cfg_pipeline_run)
 
     @classmethod
     def config_type_run_launcher(cls):
         """Configuration intended to be set on the Dagster instance."""
-        return {
-            "instance_config_map": Field(
-                StringSource,
-                is_required=True,
-                description="The ``name`` of an existing Volume to mount into the pod in order to "
-                "provide a ConfigMap for the Dagster instance. This Volume should contain a "
-                "``dagster.yaml`` with appropriate values for run storage, event log storage, etc.",
-            ),
-            "postgres_password_secret": Field(
-                StringSource,
-                is_required=False,
-                description="The name of the Kubernetes Secret where the postgres password can be "
-                "retrieved. Will be mounted and supplied as an environment variable to the Job Pod."
-                'Secret must contain the key ``"postgresql-password"`` which will be exposed in '
-                "the Job environment as the environment variable ``DAGSTER_PG_PASSWORD``.",
-            ),
-            "dagster_home": Field(
-                StringSource,
-                is_required=False,
-                default_value=DAGSTER_HOME_DEFAULT,
-                description="The location of DAGSTER_HOME in the Job container; this is where the "
-                "``dagster.yaml`` file will be mounted from the instance ConfigMap specified here. "
-                "Defaults to /opt/dagster/dagster_home.",
-            ),
-            "env_config_maps": Field(
-                Noneable(Array(StringSource)),
-                is_required=False,
-                description="A list of custom ConfigMapEnvSource names from which to draw "
-                "environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:"
-                "https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container",
-            ),
-            "env_secrets": Field(
-                Noneable(Array(StringSource)),
-                is_required=False,
-                description="A list of custom Secret names from which to draw environment "
-                "variables (using ``envFrom``) for the Job. Default: ``[]``. See:"
-                "https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables",
-            ),
-            "volume_mounts": Field(
-                Array(
-                    Shape(
-                        {
-                            "name": StringSource,
-                            "mountPath": StringSource,
-                            "mountPropagation": Field(StringSource, is_required=False),
-                            "readOnly": Field(BoolSource, is_required=False),
-                            "subPath": Field(StringSource, is_required=False),
-                            "subPathExpr": Field(StringSource, is_required=False),
-                        }
-                    )
+        return merge_dicts(
+            {
+                "instance_config_map": Field(
+                    StringSource,
+                    is_required=True,
+                    description="The ``name`` of an existing Volume to mount into the pod in order to "
+                    "provide a ConfigMap for the Dagster instance. This Volume should contain a "
+                    "``dagster.yaml`` with appropriate values for run storage, event log storage, etc.",
                 ),
-                is_required=False,
-                default_value=[],
-                description="A list of volume mounts to include in the job's container. Default: ``[]``. See: "
-                "https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core",
-            ),
-            "volumes": Field(
-                Array(
-                    Permissive(
-                        {
-                            "name": str,
-                        }
-                    )
+                "postgres_password_secret": Field(
+                    StringSource,
+                    is_required=False,
+                    description="The name of the Kubernetes Secret where the postgres password can be "
+                    "retrieved. Will be mounted and supplied as an environment variable to the Job Pod."
+                    'Secret must contain the key ``"postgresql-password"`` which will be exposed in '
+                    "the Job environment as the environment variable ``DAGSTER_PG_PASSWORD``.",
                 ),
-                is_required=False,
-                default_value=[],
-                description="A list of volumes to include in the Job's Pod. Default: ``[]``. For the many "
-                "possible volume source types that can be included, see: "
-                "https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core",
-            ),
-        }
+                "dagster_home": Field(
+                    StringSource,
+                    is_required=False,
+                    default_value=DAGSTER_HOME_DEFAULT,
+                    description="The location of DAGSTER_HOME in the Job container; this is where the "
+                    "``dagster.yaml`` file will be mounted from the instance ConfigMap specified here. "
+                    "Defaults to /opt/dagster/dagster_home.",
+                ),
+                "load_incluster_config": Field(bool, is_required=False, default_value=True),
+                "kubeconfig_file": Field(Noneable(str), is_required=False, default_value=None),
+            },
+            DagsterK8sJobConfig.config_type_job(),
+        )
 
     @classmethod
-    def config_type_pipeline_run(cls, default_image_pull_policy=None):
+    def config_type_job(cls):
         """Configuration intended to be set at pipeline execution time."""
         return {
             "job_image": Field(
                 Noneable(StringSource),
                 is_required=False,
-                description="Docker image to use for launched task Jobs. If the repository is not "
-                "loaded from a GRPC server, then this field is required. If the repository is "
-                "loaded from a GRPC server, then leave this field empty."
+                description="Docker image to use for launched Jobs. If this field is empty, "
+                "the image that was used to originally load the Dagster repository will be used."
                 '(Ex: "mycompany.com/dagster-k8s-image:latest").',
             ),
             "image_pull_policy": Field(
@@ -369,7 +324,6 @@ class DagsterK8sJobConfig(
                 is_required=False,
                 description="Image pull policy to set on the launched task Job Pods. Defaults to "
                 '"IfNotPresent".',
-                default_value=default_image_pull_policy,
             ),
             "image_pull_secrets": Field(
                 Noneable(Array(Shape({"name": StringSource}))),
@@ -435,6 +389,12 @@ class DagsterK8sJobConfig(
                 description="A list of volumes to include in the Job's Pod. Default: ``[]``. For the many "
                 "possible volume source types that can be included, see: "
                 "https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core",
+            ),
+            "labels": Field(
+                dict,
+                is_required=False,
+                description="Additional labels that should be included in the Job's Pod. See: "
+                "https://kubernetes.io/docs/concepts/overview/working-with-objects/labels",
             ),
         }
 
@@ -656,7 +616,7 @@ def construct_dagster_k8s_job(
     template = kubernetes.client.V1PodTemplateSpec(
         metadata=kubernetes.client.V1ObjectMeta(
             name=pod_name,
-            labels=merge_dicts(dagster_labels, user_defined_pod_template_labels),
+            labels=merge_dicts(dagster_labels, user_defined_pod_template_labels, job_config.labels),
             **user_defined_k8s_config.pod_template_spec_metadata,
         ),
         spec=kubernetes.client.V1PodSpec(

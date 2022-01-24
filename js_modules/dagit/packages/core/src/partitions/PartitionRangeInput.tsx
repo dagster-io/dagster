@@ -1,5 +1,5 @@
 import {TextInput} from '@dagster-io/ui';
-import React from 'react';
+import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 
@@ -9,14 +9,31 @@ export const PartitionRangeInput: React.FC<{
   partitionNames: string[];
 }> = ({value, onChange, partitionNames}) => {
   const [valueString, setValueString] = React.useState('');
+  const partitionNameJSON = React.useMemo(() => JSON.stringify(partitionNames), [partitionNames]);
 
   React.useEffect(() => {
-    setValueString(partitionsToText(value, partitionNames));
-  }, [value, partitionNames]);
+    const partitionNameArr = JSON.parse(partitionNameJSON);
+    setValueString(partitionsToText(value, partitionNameArr));
+  }, [value, partitionNameJSON]);
 
   const placeholder = React.useMemo(() => {
     return placeholderForPartitions(partitionNames);
   }, [partitionNames]);
+
+  const tryCommit = (e: React.SyntheticEvent<HTMLInputElement>) => {
+    try {
+      onChange(textToPartitions(valueString, partitionNames));
+    } catch (err: any) {
+      e.preventDefault();
+      showCustomAlert({body: err.message});
+    }
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      tryCommit(e);
+    }
+  };
 
   return (
     <TextInput
@@ -24,14 +41,8 @@ export const PartitionRangeInput: React.FC<{
       value={valueString}
       style={{display: 'flex', width: '100%', flex: 1, flexGrow: 1}}
       onChange={(e) => setValueString(e.currentTarget.value)}
-      onBlur={(e) => {
-        try {
-          onChange(textToPartitions(e.target.value, partitionNames));
-        } catch (err: any) {
-          e.preventDefault();
-          showCustomAlert({body: err.message});
-        }
-      }}
+      onKeyDown={onKeyDown}
+      onBlur={tryCommit}
     />
   );
 };

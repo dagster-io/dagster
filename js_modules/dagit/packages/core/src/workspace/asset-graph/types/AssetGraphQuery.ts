@@ -23,6 +23,11 @@ export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencyK
   path: string[];
 }
 
+export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependedByKeys {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes {
   __typename: "AssetNode";
   id: string;
@@ -31,6 +36,7 @@ export interface AssetGraphQuery_pipelineOrError_Pipeline_assetNodes {
   partitionDefinition: string | null;
   assetKey: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey;
   dependencyKeys: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependencyKeys[];
+  dependedByKeys: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_dependedByKeys[];
 }
 
 export interface AssetGraphQuery_pipelineOrError_Pipeline {

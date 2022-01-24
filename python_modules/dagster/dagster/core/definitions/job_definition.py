@@ -1,12 +1,30 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional, Tuple, Type, Union, cast
 
 from dagster import check
+from dagster.core.definitions.composition import MappedInputPlaceholder
+from dagster.core.definitions.dependency import (
+    DependencyDefinition,
+    DynamicCollectDependencyDefinition,
+    IDependencyDefinition,
+    MultiDependencyDefinition,
+    Node,
+    NodeHandle,
+    NodeInvocation,
+    SolidOutputHandle,
+)
+from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.policy import RetryPolicy
-from dagster.core.selector.subset_selector import OpSelectionData, parse_solid_selection
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidSubsetError
+from dagster.core.selector.subset_selector import (
+    LeafNodeSelection,
+    OpSelectionData,
+    parse_op_selection,
+)
+from dagster.core.utils import str_format_set
 
 from .executor_definition import ExecutorDefinition
-from .graph_definition import GraphDefinition
+from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .mode import ModeDefinition
 from .partition import PartitionSetDefinition
@@ -173,25 +191,9 @@ class JobDefinition(PipelineDefinition):
 
         op_selection = check.opt_list_param(op_selection, "op_selection", str)
 
-        # TODO: https://github.com/dagster-io/dagster/issues/2115
-        #   op selection currently still operates on PipelineSubsetDefinition. ideally we'd like to
-        #   1) move away from creating PipelineSubsetDefinition
-        #   2) consolidate solid selection and step selection
-        #   3) enable subsetting nested graphs/ops which isn't working with the current setting
-        solids_to_execute = (
-            self._op_selection_data.resolved_op_selection if self._op_selection_data else None
-        )
-        if op_selection:
-            solids_to_execute = parse_solid_selection(
-                super(JobDefinition, self).get_pipeline_subset_def(solids_to_execute),
-                op_selection,
-            )
-        subset_pipeline_def = super(JobDefinition, self).get_pipeline_subset_def(solids_to_execute)
-        ignored_solids = [
-            solid
-            for solid in self._graph_def.solids
-            if not subset_pipeline_def.has_solid_named(solid.name)
-        ]
+        resolved_op_selection_dict = parse_op_selection(self, op_selection)
+
+        sub_graph = _get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
 
         return JobDefinition(
             name=self.name,
@@ -201,13 +203,14 @@ class JobDefinition(PipelineDefinition):
             tags=self.tags,
             hook_defs=self.hook_defs,
             op_retry_policy=self._solid_retry_policy,
-            graph_def=subset_pipeline_def.graph,
+            graph_def=sub_graph,
             version_strategy=self.version_strategy,
             _op_selection_data=OpSelectionData(
                 op_selection=op_selection,
-                resolved_op_selection=solids_to_execute,
-                ignored_solids=ignored_solids,
-                parent_job_def=self,
+                resolved_op_selection=set(
+                    resolved_op_selection_dict.keys()
+                ),  # equivalent to solids_to_execute. currently only gets top level nodes.
+                parent_job_def=self,  # used by pipeline snapshot lineage
             ),
         )
 
@@ -278,3 +281,116 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: Pipeline
         return updated_resources
 
     return resources
+
+
+def _dep_key_of(node: Node) -> NodeInvocation:
+    return NodeInvocation(
+        name=node.definition.name,
+        alias=node.name,
+        tags=node.tags,
+        hook_defs=node.hook_defs,
+        retry_policy=node.retry_policy,
+    )
+
+
+def _get_subselected_graph_definition(
+    graph: GraphDefinition,
+    resolved_op_selection_dict: Dict,
+    parent_handle: Optional[NodeHandle] = None,
+) -> SubselectedGraphDefinition:
+    deps: Dict[
+        Union[str, NodeInvocation],
+        Dict[str, IDependencyDefinition],
+    ] = {}
+
+    selected_nodes: List[Tuple[str, NodeDefinition]] = []
+
+    for node in graph.solids_in_topological_order:
+        node_handle = NodeHandle(node.name, parent=parent_handle)
+        # skip if the node isn't selected
+        if node.name not in resolved_op_selection_dict:
+            continue
+
+        # rebuild graph if any nodes inside the graph are selected
+        if node.is_graph and resolved_op_selection_dict[node.name] is not LeafNodeSelection:
+            definition = _get_subselected_graph_definition(
+                node.definition,
+                resolved_op_selection_dict[node.name],
+                parent_handle=node_handle,
+            )
+        # use definition if the node as a whole is selected. this includes selecting the entire graph
+        else:
+            definition = node.definition
+        selected_nodes.append((node.name, definition))
+
+        # build dependencies for the node. we do it for both cases because nested graphs can have
+        # inputs and outputs too
+        deps[_dep_key_of(node)] = {}
+        for input_handle in node.input_handles():
+            if graph.dependency_structure.has_direct_dep(input_handle):
+                output_handle = graph.dependency_structure.get_direct_dep(input_handle)
+                if output_handle.solid.name in resolved_op_selection_dict:
+                    deps[_dep_key_of(node)][input_handle.input_def.name] = DependencyDefinition(
+                        solid=output_handle.solid.name, output=output_handle.output_def.name
+                    )
+            elif graph.dependency_structure.has_dynamic_fan_in_dep(input_handle):
+                output_handle = graph.dependency_structure.get_dynamic_fan_in_dep(input_handle)
+                if output_handle.solid.name in resolved_op_selection_dict:
+                    deps[_dep_key_of(node)][
+                        input_handle.input_def.name
+                    ] = DynamicCollectDependencyDefinition(
+                        solid_name=output_handle.solid.name,
+                        output_name=output_handle.output_def.name,
+                    )
+            elif graph.dependency_structure.has_fan_in_deps(input_handle):
+                output_handles = graph.dependency_structure.get_fan_in_deps(input_handle)
+                multi_dependencies = [
+                    DependencyDefinition(
+                        solid=output_handle.solid.name, output=output_handle.output_def.name
+                    )
+                    for output_handle in output_handles
+                    if (
+                        isinstance(output_handle, SolidOutputHandle)
+                        and output_handle.solid.name in resolved_op_selection_dict
+                    )
+                ]
+                deps[_dep_key_of(node)][input_handle.input_def.name] = MultiDependencyDefinition(
+                    cast(
+                        List[Union[DependencyDefinition, Type[MappedInputPlaceholder]]],
+                        multi_dependencies,
+                    )
+                )
+            # else input is unconnected
+
+    # filter out unselected input/output mapping
+    new_input_mappings = list(
+        filter(
+            lambda input_mapping: input_mapping.maps_to.solid_name
+            in [name for name, _ in selected_nodes],
+            graph._input_mappings,  # pylint: disable=protected-access
+        )
+    )
+    new_output_mappings = list(
+        filter(
+            lambda output_mapping: output_mapping.maps_from.solid_name
+            in [name for name, _ in selected_nodes],
+            graph._output_mappings,  # pylint: disable=protected-access
+        )
+    )
+
+    try:
+        return SubselectedGraphDefinition(
+            parent_graph_def=graph,
+            dependencies=deps,
+            node_defs=[definition for _, definition in selected_nodes],
+            input_mappings=new_input_mappings,
+            output_mappings=new_output_mappings,
+        )
+    except DagsterInvalidDefinitionError as exc:
+        # This handles the case when you construct a subset such that an unsatisfied
+        # input cannot be loaded from config. Instead of throwing a DagsterInvalidDefinitionError,
+        # we re-raise a DagsterInvalidSubsetError.
+        raise DagsterInvalidSubsetError(
+            f"The attempted subset {str_format_set(resolved_op_selection_dict)} for graph "
+            f"{graph.name} results in an invalid graph."
+        ) from exc

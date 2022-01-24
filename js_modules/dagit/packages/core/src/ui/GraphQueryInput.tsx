@@ -147,14 +147,10 @@ export const GraphQueryInput = React.memo(
 
     const onConfirmSuggestion = (suggestion: string) => {
       const preceding = lastClause ? pendingValue.substr(0, lastClause.index) : '';
-      setPendingValue(preceding + prefix + suggestion + suffix);
+      setPendingValue(preceding + prefix + `"${suggestion}"` + suffix);
     };
 
     React.useEffect(() => {
-      if (!active && suggestions.length) {
-        setActive({text: suggestions[0], idx: 0});
-        return;
-      }
       if (!active) {
         return;
       }
@@ -189,6 +185,7 @@ export const GraphQueryInput = React.memo(
         } else {
           e.currentTarget.blur();
         }
+        setActive(null);
       }
 
       // The up/down arrow keys shift selection in the dropdown.

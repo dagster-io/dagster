@@ -27,7 +27,7 @@ from dagster.utils.interrupts import capture_interrupts
 from dagster.utils.log import configure_loggers
 
 
-@click.group(name="api")
+@click.group(name="api", hidden=True)
 def api_cli():
     """
     [INTERNAL] These commands are intended to support internal use cases. Users should generally

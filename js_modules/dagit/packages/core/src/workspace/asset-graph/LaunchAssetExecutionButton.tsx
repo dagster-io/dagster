@@ -24,7 +24,7 @@ export const LaunchAssetExecutionButton: React.FC<{
   if (!assets.every((a) => a.opName)) {
     disabledReason = 'One or more foreign assets are selected and cannot be refreshed.';
   }
-  const partitionDefinition = assets[0].partitionDefinition;
+  const partitionDefinition = assets[0]?.partitionDefinition;
   if (assets.some((a) => a.partitionDefinition !== partitionDefinition)) {
     disabledReason = 'Assets refreshed together must share a partition definition.';
   }

@@ -7,7 +7,7 @@ from dagster.core.snap import (
 
 
 class PipelineIndex:
-    def __init__(self, pipeline_snapshot, parent_pipeline_snapshot, is_historical=False):
+    def __init__(self, pipeline_snapshot, parent_pipeline_snapshot):
         self.pipeline_snapshot = check.inst_param(
             pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot
         )
@@ -42,15 +42,7 @@ class PipelineIndex:
             for comp_snap in pipeline_snapshot.solid_definitions_snapshot.composite_solid_def_snaps
         }
 
-        if is_historical:
-            # defer the pipeline snapshot calculation for historical pipelines.  This tends to be an
-            # expensive operation, so we want to avoid it unless we need it.  Also, because this is
-            # a historical pipeline, we already have an identifying pipeline snapshot id (which may
-            # or may not be the same as this calculated snapshot id). The identifying pipeline
-            # snapshot id is the calculated snapshot id at the time that the run was created.
-            self._pipeline_snapshot_id = None
-        else:
-            self._pipeline_snapshot_id = create_pipeline_snapshot_id(pipeline_snapshot)
+        self._pipeline_snapshot_id = None
 
     @property
     def name(self):

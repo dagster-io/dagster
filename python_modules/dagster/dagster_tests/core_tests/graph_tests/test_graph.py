@@ -403,8 +403,7 @@ def test_desc():
         pass
 
     job = empty.to_job()
-    # should we inherit from the graph instead?
-    assert job.description == None
+    assert job.description == "graph desc"
 
     desc = "job desc"
     job = empty.to_job(description=desc)
