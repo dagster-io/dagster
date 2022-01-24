@@ -62,7 +62,7 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
             retry_mysql_creation_fn(self._init_db)
             self.build_missing_indexes()
 
-        if "instance_info" not in table_names:
+        elif "instance_info" not in table_names:
             InstanceInfo.create(self._engine)
 
         super().__init__()
