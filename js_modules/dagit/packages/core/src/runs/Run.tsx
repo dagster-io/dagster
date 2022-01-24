@@ -212,17 +212,19 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   const onClickStep = (stepKey: string, evt: React.MouseEvent<any>) => {
     const index = selectionStepKeys.indexOf(stepKey);
     let newSelected: string[];
-
+    const filterForExactStep = `"${stepKey}"`;
     if (evt.shiftKey) {
-      // shift-click to multi select steps
-      newSelected = [...selectionStepKeys];
+      // shift-click to multi select steps, preserving quotations if present
+      newSelected = [
+        ...selectionStepKeys.map((k) => (selectionQuery.includes(`"${k}"`) ? `"${k}"` : k)),
+      ];
 
       if (index !== -1) {
         // deselect the step if already selected
         newSelected.splice(index, 1);
       } else {
         // select the step otherwise
-        newSelected.push(stepKey);
+        newSelected.push(filterForExactStep);
       }
     } else {
       if (selectionStepKeys.length === 1 && index !== -1) {
@@ -230,7 +232,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
         newSelected = [];
       } else {
         // select the step otherwise
-        newSelected = [stepKey];
+        newSelected = [filterForExactStep];
       }
     }
 
