@@ -53,7 +53,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         filters: PipelineRunsFilter = None,
         cursor: str = None,
         limit: int = None,
-        bucket: Optional[Union[JobBucket, TagBucket]] = None,
+        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> Iterable[PipelineRun]:
         """Return all the runs present in the storage that match the given filters.
 
@@ -152,7 +152,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         order_by: str = None,
         ascending: bool = False,
         cursor: str = None,
-        bucket: Optional[Union[JobBucket, TagBucket]] = None,
+        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
 

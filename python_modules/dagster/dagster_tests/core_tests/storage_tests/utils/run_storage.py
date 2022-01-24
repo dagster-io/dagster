@@ -1234,7 +1234,7 @@ class TestRunStorage:
         runs_by_job = {
             run.pipeline_name: run
             for run in storage.get_runs(
-                bucket=JobBucket(
+                bucket_by=JobBucket(
                     job_names=["a_pipeline", "b_pipeline", "c_pipeline"], bucket_limit=1
                 )
             )
@@ -1249,7 +1249,7 @@ class TestRunStorage:
             run.pipeline_name: run
             for run in storage.get_runs(
                 filters=PipelineRunsFilter(tags={"a": "A"}),
-                bucket=JobBucket(
+                bucket_by=JobBucket(
                     job_names=["a_pipeline", "b_pipeline", "c_pipeline"], bucket_limit=1
                 ),
             )
@@ -1278,7 +1278,7 @@ class TestRunStorage:
         runs_by_tag = {
             run.tags.get("a"): run
             for run in storage.get_runs(
-                bucket=TagBucket(tag_key="a", tag_values=["1", "2", "3", "4"], bucket_limit=1)
+                bucket_by=TagBucket(tag_key="a", tag_values=["1", "2", "3", "4"], bucket_limit=1)
             )
         }
         assert set(runs_by_tag.keys()) == {"1", "2", "3", "4"}
@@ -1291,7 +1291,7 @@ class TestRunStorage:
             run.tags.get("a"): run
             for run in storage.get_runs(
                 filters=PipelineRunsFilter(pipeline_name="a"),
-                bucket=TagBucket(tag_key="a", tag_values=["1", "2", "3", "4"], bucket_limit=1),
+                bucket_by=TagBucket(tag_key="a", tag_values=["1", "2", "3", "4"], bucket_limit=1),
             )
         }
         assert set(runs_by_tag.keys()) == {"1", "2", "3"}
