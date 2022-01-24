@@ -710,7 +710,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     # Tracking data migrations over secondary indexes
 
-    def _execute_required_migrations(
+    def _execute_data_migrations(
         self, migrations, print_fn: Callable = None, force_rebuild_all: bool = False
     ):
         for migration_name, migration_fn in migrations.items():
@@ -724,16 +724,11 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             if print_fn:
                 print_fn(f"Finished data migration: {migration_name}")
 
-    def execute_required_migrations(
-        self, print_fn: Callable = None, force_rebuild_all: bool = False
-    ):
-        self._execute_required_migrations(REQUIRED_DATA_MIGRATIONS, print_fn, force_rebuild_all)
+    def migrate(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+        self._execute_data_migrations(REQUIRED_DATA_MIGRATIONS, print_fn, force_rebuild_all)
 
-    def execute_optional_migrations(
-        self, print_fn: Callable = None, force_rebuild_all: bool = False
-    ):
-        all_migrations = {**REQUIRED_DATA_MIGRATIONS, **OPTIONAL_DATA_MIGRATIONS}
-        self._execute_required_migrations(all_migrations, print_fn, force_rebuild_all)
+    def optimize(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+        self._execute_data_migrations(OPTIONAL_DATA_MIGRATIONS, print_fn, force_rebuild_all)
 
     def has_built_index(self, migration_name: str) -> bool:
         query = (

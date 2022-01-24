@@ -377,7 +377,7 @@ def test_run_partition_data_migration():
         assert len(run_storage._get_partition_runs(partition_set_name, partition_name)) == 0
 
         # actually migrate the data
-        run_storage.execute_required_migrations(force_rebuild_all=True)
+        run_storage.migrate(force_rebuild_all=True)
 
         # ensure that we get the same partitioned runs returned
         assert run_storage.has_built_index(RUN_PARTITIONS)

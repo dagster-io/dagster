@@ -11,9 +11,11 @@ from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 RUN_PARTITIONS = "run_partitions"
 RUN_START_END = "run_start_end"
 
+# for `dagster instance migrate`, paired with schema changes
 REQUIRED_DATA_MIGRATIONS = {
     RUN_PARTITIONS: lambda: migrate_run_partition,
 }
+# for `dagster instance reindex`, optionally run for better read performance
 OPTIONAL_DATA_MIGRATIONS = {
     RUN_START_END: lambda: migrate_run_start_end,
 }

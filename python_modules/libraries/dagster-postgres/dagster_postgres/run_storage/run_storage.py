@@ -56,7 +56,8 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
         # revision because alembic config may be shared with other storage classes)
         if self.should_autocreate_tables and "runs" not in table_names:
             retry_pg_creation_fn(self._init_db)
-            self.execute_required_migrations()
+            self.migrate()
+            self.optimize()
 
         super().__init__()
 
