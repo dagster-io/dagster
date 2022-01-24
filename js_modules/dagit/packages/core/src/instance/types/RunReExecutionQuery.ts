@@ -50,19 +50,6 @@ export interface RunReExecutionQuery_pipelineRunOrError_Run_repositoryOrigin {
   repositoryLocationName: string;
 }
 
-export interface RunReExecutionQuery_pipelineRunOrError_Run_stats_PythonError {
-  __typename: "PythonError";
-}
-
-export interface RunReExecutionQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot {
-  __typename: "RunStatsSnapshot";
-  id: string;
-  endTime: number | null;
-  startTime: number | null;
-}
-
-export type RunReExecutionQuery_pipelineRunOrError_Run_stats = RunReExecutionQuery_pipelineRunOrError_Run_stats_PythonError | RunReExecutionQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot;
-
 export interface RunReExecutionQuery_pipelineRunOrError_Run_stepStats_attempts {
   __typename: "RunMarker";
   startTime: number | null;
@@ -102,7 +89,8 @@ export interface RunReExecutionQuery_pipelineRunOrError_Run {
   executionPlan: RunReExecutionQuery_pipelineRunOrError_Run_executionPlan | null;
   stepKeysToExecute: string[] | null;
   repositoryOrigin: RunReExecutionQuery_pipelineRunOrError_Run_repositoryOrigin | null;
-  stats: RunReExecutionQuery_pipelineRunOrError_Run_stats;
+  startTime: number | null;
+  endTime: number | null;
   stepStats: RunReExecutionQuery_pipelineRunOrError_Run_stepStats[];
 }
 

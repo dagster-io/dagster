@@ -22,30 +22,6 @@ export interface RunTableRunFragment_tags {
   value: string;
 }
 
-export interface RunTableRunFragment_stats_RunStatsSnapshot {
-  __typename: "RunStatsSnapshot";
-  id: string;
-  enqueuedTime: number | null;
-  launchTime: number | null;
-  startTime: number | null;
-  endTime: number | null;
-}
-
-export interface RunTableRunFragment_stats_PythonError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface RunTableRunFragment_stats_PythonError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: RunTableRunFragment_stats_PythonError_cause | null;
-}
-
-export type RunTableRunFragment_stats = RunTableRunFragment_stats_RunStatsSnapshot | RunTableRunFragment_stats_PythonError;
-
 export interface RunTableRunFragment {
   __typename: "Run";
   id: string;
@@ -61,5 +37,7 @@ export interface RunTableRunFragment {
   repositoryOrigin: RunTableRunFragment_repositoryOrigin | null;
   solidSelection: string[] | null;
   tags: RunTableRunFragment_tags[];
-  stats: RunTableRunFragment_stats;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }

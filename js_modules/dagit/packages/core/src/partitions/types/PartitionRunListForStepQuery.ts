@@ -22,30 +22,6 @@ export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_t
   value: string;
 }
 
-export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot {
-  __typename: "RunStatsSnapshot";
-  id: string;
-  enqueuedTime: number | null;
-  launchTime: number | null;
-  startTime: number | null;
-  endTime: number | null;
-}
-
-export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_stats_PythonError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause | null;
-}
-
-export type PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_stats = PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot | PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
-
 export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results {
   __typename: "Run";
   id: string;
@@ -61,7 +37,9 @@ export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results {
   repositoryOrigin: PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_repositoryOrigin | null;
   solidSelection: string[] | null;
   tags: PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_tags[];
-  stats: PartitionRunListForStepQuery_pipelineRunsOrError_Runs_results_stats;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface PartitionRunListForStepQuery_pipelineRunsOrError_Runs {
