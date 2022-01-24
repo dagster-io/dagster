@@ -587,7 +587,7 @@ def external_asset_graph_from_defs(
             node_upstream_asset_keys = set(
                 filter(None, (id.hardcoded_asset_key for id in node_def.input_defs))
             )
-            all_upstream_asset_keys.union(node_upstream_asset_keys)
+            all_upstream_asset_keys.update(node_upstream_asset_keys)
 
             for output_def in node_def.output_defs:
                 asset_key = output_def.hardcoded_asset_key

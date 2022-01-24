@@ -385,6 +385,133 @@ def test_inter_op_dependency():
     ]
 
 
+"""
+from collections import defaultdict
+def external_asset_graph_from_defs(pipelines, foreign_assets_by_key):
+    node_defs_by_asset_key = defaultdict(list)
+
+    deps = defaultdict(dict)
+    dep_by = defaultdict(list)
+    all_upstream_asset_keys = set()
+
+    for pipeline in pipelines:
+        for node_def in pipeline.all_node_defs:
+            node_asset_keys = set()
+            for output_def in node_def.output_defs:
+                asset_key = output_def.hardcoded_asset_key
+
+                if asset_key:
+                    node_asset_keys.add(asset_key)
+                    node_defs_by_asset_key[asset_key].append((node_def, pipeline))
+
+            for input_def in node_def.input_defs:
+                upstream_asset_key = input_def.hardcoded_asset_key
+
+                if upstream_asset_key:
+                    all_upstream_asset_keys.add(upstream_asset_key)
+                    for node_asset_key in node_asset_keys:
+                        deps[node_asset_key][input_def.name] = ExternalAssetDependency(
+                            upstream_asset_key=upstream_asset_key,
+                            input_name=input_def.name,
+                        )
+                        dep_by[upstream_asset_key].append(
+                            ExternalAssetDependedBy(
+                                downstream_asset_key=node_asset_key,
+                                input_name=input_def.name,
+                            )
+                        )
+
+    asset_keys_without_definitions = all_upstream_asset_keys.difference(
+        node_defs_by_asset_key.keys()
+    ).difference(foreign_assets_by_key.keys())
+
+    asset_nodes = [
+        ExternalAssetNode(
+            asset_key=asset_key,
+            dependencies=list(deps[asset_key].values()),
+            depended_by=dep_by[asset_key],
+            job_names=[],
+        )
+        for asset_key in asset_keys_without_definitions
+    ]
+
+    for foreign_asset in foreign_assets_by_key.values():
+        if foreign_asset.key in node_defs_by_asset_key:
+            raise DagsterInvariantViolationError(
+                f"Asset with key {foreign_asset.key.to_string()} is defined both as a foreign asset"
+                " and as a non-foreign asset"
+            )
+
+        asset_nodes.append(
+            ExternalAssetNode(
+                asset_key=foreign_asset.key,
+                dependencies=list(deps[foreign_asset.key].values()),
+                depended_by=dep_by[foreign_asset.key],
+                job_names=[],
+                op_description=foreign_asset.description,
+            )
+        )
+
+    for asset_key, node_tuple_list in node_defs_by_asset_key.items():
+        node_def = node_tuple_list[0][0]
+        job_names = [node_tuple[1].name for node_tuple in node_tuple_list]
+
+        # temporary workaround to retrieve asset partition definition from job
+        output = node_def.output_dict.get("result", None)
+        partitions_def_data = None
+
+        if output and output._asset_partitions_def:  # pylint: disable=protected-access
+            partitions_def = output._asset_partitions_def  # pylint: disable=protected-access
+            if partitions_def:
+                pass
+
+        asset_nodes.append(
+            ExternalAssetNode(
+                asset_key=asset_key,
+                dependencies=list(deps[asset_key].values()),
+                depended_by=dep_by[asset_key],
+                op_name=node_def.name,
+                op_description=node_def.description,
+                job_names=job_names,
+                partitions_def_data=partitions_def_data,
+            )
+        )
+
+    return asset_nodes
+    """
+
+
+def test_source_not_foreign_asset():
+
+    foo = ForeignAsset(key=AssetKey("foo"), description=None)
+
+    @asset
+    def bar(foo):
+        pass
+
+    assets_job = build_assets_job("assets_job", [bar], source_assets=[foo])
+
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], foreign_assets_by_key={})
+    assert external_asset_nodes == [
+        ExternalAssetNode(
+            asset_key=AssetKey("foo"),
+            op_description=None,
+            dependencies=[],
+            depended_by=[ExternalAssetDependedBy(AssetKey("bar"), input_name="foo")],
+            job_names=[],
+        ),
+        ExternalAssetNode(
+            asset_key=AssetKey("bar"),
+            op_name="bar",
+            op_description=None,
+            dependencies=[ExternalAssetDependency(AssetKey("foo"), input_name="foo")],
+            depended_by=[],
+            job_names=["assets_job"],
+            output_name="result",
+        ),
+    ]
+
+
 def test_unused_foreign_asset():
     foo = ForeignAsset(key=AssetKey("foo"), description="abc")
     bar = ForeignAsset(key=AssetKey("bar"), description="def")
