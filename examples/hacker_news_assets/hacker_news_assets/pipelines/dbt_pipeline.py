@@ -52,10 +52,10 @@ def asset_metadata(_context, model_info):
     return {"Data sample": EventMetadata.md(df.to_markdown()), "Rows": num_rows[0]}
 
 
-# this list has one element per dbt model
+# this is a single multi_asset representing all of the assets in the dbt project
 assets = load_assets_from_dbt_manifest(
     json.load(open(os.path.join(DBT_PROJECT_DIR, "target", "manifest.json"))),
     runtime_metadata_fn=asset_metadata,
     io_manager_key="warehouse_io_manager",
 )
-activity_stats = build_assets_job("activity_stats", assets, [], resource_defs=DEV_RESOURCES)
+activity_stats = build_assets_job("activity_stats", [assets], [], resource_defs=DEV_RESOURCES)
