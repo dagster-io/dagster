@@ -191,7 +191,7 @@ class InMemoryRunStorage(RunStorage):
 
         # record here is a tuple of storage_id, run
         records = enumerate(list(self._runs.values()))
-        run_filter_fn = run_filter(filters)
+        run_filter_fn = build_run_filter(filters)
         record_filter_fn = lambda record: run_filter_fn(record[1])
 
         matching_records = list(filter(record_filter_fn, list(records)[::-1]))
