@@ -13,37 +13,15 @@ export interface RunTimelineQuery_unterminated_InvalidPipelineRunsFilterError {
   __typename: "InvalidPipelineRunsFilterError" | "PythonError";
 }
 
-export interface RunTimelineQuery_unterminated_Runs_results_stats_RunStatsSnapshot {
-  __typename: "RunStatsSnapshot";
-  id: string;
-  enqueuedTime: number | null;
-  launchTime: number | null;
-  startTime: number | null;
-  endTime: number | null;
-}
-
-export interface RunTimelineQuery_unterminated_Runs_results_stats_PythonError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface RunTimelineQuery_unterminated_Runs_results_stats_PythonError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: RunTimelineQuery_unterminated_Runs_results_stats_PythonError_cause | null;
-}
-
-export type RunTimelineQuery_unterminated_Runs_results_stats = RunTimelineQuery_unterminated_Runs_results_stats_RunStatsSnapshot | RunTimelineQuery_unterminated_Runs_results_stats_PythonError;
-
 export interface RunTimelineQuery_unterminated_Runs_results {
   __typename: "Run";
   id: string;
   pipelineName: string;
   runId: string;
   status: RunStatus;
-  stats: RunTimelineQuery_unterminated_Runs_results_stats;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface RunTimelineQuery_unterminated_Runs {
@@ -57,37 +35,15 @@ export interface RunTimelineQuery_terminated_InvalidPipelineRunsFilterError {
   __typename: "InvalidPipelineRunsFilterError" | "PythonError";
 }
 
-export interface RunTimelineQuery_terminated_Runs_results_stats_RunStatsSnapshot {
-  __typename: "RunStatsSnapshot";
-  id: string;
-  enqueuedTime: number | null;
-  launchTime: number | null;
-  startTime: number | null;
-  endTime: number | null;
-}
-
-export interface RunTimelineQuery_terminated_Runs_results_stats_PythonError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface RunTimelineQuery_terminated_Runs_results_stats_PythonError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: RunTimelineQuery_terminated_Runs_results_stats_PythonError_cause | null;
-}
-
-export type RunTimelineQuery_terminated_Runs_results_stats = RunTimelineQuery_terminated_Runs_results_stats_RunStatsSnapshot | RunTimelineQuery_terminated_Runs_results_stats_PythonError;
-
 export interface RunTimelineQuery_terminated_Runs_results {
   __typename: "Run";
   id: string;
   pipelineName: string;
   runId: string;
   status: RunStatus;
-  stats: RunTimelineQuery_terminated_Runs_results_stats;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface RunTimelineQuery_terminated_Runs {

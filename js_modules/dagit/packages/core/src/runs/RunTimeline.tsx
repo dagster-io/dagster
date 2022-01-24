@@ -90,15 +90,15 @@ export const RunTimelineContainer = ({
       ...(unterminated?.__typename === 'Runs' ? unterminated.results : []),
       ...(terminated?.__typename === 'Runs' ? terminated.results : []),
     ].forEach((run) => {
-      if (!run.stats || run.stats.__typename === 'PythonError' || !run.stats.startTime) {
+      if (!run.startTime) {
         return;
       }
       if (
         !overlap(
           {start, end},
           {
-            start: run.stats.startTime * 1000,
-            end: run.stats.endTime ? run.stats.endTime * 1000 : now,
+            start: run.startTime * 1000,
+            end: run.endTime ? run.endTime * 1000 : now,
           },
         )
       ) {
@@ -109,8 +109,8 @@ export const RunTimelineContainer = ({
         {
           id: run.id,
           status: run.status,
-          startTime: run.stats.startTime * 1000,
-          endTime: run.stats.endTime ? run.stats.endTime * 1000 : now,
+          startTime: run.startTime * 1000,
+          endTime: run.endTime ? run.endTime * 1000 : now,
         },
       ];
     });
