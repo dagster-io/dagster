@@ -267,7 +267,6 @@ type Materialization implements DisplayableEvent {
   label: String!
   description: String
   metadataEntries: [EventMetadataEntry!]!
-  assetKey: AssetKey
 }
 
 interface DisplayableEvent {
@@ -279,10 +278,6 @@ interface DisplayableEvent {
 interface EventMetadataEntry {
   label: String!
   description: String
-}
-
-type AssetKey {
-  path: [String!]!
 }
 
 type ExpectationResult implements DisplayableEvent {
@@ -556,6 +551,10 @@ type Asset {
     limit: Int
   ): [MaterializationEvent!]!
   definition: AssetNode
+}
+
+type AssetKey {
+  path: [String!]!
 }
 
 type MaterializationEvent implements MessageEvent & StepEvent & DisplayableEvent {

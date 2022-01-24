@@ -270,7 +270,7 @@ class GrapheneObjectStoreOperationResult(graphene.ObjectType):
         return _to_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
 
 
-class GrapheneMaterialization(graphene.ObjectType, AssetMetadataMixin):
+class GrapheneMaterialization(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneDisplayableEvent,)
         name = "Materialization"
