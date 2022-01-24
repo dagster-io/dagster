@@ -1,5 +1,32 @@
 # Changelog
 
+# 0.13.16
+
+### New
+
+* Added an integration with Airbyte, under the dagster-airbyte package (thanks Marcos Marx).
+* An op that has a config schema is no longer required to have a context argument.
+
+### Bugfixes
+
+* Fixed an issue introduced in 0.13.13 where jobs with DynamicOutputs would fail when using the `k8s_job_executor` due to a label validation error when creating the step pod.
+* In Dagit, when searching for asset keys on the Assets page, string matches beyond a certain character threshold on deeply nested key paths were ignored. This has been fixed, and all keys in the asset path are now searchable.
+* In Dagit, links to Partitions views were broken in several places due to recent URL querystring changes, resulting in page crashes due to JS errors. These links have been fixed.
+* The “Download Debug File” menu link is fixed on the Runs page in Dagit.
+* In the “Launch Backfill” dialog on the Partitions page in Dagit, the range input sometimes discarded user input due to page updates. This has been fixed. Additionally, pressing the return key now commits changes to the input.
+* When using a mouse wheel or touchpad gestures to zoom on a DAG view for a job or graph in Dagit, the zoom behavior sometimes was applied to the entire browser instead of just the DAG. This has been fixed.
+* Dagit fonts now load correctly when using the `--path-prefix` option.
+* Date strings in tool tips on time-based charts no longer duplicate the meridiem indicator.
+
+### Experimental
+
+* Software-defined assets can now be partitioned. The `@asset` decorator has a `partitions_def` argument, which accepts a `PartitionsDefinition` value. The asset details page in Dagit now represents which partitions are filled in.
+
+### Documentation
+
+* Fixed the documented return type for the `sync_and_poll` method of the dagster-fivetran resource (thanks Marcos Marx).
+* Fixed a typo in the Ops concepts page (thanks Oluwashina Aladejubelo).
+
 # 0.13.14
 
 ### New

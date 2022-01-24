@@ -3,6 +3,11 @@ import * as React from 'react';
 
 import {GanttViewport} from './Constants';
 
+type ContainerRef = {
+  element: HTMLDivElement;
+  __sized: boolean;
+};
+
 /**
  * useViewport is a React hook that exposes a viewport (top/left/width/height)
  * representing the currently visible region of a scrolling contaienr <div>.
@@ -14,7 +19,7 @@ export const useViewport = (
     initialOffset?: (el: HTMLElement) => {left: number; top: number};
   } = {},
 ) => {
-  const ref = React.useRef<any>();
+  const ref = React.useRef<ContainerRef>();
   const [offset, setOffset] = React.useState<{left: number; top: number}>({
     left: 0,
     top: 0,
@@ -32,29 +37,37 @@ export const useViewport = (
     if (!ref.current) {
       return;
     }
+
     const onApplySize = (next: {width: number; height: number}) => {
       setSize({width: next.width, height: next.height});
-      if (!ref.current.__sized && next.width !== 0 && initialOffset) {
-        const targetOffset = initialOffset(ref.current);
-        ref.current.scrollTop = targetOffset.top;
-        ref.current.scrollLeft = targetOffset.left;
-        setOffset(targetOffset);
-        ref.current.__sized = true;
+      const container = ref.current;
+      if (container) {
+        const {element, __sized} = container;
+        if (!__sized && next.width !== 0 && initialOffset) {
+          const targetOffset = initialOffset(element);
+          element.scrollTop = targetOffset.top;
+          element.scrollLeft = targetOffset.left;
+          setOffset(targetOffset);
+          container.__sized = true;
+        }
       }
     };
 
+    const container = ref.current;
+    const {element} = container;
+
     let resizeObserver: any;
-    if (ref.current instanceof HTMLElement) {
+    if (element instanceof HTMLElement) {
       if ('ResizeObserver' in window) {
         resizeObserver = new window['ResizeObserver']((entries: any) => {
-          if (entries[0].target === ref.current) {
-            onApplySize({width: ref.current.clientWidth, height: ref.current.clientHeight});
+          if (entries[0].target === element) {
+            onApplySize({width: element.clientWidth, height: element.clientHeight});
           }
         });
-        resizeObserver.observe(ref.current);
+        resizeObserver.observe(element);
       } else {
         console.warn(`No ResizeObserver support, or useViewport is attached to a non-DOM node?`);
-        onApplySize({width: ref.current.clientWidth, height: ref.current.clientHeight});
+        onApplySize({width: element.clientWidth, height: element.clientHeight});
       }
     }
     return () => {
@@ -84,28 +97,34 @@ export const useViewport = (
   };
 
   const onMoveToViewport = (targetOffset: {left: number; top: number}, animated: boolean) => {
-    const width = ref.current.clientWidth;
-    const height = ref.current.clientHeight;
+    const element = ref.current?.element;
+
+    if (!element) {
+      return;
+    }
+
+    const width = element.clientWidth;
+    const height = element.clientHeight;
 
     if (animation.current) {
       animation.current.cancel();
       animation.current = null;
     }
 
-    targetOffset.left = Math.min(ref.current.scrollWidth - width, Math.max(0, targetOffset.left));
-    targetOffset.top = Math.min(ref.current.scrollHeight - height, Math.max(0, targetOffset.top));
+    targetOffset.left = Math.min(element.scrollWidth - width, Math.max(0, targetOffset.left));
+    targetOffset.top = Math.min(element.scrollHeight - height, Math.max(0, targetOffset.top));
 
     const onDone = () => {
-      ref.current.scrollTop = targetOffset.top;
-      ref.current.scrollLeft = targetOffset.left;
+      element.scrollTop = targetOffset.top;
+      element.scrollLeft = targetOffset.left;
       setOffset(targetOffset);
       animation.current = null;
     };
     if (animated) {
       animation.current = animate(offset, targetOffset, {
         step: (v: any) => {
-          ref.current.scrollTop = v.top;
-          ref.current.scrollLeft = v.left;
+          element.scrollTop = v.top;
+          element.scrollLeft = v.left;
           setOffset({left: v.left, top: v.top});
         },
         done: onDone,
@@ -119,11 +138,15 @@ export const useViewport = (
   // (eg the parent is showing a loading state). This means it may be undefined during our initial render
   // and we need to measure it when it's actually assigned a value.
   const setRef = React.useCallback(
-    (el: any) => {
-      if (el === ref.current) {
+    (el: HTMLDivElement) => {
+      if (el === ref.current?.element) {
         return;
       }
-      ref.current = el;
+
+      ref.current = {
+        element: el,
+        __sized: false,
+      };
       measureRef();
     },
     [measureRef],

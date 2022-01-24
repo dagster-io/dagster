@@ -51,19 +51,26 @@ export const buildGraphData = (assetNodes: AssetNode[]) => {
     upstream: {},
   };
 
+  const addEdge = (upstreamKeyJson: string, downstreamKeyJson: string) => {
+    data.downstream[upstreamKeyJson] = {
+      ...(data.downstream[upstreamKeyJson] || {}),
+      [downstreamKeyJson]: true,
+    };
+    data.upstream[downstreamKeyJson] = {
+      ...(data.upstream[downstreamKeyJson] || {}),
+      [upstreamKeyJson]: true,
+    };
+  };
+
   assetNodes.forEach((definition: AssetNode) => {
     const assetKeyJson = JSON.stringify(definition.assetKey.path);
     definition.dependencyKeys.forEach(({path}) => {
-      const upstreamAssetKeyJson = JSON.stringify(path);
-      data.downstream[upstreamAssetKeyJson] = {
-        ...(data.downstream[upstreamAssetKeyJson] || {}),
-        [assetKeyJson]: true,
-      };
-      data.upstream[assetKeyJson] = {
-        ...(data.upstream[assetKeyJson] || {}),
-        [upstreamAssetKeyJson]: true,
-      };
+      addEdge(JSON.stringify(path), assetKeyJson);
     });
+    definition.dependedByKeys.forEach(({path}) => {
+      addEdge(assetKeyJson, JSON.stringify(path));
+    });
+
     data.nodes[assetKeyJson] = {
       id: assetKeyJson,
       assetKey: definition.assetKey,
@@ -83,7 +90,7 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
       [assetNode.id]: {
         id: assetNode.id,
         assetKey: assetNode.assetKey,
-        definition: {...assetNode, dependencyKeys: []},
+        definition: {...assetNode, dependencyKeys: [], dependedByKeys: []},
       },
     },
     upstream: {
@@ -97,7 +104,7 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
     graphData.nodes[asset.id] = {
       id: asset.id,
       assetKey: asset.assetKey,
-      definition: {...asset, dependencyKeys: []},
+      definition: {...asset, dependencyKeys: [], dependedByKeys: []},
     };
   }
   for (const {asset} of assetNode.dependedBy) {
@@ -106,7 +113,7 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
     graphData.nodes[asset.id] = {
       id: asset.id,
       assetKey: asset.assetKey,
-      definition: {...asset, dependencyKeys: []},
+      definition: {...asset, dependencyKeys: [], dependedByKeys: []},
     };
   }
   return graphData;
@@ -257,15 +264,20 @@ export const buildLiveData = (
 ) => {
   const data: LiveData = {};
 
-  for (const node of nodes) {
-    const lastMaterialization = node.assetMaterializations[0] || null;
+  for (const liveNode of nodes) {
+    const graphNode = graph.nodes[liveNode.id];
+    if (!graphNode) {
+      continue;
+    }
+
+    const lastMaterialization = liveNode.assetMaterializations[0] || null;
     const lastStepStart = lastMaterialization?.stepStats?.startTime || 0;
-    const isForeignNode = !node.opName;
-    const isPartitioned = graph.nodes[node.id].definition.partitionDefinition;
+    const isForeignNode = !liveNode.opName;
+    const isPartitioned = graphNode.definition.partitionDefinition;
 
-    const runs = inProgressRunsByStep.find((r) => r.stepKey === node.opName);
+    const runs = inProgressRunsByStep.find((r) => r.stepKey === liveNode.opName);
 
-    data[node.id] = {
+    data[liveNode.id] = {
       lastStepStart,
       lastMaterialization,
       inProgressRunIds: runs?.inProgressRuns.map((r) => r.id) || [],
@@ -282,8 +294,8 @@ export const buildLiveData = (
     };
   }
 
-  for (const asset of nodes) {
-    data[asset.id].computeStatus = findComputeStatusForId(data, graph.upstream, asset.id);
+  for (const liveNodeId of Object.keys(data)) {
+    data[liveNodeId].computeStatus = findComputeStatusForId(data, graph.upstream, liveNodeId);
   }
 
   return data;

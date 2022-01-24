@@ -29,6 +29,30 @@ from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, v
 )
 @experimental
 def docker_executor(init_context: InitExecutorContext) -> Executor:
+    """
+    Executor which launches steps as Docker containers.
+
+    To use the `docker_executor`, set it as the `executor_def` when defining a job:
+
+    .. literalinclude:: ../../../../../../python_modules/libraries/dagster-docker/dagster_docker_tests/test_example_executor.py
+       :start-after: start_marker
+       :end-before: end_marker
+       :language: python
+
+    Then you can configure the executor with run config as follows:
+
+    .. code-block:: YAML
+
+        execution:
+          config:
+            registry: ...
+            network: ...
+            networks: ...
+            container_kwargs: ...
+
+    If you're using the DockerRunLauncher, configuration set on the containers created by the run
+    launcher will also be set on the containers that are created for each step.
+    """
     from . import DockerRunLauncher
 
     image = init_context.executor_config.get("image")

@@ -23,9 +23,6 @@ def get_full_external_pipeline_or_raise(graphene_info, selector):
 
 
 def get_external_pipeline_or_raise(graphene_info, selector):
-    from ..schema.pipelines.pipeline_errors import GrapheneInvalidSubsetError
-    from ..schema.pipelines.pipeline import GraphenePipeline
-
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
 
@@ -33,17 +30,6 @@ def get_external_pipeline_or_raise(graphene_info, selector):
 
     if selector.solid_selection is None:
         return full_pipeline
-
-    for solid_name in selector.solid_selection:
-        if not full_pipeline.has_solid_invocation(solid_name):
-            raise UserFacingGraphQLError(
-                GrapheneInvalidSubsetError(
-                    message='Solid "{solid_name}" does not exist in "{pipeline_name}"'.format(
-                        solid_name=solid_name, pipeline_name=selector.pipeline_name
-                    ),
-                    pipeline=GraphenePipeline(full_pipeline),
-                )
-            )
 
     return get_subset_external_pipeline(graphene_info.context, selector)
 

@@ -1,4 +1,5 @@
-import './blueprint.css';
+import './css/fonts.css';
+import './css/blueprint.css';
 
 export * from './components/Alert';
 export * from './components/BaseButton';

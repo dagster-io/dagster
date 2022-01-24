@@ -414,6 +414,7 @@ type Run implements PipelineRun {
   resolvedOpSelection: [String!]
   startTime: Float
   endTime: Float
+  updateTime: Float
 }
 
 interface PipelineRun {

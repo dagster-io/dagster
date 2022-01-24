@@ -4,13 +4,9 @@ from dagster import check
 from dagster.core.events import AssetKey
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
-from dagster.core.storage.pipeline_run import (
-    PipelineRun,
-    PipelineRunStatus,
-    PipelineRunsFilter,
-    RunRecord,
-)
+from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter, RunRecord
 from dagster.core.storage.tags import TagType, get_tag_type
+from dagster.utils import datetime_as_float
 
 from ...implementation.events import from_event_record
 from ...implementation.fetch_assets import get_assets_for_run_id
@@ -199,20 +195,22 @@ class GrapheneRun(graphene.ObjectType):
     )
     startTime = graphene.Float()
     endTime = graphene.Float()
+    updateTime = graphene.Float()
 
     class Meta:
         interfaces = (GraphenePipelineRun,)
         name = "Run"
 
-    def __init__(self, run):
-        pipeline_run = run.pipeline_run if isinstance(run, RunRecord) else run
+    def __init__(self, record):
+        check.inst_param(record, "record", RunRecord)
+        pipeline_run = record.pipeline_run
         super().__init__(
             runId=pipeline_run.run_id,
             status=PipelineRunStatus(pipeline_run.status),
             mode=pipeline_run.mode,
         )
-        self._pipeline_run = check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
-        self._run_record = run if isinstance(run, RunRecord) else None
+        self._pipeline_run = pipeline_run
+        self._run_record = record
         self._run_stats = None
 
     def resolve_id(self, _graphene_info):
@@ -317,7 +315,9 @@ class GrapheneRun(graphene.ObjectType):
 
     def _get_run_record(self, instance):
         if not self._run_record:
-            self._run_record = instance.get_run_records(run_ids=[self.runId])[0]
+            self._run_record = instance.get_run_records(PipelineRunsFilter(run_ids=[self.run_id]))[
+                0
+            ]
         return self._run_record
 
     def resolve_startTime(self, graphene_info):
@@ -336,6 +336,10 @@ class GrapheneRun(graphene.ObjectType):
                 self._run_stats = graphene_info.context.instance.get_run_stats(self.runId)
             return self._run_stats.end_time
         return run_record.end_time
+
+    def resolve_updateTime(self, graphene_info):
+        run_record = self._get_run_record(graphene_info.context.instance)
+        return datetime_as_float(run_record.update_timestamp)
 
 
 class GrapheneIPipelineSnapshotMixin:

@@ -7,8 +7,8 @@ from dagster_fivetran import FivetranOutput, fivetran_resource
 
 from .utils import (
     DEFAULT_CONNECTOR_ID,
+    get_complex_sample_connector_schema_config,
     get_sample_connector_response,
-    get_sample_connector_schema_config,
     get_sample_sync_response,
     get_sample_update_response,
 )
@@ -159,7 +159,7 @@ def test_sync_and_poll(n_polls, succeed_at_end):
             rsps.add(
                 rsps.GET,
                 f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}/schemas",
-                json=get_sample_connector_schema_config(),
+                json=get_complex_sample_connector_schema_config(),
             )
             rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())
             rsps.add(rsps.POST, f"{api_prefix}/force", json=get_sample_sync_response())
@@ -175,7 +175,7 @@ def test_sync_and_poll(n_polls, succeed_at_end):
     if succeed_at_end:
         assert _mock_interaction() == FivetranOutput(
             connector_details=get_sample_connector_response(data=final_data)["data"],
-            schema_config=get_sample_connector_schema_config()["data"],
+            schema_config=get_complex_sample_connector_schema_config()["data"],
         )
     else:
         with pytest.raises(Failure, match="failed!"):
@@ -198,7 +198,7 @@ def test_sync_and_poll_timeout():
             rsps.add(
                 rsps.GET,
                 f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}/schemas",
-                json=get_sample_connector_schema_config(),
+                json=get_complex_sample_connector_schema_config(),
             )
             rsps.add(
                 rsps.GET,
@@ -241,7 +241,7 @@ def test_sync_and_poll_invalid(data, match):
             rsps.add(
                 rsps.GET,
                 f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}/schemas",
-                json=get_sample_connector_schema_config(),
+                json=get_complex_sample_connector_schema_config(),
             )
             rsps.add(
                 rsps.GET,

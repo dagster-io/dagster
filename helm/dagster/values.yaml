@@ -463,8 +463,21 @@ runLauncher:
       #     subPath: test_file.yaml
       volumeMounts: []
 
+      # Additional labels that should be included in the Job's Pod. See:
+      # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+      #
+      # Example:
+      # labels:
+      #   my_label_key: my_label_value
+      labels: {}
+
     # This configuration will only be used if the CeleryK8sRunLauncher is selected
     celeryK8sRunLauncher:
+      # Change with caution! If you're using a fixed tag for pipeline run images, changing the
+      # image pull policy to anything other than "Always" will use a cached/stale image, which is
+      # almost certainly not what you want.
+      imagePullPolicy: "Always"
+
       # The Celery workers can be deployed with a fixed image (no user code included)
       image:
         # When a tag is not supplied for a Dagster provided image,
@@ -586,6 +599,15 @@ runLauncher:
       #     mountPath: /opt/dagster/test_folder
       #     subPath: test_file.yaml
       volumeMounts: []
+
+      # Additional labels that should be included in the Job's Pod. See:
+      # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+      #
+      # Example:
+      # labels:
+      #   my_label_key: my_label_value
+      labels: {}
+
 
     ## Uncomment this configuration will only be used if the CustomRunLauncher is selected.
     ## Using this setting requires a custom Dagit image that defines the user specified

@@ -584,6 +584,9 @@ def helm_chart_for_k8s_run_launcher(
                                 "configMap": {"name": TEST_VOLUME_CONFIGMAP_NAME},
                             }
                         ],
+                        "labels": {
+                            "run_launcher_label_key": "run_launcher_label_value",
+                        },
                     }
                 },
             },
@@ -834,6 +837,9 @@ def _base_helm_config(docker_image):
                             "configMap": {"name": TEST_VOLUME_CONFIGMAP_NAME},
                         }
                     ],
+                    "labels": {
+                        "run_launcher_label_key": "run_launcher_label_value",
+                    },
                 },
             },
         },

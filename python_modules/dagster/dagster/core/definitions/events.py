@@ -262,9 +262,6 @@ class DynamicOutput(
         )
 
 
-MetadataValues = Union[str, float, int, Dict, EventMetadataEntry]
-
-
 @whitelist_for_serdes
 class AssetObservation(
     NamedTuple(
@@ -296,7 +293,7 @@ class AssetObservation(
         description: Optional[str] = None,
         metadata_entries: Optional[List[EventMetadataEntry]] = None,
         partition: Optional[str] = None,
-        metadata: Optional[Dict[str, MetadataValues]] = None,
+        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
@@ -376,7 +373,7 @@ class AssetMaterialization(
         metadata_entries: Optional[List[EventMetadataEntry]] = None,
         partition: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
-        metadata: Optional[Dict[str, MetadataValues]] = None,
+        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
@@ -578,7 +575,7 @@ class ExpectationResult(
         label: Optional[str] = None,
         description: Optional[str] = None,
         metadata_entries: Optional[List[EventMetadataEntry]] = None,
-        metadata: Optional[Dict[str, MetadataValues]] = None,
+        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
     ):
         metadata_entries = check.opt_list_param(
             metadata_entries, "metadata_entries", of_type=EventMetadataEntry
@@ -632,7 +629,7 @@ class TypeCheck(
         success: bool,
         description: Optional[str] = None,
         metadata_entries: Optional[List[EventMetadataEntry]] = None,
-        metadata: Optional[Dict[str, MetadataValues]] = None,
+        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
     ):
 
         metadata_entries = check.opt_list_param(
@@ -671,7 +668,7 @@ class Failure(Exception):
         self,
         description: Optional[str] = None,
         metadata_entries: Optional[List[EventMetadataEntry]] = None,
-        metadata: Optional[Dict[str, MetadataValues]] = None,
+        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
     ):
         metadata_entries = check.opt_list_param(
             metadata_entries, "metadata_entries", of_type=EventMetadataEntry

@@ -1533,6 +1533,16 @@
                 "image": {
                     "$ref": "#/definitions/Image"
                 },
+                "imagePullPolicy": {
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/PullPolicy"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
                 "nameOverride": {
                     "title": "Nameoverride",
                     "type": "string"
@@ -1607,6 +1617,20 @@
                     "items": {
                         "$ref": "#/definitions/Volume"
                     }
+                },
+                "labels": {
+                    "title": "Labels",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -1708,6 +1732,20 @@
                     "items": {
                         "$ref": "#/definitions/Volume"
                     }
+                },
+                "labels": {
+                    "title": "Labels",
+                    "additionalProperties": {
+                        "type": "string"
+                    },
+                    "anyOf": [
+                        {
+                            "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [

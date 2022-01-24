@@ -31,7 +31,6 @@ def test_empty_celery_config():
     assert res == {
         "backend": "rpc://",
         "retries": {"enabled": {}},
-        "image_pull_policy": "IfNotPresent",
         "volume_mounts": [],
         "volumes": [],
         "load_incluster_config": True,
@@ -50,7 +49,6 @@ def test_get_validated_celery_k8s_executor_config():
         "backend": "rpc://",
         "retries": {"enabled": {}},
         "job_image": "foo",
-        "image_pull_policy": "IfNotPresent",
         "load_incluster_config": True,
         "job_namespace": "default",
         "repo_location_name": "<<in_process>>",
@@ -167,7 +165,6 @@ def test_get_validated_celery_k8s_executor_config_for_job():
         "backend": "rpc://",
         "retries": {"enabled": {}},
         "job_image": "foo",
-        "image_pull_policy": "IfNotPresent",
         "load_incluster_config": True,
         "job_namespace": "default",
         "repo_location_name": "<<in_process>>",
@@ -278,6 +275,9 @@ def test_get_validated_celery_k8s_executor_config_for_job():
 
 
 def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
+
+    labels = {"foo_label_key": "bar_label_value"}
+
     # Construct a K8s run launcher in a fake k8s environment.
     mock_k8s_client_batch_api = mock.MagicMock()
     celery_k8s_run_launcher = CeleryK8sRunLauncher(
@@ -287,6 +287,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
         load_incluster_config=False,
         kubeconfig_file=kubeconfig_file,
         k8s_client_batch_api=mock_k8s_client_batch_api,
+        labels=labels,
     )
 
     # Construct Dagster run tags with user defined k8s config.
@@ -341,6 +342,9 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             assert method_name == "create_namespaced_job"
             job_resources = kwargs["body"].spec.template.spec.containers[0].resources
             assert job_resources == expected_resources
+
+            labels = kwargs["body"].spec.template.metadata.labels
+            assert labels["foo_label_key"] == "bar_label_value"
 
 
 def test_k8s_executor_config_override(kubeconfig_file):

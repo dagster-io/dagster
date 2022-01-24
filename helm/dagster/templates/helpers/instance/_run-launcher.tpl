@@ -39,6 +39,21 @@ config:
   {{- if $celeryK8sRunLauncherConfig.volumes }}
   volumes: {{- $celeryK8sRunLauncherConfig.volumes | toYaml | nindent 4 }}
   {{- end }}
+
+  {{- if $celeryK8sRunLauncherConfig.labels }}
+  labels: {{- $celeryK8sRunLauncherConfig.labels | toYaml | nindent 4 }}
+  {{- end }}
+
+  {{- if .Values.imagePullSecrets }}
+  image_pull_secrets: {{- .Values.imagePullSecrets | toYaml | nindent 4 }}
+  {{- end }}
+
+  service_account_name: {{ include "dagster.serviceAccountName" . }}
+
+  {{- if $celeryK8sRunLauncherConfig.imagePullPolicy }}
+  image_pull_policy: {{ $celeryK8sRunLauncherConfig.imagePullPolicy }}
+  {{- end }}
+
 {{- end }}
 
 {{- define "dagsterYaml.runLauncher.k8s" }}
@@ -55,7 +70,7 @@ config:
   image_pull_policy: {{ $k8sRunLauncherConfig.imagePullPolicy }}
 
   {{- if .Values.imagePullSecrets }}
-  image_pull_secrets: {{- .Values.imagePullSecrets | toYaml | nindent 10 }}
+  image_pull_secrets: {{- .Values.imagePullSecrets | toYaml | nindent 4 }}
   {{- end }}
   service_account_name: {{ include "dagster.serviceAccountName" . }}
 
@@ -95,6 +110,10 @@ config:
 
   {{- if $k8sRunLauncherConfig.volumes }}
   volumes: {{- $k8sRunLauncherConfig.volumes | toYaml | nindent 4 }}
+  {{- end }}
+
+  {{- if $k8sRunLauncherConfig.labels }}
+  labels: {{- $k8sRunLauncherConfig.labels | toYaml | nindent 4 }}
   {{- end }}
 
 {{- end }}

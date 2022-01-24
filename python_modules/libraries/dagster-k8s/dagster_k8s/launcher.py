@@ -1,7 +1,7 @@
 import sys
 
 import kubernetes
-from dagster import EventMetadataEntry, Field, Noneable, StringSource, check
+from dagster import EventMetadataEntry, Field, StringSource, check
 from dagster.cli.api import ExecuteRunArgs
 from dagster.core.events import EngineEventData
 from dagster.core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
@@ -47,7 +47,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
     Args:
         service_account_name (str): The name of the Kubernetes service account under which to run
-            the Job.
+            the Job. Defaults to "default"
         job_image (Optional[str]): The ``name`` of the image to use for the Job's Dagster container.
             This image will be run with the command
             ``dagster api execute_run``.
@@ -95,6 +95,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
         volumes (Optional[List[Permissive]]): A list of volumes to include in the Job's Pod. Default: ``[]``. See:
             https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
+        labels (Optional[Dict[str, str]]): Additional labels that should be included in the Job's Pod. See:
+            https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
     """
 
     def __init__(
@@ -116,6 +118,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         k8s_client_batch_api=None,
         volume_mounts=None,
         volumes=None,
+        labels=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
@@ -155,6 +158,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._env_vars = check.opt_list_param(env_vars, "env_vars", of_type=str)
         self._volume_mounts = check.opt_list_param(volume_mounts, "volume_mounts")
         self._volumes = check.opt_list_param(volumes, "volumes")
+        self._labels = check.opt_dict_param(labels, "labels", key_type=str, value_type=str)
 
         super().__init__()
 
@@ -187,6 +191,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return self._volumes
 
     @property
+    def labels(self):
+        return self._labels
+
+    @property
     def _batch_api(self):
         return self._fixed_batch_api if self._fixed_batch_api else kubernetes.client.BatchV1Api()
 
@@ -195,12 +203,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         """Include all arguments required for DagsterK8sJobConfig along with additional arguments
         needed for the RunLauncher itself.
         """
-        job_cfg = DagsterK8sJobConfig.config_type()
+        job_cfg = DagsterK8sJobConfig.config_type_run_launcher()
 
         run_launcher_extra_cfg = {
             "job_namespace": Field(StringSource, is_required=False, default_value="default"),
-            "load_incluster_config": Field(bool, is_required=False, default_value=True),
-            "kubeconfig_file": Field(Noneable(str), is_required=False, default_value=None),
         }
         return merge_dicts(job_cfg, run_launcher_extra_cfg)
 
@@ -239,6 +245,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
                 env_vars=check.opt_list_param(self._env_vars, "env_vars", of_type=str),
                 volume_mounts=self._volume_mounts,
                 volumes=self._volumes,
+                labels=self._labels,
             )
             return self._job_config
 
@@ -264,6 +271,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             env_vars=check.opt_list_param(self._env_vars, "env_vars", of_type=str),
             volume_mounts=self._volume_mounts,
             volumes=self._volumes,
+            labels=self._labels,
         )
 
     def _launch_k8s_job_with_args(self, job_name, args, run, pipeline_origin):

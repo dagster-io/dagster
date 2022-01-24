@@ -15,6 +15,7 @@ from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.output import Out, OutputDefinition
 from dagster.core.definitions.partition import PartitionedConfig, PartitionsDefinition
+from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.context.input import InputContext, build_input_context
@@ -24,6 +25,7 @@ from dagster.utils.backcompat import experimental
 from dagster.utils.merger import merge_dicts
 
 from .asset import AssetsDefinition
+from .asset_partitions import get_upstream_partitions_for_partition_range
 from .foreign_asset import ForeignAsset
 
 
@@ -101,25 +103,79 @@ def build_job_partitions_from_assets(
     assets: Sequence[AssetsDefinition],
 ) -> Optional[PartitionedConfig]:
     assets_with_partitions_defs = [assets_def for assets_def in assets if assets_def.partitions_def]
-    if assets_with_partitions_defs:
-        for assets_def in assets_with_partitions_defs:
-            if assets_def.partitions_def != assets_with_partitions_defs[0].partitions_def:
-                first_asset_key = next(iter(assets_def.asset_keys)).to_string()
-                second_asset_key = next(iter(assets_with_partitions_defs[0].asset_keys)).to_string()
-                raise DagsterInvalidDefinitionError(
-                    "When an assets job contains multiple partitions assets, they must have the "
-                    f"same partitions definitions, but asset '{first_asset_key}' and asset "
-                    f"'{second_asset_key}' have different partitions definitions. "
-                )
 
-        return PartitionedConfig(
-            partitions_def=cast(
-                PartitionsDefinition, assets_with_partitions_defs[0].partitions_def
-            ),
-            run_config_for_partition_fn=lambda p: {},
-        )
-    else:
+    if len(assets_with_partitions_defs) == 0:
         return None
+
+    first_assets_with_partitions_def = assets_with_partitions_defs[0]
+    for assets_def in assets_with_partitions_defs:
+        if assets_def.partitions_def != first_assets_with_partitions_def.partitions_def:
+            first_asset_key = next(iter(assets_def.asset_keys)).to_string()
+            second_asset_key = next(iter(first_assets_with_partitions_def.asset_keys)).to_string()
+            raise DagsterInvalidDefinitionError(
+                "When an assets job contains multiple partitions assets, they must have the "
+                f"same partitions definitions, but asset '{first_asset_key}' and asset "
+                f"'{second_asset_key}' have different partitions definitions. "
+            )
+
+    assets_defs_by_asset_key = {
+        asset_key: assets_def for assets_def in assets for asset_key in assets_def.asset_keys
+    }
+
+    def asset_partitions_for_job_partition(
+        job_partition_key: str,
+    ) -> Mapping[AssetKey, PartitionKeyRange]:
+        return {
+            asset_key: PartitionKeyRange(job_partition_key, job_partition_key)
+            for assets_def in assets
+            for asset_key in assets_def.asset_keys
+            if assets_def.partitions_def
+        }
+
+    def run_config_for_partition_fn(partition_key: str) -> Dict[str, Any]:
+        ops_config: Dict[str, Any] = {}
+        asset_partitions_by_asset_key = asset_partitions_for_job_partition(partition_key)
+
+        for assets_def in assets:
+            outputs_dict: Dict[str, Dict[str, Any]] = {}
+            if assets_def.partitions_def is not None:
+                for asset_key, output_def in assets_def.output_defs_by_asset_key.items():
+                    asset_partition_key_range = asset_partitions_by_asset_key[asset_key]
+                    outputs_dict[output_def.name] = {
+                        "start": asset_partition_key_range.start,
+                        "end": asset_partition_key_range.end,
+                    }
+
+            inputs_dict: Dict[str, Dict[str, Any]] = {}
+            for in_asset_key, input_def in assets_def.input_defs_by_asset_key.items():
+                upstream_assets_def = assets_defs_by_asset_key[in_asset_key]
+                if (
+                    assets_def.partitions_def is not None
+                    and upstream_assets_def.partitions_def is not None
+                ):
+                    upstream_partition_key_range = get_upstream_partitions_for_partition_range(
+                        assets_def, upstream_assets_def, in_asset_key, asset_partition_key_range
+                    )
+                    inputs_dict[input_def.name] = {
+                        "start": upstream_partition_key_range.start,
+                        "end": upstream_partition_key_range.end,
+                    }
+
+            ops_config[assets_def.op.name] = {
+                "config": {
+                    "assets": {
+                        "input_partitions": inputs_dict,
+                        "output_partitions": outputs_dict,
+                    }
+                }
+            }
+
+        return {"ops": ops_config}
+
+    return PartitionedConfig(
+        partitions_def=cast(PartitionsDefinition, first_assets_with_partitions_def.partitions_def),
+        run_config_for_partition_fn=lambda p: run_config_for_partition_fn(p.name),
+    )
 
 
 def build_source_assets_by_key(

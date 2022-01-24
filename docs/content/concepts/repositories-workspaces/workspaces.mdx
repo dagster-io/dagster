@@ -196,6 +196,6 @@ load_from:
 
 When running your own gRPC server within a container, you can tell Dagit that any runs launched from this repository location should be launched in a container with that same image. To do this, set the `DAGSTER_CURRENT_IMAGE` environment variable to the name of the image before starting the server. After setting this environment variable for your server, when you view the Status page in dagit, you should see the image listed alongside your repository location.
 
-This image will only be used by [run launchers](/deployment/run-launcher) and [executors](/deployment/executors) that expect to use Docker images (like the <PyObject module="dagster_docker" object="DockerRunLauncher" />, <PyObject module="dagster_k8s" object="K8sRunLauncher" />, or <PyObject module="dagster_k8s" object="k8s_job_executor" />.)
+This image will only be used by [run launchers](/deployment/run-launcher) and [executors](/deployment/executors) that expect to use Docker images (like the <PyObject module="dagster_docker" object="DockerRunLauncher" />, <PyObject module="dagster_k8s" object="K8sRunLauncher" />, <PyObject module="dagster_docker" object="docker_executor" />, or <PyObject module="dagster_k8s" object="k8s_job_executor" />).
 
 If you're using our built-in [Helm chart](/deployment/guides/kubernetes/deploying-with-helm), this environment variable is automatically set on each of your gRPC servers.

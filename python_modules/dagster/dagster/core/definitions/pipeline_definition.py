@@ -32,7 +32,7 @@ from .dependency import (
     NodeInvocation,
     SolidInputHandle,
 )
-from .graph_definition import GraphDefinition
+from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .mode import ModeDefinition
 from .node_definition import NodeDefinition
@@ -1022,14 +1022,12 @@ def _create_run_config_schema(
         define_run_config_schema_type,
     )
     from .run_config_schema import RunConfigSchema
-    from dagster.core.definitions.job_definition import JobDefinition
 
     # When executing with a subset pipeline, include the missing solids
     # from the original pipeline as ignored to allow execution with
     # run config that is valid for the original
-    if isinstance(pipeline_def, JobDefinition) and pipeline_def.op_selection_data:
-        # JobDefinition isn't aware of full graph but it threads ignored_solids in via OpSelectionData
-        ignored_solids = pipeline_def.op_selection_data.ignored_solids
+    if isinstance(pipeline_def.graph, SubselectedGraphDefinition):
+        ignored_solids = pipeline_def.graph.get_top_level_omitted_nodes()
     elif pipeline_def.is_subset_pipeline:
         if pipeline_def.parent_pipeline_def is None:
             check.failed("Unexpected subset pipeline state")

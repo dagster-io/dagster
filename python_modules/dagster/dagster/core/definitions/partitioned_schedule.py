@@ -94,8 +94,8 @@ schedule_from_partitions = build_schedule_from_partitioned_job
 def latest_window_partition_selector(
     context: ScheduleEvaluationContext, partition_set_def: PartitionSetDefinition[TimeWindow]
 ) -> Union[SkipReason, Partition[TimeWindow]]:
-    """Creates a selector for partitions that are time windows. Selects latest time window that ends
-    before the schedule tick time.
+    """Creates a selector for partitions that are time windows. Selects the latest partition that
+    exists as of the schedule tick time.
     """
     partitions = partition_set_def.get_partitions(context.scheduled_execution_time)
     if len(partitions) == 0:

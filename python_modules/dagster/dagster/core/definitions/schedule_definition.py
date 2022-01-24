@@ -435,12 +435,14 @@ class ScheduleDefinition:
             run_requests = [item] if isinstance(item, RunRequest) else []
             skip_message = item.skip_message if isinstance(item, SkipReason) else None
         else:
-            check.is_list(result, of_type=RunRequest)
+            # NOTE: mypy is not correctly reading this cast-- not sure why
+            # (pyright reads it fine). Hence the type-ignores below.
+            result = cast(List[RunRequest], check.is_list(result, of_type=RunRequest))  # type: ignore
             check.invariant(
-                not any(not request.run_key for request in result),
+                not any(not request.run_key for request in result),  # type: ignore
                 "Schedules that return multiple RunRequests must specify a run_key in each RunRequest",
             )
-            run_requests = result
+            run_requests = result  # type: ignore
             skip_message = None
 
         # clone all the run requests with the required schedule tags

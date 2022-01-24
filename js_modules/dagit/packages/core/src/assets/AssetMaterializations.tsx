@@ -3,7 +3,6 @@ import {
   Box,
   ButtonGroup,
   ColorsWIP,
-  IconWIP,
   NonIdealState,
   Spinner,
   Caption,
@@ -12,8 +11,6 @@ import {
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
-import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
 
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
@@ -175,26 +172,18 @@ export const AssetMaterializations: React.FC<Props> = ({
       <>
         <CurrentRunsBanner liveData={liveData} />
         <SidebarSection title="Materialization in Last Run">
-          <>
-            {latest ? (
-              <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
-                <LatestMaterializationMetadata latest={latest} />
-              </div>
-            ) : (
-              <Box
-                margin={{horizontal: 24, bottom: 24, top: 12}}
-                style={{color: ColorsWIP.Gray500, fontSize: '0.8rem'}}
-              >
-                No materializations found
-              </Box>
-            )}
-            <Box margin={{bottom: 12, horizontal: 12, top: 20}}>
-              <AssetCatalogLink to={`/instance/assets/${assetKey.path.join('/')}`}>
-                {'View All in Asset Catalog '}
-                <IconWIP name="open_in_new" color={ColorsWIP.Link} />
-              </AssetCatalogLink>
+          {latest ? (
+            <div style={{margin: -1, maxWidth: '100%', overflowX: 'auto'}}>
+              <LatestMaterializationMetadata latest={latest} />
+            </div>
+          ) : (
+            <Box
+              margin={{horizontal: 24, bottom: 24, top: 12}}
+              style={{color: ColorsWIP.Gray500, fontSize: '0.8rem'}}
+            >
+              No materializations found
             </Box>
-          </>
+          )}
         </SidebarSection>
         <SidebarSection title="Materialization Plots">
           <AssetMaterializationGraphs
@@ -530,12 +519,4 @@ const ASSET_MATERIALIZATIONS_QUERY = gql`
   }
   ${METADATA_ENTRY_FRAGMENT}
   ${ASSET_LINEAGE_FRAGMENT}
-`;
-
-const AssetCatalogLink = styled(Link)`
-  display: flex;
-  gap: 5px;
-  align-items: center;
-  justify-content: flex-end;
-  margin-top: -10px;
 `;
