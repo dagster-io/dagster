@@ -159,9 +159,7 @@ const AssetMaterializationRow: React.FC<{
       {isFocused && (
         <tr style={{background: ColorsWIP.Gray50}}>
           <td colSpan={6} style={{fontSize: 14, padding: 0}}>
-            {description && (
-              <Box padding={{horizontal: 24, vertical: 12}}>{description}</Box>
-            )}
+            {description && <Box padding={{horizontal: 24, vertical: 12}}>{description}</Box>}
             {metadataEntries.length || hasLineage ? (
               <DetailsTable>
                 <tbody>

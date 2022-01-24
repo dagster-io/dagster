@@ -419,8 +419,7 @@ const extractNumericData = (datapoints: MaterializationGroup[], xAxis: 'time' | 
   };
 
   for (const {partition, latest} of datapoints) {
-    const x =
-      (xAxis === 'partition' ? partition : Number(latest?.timestamp)) || null;
+    const x = (xAxis === 'partition' ? partition : Number(latest?.timestamp)) || null;
 
     if (x === null) {
       // exclude materializations where partition = null from partitioned graphs
@@ -429,9 +428,7 @@ const extractNumericData = (datapoints: MaterializationGroup[], xAxis: 'time' | 
 
     // Add an entry for every numeric metadata label
     for (const label of numericMetadataLabels) {
-      const entry = latest?.metadataEntries.find(
-        (l) => l.label === label,
-      );
+      const entry = latest?.metadataEntries.find((l) => l.label === label);
       if (!entry) {
         append(label, {x, y: NaN});
         continue;

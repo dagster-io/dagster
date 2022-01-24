@@ -13,7 +13,8 @@ import {LogRowStructuredContentTable, MetadataEntries, MetadataEntryLink} from '
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
 import {
-  LogsRowStructuredFragment, LogsRowStructuredFragment_MaterializationEvent,
+  LogsRowStructuredFragment,
+  LogsRowStructuredFragment_MaterializationEvent,
 } from './types/LogsRowStructuredFragment';
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 
@@ -130,11 +131,13 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
         />
       );
     case 'ObservationEvent':
-      return <DefaultContent
-        message={node.message}
-        eventType={eventType}
-        eventColor="rgba(173, 185, 152, 0.3)"
-      />
+      return (
+        <DefaultContent
+          message={node.message}
+          eventType={eventType}
+          eventColor="rgba(173, 185, 152, 0.3)"
+        />
+      );
     case 'ObjectStoreOperationEvent':
       return (
         <DefaultContent message={node.message} eventType={eventType}>

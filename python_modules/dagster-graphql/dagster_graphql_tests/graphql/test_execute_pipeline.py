@@ -610,8 +610,8 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
             # ensure only one event
             assert step_mat_event
-            assert len(step_mat_event["materialization"]["metadataEntries"]) == 1
-            assert step_mat_event["materialization"]["metadataEntries"][0]["path"] == out_csv_path
+            assert len(step_mat_event["metadataEntries"]) == 1
+            assert step_mat_event["metadataEntries"][0]["path"] == out_csv_path
 
     def test_start_job_execution_with_default_config(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "job_with_default_config")

@@ -270,7 +270,7 @@ class GrapheneObjectStoreOperationResult(graphene.ObjectType):
         return _to_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
 
 
-class AssetOutputMixin:
+class AssetMetadataMixin:
     assetKey = graphene.Field(GrapheneAssetKey)
 
     def __init__(self, output):
@@ -291,13 +291,13 @@ class AssetOutputMixin:
         return GrapheneAssetKey(path=asset_key.path)
 
 
-class GrapheneMaterialization(graphene.ObjectType, AssetOutputMixin):
+class GrapheneMaterialization(graphene.ObjectType, AssetMetadataMixin):
     class Meta:
         interfaces = (GrapheneDisplayableEvent,)
         name = "Materialization"
 
 
-class GrapheneObservation(graphene.ObjectType, AssetOutputMixin):
+class GrapheneObservation(graphene.ObjectType, AssetMetadataMixin):
     class Meta:
         interfaces = (GrapheneDisplayableEvent,)
         name = "Observation"

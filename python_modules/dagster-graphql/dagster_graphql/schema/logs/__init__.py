@@ -107,6 +107,6 @@ def types():
         GrapheneStepEvent,
         GrapheneStepExpectationResultEvent,
         GrapheneMaterializationEvent,
-        # GrapheneObservationEvent,
+        GrapheneObservationEvent,
         GrapheneTypeCheck,
     ]

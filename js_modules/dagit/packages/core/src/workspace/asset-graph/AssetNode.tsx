@@ -44,7 +44,7 @@ export const AssetNode: React.FC<{
     const history = useHistory();
 
     const {runOrError} = liveData?.lastMaterialization || {};
-    const event = liveData?.lastMaterialization
+    const event = liveData?.lastMaterialization;
     const kind = metadata.find((m) => m.key === 'kind')?.value;
 
     return (
