@@ -1,5 +1,6 @@
 import graphene
 from dagster.core.scheduler.instigation import TickStatus
+from dagster.core.storage.pipeline_run import PipelineRunsFilter
 
 from ..errors import GraphenePythonError
 from ..instigation import GrapheneInstigationTickStatus
@@ -24,9 +25,10 @@ def tick_specific_data_from_dagster_tick(graphene_info, tick):
 
     if tick.status == TickStatus.SUCCESS:
         if tick.run_ids and graphene_info.context.instance.has_run(tick.run_ids[0]):
-            return GrapheneScheduleTickSuccessData(
-                run=GrapheneRun(graphene_info.context.instance.get_run_by_id(tick.run_ids[0]))
-            )
+            record = graphene_info.context.instance.get_run_records(
+                PipelineRunsFilter(run_ids=[tick.run_ids[0]])
+            )[0]
+            return GrapheneScheduleTickSuccessData(run=GrapheneRun(record))
         return GrapheneScheduleTickSuccessData(run=None)
     elif tick.status == TickStatus.FAILURE:
         error = tick.error

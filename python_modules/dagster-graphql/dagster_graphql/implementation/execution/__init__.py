@@ -1,6 +1,6 @@
 from dagster import check
 from dagster.core.storage.compute_log_manager import ComputeIOType
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 from graphql.execution.base import ResolveInfo
@@ -24,17 +24,17 @@ def _force_mark_as_canceled(graphene_info, run_id):
 
     instance = graphene_info.context.instance
 
-    reloaded_run = instance.get_run_by_id(run_id)
+    reloaded_record = instance.get_run_records(PipelineRunsFilter(run_ids=[run_id]))[0]
 
-    if not reloaded_run.is_finished:
+    if not reloaded_record.pipeline_run.is_finished:
         message = (
             "This pipeline was forcibly marked as canceled from outside the execution context. The "
             "computational resources created by the run may not have been fully cleaned up."
         )
-        instance.report_run_canceled(reloaded_run, message=message)
-        reloaded_run = instance.get_run_by_id(run_id)
+        instance.report_run_canceled(reloaded_record.pipeline_run, message=message)
+        reloaded_record = instance.get_run_records(PipelineRunsFilter(run_ids=[run_id]))[0]
 
-    return GrapheneTerminateRunSuccess(GrapheneRun(reloaded_run))
+    return GrapheneTerminateRunSuccess(GrapheneRun(reloaded_record))
 
 
 @capture_error
@@ -51,16 +51,18 @@ def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
     check.str_param(run_id, "run_id")
 
     instance = graphene_info.context.instance
-    run = instance.get_run_by_id(run_id)
+    records = instance.get_run_records(PipelineRunsFilter(run_ids=[run_id]))
 
     force_mark_as_canceled = (
         terminate_policy == GrapheneTerminateRunPolicy.MARK_AS_CANCELED_IMMEDIATELY
     )
 
-    if not run:
+    if not records:
         return GrapheneRunNotFoundError(run_id)
 
-    pipeline_run = GrapheneRun(run)
+    record = records[0]
+    run = record.pipeline_run
+    graphene_run = GrapheneRun(record)
 
     valid_status = not run.is_finished and (
         force_mark_as_canceled
@@ -69,7 +71,7 @@ def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
 
     if not valid_status:
         return GrapheneTerminateRunFailure(
-            run=pipeline_run,
+            run=graphene_run,
             message="Run {run_id} could not be terminated due to having status {status}.".format(
                 run_id=run.run_id, status=run.status.value
             ),
@@ -84,14 +86,14 @@ def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
         return (
             _force_mark_as_canceled(graphene_info, run_id)
             if force_mark_as_canceled
-            else GrapheneTerminateRunSuccess(pipeline_run)
+            else GrapheneTerminateRunSuccess(graphene_run)
         )
 
     return (
         _force_mark_as_canceled(graphene_info, run_id)
         if force_mark_as_canceled
         else GrapheneTerminateRunFailure(
-            run=pipeline_run, message="Unable to terminate run {run_id}".format(run_id=run.run_id)
+            run=graphene_run, message="Unable to terminate run {run_id}".format(run_id=run.run_id)
         )
     )
 
@@ -123,9 +125,9 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
     check.str_param(run_id, "run_id")
     check.opt_int_param(after, "after")
     instance = graphene_info.context.instance
-    run = instance.get_run_by_id(run_id)
+    records = instance.get_run_records(PipelineRunsFilter(run_ids=[run_id]))
 
-    if not run:
+    if not records:
 
         def _get_error_observable(observer):
             observer.on_next(
@@ -136,10 +138,13 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
         return Observable.create(_get_error_observable)  # pylint: disable=E1101
 
+    record = records[0]
+    run = record.pipeline_run
+
     def _handle_events(payload):
         events, loading_past = payload
         return GraphenePipelineRunLogsSubscriptionSuccess(
-            run=GrapheneRun(run),
+            run=GrapheneRun(record),
             messages=[from_event_record(event, run.pipeline_name) for event in events],
             hasMorePastEvents=loading_past,
         )
