@@ -54,11 +54,12 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
 
         # Stamp and create tables if the main table does not exist (we can't check alembic
         # revision because alembic config may be shared with other storage classes)
-        if self.should_autocreate_tables and (
-            "runs" not in table_names or "telemetry_info" not in table_names
-        ):
+        if self.should_autocreate_tables and "runs" not in table_names:
             retry_pg_creation_fn(self._init_db)
             self.build_missing_indexes()
+
+        if "telemetry_info" not in table_names:
+            RunStorageSqlMetadata.create_all(self._engine)
 
         super().__init__()
 
