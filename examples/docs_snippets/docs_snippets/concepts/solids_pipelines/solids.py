@@ -99,7 +99,7 @@ def x_op(
 ):
     """
     Args:
-        args (any): One or more arguments used to generate the nwe op
+        args (any): One or more arguments used to generate the new op
         name (str): The name of the new op.
         ins (Dict[str, In]): Any Ins for the new op. Default: None.
 
