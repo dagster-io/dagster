@@ -275,17 +275,8 @@ def core_dagster_event_sequence_for_step(
         yield DagsterEvent.step_start_event(step_context)
 
     inputs = {}
-    input_lineage = []
 
     for step_input in step_context.step.step_inputs:
-        input_def = step_input.source.get_input_def(step_context.pipeline_def)
-        dagster_type = input_def.dagster_type
-
-        if dagster_type.kind == DagsterTypeKind.NOTHING:
-            continue
-
-        input_lineage.extend(step_input.source.get_asset_lineage(step_context))
-
         for event_or_input_value in ensure_gen(step_input.source.load_input_object(step_context)):
             if isinstance(event_or_input_value, DagsterEvent):
                 yield event_or_input_value
@@ -299,7 +290,7 @@ def core_dagster_event_sequence_for_step(
         ):
             yield evt
 
-    input_lineage = _dedup_asset_lineage(input_lineage)
+    input_lineage = step_context.get_input_lineage()
 
     # The core execution loop expects a compute generator in a specific format: a generator that
     # takes a context and dictionary of inputs as input, yields output events. If a solid definition

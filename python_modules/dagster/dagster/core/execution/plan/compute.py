@@ -111,7 +111,8 @@ def _yield_compute_results(
 ) -> Iterator[SolidOutputUnion]:
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
-    user_event_generator = compute_fn(SolidExecutionContext(step_context), inputs)
+    context = SolidExecutionContext(step_context)
+    user_event_generator = compute_fn(context, inputs)
 
     if isinstance(user_event_generator, Output):
         raise DagsterInvariantViolationError(
@@ -144,7 +145,12 @@ def _yield_compute_results(
         ),
         user_event_generator,
     ):
+        if context.has_events():
+            yield from context.retrieve_events()
         yield _validate_event(event, step_context)
+
+    if context.has_events():
+        yield from context.retrieve_events()
 
 
 def execute_core_compute(
