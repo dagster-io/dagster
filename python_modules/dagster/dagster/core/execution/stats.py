@@ -117,10 +117,9 @@ def build_run_step_stats_from_events(
             by_step_key[step_key]["status"] = StepEventStatus.SKIPPED
         if dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
             event_specific_data = cast(StepMaterializationData, dagster_event.event_specific_data)
-            materialization = event_specific_data.materialization
-            step_materializations = by_step_key[step_key].get("materializations", [])
-            step_materializations.append(materialization)
-            by_step_key[step_key]["materializations"] = step_materializations
+            materialization_events = by_step_key[step_key].get("materialization_events", [])
+            materialization_events.append(event)
+            by_step_key[step_key]["materialization_events"] = materialization_events
         if dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
             expectation_data = cast(StepExpectationResultData, dagster_event.event_specific_data)
             expectation_result = expectation_data.expectation_result
@@ -208,7 +207,7 @@ class RunStepKeyStatsSnapshot(
     namedtuple(
         "_RunStepKeyStatsSnapshot",
         (
-            "run_id step_key status start_time end_time materializations expectation_results "
+            "run_id step_key status start_time end_time materialization_events expectation_results "
             "attempts attempts_list markers"
         ),
     )
@@ -220,7 +219,7 @@ class RunStepKeyStatsSnapshot(
         status=None,
         start_time=None,
         end_time=None,
-        materializations=None,
+        materialization_events=None,
         expectation_results=None,
         attempts=None,
         attempts_list=None,
@@ -233,8 +232,10 @@ class RunStepKeyStatsSnapshot(
             status=check.opt_inst_param(status, "status", StepEventStatus),
             start_time=check.opt_float_param(start_time, "start_time"),
             end_time=check.opt_float_param(end_time, "end_time"),
-            materializations=check.opt_list_param(
-                materializations, "materializations", (AssetMaterialization, Materialization)
+            materialization_events=check.opt_list_param(
+                materialization_events,
+                "materialization_events",
+                EventLogEntry,
             ),
             expectation_results=check.opt_list_param(
                 expectation_results, "expectation_results", ExpectationResult

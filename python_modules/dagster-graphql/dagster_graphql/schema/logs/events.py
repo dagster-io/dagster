@@ -270,25 +270,6 @@ class GrapheneObjectStoreOperationResult(graphene.ObjectType):
         return _to_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
 
 
-class GrapheneMaterialization(graphene.ObjectType):
-    class Meta:
-        interfaces = (GrapheneDisplayableEvent,)
-        name = "Materialization"
-
-    def resolve_metadataEntries(self, _graphene_info):
-        from ...implementation.events import _to_metadata_entries
-
-        return _to_metadata_entries(self.metadata_entries)  # pylint: disable=no-member
-
-    def resolve_assetKey(self, _graphene_info):
-        asset_key = self.asset_key  # pylint: disable=no-member
-
-        if not asset_key:
-            return None
-
-        return GrapheneAssetKey(path=asset_key.path)
-
-
 class GrapheneExpectationResult(graphene.ObjectType):
     success = graphene.NonNull(graphene.Boolean)
 
@@ -565,7 +546,7 @@ class GraphenePipelineRunStepStats(graphene.Interface):
     status = graphene.Field(GrapheneStepEventStatus)
     startTime = graphene.Field(graphene.Float)
     endTime = graphene.Field(graphene.Float)
-    materializations = non_null_list(GrapheneMaterialization)
+    materializations = non_null_list(GrapheneMaterializationEvent)
     expectationResults = non_null_list(GrapheneExpectationResult)
 
     class Meta:
@@ -586,7 +567,7 @@ class GrapheneRunStepStats(graphene.ObjectType):
     status = graphene.Field(GrapheneStepEventStatus)
     startTime = graphene.Field(graphene.Float)
     endTime = graphene.Field(graphene.Float)
-    materializations = non_null_list(GrapheneMaterialization)
+    materializations = non_null_list(GrapheneMaterializationEvent)
     expectationResults = non_null_list(GrapheneExpectationResult)
     attempts = non_null_list(GrapheneRunMarker)
     markers = non_null_list(GrapheneRunMarker)
@@ -603,7 +584,7 @@ class GrapheneRunStepStats(graphene.ObjectType):
             status=stats.status,
             startTime=stats.start_time,
             endTime=stats.end_time,
-            materializations=stats.materializations,
+            materializations=stats.materialization_events,
             expectationResults=stats.expectation_results,
             attempts=[
                 GrapheneRunMarker(startTime=attempt.start_time, endTime=attempt.end_time)

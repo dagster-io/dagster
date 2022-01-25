@@ -240,7 +240,7 @@ type RunStepStats implements PipelineRunStepStats {
   status: StepEventStatus
   startTime: Float
   endTime: Float
-  materializations: [Materialization!]!
+  materializations: [MaterializationEvent!]!
   expectationResults: [ExpectationResult!]!
   attempts: [RunMarker!]!
   markers: [RunMarker!]!
@@ -252,7 +252,7 @@ interface PipelineRunStepStats {
   status: StepEventStatus
   startTime: Float
   endTime: Float
-  materializations: [Materialization!]!
+  materializations: [MaterializationEvent!]!
   expectationResults: [ExpectationResult!]!
 }
 
@@ -263,10 +263,86 @@ enum StepEventStatus {
   IN_PROGRESS
 }
 
-type Materialization implements DisplayableEvent {
+type MaterializationEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
   label: String!
   description: String
   metadataEntries: [EventMetadataEntry!]!
+  assetKey: AssetKey
+  runOrError: RunOrError!
+  stepStats: RunStepStats!
+  partition: String
+  assetLineage: [AssetLineageInfo!]!
+}
+
+interface MessageEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+}
+
+enum LogLevel {
+  CRITICAL
+  ERROR
+  INFO
+  WARNING
+  DEBUG
+}
+
+enum DagsterEventType {
+  STEP_OUTPUT
+  STEP_INPUT
+  STEP_FAILURE
+  STEP_START
+  STEP_SUCCESS
+  STEP_SKIPPED
+  STEP_UP_FOR_RETRY
+  STEP_RESTARTED
+  ASSET_MATERIALIZATION
+  ASSET_OBSERVATION
+  STEP_EXPECTATION_RESULT
+  RUN_ENQUEUED
+  RUN_DEQUEUED
+  RUN_STARTING
+  RUN_START
+  RUN_SUCCESS
+  RUN_FAILURE
+  RUN_CANCELING
+  RUN_CANCELED
+  PIPELINE_ENQUEUED
+  PIPELINE_DEQUEUED
+  PIPELINE_STARTING
+  PIPELINE_START
+  PIPELINE_SUCCESS
+  PIPELINE_FAILURE
+  PIPELINE_CANCELING
+  PIPELINE_CANCELED
+  OBJECT_STORE_OPERATION
+  ASSET_STORE_OPERATION
+  LOADED_INPUT
+  HANDLED_OUTPUT
+  ENGINE_EVENT
+  HOOK_COMPLETED
+  HOOK_ERRORED
+  HOOK_SKIPPED
+  ALERT_START
+  ALERT_SUCCESS
+  LOGS_CAPTURED
+}
+
+interface StepEvent {
+  stepKey: String
+  solidHandleID: String
 }
 
 interface DisplayableEvent {
@@ -280,107 +356,11 @@ interface EventMetadataEntry {
   description: String
 }
 
-type ExpectationResult implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  success: Boolean!
+type AssetKey {
+  path: [String!]!
 }
 
-type RunMarker {
-  startTime: Float
-  endTime: Float
-}
-
-type SolidStepStatusUnavailableError implements Error {
-  message: String!
-}
-
-interface Error {
-  message: String!
-}
-
-type Mode {
-  id: String!
-  name: String!
-  description: String
-  resources: [Resource!]!
-  loggers: [Logger!]!
-}
-
-type Resource {
-  name: String!
-  description: String
-  configField: ConfigTypeField
-}
-
-type Logger {
-  name: String!
-  description: String
-  configField: ConfigTypeField
-}
-
-interface IPipelineSnapshot {
-  name: String!
-  description: String
-  pipelineSnapshotId: String!
-  dagsterTypes: [DagsterType!]!
-  dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
-  solids: [Solid!]!
-  modes: [Mode!]!
-  solidHandles(parentHandleID: String): [SolidHandle!]!
-  solidHandle(handleID: String!): SolidHandle
-  tags: [PipelineTag!]!
-  runs(cursor: String, limit: Int): [Run!]!
-  schedules: [Schedule!]!
-  sensors: [Sensor!]!
-  parentSnapshotId: String
-  graphName: String!
-}
-
-union DagsterTypeOrError =
-    RegularDagsterType
-  | PipelineNotFoundError
-  | DagsterTypeNotFoundError
-  | PythonError
-
-type RegularDagsterType implements DagsterType {
-  key: String!
-  name: String
-  displayName: String!
-  description: String
-  isNullable: Boolean!
-  isList: Boolean!
-  isBuiltin: Boolean!
-  isNothing: Boolean!
-  inputSchemaType: ConfigType
-  outputSchemaType: ConfigType
-  innerTypes: [DagsterType!]!
-}
-
-type PipelineNotFoundError implements Error {
-  message: String!
-  pipelineName: String!
-  repositoryName: String!
-  repositoryLocationName: String!
-}
-
-type DagsterTypeNotFoundError implements Error {
-  message: String!
-  dagsterTypeName: String!
-}
-
-type PythonError implements Error {
-  message: String!
-  className: String
-  stack: [String!]!
-  cause: PythonError
-}
-
-type PipelineTag {
-  key: String!
-  value: String!
-}
+union RunOrError = Run | RunNotFoundError | PythonError
 
 type Run implements PipelineRun {
   id: ID!
@@ -495,6 +475,17 @@ interface PipelineRunStatsSnapshot {
   endTime: Float
 }
 
+type PythonError implements Error {
+  message: String!
+  className: String
+  stack: [String!]!
+  cause: PythonError
+}
+
+interface Error {
+  message: String!
+}
+
 type ComputeLogs {
   runId: String!
   stepKey: String!
@@ -541,6 +532,11 @@ enum StepKind {
 
 scalar RunConfigData
 
+type PipelineTag {
+  key: String!
+  value: String!
+}
+
 type Asset {
   id: String!
   key: AssetKey!
@@ -551,109 +547,6 @@ type Asset {
     limit: Int
   ): [MaterializationEvent!]!
   definition: AssetNode
-}
-
-type AssetKey {
-  path: [String!]!
-}
-
-type MaterializationEvent implements MessageEvent & StepEvent & DisplayableEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  assetKey: AssetKey
-  runOrError: RunOrError!
-  stepStats: RunStepStats!
-  partition: String
-  assetLineage: [AssetLineageInfo!]!
-}
-
-interface MessageEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-}
-
-enum LogLevel {
-  CRITICAL
-  ERROR
-  INFO
-  WARNING
-  DEBUG
-}
-
-enum DagsterEventType {
-  STEP_OUTPUT
-  STEP_INPUT
-  STEP_FAILURE
-  STEP_START
-  STEP_SUCCESS
-  STEP_SKIPPED
-  STEP_UP_FOR_RETRY
-  STEP_RESTARTED
-  ASSET_MATERIALIZATION
-  ASSET_OBSERVATION
-  STEP_EXPECTATION_RESULT
-  RUN_ENQUEUED
-  RUN_DEQUEUED
-  RUN_STARTING
-  RUN_START
-  RUN_SUCCESS
-  RUN_FAILURE
-  RUN_CANCELING
-  RUN_CANCELED
-  PIPELINE_ENQUEUED
-  PIPELINE_DEQUEUED
-  PIPELINE_STARTING
-  PIPELINE_START
-  PIPELINE_SUCCESS
-  PIPELINE_FAILURE
-  PIPELINE_CANCELING
-  PIPELINE_CANCELED
-  OBJECT_STORE_OPERATION
-  ASSET_STORE_OPERATION
-  LOADED_INPUT
-  HANDLED_OUTPUT
-  ENGINE_EVENT
-  HOOK_COMPLETED
-  HOOK_ERRORED
-  HOOK_SKIPPED
-  ALERT_START
-  ALERT_SUCCESS
-  LOGS_CAPTURED
-}
-
-interface StepEvent {
-  stepKey: String
-  solidHandleID: String
-}
-
-union RunOrError = Run | RunNotFoundError | PythonError
-
-type RunNotFoundError implements PipelineRunNotFoundError & Error {
-  runId: String!
-  message: String!
-}
-
-interface PipelineRunNotFoundError {
-  runId: String!
-  message: String!
-}
-
-type AssetLineageInfo {
-  assetKey: AssetKey!
-  partitions: [String!]!
 }
 
 type AssetNode {
@@ -1035,6 +928,13 @@ type StepExpectationResultEvent implements MessageEvent & StepEvent {
   expectationResult: ExpectationResult!
 }
 
+type ExpectationResult implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  success: Boolean!
+}
+
 type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
   runId: String!
   message: String!
@@ -1105,6 +1005,100 @@ type AlertSuccessEvent implements MessageEvent & RunEvent {
 }
 
 scalar Cursor
+
+type RunNotFoundError implements PipelineRunNotFoundError & Error {
+  runId: String!
+  message: String!
+}
+
+interface PipelineRunNotFoundError {
+  runId: String!
+  message: String!
+}
+
+type AssetLineageInfo {
+  assetKey: AssetKey!
+  partitions: [String!]!
+}
+
+type RunMarker {
+  startTime: Float
+  endTime: Float
+}
+
+type SolidStepStatusUnavailableError implements Error {
+  message: String!
+}
+
+type Mode {
+  id: String!
+  name: String!
+  description: String
+  resources: [Resource!]!
+  loggers: [Logger!]!
+}
+
+type Resource {
+  name: String!
+  description: String
+  configField: ConfigTypeField
+}
+
+type Logger {
+  name: String!
+  description: String
+  configField: ConfigTypeField
+}
+
+interface IPipelineSnapshot {
+  name: String!
+  description: String
+  pipelineSnapshotId: String!
+  dagsterTypes: [DagsterType!]!
+  dagsterTypeOrError(dagsterTypeName: String!): DagsterTypeOrError!
+  solids: [Solid!]!
+  modes: [Mode!]!
+  solidHandles(parentHandleID: String): [SolidHandle!]!
+  solidHandle(handleID: String!): SolidHandle
+  tags: [PipelineTag!]!
+  runs(cursor: String, limit: Int): [Run!]!
+  schedules: [Schedule!]!
+  sensors: [Sensor!]!
+  parentSnapshotId: String
+  graphName: String!
+}
+
+union DagsterTypeOrError =
+    RegularDagsterType
+  | PipelineNotFoundError
+  | DagsterTypeNotFoundError
+  | PythonError
+
+type RegularDagsterType implements DagsterType {
+  key: String!
+  name: String
+  displayName: String!
+  description: String
+  isNullable: Boolean!
+  isList: Boolean!
+  isBuiltin: Boolean!
+  isNothing: Boolean!
+  inputSchemaType: ConfigType
+  outputSchemaType: ConfigType
+  innerTypes: [DagsterType!]!
+}
+
+type PipelineNotFoundError implements Error {
+  message: String!
+  pipelineName: String!
+  repositoryName: String!
+  repositoryLocationName: String!
+}
+
+type DagsterTypeNotFoundError implements Error {
+  message: String!
+  dagsterTypeName: String!
+}
 
 type Schedule {
   id: ID!
