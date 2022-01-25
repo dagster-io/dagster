@@ -12,7 +12,7 @@ export type MaterializationGroup = {
 };
 
 const sortByEventTimestamp = (a: AssetMaterializationFragment, b: AssetMaterializationFragment) =>
-  Number(b.materializationEvent?.timestamp) - Number(a.materializationEvent?.timestamp);
+  Number(b?.timestamp) - Number(a?.timestamp);
 
 /**
  * A hook that can bucket a list of materializations by partition, if any, with the `latest`
@@ -38,7 +38,7 @@ export const groupByPartition = (
       return {
         predecessors,
         latest: latest || null,
-        timestamp: latest?.materializationEvent.timestamp,
+        timestamp: latest?.timestamp,
         partition: key,
       };
     });

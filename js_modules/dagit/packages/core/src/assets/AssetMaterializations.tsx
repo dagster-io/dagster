@@ -126,7 +126,7 @@ export const AssetMaterializations: React.FC<Props> = ({
     refetch();
   }, [params.asOf, assetLastMaterializedAt, refetch]);
 
-  const hasLineage = materializations.some((m) => m.materializationEvent.assetLineage.length > 0);
+  const hasLineage = materializations.some((m) => m.assetLineage.length > 0);
   const hasPartitions = materializations.some((m) => m.partition) || assetHasDefinedPartitions;
 
   const grouped = React.useMemo<MaterializationGroup[]>(() => {
@@ -134,7 +134,7 @@ export const AssetMaterializations: React.FC<Props> = ({
       return materializations.map((materialization) => ({
         latest: materialization,
         partition: materialization.partition || undefined,
-        timestamp: materialization.materializationEvent.timestamp,
+        timestamp: materialization.timestamp,
         predecessors: [],
       }));
     }
@@ -379,7 +379,7 @@ const extractNumericData = (datapoints: MaterializationGroup[], xAxis: 'time' | 
   // Build a set of the numeric metadata entry labels (note they may be sparsely emitted)
   const numericMetadataLabels = uniq(
     flatMap(datapoints, (e) =>
-      (e.latest?.materializationEvent.materialization.metadataEntries || [])
+      (e.latest?.metadataEntries || [])
         .filter((k) => ['EventIntMetadataEntry', 'EventFloatMetadataEntry'].includes(k.__typename))
         .map((k) => k.label),
     ),
@@ -408,8 +408,7 @@ const extractNumericData = (datapoints: MaterializationGroup[], xAxis: 'time' | 
   };
 
   for (const {partition, latest} of datapoints) {
-    const x =
-      (xAxis === 'partition' ? partition : Number(latest?.materializationEvent.timestamp)) || null;
+    const x = (xAxis === 'partition' ? partition : Number(latest?.timestamp)) || null;
 
     if (x === null) {
       // exclude materializations where partition = null from partitioned graphs
@@ -418,9 +417,7 @@ const extractNumericData = (datapoints: MaterializationGroup[], xAxis: 'time' | 
 
     // Add an entry for every numeric metadata label
     for (const label of numericMetadataLabels) {
-      const entry = latest?.materializationEvent.materialization.metadataEntries.find(
-        (l) => l.label === label,
-      );
+      const entry = latest?.metadataEntries.find((l) => l.label === label);
       if (!entry) {
         append(label, {x, y: NaN});
         continue;
@@ -443,7 +440,7 @@ const extractNumericData = (datapoints: MaterializationGroup[], xAxis: 'time' | 
     }
 
     // Add step execution time as a custom dataset
-    const {startTime, endTime} = latest?.materializationEvent.stepStats || {};
+    const {startTime, endTime} = latest?.stepStats || {};
     append(LABEL_STEP_EXECUTION_TIME, {x, y: endTime && startTime ? endTime - startTime : NaN});
   }
 
@@ -487,7 +484,7 @@ const ASSET_MATERIALIZATIONS_QUERY = gql`
       }
     }
   }
-  fragment AssetMaterializationFragment on AssetMaterialization {
+  fragment AssetMaterializationFragment on MaterializationEvent {
     partition
     runOrError {
       ... on PipelineRun {
@@ -504,24 +501,20 @@ const ASSET_MATERIALIZATIONS_QUERY = gql`
         pipelineSnapshotId
       }
     }
-    materializationEvent {
-      runId
-      timestamp
-      stepKey
-      stepStats {
-        endTime
-        startTime
-      }
-      materialization {
-        label
-        description
-        metadataEntries {
-          ...MetadataEntryFragment
-        }
-      }
-      assetLineage {
-        ...AssetLineageFragment
-      }
+    runId
+    timestamp
+    stepKey
+    stepStats {
+      endTime
+      startTime
+    }
+    label
+    description
+    metadataEntries {
+      ...MetadataEntryFragment
+    }
+    assetLineage {
+      ...AssetLineageFragment
     }
   }
   ${METADATA_ENTRY_FRAGMENT}

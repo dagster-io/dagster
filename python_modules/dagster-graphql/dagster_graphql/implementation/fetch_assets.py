@@ -98,7 +98,13 @@ def get_asset(graphene_info, asset_key):
     return GrapheneAsset(key=asset_key, definition=asset_node)
 
 
-def get_asset_events(graphene_info, asset_key, partitions=None, limit=None, before_timestamp=None):
+def get_asset_materializations(
+    graphene_info,
+    asset_key,
+    partitions=None,
+    limit=None,
+    before_timestamp=None,
+):
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
@@ -106,6 +112,29 @@ def get_asset_events(graphene_info, asset_key, partitions=None, limit=None, befo
     event_records = instance.get_event_records(
         EventRecordsFilter(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
+            asset_key=asset_key,
+            asset_partitions=partitions,
+            before_timestamp=before_timestamp,
+        ),
+        limit=limit,
+    )
+    return [event_record.event_log_entry for event_record in event_records]
+
+
+def get_asset_observations(
+    graphene_info,
+    asset_key,
+    partitions=None,
+    limit=None,
+    before_timestamp=None,
+):
+    check.inst_param(asset_key, "asset_key", AssetKey)
+    check.opt_int_param(limit, "limit")
+    check.opt_float_param(before_timestamp, "before_timestamp")
+    instance = graphene_info.context.instance
+    event_records = instance.get_event_records(
+        EventRecordsFilter(
+            event_type=DagsterEventType.ASSET_OBSERVATION,
             asset_key=asset_key,
             asset_partitions=partitions,
             before_timestamp=before_timestamp,

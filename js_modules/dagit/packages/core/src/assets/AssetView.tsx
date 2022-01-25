@@ -53,7 +53,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   const {assetOrError} = queryResult.data || queryResult.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
-  const lastMaterializedAt = asset?.assetMaterializations[0]?.materializationEvent.timestamp;
+  const lastMaterializedAt = asset?.assetMaterializations[0]?.timestamp;
   const definition = asset?.definition;
 
   const repoAddress = definition
@@ -173,9 +173,7 @@ const ASSET_QUERY = gql`
         }
 
         assetMaterializations(limit: 1) {
-          materializationEvent {
-            timestamp
-          }
+          timestamp
         }
 
         definition {

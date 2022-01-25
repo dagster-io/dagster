@@ -28,7 +28,6 @@ def types():
     )
     from .pipeline import (
         GrapheneAsset,
-        GrapheneAssetMaterialization,
         GrapheneIPipelineSnapshot,
         GraphenePipeline,
         GraphenePipelinePreset,
@@ -47,7 +46,6 @@ def types():
 
     return [
         GrapheneAsset,
-        GrapheneAssetMaterialization,
         GrapheneConfigTypeNotFoundError,
         GrapheneEvaluationErrorReason,
         GrapheneEvaluationStack,

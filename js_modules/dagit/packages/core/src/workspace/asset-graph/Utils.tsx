@@ -271,7 +271,7 @@ export const buildLiveData = (
     }
 
     const lastMaterialization = liveNode.assetMaterializations[0] || null;
-    const lastStepStart = lastMaterialization?.materializationEvent.stepStats?.startTime || 0;
+    const lastStepStart = lastMaterialization?.stepStats?.startTime || 0;
     const isForeignNode = !liveNode.opName;
     const isPartitioned = graphNode.definition.partitionDefinition;
 

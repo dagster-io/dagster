@@ -14,7 +14,7 @@ import {IRunMetadataDict} from './RunMetadataProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
 import {
   LogsRowStructuredFragment,
-  LogsRowStructuredFragment_StepMaterializationEvent_materialization,
+  LogsRowStructuredFragment_MaterializationEvent,
 } from './types/LogsRowStructuredFragment';
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 
@@ -121,13 +121,21 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
           <MetadataEntries entries={node.expectationResult.metadataEntries} />
         </DefaultContent>
       );
-    case 'StepMaterializationEvent':
+    case 'MaterializationEvent':
       return (
         <MaterializationContent
           message={node.message}
-          materialization={node.materialization}
+          materialization={node}
           eventType={eventType}
           timestamp={node.timestamp}
+        />
+      );
+    case 'ObservationEvent':
+      return (
+        <DefaultContent
+          message={node.message}
+          eventType={eventType}
+          eventColor="rgba(173, 185, 152, 0.3)"
         />
       );
     case 'ObjectStoreOperationEvent':
@@ -339,7 +347,7 @@ const FailureContent: React.FunctionComponent<{
 
 const MaterializationContent: React.FC<{
   message: string;
-  materialization: LogsRowStructuredFragment_StepMaterializationEvent_materialization;
+  materialization: LogsRowStructuredFragment_MaterializationEvent;
   eventType: string;
   timestamp: string;
 }> = ({message, materialization, eventType, timestamp}) => {

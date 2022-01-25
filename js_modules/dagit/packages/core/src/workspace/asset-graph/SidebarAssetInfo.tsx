@@ -59,7 +59,7 @@ export const SidebarAssetInfo: React.FC<{
 
       <AssetMaterializations
         assetKey={node.assetKey}
-        assetLastMaterializedAt={lastMaterialization?.materializationEvent.timestamp}
+        assetLastMaterializedAt={lastMaterialization?.timestamp}
         assetHasDefinedPartitions={!!node.partitionDefinition}
         asSidebarSection
         liveData={liveData}

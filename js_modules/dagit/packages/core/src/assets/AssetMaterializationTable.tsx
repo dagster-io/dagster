@@ -95,8 +95,7 @@ const AssetMaterializationRow: React.FC<{
   if (!run) {
     return <span />;
   }
-  const {materialization, assetLineage, stepKey} = latest.materializationEvent;
-  const metadataEntries = materialization.metadataEntries;
+  const {metadataEntries, assetLineage, stepKey, description} = latest;
 
   return (
     <>
@@ -170,9 +169,7 @@ const AssetMaterializationRow: React.FC<{
       {isFocused && (
         <tr style={{background: ColorsWIP.Gray50}}>
           <td colSpan={6} style={{fontSize: 14, padding: 0}}>
-            {materialization.description && (
-              <Box padding={{horizontal: 24, vertical: 12}}>{materialization.description}</Box>
-            )}
+            {description && <Box padding={{horizontal: 24, vertical: 12}}>{description}</Box>}
             {metadataEntries.length || hasLineage ? (
               <DetailsTable>
                 <tbody>
@@ -258,7 +255,7 @@ export const AssetPredecessorLink: React.FC<PredecessorDialogProps> = ({
             groups={predecessors.map((p) => ({
               latest: p,
               partition: p.partition || undefined,
-              timestamp: p.materializationEvent.timestamp,
+              timestamp: p.timestamp,
               predecessors: [],
             }))}
           />

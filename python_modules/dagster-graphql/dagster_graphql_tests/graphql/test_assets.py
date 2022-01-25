@@ -32,16 +32,12 @@ GET_ASSET_MATERIALIZATION = """
         assetOrError(assetKey: $assetKey) {
             ... on Asset {
                 assetMaterializations(limit: 1) {
-                    materializationEvent {
-                        materialization {
-                            label
+                    label
+                    assetLineage {
+                        assetKey {
+                            path
                         }
-                        assetLineage {
-                            assetKey {
-                                path
-                            }
-                            partitions
-                        }
+                        partitions
                     }
                 }
             }
@@ -58,11 +54,7 @@ GET_ASSET_MATERIALIZATION_WITH_PARTITION = """
             ... on Asset {
                 assetMaterializations(limit: 1) {
                     partition
-                    materializationEvent {
-                        materialization {
-                            label
-                        }
-                    }
+                    label
                 }
             }
         }
@@ -83,9 +75,7 @@ GET_ASSET_MATERIALIZATION_TIMESTAMP = """
         assetOrError(assetKey: $assetKey) {
             ... on Asset {
                 assetMaterializations(beforeTimestampMillis: $asOf) {
-                    materializationEvent {
-                        timestamp
-                    }
+                    timestamp
                 }
             }
         }
@@ -156,9 +146,39 @@ GET_LATEST_MATERIALIZATION_PER_PARTITION = """
                     partitionKeys
                     latestMaterializationByPartition(partitions: $partitions) {
                         partition
-                        materializationEvent {
-                            stepStats {
-                                startTime
+                        stepStats {
+                            startTime
+                        }
+                    }
+                }
+            }
+        }
+    }
+"""
+
+GET_ASSET_OBSERVATIONS = """
+    query AssetGraphQuery($repositorySelector: RepositorySelector!) {
+        repositoryOrError(repositorySelector: $repositorySelector) {
+            ... on Repository {
+                assetNodes {
+                    opName
+                    description
+                    assetObservations {
+                        label
+                        description
+                        runOrError {
+                            ... on Run {
+                                jobName
+                            }
+                        }
+                        assetKey {
+                            path
+                        }
+                        metadataEntries {
+                            label
+                            description
+                            ... on EventTextMetadataEntry {
+                                text
                             }
                         }
                     }
@@ -323,7 +343,7 @@ class TestAssetAwareEventLog(
         assert result.data["assetOrError"]
         materializations = result.data["assetOrError"]["assetMaterializations"]
         assert len(materializations) == 1
-        first_timestamp = int(materializations[0]["materializationEvent"]["timestamp"])
+        first_timestamp = int(materializations[0]["timestamp"])
 
         as_of_timestamp = first_timestamp + 1
 
@@ -338,7 +358,7 @@ class TestAssetAwareEventLog(
         assert result.data["assetOrError"]
         materializations = result.data["assetOrError"]["assetMaterializations"]
         assert len(materializations) == 2
-        second_timestamp = int(materializations[0]["materializationEvent"]["timestamp"])
+        second_timestamp = int(materializations[0]["timestamp"])
 
         assert second_timestamp > as_of_timestamp
 
@@ -351,7 +371,7 @@ class TestAssetAwareEventLog(
         assert result.data["assetOrError"]
         materializations = result.data["assetOrError"]["assetMaterializations"]
         assert len(materializations) == 1
-        assert first_timestamp == int(materializations[0]["materializationEvent"]["timestamp"])
+        assert first_timestamp == int(materializations[0]["timestamp"])
 
     def test_asset_node_in_pipeline(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "two_assets_job")
@@ -472,7 +492,7 @@ class TestAssetAwareEventLog(
         asset_node = result.data["pipelineOrError"]["assetNodes"][0]
         assert len(asset_node["latestMaterializationByPartition"]) == 1
         materialization = asset_node["latestMaterializationByPartition"][0]
-        start_time = materialization["materializationEvent"]["stepStats"]["startTime"]
+        start_time = materialization["stepStats"]["startTime"]
         assert materialization["partition"] == "c"
 
         _create_run(graphql_context, "partition_materialization_job")
@@ -489,7 +509,7 @@ class TestAssetAwareEventLog(
         asset_node = result.data["pipelineOrError"]["assetNodes"][0]
         assert len(asset_node["latestMaterializationByPartition"]) == 2
         materialization = asset_node["latestMaterializationByPartition"][0]
-        new_start_time = materialization["materializationEvent"]["stepStats"]["startTime"]
+        new_start_time = materialization["stepStats"]["startTime"]
         assert new_start_time > start_time
 
         assert asset_node["latestMaterializationByPartition"][1] == None
@@ -573,6 +593,37 @@ class TestAssetAwareEventLog(
 
         assert materialization_count[2]["partition"] == "c"
         assert materialization_count[2]["materializationCount"] == 2
+
+    def test_asset_observations(self, graphql_context):
+        _create_run(graphql_context, "observation_job")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_OBSERVATIONS,
+            variables={"repositorySelector": infer_repository_selector(graphql_context)},
+        )
+
+        assert result.data
+        assert result.data["repositoryOrError"] and result.data["repositoryOrError"]["assetNodes"]
+
+        asset_node = [
+            asset_node
+            for asset_node in result.data["repositoryOrError"]["assetNodes"]
+            if asset_node["opName"] == "asset_yields_observation"
+        ][0]
+
+        assert asset_node["assetObservations"]
+
+        assert asset_node["assetObservations"][0]["runOrError"]["jobName"] == "observation_job"
+
+        asset_key_path = asset_node["assetObservations"][0]["assetKey"]["path"]
+        assert asset_key_path
+        assert asset_key_path == ["asset_yields_observation"]
+
+        metadata = asset_node["assetObservations"][0]["metadataEntries"]
+        assert metadata
+        assert metadata[0]["text"] == "FOO"
+
+        assert asset_node["assetObservations"][0]["label"] == "asset_yields_observation"
 
 
 class TestPersistentInstanceAssetInProgress(
