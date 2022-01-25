@@ -117,8 +117,11 @@ def test_job_post_process_config():
     def basic():
         the_op()
 
-    # Ensure that the env var not existing will not throw an error, since resolution happens in post-processing.
-    the_job = basic.to_job(config={"ops": {"the_op": {"config": {"foo": {"env": "SOME_ENV_VAR"}}}}})
+    with environ({"SOME_ENV_VAR": None}):
+        # Ensure that the env var not existing will not throw an error, since resolution happens in post-processing.
+        the_job = basic.to_job(
+            config={"ops": {"the_op": {"config": {"foo": {"env": "SOME_ENV_VAR"}}}}}
+        )
 
     with environ({"SOME_ENV_VAR": "blah"}):
         assert the_job.execute_in_process().success
