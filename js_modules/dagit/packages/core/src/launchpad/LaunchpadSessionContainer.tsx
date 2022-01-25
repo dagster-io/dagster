@@ -170,7 +170,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
   const pipelineSelector = {
     ...repoAddressToSelector(repoAddress),
     pipelineName: pipeline.name,
-    solidSelection: currentSession?.solidSelection || undefined,
+    solidSelection: currentSession?.solidSelectionQuery || undefined,
   };
 
   const configResult = useQuery<PipelineExecutionConfigSchemaQuery>(
@@ -202,11 +202,11 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
   };
 
   const onOpSelectionChange = (
-    solidSelection: string[] | null,
-    solidSelectionQuery: string | null,
+    // solidSelection: string[] | null,
+    solidSelectionQuery: string[] | null,
   ) => {
     onSaveSession({
-      solidSelection,
+      // solidSelection,
       solidSelectionQuery,
     });
   };
@@ -379,8 +379,8 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
       base: {presetName: preset.name},
       name: preset.name,
       runConfigYaml: preset.runConfigYaml || '',
-      solidSelection: preset.solidSelection,
-      solidSelectionQuery: preset.solidSelection === null ? '*' : preset.solidSelection.join(','),
+      // solidSelection: preset.solidSelection,
+      solidSelectionQuery: preset.solidSelection,
       mode: preset.mode,
       tags: Object.entries(tagsDict).map(([key, value]) => ({key, value})),
       needsRefresh: false,
@@ -391,7 +391,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     repositorySelector: RepositorySelector,
     partitionSetName: string,
     partitionName: string,
-    sessionSolidSelection?: string[] | null,
+    sessionSolidSelectionQuery?: string[] | null,
   ) => {
     onConfigLoading();
     try {
@@ -436,7 +436,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
         runConfigYaml = partition.runConfigOrError.yaml;
       }
 
-      const solidSelection = sessionSolidSelection || partition.solidSelection;
+      const solidSelectionQuery = sessionSolidSelectionQuery || partition.solidSelection;
 
       onSaveSession({
         name: partition.name,
@@ -444,8 +444,8 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
           partitionName: partition.name,
         }),
         runConfigYaml,
-        solidSelection,
-        solidSelectionQuery: solidSelection === null ? '*' : solidSelection.join(','),
+        // solidSelection,
+        solidSelectionQuery: solidSelectionQuery,
         mode: partition.mode,
         tags,
         needsRefresh: false,
@@ -462,7 +462,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
       if (matchingPreset) {
         onSelectPreset({
           ...matchingPreset,
-          solidSelection: currentSession.solidSelection || matchingPreset.solidSelection,
+          solidSelection: currentSession.solidSelectionQuery || matchingPreset.solidSelection,
         });
       }
       return;
@@ -480,7 +480,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
         repositorySelector,
         partitionsSetName,
         partitionName,
-        currentSession.solidSelection,
+        currentSession.solidSelectionQuery,
       );
       onConfigLoaded();
     }
@@ -558,7 +558,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
                     : undefined
                 }
                 pipelineName={pipeline.name}
-                value={currentSession.solidSelection || null}
+                // value={currentSession.solidSelection || null}
                 query={currentSession.solidSelectionQuery || null}
                 onChange={onOpSelectionChange}
                 repoAddress={repoAddress}
@@ -677,7 +677,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
             <RunPreview
               document={previewedDocument}
               validation={preview ? preview.isPipelineConfigValid : null}
-              solidSelection={currentSession.solidSelection}
+              solidSelectionQuery={currentSession.solidSelectionQuery}
               runConfigSchema={runConfigSchema}
               onHighlightPath={(path) => editor.current?.moveCursorToPath(path)}
               onRemoveExtraPaths={(paths) => onRemoveExtraPaths(paths)}

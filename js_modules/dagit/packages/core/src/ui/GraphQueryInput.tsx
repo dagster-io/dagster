@@ -202,7 +202,7 @@ export const GraphQueryInput = React.memo(
     };
 
     const uncomitted = (pendingValue || '*') !== (props.value || '*');
-
+    const explodeComposites = true;
     return (
       <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
         <Popover
@@ -262,7 +262,7 @@ export const GraphQueryInput = React.memo(
                   onMouseDown={(e) => e.currentTarget.click()}
                   to={workspacePipelinePath({
                     ...props.linkToPreview,
-                    pipelineName: `${props.linkToPreview.pipelineName}~${pendingValue}`,
+                    pipelineName: `${props.linkToPreview.pipelineName}~${pendingValue}~${explodeComposites}`,
                   })}
                 >
                   Graph Preview <IconWIP color={ColorsWIP.Link} name="open_in_new" />

@@ -121,12 +121,14 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
   };
 
   const {opsQuery} = explorerPath;
+  console.log('handles', handles);
   const solids = React.useMemo(() => handles.map((h) => h.solid), [handles]);
   const solidsQueryEnabled = !parentHandle && !explorerPath.snapshotId;
-  const explodeCompositesEnabled =
-    !parentHandle &&
-    (options.explodeComposites ||
-      solids.some((f) => f.definition.__typename === 'CompositeSolidDefinition'));
+  // const explodeCompositesEnabled =
+  //   !parentHandle &&
+  //   (options.explodeComposites ||
+  //     solids.some((f) => f.definition.__typename === 'CompositeSolidDefinition'));
+  const explodeCompositesEnabled = true;
 
   const queryResultOps = React.useMemo(
     () =>
@@ -143,7 +145,10 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
 
   const backgroundColor = parentHandle ? ColorsWIP.White : ColorsWIP.White;
   const backgroundTranslucent = Color(backgroundColor).fade(0.6).toString();
-
+  // console.log(queryResultOps);
+  console.log('explorerPath.opsQuery:', explorerPath.opsQuery);
+  console.log('handleQueryChange:', handleQueryChange);
+  console.log('solids:', solids);
   return (
     <SplitPanelContainer
       identifier="explorer"

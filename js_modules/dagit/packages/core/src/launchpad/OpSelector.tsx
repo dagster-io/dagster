@@ -3,7 +3,6 @@ import {ColorsWIP, Popover} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {filterByQuery} from '../app/GraphQueryImpl';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {OP_NODE_INVOCATION_FRAGMENT} from '../graph/OpNode';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
@@ -16,9 +15,8 @@ import {OpSelectorQuery} from './types/OpSelectorQuery';
 interface IOpSelectorProps {
   pipelineName: string;
   serverProvidedSubsetError?: {message: string};
-  value: string[] | null;
-  query: string | null;
-  onChange: (value: string[] | null, query: string | null) => void;
+  query: string[] | null;
+  onChange: (query: string[] | null) => void;
   repoAddress: RepoAddress;
 }
 
@@ -52,23 +50,25 @@ export const OpSelector = (props: IOpSelectorProps) => {
   const {serverProvidedSubsetError, onChange, pipelineName, repoAddress} = props;
   const [focused, setFocused] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
+  const query = props.query;
 
-  const selector = {...repoAddressToSelector(repoAddress), pipelineName};
+  const selector = {
+    ...repoAddressToSelector(repoAddress),
+    pipelineName,
+    solidSelection: !query ? '*' : query.join(','),
+  };
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
-
   const {data, loading} = useQuery<OpSelectorQuery>(SOLID_SELECTOR_QUERY, {
     variables: {selector},
     fetchPolicy: 'cache-and-network',
   });
 
-  const query = props.query || '*';
   const ops = data?.pipelineOrError.__typename === 'Pipeline' ? data.pipelineOrError.solids : [];
   const opsFetchError =
     (data?.pipelineOrError.__typename !== 'Pipeline' && data?.pipelineOrError.message) || null;
-
-  const queryResultOps = filterByQuery(ops, query).all;
-  const invalidOpSelection = !loading && queryResultOps.length === 0;
+  console.log(ops);
+  const invalidOpSelection = !loading && ops.length === 0;
 
   const errorMessage = invalidOpSelection
     ? isJob
@@ -78,20 +78,18 @@ export const OpSelector = (props: IOpSelectorProps) => {
     ? serverProvidedSubsetError.message
     : opsFetchError;
 
-  const onTextChange = (nextQuery: string) => {
-    if (nextQuery === '') {
-      nextQuery = '*';
-    }
-    const queryResultOps = filterByQuery(ops, nextQuery).all;
-
-    // If all ops are returned, we set the subset to null rather than sending
-    // a comma separated list of evey solid to the API
-    if (queryResultOps.length === ops.length) {
-      onChange(null, nextQuery);
+  const onTextChange = (nextQueryText: string) => {
+    if (nextQueryText === '' || nextQueryText === '*') {
+      onChange(null);
     } else {
       onChange(
-        queryResultOps.map((s) => s.name),
-        nextQuery,
+        nextQueryText
+          .split(/(,| AND | and )/g)
+          .filter((value) => {
+            const parts = /(\*?\+*)([.\w\d\[\]_-]+)(\+*\*?)/.exec(value.trim());
+            return parts;
+          })
+          .map((value) => value.trim()),
       );
     }
   };
@@ -113,11 +111,11 @@ export const OpSelector = (props: IOpSelectorProps) => {
           onShortcut={() => inputRef.current?.focus()}
         >
           <GraphQueryInput
-            width={(query !== '*' && query !== '') || focused ? 350 : 90}
+            width={query || focused ? 350 : 90}
             intent={errorMessage ? 'danger' : 'none'}
             items={ops}
             ref={inputRef}
-            value={query}
+            value={!query ? '*' : query.join(',')}
             placeholder="Type an op subset…"
             onChange={onTextChange}
             onFocus={() => setFocused(true)}

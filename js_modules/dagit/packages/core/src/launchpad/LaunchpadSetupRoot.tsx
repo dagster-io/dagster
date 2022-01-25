@@ -41,7 +41,7 @@ const LaunchpadSetupAllowedRoot: React.FC<Props> = (props) => {
   const queryString = qs.parse(window.location.search, {ignoreQueryPrefix: true});
 
   React.useEffect(() => {
-    if (queryString.config || queryString.mode || queryString.solidSelection) {
+    if (queryString.config || queryString.mode || queryString.solidSelectionQuery) {
       const newSession: Partial<IExecutionSession> = {};
       if (typeof queryString.config === 'string') {
         newSession.runConfigYaml = queryString.config;
@@ -49,13 +49,14 @@ const LaunchpadSetupAllowedRoot: React.FC<Props> = (props) => {
       if (typeof queryString.mode === 'string') {
         newSession.mode = queryString.mode;
       }
-      if (queryString.solidSelection instanceof Array) {
-        newSession.solidSelection = queryString.solidSelection as string[];
-      } else if (typeof queryString.solidSelection === 'string') {
-        newSession.solidSelection = [queryString.solidSelection];
-      }
+      // if (queryString.solidSelection instanceof Array) {
+      //   newSession.solidSelectionQuery = queryString.solidSelection as string[];
+      // } else if (typeof queryString.solidSelection === 'string') {
+      //   newSession.solidSelectionQuery = [queryString.solidSelection];
+      // }
+      console.log(queryString, typeof queryString.solidSelectionQuery);
       if (typeof queryString.solidSelectionQuery === 'string') {
-        newSession.solidSelectionQuery = queryString.solidSelectionQuery;
+        newSession.solidSelectionQuery = [queryString.solidSelectionQuery];
       }
 
       onSave(applyCreateSession(data, newSession));

@@ -7,6 +7,7 @@ export interface ExplorerPath {
   snapshotId?: string;
   opsQuery: string;
   opNames: string[];
+  isExplodeComposites: boolean;
 }
 
 export function explorerPathToString(path: ExplorerPath) {
@@ -24,14 +25,24 @@ export function explorerPathFromString(path: string): ExplorerPath {
   const root = rootAndOps[0];
   const opNames = rootAndOps.length === 1 ? [''] : rootAndOps.slice(1);
 
-  const match = /^([^@~]+)@?([^~]+)?~?(.*)$/.exec(root);
-  const [, pipelineName, snapshotId, opsQuery] = [...(match || []), '', '', ''];
-
+  const match = /^([^@~]+)@?([^~]+)?~?(.*)~(true)$/.exec(root);
+  console.log('match', match);
+  const [, pipelineName, snapshotId, opsQuery, explodeComposites] = [
+    ...(match || []),
+    '',
+    '',
+    '',
+    '',
+  ];
+  const isExplodeComposites = explodeComposites === 'true';
+  console.log('isExplodeComposites', isExplodeComposites);
+  console.log('!!! explodeComposites', explodeComposites);
   return {
     pipelineName,
     snapshotId,
     opsQuery,
     opNames,
+    isExplodeComposites,
   };
 }
 

@@ -29,8 +29,7 @@ export interface IExecutionSession {
   base: SessionBase | null;
   mode: string | null;
   needsRefresh: boolean;
-  solidSelection: string[] | null;
-  solidSelectionQuery: string | null;
+  solidSelectionQuery: string[] | null;
   tags: PipelineRunTag[] | null;
 
   // this is set when you execute the session and freeze it
@@ -88,8 +87,7 @@ export function applyCreateSession(
         mode: null,
         base: null,
         needsRefresh: false,
-        solidSelection: null,
-        solidSelectionQuery: '*',
+        solidSelectionQuery: null,
         tags: null,
         runId: undefined,
         ...initial,

@@ -207,7 +207,6 @@ const EmptyHighlightedArray: never[] = [];
 
 export class PipelineGraph extends React.Component<IPipelineGraphProps> {
   viewportEl: React.RefObject<SVGViewport> = React.createRef();
-
   resolveOpPosition = (
     arg: OpNameOrPath,
     cb: (cx: number, cy: number, layout: IFullOpLayout) => void,

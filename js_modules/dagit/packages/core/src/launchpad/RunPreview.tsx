@@ -177,7 +177,7 @@ interface RunPreviewProps {
   onHighlightPath: (path: string[]) => void;
   onRemoveExtraPaths: (paths: string[]) => void;
   onScaffoldMissingConfig: () => void;
-  solidSelection: string[] | null;
+  solidSelectionQuery: string[] | null;
 }
 
 export const RunPreview: React.FC<RunPreviewProps> = (props) => {
@@ -187,7 +187,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
     onHighlightPath,
     onRemoveExtraPaths,
     onScaffoldMissingConfig,
-    solidSelection,
+    solidSelectionQuery,
     runConfigSchema,
   } = props;
   const [errorsOnly, setErrorsOnly] = React.useState(false);
@@ -275,7 +275,7 @@ export const RunPreview: React.FC<RunPreviewProps> = (props) => {
     const boxes = items
       .map((item) => {
         // If a solid selection is in use, discard anything not in it.
-        if (solidSelection?.length && !solidSelection?.includes(item.name)) {
+        if (solidSelectionQuery?.length && !solidSelectionQuery?.includes(item.name)) {
           return null;
         }
 
