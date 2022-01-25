@@ -13,23 +13,11 @@ export interface RunDetailsTestQuery_pipelineRunOrError_RunNotFoundError {
   __typename: "RunNotFoundError" | "PythonError";
 }
 
-export interface RunDetailsTestQuery_pipelineRunOrError_Run_stats_PythonError {
-  __typename: "PythonError";
-}
-
-export interface RunDetailsTestQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot {
-  __typename: "RunStatsSnapshot";
-  id: string;
-  endTime: number | null;
-  startTime: number | null;
-}
-
-export type RunDetailsTestQuery_pipelineRunOrError_Run_stats = RunDetailsTestQuery_pipelineRunOrError_Run_stats_PythonError | RunDetailsTestQuery_pipelineRunOrError_Run_stats_RunStatsSnapshot;
-
 export interface RunDetailsTestQuery_pipelineRunOrError_Run {
   __typename: "Run";
   id: string;
-  stats: RunDetailsTestQuery_pipelineRunOrError_Run_stats;
+  startTime: number | null;
+  endTime: number | null;
   status: RunStatus;
 }
 

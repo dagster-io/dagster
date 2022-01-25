@@ -16,10 +16,40 @@ from dagster.core.snap import (
     create_pipeline_snapshot_id,
 )
 from dagster.daemon.types import DaemonHeartbeat
-from dagster.utils import frozendict, merge_dicts
+from dagster.utils import EPOCH, frozendict, merge_dicts
 
 from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
 from .base import RunStorage
+
+
+def run_filter(filters):
+    def _filter_fn(run):
+        if not filters:
+            return True
+
+        if filters.run_ids and run.run_id not in filters.run_ids:
+            return False
+
+        if filters.statuses and run.status not in filters.statuses:
+            return False
+
+        if filters.pipeline_name and filters.pipeline_name != run.pipeline_name:
+            return False
+
+        if filters.mode and filters.mode != run.mode:
+            return False
+
+        if filters.tags and not all(
+            run.tags.get(key) == value for key, value in filters.tags.items()
+        ):
+            return False
+
+        if filters.snapshot_id and filters.snapshot_id != run.pipeline_snapshot_id:
+            return False
+
+        return True
+
+    return _filter_fn
 
 
 class InMemoryRunStorage(RunStorage):
@@ -88,33 +118,8 @@ class InMemoryRunStorage(RunStorage):
         check.opt_str_param(cursor, "cursor")
         check.opt_int_param(limit, "limit")
 
-        if not filters:
-            return self._slice(list(self._runs.values())[::-1], cursor, limit)
-
-        def run_filter(run):
-            if filters.run_ids and run.run_id not in filters.run_ids:
-                return False
-
-            if filters.statuses and run.status not in filters.statuses:
-                return False
-
-            if filters.pipeline_name and filters.pipeline_name != run.pipeline_name:
-                return False
-
-            if filters.mode and filters.mode != run.mode:
-                return False
-
-            if filters.tags and not all(
-                run.tags.get(key) == value for key, value in filters.tags.items()
-            ):
-                return False
-
-            if filters.snapshot_id and filters.snapshot_id != run.pipeline_snapshot_id:
-                return False
-
-            return True
-
-        matching_runs = list(filter(run_filter, list(self._runs.values())[::-1]))
+        filter_fn = run_filter(filters)
+        matching_runs = list(filter(filter_fn, list(self._runs.values())[::-1]))
         return self._slice(matching_runs, cursor=cursor, limit=limit)
 
     def get_runs_count(self, filters: PipelineRunsFilter = None) -> int:
@@ -156,8 +161,28 @@ class InMemoryRunStorage(RunStorage):
         limit: int = None,
         order_by: str = None,
         ascending: bool = False,
+        cursor: str = None,
     ) -> List[RunRecord]:
-        raise NotImplementedError("In memory run storage does not track timestamp yet.")
+        check.opt_inst_param(filters, "filters", PipelineRunsFilter)
+        check.opt_str_param(cursor, "cursor")
+        check.opt_int_param(limit, "limit")
+
+        # record here is a tuple of storage_id, run
+        records = enumerate(list(self._runs.values()))
+        run_filter_fn = run_filter(filters)
+        record_filter_fn = lambda record: run_filter_fn(record[1])
+
+        matching_records = list(filter(record_filter_fn, list(records)[::-1]))
+        sliced = self._slice(matching_records, cursor=cursor, limit=limit)
+        return [
+            RunRecord(
+                storage_id=record[0],
+                pipeline_run=record[1],
+                create_timestamp=EPOCH,  # hack just to populate some timestamp
+                update_timestamp=EPOCH,  # hack just to populate some timestamp
+            )
+            for record in sliced
+        ]
 
     def get_run_tags(self) -> List[Tuple[str, Set[str]]]:
         all_tags = defaultdict(set)

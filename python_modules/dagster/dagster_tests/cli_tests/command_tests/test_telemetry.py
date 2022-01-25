@@ -29,6 +29,9 @@ EXPECTED_KEYS = set(
         "python_version",
         "metadata",
         "version",
+        "os_desc",
+        "os_platform",
+        "dagster_version",
     ]
 )
 

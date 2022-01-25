@@ -38,7 +38,8 @@ export const Sizes = () => {
           <span style={{whiteSpace: 'nowrap'}}>Value: {value.toFixed(1)}</span>
         )}
         onChange={(values: number[]) => {
-          setValue(values[0]);
+          const [first] = values;
+          first && setValue(first);
         }}
       >
         <MultiSlider.Handle value={value} type="full" intentAfter={Intent.PRIMARY} />
@@ -53,8 +54,11 @@ export const Sizes = () => {
           <span style={{whiteSpace: 'nowrap'}}>Value: {value.toFixed(1)}</span>
         )}
         onChange={(values: number[]) => {
-          setMinValue(Math.min(values[0], values[1]));
-          setValue(Math.max(values[0], values[1]));
+          const [first, second] = values;
+          if (typeof first === 'number' && typeof second === 'number') {
+            setMinValue(Math.min(first, second));
+            setValue(Math.max(first, second));
+          }
         }}
       >
         <MultiSlider.Handle value={minValue} type="full" intentAfter={Intent.PRIMARY} />

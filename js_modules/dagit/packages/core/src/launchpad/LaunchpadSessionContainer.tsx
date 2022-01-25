@@ -52,6 +52,10 @@ import {SessionSettingsBar} from './SessionSettingsBar';
 import {TagContainer, TagEditor} from './TagEditor';
 import {scaffoldPipelineConfig} from './scaffoldType';
 import {ConfigEditorGeneratorPipelineFragment_presets} from './types/ConfigEditorGeneratorPipelineFragment';
+import {
+  ConfigPartitionSelectionQuery,
+  ConfigPartitionSelectionQueryVariables,
+} from './types/ConfigPartitionSelectionQuery';
 import {LaunchpadSessionContainerPartitionSetsFragment} from './types/LaunchpadSessionContainerPartitionSetsFragment';
 import {LaunchpadSessionContainerPipelineFragment} from './types/LaunchpadSessionContainerPipelineFragment';
 import {PipelineExecutionConfigSchemaQuery} from './types/PipelineExecutionConfigSchemaQuery';
@@ -392,7 +396,10 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     onConfigLoading();
     try {
       const {base} = currentSession;
-      const {data} = await client.query({
+      const {data} = await client.query<
+        ConfigPartitionSelectionQuery,
+        ConfigPartitionSelectionQueryVariables
+      >({
         query: CONFIG_PARTITION_SELECTION_QUERY,
         variables: {repositorySelector, partitionSetName, partitionName},
       });
@@ -400,7 +407,8 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
       if (
         !data ||
         !data.partitionSetOrError ||
-        data.partitionSetOrError.__typename !== 'PartitionSet'
+        data.partitionSetOrError.__typename !== 'PartitionSet' ||
+        !data.partitionSetOrError.partition
       ) {
         onConfigLoaded();
         return;

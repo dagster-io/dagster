@@ -11,7 +11,11 @@ from dagster.core.host_representation.external_data import (
 from . import external
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
-from .pipelines.pipeline import GrapheneAssetMaterialization, GraphenePipeline
+from .pipelines.pipeline import (
+    GrapheneAssetMaterialization,
+    GrapheneMaterializationCount,
+    GraphenePipeline,
+)
 from .util import non_null_list
 
 
@@ -54,10 +58,12 @@ class GrapheneAssetNode(graphene.ObjectType):
         limit=graphene.Int(),
     )
     partitionKeys = non_null_list(graphene.String)
+    partitionDefinition = graphene.String()
     latestMaterializationByPartition = graphene.Field(
         graphene.NonNull(graphene.List(GrapheneAssetMaterialization)),
         partitions=graphene.List(graphene.String),
     )
+    materializationCountByPartition = non_null_list(GrapheneMaterializationCount)
 
     class Meta:
         name = "AssetNode"
@@ -124,7 +130,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             for dep in self._external_asset_node.dependencies
         ]
 
-    def resolve_dependencyByKeys(self, _graphene_info):
+    def resolve_dependedByKeys(self, _graphene_info):
         return [
             GrapheneAssetKey(path=dep.downstream_asset_key.path)
             for dep in self._external_asset_node.depended_by
@@ -170,7 +176,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             if self._external_repository.has_external_pipeline(job_name)
         ]
 
-    def resolve_partitionKeys(self, _graphene_info):
+    def get_partition_keys(self):
         # TODO: Add functionality for dynamic partitions definition
         partitions_def_data = self._external_asset_node.partitions_def_data
         if partitions_def_data:
@@ -183,6 +189,15 @@ class GrapheneAssetNode(graphene.ObjectType):
                 ]
         return []
 
+    def resolve_partitionKeys(self, _graphene_info):
+        return self.get_partition_keys()
+
+    def resolve_partitionDefinition(self, _graphene_info):
+        partitions_def_data = self._external_asset_node.partitions_def_data
+        if partitions_def_data:
+            return str(partitions_def_data.get_partitions_definition())
+        return None
+
     def resolve_latestMaterializationByPartition(self, _graphene_info, **kwargs):
         from ..implementation.fetch_assets import get_asset_events
 
@@ -190,7 +205,8 @@ class GrapheneAssetNode(graphene.ObjectType):
             lambda event: event.dagster_event.step_materialization_data.materialization.partition
         )
 
-        partitions = kwargs.get("partitions")
+        partitions = kwargs.get("partitions") or self.get_partition_keys()
+
         events_for_partitions = get_asset_events(
             _graphene_info,
             self._external_asset_node.asset_key,
@@ -214,6 +230,19 @@ class GrapheneAssetNode(graphene.ObjectType):
         return [
             GrapheneAssetMaterialization(event=event) if event else None
             for event in ordered_materializations
+        ]
+
+    def resolve_materializationCountByPartition(self, _graphene_info):
+        asset_key = self._external_asset_node.asset_key
+        partition_keys = self.get_partition_keys()
+
+        count_by_partition = _graphene_info.context.instance.get_materialization_count_by_partition(
+            [self._external_asset_node.asset_key]
+        )[asset_key]
+
+        return [
+            GrapheneMaterializationCount(partition_key, count_by_partition.get(partition_key, 0))
+            for partition_key in partition_keys
         ]
 
 

@@ -1,6 +1,7 @@
 import uuid
 from contextlib import contextmanager
 
+import pytest
 from dagster import AssetKey, OutputDefinition, build_input_context, build_output_context, solid
 from hacker_news_assets.resources.snowflake_io_manager import (  # pylint: disable=E0401
     PROD_SNOWFLAKE_CONF,

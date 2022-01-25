@@ -154,6 +154,7 @@ def test_k8s_executor_combine_configs(
                         ],
                         "env_config_maps": [TEST_OTHER_CONFIGMAP_NAME, TEST_OTHER_CONFIGMAP_NAME],
                         "env_secrets": [TEST_OTHER_SECRET_NAME, TEST_OTHER_SECRET_NAME],
+                        "labels": {"executor_label_key": "executor_label_value"},
                     }
                 }
             },
@@ -178,6 +179,10 @@ def test_k8s_executor_combine_configs(
     step_pod = step_pods[0]
 
     assert len(step_pod.spec.containers) == 1, str(step_pod)
+
+    labels = step_pod.metadata.labels
+    assert labels["run_launcher_label_key"] == "run_launcher_label_value"
+    assert labels["executor_label_key"] == "executor_label_value"
 
     env_from = step_pod.spec.containers[0].env_from
 

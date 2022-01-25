@@ -26,7 +26,7 @@ from .utils import delete_job
 @executor(
     name="k8s",
     config_schema=merge_dicts(
-        DagsterK8sJobConfig.config_type_pipeline_run(),
+        DagsterK8sJobConfig.config_type_job(),
         {"job_namespace": Field(StringSource, is_required=False)},
         {"retries": get_retries_config()},
     ),
@@ -56,6 +56,9 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             env_config_maps: ...
             env_secrets: ...
             job_image: ... # leave out if using userDeployments
+
+    Configuration set on the Kubernetes Jobs and Pods created by the `K8sRunLauncher` will also be
+    set on Kubernetes Jobs and Pods created by the `k8s_job_executor`.
     """
 
     run_launcher = init_context.instance.run_launcher
@@ -87,6 +90,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         env_secrets=run_launcher.env_secrets + (exc_cfg.get("env_secrets") or []),
         volume_mounts=run_launcher.volume_mounts + (exc_cfg.get("volume_mounts") or []),
         volumes=run_launcher.volumes + (exc_cfg.get("volumes") or []),
+        labels=merge_dicts(run_launcher.labels, exc_cfg.get("labels", {})),
     )
 
     return StepDelegatingExecutor(

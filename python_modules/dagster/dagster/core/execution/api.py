@@ -893,7 +893,7 @@ def _check_execute_pipeline_args(
     Optional[dict],
     Optional[str],
     Dict[str, Any],
-    FrozenSet[str],
+    Optional[FrozenSet[str]],
     Optional[List[str]],
 ]:
     pipeline = _check_pipeline(pipeline)

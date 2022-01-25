@@ -262,7 +262,61 @@ class DynamicOutput(
         )
 
 
-MetadataValues = Union[str, float, int, Dict, EventMetadataEntry]
+@whitelist_for_serdes
+class AssetObservation(
+    NamedTuple(
+        "_AssetObservation",
+        [
+            ("asset_key", AssetKey),
+            ("metadata_entries", List[EventMetadataEntry]),
+            ("partition", Optional[str]),
+        ],
+    )
+):
+    """Event that captures metadata about an asset at a point in time.
+
+    Args:
+        asset_key (Union[str, List[str], AssetKey]): A key to identify the asset.
+        metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the asset.
+        partition (Optional[str]): The name of a partition of the asset that the metadata
+            corresponds to.
+        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadata]]]):
+            Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
+            one of the following: string, float, int, JSON-serializable dict, JSON-serializable
+            list, and one of the data classes returned by a EventMetadata static method.
+    """
+
+    def __new__(
+        cls,
+        asset_key: Union[List[str], AssetKey, str],
+        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        partition: Optional[str] = None,
+        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
+    ):
+        if isinstance(asset_key, AssetKey):
+            check.inst_param(asset_key, "asset_key", AssetKey)
+        elif isinstance(asset_key, str):
+            asset_key = AssetKey(parse_asset_key_string(asset_key))
+        elif isinstance(asset_key, list):
+            check.is_list(asset_key, of_type=str)
+            asset_key = AssetKey(asset_key)
+        else:
+            check.is_tuple(asset_key, of_type=str)
+            asset_key = AssetKey(asset_key)
+
+        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        metadata_entries = check.opt_list_param(
+            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+        )
+
+        return super(AssetObservation, cls).__new__(
+            cls,
+            asset_key=asset_key,
+            metadata_entries=cast(
+                List[EventMetadataEntry], parse_metadata(metadata, metadata_entries)
+            ),
+            partition=check.opt_str_param(partition, "partition"),
+        )
 
 
 @whitelist_for_serdes
@@ -312,7 +366,7 @@ class AssetMaterialization(
         metadata_entries: Optional[List[EventMetadataEntry]] = None,
         partition: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
-        metadata: Optional[Dict[str, MetadataValues]] = None,
+        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
@@ -514,7 +568,7 @@ class ExpectationResult(
         label: Optional[str] = None,
         description: Optional[str] = None,
         metadata_entries: Optional[List[EventMetadataEntry]] = None,
-        metadata: Optional[Dict[str, MetadataValues]] = None,
+        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
     ):
         metadata_entries = check.opt_list_param(
             metadata_entries, "metadata_entries", of_type=EventMetadataEntry
@@ -568,7 +622,7 @@ class TypeCheck(
         success: bool,
         description: Optional[str] = None,
         metadata_entries: Optional[List[EventMetadataEntry]] = None,
-        metadata: Optional[Dict[str, MetadataValues]] = None,
+        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
     ):
 
         metadata_entries = check.opt_list_param(
@@ -607,7 +661,7 @@ class Failure(Exception):
         self,
         description: Optional[str] = None,
         metadata_entries: Optional[List[EventMetadataEntry]] = None,
-        metadata: Optional[Dict[str, MetadataValues]] = None,
+        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
     ):
         metadata_entries = check.opt_list_param(
             metadata_entries, "metadata_entries", of_type=EventMetadataEntry

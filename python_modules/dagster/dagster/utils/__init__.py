@@ -15,9 +15,9 @@ import threading
 from collections import OrderedDict, defaultdict, namedtuple
 from datetime import timezone
 from enum import Enum
-from typing import TYPE_CHECKING, Callable, ContextManager, Generator, Generic, Iterator
+from typing import TYPE_CHECKING, Any, Callable, ContextManager, Generator, Generic, Iterator
 from typing import Mapping as TypingMapping
-from typing import Optional, Type, TypeVar, Union, cast
+from typing import Optional, Type, TypeVar, Union, cast, overload
 from warnings import warn
 
 import _thread as thread
@@ -38,6 +38,7 @@ else:
 if TYPE_CHECKING:
     from dagster.core.events import DagsterEvent
 
+T = TypeVar("T")
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)
 
@@ -309,6 +310,16 @@ def safe_tempfile_path() -> Iterator[str]:
             os.unlink(path)
 
 
+@overload
+def ensure_gen(thing_or_gen: Generator[T, Any, Any]) -> Generator[T, Any, Any]:
+    pass
+
+
+@overload
+def ensure_gen(thing_or_gen: T) -> Generator[T, Any, Any]:
+    pass
+
+
 def ensure_gen(thing_or_gen):
     if not inspect.isgenerator(thing_or_gen):
 
@@ -372,8 +383,6 @@ def start_termination_thread(termination_event):
     int_thread.daemon = True
     int_thread.start()
 
-
-T = TypeVar("T")
 
 # Executes the next() function within an instance of the supplied context manager class
 # (leaving the context before yielding each result)

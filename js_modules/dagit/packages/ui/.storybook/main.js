@@ -7,5 +7,12 @@ module.exports = {
     "@storybook/addon-links",
     "@storybook/addon-essentials"
   ],
-  "framework": "@storybook/react"
+  "framework": "@storybook/react",
+  "core": {
+    "builder": "webpack5"
+  },
+  // https://storybook.js.org/docs/react/configure/webpack#bundle-splitting
+  features: {
+    storyStoreV7: true,
+  }
 }

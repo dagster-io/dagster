@@ -19,6 +19,7 @@ from dagster.daemon.controller import (
     debug_daemon_heartbeats,
     get_daemon_status,
 )
+from dagster.daemon.daemon import get_telemetry_daemon_session_id
 from dagster.utils.interrupts import capture_interrupts, raise_interrupts_as
 
 
@@ -39,7 +40,7 @@ def run_command():
             _daemon_run_command(instance)
 
 
-@telemetry_wrapper
+@telemetry_wrapper(metadata={"DAEMON_SESSION_ID": get_telemetry_daemon_session_id()})
 def _daemon_run_command(instance):
     with daemon_controller_from_instance(
         instance, heartbeat_tolerance_seconds=_get_heartbeat_tolerance()

@@ -109,14 +109,11 @@ function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
   if (!run) {
     return metadata;
   }
-  if (run.stats.__typename !== 'RunStatsSnapshot') {
-    return metadata;
+  if (run.startTime) {
+    metadata.startedPipelineAt = fromTimestamp(run.startTime);
   }
-  if (run.stats.startTime) {
-    metadata.startedPipelineAt = fromTimestamp(run.stats.startTime);
-  }
-  if (run.stats.endTime) {
-    metadata.exitedAt = fromTimestamp(run.stats.endTime);
+  if (run.endTime) {
+    metadata.exitedAt = fromTimestamp(run.endTime);
   }
 
   run.stepStats.forEach((stepStat) => {

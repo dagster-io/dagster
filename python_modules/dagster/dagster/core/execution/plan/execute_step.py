@@ -6,6 +6,7 @@ from dagster import check
 from dagster.core.definitions import (
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     ExpectationResult,
     Materialization,
     Output,
@@ -331,6 +332,8 @@ def core_dagster_event_sequence_for_step(
             # to do something with these in the above path eventually
             elif isinstance(user_event, (AssetMaterialization, Materialization)):
                 yield DagsterEvent.asset_materialization(step_context, user_event, input_lineage)
+            elif isinstance(user_event, AssetObservation):
+                yield DagsterEvent.asset_observation(step_context, user_event)
             elif isinstance(user_event, ExpectationResult):
                 yield DagsterEvent.step_expectation_result(step_context, user_event)
             else:

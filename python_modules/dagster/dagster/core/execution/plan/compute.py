@@ -5,6 +5,7 @@ from typing import Any, AsyncGenerator, Callable, Dict, Iterator, List, Set, Uni
 from dagster import check
 from dagster.core.definitions import (
     AssetMaterialization,
+    AssetObservation,
     DynamicOutput,
     ExpectationResult,
     Materialization,
@@ -22,7 +23,12 @@ from .outputs import StepOutput, StepOutputProperties
 from .utils import solid_execution_error_boundary
 
 SolidOutputUnion = Union[
-    DynamicOutput, Output, AssetMaterialization, Materialization, ExpectationResult
+    DynamicOutput,
+    Output,
+    AssetMaterialization,
+    Materialization,
+    ExpectationResult,
+    AssetObservation,
 ]
 
 
@@ -59,7 +65,14 @@ def create_step_outputs(
 def _validate_event(event: Any, step_context: StepExecutionContext) -> SolidOutputUnion:
     if not isinstance(
         event,
-        (DynamicOutput, Output, AssetMaterialization, Materialization, ExpectationResult),
+        (
+            DynamicOutput,
+            Output,
+            AssetMaterialization,
+            Materialization,
+            ExpectationResult,
+            AssetObservation,
+        ),
     ):
         raise DagsterInvariantViolationError(
             (

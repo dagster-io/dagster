@@ -13,7 +13,7 @@ APIs
 
 .. autoclass:: K8sRunLauncher
 
-.. autodata:: k8s_job_executor
+.. autoconfigurable:: k8s_job_executor
   :annotation: ExecutorDefinition
 
 

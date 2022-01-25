@@ -16,6 +16,9 @@ from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, UserDefinedDagsterK8sCo
 
 
 def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
+
+    labels = {"foo_label_key": "bar_label_value"}
+
     # Construct a K8s run launcher in a fake k8s environment.
     mock_k8s_client_batch_api = mock.MagicMock()
     k8s_run_launcher = K8sRunLauncher(
@@ -27,6 +30,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
         load_incluster_config=False,
         kubeconfig_file=kubeconfig_file,
         k8s_client_batch_api=mock_k8s_client_batch_api,
+        labels=labels,
     )
 
     # Construct Dagster run tags with user defined k8s config.
@@ -82,6 +86,9 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
         assert DAGSTER_PG_PASSWORD_ENV_VAR in [
             env.name for env in kwargs["body"].spec.template.spec.containers[0].env
         ]
+
+        labels = kwargs["body"].spec.template.metadata.labels
+        assert labels["foo_label_key"] == "bar_label_value"
 
 
 def test_no_postgres(kubeconfig_file):

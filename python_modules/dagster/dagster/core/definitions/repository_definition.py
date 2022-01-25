@@ -6,7 +6,7 @@ from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantV
 from dagster.utils import merge_dicts
 
 from .events import AssetKey
-from .graph_definition import GraphDefinition
+from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .job_definition import JobDefinition
 from .partition import PartitionScheduleDefinition, PartitionSetDefinition
 from .pipeline_definition import PipelineDefinition
@@ -874,6 +874,10 @@ class CachingRepositoryData(RepositoryData):
         solid_to_pipeline = {}
         for pipeline in self._all_pipelines:
             for solid_def in pipeline.all_node_defs + [pipeline.graph]:
+                # skip checks for subselected graphs because they don't have their own names
+                if isinstance(solid_def, SubselectedGraphDefinition):
+                    break
+
                 if solid_def.name not in solid_defs:
                     solid_defs[solid_def.name] = solid_def
                     solid_to_pipeline[solid_def.name] = pipeline.name

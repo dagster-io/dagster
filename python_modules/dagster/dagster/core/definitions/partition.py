@@ -824,19 +824,18 @@ def dynamic_partitioned_config(
 def get_cron_schedule(
     schedule_type: ScheduleType,
     time_of_day: time = time(0, 0),
-    day_of_week: Optional[int] = 0,
+    execution_day: Optional[int] = None,
 ) -> str:
     minute = time_of_day.minute
     hour = time_of_day.hour
-    day = day_of_week
 
     if schedule_type is ScheduleType.HOURLY:
         return f"{minute} * * * *"
     elif schedule_type is ScheduleType.DAILY:
         return f"{minute} {hour} * * *"
     elif schedule_type is ScheduleType.WEEKLY:
-        return f"{minute} {hour} * * {day}"
+        return f"{minute} {hour} * * {execution_day if execution_day != None else 0}"
     elif schedule_type is ScheduleType.MONTHLY:
-        return f"{minute} {hour} {day} * *"
+        return f"{minute} {hour} {execution_day if execution_day != None else 1} * *"
     else:
         check.assert_never(schedule_type)

@@ -1090,6 +1090,7 @@ class DagsterInstance:
         limit: int = None,
         order_by: str = None,
         ascending: bool = False,
+        cursor: str = None,
     ) -> List[RunRecord]:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
 
@@ -1103,7 +1104,7 @@ class DagsterInstance:
         Returns:
             List[RunRecord]: List of run records stored in the run storage.
         """
-        return self._run_storage.get_run_records(filters, limit, order_by, ascending)
+        return self._run_storage.get_run_records(filters, limit, order_by, ascending, cursor)
 
     def wipe(self):
         self._run_storage.wipe()

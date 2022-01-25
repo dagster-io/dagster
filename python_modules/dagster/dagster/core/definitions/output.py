@@ -160,6 +160,10 @@ class OutputDefinition:
         return self._asset_key is not None
 
     @property
+    def asset_partitions_def(self):
+        return self._asset_partitions_def
+
+    @property
     def hardcoded_asset_key(self) -> Optional[AssetKey]:
         if not callable(self._asset_key):
             return self._asset_key
