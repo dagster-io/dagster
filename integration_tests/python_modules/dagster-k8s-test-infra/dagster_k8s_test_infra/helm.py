@@ -656,7 +656,6 @@ def helm_chart_for_user_deployments_subchart_disabled(namespace, docker_image, s
                         "service": {
                             "annotations": {"dagster-integration-tests": "ucd-1-svc-annotation"}
                         },
-                        "replicaCount": 1,
                         "volumeMounts": [
                             {
                                 "name": "test-volume",
@@ -705,7 +704,6 @@ def helm_chart_for_user_deployments_subchart(namespace, docker_image, should_cle
                     "define_demo_execution_repo",
                 ],
                 "port": 3030,
-                "replicaCount": 1,
             }
         ],
     }
@@ -748,7 +746,6 @@ def _base_helm_config(docker_image):
                     "service": {
                         "annotations": {"dagster-integration-tests": "ucd-1-svc-annotation"}
                     },
-                    "replicaCount": 1,
                     "volumeMounts": [
                         {
                             "name": "test-volume",

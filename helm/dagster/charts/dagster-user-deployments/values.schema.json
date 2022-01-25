@@ -192,11 +192,6 @@
                     "title": "Port",
                     "type": "integer"
                 },
-                "replicaCount": {
-                    "title": "Replicacount",
-                    "default": 1,
-                    "type": "integer"
-                },
                 "env": {
                     "title": "Env",
                     "type": "object",
