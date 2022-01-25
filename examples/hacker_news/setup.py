@@ -25,7 +25,7 @@ setup(
         "dagstermill",
         "dbt>=0.19.0",
         "mock",
-        "pandas",
+        "pandas<1.4.0",
         "pyarrow>=4.0.0",
         "pyspark",
         "requests",
