@@ -475,7 +475,7 @@ class TestEventLogStorage:
         assert d_stats.step_key == "D"
         assert d_stats.status.value == "SUCCESS"
         assert d_stats.end_time - d_stats.start_time == 150
-        assert len(d_stats.materializations) == 3
+        assert len(d_stats.materialization_events) == 3
         assert len(d_stats.expectation_results) == 2
         assert len(c_stats.attempts_list) == 1
 
