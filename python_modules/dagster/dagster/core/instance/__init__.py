@@ -363,7 +363,7 @@ class DagsterInstance:
                     "This directory is used to store metadata across sessions, or load the dagster.yaml "
                     "file which can configure storing metadata in an external database.\n"
                     "You can resolve this error by exporting the environment variable. For example, you can run the following command in your shell or include it in your shell configuration file:\n"
-                    '\texport DAGSTER_HOME="~/dagster_home"\n'
+                    '\texport DAGSTER_HOME=~"/dagster_home"\n'
                     "or PowerShell\n"
                     "$env:DAGSTER_HOME = ($home + '\\dagster_home')"
                     "or batch"
