@@ -39,7 +39,7 @@ export interface PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stats_
 export type PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stats = PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot | PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
 
 export interface PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stepStats_materializations {
-  __typename: "Materialization";
+  __typename: "MaterializationEvent";
 }
 
 export interface PartitionSetLoaderQuery_pipelineRunsOrError_Runs_results_stepStats_expectationResults {
