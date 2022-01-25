@@ -51,7 +51,6 @@ export const PipelineExplorerContainer: React.FC<{
     explodeComposites: false,
   });
 
-  const selectedName = explorerPath.opNames[explorerPath.opNames.length - 1];
   const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
   const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
   const {flagAssetGraph} = useFeatureFlags();
@@ -81,28 +80,6 @@ export const PipelineExplorerContainer: React.FC<{
           ? explodeCompositesInHandleGraph(result.solidHandles)
           : result.solidHandles;
 
-        const selectedHandles = displayedHandles.filter((h) =>
-          selectedName.split(',').includes(h.solid.name),
-        );
-
-        // Run a few assertions on the state of the world and redirect the user
-        // back to safety if they've landed in an invalid place. Note that we can
-        // pop one layer at a time and this renders recursively until we reach a
-        // valid parent.
-        const invalidSelection = selectedName && !selectedHandles;
-        const invalidParent =
-          parentHandle && parentHandle.solid.definition.__typename !== 'CompositeSolidDefinition';
-
-        if (invalidSelection || invalidParent) {
-          onChangeExplorerPath(
-            {
-              ...explorerPath,
-              opNames: explorerPath.opNames.slice(0, explorerPath.opNames.length - 1),
-            },
-            'replace',
-          );
-        }
-
         const isAssetJob = pipelineOrError.__typename === 'Pipeline' && pipelineOrError.isAssetJob;
 
         if (flagAssetGraph && isAssetJob) {
@@ -123,7 +100,6 @@ export const PipelineExplorerContainer: React.FC<{
               handles={displayedHandles}
               explorerPath={explorerPath}
               onChangeExplorerPath={onChangeExplorerPath}
-              selectedHandles={selectedHandles}
             />
           );
         }
@@ -137,7 +113,6 @@ export const PipelineExplorerContainer: React.FC<{
             repoAddress={repoAddress}
             handles={displayedHandles}
             parentHandle={parentHandle ? parentHandle : undefined}
-            selectedHandle={selectedHandles[0]}
             isGraph={isGraph}
             getInvocations={(definitionName) =>
               displayedHandles
