@@ -669,14 +669,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             conn.execute(snapshot_insert)
             return snapshot_id
 
-    def get_telemetry_watermark(self) -> str:
-        query = db.select([InstanceInfo.c.telemetry_id])
+    def get_run_storage_id(self) -> str:
+        query = db.select([InstanceInfo.c.run_storage_id])
         row = self.fetchone(query)
         if not row:
-            telemetry_id = str(uuid.uuid4())
+            run_storage_id = str(uuid.uuid4())
             with self.connect() as conn:
-                conn.execute(InstanceInfo.insert().values(telemetry_id=telemetry_id))
-            return telemetry_id
+                conn.execute(InstanceInfo.insert().values(run_storage_id=run_storage_id))
+            return run_storage_id
         else:
             return row[0]
 

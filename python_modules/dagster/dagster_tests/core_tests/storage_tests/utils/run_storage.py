@@ -128,10 +128,10 @@ class TestRunStorage:
 
     def test_storage_telemetry(self, storage):
         assert storage
-        watermark = storage.get_telemetry_watermark()
-        assert isinstance(watermark, str)
-        watermark_again = storage.get_telemetry_watermark()
-        assert watermark == watermark_again
+        storage_id = storage.get_run_storage_id()
+        assert isinstance(storage_id, str)
+        storage_id_again = storage.get_run_storage_id()
+        assert storage_id == storage_id_again
 
     def test_fetch_by_pipeline(self, storage):
         assert storage

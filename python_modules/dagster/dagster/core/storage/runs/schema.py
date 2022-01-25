@@ -80,7 +80,7 @@ BulkActionsTable = db.Table(
 InstanceInfo = db.Table(
     "instance_info",
     RunStorageSqlMetadata,
-    db.Column("telemetry_id", db.Text),
+    db.Column("run_storage_id", db.Text),
 )
 
 db.Index("idx_run_tags", RunTagsTable.c.key, RunTagsTable.c.value, mysql_length=64)
