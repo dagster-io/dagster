@@ -578,7 +578,8 @@ def external_asset_graph_from_defs(
         AssetKey, List[Tuple[OutputDefinition, NodeDefinition, PipelineDefinition]]
     ] = defaultdict(list)
 
-    deps: Dict[AssetKey, Dict[str, ExternalAssetDependency]] = defaultdict(dict)
+    deps_in: Dict[AssetKey, Dict[str, ExternalAssetDependency]] = defaultdict(dict)
+    deps_out: Dict[AssetKey, Dict[str, ExternalAssetDependency]] = defaultdict(dict)
     dep_by: Dict[AssetKey, List[ExternalAssetDependedBy]] = defaultdict(list)
     all_upstream_asset_keys: Set[AssetKey] = set()
 
@@ -603,7 +604,7 @@ def external_asset_graph_from_defs(
                 for input_name in in_deps:
                     upstream_asset_key = node_def.input_def_named(input_name).hardcoded_asset_key
                     if upstream_asset_key:
-                        deps[asset_key][input_name] = ExternalAssetDependency(
+                        deps_in[asset_key][input_name] = ExternalAssetDependency(
                             upstream_asset_key=upstream_asset_key, input_name=input_name
                         )
                         dep_by[upstream_asset_key].append(
@@ -619,8 +620,7 @@ def external_asset_graph_from_defs(
                         output_name
                     ).hardcoded_asset_key
                     if internal_upstream_asset_key:
-                        # FIXME: this will break if an input shares a name with an output
-                        deps[asset_key][output_name] = ExternalAssetDependency(
+                        deps_out[asset_key][output_name] = ExternalAssetDependency(
                             upstream_asset_key=internal_upstream_asset_key,
                             output_name=output_name,
                         )
@@ -638,7 +638,7 @@ def external_asset_graph_from_defs(
     asset_nodes = [
         ExternalAssetNode(
             asset_key=asset_key,
-            dependencies=list(deps[asset_key].values()),
+            dependencies=list(deps_in[asset_key].values()),
             depended_by=dep_by[asset_key],
             job_names=[],
         )
@@ -655,7 +655,7 @@ def external_asset_graph_from_defs(
         asset_nodes.append(
             ExternalAssetNode(
                 asset_key=foreign_asset.key,
-                dependencies=list(deps[foreign_asset.key].values()),
+                dependencies=list(deps_in[foreign_asset.key].values()),
                 depended_by=dep_by[foreign_asset.key],
                 job_names=[],
                 op_description=foreign_asset.description,
@@ -688,7 +688,7 @@ def external_asset_graph_from_defs(
         asset_nodes.append(
             ExternalAssetNode(
                 asset_key=asset_key,
-                dependencies=list(deps[asset_key].values()),
+                dependencies=list(deps_in[asset_key].values()) + list(deps_out[asset_key].values()),
                 depended_by=dep_by[asset_key],
                 op_name=node_def.name,
                 op_description=node_def.description,

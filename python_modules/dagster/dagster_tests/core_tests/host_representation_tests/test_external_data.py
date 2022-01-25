@@ -1,7 +1,7 @@
 import pytest
 from dagster import AssetKey, DagsterInvariantViolationError, Out
 from dagster.check import CheckError
-from dagster.core.asset_defs import ForeignAsset, asset, build_assets_job, multi_asset
+from dagster.core.asset_defs import ForeignAsset, asset, build_assets_job, multi_asset, AssetIn
 from dagster.core.host_representation.external_data import (
     ExternalAssetDependedBy,
     ExternalAssetDependency,
@@ -73,6 +73,67 @@ def test_two_asset_job():
             job_names=["assets_job"],
             output_name="result",
             output_description=None,
+        ),
+    ]
+
+
+def test_in_dep_matches_out_dep():
+    a = ForeignAsset(key=AssetKey("a"), description=None)
+
+    @multi_asset(
+        outs={"a": Out(asset_key=AssetKey("not_a")), "b": Out(in_deps=["a"], out_deps=["a"])}
+    )
+    def foo(a):
+        pass
+
+    assets_job = build_assets_job("assets_job", [foo], source_assets=[a])
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], foreign_assets_by_key={})
+
+    assert external_asset_nodes[-1] == ExternalAssetNode(
+        asset_key=AssetKey(["b"]),
+        dependencies=[
+            ExternalAssetDependency(upstream_asset_key=AssetKey(["a"]), input_name="a"),
+            ExternalAssetDependency(upstream_asset_key=AssetKey(["not_a"]), output_name="a"),
+        ],
+        depended_by=[],
+        op_name="foo",
+        job_names=["assets_job"],
+        output_name="b",
+    )
+
+
+def test_input_name_matches_output_name():
+    not_result = ForeignAsset(key=AssetKey("not_result"), description=None)
+
+    @asset(ins={"result": AssetIn(asset_key=AssetKey("not_result"))})
+    def something(result):
+        pass
+
+    assets_job = build_assets_job("assets_job", [something], source_assets=[not_result])
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], foreign_assets_by_key={})
+
+    assert external_asset_nodes == [
+        ExternalAssetNode(
+            asset_key=AssetKey("not_result"),
+            dependencies=[],
+            depended_by=[
+                ExternalAssetDependedBy(
+                    downstream_asset_key=AssetKey("something"), input_name="result"
+                )
+            ],
+            job_names=[],
+        ),
+        ExternalAssetNode(
+            asset_key=AssetKey("something"),
+            dependencies=[
+                ExternalAssetDependency(
+                    upstream_asset_key=AssetKey("not_result"), input_name="result"
+                )
+            ],
+            depended_by=[],
+            op_name="something",
+            output_name="result",
+            job_names=["assets_job"],
         ),
     ]
 

@@ -76,9 +76,9 @@ class OutputDefinition:
         asset_key=None,
         asset_partitions=None,
         asset_partitions_def=None,
-        # make sure new parameters are updated in combine_with_inferred below
         in_deps=None,
         out_deps=None,
+        # make sure new parameters are updated in combine_with_inferred below
     ):
         from dagster.core.definitions.partition import PartitionsDefinition
 
@@ -129,11 +129,11 @@ class OutputDefinition:
         )
 
     @property
-    def in_deps(self) -> Sequence[str]:
+    def in_deps(self) -> Optional[Sequence[str]]:
         return self._in_deps
 
     @property
-    def out_deps(self) -> Sequence[str]:
+    def out_deps(self) -> Optional[Sequence[str]]:
         return self._out_deps
 
     @property
