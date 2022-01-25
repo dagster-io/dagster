@@ -16,7 +16,13 @@ from dagster.core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
 from dagster.core.snap import create_pipeline_snapshot_id
-from dagster.core.storage.pipeline_run import DagsterRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import (
+    DagsterRun,
+    JobBucket,
+    PipelineRunStatus,
+    PipelineRunsFilter,
+    TagBucket,
+)
 from dagster.core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
 from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
@@ -1209,3 +1215,86 @@ class TestRunStorage:
         assert run_record.start_time is not None
         assert run_record.end_time is not None
         assert run_record.end_time >= run_record.start_time
+
+    def test_by_job(self, storage):
+        def _add_run(job_name, tags=None):
+            return storage.add_run(
+                TestRunStorage.build_run(
+                    pipeline_name=job_name, run_id=make_new_run_id(), tags=tags
+                )
+            )
+
+        _a_one = _add_run("a_pipeline", tags={"a": "A"})
+        a_two = _add_run("a_pipeline", tags={"a": "A"})
+        _b_one = _add_run("b_pipeline", tags={"a": "A"})
+        b_two = _add_run("b_pipeline", tags={"a": "A"})
+        c_one = _add_run("c_pipeline", tags={"a": "A"})
+        c_two = _add_run("c_pipeline", tags={"a": "B"})
+
+        runs_by_job = {
+            run.pipeline_name: run
+            for run in storage.get_runs(
+                bucket_by=JobBucket(
+                    job_names=["a_pipeline", "b_pipeline", "c_pipeline"], bucket_limit=1
+                )
+            )
+        }
+        assert set(runs_by_job.keys()) == {"a_pipeline", "b_pipeline", "c_pipeline"}
+        assert runs_by_job.get("a_pipeline").run_id == a_two.run_id
+        assert runs_by_job.get("b_pipeline").run_id == b_two.run_id
+        assert runs_by_job.get("c_pipeline").run_id == c_two.run_id
+
+        # fetch with a runs filter applied
+        runs_by_job = {
+            run.pipeline_name: run
+            for run in storage.get_runs(
+                filters=PipelineRunsFilter(tags={"a": "A"}),
+                bucket_by=JobBucket(
+                    job_names=["a_pipeline", "b_pipeline", "c_pipeline"], bucket_limit=1
+                ),
+            )
+        }
+        assert set(runs_by_job.keys()) == {"a_pipeline", "b_pipeline", "c_pipeline"}
+        assert runs_by_job.get("a_pipeline").run_id == a_two.run_id
+        assert runs_by_job.get("b_pipeline").run_id == b_two.run_id
+        assert runs_by_job.get("c_pipeline").run_id == c_one.run_id
+
+    def test_by_tag(self, storage):
+        def _add_run(job_name, tags=None):
+            return storage.add_run(
+                TestRunStorage.build_run(
+                    pipeline_name=job_name, run_id=make_new_run_id(), tags=tags
+                )
+            )
+
+        _one = _add_run("a", tags={"a": "1"})
+        _two = _add_run("a", tags={"a": "2"})
+        three = _add_run("a", tags={"a": "3"})
+        _none = _add_run("a")
+        b = _add_run("b", tags={"a": "4"})
+        one = _add_run("a", tags={"a": "1"})
+        two = _add_run("a", tags={"a": "2"})
+
+        runs_by_tag = {
+            run.tags.get("a"): run
+            for run in storage.get_runs(
+                bucket_by=TagBucket(tag_key="a", tag_values=["1", "2", "3", "4"], bucket_limit=1)
+            )
+        }
+        assert set(runs_by_tag.keys()) == {"1", "2", "3", "4"}
+        assert runs_by_tag.get("1").run_id == one.run_id
+        assert runs_by_tag.get("2").run_id == two.run_id
+        assert runs_by_tag.get("3").run_id == three.run_id
+        assert runs_by_tag.get("4").run_id == b.run_id
+
+        runs_by_tag = {
+            run.tags.get("a"): run
+            for run in storage.get_runs(
+                filters=PipelineRunsFilter(pipeline_name="a"),
+                bucket_by=TagBucket(tag_key="a", tag_values=["1", "2", "3", "4"], bucket_limit=1),
+            )
+        }
+        assert set(runs_by_tag.keys()) == {"1", "2", "3"}
+        assert runs_by_tag.get("1").run_id == one.run_id
+        assert runs_by_tag.get("2").run_id == two.run_id
+        assert runs_by_tag.get("3").run_id == three.run_id
