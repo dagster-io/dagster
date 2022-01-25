@@ -185,6 +185,7 @@ class TelemetryEntry(
         client_time: str,
         event_id: str,
         instance_id: str,
+        metadata: Optional[Dict[str, str]] = None,
         elapsed_time: Optional[str] = None,
         pipeline_name_hash: Optional[str] = None,
         num_pipelines_in_repo: Optional[str] = None,
