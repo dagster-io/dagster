@@ -268,6 +268,7 @@ class AssetObservation(
         "_AssetObservation",
         [
             ("asset_key", AssetKey),
+            ("description", Optional[str]),
             ("metadata_entries", List[EventMetadataEntry]),
             ("partition", Optional[str]),
         ],
@@ -289,6 +290,7 @@ class AssetObservation(
     def __new__(
         cls,
         asset_key: Union[List[str], AssetKey, str],
+        description: Optional[str] = None,
         metadata_entries: Optional[List[EventMetadataEntry]] = None,
         partition: Optional[str] = None,
         metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
@@ -312,6 +314,7 @@ class AssetObservation(
         return super(AssetObservation, cls).__new__(
             cls,
             asset_key=asset_key,
+            description=check.opt_str_param(description, "description"),
             metadata_entries=cast(
                 List[EventMetadataEntry], parse_metadata(metadata, metadata_entries)
             ),
