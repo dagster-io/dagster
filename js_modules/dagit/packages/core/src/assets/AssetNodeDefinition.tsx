@@ -1,8 +1,9 @@
 import {gql} from '@apollo/client';
-import {Box, ColorsWIP, IconWIP, Caption, Subheading} from '@dagster-io/ui';
+import {Box, ColorsWIP, IconWIP, Caption, Subheading, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {displayNameForAssetKey, tokenForAssetKey} from '../app/Util';
 import {Description} from '../pipelines/Description';
 import {explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -35,16 +36,24 @@ export const AssetNodeDefinition: React.FC<{
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>Definition in Repository</Subheading>
-            <Box flex={{alignItems: 'baseline', gap: 8, wrap: 'wrap'}}>
+            <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}}>
               {assetNode.jobs.map((job) => (
-                <PipelineReference
-                  key={job.id}
-                  isJob
-                  showIcon
-                  pipelineName={job.name}
-                  pipelineHrefContext={repoAddress}
-                />
+                <Mono key={job.id}>
+                  <PipelineReference
+                    isJob
+                    showIcon
+                    pipelineName={job.name}
+                    pipelineHrefContext={repoAddress}
+                  />
+                </Mono>
               ))}
+              {displayNameForAssetKey(assetNode.assetKey) !== assetNode.opName && (
+                <Box flex={{gap: 6, alignItems: 'center'}}>
+                  <IconWIP name="op" size={16} />
+                  <Mono>{assetNode.opName}</Mono>
+                </Box>
+              )}
+
               {assetNode.jobs.length === 0 && !assetNode.opName && (
                 <Caption style={{marginTop: 2}}>Foreign Asset</Caption>
               )}
@@ -116,17 +125,26 @@ const JobGraphLink: React.FC<{
   repoAddress: RepoAddress;
   assetNode: AssetNodeDefinitionFragment;
   direction: 'upstream' | 'downstream';
-}> = ({direction, assetNode, repoAddress}) =>
-  assetNode.jobs.length > 0 &&
-  assetNode.opName &&
-  (direction === 'upstream' ? assetNode.dependencies : assetNode.dependedBy).length > 0 ? (
+}> = ({direction, assetNode, repoAddress}) => {
+  if (assetNode.jobs.length === 0 || !assetNode.opName) {
+    return null;
+  }
+  const populated =
+    (direction === 'upstream' ? assetNode.dependencies : assetNode.dependedBy).length > 0;
+  if (!populated) {
+    return null;
+  }
+
+  const token = tokenForAssetKey(assetNode.assetKey);
+
+  return (
     <Link
       to={workspacePathFromAddress(
         repoAddress,
         `/jobs/${explorerPathToString({
           pipelineName: assetNode.jobs[0].name,
-          opNames: [assetNode.opName],
-          opsQuery: direction === 'upstream' ? `*${assetNode.opName}` : `${assetNode.opName}*`,
+          opNames: [token],
+          opsQuery: direction === 'upstream' ? `*${token}` : `${token}*`,
         })}`,
       )}
     >
@@ -135,7 +153,8 @@ const JobGraphLink: React.FC<{
         <IconWIP name="open_in_new" color={ColorsWIP.Link} />
       </Box>
     </Link>
-  ) : null;
+  );
+};
 
 export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {

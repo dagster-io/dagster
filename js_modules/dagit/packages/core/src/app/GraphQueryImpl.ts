@@ -56,7 +56,10 @@ class GraphTraverser<T extends GraphQueryItem> {
   fetchUpstream(item: T, depth: number) {
     const step: TraverseStepFunction<T> = (item, callback) =>
       item.inputs.forEach((input) =>
-        input.dependsOn.forEach((d) => callback(this.itemNamed(d.solid.name)!)),
+        input.dependsOn.forEach((d) => {
+          const item = this.itemNamed(d.solid.name);
+          item && callback(item);
+        }),
       );
 
     return this.traverse(item, step, depth);
@@ -65,7 +68,10 @@ class GraphTraverser<T extends GraphQueryItem> {
   fetchDownstream(item: T, depth: number) {
     const step: TraverseStepFunction<T> = (item, callback) =>
       item.outputs.forEach((output) =>
-        output.dependedBy.forEach((d) => callback(this.itemNamed(d.solid.name)!)),
+        output.dependedBy.forEach((d) => {
+          const item = this.itemNamed(d.solid.name);
+          item && callback(item);
+        }),
       );
 
     return this.traverse(item, step, depth);
@@ -94,7 +100,7 @@ export function filterByQuery<T extends GraphQueryItem>(items: T[], query: strin
   const focus = new Set<T>();
 
   for (const clause of clauses) {
-    const parts = /(\*?\+*)([.\w\d\[\]\"_-]+)(\+*\*?)/.exec(clause.trim());
+    const parts = /(\*?\+*)([.\w\d>\[\]\"_-]+)(\+*\*?)/.exec(clause.trim());
     if (!parts) {
       continue;
     }

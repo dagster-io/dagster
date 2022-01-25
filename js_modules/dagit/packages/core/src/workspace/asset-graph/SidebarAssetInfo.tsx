@@ -23,12 +23,19 @@ export const SidebarAssetInfo: React.FC<{
 }> = ({node, definition, repoAddress, liveData}) => {
   const Plugin = pluginForMetadata(definition.metadata);
   const {lastMaterialization} = liveData || {};
+  const displayName = displayNameForAssetKey(node.assetKey);
 
   return (
     <>
       <Box flex={{gap: 4, direction: 'column'}} margin={{left: 24, right: 12, vertical: 16}}>
-        <SidebarTitle style={{marginBottom: 0}}>
-          {displayNameForAssetKey(node.assetKey)}
+        <SidebarTitle style={{marginBottom: 0, display: 'flex', justifyContent: 'space-between'}}>
+          {displayName}
+          {displayName !== node.opName ? (
+            <Box style={{opacity: 0.5}} flex={{gap: 6, alignItems: 'center'}}>
+              <IconWIP name="op" size={16} />
+              {node.opName}
+            </Box>
+          ) : undefined}
         </SidebarTitle>
         <AssetCatalogLink to={`/instance/assets/${node.assetKey.path.join('/')}`}>
           {'View in Asset Catalog '}
@@ -38,7 +45,7 @@ export const SidebarAssetInfo: React.FC<{
 
       <SidebarSection title="Description">
         <Box padding={{vertical: 16, horizontal: 24}}>
-          <Description description={node.description || null} />
+          <Description description={node.description || 'No description provided'} />
         </Box>
 
         {definition.metadata && Plugin && Plugin.SidebarComponent && (

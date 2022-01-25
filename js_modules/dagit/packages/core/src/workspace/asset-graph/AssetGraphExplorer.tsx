@@ -5,8 +5,9 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {filterByQuery} from '../../app/GraphQueryImpl';
+import {filterByQuery, GraphQueryItem} from '../../app/GraphQueryImpl';
 import {QueryCountdown} from '../../app/QueryCountdown';
+import {tokenForAssetKey} from '../../app/Util';
 import {SVGViewport} from '../../graph/SVGViewport';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {RightInfoPanel, RightInfoPanelContent} from '../../pipelines/GraphExplorer';
@@ -49,12 +50,34 @@ interface Props {
   repoAddress: RepoAddress;
   explorerPath: ExplorerPath;
   handles: GraphExplorerSolidHandleFragment[];
-  selectedHandles: GraphExplorerSolidHandleFragment[];
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
 }
 
+function buildGraphQueryItems(nodes: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes[]) {
+  const items: {
+    [name: string]: GraphQueryItem & {
+      node: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
+    };
+  } = {};
+
+  for (const node of nodes) {
+    const name = tokenForAssetKey(node.assetKey);
+    items[name] = {
+      node: node,
+      name: name,
+      inputs: node.dependencyKeys.map((key) => ({
+        dependsOn: [{solid: {name: tokenForAssetKey(key)}}],
+      })),
+      outputs: node.dependedByKeys.map((key) => ({
+        dependedBy: [{solid: {name: tokenForAssetKey(key)}}],
+      })),
+    };
+  }
+  return Object.values(items);
+}
+
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
-  const {repoAddress, explorerPath, handles} = props;
+  const {repoAddress, explorerPath} = props;
   const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
   const repositorySelector = {
     repositoryLocationName: repoAddress.location,
@@ -66,24 +89,30 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     notifyOnNetworkStatusChange: true,
   });
 
-  const {graphData, graphAssetKeys} = React.useMemo(() => {
+  const {
+    assetGraphData,
+    graphQueryItems,
+    graphAssetKeys,
+    applyingEmptyDefault,
+  } = React.useMemo(() => {
     if (queryResult.data?.pipelineOrError.__typename !== 'Pipeline') {
-      return {graphAssetKeys: [], graphData: null};
+      return {
+        graphAssetKeys: [],
+        graphQueryItems: [],
+        assetGraphData: null,
+        applyingEmptyDefault: false,
+      };
     }
-    const assetNodes = queryResult.data.pipelineOrError.assetNodes;
-    const queryOps = filterByQuery(
-      handles.map((h) => h.solid),
-      explorerPath.opsQuery,
-    );
-    const queryAssetNodes = assetNodes.filter((a) =>
-      queryOps.all.some((op) => op.name === a.opName),
-    );
-    const graphData = buildGraphData(queryAssetNodes);
+    const graphQueryItems = buildGraphQueryItems(queryResult.data.pipelineOrError.assetNodes);
+    const {all, applyingEmptyDefault} = filterByQuery(graphQueryItems, explorerPath.opsQuery);
+
     return {
-      graphAssetKeys: queryAssetNodes.map((n) => ({path: n.assetKey.path})),
-      graphData: graphData,
+      graphAssetKeys: all.map((n) => ({path: n.node.assetKey.path})),
+      assetGraphData: buildGraphData(all.map((n) => n.node)),
+      graphQueryItems,
+      applyingEmptyDefault,
     };
-  }, [queryResult.data, handles, explorerPath.opsQuery]);
+  }, [queryResult.data, explorerPath.opsQuery]);
 
   const liveResult = useQuery<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>(
     ASSETS_GRAPH_LIVE_QUERY,
@@ -96,7 +125,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   );
 
   const liveDataByNode = React.useMemo(() => {
-    if (!liveResult.data || !graphData) {
+    if (!liveResult.data || !assetGraphData) {
       return {};
     }
 
@@ -106,8 +135,8 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     const inProgressRunsByStep =
       repositoryOrError.__typename === 'Repository' ? repositoryOrError.inProgressRunsByStep : [];
 
-    return buildLiveData(graphData, liveAssetNodes, inProgressRunsByStep);
-  }, [graphData, liveResult]);
+    return buildLiveData(assetGraphData, liveAssetNodes, inProgressRunsByStep);
+  }, [assetGraphData, liveResult]);
 
   useDocumentTitle('Assets');
   useDidLaunchEvent(liveResult.refetch);
@@ -115,11 +144,11 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   return (
     <Loading allowStaleData queryResult={queryResult}>
       {() => {
-        if (!graphData) {
+        if (!assetGraphData) {
           return <NonIdealState icon="error" title="Query Error" />;
         }
 
-        const hasCycles = graphHasCycles(graphData);
+        const hasCycles = graphHasCycles(assetGraphData);
 
         if (hasCycles) {
           return (
@@ -134,7 +163,9 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
         return (
           <AssetGraphExplorerWithData
             key={explorerPath.pipelineName}
-            graphData={graphData}
+            assetGraphData={assetGraphData}
+            graphQueryItems={graphQueryItems}
+            applyingEmptyDefault={applyingEmptyDefault}
             liveDataQueryResult={liveResult}
             liveDataByNode={liveDataByNode}
             {...props}
@@ -147,37 +178,39 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
 
 const AssetGraphExplorerWithData: React.FC<
   {
-    graphData: GraphData;
+    assetGraphData: GraphData;
+    graphQueryItems: GraphQueryItem[];
     liveDataByNode: LiveData;
     liveDataQueryResult: QueryResult<any>;
+    applyingEmptyDefault: boolean;
   } & Props
 > = (props) => {
   const {
     repoAddress,
     handles,
-    selectedHandles,
     explorerPath,
     onChangeExplorerPath,
     liveDataQueryResult,
     liveDataByNode,
-    graphData,
+    assetGraphData,
+    graphQueryItems,
+    applyingEmptyDefault,
   } = props;
 
   const history = useHistory();
   const findAssetInWorkspace = useFindAssetInWorkspace();
 
-  const selectedDefinitions = selectedHandles.map((h) => h.solid.definition);
-  const selectedGraphNodes = selectedDefinitions
-    .map(
-      (def) => Object.values(graphData.nodes).find((node) => node.definition.opName === def.name)!,
-    )
-    .filter(Boolean);
+  const selectedAssetValues = explorerPath.opNames[explorerPath.opNames.length - 1].split(',');
+  const selectedGraphNodes = Object.values(assetGraphData.nodes).filter((node) =>
+    selectedAssetValues.includes(tokenForAssetKey(node.definition.assetKey)),
+  );
   const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1];
 
   const onSelectNode = React.useCallback(
     async (e: React.MouseEvent<any>, assetKey: {path: string[]}, node: Node | null) => {
       e.stopPropagation();
 
+      const token = tokenForAssetKey(assetKey);
       let clicked: {opName: string | null; jobName: string | null} = {opName: null, jobName: null};
 
       if (node?.definition) {
@@ -196,7 +229,7 @@ const AssetGraphExplorerWithData: React.FC<
       }
 
       let nextOpsQuery = explorerPath.opsQuery;
-      let nextOpsNameSelection = clicked.opName;
+      let nextOpsNameSelection = token;
 
       if (clicked.jobName !== explorerPath.pipelineName) {
         nextOpsQuery = '';
@@ -204,11 +237,11 @@ const AssetGraphExplorerWithData: React.FC<
         const existing = explorerPath.opNames[0].split(',');
         const added =
           e.shiftKey && lastSelectedNode && node
-            ? opsInRange({graph: graphData, from: lastSelectedNode, to: node})
-            : [clicked.opName];
+            ? opsInRange({graph: assetGraphData, from: lastSelectedNode, to: node})
+            : [token];
 
-        nextOpsNameSelection = (existing.includes(clicked.opName)
-          ? without(existing, clicked.opName)
+        nextOpsNameSelection = (existing.includes(token)
+          ? without(existing, token)
           : uniq([...existing, ...added])
         ).join(',');
       }
@@ -229,20 +262,11 @@ const AssetGraphExplorerWithData: React.FC<
       findAssetInWorkspace,
       history,
       lastSelectedNode,
-      graphData,
+      assetGraphData,
     ],
   );
 
-  const queryResultAssets = React.useMemo(
-    () =>
-      filterByQuery(
-        handles.map((h) => h.solid),
-        explorerPath.opsQuery,
-      ),
-    [explorerPath.opsQuery, handles],
-  );
-
-  const layout = React.useMemo(() => layoutGraph(graphData), [graphData]);
+  const layout = React.useMemo(() => layoutGraph(assetGraphData), [assetGraphData]);
 
   const viewportEl = React.useRef<SVGViewport>();
   React.useEffect(() => {
@@ -276,7 +300,7 @@ const AssetGraphExplorerWithData: React.FC<
                 <AssetLinks edges={layout.edges} />
 
                 {layout.nodes.map((layoutNode) => {
-                  const graphNode = graphData.nodes[layoutNode.id];
+                  const graphNode = assetGraphData.nodes[layoutNode.id];
                   const path = JSON.parse(layoutNode.id);
                   if (
                     layoutNode.x + layoutNode.width < bounds.left ||
@@ -318,7 +342,7 @@ const AssetGraphExplorerWithData: React.FC<
 
           {handles.length === 0 ? (
             <EmptyDAGNotice nodeType="asset" isGraph />
-          ) : queryResultAssets.applyingEmptyDefault ? (
+          ) : applyingEmptyDefault ? (
             <LargeDAGNotice nodeType="asset" />
           ) : undefined}
 
@@ -329,7 +353,7 @@ const AssetGraphExplorerWithData: React.FC<
               assetJobName={explorerPath.pipelineName}
               assets={(selectedGraphNodes.length
                 ? selectedGraphNodes
-                : Object.values(graphData.nodes)
+                : Object.values(assetGraphData.nodes)
               ).map((n) => n.definition)}
             />
           </div>
@@ -338,7 +362,7 @@ const AssetGraphExplorerWithData: React.FC<
           </div>
           <AssetQueryInputContainer>
             <GraphQueryInput
-              items={handles.map((h) => h.solid)}
+              items={graphQueryItems}
               value={explorerPath.opsQuery}
               placeholder="Type an asset subset…"
               onChange={(opsQuery) => onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')}
@@ -361,7 +385,11 @@ const AssetGraphExplorerWithData: React.FC<
               <SidebarAssetInfo
                 node={selectedGraphNodes[0].definition}
                 liveData={liveDataByNode[selectedGraphNodes[0].id]}
-                definition={selectedDefinitions[0]}
+                definition={
+                  handles.find(
+                    (h) => h.solid.definition.name === selectedGraphNodes[0].definition.opName,
+                  )!.solid.definition
+                }
                 repoAddress={repoAddress}
               />
             ) : (
