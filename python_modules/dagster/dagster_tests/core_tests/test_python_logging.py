@@ -379,3 +379,4 @@ def test_failure_logging(managed_loggers):
             reconstructable(define_logging_pipeline),
             instance=instance,
         )
+        assert result.success
