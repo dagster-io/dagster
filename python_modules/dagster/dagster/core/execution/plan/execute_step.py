@@ -277,6 +277,11 @@ def core_dagster_event_sequence_for_step(
     inputs = {}
 
     for step_input in step_context.step.step_inputs:
+        input_def = step_input.source.get_input_def(step_context.pipeline_def)
+        dagster_type = input_def.dagster_type
+
+        if dagster_type.kind == DagsterTypeKind.NOTHING:
+            continue
         for event_or_input_value in ensure_gen(step_input.source.load_input_object(step_context)):
             if isinstance(event_or_input_value, DagsterEvent):
                 yield event_or_input_value
