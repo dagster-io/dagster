@@ -1076,9 +1076,9 @@ class DagsterInstance:
         filters: PipelineRunsFilter = None,
         cursor: str = None,
         limit: int = None,
-        bucket: Optional[Union[JobBucket, TagBucket]] = None,
+        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> Iterable[PipelineRun]:
-        return self._run_storage.get_runs(filters, cursor, limit, bucket)
+        return self._run_storage.get_runs(filters, cursor, limit, bucket_by)
 
     @traced
     def get_runs_count(self, filters: PipelineRunsFilter = None) -> int:
@@ -1098,7 +1098,7 @@ class DagsterInstance:
         order_by: str = None,
         ascending: bool = False,
         cursor: str = None,
-        bucket: Optional[Union[JobBucket, TagBucket]] = None,
+        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
 
@@ -1113,7 +1113,7 @@ class DagsterInstance:
             List[RunRecord]: List of run records stored in the run storage.
         """
         return self._run_storage.get_run_records(
-            filters, limit, order_by, ascending, cursor, bucket
+            filters, limit, order_by, ascending, cursor, bucket_by
         )
 
     def wipe(self):
