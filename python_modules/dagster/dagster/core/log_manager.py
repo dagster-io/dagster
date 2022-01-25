@@ -192,6 +192,7 @@ class DagsterLogHandler(logging.Handler):
         self._logging_metadata = logging_metadata
         self._loggers = loggers
         self._handlers = handlers
+        self._should_capture = True
         super().__init__()
 
     @property
@@ -242,23 +243,33 @@ class DagsterLogHandler(logging.Handler):
         multiple times, as the DagsterLogHandler will be invoked at each level of the hierarchy as
         the message is propagated. This filter prevents this from happening.
         """
-        return not isinstance(getattr(record, DAGSTER_META_KEY, None), dict)
+        return self._should_capture and not isinstance(
+            getattr(record, DAGSTER_META_KEY, None), dict
+        )
 
     def emit(self, record: logging.LogRecord):
         """For any received record, add Dagster metadata, and have handlers handle it"""
-        dagster_record = self._convert_record(record)
-        # built-in handlers
-        for handler in self._handlers:
-            if dagster_record.levelno >= handler.level:
-                handler.handle(dagster_record)
-        # user-defined @loggers
-        for logger in self._loggers:
-            logger.log(
-                dagster_record.levelno,
-                dagster_record.msg,
-                exc_info=dagster_record.exc_info,
-                extra=self._extract_extra(record),
-            )
+
+        try:
+            # to prevent the potential for infinite loops in which a handler produces log messages
+            # which are then captured and then handled by that same handler (etc.), do not capture
+            # any log messages while one is currently being emitted
+            self._should_capture = False
+            dagster_record = self._convert_record(record)
+            # built-in handlers
+            for handler in self._handlers:
+                if dagster_record.levelno >= handler.level:
+                    handler.handle(dagster_record)
+            # user-defined @loggers
+            for logger in self._loggers:
+                logger.log(
+                    dagster_record.levelno,
+                    dagster_record.msg,
+                    exc_info=dagster_record.exc_info,
+                    extra=self._extract_extra(record),
+                )
+        finally:
+            self._should_capture = True
 
 
 class DagsterLogManager(logging.Logger):
