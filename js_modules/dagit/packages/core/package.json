@@ -18,7 +18,7 @@
     "analyze": "source-map-explorer 'build/static/js/*.js'"
   },
   "peerDependencies": {
-    "@apollo/client": "3.3.16",
+    "@apollo/client": "3.5.8",
     "@blueprintjs/core": "^3.45.0",
     "@blueprintjs/icons": "^3.26.1",
     "@blueprintjs/popover2": "0.10.1",
