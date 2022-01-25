@@ -304,9 +304,11 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     def delete_run(self, run_id: str):
         """Remove a run from storage"""
 
-    @abstractmethod
-    def build_missing_indexes(self, print_fn: Callable = None, force_rebuild_all: bool = False):
-        """Call this method to run any data migrations"""
+    def migrate(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+        """Call this method to run any required data migrations"""
+
+    def optimize(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+        """Call this method to run any optional data migrations for optimized reads"""
 
     def dispose(self):
         """Explicit lifecycle management."""

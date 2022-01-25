@@ -17,7 +17,7 @@ from dagster.core.host_representation import (
 )
 from dagster.core.snap import create_pipeline_snapshot_id
 from dagster.core.storage.pipeline_run import DagsterRun, PipelineRunStatus, PipelineRunsFilter
-from dagster.core.storage.runs.migration import RUN_DATA_MIGRATIONS
+from dagster.core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
 from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -1084,7 +1084,7 @@ class TestRunStorage:
         if not isinstance(storage, SqlRunStorage):
             return
 
-        for name in RUN_DATA_MIGRATIONS.keys():
+        for name in REQUIRED_DATA_MIGRATIONS.keys():
             assert storage.has_built_index(name)
 
     def test_handle_run_event_pipeline_success_test(self, storage):

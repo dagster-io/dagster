@@ -35,7 +35,7 @@ from dagster.utils import datetime_as_float, merge_dicts, utc_datetime_from_time
 
 from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
 from .base import RunStorage
-from .migration import RUN_DATA_MIGRATIONS, RUN_PARTITIONS
+from .migration import OPTIONAL_DATA_MIGRATIONS, REQUIRED_DATA_MIGRATIONS, RUN_PARTITIONS
 from .schema import (
     BulkActionsTable,
     DaemonHeartbeatsTable,
@@ -710,8 +710,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     # Tracking data migrations over secondary indexes
 
-    def build_missing_indexes(self, print_fn: Callable = None, force_rebuild_all: bool = False):
-        for migration_name, migration_fn in RUN_DATA_MIGRATIONS.items():
+    def _execute_data_migrations(
+        self, migrations, print_fn: Callable = None, force_rebuild_all: bool = False
+    ):
+        for migration_name, migration_fn in migrations.items():
             if self.has_built_index(migration_name):
                 if not force_rebuild_all:
                     continue
@@ -721,6 +723,12 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             self.mark_index_built(migration_name)
             if print_fn:
                 print_fn(f"Finished data migration: {migration_name}")
+
+    def migrate(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+        self._execute_data_migrations(REQUIRED_DATA_MIGRATIONS, print_fn, force_rebuild_all)
+
+    def optimize(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+        self._execute_data_migrations(OPTIONAL_DATA_MIGRATIONS, print_fn, force_rebuild_all)
 
     def has_built_index(self, migration_name: str) -> bool:
         query = (

@@ -55,7 +55,8 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         # revision because alembic config may be shared with other storage classes)
         if "runs" not in table_names:
             retry_mysql_creation_fn(self._init_db)
-            self.build_missing_indexes()
+            self.migrate()
+            self.optimize()
 
         super().__init__()
 
