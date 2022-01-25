@@ -305,7 +305,9 @@ class EmrPySparkStepLauncher(StepLauncher):
             0
         ]
 
-        return self.wait_for_completion_and_log(log, run_id, step_key, emr_step_id, step_context)
+        yield from self.wait_for_completion_and_log(
+            log, run_id, step_key, emr_step_id, step_context
+        )
 
     def wait_for_completion_and_log(self, log, run_id, step_key, emr_step_id, step_context):
         s3 = boto3.resource("s3", region_name=self.region_name)
