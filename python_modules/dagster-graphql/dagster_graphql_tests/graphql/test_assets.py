@@ -624,7 +624,6 @@ class TestAssetAwareEventLog(
         assert metadata[0]["text"] == "FOO"
 
         assert asset_node["assetObservations"][0]["label"] == "asset_yields_observation"
-        assert asset_node["assetObservations"][0]["description"] == "BAR"
 
 
 class TestPersistentInstanceAssetInProgress(
