@@ -1,18 +1,17 @@
 import graphene
 import yaml
 from dagster import check
-from dagster.core.events import AssetKey, StepMaterializationData
-from dagster.core.events.log import EventLogEntry
+from dagster.core.events import AssetKey
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter, RunRecord
 from dagster.core.storage.tags import TagType, get_tag_type
 from dagster.utils import datetime_as_float
 
-from ...implementation.events import construct_basic_params, from_event_record
+from ...implementation.events import from_event_record
 from ...implementation.fetch_assets import get_assets_for_run_id
 from ...implementation.fetch_pipelines import get_pipeline_reference_or_raise
-from ...implementation.fetch_runs import get_run_by_id, get_runs, get_stats, get_step_stats
+from ...implementation.fetch_runs import get_runs, get_stats, get_step_stats
 from ...implementation.fetch_schedules import get_schedules_for_pipeline
 from ...implementation.fetch_sensors import get_sensors_for_pipeline
 from ...implementation.utils import UserFacingGraphQLError, capture_error
@@ -24,8 +23,8 @@ from ..inputs import GrapheneAssetKeyInput
 from ..logs.compute_logs import GrapheneComputeLogs
 from ..logs.events import (
     GrapheneDagsterRunEvent,
+    GrapheneMaterializationEvent,
     GrapheneRunStepStats,
-    GrapheneStepMaterializationEvent,
 )
 from ..paging import GrapheneCursor
 from ..repository_origin import GrapheneRepositoryOrigin
@@ -60,35 +59,6 @@ COMPLETED_STATUSES = {
 }
 
 
-class GrapheneAssetMaterialization(graphene.ObjectType):
-    materializationEvent = graphene.NonNull(GrapheneStepMaterializationEvent)
-    runOrError = graphene.NonNull(lambda: GrapheneRunOrError)
-    partition = graphene.Field(graphene.String)
-
-    class Meta:
-        name = "AssetMaterialization"
-
-    def __init__(self, event):
-        super().__init__()
-        self._event = check.inst_param(event, "event", EventLogEntry)
-        check.invariant(
-            isinstance(event.dagster_event.step_materialization_data, StepMaterializationData)
-        )
-
-    def resolve_materializationEvent(self, _graphene_info):
-        return GrapheneStepMaterializationEvent(
-            materialization=self._event.dagster_event.step_materialization_data.materialization,
-            assetLineage=self._event.dagster_event.step_materialization_data.asset_lineage,
-            **construct_basic_params(self._event),
-        )
-
-    def resolve_runOrError(self, graphene_info):
-        return get_run_by_id(graphene_info, self._event.run_id)
-
-    def resolve_partition(self, _graphene_info):
-        return self._event.dagster_event.step_materialization_data.materialization.partition
-
-
 class GrapheneMaterializationCount(graphene.ObjectType):
     partition = graphene.NonNull(graphene.String)
     materializationCount = graphene.NonNull(graphene.Int)
@@ -101,7 +71,7 @@ class GrapheneAsset(graphene.ObjectType):
     id = graphene.NonNull(graphene.String)
     key = graphene.NonNull(GrapheneAssetKey)
     assetMaterializations = graphene.Field(
-        non_null_list(GrapheneAssetMaterialization),
+        non_null_list(GrapheneMaterializationEvent),
         partitions=graphene.List(graphene.String),
         partitionInLast=graphene.Int(),
         beforeTimestampMillis=graphene.String(),
@@ -120,7 +90,7 @@ class GrapheneAsset(graphene.ObjectType):
         return self.key
 
     def resolve_assetMaterializations(self, graphene_info, **kwargs):
-        from ...implementation.fetch_assets import get_asset_events
+        from ...implementation.fetch_assets import get_asset_materializations
 
         try:
             before_timestamp = (
@@ -138,8 +108,8 @@ class GrapheneAsset(graphene.ObjectType):
             partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
 
         return [
-            GrapheneAssetMaterialization(event=event)
-            for event in get_asset_events(
+            GrapheneMaterializationEvent(event=event)
+            for event in get_asset_materializations(
                 graphene_info,
                 self.key,
                 partitions=partitions,

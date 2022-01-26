@@ -36,7 +36,6 @@ interface GraphExplorerProps {
   pipelineOrGraph: GraphExplorerFragment;
   repoAddress?: RepoAddress;
   handles: GraphExplorerSolidHandleFragment[];
-  selectedHandle?: GraphExplorerSolidHandleFragment;
   parentHandle?: GraphExplorerSolidHandleFragment;
   getInvocations?: (definitionName: string) => {handleID: string}[];
   isGraph: boolean;
@@ -51,7 +50,6 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
     explorerPath,
     onChangeExplorerPath,
     parentHandle,
-    selectedHandle,
     setOptions,
     repoAddress,
     isGraph,
@@ -62,14 +60,17 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
     onChangeExplorerPath({...explorerPath, opsQuery}, 'replace');
   };
 
-  const handleAdjustPath = (fn: (opNames: string[]) => void) => {
-    const opNames = [...explorerPath.opNames];
-    const retValue = fn(opNames);
-    if (retValue !== undefined) {
-      throw new Error('handleAdjustPath function is expected to mutate the array');
-    }
-    onChangeExplorerPath({...explorerPath, opNames}, 'push');
-  };
+  const handleAdjustPath = React.useMemo(
+    () => (fn: (opNames: string[]) => void) => {
+      const opNames = [...explorerPath.opNames];
+      const retValue = fn(opNames);
+      if (retValue !== undefined) {
+        throw new Error('handleAdjustPath function is expected to mutate the array');
+      }
+      onChangeExplorerPath({...explorerPath, opNames}, 'push');
+    },
+    [onChangeExplorerPath, explorerPath],
+  );
 
   // Note: this method handles relative solid paths, eg: {path: ['..', 'OtherSolid']}.
   // This is important because the DAG component tree doesn't always have access to a handleID,
@@ -120,7 +121,25 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
     handleClickOp({name: ''});
   };
 
-  const {opsQuery} = explorerPath;
+  const {opsQuery, opNames} = explorerPath;
+
+  const selectedName = opNames[opNames.length - 1];
+  const selectedHandle = handles.find((h) => selectedName === h.solid.name);
+
+  // Run a few assertions on the state of the world and redirect the user
+  // back to safety if they've landed in an invalid place. Note that we can
+  // pop one layer at a time and this renders recursively until we reach a
+  // valid parent.
+  const invalidSelection = selectedName && !selectedHandle;
+  const invalidParent =
+    parentHandle && parentHandle.solid.definition.__typename !== 'CompositeSolidDefinition';
+
+  React.useEffect(() => {
+    if (invalidSelection || invalidParent) {
+      handleAdjustPath((opNames) => opNames.pop());
+    }
+  }, [handleAdjustPath, invalidSelection, invalidParent]);
+
   const solids = React.useMemo(() => handles.map((h) => h.solid), [handles]);
   const solidsQueryEnabled = !parentHandle && !explorerPath.snapshotId;
   const explodeCompositesEnabled =

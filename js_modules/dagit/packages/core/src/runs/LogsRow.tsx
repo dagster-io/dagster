@@ -99,16 +99,14 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       level
       stepKey
     }
-    ... on StepMaterializationEvent {
-      materialization {
-        assetKey {
-          path
-        }
-        label
-        description
-        metadataEntries {
-          ...MetadataEntryFragment
-        }
+    ... on MaterializationEvent {
+      assetKey {
+        path
+      }
+      label
+      description
+      metadataEntries {
+        ...MetadataEntryFragment
       }
     }
     ... on RunFailureEvent {

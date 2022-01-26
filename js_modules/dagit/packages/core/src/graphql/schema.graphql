@@ -267,7 +267,6 @@ type Materialization implements DisplayableEvent {
   label: String!
   description: String
   metadataEntries: [EventMetadataEntry!]!
-  assetKey: AssetKey
 }
 
 interface DisplayableEvent {
@@ -279,10 +278,6 @@ interface DisplayableEvent {
 interface EventMetadataEntry {
   label: String!
   description: String
-}
-
-type AssetKey {
-  path: [String!]!
 }
 
 type ExpectationResult implements DisplayableEvent {
@@ -554,17 +549,15 @@ type Asset {
     partitionInLast: Int
     beforeTimestampMillis: String
     limit: Int
-  ): [AssetMaterialization!]!
+  ): [MaterializationEvent!]!
   definition: AssetNode
 }
 
-type AssetMaterialization {
-  materializationEvent: StepMaterializationEvent!
-  runOrError: RunOrError!
-  partition: String
+type AssetKey {
+  path: [String!]!
 }
 
-type StepMaterializationEvent implements MessageEvent & StepEvent {
+type MaterializationEvent implements MessageEvent & StepEvent & DisplayableEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -572,8 +565,13 @@ type StepMaterializationEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
-  materialization: Materialization!
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  assetKey: AssetKey
+  runOrError: RunOrError!
   stepStats: RunStepStats!
+  partition: String
   assetLineage: [AssetLineageInfo!]!
 }
 
@@ -641,11 +639,6 @@ interface StepEvent {
   solidHandleID: String
 }
 
-type AssetLineageInfo {
-  assetKey: AssetKey!
-  partitions: [String!]!
-}
-
 union RunOrError = Run | RunNotFoundError | PythonError
 
 type RunNotFoundError implements PipelineRunNotFoundError & Error {
@@ -656,6 +649,11 @@ type RunNotFoundError implements PipelineRunNotFoundError & Error {
 interface PipelineRunNotFoundError {
   runId: String!
   message: String!
+}
+
+type AssetLineageInfo {
+  assetKey: AssetKey!
+  partitions: [String!]!
 }
 
 type AssetNode {
@@ -673,11 +671,16 @@ type AssetNode {
     partitions: [String]
     beforeTimestampMillis: String
     limit: Int
-  ): [AssetMaterialization!]!
+  ): [MaterializationEvent!]!
   partitionKeys: [String!]!
   partitionDefinition: String
-  latestMaterializationByPartition(partitions: [String]): [AssetMaterialization]!
+  latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
   materializationCountByPartition: [MaterializationCountByPartition!]!
+  assetObservations(
+    partitions: [String]
+    beforeTimestampMillis: String
+    limit: Int
+  ): [ObservationEvent!]!
 }
 
 type AssetDependency {
@@ -688,6 +691,23 @@ type AssetDependency {
 type MaterializationCountByPartition {
   partition: String!
   materializationCount: Int!
+}
+
+type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  assetKey: AssetKey
+  runOrError: RunOrError!
+  stepStats: RunStepStats!
+  partition: String
 }
 
 union DagsterRunEvent =
@@ -713,7 +733,8 @@ union DagsterRunEvent =
   | LogsCapturedEvent
   | ObjectStoreOperationEvent
   | StepExpectationResultEvent
-  | StepMaterializationEvent
+  | MaterializationEvent
+  | ObservationEvent
   | EngineEvent
   | HookCompletedEvent
   | HookSkippedEvent

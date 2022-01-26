@@ -138,13 +138,11 @@ fragment stepEventFragment on StepEvent {
       }
     }
   }
-  ... on StepMaterializationEvent {
-    materialization {
-      label
-      description
-      metadataEntries {
-        ...metadataEntryFragment
-      }
+  ... on MaterializationEvent {
+    label
+    description
+    metadataEntries {
+      ...metadataEntryFragment
     }
   }
 
@@ -172,14 +170,12 @@ fragment messageEventFragment on MessageEvent {
   level
   eventType
   ...stepEventFragment
-  ... on StepMaterializationEvent {
-    materialization {
-      label
-      description
-      metadataEntries {
-        __typename
-        ...metadataEntryFragment
-      }
+  ... on MaterializationEvent {
+    label
+    description
+    metadataEntries {
+      __typename
+      ...metadataEntryFragment
     }
   }
   ... on ExecutionStepFailureEvent {

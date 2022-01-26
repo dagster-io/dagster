@@ -321,6 +321,16 @@ class AssetObservation(
             partition=check.opt_str_param(partition, "partition"),
         )
 
+    @property
+    def label(self) -> str:
+        return " ".join(self.asset_key.path)
+
+    @property
+    def description(self) -> str:
+        # Descriptions are a required field when metadata entries are yielded.
+        # Returning empty str for now, creating separate PR to add description field to class.
+        return ""
+
 
 @whitelist_for_serdes
 class AssetMaterialization(
