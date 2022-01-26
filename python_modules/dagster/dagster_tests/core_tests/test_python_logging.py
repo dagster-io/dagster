@@ -358,7 +358,7 @@ def define_logging_pipeline():
         ),
     ],
 )
-def test_multiprocess_logging(managed_loggers, run_config):
+def test_execution_logging(managed_loggers, run_config):
     reset_logging()
 
     log_records = get_log_records(
