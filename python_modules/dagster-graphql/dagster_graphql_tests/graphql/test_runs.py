@@ -843,4 +843,4 @@ def test_repository_batching():
             counts = counter.counts()
             assert counts
             assert len(counts) == 1
-            assert counts.get("DagsterInstance.get_runs") == 1
+            assert counts.get("DagsterInstance.get_run_records") == 1
