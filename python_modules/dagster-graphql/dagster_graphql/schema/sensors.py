@@ -3,6 +3,7 @@ from dagster import check
 from dagster.core.host_representation import ExternalSensor, ExternalTargetData, SensorSelector
 from dagster.core.scheduler.instigation import InstigatorState
 from dagster.core.workspace.permissions import Permissions
+from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import capture_error, check_permission
 
 from ..implementation.fetch_sensors import get_sensor_next_tick, start_sensor, stop_sensor
@@ -58,9 +59,15 @@ class GrapheneSensor(graphene.ObjectType):
     class Meta:
         name = "Sensor"
 
-    def __init__(self, external_sensor, sensor_state):
+    def __init__(self, external_sensor, sensor_state, batch_loader=None):
         self._external_sensor = check.inst_param(external_sensor, "external_sensor", ExternalSensor)
         self._sensor_state = check.opt_inst_param(sensor_state, "sensor_state", InstigatorState)
+
+        # optional run loader, provided by a parent GrapheneRepository object that instantiates
+        # multiple sensors
+        self._batch_loader = check.opt_inst_param(
+            batch_loader, "batch_loader", RepositoryScopedBatchLoader
+        )
 
         if not self._sensor_state:
             self._sensor_state = self._external_sensor.get_default_instigation_state()
@@ -80,7 +87,8 @@ class GrapheneSensor(graphene.ObjectType):
         return self._external_sensor.get_external_origin_id()
 
     def resolve_sensorState(self, _graphene_info):
-        return GrapheneInstigationState(self._sensor_state)
+        # forward the batch run loader to the instigation state, which provides the sensor runs
+        return GrapheneInstigationState(self._sensor_state, self._batch_loader)
 
     def resolve_nextTick(self, graphene_info):
         return get_sensor_next_tick(graphene_info, self._sensor_state)
