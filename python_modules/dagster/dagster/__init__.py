@@ -338,6 +338,7 @@ __all__ = [
     "OpExecutionContext",
     "PipelineExecutionResult",
     "RetryRequested",
+    "build_resources",
     "SolidExecutionResult",
     "SolidExecutionContext",
     "build_solid_context",
