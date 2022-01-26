@@ -15,7 +15,7 @@ Resources provide a way to manage dependencies to external components and share 
 | <PyObject object="ResourceDefinition" />         | Class for resource definitions. You almost never want to use initialize this class directly. Instead, you should use the <PyObject object="resource" decorator /> which returns a <PyObject object="ResourceDefinition" />. |
 | <PyObject object="InitResourceContext"/>         | The context object provided to a resource during initialization. This object contains required resource, config, and other run information.                                                                                 |
 | <PyObject object="build_init_resource_context"/> | Function for building an <PyObject object="InitResourceContext"/> outside of execution, intended to be used when testing a resource.                                                                                        |
-| <PyObject object="build_resources"/> | Function for initializing a set of resources outside of the context of a job's execution.                                                                                        |
+| <PyObject object="build_resources"/>             | Function for initializing a set of resources outside of the context of a job's execution.                                                                                                                                   |
 
 ## Overview
 
@@ -195,9 +195,28 @@ def test_cm_resource():
 
 ## Initializing Resources Outside of Execution
 
-There are scenarios where you might want to reuse the code written within your resources outside of the context of execution. Consider that I have a resource `db_connection`, and I want to use that resource within my sensor. I can use the `build_resources` API to initialize this resource outside of execution.
+There are scenarios where you might want to reuse the code written within your resources outside of the context of execution. Consider that I have a resource `db_connection`, and I want to use that resource outside of the context of an execution. I can use the <PyObject object="build_resources"/> API to initialize this resource outside of execution.
 
 ```python file=/concepts/resources/resources.py startafter=start_build_resources_example endbefore=end_build_resources_example
+from dagster import resource, build_resources
+
+
+@resource
+def the_credentials():
+    ...
+
+
+@resource(required_resource_keys={"credentials"})
+def the_db_connection(init_context):
+    get_the_db_connection(init_context.resources.credentials)
+
+
+def uses_db_connection():
+    with build_resources(
+        {"db_connection": the_db_connection, "credentials": credentials}
+    ) as resources:
+        conn = resources.db_connection
+        ...
 ```
 
 ## Resource to Resource Dependencies

@@ -242,6 +242,41 @@ def my_s3_sensor(context):
 # end_s3_sensors_marker
 
 
+@job
+def the_job():
+    ...
+
+
+def get_the_db_connection(creds):
+    ...
+
+
+# start_build_resources_example
+from dagster import resource, build_resources, sensor
+
+
+@resource
+def the_credentials():
+    ...
+
+
+@resource(required_resource_keys={"credentials"})
+def the_db_connection(init_context):
+    get_the_db_connection(init_context.resources.credentials)
+
+
+@sensor(job=the_job)
+def uses_db_connection():
+    with build_resources(
+        {"db_connection": the_db_connection, "credentials": the_credentials}
+    ) as resources:
+        conn = resources.db_connection
+        ...
+
+
+# end_build_resources_example
+
+
 @repository
 def my_repository():
     return [my_job, log_file_job, my_directory_sensor, sensor_A, sensor_B]
