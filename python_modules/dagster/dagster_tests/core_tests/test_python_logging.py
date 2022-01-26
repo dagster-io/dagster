@@ -340,17 +340,32 @@ def define_logging_pipeline():
     return pipe
 
 
-@pytest.mark.parametrize("managed_loggers", [["root"], ["loggerA", "loggerB"]])
-def test_multiprocess_logging(managed_loggers):
+@pytest.mark.parametrize(
+    "managed_loggers,run_config",
+    [
+        (["root"], None),
+        (
+            ["root"],
+            {
+                "execution": {"multiprocess": {}},
+            },
+        ),
+        (
+            ["loggerA", "loggerB"],
+            {
+                "execution": {"multiprocess": {}},
+            },
+        ),
+    ],
+)
+def test_execution_logging(managed_loggers, run_config):
     reset_logging()
 
     log_records = get_log_records(
         reconstructable(define_logging_pipeline),
         managed_loggers=managed_loggers,
         python_logging_level="INFO",
-        run_config={
-            "execution": {"multiprocess": {}},
-        },
+        run_config=run_config,
     )
 
     logA_records = [lr for lr in log_records if lr.user_message == "loggerA"]
