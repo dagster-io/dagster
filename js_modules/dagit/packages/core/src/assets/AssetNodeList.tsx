@@ -40,12 +40,11 @@ export const AssetNodeList: React.FC<{
             {asset.jobs.length ? (
               <AssetNode
                 definition={asset}
-                inAssetCatalog
                 metadata={[]}
+                inAssetCatalog
                 jobName={asset.jobs[0].name}
                 selected={false}
                 liveData={liveDataByNode[asset.id]}
-                repoAddress={repoAddress}
               />
             ) : (
               <ForeignNode assetKey={asset.assetKey} />

@@ -51,7 +51,11 @@ type DagitQuery {
   instance: Instance!
   assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
-  assetNodes: [AssetNode!]!
+  assetNodes(
+    pipeline: PipelineSelector
+    assetKeys: [AssetKeyInput!]
+    loadMaterializations: Boolean = false
+  ): [AssetNode!]!
   assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
   partitionBackfillsOrError(
@@ -115,7 +119,6 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   isJob: Boolean!
   isAssetJob: Boolean!
   repository: Repository!
-  assetNodes(assetKeys: [AssetKeyInput!], loadMaterializations: Boolean = false): [AssetNode!]!
 }
 
 interface SolidContainer {
@@ -1297,10 +1300,6 @@ type PipelinePreset {
   tags: [PipelineTag!]!
 }
 
-input AssetKeyInput {
-  path: [String!]!
-}
-
 type Job implements SolidContainer & IPipelineSnapshot {
   id: ID!
   name: String!
@@ -1322,7 +1321,6 @@ type Job implements SolidContainer & IPipelineSnapshot {
   isJob: Boolean!
   isAssetJob: Boolean!
   repository: Repository!
-  assetNodes(assetKeys: [AssetKeyInput!], loadMaterializations: Boolean = false): [AssetNode!]!
 }
 
 type UsedSolid {
@@ -1677,6 +1675,10 @@ union AssetOrError = Asset | AssetNotFoundError
 
 type AssetNotFoundError implements Error {
   message: String!
+}
+
+input AssetKeyInput {
+  path: [String!]!
 }
 
 union AssetNodeOrError = AssetNode | AssetNotFoundError

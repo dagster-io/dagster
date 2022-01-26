@@ -2,7 +2,7 @@ import {ButtonWIP, IconWIP, Tooltip} from '@dagster-io/ui';
 import React from 'react';
 
 import {LaunchRootExecutionButton} from '../../launchpad/LaunchRootExecutionButton';
-import {RepoAddress} from '../types';
+import {buildRepoAddress} from '../buildRepoAddress';
 
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
 
@@ -10,23 +10,36 @@ type AssetMinimal = {
   assetKey: {path: string[]};
   opName: string | null;
   partitionDefinition: string | null;
+  repository: {name: string; location: {name: string}};
 };
 
 export const LaunchAssetExecutionButton: React.FC<{
-  repoAddress: RepoAddress;
   assetJobName: string;
   assets: AssetMinimal[];
   title?: string;
-}> = ({repoAddress, assets, assetJobName, title}) => {
+}> = ({assets, assetJobName, title}) => {
   const [showingPartitionDialog, setShowingPartitionDialog] = React.useState(false);
+  const repoAddress = buildRepoAddress(
+    assets[0]?.repository.name || '',
+    assets[0]?.repository.location.name || '',
+  );
 
   let disabledReason = '';
   if (!assets.every((a) => a.opName)) {
     disabledReason = 'One or more foreign assets are selected and cannot be refreshed.';
   }
+  if (
+    !assets.every(
+      (a) =>
+        a.repository.name === repoAddress.name &&
+        a.repository.location.name === repoAddress.location,
+    )
+  ) {
+    disabledReason = 'Assets must be in the same repository to be materialized together.';
+  }
   const partitionDefinition = assets[0]?.partitionDefinition;
   if (assets.some((a) => a.partitionDefinition !== partitionDefinition)) {
-    disabledReason = 'Assets refreshed together must share a partition definition.';
+    disabledReason = 'Assets must share a partition definition to be materialized together.';
   }
 
   title = title || 'Refresh';
@@ -53,9 +66,9 @@ export const LaunchAssetExecutionButton: React.FC<{
           <LaunchAssetChoosePartitionsDialog
             assets={assets}
             assetJobName={assetJobName}
-            repoAddress={repoAddress}
             open={showingPartitionDialog}
             setOpen={setShowingPartitionDialog}
+            repoAddress={repoAddress}
           />
         </>
       ) : (

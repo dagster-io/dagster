@@ -1,7 +1,6 @@
 import graphene
 import yaml
 from dagster import check
-from dagster.core.events import AssetKey
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter, RunRecord
@@ -19,7 +18,6 @@ from ..asset_key import GrapheneAssetKey
 from ..dagster_types import GrapheneDagsterType, GrapheneDagsterTypeOrError, to_dagster_type
 from ..errors import GrapheneDagsterTypeNotFoundError, GraphenePythonError, GrapheneRunNotFoundError
 from ..execution import GrapheneExecutionPlan
-from ..inputs import GrapheneAssetKeyInput
 from ..logs.compute_logs import GrapheneComputeLogs
 from ..logs.events import (
     GrapheneDagsterRunEvent,
@@ -589,11 +587,6 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     isJob = graphene.NonNull(graphene.Boolean)
     isAssetJob = graphene.NonNull(graphene.Boolean)
     repository = graphene.NonNull("dagster_graphql.schema.external.GrapheneRepository")
-    assetNodes = graphene.Field(
-        non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode"),
-        assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
-        loadMaterializations=graphene.Boolean(default_value=False),
-    )
 
     class Meta:
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
@@ -632,41 +625,6 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         handle = self._external_pipeline.repository_handle
         location = graphene_info.context.get_repository_location(handle.location_name)
         return GrapheneRepository(location.get_repository(handle.repository_name), location)
-
-    def resolve_assetNodes(self, graphene_info, **kwargs):
-        from ..asset_graph import GrapheneAssetNode
-
-        load_materializations = kwargs.get("loadMaterializations")
-
-        handle = self._external_pipeline.repository_handle
-        location = graphene_info.context.get_repository_location(handle.location_name)
-        repository = location.get_repository(handle.repository_name)
-        asset_nodes = repository.get_external_asset_nodes(self._external_pipeline.name)
-        if not asset_nodes:
-            return []
-        asset_keys = set(
-            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
-        )
-        matching = [node for node in asset_nodes if not asset_keys or node.asset_key in asset_keys]
-        if not matching:
-            return []
-
-        if load_materializations:
-            events_by_key = graphene_info.context.instance.get_latest_materialization_events(
-                [node.asset_key for node in matching]
-            )
-        else:
-            events_by_key = {}
-
-        return [
-            GrapheneAssetNode(
-                repository,
-                node,
-                events_by_key.get(node.asset_key),
-                fetched_materialization=load_materializations,
-            )
-            for node in matching
-        ]
 
 
 class GrapheneJob(GraphenePipeline):

@@ -84,6 +84,16 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._external_asset_node = check.inst_param(
             external_asset_node, "external_asset_node", ExternalAssetNode
         )
+        self.attach_latest_materialization(latest_materialization, fetched_materialization)
+
+        super().__init__(
+            id=external_asset_node.asset_key.to_string(),
+            assetKey=external_asset_node.asset_key,
+            opName=external_asset_node.op_name,
+            description=external_asset_node.op_description,
+        )
+
+    def attach_latest_materialization(self, latest_materialization, fetched_materialization):
         self._latest_materialization = check.opt_inst_param(
             latest_materialization, "latest_materialization", EventLogEntry
         )
@@ -91,13 +101,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         # value has significance
         self._fetched_materialization = check.bool_param(
             fetched_materialization, "fetched_materialization"
-        )
-
-        super().__init__(
-            id=external_asset_node.asset_key.to_string(),
-            assetKey=external_asset_node.asset_key,
-            opName=external_asset_node.op_name,
-            description=external_asset_node.op_description,
         )
 
     def resolve_repository(self, _graphene_info):

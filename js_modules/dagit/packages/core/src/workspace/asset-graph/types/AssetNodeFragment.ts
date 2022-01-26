@@ -12,6 +12,19 @@ export interface AssetNodeFragment_assetKey {
   path: string[];
 }
 
+export interface AssetNodeFragment_repository_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
+export interface AssetNodeFragment_repository {
+  __typename: "Repository";
+  id: string;
+  name: string;
+  location: AssetNodeFragment_repository_location;
+}
+
 export interface AssetNodeFragment {
   __typename: "AssetNode";
   id: string;
@@ -19,4 +32,5 @@ export interface AssetNodeFragment {
   description: string | null;
   partitionDefinition: string | null;
   assetKey: AssetNodeFragment_assetKey;
+  repository: AssetNodeFragment_repository;
 }

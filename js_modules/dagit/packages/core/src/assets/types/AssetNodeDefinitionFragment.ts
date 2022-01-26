@@ -15,6 +15,19 @@ export interface AssetNodeDefinitionFragment_jobs {
   name: string;
 }
 
+export interface AssetNodeDefinitionFragment_repository_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
+export interface AssetNodeDefinitionFragment_repository {
+  __typename: "Repository";
+  id: string;
+  name: string;
+  location: AssetNodeDefinitionFragment_repository_location;
+}
+
 export interface AssetNodeDefinitionFragment_assetKey {
   __typename: "AssetKey";
   path: string[];
@@ -164,6 +177,19 @@ export interface AssetNodeDefinitionFragment_dependencies_asset_assetKey {
   path: string[];
 }
 
+export interface AssetNodeDefinitionFragment_dependencies_asset_repository_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_repository {
+  __typename: "Repository";
+  id: string;
+  name: string;
+  location: AssetNodeDefinitionFragment_dependencies_asset_repository_location;
+}
+
 export interface AssetNodeDefinitionFragment_dependencies_asset_assetMaterializations_runOrError_RunNotFoundError {
   __typename: "RunNotFoundError" | "PythonError";
 }
@@ -305,6 +331,7 @@ export interface AssetNodeDefinitionFragment_dependencies_asset {
   description: string | null;
   partitionDefinition: string | null;
   assetKey: AssetNodeDefinitionFragment_dependencies_asset_assetKey;
+  repository: AssetNodeDefinitionFragment_dependencies_asset_repository;
   assetMaterializations: AssetNodeDefinitionFragment_dependencies_asset_assetMaterializations[];
 }
 
@@ -322,6 +349,19 @@ export interface AssetNodeDefinitionFragment_dependedBy_asset_jobs {
 export interface AssetNodeDefinitionFragment_dependedBy_asset_assetKey {
   __typename: "AssetKey";
   path: string[];
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_repository_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_repository {
+  __typename: "Repository";
+  id: string;
+  name: string;
+  location: AssetNodeDefinitionFragment_dependedBy_asset_repository_location;
 }
 
 export interface AssetNodeDefinitionFragment_dependedBy_asset_assetMaterializations_runOrError_RunNotFoundError {
@@ -465,6 +505,7 @@ export interface AssetNodeDefinitionFragment_dependedBy_asset {
   description: string | null;
   partitionDefinition: string | null;
   assetKey: AssetNodeDefinitionFragment_dependedBy_asset_assetKey;
+  repository: AssetNodeDefinitionFragment_dependedBy_asset_repository;
   assetMaterializations: AssetNodeDefinitionFragment_dependedBy_asset_assetMaterializations[];
 }
 
@@ -479,6 +520,7 @@ export interface AssetNodeDefinitionFragment {
   description: string | null;
   opName: string | null;
   jobs: AssetNodeDefinitionFragment_jobs[];
+  repository: AssetNodeDefinitionFragment_repository;
   partitionDefinition: string | null;
   assetKey: AssetNodeDefinitionFragment_assetKey;
   assetMaterializations: AssetNodeDefinitionFragment_assetMaterializations[];

@@ -191,6 +191,19 @@ export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_ass
   path: string[];
 }
 
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository {
+  __typename: "Repository";
+  id: string;
+  name: string;
+  location: AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository_location;
+}
+
 export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_runOrError_RunNotFoundError {
   __typename: "RunNotFoundError" | "PythonError";
 }
@@ -332,6 +345,7 @@ export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset {
   description: string | null;
   partitionDefinition: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetKey;
+  repository: AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository;
   assetMaterializations: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations[];
 }
 
@@ -349,6 +363,19 @@ export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_jobs 
 export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetKey {
   __typename: "AssetKey";
   path: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository {
+  __typename: "Repository";
+  id: string;
+  name: string;
+  location: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository_location;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_runOrError_RunNotFoundError {
@@ -492,6 +519,7 @@ export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset {
   description: string | null;
   partitionDefinition: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetKey;
+  repository: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository;
   assetMaterializations: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations[];
 }
 

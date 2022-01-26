@@ -2,13 +2,13 @@ import {gql, useQuery} from '@apollo/client';
 import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {PipelineSelector} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
-import {isThisThingAJob, buildPipelineSelector, useRepository} from '../workspace/WorkspaceContext';
-import {RepoAddress} from '../workspace/types';
+import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {Description} from './Description';
 import {NonIdealPipelineQueryResult} from './NonIdealPipelineQueryResult';
-import {ExplorerPath} from './PipelinePathUtils';
 import {SidebarSection} from './SidebarComponents';
 import {SidebarModeSection, SIDEBAR_MODE_INFO_FRAGMENT} from './SidebarModeSection';
 import {
@@ -17,13 +17,8 @@ import {
 } from './types/JobOverviewSidebarQuery';
 
 export const SidebarPipelineOrJobOverview: React.FC<{
-  repoAddress: RepoAddress;
-  explorerPath: ExplorerPath;
-}> = (props) => {
-  const {explorerPath, repoAddress} = props;
-  const {pipelineName} = explorerPath;
-  const pipelineSelector = buildPipelineSelector(repoAddress, pipelineName);
-
+  pipelineSelector: PipelineSelector;
+}> = ({pipelineSelector}) => {
   const queryResult = useQuery<JobOverviewSidebarQuery, JobOverviewSidebarQueryVariables>(
     JOB_OVERVIEW_SIDEBAR_QUERY,
     {
@@ -33,8 +28,9 @@ export const SidebarPipelineOrJobOverview: React.FC<{
     },
   );
 
-  const repo = useRepository(repoAddress);
-  const isJob = isThisThingAJob(repo, pipelineName);
+  const {repositoryName, repositoryLocationName} = pipelineSelector;
+  const repo = useRepository(buildRepoAddress(repositoryName, repositoryLocationName));
+  const isJob = isThisThingAJob(repo, pipelineSelector.pipelineName);
 
   return (
     <Loading queryResult={queryResult}>
