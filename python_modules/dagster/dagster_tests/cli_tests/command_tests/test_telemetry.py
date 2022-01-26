@@ -25,6 +25,7 @@ EXPECTED_KEYS = set(
         "instance_id",
         "pipeline_name_hash",
         "num_pipelines_in_repo",
+        "run_storage_id",
         "repo_hash",
         "python_version",
         "metadata",

@@ -1,6 +1,11 @@
 import sqlalchemy as db
 from dagster import check
-from dagster.core.storage.runs import DaemonHeartbeatsTable, RunStorageSqlMetadata, SqlRunStorage
+from dagster.core.storage.runs import (
+    DaemonHeartbeatsTable,
+    InstanceInfo,
+    RunStorageSqlMetadata,
+    SqlRunStorage,
+)
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
@@ -58,6 +63,9 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
             retry_pg_creation_fn(self._init_db)
             self.migrate()
             self.optimize()
+
+        elif "instance_info" not in table_names:
+            InstanceInfo.create(self._engine)
 
         super().__init__()
 

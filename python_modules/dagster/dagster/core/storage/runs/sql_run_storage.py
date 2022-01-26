@@ -1,4 +1,5 @@
 import logging
+import uuid
 import zlib
 from abc import abstractmethod
 from collections import defaultdict
@@ -39,6 +40,7 @@ from .migration import OPTIONAL_DATA_MIGRATIONS, REQUIRED_DATA_MIGRATIONS, RUN_P
 from .schema import (
     BulkActionsTable,
     DaemonHeartbeatsTable,
+    InstanceInfo,
     RunTagsTable,
     RunsTable,
     SecondaryIndexMigrationTable,
@@ -718,6 +720,17 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             )
             conn.execute(snapshot_insert)
             return snapshot_id
+
+    def get_run_storage_id(self) -> str:
+        query = db.select([InstanceInfo.c.run_storage_id])
+        row = self.fetchone(query)
+        if not row:
+            run_storage_id = str(uuid.uuid4())
+            with self.connect() as conn:
+                conn.execute(InstanceInfo.insert().values(run_storage_id=run_storage_id))
+            return run_storage_id
+        else:
+            return row[0]
 
     def _has_snapshot_id(self, snapshot_id: str) -> bool:
         query = db.select([SnapshotsTable.c.snapshot_id]).where(

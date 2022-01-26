@@ -324,6 +324,7 @@ def test_dagit_logs(
                         "num_pipelines_in_repo",
                         "repo_hash",
                         "python_version",
+                        "run_storage_id",
                         "metadata",
                         "version",
                         "dagster_version",
