@@ -4,10 +4,11 @@ from dagster.cli import api
 from dagster.cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
 from dagster.core.execution.retries import RetryState
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot
+from dagster.core.host_representation import PipelineHandle
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import create_run_for_test, instance_for_test
 from dagster.serdes import serialize_dagster_namedtuple
-from dagster_tests.api_tests.utils import get_foo_pipeline_handle
+from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_pipeline_handle
 
 
 def runner_execute_run(runner, cli_args):
@@ -59,7 +60,67 @@ def test_execute_run():
                 [input_json],
             )
 
-        assert "PIPELINE_SUCCESS" in result.stdout, "no match, result: {}".format(result)
+            assert "PIPELINE_SUCCESS" in result.stdout, "no match, result: {}".format(result.stdout)
+
+            # Framework errors (e.g. running a run that has already run) still result in a non-zero error code
+            result = runner.invoke(api.execute_run_command, [input_json])
+            assert result.exit_code == 0
+
+
+def test_execute_run_fail_pipeline():
+    with get_bar_repo_handle() as repo_handle:
+        pipeline_handle = PipelineHandle("fail", repo_handle)
+        runner = CliRunner()
+
+        with instance_for_test(
+            overrides={
+                "compute_logs": {
+                    "module": "dagster.core.storage.noop_compute_log_manager",
+                    "class": "NoOpComputeLogManager",
+                }
+            }
+        ) as instance:
+            instance = DagsterInstance.get()
+            run = create_run_for_test(instance, pipeline_name="foo", run_id="new_run")
+
+            input_json = serialize_dagster_namedtuple(
+                ExecuteRunArgs(
+                    pipeline_origin=pipeline_handle.get_python_origin(),
+                    pipeline_run_id=run.run_id,
+                    instance_ref=instance.get_ref(),
+                )
+            )
+
+            result = runner_execute_run(
+                runner,
+                [input_json],
+            )
+            assert result.exit_code == 0
+
+            assert "RUN_FAILURE" in result.stdout, "no match, result: {}".format(result)
+
+            run = create_run_for_test(
+                instance, pipeline_name="foo", run_id="new_run_raise_on_error"
+            )
+
+            input_json_raise_on_failure = serialize_dagster_namedtuple(
+                ExecuteRunArgs(
+                    pipeline_origin=pipeline_handle.get_python_origin(),
+                    pipeline_run_id=run.run_id,
+                    instance_ref=instance.get_ref(),
+                    set_exit_code_on_failure=True,
+                )
+            )
+
+            result = runner.invoke(api.execute_run_command, [input_json_raise_on_failure])
+
+            assert result.exit_code != 0, str(result.stdout)
+
+            assert "RUN_FAILURE" in result.stdout, "no match, result: {}".format(result)
+
+            # Framework errors (e.g. running a run that has already run) also result in a non-zero error code
+            result = runner.invoke(api.execute_run_command, [input_json_raise_on_failure])
+            assert result.exit_code != 0, str(result.stdout)
 
 
 def runner_execute_step(runner, cli_args):

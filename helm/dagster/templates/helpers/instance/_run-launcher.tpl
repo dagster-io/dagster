@@ -54,6 +54,10 @@ config:
   image_pull_policy: {{ $celeryK8sRunLauncherConfig.imagePullPolicy }}
   {{- end }}
 
+  {{- if $celeryK8sRunLauncherConfig.failPodOnRunFailure }}
+  fail_pod_on_run_failure: true
+  {{- end }}
+
 {{- end }}
 
 {{- define "dagsterYaml.runLauncher.k8s" }}
@@ -115,6 +119,11 @@ config:
   {{- if $k8sRunLauncherConfig.labels }}
   labels: {{- $k8sRunLauncherConfig.labels | toYaml | nindent 4 }}
   {{- end }}
+
+  {{- if $k8sRunLauncherConfig.failPodOnRunFailure }}
+  fail_pod_on_run_failure: true
+  {{- end }}
+
 
 {{- end }}
 
