@@ -1,10 +1,12 @@
 # pylint: disable=print-call, redefined-outer-name
 import base64
 import os
+import json
 import subprocess
 import time
 from contextlib import contextmanager
 
+import boto3
 import kubernetes
 import pytest
 import requests
@@ -159,10 +161,20 @@ def aws_configmap(namespace, should_cleanup):
         }
 
         if not aws_data["AWS_ACCESS_KEY_ID"] or not aws_data["AWS_SECRET_ACCESS_KEY"]:
-            raise Exception(
-                "Must have AWS credentials set in AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY "
-                "to be able to run Helm tests locally"
-            )
+            sm_client = boto3.client("secretsmanager", region_name="us-west-1")
+            try:
+                creds = json.loads(
+                    sm_client.get_secret_value(SecretId="development/DOCKER_AWS_CREDENTIAL").get(
+                        "SecretString"
+                    )
+                )
+                aws_data["AWS_ACCESS_KEY_ID"] = creds['aws_access_key_id']
+                aws_data["AWS_SECRET_ACCESS_KEY"] = creds['aws_secret_access_key']
+            except:
+                raise Exception(
+                    "Must have AWS credentials set in AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY "
+                    "to be able to run Helm tests locally"
+                )
 
         print("Creating ConfigMap %s with AWS credentials" % (TEST_AWS_CONFIGMAP_NAME))
         aws_configmap = kubernetes.client.V1ConfigMap(
