@@ -556,6 +556,7 @@ def test_yield_event_ordering():
     def yielding_op(context):
         context.log_event(AssetMaterialization("first"))
         time.sleep(1)
+        context.log.debug("A log")
         context.log_event(AssetMaterialization("second"))
         yield AssetMaterialization("third")
         yield Output("foo")
@@ -583,6 +584,14 @@ def test_yield_event_ordering():
             )
         ]
 
+        log_entries = [
+            event_log
+            for event_log in instance.all_logs(result.run_id)
+            if event_log.dagster_event is None
+        ]
+        log = log_entries[0]
+        assert log.user_message == "A log"
+
         first = relevant_event_logs[0]
         assert first.dagster_event.event_specific_data.materialization.label == "first"
 
@@ -593,3 +602,4 @@ def test_yield_event_ordering():
         assert third.dagster_event.event_specific_data.materialization.label == "third"
 
         assert second.timestamp - first.timestamp >= 1
+        assert log.timestamp - first.timestamp >= 1
