@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {Box} from '@dagster-io/ui';
+import {Box, Heading, MetadataTable, Subheading, Table} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -9,13 +9,21 @@ import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/Sidebar
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from './ConfigTypeSchema';
 import {TypeExplorerFragment} from './types/TypeExplorerFragment';
 
+import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
+import { isTableSchemaMetadataEntry, TableSchema } from '../runs/TableSchema';
+import { MetadataEntryFragment } from '../runs/types/MetadataEntryFragment';
+
 interface ITypeExplorerProps {
   isGraph: boolean;
   type: TypeExplorerFragment;
 }
 
+// TODO: how to put key on metadata entries?
+
 export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
-  const {name, inputSchemaType, outputSchemaType, description} = props.type;
+  const {name, metadataEntries, inputSchemaType, outputSchemaType, description} = props.type;
+  const tableSchemaEntry = metadataEntries.find(isTableSchemaMetadataEntry);
+  const tableSchema = tableSchemaEntry?.schema;
   return (
     <div>
       <SidebarSubhead />
@@ -30,6 +38,9 @@ export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
         <Box padding={{vertical: 16, horizontal: 24}}>
           <Description description={description || 'No Description Provided'} />
         </Box>
+        {tableSchema && (
+            <TableSchema schema={tableSchema} />
+        )}
       </SidebarSection>
       {inputSchemaType && (
         <SidebarSection title="Input">
@@ -55,10 +66,16 @@ export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
   );
 };
 
+// const ColumnDescription = React.FC<EventMetadata
+// }>
+
 export const TYPE_EXPLORER_FRAGMENT = gql`
   fragment TypeExplorerFragment on DagsterType {
     name
     description
+    metadataEntries {
+      ...MetadataEntryFragment
+    }
     inputSchemaType {
       ...ConfigTypeSchemaFragment
       recursiveConfigTypes {
@@ -72,6 +89,6 @@ export const TYPE_EXPLORER_FRAGMENT = gql`
       }
     }
   }
-
+  ${METADATA_ENTRY_FRAGMENT}
   ${CONFIG_TYPE_SCHEMA_FRAGMENT}
 `;
