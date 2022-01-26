@@ -17,7 +17,7 @@ from typing import (
 from dagster import check
 from dagster.config import Field, Shape
 from dagster.config.config_type import ConfigType
-from dagster.config.validate import process_config
+from dagster.config.validate import validate_config
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.definitions.mode import ModeDefinition
@@ -950,7 +950,7 @@ def _config_mapping_with_default_value(
         field_aliases=inner_schema.field_aliases,
     )
 
-    config_evr = process_config(config_schema, default_config)
+    config_evr = validate_config(config_schema, default_config)
     if not config_evr.success:
         raise DagsterInvalidConfigError(
             f"Error in config when building job '{job_name}' from graph '{graph_name}' ",
