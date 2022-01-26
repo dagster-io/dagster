@@ -37,6 +37,7 @@ interface GraphQueryInputProps {
     isJob: boolean;
   };
 
+  explodeComposites?: boolean;
   onChange: (value: string) => void;
   onKeyDown?: (e: React.KeyboardEvent<any>) => void;
   onFocus?: () => void;
@@ -202,6 +203,7 @@ export const GraphQueryInput = React.memo(
     };
 
     const uncomitted = (pendingValue || '*') !== (props.value || '*');
+    const explodeCompositesFlag = props.explodeComposites ? '!' : '';
 
     return (
       <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
@@ -262,7 +264,7 @@ export const GraphQueryInput = React.memo(
                   onMouseDown={(e) => e.currentTarget.click()}
                   to={workspacePipelinePath({
                     ...props.linkToPreview,
-                    pipelineName: `${props.linkToPreview.pipelineName}~${pendingValue}`,
+                    pipelineName: `${props.linkToPreview.pipelineName}~${explodeCompositesFlag}${pendingValue}`,
                   })}
                 >
                   Graph Preview <IconWIP color={ColorsWIP.Link} name="open_in_new" />

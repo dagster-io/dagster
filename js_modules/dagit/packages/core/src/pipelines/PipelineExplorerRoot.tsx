@@ -48,7 +48,7 @@ export const PipelineExplorerContainer: React.FC<{
   isGraph?: boolean;
 }> = ({explorerPath, repoAddress, onChangeExplorerPath, isGraph = false}) => {
   const [options, setOptions] = React.useState<GraphExplorerOptions>({
-    explodeComposites: false,
+    explodeComposites: explorerPath.explodeComposites ?? false,
   });
 
   const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
