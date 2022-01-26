@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Any, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from dagster import check
 from dagster.core.definitions.dependency import Node, NodeHandle
@@ -14,11 +14,12 @@ from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
-from dagster.core.errors import DagsterInvalidPropertyError
+from dagster.core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.utils import merge_dicts
 from dagster.utils.forked_pdb import ForkedPdb
 
 from .system import StepExecutionContext
@@ -99,6 +100,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         )
         self._pdb: Optional[ForkedPdb] = None
         self._events: List[DagsterEvent] = []
+        self._output_metadata: Dict[str, Any] = {}
 
     @property
     def solid_config(self) -> Any:
@@ -293,6 +295,23 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
             )
         else:
             check.failed("Unexpected event {event}".format(event=event))
+
+    def log_metadata_for_output(self, metadata: Dict[str, Any], output_name: Optional[str] = None):
+        metadata = check.dict_param(metadata, "metadata", key_type=str)
+        output_name = check.opt_str_param(output_name, "output_name")
+
+        if output_name is None and len(self.solid_def.output_defs) == 1:
+            output_name = self.solid_def.output_defs[0].name
+        elif output_name is None:
+            raise DagsterInvariantViolationError(
+                "Attempted to log metadata without providing output_name, but multiple outputs exist. Please provide an output_name to the invocation of `context.log_metadata_for_output`."
+            )
+        self._output_metadata[output_name] = merge_dicts(
+            self._output_metadata.get(output_name, {}), metadata
+        )
+
+    def get_metadata_for_output(self, output_name: str) -> Optional[Dict[str, Any]]:
+        return self._output_metadata.get(output_name)
 
     def get_step_execution_context(self) -> StepExecutionContext:
         """Allows advanced users (e.g. framework authors) to punch through to the underlying
