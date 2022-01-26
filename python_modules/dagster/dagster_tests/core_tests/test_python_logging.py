@@ -340,17 +340,32 @@ def define_logging_pipeline():
     return pipe
 
 
-@pytest.mark.parametrize("managed_loggers", [["root"], ["loggerA", "loggerB"]])
-def test_multiprocess_logging(managed_loggers):
+@pytest.mark.parametrize(
+    "managed_loggers,run_config",
+    [
+        (["root"], None),
+        (
+            ["root"],
+            {
+                "execution": {"multiprocess": {}},
+            },
+        ),
+        (
+            ["loggerA", "loggerB"],
+            {
+                "execution": {"multiprocess": {}},
+            },
+        ),
+    ],
+)
+def test_multiprocess_logging(managed_loggers, run_config):
     reset_logging()
 
     log_records = get_log_records(
         reconstructable(define_logging_pipeline),
         managed_loggers=managed_loggers,
         python_logging_level="INFO",
-        run_config={
-            "execution": {"multiprocess": {}},
-        },
+        run_config=run_config,
     )
 
     logA_records = [lr for lr in log_records if lr.user_message == "loggerA"]
@@ -358,25 +373,3 @@ def test_multiprocess_logging(managed_loggers):
 
     assert len(logA_records) == 2
     assert len(logB_records) == 1
-
-
-@pytest.mark.parametrize("managed_loggers", [["root"]])
-def test_failure_logging(managed_loggers):
-    reset_logging()
-
-    with instance_for_test(
-        overrides={
-            "python_logs": {"managed_python_loggers": managed_loggers, "python_log_level": "INFO"}
-        }
-    ) as instance:
-
-        # This test hangs because _EventListenerLogHandler.emit()
-        # calls handle_new_event, which calls deep inside log.info inside the event log machinery,
-        # which repeats, which tries to acquire a lock a second time in event log storage and hangs
-
-        # stack trace of hang: https://gist.github.com/gibsondan/c4080ce8108c9dce6530d6f2b56c06fc
-        result = execute_pipeline(
-            reconstructable(define_logging_pipeline),
-            instance=instance,
-        )
-        assert result.success
