@@ -646,10 +646,10 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
     def resolve_runs(self, graphene_info, **kwargs):
         # override the implementation to use the batch run loader
         if not kwargs.get("cursor") and kwargs.get("limit") and self._batch_loader:
-            runs = self._batch_loader.get_runs_for_job(
+            records = self._batch_loader.get_run_records_for_job(
                 self._external_pipeline.name, kwargs.get("limit")
             )
-            return [GrapheneRun(run) for run in runs]
+            return [GrapheneRun(record) for record in records]
 
         # otherwise, fall back to the default implementation
         return super().resolve_runs(graphene_info, **kwargs)

@@ -55,37 +55,37 @@ class RepositoryScopedBatchLoader:
 
         if data_type == RepositoryDataType.JOB_RUNS:
             job_names = [x.name for x in self._repository.get_all_external_pipelines()]
-            runs = self._instance.get_runs(
-                bucket=JobBucket(bucket_limit=limit, job_names=job_names),
+            records = self._instance.get_run_records(
+                bucket_by=JobBucket(bucket_limit=limit, job_names=job_names),
             )
-            for run in runs:
-                fetched[run.pipeline_name].append(run)
+            for record in records:
+                fetched[record.pipeline_run.pipeline_name].append(record)
 
         elif data_type == RepositoryDataType.SCHEDULE_RUNS:
             schedule_names = [
                 schedule.name for schedule in self._repository.get_external_schedules()
             ]
-            runs = self._instance.get_runs(
-                bucket=TagBucket(
+            records = self._instance.get_run_records(
+                bucket_by=TagBucket(
                     tag_key=SCHEDULE_NAME_TAG,
                     bucket_limit=limit,
                     tag_values=schedule_names,
                 ),
             )
-            for run in runs:
-                fetched[run.tags.get(SCHEDULE_NAME_TAG)].append(run)
+            for record in records:
+                fetched[record.pipeline_run.tags.get(SCHEDULE_NAME_TAG)].append(record)
 
         elif data_type == RepositoryDataType.SENSOR_RUNS:
             sensor_names = [sensor.name for sensor in self._repository.get_external_sensors()]
-            runs = self._instance.get_runs(
-                bucket=TagBucket(
+            records = self._instance.get_run_records(
+                bucket_by=TagBucket(
                     tag_key=SENSOR_NAME_TAG,
                     bucket_limit=limit,
                     tag_values=sensor_names,
                 ),
             )
-            for run in runs:
-                fetched[run.tags.get(SENSOR_NAME_TAG)].append(run)
+            for record in records:
+                fetched[record.pipeline_run.tags.get(SENSOR_NAME_TAG)].append(record)
 
         elif data_type == RepositoryDataType.SCHEDULE_STATES:
             schedule_states = self._instance.all_stored_job_state(
@@ -108,21 +108,21 @@ class RepositoryScopedBatchLoader:
         self._data[data_type] = fetched
         self._limits[data_type] = limit
 
-    def get_runs_for_job(self, job_name, limit):
+    def get_run_records_for_job(self, job_name, limit):
         check.invariant(
             job_name
             in [pipeline.name for pipeline in self._repository.get_all_external_pipelines()]
         )
         return self._get(RepositoryDataType.JOB_RUNS, job_name, limit)
 
-    def get_runs_for_schedule(self, schedule_name, limit):
+    def get_run_records_for_schedule(self, schedule_name, limit):
         check.invariant(
             schedule_name
             in [schedule.name for schedule in self._repository.get_external_schedules()]
         )
         return self._get(RepositoryDataType.SCHEDULE_RUNS, schedule_name, limit)
 
-    def get_runs_for_sensor(self, sensor_name, limit):
+    def get_run_records_for_sensor(self, sensor_name, limit):
         check.invariant(
             sensor_name in [sensor.name for sensor in self._repository.get_external_sensors()]
         )

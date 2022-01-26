@@ -314,12 +314,12 @@ class GrapheneInstigationState(graphene.ObjectType):
 
         if kwargs.get("limit") and self._batch_loader:
             limit = kwargs["limit"]
-            runs = (
-                self._batch_loader.get_runs_for_sensor(self._job_state.name, limit)
+            records = (
+                self._batch_loader.get_run_records_for_sensor(self._job_state.name, limit)
                 if self._job_state.job_type == InstigatorType.SENSOR
-                else self._batch_loader.get_runs_for_schedule(self._job_state.name, limit)
+                else self._batch_loader.get_run_records_for_schedule(self._job_state.name, limit)
             )
-            return [GrapheneRun(run) for run in runs]
+            return [GrapheneRun(record) for record in records]
 
         if self._job_state.job_type == InstigatorType.SENSOR:
             filters = PipelineRunsFilter.for_sensor(self._job_state)
