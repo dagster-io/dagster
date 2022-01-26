@@ -507,5 +507,11 @@ def test_repository_batching(graphql_context):
     counts = counter.counts()
     assert counts
     assert len(counts) == 2
-    assert counts.get("DagsterInstance.get_runs") == 1
+
+    # We should have a single batch call to fetch run records (to fetch schedule runs) and a single
+    # batch call to fetch instigator state, instead of separate calls for each schedule (~18
+    # distinct schedules in the repo)
+    # 1) `get_run_records` is fetched to instantiate GrapheneRun
+    # 2) `all_stored_job_state` is fetched to instantiate GrapheneSchedule
+    assert counts.get("DagsterInstance.get_run_records") == 1
     assert counts.get("DagsterInstance.all_stored_job_state") == 1

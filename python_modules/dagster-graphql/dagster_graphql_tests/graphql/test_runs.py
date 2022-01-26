@@ -843,4 +843,6 @@ def test_repository_batching():
             counts = counter.counts()
             assert counts
             assert len(counts) == 1
+            # We should have a single batch call to fetch run records, instead of 3 separate calls
+            # to fetch run records (which is fetched to instantiate GrapheneRun)
             assert counts.get("DagsterInstance.get_run_records") == 1
