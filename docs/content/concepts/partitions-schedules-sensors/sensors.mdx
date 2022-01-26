@@ -476,7 +476,7 @@ def the_db_connection(init_context):
 @sensor(job=the_job)
 def uses_db_connection():
     with build_resources(
-        {"db_connection": the_db_connection, "credentials": credentials}
+        {"db_connection": the_db_connection, "credentials": the_credentials}
     ) as resources:
         conn = resources.db_connection
         ...
