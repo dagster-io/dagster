@@ -2,14 +2,14 @@ import copy
 
 import yaml
 from dagster import (
-    execute_pipeline,
-    lambda_solid,
-    pipeline,
-    repository,
-    op,
-    job,
     AssetMaterialization,
     Output,
+    execute_pipeline,
+    job,
+    lambda_solid,
+    op,
+    pipeline,
+    repository,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import execute_run
