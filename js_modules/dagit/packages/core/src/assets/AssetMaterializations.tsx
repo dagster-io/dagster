@@ -47,11 +47,11 @@ const LABEL_STEP_EXECUTION_TIME = 'Step Execution Time';
 
 /**
  * If the asset has a defined partition space, we load all materializations in the
- * last 200 partitions. This ensures that if you run a huge backfill of old partitions,
- * you still see accurate info for the last 200 partitions in the UI. A count-based
+ * last 100 partitions. This ensures that if you run a huge backfill of old partitions,
+ * you still see accurate info for the last 100 partitions in the UI. A count-based
  * limit could cause random partitions to disappear if materializations were out of order.
  *
- * For non-SDA-partitioned assets, we load the most recent 200 materializations. We might
+ * For non-SDA-partitioned assets, we load the most recent 100 materializations. We might
  * still show these "By partition" (and the gaps problem above exists), but we don't have
  * a choice.
  */
@@ -76,7 +76,7 @@ function useRecentMaterializations(
       : {
           assetKey: {path: assetKey.path},
           before: before,
-          limit: 200,
+          limit: 100,
         },
   });
 
