@@ -3,6 +3,7 @@ from datetime import datetime
 
 import pendulum
 import pytest
+from dagster import seven
 from dagster.core.definitions import PipelineDefinition
 from dagster.core.errors import (
     DagsterRunAlreadyExists,
@@ -31,6 +32,8 @@ from dagster.core.utils import make_new_run_id
 from dagster.daemon.daemon import SensorDaemon
 from dagster.daemon.types import DaemonHeartbeat
 from dagster.serdes import serialize_pp
+
+win_py36 = seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
 
 
 class TestRunStorage:
@@ -1216,6 +1219,7 @@ class TestRunStorage:
         assert run_record.end_time is not None
         assert run_record.end_time >= run_record.start_time
 
+    @pytest.mark.skipif(win_py36, reason="Sqlite rank queries not working on windows py36")
     def test_by_job(self, storage):
         def _add_run(job_name, tags=None):
             return storage.add_run(
@@ -1259,6 +1263,7 @@ class TestRunStorage:
         assert runs_by_job.get("b_pipeline").run_id == b_two.run_id
         assert runs_by_job.get("c_pipeline").run_id == c_one.run_id
 
+    @pytest.mark.skipif(win_py36, reason="Sqlite rank queries not working on windows py36")
     def test_by_tag(self, storage):
         def _add_run(job_name, tags=None):
             return storage.add_run(
