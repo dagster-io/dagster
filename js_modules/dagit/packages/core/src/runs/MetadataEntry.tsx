@@ -166,6 +166,25 @@ export const MetadataEntry: React.FC<{
   }
 };
 
+const TABLE_SCHEMA_FRAGMENT = gql`
+  fragment TableSchemaFragment on TableSchema {
+    __typename
+    columns {
+      name
+      description
+      type
+      constraints {
+        nullable
+        unique
+        other
+      }
+    }
+    constraints {
+      other
+    }
+  }
+`;
+
 export const METADATA_ENTRY_FRAGMENT = gql`
   fragment MetadataEntryFragment on EventMetadataEntry {
     __typename
@@ -205,7 +224,21 @@ export const METADATA_ENTRY_FRAGMENT = gql`
         path
       }
     }
+    ... on EventTableMetadataEntry {
+      table {
+        records
+        schema {
+          ...TableSchemaFragment
+        }
+      }
+    }
+    ... on EventTableSchemaMetadataEntry {
+      schema {
+        ...TableSchemaFragment
+      }
+    }
   }
+  ${TABLE_SCHEMA_FRAGMENT}
 `;
 
 const IconButton = styled.button`
