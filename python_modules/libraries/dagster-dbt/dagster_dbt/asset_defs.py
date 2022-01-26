@@ -2,9 +2,9 @@ import json
 import os
 import subprocess
 import textwrap
-from typing import Any, Callable, List, Mapping, Optional, Sequence
+from typing import Any, Callable, Mapping, Optional, Sequence
 
-from dagster import AssetKey, OpDefinition, Out, Output, SolidExecutionContext, check
+from dagster import AssetKey, Out, Output, SolidExecutionContext, check
 from dagster.core.asset_defs import AssetsDefinition, multi_asset
 from dagster_dbt.utils import generate_materializations
 
@@ -127,7 +127,7 @@ def load_assets_from_dbt_project(
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
     io_manager_key: Optional[str] = None,
-) -> List[OpDefinition]:
+) -> Sequence[AssetsDefinition]:
     """
     Loads a set of DBT models from a DBT project into Dagster assets.
 
@@ -162,7 +162,7 @@ def load_assets_from_dbt_manifest(
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
     io_manager_key: Optional[str] = None,
-) -> AssetsDefinition:
+) -> Sequence[AssetsDefinition]:
     """
     Loads a set of DBT models, described in a manifest.json, into Dagster assets.
 
@@ -180,8 +180,10 @@ def load_assets_from_dbt_manifest(
     """
     check.dict_param(manifest_json, "manifest_json", key_type=str)
     dbt_nodes = list(manifest_json["nodes"].values())
-    return _dbt_nodes_to_assets(
-        [node_info for node_info in dbt_nodes if node_info["resource_type"] == "model"],
-        runtime_metadata_fn=runtime_metadata_fn,
-        io_manager_key=io_manager_key,
-    )
+    return [
+        _dbt_nodes_to_assets(
+            [node_info for node_info in dbt_nodes if node_info["resource_type"] == "model"],
+            runtime_metadata_fn=runtime_metadata_fn,
+            io_manager_key=io_manager_key,
+        )
+    ]

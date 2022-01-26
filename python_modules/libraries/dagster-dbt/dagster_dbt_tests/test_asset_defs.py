@@ -24,7 +24,7 @@ def test_load_from_manifest_json():
     dbt.run.return_value = DbtOutput(run_results_json)
     assets_job = build_assets_job(
         "assets_job",
-        [dbt_assets],
+        dbt_assets,
         resource_defs={"dbt": ResourceDefinition.hardcoded_resource(dbt)},
     )
     assert assets_job.execute_in_process().success
@@ -51,7 +51,7 @@ def test_runtime_metadata_fn():
     dbt.run.return_value = DbtOutput(run_results_json)
     assets_job = build_assets_job(
         "assets_job",
-        [dbt_assets],
+        dbt_assets,
         resource_defs={"dbt": ResourceDefinition.hardcoded_resource(dbt)},
     )
     result = assets_job.execute_in_process()
@@ -59,20 +59,22 @@ def test_runtime_metadata_fn():
 
     materializations = [
         event.event_specific_data.materialization
-        for event in result.events_for_node(dbt_assets.op.name)
+        for event in result.events_for_node(dbt_assets[0].op.name)
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 4
     assert materializations[0].metadata_entries == [
-        EventMetadataEntry.text(dbt_assets.op.name, label="op_name"),
+        EventMetadataEntry.text(dbt_assets[0].op.name, label="op_name"),
         EventMetadataEntry.text(materializations[0].asset_key.path[0], label="dbt_model"),
     ]
 
 
 def assert_assets_match_project(dbt_assets):
-    assert dbt_assets.op.tags == {"kind": "dbt"}
-    assert len(dbt_assets.op.input_defs) == 0
-    assert dbt_assets.op.output_dict.keys() == {
+    assert len(dbt_assets) == 1
+    assets_op = dbt_assets[0].op
+    assert assets_op.tags == {"kind": "dbt"}
+    assert len(assets_op.input_defs) == 0
+    assert assets_op.output_dict.keys() == {
         "sort_by_calories",
         "least_caloric",
         "sort_hot_cereals_by_calories",
@@ -83,12 +85,12 @@ def assert_assets_match_project(dbt_assets):
         "sort_hot_cereals_by_calories",
         "sort_cold_cereals_by_calories",
     ]:
-        out_def = dbt_assets.op.output_dict.get(model_name)
+        out_def = assets_op.output_dict.get(model_name)
         assert out_def.hardcoded_asset_key == AssetKey([model_name])
         assert out_def.out_deps == ["sort_by_calories"]
         assert out_def.in_deps == []
 
-    root_out_def = dbt_assets.op.output_dict.get("sort_by_calories")
+    root_out_def = assets_op.output_dict.get("sort_by_calories")
     assert root_out_def.hardcoded_asset_key == AssetKey(["sort_by_calories"])
     assert root_out_def.out_deps == []
     assert out_def.in_deps == []
