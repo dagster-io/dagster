@@ -34,6 +34,7 @@ def types():
     from .runs import types as runs_types
     from .sensors import types as sensors_types
     from .solids import types as solids_types
+    from .table import types as table_types
     from .tags import GraphenePipelineTag, GraphenePipelineTagAndValues
     from .used_solid import GrapheneNodeInvocationSite, GrapheneUsedSolid
 
@@ -61,6 +62,7 @@ def types():
         + runs_types
         + sensors_types
         + solids_types
+        + table_types
         + [GraphenePipelineTag, GraphenePipelineTagAndValues]
         + [GrapheneNodeInvocationSite, GrapheneUsedSolid]
     )

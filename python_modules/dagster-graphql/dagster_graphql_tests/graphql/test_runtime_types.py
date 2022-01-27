@@ -57,6 +57,9 @@ fragment dagsterTypeFragment on DagsterType {
     innerTypes {
         key
     }
+    metadataEntries {
+        label
+    }
     ... on WrappingDagsterType {
         ofType {
             key

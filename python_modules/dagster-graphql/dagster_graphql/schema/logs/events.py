@@ -10,6 +10,7 @@ from ...implementation.loader import BatchRunLoader
 from ..asset_key import GrapheneAssetKey, GrapheneAssetLineageInfo
 from ..errors import GraphenePythonError, GrapheneRunNotFoundError
 from ..runs import GrapheneStepEventStatus
+from ..table import GrapheneTable, GrapheneTableSchema
 from ..util import non_null_list
 from .log_level import GrapheneLogLevel
 
@@ -167,6 +168,23 @@ class GrapheneEventPathMetadataEntry(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneEventMetadataEntry,)
         name = "EventPathMetadataEntry"
+
+
+class GrapheneEventTableMetadataEntry(graphene.ObjectType):
+    table = graphene.NonNull(GrapheneTable)
+
+    class Meta:
+        interfaces = (GrapheneEventMetadataEntry,)
+        name = "EventTableMetadataEntry"
+
+
+class GrapheneEventTableSchemaMetadataEntry(graphene.ObjectType):
+
+    schema = graphene.NonNull(GrapheneTableSchema)
+
+    class Meta:
+        interfaces = (GrapheneEventMetadataEntry,)
+        name = "EventTableSchemaMetadataEntry"
 
 
 class GrapheneEventJsonMetadataEntry(graphene.ObjectType):
