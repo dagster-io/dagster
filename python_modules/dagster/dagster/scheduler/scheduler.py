@@ -114,10 +114,7 @@ def launch_scheduled_runs(
     ]
 
     if not schedules:
-        if log_verbose_checks:
-            # Only log the "No schedules have been started" warning once per workspace reload
-            # to avoid spamming the logs
-            logger.info("Not checking for any runs since no schedules have been started.")
+        logger.debug("Not checking for any runs since no schedules have been started.")
         yield
         return
 

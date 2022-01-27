@@ -41,7 +41,7 @@ def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=No
     backfill_jobs = instance.get_backfills(status=BulkActionStatus.REQUESTED)
 
     if not backfill_jobs:
-        logger.info("No backfill jobs requested.")
+        logger.debug("No backfill jobs requested.")
         yield
         return
 
