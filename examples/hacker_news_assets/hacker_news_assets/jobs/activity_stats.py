@@ -2,7 +2,7 @@ import json
 import os
 
 import pandas as pd
-from dagster import EventMetadata, ResourceDefinition
+from dagster import EventMetadata
 from dagster.core.asset_defs import build_assets_job
 from dagster.utils import file_relative_path
 from dagster_dbt import dbt_cli_resource
@@ -43,24 +43,12 @@ activity_stats_staging_job = build_assets_job(
     "activity_stats",
     assets,
     [],
-    resource_defs={
-        **RESOURCES_STAGING,
-        **{
-            "dbt": dbt_prod_resource,
-            "partition_bounds": ResourceDefinition.none_resource(),
-        },
-    },
+    resource_defs={**RESOURCES_STAGING, **{"dbt": dbt_prod_resource}},
 )
 
 activity_stats_prod_job = build_assets_job(
     "activity_stats",
     assets,
     [],
-    resource_defs={
-        **RESOURCES_PROD,
-        **{
-            "dbt": dbt_prod_resource,
-            "partition_bounds": ResourceDefinition.none_resource(),
-        },
-    },
+    resource_defs={**RESOURCES_PROD, **{"dbt": dbt_prod_resource}},
 )

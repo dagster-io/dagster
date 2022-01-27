@@ -1,4 +1,3 @@
-from dagster import ResourceDefinition
 from dagster.core.asset_defs import build_assets_job
 from hacker_news_assets.assets.comment_stories import comment_stories
 from hacker_news_assets.assets.items import comments, stories
@@ -21,18 +20,12 @@ story_recommender_prod_job = build_assets_job(
     "story_recommender_prod",
     assets=assets,
     source_assets=source_assets,
-    resource_defs={
-        **RESOURCES_PROD,
-        **{"partition_bounds": ResourceDefinition.none_resource()},
-    },
+    resource_defs=RESOURCES_PROD,
 )
 
 story_recommender_staging_job = build_assets_job(
     "story_recommender_staging",
     assets=assets,
     source_assets=source_assets,
-    resource_defs={
-        **RESOURCES_STAGING,
-        **{"partition_bounds": ResourceDefinition.none_resource()},
-    },
+    resource_defs=RESOURCES_STAGING,
 )
