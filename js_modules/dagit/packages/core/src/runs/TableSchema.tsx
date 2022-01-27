@@ -1,7 +1,8 @@
 import * as React from 'react';
-
 import styled from 'styled-components/macro';
+
 import {ColorsWIP, Tag, TagWIP, Tooltip} from '../../../ui/src';
+
 import {
   MetadataEntryFragment,
   MetadataEntryFragment_EventTableSchemaMetadataEntry,
@@ -73,7 +74,9 @@ const ColumnConstraintsTooltipContent = styled.div`
   flex-direction: column;
   align-items: flex-start;
   padding: 8px;
-  div:first-child { border-top: none; }
+  div:first-child {
+    border-top: none;
+  }
 `;
 
 const ColumnConstraintsTooltipContentItem = styled.div`
@@ -87,9 +90,15 @@ const NonNullableTag = <TagWIP intent="warning">non-nullable</TagWIP>;
 const UniqueTag = <TagWIP intent="success">unique</TagWIP>;
 
 const OtherTag: React.FC<{other: string[]}> = ({other}) => {
-  const content = <ColumnConstraintsTooltipContent>
-    {other.map((constraint, i) => <ColumnConstraintsTooltipContentItem key={i}>{constraint}</ColumnConstraintsTooltipContentItem>)}
-  </ColumnConstraintsTooltipContent>;
+  const content = (
+    <ColumnConstraintsTooltipContent>
+      {other.map((constraint, i) => (
+        <ColumnConstraintsTooltipContentItem key={i}>
+          {constraint}
+        </ColumnConstraintsTooltipContentItem>
+      ))}
+    </ColumnConstraintsTooltipContent>
+  );
   return (
     <Tooltip content={content}>
       <TagWIP intent="warning">
@@ -110,7 +119,7 @@ const ColumnItem: React.FC<{
         <ColumnName>{name}</ColumnName>
         {!constraints.nullable && NonNullableTag}
         {constraints.unique && UniqueTag}
-          {constraints.other?.length > 0 && <OtherTag other={constraints.other}/>}
+        {constraints.other?.length > 0 && <OtherTag other={constraints.other} />}
       </ColumnMetadata>
       {description && <ColumnDescription>{description}</ColumnDescription>}
     </ColumnItemContainer>
