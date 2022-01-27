@@ -212,7 +212,7 @@ def experimental(callable_):
 
         callable_.__init__ = __init__
 
-    return callable_
+        return callable_
 
 
 def experimental_decorator(decorator):
