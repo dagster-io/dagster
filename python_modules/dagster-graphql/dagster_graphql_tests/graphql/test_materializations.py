@@ -23,56 +23,69 @@ class TestMaterializations(ExecutingGraphQLContextTestMatrix):
         mat = materializations[0]
         assert mat["label"] == "all_types"
 
-        text_entry = mat["metadataEntries"][0]
-        assert text_entry["__typename"] == "EventTextMetadataEntry"
-        assert text_entry["text"]
+        entry = mat["metadataEntries"][0]
+        assert entry["__typename"] == "EventTextMetadataEntry"
+        assert entry["text"]
 
-        text_entry = mat["metadataEntries"][1]
-        assert text_entry["__typename"] == "EventUrlMetadataEntry"
-        assert text_entry["url"]
+        entry = mat["metadataEntries"][1]
+        assert entry["__typename"] == "EventUrlMetadataEntry"
+        assert entry["url"]
 
-        text_entry = mat["metadataEntries"][2]
-        assert text_entry["__typename"] == "EventPathMetadataEntry"
-        assert text_entry["path"]
+        entry = mat["metadataEntries"][2]
+        assert entry["__typename"] == "EventPathMetadataEntry"
+        assert entry["path"]
 
-        text_entry = mat["metadataEntries"][3]
-        assert text_entry["__typename"] == "EventJsonMetadataEntry"
-        assert text_entry["jsonString"]
+        entry = mat["metadataEntries"][3]
+        assert entry["__typename"] == "EventJsonMetadataEntry"
+        assert entry["jsonString"]
 
-        text_entry = mat["metadataEntries"][4]
-        assert text_entry["__typename"] == "EventPythonArtifactMetadataEntry"
-        assert text_entry["module"]
-        assert text_entry["name"]
+        entry = mat["metadataEntries"][4]
+        assert entry["__typename"] == "EventPythonArtifactMetadataEntry"
+        assert entry["module"]
+        assert entry["name"]
 
-        text_entry = mat["metadataEntries"][5]
-        assert text_entry["__typename"] == "EventPythonArtifactMetadataEntry"
-        assert text_entry["module"]
-        assert text_entry["name"]
+        entry = mat["metadataEntries"][5]
+        assert entry["__typename"] == "EventPythonArtifactMetadataEntry"
+        assert entry["module"]
+        assert entry["name"]
 
-        text_entry = mat["metadataEntries"][6]
-        assert text_entry["__typename"] == "EventFloatMetadataEntry"
-        assert text_entry["floatValue"]
+        entry = mat["metadataEntries"][6]
+        assert entry["__typename"] == "EventFloatMetadataEntry"
+        assert entry["floatValue"]
 
-        text_entry = mat["metadataEntries"][7]
-        assert text_entry["__typename"] == "EventIntMetadataEntry"
-        assert text_entry["intRepr"]
+        entry = mat["metadataEntries"][7]
+        assert entry["__typename"] == "EventIntMetadataEntry"
+        assert entry["intRepr"]
 
-        text_entry = mat["metadataEntries"][8]
-        assert text_entry["__typename"] == "EventFloatMetadataEntry"
-        assert text_entry["floatValue"] is None  # float NaN test
+        entry = mat["metadataEntries"][8]
+        assert entry["__typename"] == "EventFloatMetadataEntry"
+        assert entry["floatValue"] is None  # float NaN test
 
-        text_entry = mat["metadataEntries"][9]
-        assert text_entry["__typename"] == "EventIntMetadataEntry"
-        assert int(text_entry["intRepr"]) == LONG_INT
+        entry = mat["metadataEntries"][9]
+        assert entry["__typename"] == "EventIntMetadataEntry"
+        assert int(entry["intRepr"]) == LONG_INT
 
-        text_entry = mat["metadataEntries"][10]
-        assert text_entry["__typename"] == "EventPipelineRunMetadataEntry"
-        assert text_entry["runId"] == "fake_run_id"
+        entry = mat["metadataEntries"][10]
+        assert entry["__typename"] == "EventPipelineRunMetadataEntry"
+        assert entry["runId"] == "fake_run_id"
 
-        text_entry = mat["metadataEntries"][11]
-        assert text_entry["__typename"] == "EventAssetMetadataEntry"
-        assert text_entry["assetKey"]
-        assert text_entry["assetKey"]["path"]
+        entry = mat["metadataEntries"][11]
+        assert entry["__typename"] == "EventAssetMetadataEntry"
+        assert entry["assetKey"]
+        assert entry["assetKey"]["path"]
+
+        entry = mat["metadataEntries"][12]
+        assert entry["__typename"] == "EventTableMetadataEntry"
+        assert entry["table"]
+        assert entry["table"]["records"]
+        assert entry["table"]["schema"]
+
+        entry = mat["metadataEntries"][13]
+        assert entry["__typename"] == "EventTableSchemaMetadataEntry"
+        assert entry["schema"]
+        assert entry["schema"]["columns"]
+        assert entry["schema"]["columns"][0]["constraints"]
+        assert entry["schema"]["constraints"]
 
         non_engine_event_logs = [
             message for message in logs if message["__typename"] != "EngineEvent"

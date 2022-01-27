@@ -6,9 +6,7 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots[
-    'test_basic_dep_fan_out 1'
-] = '''{
+snapshots['test_basic_dep_fan_out 1'] = '''{
   "__class__": "PipelineSnapshot",
   "config_schema_snapshot": {
     "__class__": "ConfigSchemaSnapshot",
@@ -907,6 +905,7 @@ snapshots[
         },
         "loader_schema_key": "Selector.f2fe6dfdc60a1947a8f8e7cd377a012b47065bc4",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Any",
         "type_param_keys": []
       },
@@ -921,6 +920,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Bool-Selector.be5d518b39e86a43c5f2eecaf538c1f6c7711b59",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Bool",
         "type_param_keys": []
       },
@@ -935,6 +935,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Float-Selector.d00a37e3807d37c9f69cc62997c4a5f4a176e5c3",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Float",
         "type_param_keys": []
       },
@@ -949,6 +950,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Int-Selector.a9799b971d12ace70a2d8803c883c863417d0725",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Int",
         "type_param_keys": []
       },
@@ -963,6 +965,7 @@ snapshots[
         },
         "loader_schema_key": null,
         "materializer_schema_key": null,
+        "metadata_entries": [],
         "name": "Nothing",
         "type_param_keys": []
       },
@@ -977,6 +980,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.String-Selector.e04723c9d9937e3ab21206435b22247cfbe58269",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "String",
         "type_param_keys": []
       }
@@ -1151,11 +1155,9 @@ snapshots[
   "tags": {}
 }'''
 
-snapshots['test_basic_dep_fan_out 2'] = '9028d026f4732a6e5bc7e86f99c5fdee35619abc'
+snapshots['test_basic_dep_fan_out 2'] = 'cc3e764828162bd00c757ac238c2ca11c51c79ec'
 
-snapshots[
-    'test_basic_fan_in 1'
-] = '''{
+snapshots['test_basic_fan_in 1'] = '''{
   "__class__": "PipelineSnapshot",
   "config_schema_snapshot": {
     "__class__": "ConfigSchemaSnapshot",
@@ -2080,6 +2082,7 @@ snapshots[
         },
         "loader_schema_key": "Selector.f2fe6dfdc60a1947a8f8e7cd377a012b47065bc4",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Any",
         "type_param_keys": []
       },
@@ -2094,6 +2097,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Bool-Selector.be5d518b39e86a43c5f2eecaf538c1f6c7711b59",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Bool",
         "type_param_keys": []
       },
@@ -2108,6 +2112,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Float-Selector.d00a37e3807d37c9f69cc62997c4a5f4a176e5c3",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Float",
         "type_param_keys": []
       },
@@ -2122,6 +2127,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Int-Selector.a9799b971d12ace70a2d8803c883c863417d0725",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Int",
         "type_param_keys": []
       },
@@ -2136,6 +2142,7 @@ snapshots[
         },
         "loader_schema_key": null,
         "materializer_schema_key": null,
+        "metadata_entries": [],
         "name": "Nothing",
         "type_param_keys": []
       },
@@ -2150,6 +2157,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.String-Selector.e04723c9d9937e3ab21206435b22247cfbe58269",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "String",
         "type_param_keys": []
       }
@@ -2316,11 +2324,9 @@ snapshots[
   "tags": {}
 }'''
 
-snapshots['test_basic_fan_in 2'] = 'fcbb74fb1ffa0600fc799f4d03df64b0a1c014d2'
+snapshots['test_basic_fan_in 2'] = 'd7f340f8c8be19e00825aa6c00645f948a12552c'
 
-snapshots[
-    'test_deserialize_solid_def_snaps_multi_type_config 1'
-] = '''{
+snapshots['test_deserialize_solid_def_snaps_multi_type_config 1'] = '''{
   "__class__": "ConfigTypeSnap",
   "description": null,
   "enum_values": null,
@@ -2353,9 +2359,7 @@ snapshots[
   "type_param_keys": null
 }'''
 
-snapshots[
-    'test_empty_pipeline_snap_props 1'
-] = '''{
+snapshots['test_empty_pipeline_snap_props 1'] = '''{
   "__class__": "PipelineSnapshot",
   "config_schema_snapshot": {
     "__class__": "ConfigSchemaSnapshot",
@@ -3236,6 +3240,7 @@ snapshots[
         },
         "loader_schema_key": "Selector.f2fe6dfdc60a1947a8f8e7cd377a012b47065bc4",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Any",
         "type_param_keys": []
       },
@@ -3250,6 +3255,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Bool-Selector.be5d518b39e86a43c5f2eecaf538c1f6c7711b59",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Bool",
         "type_param_keys": []
       },
@@ -3264,6 +3270,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Float-Selector.d00a37e3807d37c9f69cc62997c4a5f4a176e5c3",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Float",
         "type_param_keys": []
       },
@@ -3278,6 +3285,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Int-Selector.a9799b971d12ace70a2d8803c883c863417d0725",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Int",
         "type_param_keys": []
       },
@@ -3292,6 +3300,7 @@ snapshots[
         },
         "loader_schema_key": null,
         "materializer_schema_key": null,
+        "metadata_entries": [],
         "name": "Nothing",
         "type_param_keys": []
       },
@@ -3306,6 +3315,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.String-Selector.e04723c9d9937e3ab21206435b22247cfbe58269",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "String",
         "type_param_keys": []
       }
@@ -3404,11 +3414,9 @@ snapshots[
   "tags": {}
 }'''
 
-snapshots['test_empty_pipeline_snap_props 2'] = '2290b3c558988d5ac3b68b109c7a6da33a237696'
+snapshots['test_empty_pipeline_snap_props 2'] = '21e468a577a1e9d63097a1f3e61b9a65a790d61d'
 
-snapshots[
-    'test_empty_pipeline_snap_snapshot 1'
-] = '''{
+snapshots['test_empty_pipeline_snap_snapshot 1'] = '''{
   "__class__": "PipelineSnapshot",
   "config_schema_snapshot": {
     "__class__": "ConfigSchemaSnapshot",
@@ -4289,6 +4297,7 @@ snapshots[
         },
         "loader_schema_key": "Selector.f2fe6dfdc60a1947a8f8e7cd377a012b47065bc4",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Any",
         "type_param_keys": []
       },
@@ -4303,6 +4312,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Bool-Selector.be5d518b39e86a43c5f2eecaf538c1f6c7711b59",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Bool",
         "type_param_keys": []
       },
@@ -4317,6 +4327,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Float-Selector.d00a37e3807d37c9f69cc62997c4a5f4a176e5c3",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Float",
         "type_param_keys": []
       },
@@ -4331,6 +4342,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Int-Selector.a9799b971d12ace70a2d8803c883c863417d0725",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Int",
         "type_param_keys": []
       },
@@ -4345,6 +4357,7 @@ snapshots[
         },
         "loader_schema_key": null,
         "materializer_schema_key": null,
+        "metadata_entries": [],
         "name": "Nothing",
         "type_param_keys": []
       },
@@ -4359,6 +4372,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.String-Selector.e04723c9d9937e3ab21206435b22247cfbe58269",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "String",
         "type_param_keys": []
       }
@@ -4457,9 +4471,7 @@ snapshots[
   "tags": {}
 }'''
 
-snapshots[
-    'test_multi_type_config_array_dict_fields[Permissive] 1'
-] = '''{
+snapshots['test_multi_type_config_array_dict_fields[Permissive] 1'] = '''{
   "__class__": "ConfigTypeSnap",
   "description": "List of Array.Permissive.1f37a068c7c51aba23e9c41475c78eebc4e58471",
   "enum_values": null,
@@ -4475,9 +4487,7 @@ snapshots[
   ]
 }'''
 
-snapshots[
-    'test_multi_type_config_array_dict_fields[Selector] 1'
-] = '''{
+snapshots['test_multi_type_config_array_dict_fields[Selector] 1'] = '''{
   "__class__": "ConfigTypeSnap",
   "description": "List of Array.Selector.1f37a068c7c51aba23e9c41475c78eebc4e58471",
   "enum_values": null,
@@ -4493,9 +4503,7 @@ snapshots[
   ]
 }'''
 
-snapshots[
-    'test_multi_type_config_array_dict_fields[Shape] 1'
-] = '''{
+snapshots['test_multi_type_config_array_dict_fields[Shape] 1'] = '''{
   "__class__": "ConfigTypeSnap",
   "description": "List of Array.Shape.1f37a068c7c51aba23e9c41475c78eebc4e58471",
   "enum_values": null,
@@ -4511,9 +4519,7 @@ snapshots[
   ]
 }'''
 
-snapshots[
-    'test_multi_type_config_nested_dicts[nested_dict_types0] 1'
-] = '''{
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types0] 1'] = '''{
   "__class__": "ConfigTypeSnap",
   "description": null,
   "enum_values": null,
@@ -4537,9 +4543,7 @@ snapshots[
   "type_param_keys": null
 }'''
 
-snapshots[
-    'test_multi_type_config_nested_dicts[nested_dict_types1] 1'
-] = '''{
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types1] 1'] = '''{
   "__class__": "ConfigTypeSnap",
   "description": null,
   "enum_values": null,
@@ -4563,9 +4567,7 @@ snapshots[
   "type_param_keys": null
 }'''
 
-snapshots[
-    'test_multi_type_config_nested_dicts[nested_dict_types2] 1'
-] = '''{
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types2] 1'] = '''{
   "__class__": "ConfigTypeSnap",
   "description": null,
   "enum_values": null,
@@ -4589,9 +4591,7 @@ snapshots[
   "type_param_keys": null
 }'''
 
-snapshots[
-    'test_multi_type_config_nested_dicts[nested_dict_types3] 1'
-] = '''{
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types3] 1'] = '''{
   "__class__": "ConfigTypeSnap",
   "description": null,
   "enum_values": null,
@@ -4615,9 +4615,7 @@ snapshots[
   "type_param_keys": null
 }'''
 
-snapshots[
-    'test_multi_type_config_nested_dicts[nested_dict_types4] 1'
-] = '''{
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types4] 1'] = '''{
   "__class__": "ConfigTypeSnap",
   "description": null,
   "enum_values": null,
@@ -4641,9 +4639,7 @@ snapshots[
   "type_param_keys": null
 }'''
 
-snapshots[
-    'test_multi_type_config_nested_dicts[nested_dict_types5] 1'
-] = '''{
+snapshots['test_multi_type_config_nested_dicts[nested_dict_types5] 1'] = '''{
   "__class__": "ConfigTypeSnap",
   "description": null,
   "enum_values": null,
@@ -4667,9 +4663,7 @@ snapshots[
   "type_param_keys": null
 }'''
 
-snapshots[
-    'test_pipeline_snap_all_props 1'
-] = '''{
+snapshots['test_pipeline_snap_all_props 1'] = '''{
   "__class__": "PipelineSnapshot",
   "config_schema_snapshot": {
     "__class__": "ConfigSchemaSnapshot",
@@ -5550,6 +5544,7 @@ snapshots[
         },
         "loader_schema_key": "Selector.f2fe6dfdc60a1947a8f8e7cd377a012b47065bc4",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Any",
         "type_param_keys": []
       },
@@ -5564,6 +5559,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Bool-Selector.be5d518b39e86a43c5f2eecaf538c1f6c7711b59",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Bool",
         "type_param_keys": []
       },
@@ -5578,6 +5574,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Float-Selector.d00a37e3807d37c9f69cc62997c4a5f4a176e5c3",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Float",
         "type_param_keys": []
       },
@@ -5592,6 +5589,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Int-Selector.a9799b971d12ace70a2d8803c883c863417d0725",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Int",
         "type_param_keys": []
       },
@@ -5606,6 +5604,7 @@ snapshots[
         },
         "loader_schema_key": null,
         "materializer_schema_key": null,
+        "metadata_entries": [],
         "name": "Nothing",
         "type_param_keys": []
       },
@@ -5620,6 +5619,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.String-Selector.e04723c9d9937e3ab21206435b22247cfbe58269",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "String",
         "type_param_keys": []
       }
@@ -5720,11 +5720,9 @@ snapshots[
   }
 }'''
 
-snapshots['test_pipeline_snap_all_props 2'] = '65d6b223a7426ba89b261b19570ebbc8f51861e2'
+snapshots['test_pipeline_snap_all_props 2'] = '32c8e8c2f26851e59a3ce51e3cb4358094994dfa'
 
-snapshots[
-    'test_two_invocations_deps_snap 1'
-] = '''{
+snapshots['test_two_invocations_deps_snap 1'] = '''{
   "__class__": "PipelineSnapshot",
   "config_schema_snapshot": {
     "__class__": "ConfigSchemaSnapshot",
@@ -6614,6 +6612,7 @@ snapshots[
         },
         "loader_schema_key": "Selector.f2fe6dfdc60a1947a8f8e7cd377a012b47065bc4",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Any",
         "type_param_keys": []
       },
@@ -6628,6 +6627,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Bool-Selector.be5d518b39e86a43c5f2eecaf538c1f6c7711b59",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Bool",
         "type_param_keys": []
       },
@@ -6642,6 +6642,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Float-Selector.d00a37e3807d37c9f69cc62997c4a5f4a176e5c3",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Float",
         "type_param_keys": []
       },
@@ -6656,6 +6657,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.Int-Selector.a9799b971d12ace70a2d8803c883c863417d0725",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "Int",
         "type_param_keys": []
       },
@@ -6670,6 +6672,7 @@ snapshots[
         },
         "loader_schema_key": null,
         "materializer_schema_key": null,
+        "metadata_entries": [],
         "name": "Nothing",
         "type_param_keys": []
       },
@@ -6684,6 +6687,7 @@ snapshots[
         },
         "loader_schema_key": "ScalarUnion.String-Selector.e04723c9d9937e3ab21206435b22247cfbe58269",
         "materializer_schema_key": "Selector.e52fa3afbe531d9522fae1206f3ae9d248775742",
+        "metadata_entries": [],
         "name": "String",
         "type_param_keys": []
       }
@@ -6790,4 +6794,4 @@ snapshots[
   "tags": {}
 }'''
 
-snapshots['test_two_invocations_deps_snap 2'] = '3cef1512951bc4e813f0de88f41247d6753672dc'
+snapshots['test_two_invocations_deps_snap 2'] = '941a23f6db0efcfec78399844af8eb3f475e3a71'

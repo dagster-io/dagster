@@ -27,6 +27,7 @@ from dagster.core.executor.base import Executor
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.io_manager import IOManager
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.tags import PARTITION_NAME_TAG
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.types.dagster_type import DagsterType
 
@@ -290,13 +291,13 @@ class PlanExecutionContext(IPlanContext):
     def partition_key(self) -> str:
         tags = self._plan_data.pipeline_run.tags
         check.invariant(
-            "partition" in tags, "Tried to access partition_key for a non-partitioned run"
+            PARTITION_NAME_TAG in tags, "Tried to access partition_key for a non-partitioned run"
         )
-        return tags["partition"]
+        return tags[PARTITION_NAME_TAG]
 
     @property
     def has_partition_key(self) -> bool:
-        return "partition" in self._plan_data.pipeline_run.tags
+        return PARTITION_NAME_TAG in self._plan_data.pipeline_run.tags
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
         return TypeCheckContext(

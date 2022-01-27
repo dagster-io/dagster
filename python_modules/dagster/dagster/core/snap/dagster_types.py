@@ -1,6 +1,7 @@
 from typing import Dict, List, NamedTuple, Optional
 
 from dagster import check
+from dagster.core.definitions.event_metadata import EventMetadataEntry
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.serdes import whitelist_for_serdes
@@ -27,6 +28,7 @@ def build_dagster_type_snap(dagster_type: DagsterType) -> "DagsterTypeSnap":
         type_param_keys=dagster_type.type_param_keys,
         loader_schema_key=dagster_type.loader_schema_key,
         materializer_schema_key=dagster_type.materializer_schema_key,
+        metadata_entries=dagster_type.metadata_entries,
     )
 
 
@@ -67,6 +69,7 @@ class DagsterTypeSnap(
             ("type_param_keys", List[str]),
             ("loader_schema_key", Optional[str]),
             ("materializer_schema_key", Optional[str]),
+            ("metadata_entries", List[EventMetadataEntry]),
         ],
     )
 ):
@@ -81,6 +84,7 @@ class DagsterTypeSnap(
         type_param_keys,
         loader_schema_key=None,
         materializer_schema_key=None,
+        metadata_entries=None,
     ):
         return super(DagsterTypeSnap, cls).__new__(
             cls,
@@ -94,5 +98,8 @@ class DagsterTypeSnap(
             loader_schema_key=check.opt_str_param(loader_schema_key, "loader_schema_key"),
             materializer_schema_key=check.opt_str_param(
                 materializer_schema_key, "materializer_schema_key"
+            ),
+            metadata_entries=check.opt_list_param(
+                metadata_entries, "metadata_entries", of_type=EventMetadataEntry
             ),
         )

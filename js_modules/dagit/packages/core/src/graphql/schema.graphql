@@ -189,6 +189,7 @@ interface DagsterType {
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
   innerTypes: [DagsterType!]!
+  metadataEntries: [EventMetadataEntry!]!
 }
 
 interface ConfigType {
@@ -197,6 +198,11 @@ interface ConfigType {
   recursiveConfigTypes: [ConfigType!]!
   typeParamKeys: [String!]!
   isSelector: Boolean!
+}
+
+interface EventMetadataEntry {
+  label: String!
+  description: String
 }
 
 type ConfigTypeField {
@@ -278,11 +284,6 @@ interface DisplayableEvent {
   metadataEntries: [EventMetadataEntry!]!
 }
 
-interface EventMetadataEntry {
-  label: String!
-  description: String
-}
-
 type ExpectationResult implements DisplayableEvent {
   label: String!
   description: String
@@ -359,6 +360,7 @@ type RegularDagsterType implements DagsterType {
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
   innerTypes: [DagsterType!]!
+  metadataEntries: [EventMetadataEntry!]!
 }
 
 type PipelineNotFoundError implements Error {
@@ -2032,6 +2034,45 @@ type EventAssetMetadataEntry implements EventMetadataEntry {
   assetKey: AssetKey!
 }
 
+type EventTableSchemaMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  schema: TableSchema!
+}
+
+type TableSchema {
+  constraints: TableConstraints
+  columns: [TableColumn!]!
+}
+
+type TableConstraints {
+  other: [String!]!
+}
+
+type TableColumn {
+  name: String!
+  type: String!
+  description: String
+  constraints: TableColumnConstraints!
+}
+
+type TableColumnConstraints {
+  nullable: Boolean!
+  unique: Boolean!
+  other: [String!]!
+}
+
+type EventTableMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  table: Table!
+}
+
+type Table {
+  schema: TableSchema!
+  records: [String!]!
+}
+
 type EventFloatMetadataEntry implements EventMetadataEntry {
   label: String!
   description: String
@@ -2302,6 +2343,7 @@ type ListDagsterType implements DagsterType & WrappingDagsterType {
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
   innerTypes: [DagsterType!]!
+  metadataEntries: [EventMetadataEntry!]!
   ofType: DagsterType!
 }
 
@@ -2321,6 +2363,7 @@ type NullableDagsterType implements DagsterType & WrappingDagsterType {
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
   innerTypes: [DagsterType!]!
+  metadataEntries: [EventMetadataEntry!]!
   ofType: DagsterType!
 }
 
