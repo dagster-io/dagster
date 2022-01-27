@@ -207,6 +207,18 @@ GET_MATERIALIZATION_COUNT_BY_PARTITION = """
     }
 """
 
+GET_ASSET_MATERIALIZATION_AFTER_TIMESTAMP = """
+    query AssetQuery($assetKey: AssetKeyInput!, $afterTimestamp: String) {
+        assetOrError(assetKey: $assetKey) {
+            ... on Asset {
+                assetMaterializations(afterTimestampMillis: $afterTimestamp) {
+                    timestamp
+                }
+            }
+        }
+    }
+"""
+
 
 def _create_run(graphql_context, pipeline_name, mode="default"):
     selector = infer_pipeline_selector(graphql_context, pipeline_name)
@@ -372,6 +384,33 @@ class TestAssetAwareEventLog(
         materializations = result.data["assetOrError"]["assetMaterializations"]
         assert len(materializations) == 1
         assert first_timestamp == int(materializations[0]["timestamp"])
+
+        # Test afterTimestep before the first timestamp, which should return both results
+        after_timestamp = first_timestamp - 1
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_MATERIALIZATION_AFTER_TIMESTAMP,
+            variables={"assetKey": {"path": ["a"]}, "afterTimestamp": after_timestamp},
+        )
+        assert result.data
+        assert result.data["assetOrError"]
+        materializations = result.data["assetOrError"]["assetMaterializations"]
+        assert len(materializations) == 2
+
+        # Test afterTimestamp between the two timestamps, which should only return the first result
+        after_timestamp = first_timestamp + 1
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_MATERIALIZATION_AFTER_TIMESTAMP,
+            variables={"assetKey": {"path": ["a"]}, "afterTimestamp": after_timestamp},
+        )
+        assert result.data
+        assert result.data["assetOrError"]
+        materializations = result.data["assetOrError"]["assetMaterializations"]
+        assert len(materializations) == 1
+        assert second_timestamp == int(materializations[0]["timestamp"])
 
     def test_asset_node_in_pipeline(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "two_assets_job")

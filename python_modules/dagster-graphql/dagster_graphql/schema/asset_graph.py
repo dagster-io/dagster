@@ -65,6 +65,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         non_null_list(GrapheneObservationEvent),
         partitions=graphene.List(graphene.String),
         beforeTimestampMillis=graphene.String(),
+        afterTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
 
@@ -266,6 +267,15 @@ class GrapheneAssetNode(graphene.ObjectType):
         except ValueError:
             before_timestamp = None
 
+        try:
+            after_timestamp = (
+                int(kwargs.get("afterTimestampMillis")) / 1000.0
+                if kwargs.get("afterTimestampMillis")
+                else None
+            )
+        except ValueError:
+            before_timestamp = None
+
         return [
             GrapheneObservationEvent(event=event)
             for event in get_asset_observations(
@@ -273,6 +283,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 self._external_asset_node.asset_key,
                 kwargs.get("partitions"),
                 before_timestamp=before_timestamp,
+                after_timestamp=after_timestamp,
                 limit=kwargs.get("limit"),
             )
         ]
