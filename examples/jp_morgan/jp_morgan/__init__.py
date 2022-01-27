@@ -1,4 +1,7 @@
-from dagster import repository
+import warnings
+
+from dagster import repository, ExperimentalWarning
+warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
 from .jobs import bollinger_sda, bollinger_vanilla
 from . import lib
