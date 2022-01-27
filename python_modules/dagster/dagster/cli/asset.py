@@ -13,6 +13,7 @@ def asset_cli():
 @asset_cli.command(name="wipe")
 @click.argument("key", nargs=-1)
 @click.option("--all", is_flag=True, help="Eliminate all asset key indexes")
+@click.option("--noprompt", is_flag=True)
 def asset_wipe_command(key, **cli_args):
     """
     Eliminate asset key indexes from event logs.
@@ -33,6 +34,8 @@ def asset_wipe_command(key, **cli_args):
     if cli_args.get("all") and len(key) > 0:
         raise click.UsageError("Error, cannot use more than one of: asset key, `--all`.")
 
+    noprompt = cli_args.get("noprompt")
+
     with DagsterInstance.get() as instance:
         if len(key) > 0:
             asset_keys = [AssetKey.from_db_string(key_string) for key_string in key]
@@ -44,7 +47,11 @@ def asset_wipe_command(key, **cli_args):
             asset_keys = instance.all_asset_keys()
             prompt = "Are you sure you want to remove all asset key indexes from the event logs? Type DELETE"
 
-        confirmation = click.prompt(prompt)
+        if noprompt:
+            confirmation = "DELETE"
+        else:
+            confirmation = click.prompt(prompt)
+
         if confirmation == "DELETE":
             with DagsterInstance.get() as instance:
                 instance.wipe_assets(asset_keys)
