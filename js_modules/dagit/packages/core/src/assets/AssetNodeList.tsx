@@ -5,15 +5,13 @@ import {useHistory} from 'react-router-dom';
 import {AssetNode} from '../workspace/asset-graph/AssetNode';
 import {ForeignNode} from '../workspace/asset-graph/ForeignNode';
 import {LiveData} from '../workspace/asset-graph/Utils';
-import {RepoAddress} from '../workspace/types';
 
 import {AssetNodeDefinitionFragment_dependencies} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeList: React.FC<{
   items: AssetNodeDefinitionFragment_dependencies[];
-  repoAddress: RepoAddress;
   liveDataByNode: LiveData;
-}> = ({items, liveDataByNode, repoAddress}) => {
+}> = ({items, liveDataByNode}) => {
   const history = useHistory();
 
   return (

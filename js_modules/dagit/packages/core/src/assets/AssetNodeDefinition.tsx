@@ -102,11 +102,7 @@ export const AssetNodeDefinition: React.FC<{
             <Subheading>Upstream Assets ({assetNode.dependencies.length})</Subheading>
             <JobGraphLink repoAddress={repoAddress} assetNode={assetNode} direction="upstream" />
           </Box>
-          <AssetNodeList
-            items={assetNode.dependencies}
-            liveDataByNode={liveDataByNode}
-            repoAddress={repoAddress}
-          />
+          <AssetNodeList items={assetNode.dependencies} liveDataByNode={liveDataByNode} />
           <Box
             padding={{vertical: 16, left: 24, right: 12}}
             flex={{justifyContent: 'space-between'}}
@@ -115,11 +111,7 @@ export const AssetNodeDefinition: React.FC<{
             <Subheading>Downstream Assets ({assetNode.dependedBy.length})</Subheading>
             <JobGraphLink repoAddress={repoAddress} assetNode={assetNode} direction="downstream" />
           </Box>
-          <AssetNodeList
-            items={assetNode.dependedBy}
-            liveDataByNode={liveDataByNode}
-            repoAddress={repoAddress}
-          />
+          <AssetNodeList items={assetNode.dependedBy} liveDataByNode={liveDataByNode} />
         </Box>
       </Box>
     </>
