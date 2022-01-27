@@ -3,6 +3,7 @@ import re
 import pytest
 from dagster import (
     AssetMaterialization,
+    EventMetadataEntry,
     InputContext,
     OutputContext,
     build_input_context,

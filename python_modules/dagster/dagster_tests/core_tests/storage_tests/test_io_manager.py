@@ -9,6 +9,7 @@ from dagster import (
     AssetMaterialization,
     DagsterInstance,
     DagsterInvalidDefinitionError,
+    EventMetadataEntry,
     Field,
     IOManagerDefinition,
     In,
@@ -822,3 +823,42 @@ def test_context_logging_user_events():
 
         assert second.timestamp - first.timestamp >= 1
         assert log.timestamp - first.timestamp >= 1
+
+
+def test_context_logging_metadata():
+    class DummyIOManager(IOManager):
+        def __init__(self):
+            self.values = {}
+
+        def handle_output(self, context, obj):
+            keys = tuple(context.get_output_identifier())
+            self.values[keys] = obj
+
+            context.log_metadata(EventMetadataEntry.text(label="foo", text="foo"))
+            yield EventMetadataEntry.text(label="baz", text="baz")
+            context.log_metadata(EventMetadataEntry.text(label="bar", text="bar"))
+
+        def load_input(self, context):
+            keys = tuple(context.upstream_output.get_output_identifier())
+            return self.values[keys]
+
+        def has_asset(self, context):
+            keys = tuple(context.get_output_identifier())
+            return keys in self.values
+
+    @op
+    def the_op():
+        return 5
+
+    @graph
+    def the_graph():
+        the_op()
+
+    result = the_graph.execute_in_process(resources={"io_manager": DummyIOManager()})
+
+    assert result.success
+
+    output_event = result.all_node_events[2]
+    entry_labels = [entry.label for entry in output_event.event_specific_data.metadata_entries]
+    # Ensure that ordering is preserved among yields and calls to log
+    assert entry_labels == ["foo", "baz", "bar"]

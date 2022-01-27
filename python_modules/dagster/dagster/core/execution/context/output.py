@@ -6,7 +6,9 @@ from dagster.core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    EventMetadataEntry,
     Materialization,
+    PartitionMetadataEntry,
 )
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
@@ -104,6 +106,7 @@ class OutputContext:
 
         self._events: List["DagsterEvent"] = []
         self._user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]] = []
+        self._metadata_entries: List[Union[EventMetadataEntry, PartitionMetadataEntry]] = []
 
     def __enter__(self):
         if self._resources_cm:
@@ -458,6 +461,21 @@ class OutputContext:
         """
 
         return self._user_events
+
+    def log_metadata(self, metadata: Union[EventMetadataEntry, PartitionMetadataEntry]) -> None:
+        self._metadata_entries.append(metadata)
+
+    def get_metadata_entries(self) -> List[Union[EventMetadataEntry, PartitionMetadataEntry]]:
+        return self._metadata_entries
+
+    def scrub_metadata_entries(self) -> None:
+        self._metadata_entries = []
+
+    def retrieve_metadata_entries(
+        self,
+    ) -> Iterator[Union[PartitionMetadataEntry, EventMetadataEntry]]:
+        while self._metadata_entries:
+            yield self._metadata_entries.pop(0)
 
 
 def get_output_context(
