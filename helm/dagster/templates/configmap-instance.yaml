@@ -91,3 +91,30 @@ data:
       {{- else if eq $computeLogManagerType "CustomComputeLogManager" }}
         {{- include "dagsterYaml.computeLogManager.custom" . | indent 6 -}}
       {{- end }}
+
+    {{- if .Values.pythonLogs }}
+    python_logs:
+      {{- if .Values.pythonLogs.pythonLogLevel }}
+      python_log_level: {{ .Values.pythonLogs.pythonLogLevel }}
+      {{- end }}
+      {{- if .Values.pythonLogs.dagsterHandlerConfig }}
+      dagster_handler_config: {{ .Values.pythonLogs.dagsterHandlerConfig | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if .Values.pythonLogs.managedPythonLoggers }}
+      managed_python_loggers: {{ .Values.pythonLogs.managedPythonLoggers | toYaml | nindent 8 }}
+      {{- end }}
+    {{- end }}
+
+
+    {{- if and (.Values.dagsterDaemon.enabled) (.Values.dagsterDaemon.runMonitoring.enabled) }}
+    {{- $runMonitoring := .Values.dagsterDaemon.runMonitoring }}
+    run_monitoring:
+      enabled: {{ $runMonitoring.enabled }}
+      start_timeout_seconds:  {{ $runMonitoring.startTimeoutSeconds }}
+      {{- if $runMonitoring.maxResumeRunAttempts }}
+      max_resume_run_attempts: {{ $runMonitoring.maxResumeRunAttempts }}
+      {{- end }}
+      poll_interval_seconds: {{ $runMonitoring.pollIntervalSeconds }}
+    {{- end }}
+    telemetry:
+      enabled: {{ default "false" | .Values.telemetry.enabled }}
