@@ -250,8 +250,9 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return bool(self._events)
 
     def retrieve_events(self) -> Iterator[DagsterEvent]:
-        while self._events:
-            yield self._events.pop(0)
+        events = self._events
+        self._events = []
+        yield from events
 
     def log_event(self, event: UserEvent) -> None:
         """Log an AssetMaterialization, AssetObservation, or ExpectationResult from within the body of an op.
