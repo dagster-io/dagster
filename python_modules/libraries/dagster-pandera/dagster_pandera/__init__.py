@@ -1,13 +1,25 @@
 import itertools
 import textwrap
 from typing import TYPE_CHECKING, Dict, Generator, Optional, Tuple, Type, Union
-from pkg_resources import working_set as pkg_resources_available, Requirement
-import pandera as pa
-import pandas as pd
+
+import dagster.check as check
 import dask
+import pandas as pd
+import pandera as pa
 from dagster import DagsterType, EventMetadataEntry, TypeCheck
-from dagster.core.definitions.event_metadata import ColumnarSchemaMetadataEntryData
+from dagster.core.definitions.event_metadata import (
+    TableMetadataEntryData,
+    TableSchemaMetadataEntryData,
+)
+from dagster.core.definitions.event_metadata.table import (
+    TableColumn,
+    TableColumnConstraints,
+    TableSchema,
+)
 from dagster.core.utils import check_dagster_package_version
+from pkg_resources import Requirement
+from pkg_resources import working_set as pkg_resources_available
+
 from .version import __version__
 
 if TYPE_CHECKING:
@@ -45,6 +57,10 @@ def _anonymous_type_name_func() -> Generator[str, None, None]:
 
 
 _anonymous_type_name = _anonymous_type_name_func()
+
+# ########################
+# ##### PANDERA SCHEMA TO DAGSTER TYPE
+# ########################
 
 
 def pandera_schema_to_dagster_type(
@@ -93,7 +109,7 @@ def pandera_schema_to_dagster_type(
 
         return TypeCheck(success=True)
 
-    fschema = pandera_schema_to_frictionless_schema(schema, extra)
+    tschema = pandera_schema_to_table_schema(schema, extra)
 
     return DagsterType(
         type_check_fn=type_check_fn,
@@ -101,61 +117,30 @@ def pandera_schema_to_dagster_type(
         description=schema_desc,
         metadata_entries=[
             EventMetadataEntry.text("foo", label="test"),
-            EventMetadataEntry.columnar_schema(fschema, label="schema"),
+            EventMetadataEntry.table_schema(tschema, label="schema"),
         ],
     )
 
 
-def _build_schema_desc(
-    schema: pa.DataFrameSchema,
-    desc: Optional[str],
-    extra: Dict,
-):
-    sections = [
-        "### Columns",
-        "\n".join(
-            [
-                _build_column_desc(column, extra["columns"][k].get("description", None))
-                for k, column in schema.columns.items()
-            ]
-        ),
-    ]
-    if desc:
-        sections.insert(0, desc)
-    return "\n\n".join(sections)
-
-
-def _build_column_desc(column: pa.Column, desc: Optional[str]) -> str:
-    head = f"- **{column.name}** [{column.dtype}]"
-    if desc:
-        head += f" {desc}"
-    lines = [head]
-    for check in column.checks:
-        lines.append(textwrap.indent(_build_check_desc(check), "    "))
-    return "\n".join(lines)
-
-
-def _build_check_desc(_check) -> str:
-    return "- check"
-
-
-def pandera_schema_to_frictionless_schema(schema: pa.DataFrameSchema, extra: Dict) -> Dict:  # TODO
-    """Convert a pandera schema to a frictionless schema.
+def pandera_schema_to_table_schema(schema: pa.DataFrameSchema, extra: Dict[str, object] = None) -> TableSchema:
+    """Convert a pandera schema to a Dagster `TableSchema`.
 
     Args:
         schema (pa.DataFrameSchema): The pandera schema to convert.
 
     Returns:
-        pa.DataFrameSchema: The frictionless schema.
+        TableSchema: The converted table schema.
     """
-    fields = [
-        pandera_column_to_frictionless_field(column, extra["columns"][column.name])
+    extra = extra or { "columns": {} }
+    cols_extra = check.dict_elem(extra, "columns")
+    columns = [
+        pandera_column_to_table_column(column, cols_extra.get(column.name, {}))
         for column in schema.columns.values()
     ]
-    return {"fields": fields}
+    return TableSchema(columns=columns)
 
 
-def pandera_column_to_frictionless_field(column: pa.Column, extra: Dict) -> Dict:  # TODO
+def pandera_column_to_table_column(column: pa.Column, extra: Dict) -> TableColumn:
     """Convert a pandera column to a frictionless field.
 
     Args:
@@ -165,19 +150,21 @@ def pandera_column_to_frictionless_field(column: pa.Column, extra: Dict) -> Dict
     Returns:
         Dict: The frictionless field.
     """
-    field = {
-        "name": column.name,
-        "type": str(column.dtype),
-        # "format": column.format,
-        "description": extra.get("description"),
-        "constraints": [pandera_check_to_frictionless_constraint(check) for check in column.checks],
-    }
-    field["constraints"].append({"required": column.nullable})
-    field["constraints"].append({"unique": column.nullable})
-    return field
+    constraints = TableColumnConstraints(
+        nullable=column.nullable,
+        unique=column.unique,
+        other=[pandera_check_to_column_constraint(check) for check in column.checks],
+    )
+    name = check.not_none(column.name, "name")
+    return TableColumn(
+        name=name,
+        type=str(column.dtype),
+        description=extra.get("description"),
+        constraints=constraints,
+    )
 
 
-def pandera_check_to_frictionless_constraint(check: pa.Check) -> Dict:  # TODO
+def pandera_check_to_column_constraint(check: pa.Check) -> str:
     """Convert a pandera check to a frictionless constraint.
 
     Args:
@@ -186,10 +173,9 @@ def pandera_check_to_frictionless_constraint(check: pa.Check) -> Dict:  # TODO
     Returns:
         Dict: The frictionless constraint.
     """
-    return {
-        "name": check.name,
-        # "description": check.description,  # TODO
-    }
+
+    # `error` is the closest thing to a "description" offered by a pandera check
+    return check.error
 
 
 __all__ = [
