@@ -1,27 +1,37 @@
-from dagster import repository, schedule_from_partitions
+from dagster import repository
+from dagster.core.asset_defs import (
+    ScheduledAssetsJob,
+    SensoredAssetsJob,
+    gather_assets_from_package,
+)
+from hacker_news_assets import assets as assets_pkg
 
-from .jobs.activity_stats import activity_stats_prod_job, activity_stats_staging_job
-from .jobs.hacker_news_api_download import download_prod_job, download_staging_job
-from .jobs.story_recommender import story_recommender_prod_job, story_recommender_staging_job
-from .sensors.hn_tables_updated_sensor import make_hn_tables_updated_sensor
+from .resources import RESOURCES_PROD, RESOURCES_STAGING
 from .sensors.slack_on_failure_sensor import make_slack_on_failure_sensor
 
+assets = gather_assets_from_package(assets_pkg)
+download_job = ScheduledAssetsJob(
+    asset_selection=["*comments", "*stories"], infer_schedule_from_partitions=True
+)
+activity_stats_job = SensoredAssetsJob()
+story_recommender_job = SensoredAssetsJob(
+    asset_selection=[
+        "*recommender_model",
+        "*component_top_stories",
+        "*user_top_recommended_stories",
+        "-*comments",
+        "-*stories",
+    ]
+)
 
-@repository
+shared_repo_defs = [assets, download_job, activity_stats_job, story_recommender_job]
+
+
+@repository(resource_defs=RESOURCES_PROD)
 def hacker_news_assets_prod():
-    return [
-        schedule_from_partitions(download_prod_job),
-        make_slack_on_failure_sensor(base_url="my_dagit_url.com"),
-        make_hn_tables_updated_sensor(activity_stats_prod_job),
-        make_hn_tables_updated_sensor(story_recommender_prod_job),
-    ]
+    return shared_repo_defs + [make_slack_on_failure_sensor(base_url="my_prod_dagit_url.com")]
 
 
-@repository
+@repository(resource_defs=RESOURCES_STAGING)
 def hacker_news_assets_staging():
-    return [
-        schedule_from_partitions(download_staging_job),
-        make_slack_on_failure_sensor(base_url="my_dagit_url.com"),
-        make_hn_tables_updated_sensor(activity_stats_staging_job),
-        make_hn_tables_updated_sensor(story_recommender_staging_job),
-    ]
+    return shared_repo_defs + [make_slack_on_failure_sensor(base_url="my_staging_dagit_url.com")]

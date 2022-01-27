@@ -9,6 +9,7 @@ from .parquet_io_manager import (
     local_partitioned_parquet_io_manager,
     s3_partitioned_parquet_io_manager,
 )
+from .resources.hn_resource import hn_api_subsample_client
 from .snowflake_io_manager import snowflake_io_manager
 
 configured_pyspark = pyspark_resource.configured(
@@ -40,6 +41,7 @@ RESOURCES_PROD = {
     "warehouse_io_manager": snowflake_io_manager_prod,
     "pyspark": configured_pyspark,
     "warehouse_loader": snowflake_io_manager_prod,
+    "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
 }
 
 snowflake_io_manager_staging = snowflake_io_manager.configured(
@@ -55,6 +57,7 @@ RESOURCES_STAGING = {
     "warehouse_io_manager": snowflake_io_manager_staging,
     "pyspark": configured_pyspark,
     "warehouse_loader": snowflake_io_manager_staging,
+    "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
 }
 
 
