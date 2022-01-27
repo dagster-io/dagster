@@ -43,6 +43,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     description = graphene.String()
     opName = graphene.String()
     jobs = non_null_list(GraphenePipeline)
+    jobNames = non_null_list(graphene.String)
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
     dependencies = non_null_list(GrapheneAssetDependency)
     dependedBy = non_null_list(GrapheneAssetDependency)
@@ -183,6 +184,9 @@ class GrapheneAssetNode(graphene.ObjectType):
                 limit=limit,
             )
         ]
+
+    def resolve_jobNames(self, _graphene_info):
+        return self._external_asset_node.job_names
 
     def resolve_jobs(self, _graphene_info):
         job_names = self._external_asset_node.job_names or []

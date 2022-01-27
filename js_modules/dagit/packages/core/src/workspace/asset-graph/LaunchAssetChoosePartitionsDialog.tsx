@@ -87,6 +87,7 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
     AssetJobPartitionSetsQuery,
     AssetJobPartitionSetsQueryVariables
   >(ASSET_JOB_PARTITION_SETS_QUERY, {
+    skip: !open,
     variables: {
       repositoryLocationName: repoAddress.location,
       repositoryName: repoAddress.name,

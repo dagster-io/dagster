@@ -9,12 +9,6 @@ import { RunStatus } from "./../../types/globalTypes";
 // GraphQL fragment: AssetNodeDefinitionFragment
 // ====================================================
 
-export interface AssetNodeDefinitionFragment_jobs {
-  __typename: "Pipeline";
-  id: string;
-  name: string;
-}
-
 export interface AssetNodeDefinitionFragment_repository_location {
   __typename: "RepositoryLocation";
   id: string;
@@ -170,12 +164,6 @@ export interface AssetNodeDefinitionFragment_assetMaterializations {
   stepStats: AssetNodeDefinitionFragment_assetMaterializations_stepStats;
   metadataEntries: AssetNodeDefinitionFragment_assetMaterializations_metadataEntries[];
   assetLineage: AssetNodeDefinitionFragment_assetMaterializations_assetLineage[];
-}
-
-export interface AssetNodeDefinitionFragment_dependencies_asset_jobs {
-  __typename: "Pipeline";
-  id: string;
-  name: string;
 }
 
 export interface AssetNodeDefinitionFragment_dependencies_asset_assetKey {
@@ -339,7 +327,7 @@ export interface AssetNodeDefinitionFragment_dependencies_asset {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
-  jobs: AssetNodeDefinitionFragment_dependencies_asset_jobs[];
+  jobNames: string[];
   description: string | null;
   partitionDefinition: string | null;
   assetKey: AssetNodeDefinitionFragment_dependencies_asset_assetKey;
@@ -350,12 +338,6 @@ export interface AssetNodeDefinitionFragment_dependencies_asset {
 export interface AssetNodeDefinitionFragment_dependencies {
   __typename: "AssetDependency";
   asset: AssetNodeDefinitionFragment_dependencies_asset;
-}
-
-export interface AssetNodeDefinitionFragment_dependedBy_asset_jobs {
-  __typename: "Pipeline";
-  id: string;
-  name: string;
 }
 
 export interface AssetNodeDefinitionFragment_dependedBy_asset_assetKey {
@@ -519,7 +501,7 @@ export interface AssetNodeDefinitionFragment_dependedBy_asset {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
-  jobs: AssetNodeDefinitionFragment_dependedBy_asset_jobs[];
+  jobNames: string[];
   description: string | null;
   partitionDefinition: string | null;
   assetKey: AssetNodeDefinitionFragment_dependedBy_asset_assetKey;
@@ -537,7 +519,7 @@ export interface AssetNodeDefinitionFragment {
   id: string;
   description: string | null;
   opName: string | null;
-  jobs: AssetNodeDefinitionFragment_jobs[];
+  jobNames: string[];
   repository: AssetNodeDefinitionFragment_repository;
   partitionDefinition: string | null;
   assetKey: AssetNodeDefinitionFragment_assetKey;

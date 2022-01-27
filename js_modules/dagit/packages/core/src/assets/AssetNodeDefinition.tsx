@@ -42,12 +42,12 @@ export const AssetNodeDefinition: React.FC<{
           >
             <Subheading>Definition in Repository</Subheading>
             <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}}>
-              {assetNode.jobs.map((job) => (
-                <Mono key={job.id}>
+              {assetNode.jobNames.map((jobName) => (
+                <Mono key={jobName}>
                   <PipelineReference
                     isJob
                     showIcon
-                    pipelineName={job.name}
+                    pipelineName={jobName}
                     pipelineHrefContext={repoAddress}
                   />
                 </Mono>
@@ -59,7 +59,7 @@ export const AssetNodeDefinition: React.FC<{
                 </Box>
               )}
 
-              {assetNode.jobs.length === 0 && !assetNode.opName && (
+              {assetNode.jobNames.length === 0 && !assetNode.opName && (
                 <Caption style={{marginTop: 2}}>Foreign Asset</Caption>
               )}
             </Box>
@@ -123,7 +123,7 @@ const JobGraphLink: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
   direction: 'upstream' | 'downstream';
 }> = ({direction, assetNode, repoAddress}) => {
-  if (assetNode.jobs.length === 0 || !assetNode.opName) {
+  if (assetNode.jobNames.length === 0 || !assetNode.opName) {
     return null;
   }
   const populated =
@@ -139,7 +139,7 @@ const JobGraphLink: React.FC<{
       to={workspacePathFromAddress(
         repoAddress,
         `/jobs/${explorerPathToString({
-          pipelineName: assetNode.jobs[0].name,
+          pipelineName: assetNode.jobNames[0],
           opNames: [token],
           opsQuery: direction === 'upstream' ? `*${token}` : `${token}*`,
         })}`,
@@ -158,10 +158,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     id
     description
     opName
-    jobs {
-      id
-      name
-    }
+    jobNames
     repository {
       id
       name
@@ -178,10 +175,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
       asset {
         id
         opName
-        jobs {
-          id
-          name
-        }
+        jobNames
         ...AssetNodeFragment
         ...AssetNodeLiveFragment
       }
@@ -190,10 +184,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
       asset {
         id
         opName
-        jobs {
-          id
-          name
-        }
+        jobNames
         ...AssetNodeFragment
         ...AssetNodeLiveFragment
       }

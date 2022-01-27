@@ -19,7 +19,7 @@ export function useFindAssetInWorkspace() {
       });
       if (data?.assetOrError.__typename === 'Asset' && data?.assetOrError.definition) {
         const def = data.assetOrError.definition;
-        return {opName: def.opName, jobName: def.jobs[0]?.name || null};
+        return {opName: def.opName, jobName: def.jobNames[0] || null};
       }
       return {opName: null, jobName: null};
     },
@@ -36,10 +36,7 @@ const ASSET_FOR_NAVIGATION_QUERY = gql`
         definition {
           id
           opName
-          jobs {
-            id
-            name
-          }
+          jobNames
         }
       }
     }

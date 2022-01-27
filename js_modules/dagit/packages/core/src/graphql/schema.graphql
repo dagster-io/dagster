@@ -668,6 +668,7 @@ type AssetNode {
   description: String
   opName: String
   jobs: [Pipeline!]!
+  jobNames: [String!]!
   repository: Repository!
   dependencies: [AssetDependency!]!
   dependedBy: [AssetDependency!]!

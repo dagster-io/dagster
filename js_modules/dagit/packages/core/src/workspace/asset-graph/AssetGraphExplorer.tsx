@@ -204,6 +204,9 @@ const AssetGraphExplorerWithData: React.FC<
     selectedAssetValues.includes(tokenForAssetKey(node.definition.assetKey)),
   );
   const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1];
+  const launchGraphNodes = selectedGraphNodes.length
+    ? selectedGraphNodes
+    : Object.values(assetGraphData.nodes);
 
   const onSelectNode = React.useCallback(
     async (e: React.MouseEvent<any>, assetKey: {path: string[]}, node: Node | null) => {
@@ -324,8 +327,8 @@ const AssetGraphExplorerWithData: React.FC<
                           definition={graphNode.definition}
                           liveData={liveDataByNode[graphNode.id]}
                           metadata={
-                            handles.find((h) => h.handleID === graphNode.definition.opName)!.solid
-                              .definition.metadata
+                            handles.find((h) => h.handleID === graphNode.definition.opName)?.solid
+                              .definition.metadata || []
                           }
                           selected={selectedGraphNodes.includes(graphNode)}
                           jobName={explorerPath.pipelineName}
@@ -347,11 +350,8 @@ const AssetGraphExplorerWithData: React.FC<
           <div style={{position: 'absolute', right: 12, top: 12}}>
             <LaunchAssetExecutionButton
               title={titleForLaunch(selectedGraphNodes, liveDataByNode)}
-              assetJobName={explorerPath.pipelineName}
-              assets={(selectedGraphNodes.length
-                ? selectedGraphNodes
-                : Object.values(assetGraphData.nodes)
-              ).map((n) => n.definition)}
+              preferredJobName={explorerPath.pipelineName}
+              assets={launchGraphNodes.map((n) => n.definition)}
             />
           </div>
           <div style={{position: 'absolute', left: 24, top: 16}}>
@@ -385,7 +385,7 @@ const AssetGraphExplorerWithData: React.FC<
                 definition={
                   handles.find(
                     (h) => h.solid.definition.name === selectedGraphNodes[0].definition.opName,
-                  )!.solid.definition
+                  )?.solid.definition
                 }
               />
             ) : pipelineSelector ? (
@@ -427,6 +427,7 @@ const ASSETS_GRAPH_QUERY = gql`
     assetNodes(pipeline: $pipelineSelector) {
       id
       ...AssetNodeFragment
+      jobNames
       dependencyKeys {
         path
       }

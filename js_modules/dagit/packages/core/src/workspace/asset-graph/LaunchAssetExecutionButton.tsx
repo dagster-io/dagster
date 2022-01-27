@@ -9,15 +9,16 @@ import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDi
 type AssetMinimal = {
   assetKey: {path: string[]};
   opName: string | null;
+  jobNames: string[];
   partitionDefinition: string | null;
   repository: {name: string; location: {name: string}};
 };
 
 export const LaunchAssetExecutionButton: React.FC<{
-  assetJobName: string;
+  preferredJobName?: string;
   assets: AssetMinimal[];
   title?: string;
-}> = ({assets, assetJobName, title}) => {
+}> = ({assets, preferredJobName, title}) => {
   const [showingPartitionDialog, setShowingPartitionDialog] = React.useState(false);
   const repoAddress = buildRepoAddress(
     assets[0]?.repository.name || '',
@@ -26,7 +27,7 @@ export const LaunchAssetExecutionButton: React.FC<{
 
   let disabledReason = '';
   if (!assets.every((a) => a.opName)) {
-    disabledReason = 'One or more foreign assets are selected and cannot be refreshed.';
+    disabledReason = 'One or more foreign assets are selected and cannot be materialized.';
   }
   if (
     !assets.every(
@@ -37,6 +38,14 @@ export const LaunchAssetExecutionButton: React.FC<{
   ) {
     disabledReason = 'Assets must be in the same repository to be materialized together.';
   }
+
+  const everyAssetHasJob = (jobName: string) => assets.every((a) => a.jobNames.includes(jobName));
+  const jobsInCommon = assets[0] ? assets[0].jobNames.filter(everyAssetHasJob) : [];
+  const jobName = jobsInCommon.find((name) => name === preferredJobName) || jobsInCommon[0];
+  if (!jobName) {
+    disabledReason = 'Assets must be in the same job to be materialized together.';
+  }
+
   const partitionDefinition = assets[0]?.partitionDefinition;
   if (assets.some((a) => a.partitionDefinition !== partitionDefinition)) {
     disabledReason = 'Assets must share a partition definition to be materialized together.';
@@ -65,7 +74,7 @@ export const LaunchAssetExecutionButton: React.FC<{
           </ButtonWIP>
           <LaunchAssetChoosePartitionsDialog
             assets={assets}
-            assetJobName={assetJobName}
+            assetJobName={jobName}
             open={showingPartitionDialog}
             setOpen={setShowingPartitionDialog}
             repoAddress={repoAddress}
@@ -73,8 +82,8 @@ export const LaunchAssetExecutionButton: React.FC<{
         </>
       ) : (
         <LaunchRootExecutionButton
-          pipelineName={assetJobName}
-          disabled={false}
+          pipelineName={jobName}
+          disabled={!!disabledReason}
           title={title}
           getVariables={() => ({
             executionParams: {
@@ -84,7 +93,7 @@ export const LaunchAssetExecutionButton: React.FC<{
               selector: {
                 repositoryLocationName: repoAddress.location,
                 repositoryName: repoAddress.name,
-                pipelineName: assetJobName,
+                pipelineName: jobName,
                 solidSelection: assets.map((o) => o.opName!),
               },
             },

@@ -45,6 +45,7 @@ export interface AssetGraphQuery_assetNodes {
   partitionDefinition: string | null;
   assetKey: AssetGraphQuery_assetNodes_assetKey;
   repository: AssetGraphQuery_assetNodes_repository;
+  jobNames: string[];
   dependencyKeys: AssetGraphQuery_assetNodes_dependencyKeys[];
   dependedByKeys: AssetGraphQuery_assetNodes_dependedByKeys[];
 }

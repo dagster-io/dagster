@@ -63,8 +63,6 @@ export const AssetKeysTable: React.FC<{
             );
           }
 
-          const showSwitcher =
-            prefixPath.length || assets.some((asset) => asset.key.path.length > 1);
           const {hasNextCursor, hasPrevCursor} = paginationProps;
           return (
             <>
@@ -72,7 +70,7 @@ export const AssetKeysTable: React.FC<{
                 assets={assets}
                 actionBarComponents={
                   <>
-                    {showSwitcher ? switcher : null}
+                    {switcher}
                     <AssetSearch />
                     <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
                   </>
