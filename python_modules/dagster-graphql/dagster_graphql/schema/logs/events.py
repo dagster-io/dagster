@@ -6,8 +6,9 @@ from dagster.core.execution.stats import RunStepKeyStatsSnapshot
 
 from ...implementation.events import construct_basic_params
 from ...implementation.fetch_runs import get_run_by_id, get_step_stats
+from ...implementation.loader import BatchRunLoader
 from ..asset_key import GrapheneAssetKey, GrapheneAssetLineageInfo
-from ..errors import GraphenePythonError
+from ..errors import GraphenePythonError, GrapheneRunNotFoundError
 from ..runs import GrapheneStepEventStatus
 from ..util import non_null_list
 from .log_level import GrapheneLogLevel
@@ -439,8 +440,9 @@ class GrapheneMaterializationEvent(graphene.ObjectType, AssetEventMixin):
 
     assetLineage = non_null_list(GrapheneAssetLineageInfo)
 
-    def __init__(self, event, assetLineage=None):
+    def __init__(self, event, assetLineage=None, loader=None):
         self._asset_lineage = check.opt_list_param(assetLineage, "assetLineage", AssetLineageInfo)
+        self._batch_run_loader = check.opt_inst_param(loader, "loader", BatchRunLoader)
 
         materialization = event.dagster_event.step_materialization_data.materialization
         super().__init__(**_construct_asset_event_metadata_params(event, materialization))
@@ -449,6 +451,18 @@ class GrapheneMaterializationEvent(graphene.ObjectType, AssetEventMixin):
             event=event,
             metadata=materialization,
         )
+
+    def resolve_runOrError(self, graphene_info):
+        from ..pipelines.pipeline import GrapheneRun
+
+        if self._batch_run_loader:
+            record = self._batch_run_loader.get_run_record_by_run_id(self._event.run_id)
+            if not record:
+                return GrapheneRunNotFoundError(self._event.run_id)
+
+            return GrapheneRun(record)
+
+        return super().resolve_runOrError(graphene_info)
 
     def resolve_assetLineage(self, _graphene_info):
         return [

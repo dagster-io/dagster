@@ -1,7 +1,16 @@
 import copy
 
 import yaml
-from dagster import execute_pipeline, lambda_solid, pipeline, repository
+from dagster import (
+    AssetMaterialization,
+    Output,
+    execute_pipeline,
+    job,
+    lambda_solid,
+    op,
+    pipeline,
+    repository,
+)
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import execute_run
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -196,6 +205,24 @@ query RepositoryRunsQuery($repositorySelector: RepositorySelector!) {
 }
 """
 
+ASSET_RUNS_QUERY = """
+query AssetRunsQuery($assetKey: AssetKeyInput!) {
+    assetOrError(assetKey: $assetKey) {
+        ... on Asset {
+            assetMaterializations {
+                label
+                runOrError {
+                    ... on PipelineRun {
+                        id
+                        runId
+                    }
+                }
+            }
+        }
+    }
+}
+"""
+
 
 def _get_runs_data(result, run_id):
     for run_data in result.data["pipelineOrError"]["runs"]:
@@ -380,6 +407,23 @@ def get_repo_at_time_2():
         return [evolving_pipeline, bar_pipeline]
 
     return evolving_repo
+
+
+def get_asset_repo():
+    @op
+    def foo():
+        yield AssetMaterialization(asset_key="foo", description="foo")
+        yield Output(None)
+
+    @job
+    def foo_job():
+        foo()
+
+    @repository
+    def asset_repo():
+        return [foo_job]
+
+    return asset_repo
 
 
 def test_runs_over_time():
@@ -811,7 +855,6 @@ def test_run_groups():
 
 
 def test_repository_batching():
-
     with instance_for_test() as instance:
         repo = get_repo_at_time_1()
         foo_pipeline = repo.get_pipeline("foo_pipeline")
@@ -845,4 +888,26 @@ def test_repository_batching():
             assert len(counts) == 1
             # We should have a single batch call to fetch run records, instead of 3 separate calls
             # to fetch run records (which is fetched to instantiate GrapheneRun)
+            assert counts.get("DagsterInstance.get_run_records") == 1
+
+
+def test_asset_batching():
+    with instance_for_test() as instance:
+        repo = get_asset_repo()
+        foo_job = repo.get_job("foo_job")
+        for _ in range(3):
+            foo_job.execute_in_process(instance=instance)
+        with define_out_of_process_context(__file__, "asset_repo", instance) as context:
+            traced_counter.set(Counter())
+            result = execute_dagster_graphql(
+                context, ASSET_RUNS_QUERY, variables={"assetKey": {"path": ["foo"]}}
+            )
+            assert result.data
+            assert "assetOrError" in result.data
+            assert "assetMaterializations" in result.data["assetOrError"]
+            materializations = result.data["assetOrError"]["assetMaterializations"]
+            assert len(materializations) == 3
+            counter = traced_counter.get()
+            counts = counter.counts()
+            assert counts
             assert counts.get("DagsterInstance.get_run_records") == 1

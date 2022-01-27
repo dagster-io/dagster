@@ -1,11 +1,11 @@
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, Dict, Iterable, List, Optional, Set
 
 from dagster import DagsterInstance, check
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.scheduler.instigation import InstigatorType
-from dagster.core.storage.pipeline_run import JobBucket, TagBucket
+from dagster.core.storage.pipeline_run import JobBucket, PipelineRunsFilter, RunRecord, TagBucket
 from dagster.core.storage.tags import SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
 
 
@@ -142,3 +142,30 @@ class RepositoryScopedBatchLoader:
         )
         states = self._get(RepositoryDataType.SENSOR_STATES, sensor_state, 1)
         return states[0] if states else None
+
+
+class BatchRunLoader:
+    """
+    A batch loader that fetches a set of runs by run_id. This loader is expected to be instantiated
+    once with a set of run_ids. For example, for a particular asset, we can fetch a list of asset
+    materializations, all of which may have been materialized from a different run.
+    """
+
+    def __init__(self, instance: DagsterInstance, run_ids: Iterable[str]):
+        self._instance = instance
+        self._run_ids: Set[str] = set(run_ids)
+        self._records: Dict[str, RunRecord] = {}
+
+    def get_run_record_by_run_id(self, run_id: str) -> Optional[RunRecord]:
+        if run_id not in self._run_ids:
+            check.failed(
+                f"Run id {run_id} not recognized for this loader.  Expected one of: {self._run_ids}"
+            )
+        if self._records.get(run_id) is None:
+            self._fetch()
+        return self._records.get(run_id)
+
+    def _fetch(self):
+        records = self._instance.get_run_records(PipelineRunsFilter(run_ids=list(self._run_ids)))
+        for record in records:
+            self._records[record.pipeline_run.run_id] = record
