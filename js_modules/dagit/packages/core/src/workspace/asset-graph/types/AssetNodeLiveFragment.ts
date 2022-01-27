@@ -33,10 +33,11 @@ export interface AssetNodeLiveFragment_assetMaterializations_runOrError_Run {
 
 export type AssetNodeLiveFragment_assetMaterializations_runOrError = AssetNodeLiveFragment_assetMaterializations_runOrError_RunNotFoundError | AssetNodeLiveFragment_assetMaterializations_runOrError_Run;
 
-export interface AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry" | "EventTableMetadataEntry";
-  label: string;
-  description: string | null;
+export interface AssetNodeLiveFragment_assetMaterializations_stepStats {
+  __typename: "RunStepStats";
+  endTime: number | null;
+  startTime: number | null;
+  stepKey: string;
 }
 
 export interface AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventPathMetadataEntry {
@@ -116,12 +117,6 @@ export interface AssetNodeLiveFragment_assetMaterializations_metadataEntries_Eve
   assetKey: AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventAssetMetadataEntry_assetKey;
 }
 
-<<<<<<< HEAD
-export type AssetNodeLiveFragment_assetMaterializations_metadataEntries = AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventPathMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventJsonMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventUrlMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventTextMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventMarkdownMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventPythonArtifactMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventFloatMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventIntMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventPipelineRunMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventAssetMetadataEntry;
-=======
-<<<<<<< HEAD
-export type AssetNodeLiveFragment_assetMaterializations_metadataEntries = AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventPathMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventJsonMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventUrlMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventTextMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventMarkdownMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventPythonArtifactMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventFloatMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventIntMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventPipelineRunMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventAssetMetadataEntry;
-=======
 export interface AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
@@ -195,8 +190,6 @@ export interface AssetNodeLiveFragment_assetMaterializations_metadataEntries_Eve
 }
 
 export type AssetNodeLiveFragment_assetMaterializations_metadataEntries = AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventPathMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventJsonMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventUrlMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventTextMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventMarkdownMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventPythonArtifactMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventFloatMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventIntMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventPipelineRunMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventAssetMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventTableMetadataEntry | AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry;
->>>>>>> 54b3ea81e ([dagit-type-metadata] update graphql types)
->>>>>>> 3bea9c582 ([dagit-type-metadata] update graphql types)
 
 export interface AssetNodeLiveFragment_assetMaterializations_assetLineage_assetKey {
   __typename: "AssetKey";
@@ -209,13 +202,6 @@ export interface AssetNodeLiveFragment_assetMaterializations_assetLineage {
   partitions: string[];
 }
 
-export interface AssetNodeLiveFragment_assetMaterializations_stepStats {
-  __typename: "RunStepStats";
-  stepKey: string;
-  startTime: number | null;
-  endTime: number | null;
-}
-
 export interface AssetNodeLiveFragment_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
@@ -223,9 +209,9 @@ export interface AssetNodeLiveFragment_assetMaterializations {
   runId: string;
   timestamp: string;
   stepKey: string | null;
+  stepStats: AssetNodeLiveFragment_assetMaterializations_stepStats;
   metadataEntries: AssetNodeLiveFragment_assetMaterializations_metadataEntries[];
   assetLineage: AssetNodeLiveFragment_assetMaterializations_assetLineage[];
-  stepStats: AssetNodeLiveFragment_assetMaterializations_stepStats;
 }
 
 export interface AssetNodeLiveFragment {
