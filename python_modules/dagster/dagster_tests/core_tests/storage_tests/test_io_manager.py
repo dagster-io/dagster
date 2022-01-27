@@ -1,5 +1,6 @@
 import os
 import tempfile
+import time
 
 import mock
 import pytest
@@ -37,6 +38,7 @@ from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_
 from dagster.core.storage.io_manager import IOManager, io_manager
 from dagster.core.storage.mem_io_manager import InMemoryIOManager, mem_io_manager
 from dagster.core.system_config.objects import ResolvedRunConfig
+from dagster.core.test_utils import instance_for_test
 
 
 def test_io_manager_with_config():
@@ -760,4 +762,63 @@ def test_partition_key():
 
 
 def test_context_logging_user_events():
-    pass
+    class DummyIOManager(IOManager):
+        def __init__(self):
+            self.values = {}
+
+        def handle_output(self, context, obj):
+            keys = tuple(context.get_output_identifier())
+            self.values[keys] = obj
+
+            context.log_event(AssetMaterialization(asset_key="first"))
+            time.sleep(1)
+            context.log.debug("foo bar")
+            context.log_event(AssetMaterialization(asset_key="second"))
+
+        def load_input(self, context):
+            keys = tuple(context.upstream_output.get_output_identifier())
+            return self.values[keys]
+
+        def has_asset(self, context):
+            keys = tuple(context.get_output_identifier())
+            return keys in self.values
+
+    @op
+    def the_op():
+        return 5
+
+    @graph
+    def the_graph():
+        the_op()
+
+    with instance_for_test() as instance:
+        result = the_graph.execute_in_process(
+            resources={"io_manager": DummyIOManager()}, instance=instance
+        )
+
+        assert result.success
+
+        relevant_event_logs = [
+            event_log
+            for event_log in instance.all_logs(result.run_id)
+            if event_log.dagster_event is not None
+            and event_log.dagster_event.is_step_materialization
+        ]
+
+        log_entries = [
+            event_log
+            for event_log in instance.all_logs(result.run_id)
+            if event_log.dagster_event is None
+        ]
+
+        log = log_entries[0]
+        assert log.user_message == "foo bar"
+
+        first = relevant_event_logs[0]
+        assert first.dagster_event.event_specific_data.materialization.label == "first"
+
+        second = relevant_event_logs[1]
+        assert second.dagster_event.event_specific_data.materialization.label == "second"
+
+        assert second.timestamp - first.timestamp >= 1
+        assert log.timestamp - first.timestamp >= 1

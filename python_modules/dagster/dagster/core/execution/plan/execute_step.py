@@ -527,7 +527,9 @@ def _store_output(
     ):
         for event in output_context.retrieve_events():
             yield event
-        if isinstance(elt, AssetMaterialization):
+        if isinstance(elt, DagsterEvent):
+            yield elt
+        elif isinstance(elt, AssetMaterialization):
             manager_materializations.append(elt)
         elif isinstance(elt, (EventMetadataEntry, PartitionMetadataEntry)):
             experimental_functionality_warning(

@@ -1,7 +1,14 @@
 import re
 
 import pytest
-from dagster import InputContext, OutputContext, build_input_context, build_output_context, resource
+from dagster import (
+    AssetMaterialization,
+    InputContext,
+    OutputContext,
+    build_input_context,
+    build_output_context,
+    resource,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 
 
@@ -92,4 +99,12 @@ def test_build_output_context_with_cm_resource():
 
 
 def test_context_logging_user_events():
-    pass
+    context = build_output_context()
+
+    context.log_event(AssetMaterialization("first"))
+    context.log_event(AssetMaterialization("second"))
+    assert [event.label for event in context.get_events()] == ["first", "second"]
+
+    context.scrub_events()
+
+    assert context.get_events() == []
