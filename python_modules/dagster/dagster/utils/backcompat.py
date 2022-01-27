@@ -205,6 +205,8 @@ def experimental(callable_):
 
         def __init__(self, *args, **kwargs):
             experimental_class_warning(callable_.__name__, stacklevel=3)
+            # Tuples must be handled differently, because the undecorated_init does not take any
+            # arguments-- they're assigned in __new__.
             if issubclass(callable_, tuple):
                 undecorated_init(self)
             else:
