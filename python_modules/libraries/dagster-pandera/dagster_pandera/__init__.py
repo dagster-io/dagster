@@ -1,6 +1,5 @@
 import itertools
-import textwrap
-from typing import TYPE_CHECKING, Dict, Generator, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Tuple, Type, Union, cast
 
 import dagster.check as check
 import dask
@@ -31,6 +30,7 @@ if TYPE_CHECKING:
     # import ray
     ValidatableDataFrame = Union[pd.DataFrame, ks.DataFrame, mpd.DataFrame]
 
+# TODO: Use TypedDict for description info (pending typing-extensions)
 
 check_dagster_package_version("dagster-pandera", __version__)
 
@@ -66,8 +66,7 @@ _anonymous_type_name = _anonymous_type_name_func()
 def pandera_schema_to_dagster_type(
     schema: Union[pa.DataFrameSchema, Type[pa.SchemaModel]],
     name: Optional[str] = None,
-    description: Optional[str] = None,
-    column_descriptions: Dict[str, str] = None,
+    description: Optional[Union[str, Dict[str, Any]]] = None,
 ):
 
     if isinstance(schema, type) and issubclass(schema, pa.SchemaModel):
@@ -78,13 +77,7 @@ def pandera_schema_to_dagster_type(
     else:
         raise TypeError("schema must be a DataFrameSchema or a subclass of SchemaModel")
 
-    column_descriptions = column_descriptions or {}
-
-    extra = {"columns": {k: {} for k in schema.columns.keys()}}
-    for k, v in column_descriptions.items():
-        extra["columns"][k]["description"] = v
-
-    schema_desc = _build_schema_desc(schema, description, extra)
+    description = _normalize_schema_description(schema, description)
 
     def type_check_fn(_context, value: object) -> TypeCheck:
         if isinstance(value, VALIDATABLE_DATA_FRAME_CLASSES):
@@ -109,20 +102,40 @@ def pandera_schema_to_dagster_type(
 
         return TypeCheck(success=True)
 
-    tschema = pandera_schema_to_table_schema(schema, extra)
+    col_descs = cast(Dict[str, str], description.get("columns"))
+    tschema = pandera_schema_to_table_schema(schema, col_descs)
 
     return DagsterType(
         type_check_fn=type_check_fn,
         name=name,
-        description=schema_desc,
+        description=description.get('summary'),
         metadata_entries=[
             EventMetadataEntry.text("foo", label="test"),
             EventMetadataEntry.table_schema(tschema, label="schema"),
         ],
     )
 
+def _normalize_schema_description(schema: pa.DataFrameSchema, description: Optional[Union[str, Dict[str, Any]]]) -> Dict[str, Any]:
+    if isinstance(description, str):
+        return { 'summary': description }
+    elif isinstance(description, dict):
+        col_descs = description.get('columns', {})
+        return {
+            'summary': description.get('summary'),
+            'columns': {
+                k: col_descs.get(k) for k in schema.columns.keys()
+            }
+        }
+    else:
+        return { 'summary': None, 'columns': { k: None for k in schema.columns.keys() } }
 
-def pandera_schema_to_table_schema(schema: pa.DataFrameSchema, extra: Dict[str, object] = None) -> TableSchema:
+
+# TODO: implement TableConstraints
+
+
+def pandera_schema_to_table_schema(
+    schema: pa.DataFrameSchema, column_descriptions: Dict[str, str]
+) -> TableSchema:
     """Convert a pandera schema to a Dagster `TableSchema`.
 
     Args:
@@ -131,51 +144,50 @@ def pandera_schema_to_table_schema(schema: pa.DataFrameSchema, extra: Dict[str, 
     Returns:
         TableSchema: The converted table schema.
     """
-    extra = extra or { "columns": {} }
-    cols_extra = check.dict_elem(extra, "columns")
     columns = [
-        pandera_column_to_table_column(column, cols_extra.get(column.name, {}))
-        for column in schema.columns.values()
+        pandera_column_to_table_column(col, column_descriptions.get(cast(str, k), None))
+        for k, col in schema.columns.items()
     ]
     return TableSchema(columns=columns)
 
 
-def pandera_column_to_table_column(column: pa.Column, extra: Dict) -> TableColumn:
-    """Convert a pandera column to a frictionless field.
+def pandera_column_to_table_column(pa_column: pa.Column, description: Optional[str]) -> TableColumn:
+    """Convert a pandera column to a dagster `TableColumn`.
 
     Args:
-        name (str): The name of the field.
         column (pa.Column): The pandera column to convert.
+        extra
 
     Returns:
-        Dict: The frictionless field.
+        TableColumn: The converted table column.
     """
     constraints = TableColumnConstraints(
-        nullable=column.nullable,
-        unique=column.unique,
-        other=[pandera_check_to_column_constraint(check) for check in column.checks],
+        nullable=pa_column.nullable,
+        unique=pa_column.unique,
+        other=[pandera_check_to_column_constraint(pa_check) for pa_check in pa_column.checks],
     )
-    name = check.not_none(column.name, "name")
+    name = check.not_none(pa_column.name, "name")
     return TableColumn(
         name=name,
-        type=str(column.dtype),
-        description=extra.get("description"),
+        type=str(pa_column.dtype),
+        description=description,
         constraints=constraints,
     )
 
 
-def pandera_check_to_column_constraint(check: pa.Check) -> str:
-    """Convert a pandera check to a frictionless constraint.
+def pandera_check_to_column_constraint(pa_check: pa.Check) -> str:
+    """Convert a pandera check to a descriptive string for inclusion in
+    `TableColumnConstraints.other`.
 
     Args:
         check (pa.Check): The pandera check to convert.
 
     Returns:
-        Dict: The frictionless constraint.
+        str: The descriptive string.
     """
 
     # `error` is the closest thing to a "description" offered by a pandera check
-    return check.error
+    return pa_check.error
 
 
 __all__ = [
