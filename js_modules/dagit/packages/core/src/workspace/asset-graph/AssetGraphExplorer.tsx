@@ -204,7 +204,7 @@ const AssetGraphExplorerWithData: React.FC<
     selectedAssetValues.includes(tokenForAssetKey(node.definition.assetKey)),
   );
   const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1];
-  const launchAssetNodes = selectedGraphNodes.length
+  const launchGraphNodes = selectedGraphNodes.length
     ? selectedGraphNodes
     : Object.values(assetGraphData.nodes);
 
@@ -327,8 +327,8 @@ const AssetGraphExplorerWithData: React.FC<
                           definition={graphNode.definition}
                           liveData={liveDataByNode[graphNode.id]}
                           metadata={
-                            handles.find((h) => h.handleID === graphNode.definition.opName)!.solid
-                              .definition.metadata
+                            handles.find((h) => h.handleID === graphNode.definition.opName)?.solid
+                              .definition.metadata || []
                           }
                           selected={selectedGraphNodes.includes(graphNode)}
                           jobName={explorerPath.pipelineName}
@@ -350,14 +350,14 @@ const AssetGraphExplorerWithData: React.FC<
           <div style={{position: 'absolute', right: 12, top: 12}}>
             <LaunchAssetExecutionButton
               title={titleForLaunch(selectedGraphNodes, liveDataByNode)}
-              assetJobName={explorerPath.pipelineName}
-              assets={launchAssetNodes.map((n) => n.definition)}
+              preferredJobName={explorerPath.pipelineName}
+              assets={launchGraphNodes.map((n) => n.definition)}
               upstreamAssetKeys={uniqBy(
-                flatMap(launchAssetNodes.map((n) => n.definition.dependencyKeys)),
+                flatMap(launchGraphNodes.map((n) => n.definition.dependencyKeys)),
                 (key) => JSON.stringify(key),
               ).filter(
                 (key) =>
-                  !launchAssetNodes.some((n) => JSON.stringify(n.assetKey) === JSON.stringify(key)),
+                  !launchGraphNodes.some((n) => JSON.stringify(n.assetKey) === JSON.stringify(key)),
               )}
             />
           </div>
@@ -392,7 +392,7 @@ const AssetGraphExplorerWithData: React.FC<
                 definition={
                   handles.find(
                     (h) => h.solid.definition.name === selectedGraphNodes[0].definition.opName,
-                  )!.solid.definition
+                  )?.solid.definition
                 }
               />
             ) : pipelineSelector ? (
@@ -434,6 +434,7 @@ const ASSETS_GRAPH_QUERY = gql`
     assetNodes(pipeline: $pipelineSelector) {
       id
       ...AssetNodeFragment
+      jobNames
       dependencyKeys {
         path
       }

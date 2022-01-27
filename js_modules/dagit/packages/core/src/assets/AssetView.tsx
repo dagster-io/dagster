@@ -109,11 +109,11 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             <Box margin={{top: 4}}>
               <QueryCountdown pollInterval={5 * 1000} queryResult={queryResult} />
             </Box>
-            {definition && definition.jobs.length > 0 && repoAddress && (
+            {definition && definition.jobNames.length > 0 && repoAddress && (
               <LaunchAssetExecutionButton
                 assets={[definition]}
                 upstreamAssetKeys={definition.dependencies.map((d) => d.asset.assetKey)}
-                assetJobName={definition.jobs[0].name}
+                preferredJobName={definition.jobNames[0]}
                 title={lastMaterializedAt ? 'Rematerialize' : 'Materialize'}
               />
             )}

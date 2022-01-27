@@ -10,6 +10,7 @@ import {PipelineReference} from '../pipelines/PipelineReference';
 import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {__REPOSITORY_MEGA_JOB} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
@@ -48,7 +49,7 @@ export const LatestMaterializationMetadata: React.FC<{
           <td>
             {latestRun ? (
               <div>
-                <Box margin={{bottom: 4}}>
+                <Box>
                   {'Run '}
                   <Link
                     to={`/instance/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}
@@ -56,26 +57,30 @@ export const LatestMaterializationMetadata: React.FC<{
                     <Mono>{titleForRun({runId: latestEvent.runId})}</Mono>
                   </Link>
                 </Box>
-                <Box padding={{left: 8}}>
-                  <PipelineReference
-                    showIcon
-                    pipelineName={latestRun.pipelineName}
-                    pipelineHrefContext={repoAddress || 'repo-unknown'}
-                    snapshotId={latestRun.pipelineSnapshotId}
-                    isJob={isThisThingAJob(repo, latestRun.pipelineName)}
-                  />
-                </Box>
-                <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
-                  <IconWIP name="linear_scale" color={ColorsWIP.Gray400} />
-                  <Link
-                    to={`/instance/runs/${latestRun.runId}?${qs.stringify({
-                      selection: latestEvent.stepKey,
-                      logs: `step:${latestEvent.stepKey}`,
-                    })}`}
-                  >
-                    {latestEvent.stepKey}
-                  </Link>
-                </Group>
+                {latestRun.pipelineName !== __REPOSITORY_MEGA_JOB && (
+                  <>
+                    <Box padding={{left: 8, top: 4}}>
+                      <PipelineReference
+                        showIcon
+                        pipelineName={latestRun.pipelineName}
+                        pipelineHrefContext={repoAddress || 'repo-unknown'}
+                        snapshotId={latestRun.pipelineSnapshotId}
+                        isJob={isThisThingAJob(repo, latestRun.pipelineName)}
+                      />
+                    </Box>
+                    <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
+                      <IconWIP name="linear_scale" color={ColorsWIP.Gray400} />
+                      <Link
+                        to={`/instance/runs/${latestRun.runId}?${qs.stringify({
+                          selection: latestEvent.stepKey,
+                          logs: `step:${latestEvent.stepKey}`,
+                        })}`}
+                      >
+                        {latestEvent.stepKey}
+                      </Link>
+                    </Group>
+                  </>
+                )}
               </div>
             ) : (
               'No materialization events'

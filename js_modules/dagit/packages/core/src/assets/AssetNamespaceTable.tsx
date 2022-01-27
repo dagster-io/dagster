@@ -48,8 +48,6 @@ export const AssetNamespaceTable: React.FC<{prefixPath: string[]; switcher: Reac
             );
           }
 
-          const showSwitcher =
-            prefixPath.length || assets.some((asset) => asset.key.path.length > 1);
           const namespaceForAsset = (asset: Asset) => {
             return asset.key.path.slice(prefixPath.length, prefixPath.length + 1);
           };
@@ -96,7 +94,7 @@ export const AssetNamespaceTable: React.FC<{prefixPath: string[]; switcher: Reac
                 assets={matchingAssets}
                 actionBarComponents={
                   <>
-                    {showSwitcher ? switcher : null}
+                    {switcher}
                     <AssetSearch />
                     <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={assetsQuery} />
                   </>

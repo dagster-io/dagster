@@ -35,12 +35,12 @@ export const AssetNodeList: React.FC<{
               history.push(`/instance/assets/${asset.assetKey.path.join('/')}`);
             }}
           >
-            {asset.jobs.length ? (
+            {asset.jobNames.length ? (
               <AssetNode
                 definition={asset}
                 metadata={[]}
                 inAssetCatalog
-                jobName={asset.jobs[0].name}
+                jobName={asset.jobNames[0]}
                 selected={false}
                 liveData={liveDataByNode[asset.id]}
               />

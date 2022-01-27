@@ -25,11 +25,8 @@ const REPOSITORY_ASSETS_LIST_QUERY = gql`
             path
           }
           opName
+          jobNames
           description
-          jobs {
-            id
-            name
-          }
         }
       }
       ... on RepositoryNotFoundError {
@@ -110,9 +107,9 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
             </td>
             <td>
               <Box flex={{direction: 'column', gap: 2}}>
-                {asset.jobs
-                  .filter((a) => a.name !== __REPOSITORY_MEGA_JOB)
-                  .map(({name}) => (
+                {asset.jobNames
+                  .filter((name) => name !== __REPOSITORY_MEGA_JOB)
+                  .map((name) => (
                     <PipelineReference
                       showIcon
                       isJob

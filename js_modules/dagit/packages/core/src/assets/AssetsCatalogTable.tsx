@@ -1,4 +1,3 @@
-import {ButtonGroup} from '@dagster-io/ui';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -8,42 +7,42 @@ import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 
 import {AssetKeysTable} from './AssetKeysTable';
 import {AssetNamespaceTable} from './AssetNamespaceTable';
+import {AssetViewModeSwitch} from './AssetViewModeSwitch';
 import {useAssetView} from './useAssetView';
 
 export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPath}) => {
   const [cursor, setCursor] = useQueryPersistedState<string | undefined>({queryKey: 'cursor'});
-  const [view, setView] = useAssetView();
+  const [view, _setView] = useAssetView();
   const history = useHistory();
-  const isFlattened = view !== 'directory';
+
   useDocumentTitle(
     prefixPath && prefixPath.length ? `Assets: ${prefixPath.join(' \u203A ')}` : 'Assets',
   );
-  const setIsFlattened = (flat: boolean) => {
-    setView(flat ? 'flat' : 'directory');
-    if (flat && prefixPath) {
+  const setView = (view: 'flat' | 'graph' | 'directory') => {
+    if (view === 'graph') {
+      history.push('/instance/asset-graph');
+      return;
+    }
+    _setView(view);
+    if (view === 'flat' && prefixPath) {
       history.push('/instance/assets');
     } else if (cursor) {
       setCursor(undefined);
     }
   };
 
-  const switcher = (
-    <ButtonGroup
-      activeItems={new Set([view])}
-      buttons={[
-        {id: 'flat', icon: 'view_list', tooltip: 'List view'},
-        {id: 'directory', icon: 'folder', tooltip: 'Folder view'},
-      ]}
-      onClick={(id) => setIsFlattened(id === 'flat')}
-    />
-  );
-
   return (
     <Wrapper>
-      {isFlattened ? (
-        <AssetKeysTable prefixPath={prefixPath || []} switcher={switcher} />
+      {view === 'flat' ? (
+        <AssetKeysTable
+          prefixPath={prefixPath || []}
+          switcher={<AssetViewModeSwitch view={view} setView={setView} />}
+        />
       ) : (
-        <AssetNamespaceTable prefixPath={prefixPath || []} switcher={switcher} />
+        <AssetNamespaceTable
+          prefixPath={prefixPath || []}
+          switcher={<AssetViewModeSwitch view={view} setView={setView} />}
+        />
       )}
     </Wrapper>
   );

@@ -318,6 +318,7 @@ const AssetMaterializationGraphs: React.FC<{
         {graphedLabels.length === 0 && (
           <Box padding={{horizontal: 24, top: 64}}>
             <NonIdealState
+              shrinkable
               icon="linear_scale"
               title="No numeric metadata"
               description={`Include numeric metadata entries in your materializations and observations to see data graphed by ${props.xAxis}.`}
