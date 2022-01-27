@@ -280,7 +280,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 else None
             )
         except ValueError:
-            before_timestamp = None
+            after_timestamp = None
 
         return [
             GrapheneObservationEvent(event=event)
