@@ -258,9 +258,11 @@ def create_backfill_run(
     log_action(
         instance,
         BACKFILL_RUN_CREATED,
-        metadata={"DAEMON_SESSION_ID": get_telemetry_daemon_session_id()},
-        repo_hash=hash_name(repo_location.name),
-        pipeline_name_hash=hash_name(external_pipeline.name),
+        metadata={
+            "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
+            "repo_hash": hash_name(repo_location.name),
+            "pipeline_name_hash": hash_name(external_pipeline.name),
+        },
     )
 
     return instance.create_run(

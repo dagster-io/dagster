@@ -474,11 +474,11 @@ def _create_sensor_run(
     log_action(
         instance,
         SENSOR_RUN_CREATED,
-        pipeline_name_hash=hash_name(external_pipeline.name),
-        repo_hash=hash_name(repo_location.name),
         metadata={
             "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
             "SENSOR_NAME_HASH": hash_name(external_sensor.name),
+            "pipeline_name_hash": hash_name(external_pipeline.name),
+            "repo_hash": hash_name(repo_location.name),
         },
     )
 

@@ -462,11 +462,11 @@ def _create_scheduler_run(
     log_action(
         instance,
         SCHEDULED_RUN_CREATED,
-        repo_hash=hash_name(repo_location.name),
-        pipeline_name_hash=hash_name(external_pipeline.name),
         metadata={
             "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
             "SCHEDULE_NAME_HASH": hash_name(external_schedule.name),
+            "repo_hash": hash_name(repo_location.name),
+            "pipeline_name_hash": hash_name(external_pipeline.name),
         },
     )
 

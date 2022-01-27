@@ -304,12 +304,13 @@ def test_dagit_logs(
 
                 actions.add(message.get("action"))
                 if message.get("action") == UPDATE_REPO_STATS:
-                    assert message.get("pipeline_name_hash") == ""
-                    repo_hash = message.get("repo_hash")
+                    metadata = message.get("metadata")
+                    assert metadata.get("pipeline_name_hash") == ""
+                    repo_hash = metadata.get("repo_hash")
 
                     assert repo_hash in expected_repo_stats
                     expected_num_pipelines_in_repo = expected_repo_stats.get(repo_hash)
-                    assert message.get("num_pipelines_in_repo") == str(
+                    assert metadata.get("num_pipelines_in_repo") == str(
                         expected_num_pipelines_in_repo
                     )
 
@@ -320,11 +321,6 @@ def test_dagit_logs(
                         "elapsed_time",
                         "event_id",
                         "instance_id",
-                        "pipeline_name_hash",
-                        "num_pipelines_in_repo",
-                        "num_schedules_in_repo",
-                        "num_sensors_in_repo",
-                        "repo_hash",
                         "python_version",
                         "run_storage_id",
                         "metadata",
