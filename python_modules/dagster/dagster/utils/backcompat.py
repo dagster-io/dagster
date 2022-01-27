@@ -200,14 +200,19 @@ def experimental(callable_):
         return _inner
 
     if inspect.isclass(callable_):
+
         undecorated_init = callable_.__init__
 
         def __init__(self, *args, **kwargs):
             experimental_class_warning(callable_.__name__, stacklevel=3)
-            undecorated_init(self, *args, **kwargs)
+            if issubclass(callable_, tuple):
+                undecorated_init(self)
+            else:
+                undecorated_init(self, *args, **kwargs)
 
         callable_.__init__ = __init__
-        return callable_
+
+    return callable_
 
 
 def experimental_decorator(decorator):

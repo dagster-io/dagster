@@ -1,4 +1,5 @@
 import re
+from typing import NamedTuple
 
 import pytest
 from dagster.check import CheckError
@@ -166,3 +167,13 @@ def test_experimental_decorator_class():
         match='"goodbye" is an experimental function. It may break in future versions, even between dot releases.',
     ):
         assert experimental_class_with_experimental_function.goodbye("dagster") == "goodbye dagster"
+
+    @experimental
+    class ExperimentalNamedTupleClass(NamedTuple("_", [("salutation", str)])):
+        pass
+
+    with pytest.warns(
+        ExperimentalWarning,
+        match='"ExperimentalNamedTupleClass" is an experimental class. It may break in future versions, even between dot releases.',
+    ):
+        assert ExperimentalNamedTupleClass(salutation="howdy").salutation == "howdy"
