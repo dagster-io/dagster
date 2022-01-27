@@ -14,7 +14,7 @@ from ...implementation.fetch_pipelines import get_pipeline_reference_or_raise
 from ...implementation.fetch_runs import get_runs, get_stats, get_step_stats
 from ...implementation.fetch_schedules import get_schedules_for_pipeline
 from ...implementation.fetch_sensors import get_sensors_for_pipeline
-from ...implementation.loader import RepositoryScopedBatchLoader
+from ...implementation.loader import BatchRunLoader, RepositoryScopedBatchLoader
 from ...implementation.utils import UserFacingGraphQLError, capture_error
 from ..asset_key import GrapheneAssetKey
 from ..dagster_types import GrapheneDagsterType, GrapheneDagsterTypeOrError, to_dagster_type
@@ -108,16 +108,16 @@ class GrapheneAsset(graphene.ObjectType):
         if partitionInLast and self._definition:
             partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
 
-        return [
-            GrapheneMaterializationEvent(event=event)
-            for event in get_asset_materializations(
-                graphene_info,
-                self.key,
-                partitions=partitions,
-                before_timestamp=before_timestamp,
-                limit=limit,
-            )
-        ]
+        events = get_asset_materializations(
+            graphene_info,
+            self.key,
+            partitions=partitions,
+            before_timestamp=before_timestamp,
+            limit=limit,
+        )
+        run_ids = [event.run_id for event in events]
+        loader = BatchRunLoader(graphene_info.context.instance, run_ids) if run_ids else None
+        return [GrapheneMaterializationEvent(event=event, loader=loader) for event in events]
 
 
 class GraphenePipelineRun(graphene.Interface):
