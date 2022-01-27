@@ -89,3 +89,7 @@ def test_build_output_context_with_cm_resource():
         assert context.resources.cm_resource == "foo"
 
     assert entered == ["yes", "yes"]
+
+
+def test_context_logging_user_events():
+    pass

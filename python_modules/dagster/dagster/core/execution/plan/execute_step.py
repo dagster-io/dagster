@@ -503,6 +503,8 @@ def _store_output(
 
         def _gen_fn():
             gen_output = output_manager.handle_output(output_context, output.value)
+            for event in output_context.retrieve_events():
+                yield event
             if gen_output:
                 yield gen_output
 
@@ -523,6 +525,8 @@ def _store_output(
         ),
         handle_output_gen,
     ):
+        for event in output_context.retrieve_events():
+            yield event
         if isinstance(elt, AssetMaterialization):
             manager_materializations.append(elt)
         elif isinstance(elt, (EventMetadataEntry, PartitionMetadataEntry)):
@@ -537,6 +541,8 @@ def _store_output(
                 "one of AssetMaterialization, EventMetadataEntry, PartitionMetadataEntry."
             )
 
+    for event in output_context.retrieve_events():
+        yield event
     # do not alter explicitly created AssetMaterializations
     for materialization in manager_materializations:
         yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)

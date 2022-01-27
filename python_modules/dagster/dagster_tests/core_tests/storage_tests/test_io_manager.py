@@ -757,3 +757,7 @@ def test_partition_key():
         my_op2(my_op())
 
     assert my_job.execute_in_process(partition_key="2020-01-01").success
+
+
+def test_context_logging_user_events():
+    pass

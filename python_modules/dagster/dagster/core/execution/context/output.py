@@ -1,8 +1,13 @@
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
 
 from dagster import check
-from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.events import (
+    AssetKey,
+    AssetMaterialization,
+    AssetObservation,
+    Materialization,
+)
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.solid_definition import SolidDefinition
@@ -11,6 +16,7 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.utils import build_resources_for_manager
 
 if TYPE_CHECKING:
+    from dagster.core.events import DagsterEvent
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.types.dagster_type import DagsterType
     from dagster.core.definitions import PipelineDefinition
@@ -95,6 +101,9 @@ class OutputContext:
             self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
             self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
             self._cm_scope_entered = False
+
+        self._events: List["DagsterEvent"] = []
+        self._user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]] = []
 
     def __enter__(self):
         if self._resources_cm:
@@ -371,6 +380,55 @@ class OutputContext:
                 identifier.append(self.mapping_key)
 
         return identifier
+
+    def log_event(
+        self, event: Union[AssetObservation, AssetMaterialization, Materialization]
+    ) -> None:
+        from dagster.core.events import DagsterEvent
+
+        """Log an AssetMaterialization, AssetObservation, or ExpectationResult from within the body of an io manager's `handle_output` method.
+
+        Events logged with this method will appear in the list of DagsterEvents, as well as the event log.
+
+        Args:
+            event (Union[AssetMaterialization, Materialization, AssetObservation, ExpectationResult]): The event to log.
+
+        Examples:
+
+        .. code-block:: python
+            from dagster import IOManager, AssetMaterialization
+
+            class MyIOManager(IOManager):
+                def handle_output(self, context, obj):
+                    context.log_event(AssetMaterialization("foo"))
+        """
+
+        if isinstance(event, (AssetMaterialization, Materialization)):
+            if self._step_context:
+                self._events.append(
+                    DagsterEvent.asset_materialization(
+                        self._step_context,
+                        event,
+                        self._step_context.get_input_lineage(),
+                    )
+                )
+            self._user_events.append(event)
+        elif isinstance(event, AssetObservation):
+            if self._step_context:
+                self._events.append(DagsterEvent.asset_observation(self._step_context, event))
+            self._user_events.append(event)
+        else:
+            check.failed("Unexpected event {event}".format(event=event))
+
+    def retrieve_events(self) -> Iterator[DagsterEvent]:
+        while self._events:
+            yield self._events.pop(0)
+
+    def get_events(self) -> List[Union[AssetMaterialization, Materialization, AssetObservation]]:
+        return self._user_events
+
+    def scrub_events(self) -> None:
+        self._user_events = []
 
 
 def get_output_context(
