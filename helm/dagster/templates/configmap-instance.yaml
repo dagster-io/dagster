@@ -117,4 +117,4 @@ data:
       poll_interval_seconds: {{ $runMonitoring.pollIntervalSeconds }}
     {{- end }}
     telemetry:
-      enabled: {{ default "true" | .Values.telemetry.enabled }}
+      enabled: {{ .Values.telemetry.enabled | default true }}
