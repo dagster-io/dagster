@@ -4,8 +4,9 @@ import pytest
 
 import pandera as pa
 import pandas as pd
+from dagster.core.definitions.event_metadata.table import TableSchema
 
-from dagster_pandera import pandera_schema_to_dagster_type
+from dagster_pandera import pandera_schema_to_dagster_type, pandera_schema_to_table_schema
 from dagster import check_dagster_type, DagsterType, TypeCheck
 
 from modin.pandas import DataFrame as ModinDataFrame
@@ -71,3 +72,16 @@ def test_validate_valid_dataframe(dagster_type, dataframe):
     result = check_dagster_type(dagster_type, dataframe)
     assert isinstance(result, TypeCheck)
     assert result.success
+
+def test_pandera_schema_to_table_schema(schema):
+    tschema = pandera_schema_to_table_schema(schema)
+    assert isinstance(tschema, TableSchema)
+
+    assert tschema == TableSchema(
+        columns=[
+            TableColumn(
+                name="a",
+                # constraints=TableColumnConstraints(
+                #
+                # )
+            ),
