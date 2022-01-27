@@ -10,6 +10,7 @@ from dagster.core.definitions.events import (
     AssetObservation,
     ExpectationResult,
     Materialization,
+    UserEvent,
 )
 from dagster.core.definitions.hook_definition import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
@@ -44,9 +45,6 @@ def _property_msg(prop_name: str, method_name: str) -> str:
     return (
         f"The {prop_name} {method_name} is not set on the context when a solid is directly invoked."
     )
-
-
-UserEvent = Union[AssetMaterialization, AssetObservation, Materialization, ExpectationResult]
 
 
 class UnboundSolidExecutionContext(OpExecutionContext):
