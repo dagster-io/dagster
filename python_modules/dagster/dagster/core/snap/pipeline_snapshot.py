@@ -1,6 +1,6 @@
 from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Union, cast
 
-from dagster import Field, Permissive, Selector, Shape, check
+from dagster import Field, Permissive, Selector, Shape, check, KeyedCollection
 from dagster.config.config_type import (
     Array,
     ConfigTypeKind,
@@ -349,6 +349,23 @@ def _construct_array_from_snap(config_type_snap, config_snap_map):
     )
 
 
+def _construct_keyed_collection_from_snap(config_type_snap, config_snap_keyed_collection):
+    check.list_param(config_type_snap.type_param_keys, "type_param_keys", str)
+    check.invariant(
+        len(config_type_snap.type_param_keys) == 1,
+        "Expect KEYED_COLLECTION to provide a single inner type. Snapshot provided: {}".format(
+            config_type_snap.type_param_keys
+        ),
+    )
+
+    return KeyedCollection(
+        inner_type=construct_config_type_from_snap(
+            config_snap_keyed_collection[config_type_snap.type_param_keys[0]],
+            config_snap_keyed_collection,
+        )
+    )
+
+
 def _construct_noneable_from_snap(config_type_snap, config_snap_map):
     check.list_param(config_type_snap.type_param_keys, "type_param_keys", str)
     check.invariant(
@@ -384,6 +401,8 @@ def construct_config_type_from_snap(
         return _construct_scalar_union_from_snap(config_type_snap, config_snap_map)
     elif config_type_snap.kind == ConfigTypeKind.ARRAY:
         return _construct_array_from_snap(config_type_snap, config_snap_map)
+    elif config_type_snap.kind == ConfigTypeKind.KEYED_COLLECTION:
+        return _construct_keyed_collection_from_snap(config_type_snap, config_snap_map)
     elif config_type_snap.kind == ConfigTypeKind.NONEABLE:
         return _construct_noneable_from_snap(config_type_snap, config_snap_map)
     check.failed("Could not evaluate config type snap kind: {}".format(config_type_snap.kind))

@@ -2,7 +2,11 @@ from dagster import Any, Bool, Field, Int, Noneable, Selector, Shape, String, St
 from dagster.config.errors import DagsterEvaluationErrorReason
 from dagster.config.evaluate_value_result import EvaluateValueResult
 from dagster.config.field import resolve_to_config_type
-from dagster.config.stack import EvaluationStackListItemEntry, EvaluationStackPathEntry
+from dagster.config.stack import (
+    EvaluationStackKeyedCollectionItemEntry,
+    EvaluationStackListItemEntry,
+    EvaluationStackPathEntry,
+)
 from dagster.config.validate import process_config
 
 
@@ -357,6 +361,103 @@ def test_selector_with_defaults():
     result = eval_config_value_from_dagster_type(SelectorWithDefaults, {})
     assert result.success
     assert result.value == {"default": "foo"}
+
+
+def test_evaluate_keyed_collection_string():
+    string_keyed_collection = {str: str}
+    result = eval_config_value_from_dagster_type(string_keyed_collection, {"foo": "bar"})
+    assert result.success
+    assert result.value == {"foo": "bar"}
+
+
+def test_evaluate_keyed_collection_error_item_mismatch():
+    result = eval_config_value_from_dagster_type({str: str}, {"a": 1})
+    assert not result.success
+    assert len(result.errors) == 1
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+
+
+def test_evaluate_keyed_collection_error_top_level_mismatch():
+    string_keyed_collection = {str: str}
+    result = eval_config_value_from_dagster_type(string_keyed_collection, 1)
+    assert not result.success
+    assert len(result.errors) == 1
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+
+
+def test_evaluate_double_keyed_collection():
+    string_double_keyed_collection = {str: {str: str}}
+    result = eval_config_value_from_dagster_type(
+        string_double_keyed_collection, {"a": {"b": "foo"}}
+    )
+    assert result.success
+    assert result.value == {"a": {"b": "foo"}}
+
+
+def test_config_keyed_collection_in_dict():
+    nested_keyed_collection = {"nested_keyed_collection": {str: int}}
+
+    value = {"nested_keyed_collection": {"a": 1, "b": 2, "c": 3}}
+    result = eval_config_value_from_dagster_type(nested_keyed_collection, value)
+    assert result.success
+    assert result.value == value
+
+
+def test_config_keyed_collection_in_dict_error():
+    nested_keyed_collection = {"nested_keyed_collection": {str: int}}
+
+    value = {"nested_keyed_collection": {"a": 1, "b": "bar", "c": 3}}
+    result = eval_config_value_from_dagster_type(nested_keyed_collection, value)
+    assert not result.success
+    assert len(result.errors) == 1
+    error = result.errors[0]
+    assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+    assert len(error.stack.entries) == 2
+    stack_entry = error.stack.entries[0]
+    assert isinstance(stack_entry, EvaluationStackPathEntry)
+    assert stack_entry.field_name == "nested_keyed_collection"
+    keyed_collection_entry = error.stack.entries[1]
+    assert isinstance(keyed_collection_entry, EvaluationStackKeyedCollectionItemEntry)
+    assert keyed_collection_entry.keyed_collection_key == "b"
+
+
+def test_config_double_keyed_collection():
+    nested_keyed_collections = {
+        "nested_keyed_collection_one": {str: int},
+        "nested_keyed_collection_two": {str: str},
+    }
+
+    value = {
+        "nested_keyed_collection_one": {"a": 1, "b": 2, "c": 3},
+        "nested_keyed_collection_two": {"x": "foo", "y": "bar"},
+    }
+
+    result = eval_config_value_from_dagster_type(nested_keyed_collections, value)
+    assert result.success
+    assert result.value == value
+
+    error_value = {
+        "nested_keyed_collection_one": "kjdfkdj",
+        "nested_keyed_collection_two": {"x": "bar"},
+    }
+
+    error_result = eval_config_value_from_dagster_type(nested_keyed_collections, error_value)
+    assert not error_result.success
+
+
+def test_config_double_keyed_collection_double_error():
+    nested_keyed_collections = {
+        "nested_keyed_collection_one": {str: int},
+        "nested_keyed_collection_two": {str: str},
+    }
+
+    error_value = {
+        "nested_keyed_collection_one": "kjdfkdj",
+        "nested_keyed_collection_two": {"x": "bar", "y": 2},
+    }
+    error_result = eval_config_value_from_dagster_type(nested_keyed_collections, error_value)
+    assert not error_result.success
+    assert len(error_result.errors) == 2
 
 
 def test_evaluate_list_string():

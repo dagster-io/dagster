@@ -21,6 +21,9 @@ def test_kitchen_sink():
             "selector_of_things": Selector(
                 {"select_list_dict_field": [{"an_int": int}], "select_int": int}
             ),
+            "keyed_collection_int": {str: int},
+            "keyed_collection_keyed_collection_int": {str: {str: int}},
+            "keyed_collection_dict_field": {str: {"an_int": int}},
             # this is a good argument to use () instead of [] for type parameterization in
             # the config system
             "optional_list_of_optional_string": Noneable([Noneable(str)]),
@@ -37,6 +40,9 @@ def test_kitchen_sink():
         "dict_field": {"a_string": "kdjfkd"},
         "list_dict_field": [{"an_int": 2}, {"an_int": 4}],
         "selector_of_things": {"select_int": 3},
+        "keyed_collection_int": {"a": 1},
+        "keyed_collection_keyed_collection_int": {"a": {"b": 1}},
+        "keyed_collection_dict_field": {"a": {"an_int": 5}},
         "optional_list_of_optional_string": ["foo", None],
     }
 
@@ -56,6 +62,9 @@ def test_kitchen_sink():
         "dict_field": {"a_string": "kdjfkd"},
         "list_dict_field": [{"an_int": 2}, {"an_int": 4}],
         "selector_of_things": {"select_list_dict_field": [{"an_int": 5}]},
+        "keyed_collection_int": {"b": 2},
+        "keyed_collection_keyed_collection_int": {"b": {"b": 3}},
+        "keyed_collection_dict_field": {"b": {"an_int": 6}},
         "optional_list_of_optional_string": None,
     }
 
@@ -121,6 +130,18 @@ def test_bad_solid_config_argument_list_wrong_length():
         "Error defining config. Original value passed: {'bad_list': []}. "
         "Error at stack path :bad_list. [] cannot be resolved. "
         "Reason: List must be of length 1."
+    )
+
+
+def test_bad_solid_config_argument_keyed_config_bad_value():
+    with pytest.raises(DagsterInvalidConfigDefinitionError) as exc_info:
+
+        @solid(config_schema={"bad_keyed_config": {str: "asdf"}})
+        def _bad_keyed_config(_):
+            pass
+
+    assert "KeyedCollection must have a single value and contain a valid type" in str(
+        exc_info.value
     )
 
 

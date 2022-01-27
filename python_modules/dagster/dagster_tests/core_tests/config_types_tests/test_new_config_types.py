@@ -50,3 +50,15 @@ def test_list_nullable_int():
     assert validate_config(lni, [1, None]).success
     assert not validate_config(lni, None).success
     assert not validate_config(lni, [1, "absdf"]).success
+
+
+def test_keyed_collection_int():
+    keyed_collection_int = resolve_to_config_type({str: Int})
+
+    assert validate_config(keyed_collection_int, {"a": 1}).success
+    assert validate_config(keyed_collection_int, {"a": 1, "b": 2}).success
+    assert validate_config(keyed_collection_int, {}).success
+    assert not validate_config(keyed_collection_int, {"a": None}).success
+    assert not validate_config(keyed_collection_int, {"a": 1, "b": None}).success
+    assert not validate_config(keyed_collection_int, None).success
+    assert not validate_config(keyed_collection_int, {"a": 1, "b": "absdf"}).success

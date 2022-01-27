@@ -1,5 +1,5 @@
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
-from dagster.config import Enum, EnumValue, Field, Permissive, Selector, Shape
+from dagster.config import Enum, EnumValue, Field, Permissive, Selector, Shape, KeyedCollection
 from dagster.config.config_schema import ConfigSchema
 from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.definitions import (
@@ -244,6 +244,7 @@ __all__ = [
     "ExpectationResult",
     "Failure",
     "Field",
+    "KeyedCollection",
     "GraphDefinition",
     "GraphIn",
     "GraphOut",

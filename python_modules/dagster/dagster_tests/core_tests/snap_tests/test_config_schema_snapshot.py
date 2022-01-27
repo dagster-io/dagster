@@ -14,6 +14,7 @@ from dagster import (
 )
 from dagster.config.config_type import ConfigTypeKind
 from dagster.config.field import resolve_to_config_type
+from dagster.config.field_utils import KeyedCollection
 from dagster.core.snap import (
     ConfigEnumValueSnap,
     build_config_schema_snapshot,
@@ -155,6 +156,36 @@ def test_selector_of_things():
     assert field_snap.type_key == "Int"
 
 
+def test_basic_keyed_collection():
+    keyed_collection_snap = snap_from_dagster_type(KeyedCollection(int))
+    assert keyed_collection_snap.key.startswith("KeyedCollection")
+    child_type_keys = keyed_collection_snap.get_child_type_keys()
+    assert child_type_keys
+    assert len(child_type_keys) == 1
+    assert child_type_keys[0] == "Int"
+
+
+def test_basic_keyed_collection_nested():
+    keyed_collection_snap = snap_from_dagster_type({str: {str: int}})
+    assert keyed_collection_snap.key.startswith("KeyedCollection")
+    child_type_keys = keyed_collection_snap.get_child_type_keys()
+    assert child_type_keys
+    assert len(child_type_keys) == 1
+    assert child_type_keys[0] == "KeyedCollection.Int"
+    assert keyed_collection_snap.enum_values is None
+
+
+def test_keyed_collection_of_dict():
+    inner_dict_dagster_type = Shape({"foo": Field(str)})
+    keyed_collection_of_dict_snap = snap_from_dagster_type({str: inner_dict_dagster_type})
+
+    assert keyed_collection_of_dict_snap.key.startswith("KeyedCollection")
+    child_type_keys = keyed_collection_of_dict_snap.get_child_type_keys()
+    assert child_type_keys
+    assert len(child_type_keys) == 1
+    assert child_type_keys[0].startswith("Shape")
+
+
 def test_kitchen_sink():
     kitchen_sink = resolve_to_config_type(
         [
@@ -165,6 +196,9 @@ def test_kitchen_sink():
                     "nested_selector": Field(
                         Selector({"some_field": int, "more_list": Noneable([bool])})
                     ),
+                },
+                "keyed_collection": {
+                    str: {"keyed_collection_a": int, "keyed_collection_b": [str]},
                 },
             }
         ]
@@ -264,6 +298,9 @@ def test_kitchen_sink_break_out():
                         {"some_field": int, "noneable_list": Noneable([bool])}
                     ),
                 },
+                "keyed_collection": {
+                    str: {"keyed_collection_a": int, "keyed_collection_b": [str]},
+                },
             }
         ]
     )
@@ -284,7 +321,7 @@ def test_kitchen_sink_break_out():
 
     dict_within_list = config_snaps[solid_config_snap.inner_type_key]
 
-    assert len(dict_within_list.fields) == 2
+    assert len(dict_within_list.fields) == 3
 
     opt_field = dict_within_list.get_field("opt_list_of_int")
 
@@ -298,6 +335,15 @@ def test_kitchen_sink_break_out():
     assert noneable_list_bool.kind == ConfigTypeKind.NONEABLE
     list_bool = config_snaps[noneable_list_bool.inner_type_key]
     assert list_bool.kind == ConfigTypeKind.ARRAY
+
+    keyed_collection = config_snaps[dict_within_list.get_field("keyed_collection").type_key]
+    assert keyed_collection.kind == ConfigTypeKind.KEYED_COLLECTION
+    keyed_collection_dict = config_snaps[keyed_collection.inner_type_key]
+    assert len(keyed_collection_dict.fields) == 2
+    keyed_collection_a = config_snaps[
+        keyed_collection_dict.get_field("keyed_collection_a").type_key
+    ]
+    assert keyed_collection_a.kind == ConfigTypeKind.SCALAR
 
 
 def test_multiple_modes():

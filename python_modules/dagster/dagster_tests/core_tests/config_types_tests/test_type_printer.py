@@ -48,6 +48,55 @@ def test_nullable_list_combos():
     assert print_config_type_to_string(Noneable([Noneable(int)])) == "[Int?]?"
 
 
+def test_basic_keyed_collection_type_print():
+    assert (
+        print_config_type_to_string({str: int})
+        == """{
+  *String: Int
+}"""
+    )
+    assert_inner_types({str: int}, int)
+
+
+def test_double_keyed_collection_type_print():
+    assert (
+        print_config_type_to_string({str: {str: int}})
+        == """{
+  *String: {
+    *String: Int
+  }
+}"""
+    )
+    int_keyed_collection = {str: int}
+    keyed_collection_int_keyed_collection = {str: int_keyed_collection}
+    assert_inner_types(keyed_collection_int_keyed_collection, Int, int_keyed_collection)
+
+
+def test_list_keyed_collection_nullable_combos():
+    # Don't care about newlines here for brevity's sake, those are tested elsewhere
+    assert print_config_type_to_string({str: [int]}, with_lines=False) == "{ *String: [Int] }"
+    assert (
+        print_config_type_to_string(Noneable({str: [int]}), with_lines=False)
+        == "{ *String: [Int] }?"
+    )
+    assert (
+        print_config_type_to_string({str: Noneable([int])}, with_lines=False)
+        == "{ *String: [Int]? }"
+    )
+    assert (
+        print_config_type_to_string({str: [Noneable(int)]}, with_lines=False)
+        == "{ *String: [Int?] }"
+    )
+    assert (
+        print_config_type_to_string(Noneable({str: [Noneable(int)]}), with_lines=False)
+        == "{ *String: [Int?] }?"
+    )
+    assert (
+        print_config_type_to_string(Noneable({str: Noneable([Noneable(int)])}), with_lines=False)
+        == "{ *String: [Int?]? }?"
+    )
+
+
 def test_basic_dict():
     output = print_config_type_to_string({"int_field": int})
 
@@ -96,12 +145,13 @@ def test_optional_field():
     assert output == expected
 
 
-def test_single_level_dict_lists_and_nullable():
+def test_single_level_dict_lists_keyed_collections_and_nullable():
     output = print_config_type_to_string(
         {
             "nullable_int_field": Noneable(int),
             "optional_int_field": Field(int, is_required=False),
             "string_list_field": [str],
+            "zkeyed_collection_list_field": {str: int},
         }
     )
 
@@ -109,9 +159,25 @@ def test_single_level_dict_lists_and_nullable():
   nullable_int_field?: Int?
   optional_int_field?: Int
   string_list_field: [String]
+  zkeyed_collection_list_field: {
+    *String: Int
+  }
 }"""
 
     assert output == expected
+
+
+def test_nested_dicts_and_keyed_collections():
+    output = print_config_type_to_string({"field_one": {str: {"field_two": {str: int}}}})
+    expected = """{
+  field_one: {
+    *String: {
+      field_two: {
+        *String: Int
+      }
+    }
+  }
+}"""
 
 
 def test_nested_dict():
