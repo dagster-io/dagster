@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ColorsWIP, Tag, TagWIP, Tooltip} from '../../../ui/src';
+import {ColorsWIP, TagWIP, Tooltip} from '../../../ui/src';
 
 import {
   MetadataEntryFragment,
@@ -14,8 +14,6 @@ import {
 
 // TODO is there a better way to do this?
 type TableSchemaType = MetadataEntryFragment_EventTableSchemaMetadataEntry_schema;
-type Column = MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_columns;
-type TableConstraints = MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_constraints;
 type ColumnConstraints = MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_columns_constraints;
 
 const SectionHeader = styled.div`
@@ -85,6 +83,8 @@ const ColumnConstraintsTooltipContentItem = styled.div`
   width: 300px;
 `;
 
+const TypeTag: React.FC<{type: string}> = ({type}) => <TagWIP intent="none">{type}</TagWIP>;
+
 const NonNullableTag = <TagWIP intent="warning">non-nullable</TagWIP>;
 
 const UniqueTag = <TagWIP intent="success">unique</TagWIP>;
@@ -110,13 +110,15 @@ const OtherTag: React.FC<{other: string[]}> = ({other}) => {
 
 const ColumnItem: React.FC<{
   name: string;
+  type: string;
   description?: string;
   constraints: ColumnConstraints;
-}> = ({name, description, constraints}) => {
+}> = ({name, type, description, constraints}) => {
   return (
     <ColumnItemContainer>
       <ColumnMetadata>
         <ColumnName>{name}</ColumnName>
+        <TypeTag type={type} />
         {!constraints.nullable && NonNullableTag}
         {constraints.unique && UniqueTag}
         {constraints.other?.length > 0 && <OtherTag other={constraints.other} />}
@@ -143,6 +145,7 @@ export const TableSchema: React.FC<{
           <ColumnItem
             key={column.name}
             name={column.name}
+            type={column.type}
             description={column.description || undefined}
             constraints={column.constraints}
           />
