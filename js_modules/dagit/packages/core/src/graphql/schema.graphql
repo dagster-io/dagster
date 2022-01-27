@@ -551,6 +551,7 @@ type Asset {
     partitions: [String]
     partitionInLast: Int
     beforeTimestampMillis: String
+    afterTimestampMillis: String
     limit: Int
   ): [MaterializationEvent!]!
   definition: AssetNode
@@ -682,6 +683,7 @@ type AssetNode {
   assetObservations(
     partitions: [String]
     beforeTimestampMillis: String
+    afterTimestampMillis: String
     limit: Int
   ): [ObservationEvent!]!
 }

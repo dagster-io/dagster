@@ -45,7 +45,6 @@ def main(quiet):
         install_targets += ["Cython==0.29.21", "numpy==1.18.5"]
 
     install_targets += [
-        "awscli",
         "-e python_modules/dagster[mypy,test]",
         "-e python_modules/dagster-graphql",
         "-e python_modules/dagster-test",

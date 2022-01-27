@@ -131,7 +131,7 @@ class TelemetryEntry(
     namedtuple(
         "TelemetryEntry",
         "action client_time elapsed_time event_id instance_id pipeline_name_hash "
-        "num_pipelines_in_repo repo_hash python_version metadata version dagster_version os_desc os_platform",
+        "num_pipelines_in_repo repo_hash python_version metadata version dagster_version os_desc os_platform run_storage_id",
     )
 ):
     """
@@ -154,6 +154,7 @@ class TelemetryEntry(
     dagster_version - Version of the project being used.
     os_desc - String describing OS in use
     os_platform - Terse string describing OS platform - linux, windows, darwin, etc.
+    run_storage_id - Unique identifier of run storage database
 
     If $DAGSTER_HOME is set, then use $DAGSTER_HOME/logs/
     Otherwise, use ~/.dagster/logs/
@@ -170,6 +171,7 @@ class TelemetryEntry(
         num_pipelines_in_repo=None,
         repo_hash=None,
         metadata=None,
+        run_storage_id=None,
     ):
         action = check.str_param(action, "action")
         client_time = check.str_param(client_time, "action")
@@ -177,6 +179,7 @@ class TelemetryEntry(
         event_id = check.str_param(event_id, "event_id")
         instance_id = check.str_param(instance_id, "instance_id")
         metadata = check.opt_dict_param(metadata, "metadata")
+        run_storage_id = check.opt_str_param(run_storage_id, "run_storage_id")
 
         pipeline_name_hash = check.opt_str_param(
             pipeline_name_hash, "pipeline_name_hash", default=""
@@ -202,6 +205,7 @@ class TelemetryEntry(
             dagster_version=dagster_module_version,
             os_desc=OS_DESC,
             os_platform=OS_PLATFORM,
+            run_storage_id=run_storage_id,
         )
 
 
@@ -310,12 +314,18 @@ def write_telemetry_log_line(log_line):
 
 
 def _get_instance_telemetry_info(instance):
+    from dagster.core.storage.runs import SqlRunStorage
+
     check.inst_param(instance, "instance", DagsterInstance)
     dagster_telemetry_enabled = _get_instance_telemetry_enabled(instance)
     instance_id = None
     if dagster_telemetry_enabled:
         instance_id = _get_or_set_instance_id()
-    return (dagster_telemetry_enabled, instance_id)
+
+    run_storage_id = None
+    if isinstance(instance.run_storage, SqlRunStorage):
+        run_storage_id = instance.run_storage.get_run_storage_id()
+    return (dagster_telemetry_enabled, instance_id, run_storage_id)
 
 
 def _get_instance_telemetry_enabled(instance):
@@ -462,7 +472,9 @@ def log_action(
     if client_time is None:
         client_time = datetime.datetime.now()
 
-    (dagster_telemetry_enabled, instance_id) = _get_instance_telemetry_info(instance)
+    (dagster_telemetry_enabled, instance_id, run_storage_id) = _get_instance_telemetry_info(
+        instance
+    )
 
     if dagster_telemetry_enabled:
         # Log general statistics
@@ -476,6 +488,7 @@ def log_action(
                 metadata=metadata,
                 repo_hash=repo_hash,
                 pipeline_name_hash=pipeline_name_hash,
+                run_storage_id=run_storage_id,
             )._asdict()
         )
 

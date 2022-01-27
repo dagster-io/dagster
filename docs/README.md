@@ -135,3 +135,34 @@ By default, we just display the object name. To override, use the `displayText` 
 ### Navigation
 
 If you are adding a new page or want to update the navigation in the sidebar, update the `docs/content/_navigation.json` file.
+
+### Generating and Updating Screenshots
+
+Docs screenshots are generated manually. Previously, this meant that you would run Dagit and hit Shift-Command-4. Now, we are moving towards using the `docs/screenshot_capture/capture-screenshot.py` script, which adds some automation. To use it, you add a "screenshot spec" to `docs/screenshot_capture/screenshots.yaml` and then run the script to generate an image from that spec.
+
+A screenshot spec includes:
+- A `path` to an image file that the screenshot should be stored in.
+- A `defs_file` that the script will run `dagit -f` or `dagit -w` on to load a set of Dagster definitions.
+- A `url` for the page to take the screenshot from.
+- An optional set of manual `steps`, which the person generating the screenshot is expected to carry out before the screenshot is taken.
+- A `vetted` boolean, which indicates whether the current screenshot in the repo was generated using the spec.
+
+#### Setup
+```
+pip install selenium
+```
+
+Install Selenium's chrome driver:
+- Download chromedriver from [here](https://chromedriver.chromium.org/downloads).
+- Add it to /usr/local/bin
+- Run `xattr -d com.apple.quarantine /usr/local/bin/chromedriver` (gross)
+
+#### Capturing a screenshot
+
+Having written a screenshot spec, you can (re-)generate the screenshot by running the capture-screenshot script and providing the `path` value that you want to regenerate the screenshot for. E.g.
+
+```
+python docs/screenshot_capture/capture-screenshot.py concepts/dagit/runs-tab.png
+```
+
+It goes without saying that opportunities to automate this further abound.

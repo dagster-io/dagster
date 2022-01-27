@@ -13,6 +13,7 @@ from ...implementation.fetch_pipelines import get_pipeline_reference_or_raise
 from ...implementation.fetch_runs import get_runs, get_stats, get_step_stats
 from ...implementation.fetch_schedules import get_schedules_for_pipeline
 from ...implementation.fetch_sensors import get_sensors_for_pipeline
+from ...implementation.loader import BatchRunLoader, RepositoryScopedBatchLoader
 from ...implementation.utils import UserFacingGraphQLError, capture_error
 from ..asset_key import GrapheneAssetKey
 from ..dagster_types import GrapheneDagsterType, GrapheneDagsterTypeOrError, to_dagster_type
@@ -73,6 +74,7 @@ class GrapheneAsset(graphene.ObjectType):
         partitions=graphene.List(graphene.String),
         partitionInLast=graphene.Int(),
         beforeTimestampMillis=graphene.String(),
+        afterTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
     definition = graphene.Field("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
@@ -98,6 +100,14 @@ class GrapheneAsset(graphene.ObjectType):
             )
         except ValueError:
             before_timestamp = None
+        try:
+            after_timestamp = (
+                int(kwargs.get("afterTimestampMillis")) / 1000.0
+                if kwargs.get("afterTimestampMillis")
+                else None
+            )
+        except ValueError:
+            after_timestamp = None
 
         limit = kwargs.get("limit")
         partitions = kwargs.get("partitions")
@@ -105,16 +115,17 @@ class GrapheneAsset(graphene.ObjectType):
         if partitionInLast and self._definition:
             partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
 
-        return [
-            GrapheneMaterializationEvent(event=event)
-            for event in get_asset_materializations(
-                graphene_info,
-                self.key,
-                partitions=partitions,
-                before_timestamp=before_timestamp,
-                limit=limit,
-            )
-        ]
+        events = get_asset_materializations(
+            graphene_info,
+            self.key,
+            partitions=partitions,
+            before_timestamp=before_timestamp,
+            after_timestamp=after_timestamp,
+            limit=limit,
+        )
+        run_ids = [event.run_id for event in events]
+        loader = BatchRunLoader(graphene_info.context.instance, run_ids) if run_ids else None
+        return [GrapheneMaterializationEvent(event=event, loader=loader) for event in events]
 
 
 class GraphenePipelineRun(graphene.Interface):
@@ -592,10 +603,15 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
         interfaces = (GrapheneSolidContainer, GrapheneIPipelineSnapshot)
         name = "Pipeline"
 
-    def __init__(self, external_pipeline):
+    def __init__(self, external_pipeline, batch_loader=None):
         super().__init__()
         self._external_pipeline = check.inst_param(
             external_pipeline, "external_pipeline", ExternalPipeline
+        )
+        # optional run loader, provided by a parent GrapheneRepository object that instantiates
+        # multiple pipelines
+        self._batch_loader = check.opt_inst_param(
+            batch_loader, "batch_loader", RepositoryScopedBatchLoader
         )
 
     def resolve_id(self, _graphene_info):
@@ -624,7 +640,22 @@ class GraphenePipeline(GrapheneIPipelineSnapshotMixin, graphene.ObjectType):
 
         handle = self._external_pipeline.repository_handle
         location = graphene_info.context.get_repository_location(handle.location_name)
-        return GrapheneRepository(location.get_repository(handle.repository_name), location)
+        return GrapheneRepository(
+            graphene_info.context.instance,
+            location.get_repository(handle.repository_name),
+            location,
+        )
+
+    def resolve_runs(self, graphene_info, **kwargs):
+        # override the implementation to use the batch run loader
+        if not kwargs.get("cursor") and kwargs.get("limit") and self._batch_loader:
+            records = self._batch_loader.get_run_records_for_job(
+                self._external_pipeline.name, kwargs.get("limit")
+            )
+            return [GrapheneRun(record) for record in records]
+
+        # otherwise, fall back to the default implementation
+        return super().resolve_runs(graphene_info, **kwargs)
 
 
 class GrapheneJob(GraphenePipeline):

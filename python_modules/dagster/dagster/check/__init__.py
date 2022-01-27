@@ -333,14 +333,27 @@ def is_list(obj_list: Any, of_type: Type = None, desc: str = None) -> List:
     return _check_list_items(obj_list, of_type)
 
 
-def is_tuple(obj_tuple: Any, of_type: Type = None, desc: str = None) -> Tuple:
+def is_tuple(
+    obj_tuple: Any,
+    of_type: Type = None,
+    of_shape: Optional[Tuple[Type, ...]] = None,
+    desc: str = None,
+) -> Tuple:
+    """Ensure target is a tuple and is of a specified type. `of_type` defines a variadic tuple
+    type-- `obj` may be of any length, but each element must match the `of_type` argmument.
+    `of_shape` defines a fixed-length tuple type-- each element must match the corresponding element
+    in `of_shape`. Passing both `of_type` and `of_shape` will raise an error.
+    """
     if not isinstance(obj_tuple, tuple):
         raise _type_mismatch_error(obj_tuple, tuple, desc)
 
-    if not of_type:
+    if of_type is None and of_shape is None:
         return obj_tuple
 
-    return _check_tuple_items(obj_tuple, of_type)
+    if of_type and of_shape:
+        raise CheckError("Must specify exactly one `of_type` or `of_shape`")
+
+    return _check_tuple_items(obj_tuple, of_type, of_shape)
 
 
 def list_param(obj_list: Any, param_name: str, of_type: Type = None) -> List:
@@ -365,14 +378,24 @@ def set_param(obj_set: Any, param_name: str, of_type: Type = None) -> AbstractSe
     return _check_set_items(obj_set, of_type)
 
 
-def tuple_param(obj: Any, param_name: str, of_type: Type = None) -> Tuple:
+def tuple_param(
+    obj: Any, param_name: str, of_type: Type = None, of_shape: Optional[Tuple[Type, ...]] = None
+) -> Tuple:
+    """Ensure param is a tuple and is of a specified type. `of_type` defines a variadic tuple type--
+    `obj` may be of any length, but each element must match the `of_type` argmument. `of_shape`
+    defines a fixed-length tuple type-- each element must match the corresponding element in
+    `of_shape`. Passing both `of_type` and `of_shape` will raise an error.
+    """
     if not isinstance(obj, tuple):
         raise _param_type_mismatch_exception(obj, tuple, param_name)
 
-    if of_type is None:
+    if of_type is None and of_shape is None:
         return obj
 
-    return _check_tuple_items(obj, of_type)
+    if of_type and of_shape:
+        raise CheckError("Must specify exactly one `of_type` or `of_shape`")
+
+    return _check_tuple_items(obj, of_type, of_shape)
 
 
 def matrix_param(matrix: Any, param_name: str, of_type: Type = None) -> List[List]:
@@ -387,18 +410,31 @@ def matrix_param(matrix: Any, param_name: str, of_type: Type = None) -> List[Lis
 
 
 def opt_tuple_param(
-    obj: Any, param_name: str, default: Tuple = None, of_type: Type = None
+    obj: Any,
+    param_name: str,
+    default: Tuple = None,
+    of_type: Type = None,
+    of_shape: Optional[Tuple[Type, ...]] = None,
 ) -> Optional[Tuple]:
+    """Ensure optional param is a tuple and is of a specified type. `default` is returned if `obj`
+    is None. `of_type` defines a variadic tuple type-- `obj` may be of any length, but each element
+    must match the `of_type` argmument. `of_shape` defines a fixed-length tuple type-- each element
+    must match the corresponding element in `of_shape`. Passing both `of_type` and `of_shape` will
+    raise an error.
+    """
     if obj is not None and not isinstance(obj, tuple):
         raise _param_type_mismatch_exception(obj, tuple, param_name)
 
     if obj is None:
         return default
 
-    if of_type is None:
+    if of_type is None and of_shape is None:
         return obj
 
-    return _check_tuple_items(obj, of_type)
+    if of_type and of_shape:
+        raise CheckError("Must specify exactly one `of_type` or `of_shape`")
+
+    return _check_tuple_items(obj, of_type, of_shape)
 
 
 def _check_list_items(obj_list: Any, of_type: Type) -> List:
@@ -446,10 +482,12 @@ def _check_set_items(obj_set: Any, of_type: Type) -> Set:
     return obj_set
 
 
-def _check_tuple_items(obj_tuple: Any, of_type: Union[Tuple, Type]) -> Tuple:
-    if isinstance(of_type, tuple):
+def _check_tuple_items(
+    obj_tuple: Any, of_type: Optional[Type] = None, of_shape: Optional[Tuple[Type, ...]] = None
+) -> Tuple:
+    if of_shape is not None:
         len_tuple = len(obj_tuple)
-        len_type = len(of_type)
+        len_type = len(of_shape)
         if not len_tuple == len_type:
             raise CheckError(
                 "Tuple mismatches type: tuple had {len_tuple} members but type had "
@@ -457,8 +495,8 @@ def _check_tuple_items(obj_tuple: Any, of_type: Union[Tuple, Type]) -> Tuple:
             )
 
         for (i, obj) in enumerate(obj_tuple):
-            of_type_i = of_type[i]
-            if not isinstance(obj, of_type_i):
+            of_shape_i = of_shape[i]
+            if not isinstance(obj, of_shape_i):
                 if isinstance(obj, type):
                     additional_message = (
                         " Did you pass a class where you were expecting an instance of the class?"
@@ -469,14 +507,14 @@ def _check_tuple_items(obj_tuple: Any, of_type: Union[Tuple, Type]) -> Tuple:
                     "Member of tuple mismatches type at index {index}. Expected {of_type}. Got "
                     "{obj_repr} of type {obj_type}.{additional_message}".format(
                         index=i,
-                        of_type=of_type_i,
+                        of_type=of_shape_i,
                         obj_repr=repr(obj),
                         obj_type=type(obj),
                         additional_message=additional_message,
                     )
                 )
 
-    else:
+    elif of_type is not None:
         for (i, obj) in enumerate(obj_tuple):
             if not isinstance(obj, of_type):
                 if isinstance(obj, type):

@@ -77,6 +77,12 @@ BulkActionsTable = db.Table(
     db.Column("body", db.Text),
 )
 
+InstanceInfo = db.Table(
+    "instance_info",
+    RunStorageSqlMetadata,
+    db.Column("run_storage_id", db.Text),
+)
+
 db.Index("idx_run_tags", RunTagsTable.c.key, RunTagsTable.c.value, mysql_length=64)
 db.Index("idx_run_partitions", RunsTable.c.partition_set, RunsTable.c.partition, mysql_length=64)
 db.Index("idx_bulk_actions", BulkActionsTable.c.key, mysql_length=32)

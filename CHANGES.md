@@ -1,5 +1,34 @@
 # Changelog
 
+### New
+
+* When a user-generated context.log call fails while writing to the event log, it will now log a system error in the event log instead of failing the run.
+* [dagit] Made performance improvements to the Runs page, which can be realized after running an optional storage schema migration using dagster instance migrate.
+* When a job is created from a graph, it will now use the graph’s description if a description is not explicitly provided to override it.  (Thanks [@AndreaGiardini](https://github.com/AndreaGiardini)!)
+* [dagit] Log job names are now truncated in Dagit.
+* [dagit] The execution timezone is shown beside schedule cron strings, since their timezone may be UTC or a custom value.
+* [dagit] Graph filter inputs now default to using quoted strings, and this syntax matches ops, steps, or assets via an exact string match. "build_table"+  will select that asset and it's downstream children without selecting another containing that string, such as build_table_result. Removing the quotes provides the old string matching behavior
+* [dagster-aws] When using the emr_pyspark_step_launcher to run Dagster ops in an Amazon EMR cluster, the raw stdout output of the Spark driver is now written to stdout and will appear in the compute logs for the op in dagit, rather than being written to the Dagster event log.
+* [dagit] Improved performance loading the Asset entry page in Dagit.
+
+### Bugfixes
+
+* [dagster-mysql] Added a schema migration script that was mistakenly omitted from 0.13.16.  Migrating instance storage using dagster instance migrate should now complete without error.
+* [dagster-airbyte] Fixed a packaging dependency issue with dagster-airbyte.  (Thanks [bollwyvl](https://github.com/bollwyvl)!)
+* Fixed a bug where config provided to the config arg on to_job required environment variables to exist at definition time.
+* [dagit] The asset graph view now supports ops that yield multiple assets and renders long asset key paths correctly.
+* [dagit] The asset graph’s filter input now allows you to filter on assets with multi-component key paths.
+* [dagit] The asset graph properly displays downstream asset links to other asset jobs in your workspace.
+
+### Experimental
+
+* [dagster-celery-k8s] Experimental run monitoring is now supported with the CeleryK8sRunLauncher. This will detect when a run worker K8s Job has failed (due to an OOM, a Node shutting down, etc.) and mark the run as failed so that it doesn’t hang in STARTED. To enable this feature, set dagsterDaemon.runMonitoring.enabled to true in your Helm values.
+
+### Documentation
+
+* [dagster-snowflake] Fixed some example code in the API doc for snowflake_resource, which incorrectly constructed a Dagster job using the snowflake resource.
+
+
 # 0.13.16
 
 ### New

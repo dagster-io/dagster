@@ -104,6 +104,7 @@ def get_asset_materializations(
     partitions=None,
     limit=None,
     before_timestamp=None,
+    after_timestamp=None,
 ):
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
@@ -115,6 +116,7 @@ def get_asset_materializations(
             asset_key=asset_key,
             asset_partitions=partitions,
             before_timestamp=before_timestamp,
+            after_timestamp=after_timestamp,
         ),
         limit=limit,
     )
@@ -127,10 +129,12 @@ def get_asset_observations(
     partitions=None,
     limit=None,
     before_timestamp=None,
+    after_timestamp=None,
 ):
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
+    check.opt_float_param(after_timestamp, "after_timestamp")
     instance = graphene_info.context.instance
     event_records = instance.get_event_records(
         EventRecordsFilter(
@@ -138,6 +142,7 @@ def get_asset_observations(
             asset_key=asset_key,
             asset_partitions=partitions,
             before_timestamp=before_timestamp,
+            after_timestamp=after_timestamp,
         ),
         limit=limit,
     )
