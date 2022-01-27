@@ -423,36 +423,42 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     def resolve_assetNodes(self, graphene_info, **kwargs):
         load_materializations = kwargs.get("loadMaterializations")
+        asset_keys = set(
+            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
+        )
+
         if "pipeline" in kwargs:
-            sel = RepositorySelector.from_graphql_input(kwargs.get("pipeline"))
-            repo_loc = graphene_info.context.get_repository_location(sel.location_name)
-            repo = repo_loc.get_repository(sel.repository_name)
-            external_asset_nodes = repo.get_external_asset_nodes(
-                kwargs.get("pipeline").get("pipelineName")
-            )
-            asset_nodes = (
+            pipeline_name = kwargs.get("pipeline").get("pipelineName")
+            repo_sel = RepositorySelector.from_graphql_input(kwargs.get("pipeline"))
+            repo_loc = graphene_info.context.get_repository_location(repo_sel.location_name)
+            repo = repo_loc.get_repository(repo_sel.repository_name)
+            external_asset_nodes = repo.get_external_asset_nodes(pipeline_name)
+            results = (
                 [GrapheneAssetNode(repo, asset_node) for asset_node in external_asset_nodes]
                 if external_asset_nodes
                 else []
             )
         else:
-            asset_nodes = get_asset_nodes(graphene_info)
+            results = get_asset_nodes(graphene_info)
 
-        asset_keys = set(
-            AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
-        )
-        matching = [node for node in asset_nodes if not asset_keys or node.assetKey in asset_keys]
-        if not matching:
-            return []
+        # Filter down to requested asset keys
+        results = [node for node in results if not asset_keys or node.assetKey in asset_keys]
 
-        if load_materializations:
-            events_by_key = graphene_info.context.instance.get_latest_materialization_events(
-                [node.assetKey for node in matching]
-            )
-            for node in matching:
-                node.attach_latest_materialization(events_by_key.get(node.assetKey), True)
+        # Attach latest materialization if requested to avoid N queries later
+        if results and load_materializations:
+            keys = [node.assetKey for node in results]
+            events_by_key = graphene_info.context.instance.get_latest_materialization_events(keys)
+            results = [
+                GrapheneAssetNode(
+                    node.get_external_repository(),
+                    node.get_external_asset_node(),
+                    events_by_key.get(node.assetKey),
+                    True,
+                )
+                for node in results
+            ]
 
-        return matching
+        return results
 
     def resolve_assetNodeOrError(self, graphene_info, **kwargs):
         return get_asset_node(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))

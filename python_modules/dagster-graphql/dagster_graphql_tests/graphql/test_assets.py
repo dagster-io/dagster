@@ -474,10 +474,7 @@ class TestAssetAwareEventLog(
             GET_LATEST_MATERIALIZATION_PER_PARTITION,
             variables={"pipelineSelector": selector, "partitions": ["c", "a"]},
         )
-        assert (
-            result.data
-            and result.data["assetNodes"]
-        )
+        assert result.data and result.data["assetNodes"]
         asset_node = result.data["assetNodes"][0]
         assert len(asset_node["latestMaterializationByPartition"]) == 2
         materialization = asset_node["latestMaterializationByPartition"][0]
@@ -497,9 +494,7 @@ class TestAssetAwareEventLog(
         assert result.data
         assert result.data["assetNodes"]
 
-        materialization_count = result.data["assetNodes"][0][
-            "materializationCountByPartition"
-        ]
+        materialization_count = result.data["assetNodes"][0]["materializationCountByPartition"]
         assert len(materialization_count) == 0
 
         # test for partitioned asset with no materializations
