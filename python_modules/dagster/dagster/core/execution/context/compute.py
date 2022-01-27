@@ -8,6 +8,7 @@ from dagster.core.definitions.events import (
     AssetObservation,
     ExpectationResult,
     Materialization,
+    UserEvent,
 )
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
@@ -252,7 +253,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         while self._events:
             yield self._events.pop(0)
 
-    def log_event(self, event) -> None:
+    def log_event(self, event: UserEvent) -> None:
         if isinstance(event, (AssetMaterialization, Materialization)):
             self._events.append(
                 DagsterEvent.asset_materialization(
