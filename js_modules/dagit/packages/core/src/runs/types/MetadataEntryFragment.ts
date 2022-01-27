@@ -90,4 +90,84 @@ export interface MetadataEntryFragment_EventAssetMetadataEntry {
   assetKey: MetadataEntryFragment_EventAssetMetadataEntry_assetKey;
 }
 
+<<<<<<< HEAD
 export type MetadataEntryFragment = MetadataEntryFragment_EventTableSchemaMetadataEntry | MetadataEntryFragment_EventPathMetadataEntry | MetadataEntryFragment_EventJsonMetadataEntry | MetadataEntryFragment_EventUrlMetadataEntry | MetadataEntryFragment_EventTextMetadataEntry | MetadataEntryFragment_EventMarkdownMetadataEntry | MetadataEntryFragment_EventPythonArtifactMetadataEntry | MetadataEntryFragment_EventFloatMetadataEntry | MetadataEntryFragment_EventIntMetadataEntry | MetadataEntryFragment_EventPipelineRunMetadataEntry | MetadataEntryFragment_EventAssetMetadataEntry;
+=======
+<<<<<<< HEAD
+export type MetadataEntryFragment = MetadataEntryFragment_EventPathMetadataEntry | MetadataEntryFragment_EventJsonMetadataEntry | MetadataEntryFragment_EventUrlMetadataEntry | MetadataEntryFragment_EventTextMetadataEntry | MetadataEntryFragment_EventMarkdownMetadataEntry | MetadataEntryFragment_EventPythonArtifactMetadataEntry | MetadataEntryFragment_EventFloatMetadataEntry | MetadataEntryFragment_EventIntMetadataEntry | MetadataEntryFragment_EventPipelineRunMetadataEntry | MetadataEntryFragment_EventAssetMetadataEntry;
+=======
+export interface MetadataEntryFragment_EventTableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface MetadataEntryFragment_EventTableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: MetadataEntryFragment_EventTableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface MetadataEntryFragment_EventTableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface MetadataEntryFragment_EventTableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: MetadataEntryFragment_EventTableMetadataEntry_table_schema_columns[];
+  constraints: MetadataEntryFragment_EventTableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface MetadataEntryFragment_EventTableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: MetadataEntryFragment_EventTableMetadataEntry_table_schema;
+}
+
+export interface MetadataEntryFragment_EventTableMetadataEntry {
+  __typename: "EventTableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: MetadataEntryFragment_EventTableMetadataEntry_table;
+}
+
+export interface MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface MetadataEntryFragment_EventTableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_columns[];
+  constraints: MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface MetadataEntryFragment_EventTableSchemaMetadataEntry {
+  __typename: "EventTableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: MetadataEntryFragment_EventTableSchemaMetadataEntry_schema;
+}
+
+export type MetadataEntryFragment = MetadataEntryFragment_EventPathMetadataEntry | MetadataEntryFragment_EventJsonMetadataEntry | MetadataEntryFragment_EventUrlMetadataEntry | MetadataEntryFragment_EventTextMetadataEntry | MetadataEntryFragment_EventMarkdownMetadataEntry | MetadataEntryFragment_EventPythonArtifactMetadataEntry | MetadataEntryFragment_EventFloatMetadataEntry | MetadataEntryFragment_EventIntMetadataEntry | MetadataEntryFragment_EventPipelineRunMetadataEntry | MetadataEntryFragment_EventAssetMetadataEntry | MetadataEntryFragment_EventTableMetadataEntry | MetadataEntryFragment_EventTableSchemaMetadataEntry;
+>>>>>>> 54b3ea81e ([dagit-type-metadata] update graphql types)
+>>>>>>> 3bea9c582 ([dagit-type-metadata] update graphql types)
