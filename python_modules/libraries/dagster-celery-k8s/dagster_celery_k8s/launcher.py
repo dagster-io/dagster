@@ -7,7 +7,8 @@ from dagster.config.validate import process_config
 from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import RetryMode
 from dagster.core.launcher import LaunchRunContext, RunLauncher
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.launcher.base import CheckRunHealthResult, WorkerStatus
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import frozentags, merge_dicts
@@ -247,11 +248,11 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             pipeline_origin=pipeline_origin,
             pipeline_run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
-        )
+        ).get_command_args()
 
         job = construct_dagster_k8s_job(
             job_config,
-            args=run_args.get_command_args(),
+            args=run_args,
             job_name=job_name,
             pod_name=pod_name,
             component="run_worker",
@@ -378,6 +379,25 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         run_config = pipeline_run.run_config
         executor_config = _get_validated_celery_k8s_executor_config(run_config)
         return executor_config.get("job_namespace")
+
+    @property
+    def supports_check_run_worker_health(self):
+        return True
+
+    def check_run_worker_health(self, run: PipelineRun):
+        job_namespace = _get_validated_celery_k8s_executor_config(run.run_config).get(
+            "job_namespace"
+        )
+        job_name = get_job_name_from_run_id(run.run_id)
+        try:
+            job = self._batch_api.read_namespaced_job(namespace=job_namespace, name=job_name)
+        except Exception:
+            return CheckRunHealthResult(
+                WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
+            )
+        if job.status.failed:
+            return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
+        return CheckRunHealthResult(WorkerStatus.RUNNING)
 
 
 def _get_validated_celery_k8s_executor_config(run_config):
