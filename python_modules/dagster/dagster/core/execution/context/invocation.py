@@ -1,10 +1,16 @@
 # pylint: disable=super-init-not-called
-from typing import AbstractSet, Any, Dict, NamedTuple, Optional, Union, cast
+from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Union, cast
 
 from dagster import check
 from dagster.config import Shape
 from dagster.core.definitions.composition import PendingNodeInvocation
 from dagster.core.definitions.dependency import Node, NodeHandle
+from dagster.core.definitions.events import (
+    AssetMaterialization,
+    AssetObservation,
+    ExpectationResult,
+    Materialization,
+)
 from dagster.core.definitions.hook_definition import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.op_definition import OpDefinition
@@ -38,6 +44,9 @@ def _property_msg(prop_name: str, method_name: str) -> str:
     return (
         f"The {prop_name} {method_name} is not set on the context when a solid is directly invoked."
     )
+
+
+UserEvent = Union[AssetMaterialization, AssetObservation, Materialization, ExpectationResult]
 
 
 class UnboundSolidExecutionContext(OpExecutionContext):
@@ -82,6 +91,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         self._pdb: Optional[ForkedPdb] = None
         self._cm_scope_entered = False
         self._partition_key = partition_key
+        self._user_events: List[UserEvent] = []
 
     def __enter__(self):
         self._cm_scope_entered = True
@@ -231,7 +241,14 @@ class UnboundSolidExecutionContext(OpExecutionContext):
             alias=solid_def_or_invocation.given_alias
             if isinstance(solid_def_or_invocation, PendingNodeInvocation)
             else None,
+            user_events=self._user_events,
         )
+
+    def get_events(self) -> List[UserEvent]:
+        return self._user_events
+
+    def scrub_events(self) -> None:
+        self._user_events = []
 
 
 def _validate_resource_requirements(resources: "Resources", solid_def: SolidDefinition) -> None:
@@ -295,6 +312,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
         tags: Optional[Dict[str, str]],
         hook_defs: Optional[AbstractSet[HookDefinition]],
         alias: Optional[str],
+        user_events: List[UserEvent],
     ):
         self._solid_def = solid_def
         self._solid_config = solid_config
@@ -306,6 +324,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
         self._hook_defs = hook_defs
         self._alias = alias if alias else self._solid_def.name
         self._resources_config = resources_config
+        self._user_events: List[UserEvent] = user_events
 
     @property
     def solid_config(self) -> Any:
@@ -414,6 +433,15 @@ class BoundSolidExecutionContext(OpExecutionContext):
             return f'op "{self.solid_def.name}"'
 
         return f'solid "{self.solid_def.name}"'
+
+    def log_event(self, event: UserEvent) -> None:
+
+        check.inst_param(
+            event,
+            "event",
+            (AssetMaterialization, AssetObservation, ExpectationResult, Materialization),
+        )
+        self._user_events.append(event)
 
 
 def build_op_context(

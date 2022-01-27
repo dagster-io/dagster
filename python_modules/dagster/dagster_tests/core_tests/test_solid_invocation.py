@@ -5,11 +5,14 @@ import pytest
 from dagster import (
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     DynamicOutput,
     DynamicOutputDefinition,
+    ExpectationResult,
     Failure,
     Field,
     InputDefinition,
+    Materialization,
     Noneable,
     Nothing,
     Output,
@@ -20,6 +23,7 @@ from dagster import (
     build_solid_context,
     composite_solid,
     execute_solid,
+    op,
     pipeline,
     resource,
     solid,
@@ -927,3 +931,23 @@ def test_build_context_with_resources_config(context_builder):
             resources={"my_resource": my_resource},
             resources_config={"bad_resource": {"config": "foo"}},
         )
+
+
+def test_logged_user_events():
+    @op
+    def logs_events(context):
+        context.log_event(AssetMaterialization("first"))
+        context.log_event(Materialization("second"))
+        context.log_event(ExpectationResult(success=True))
+        context.log_event(AssetObservation("fourth"))
+
+    context = build_op_context()
+    logs_events(context)
+    assert [type(event) for event in context.get_events()] == [
+        AssetMaterialization,
+        Materialization,
+        ExpectationResult,
+        AssetObservation,
+    ]
+    context.scrub_events()
+    assert context.get_events() == []
