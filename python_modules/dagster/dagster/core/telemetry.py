@@ -192,7 +192,6 @@ class TelemetryEntry(
         num_schedules_in_repo: Optional[str] = None,
         num_sensors_in_repo: Optional[str] = None,
         repo_hash: Optional[str] = None,
-        metadata: Optional[str] = None,
         run_storage_id: Optional[str] = None,
     ):
         action = check.str_param(action, "action")
@@ -201,7 +200,7 @@ class TelemetryEntry(
         event_id = check.str_param(event_id, "event_id")
         instance_id = check.str_param(instance_id, "instance_id")
         metadata = check.opt_dict_param(metadata, "metadata")
-        run_storage_id = check.opt_str_param(run_storage_id, "run_storage_id")
+        run_storage_id = check.opt_str_param(run_storage_id, "run_storage_id", default="")
 
         pipeline_name_hash = check.opt_str_param(
             pipeline_name_hash, "pipeline_name_hash", default=""
