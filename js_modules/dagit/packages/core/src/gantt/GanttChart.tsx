@@ -344,7 +344,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
         />
       )}
       <div style={{overflow: 'scroll', flex: 1}} {...containerProps}>
-        <div style={{position: 'relative', marginBottom: 50, ...layoutSize}}>
+        <div style={{position: 'relative', marginBottom: 70, ...layoutSize}}>
           {measurementComplete && (
             <GanttChartViewportContents
               options={options}
@@ -383,7 +383,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
             </Box>
           </WebsocketWarning>
         ) : null}
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+        <FilterInputsBackgroundBox flex={{direction: 'row', alignItems: 'center', gap: 12}}>
           <GraphQueryInput
             items={props.graph}
             value={props.selection.query}
@@ -397,7 +397,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
             label="Hide unselected steps"
             onChange={props.onChange}
           />
-        </Box>
+        </FilterInputsBackgroundBox>
       </GraphQueryInputContainer>
     </>
   );
@@ -771,6 +771,11 @@ const GraphQueryInputContainer = styled.div`
   left: 50%;
   transform: translateX(-50%);
   white-space: nowrap;
+`;
+
+const FilterInputsBackgroundBox = styled(Box)`
+  background: radial-gradient(${ColorsWIP.Gray50} 0%, rgba(255, 255, 255, 0) 100%);
+  padding: 15px 15px 0px 15px;
 `;
 
 export const GanttChartLoadingState = ({runId}: {runId: string}) => (
