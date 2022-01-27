@@ -123,12 +123,25 @@ def test_backcompat_deployed_pipeline(graphql_client):
     assert_runs_and_exists(graphql_client, "the_pipeline")
 
 
+def test_backcompat_deployed_pipeline_subset(graphql_client):
+    assert_runs_and_exists(graphql_client, "the_pipeline", subset_selection=["my_solid"])
+
+
 def test_backcompat_deployed_job(graphql_client):
     assert_runs_and_exists(graphql_client, "the_job")
 
 
-def assert_runs_and_exists(client, name):
-    run_id = client.submit_pipeline_execution(pipeline_name=name, mode="default", run_config={})
+def test_backcompat_deployed_job_subset(graphql_client):
+    assert_runs_and_exists(graphql_client, "the_job", subset_selection=["my_op"])
+
+
+def assert_runs_and_exists(client: DagsterGraphQLClient, name, subset_selection=None):
+    run_id = client.submit_pipeline_execution(
+        pipeline_name=name,
+        mode="default",
+        run_config={},
+        solid_selection=subset_selection,
+    )
     assert_run_success(client, run_id)
 
     locations = (
