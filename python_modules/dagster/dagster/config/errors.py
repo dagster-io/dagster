@@ -254,6 +254,25 @@ def create_array_error(context, config_value):
     )
 
 
+def create_keyed_collection_error(context, config_value):
+    check.inst_param(context, "context", ContextData)
+    check.param_invariant(
+        context.config_type_snap.kind == ConfigTypeKind.KEYED_COLLECTION, "config_type"
+    )
+
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
+        message='Value {path_msg} must be dict. Expected: "{type_name}"'.format(
+            path_msg=get_friendly_path_msg(context.stack),
+            type_name=print_config_type_key_to_string(
+                context.config_schema_snapshot, context.config_type_key, with_lines=False
+            ),
+        ),
+        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
+    )
+
+
 def create_missing_required_field_error(
     context: ContextData, expected_field: str
 ) -> EvaluationError:

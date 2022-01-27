@@ -59,6 +59,8 @@ def _recursively_resolve_defaults(
         return _recurse_in_to_shape(context, config_value)
     elif kind == ConfigTypeKind.ARRAY:
         return _recurse_in_to_array(context, config_value)
+    elif kind == ConfigTypeKind.KEYED_COLLECTION:
+        return _recurse_in_to_keyed_collection(context, config_value)
     elif kind == ConfigTypeKind.NONEABLE:
         if config_value is None:
             return EvaluateValueResult.for_value(None)
@@ -206,3 +208,38 @@ def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> Evalua
         return EvaluateValueResult.for_errors(errors)
 
     return EvaluateValueResult.for_value(frozenlist([result.value for result in results]))
+
+
+def _recurse_in_to_keyed_collection(
+    context: TraversalContext, config_value: Any
+) -> EvaluateValueResult:
+    check.invariant(
+        context.config_type.kind == ConfigTypeKind.KEYED_COLLECTION,
+        "Unexpected non keyed collection type",
+    )
+
+    if not config_value:
+        return EvaluateValueResult.for_value({})
+
+    config_value = cast(Dict[str, object], config_value)
+
+    if context.config_type.inner_type.kind != ConfigTypeKind.NONEABLE:  # type: ignore
+        if any((cv is None for cv in config_value.values())):
+            check.failed("Null keyed collection member not caught in validation")
+
+    results = {
+        key: _recursively_process_config(context.for_keyed_collection(key), item)
+        for key, item in config_value.items()
+    }
+
+    errors = []
+    for result in results.values():
+        if not result.success:
+            errors += cast(List[EvaluationError], result.errors)
+
+    if errors:
+        return EvaluateValueResult.for_errors(errors)
+
+    return EvaluateValueResult.for_value(
+        frozendict({key: result.value for key, result in results.items()})
+    )

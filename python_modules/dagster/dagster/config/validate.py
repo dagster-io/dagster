@@ -13,6 +13,7 @@ from .errors import (
     create_field_not_defined_error,
     create_field_substitution_collision_error,
     create_fields_not_defined_error,
+    create_keyed_collection_error,
     create_missing_required_field_error,
     create_missing_required_fields_error,
     create_none_not_allowed_error,
@@ -110,6 +111,8 @@ def _validate_config(context: ValidationContext, config_value: object) -> Evalua
         return validate_shape_config(context, config_value)
     elif kind == ConfigTypeKind.PERMISSIVE_SHAPE:
         return validate_permissive_shape_config(context, config_value)
+    elif kind == ConfigTypeKind.KEYED_COLLECTION:
+        return validate_keyed_collection_config(context, config_value)
     elif kind == ConfigTypeKind.ARRAY:
         return validate_array_config(context, config_value)
     elif kind == ConfigTypeKind.ENUM:
@@ -297,6 +300,30 @@ def validate_permissive_shape_config(
     check.not_none_param(config_value, "config_value")
 
     return _validate_shape_config(context, config_value, check_for_extra_incoming_fields=False)
+
+
+def validate_keyed_collection_config(
+    context: ValidationContext, config_value: object
+) -> EvaluateValueResult[Dict[str, object]]:
+    check.inst_param(context, "context", ValidationContext)
+    check.invariant(context.config_type_snap.kind == ConfigTypeKind.KEYED_COLLECTION)
+    check.not_none_param(config_value, "config_value")
+
+    if not isinstance(config_value, dict):
+        return EvaluateValueResult.for_error(create_keyed_collection_error(context, config_value))
+    config_value = cast(Dict[str, object], config_value)
+
+    evaluation_results = [
+        _validate_config(context.for_keyed_collection(key), config_item)
+        for key, config_item in config_value.items()
+    ]
+
+    errors = []
+    for result in evaluation_results:
+        if not result.success:
+            errors += cast(List, result.errors)
+
+    return EvaluateValueResult(not bool(errors), frozendict(config_value), errors)  # type: ignore
 
 
 def validate_shape_config(

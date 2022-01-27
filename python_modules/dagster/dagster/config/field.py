@@ -8,7 +8,7 @@ from dagster.utils import is_enum_value
 from dagster.utils.typing_api import is_closed_python_optional_type, is_typing_type
 
 from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
-from .field_utils import FIELD_NO_DEFAULT_PROVIDED, all_optional_type
+from .field_utils import FIELD_NO_DEFAULT_PROVIDED, KeyedCollection, all_optional_type
 
 
 def _is_config_type_class(obj):
@@ -52,7 +52,20 @@ def resolve_to_config_type(dagster_type) -> Union[ConfigType, bool]:
         return dagster_type
 
     if isinstance(dagster_type, dict):
-        return convert_fields_to_dict_type(dagster_type)
+        # Dicts of the special form {str: value} are treated as KeyedCollections
+        # mapping from strings to value type, otherwise treat as dict type
+        if str in dagster_type and len(dagster_type) == 1:
+            inner_type = resolve_to_config_type(dagster_type[str])
+
+            if not inner_type:
+                raise DagsterInvalidDefinitionError(
+                    "Invalid member of array specification: {value} in keyed collection {collection}".format(
+                        value=repr(dagster_type[str]), collection=dagster_type
+                    )
+                )
+            return KeyedCollection(inner_type)
+        else:
+            return convert_fields_to_dict_type(dagster_type)
 
     if isinstance(dagster_type, list):
         if len(dagster_type) != 1:

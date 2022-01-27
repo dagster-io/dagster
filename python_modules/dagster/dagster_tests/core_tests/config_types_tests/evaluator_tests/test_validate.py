@@ -1,7 +1,11 @@
 from dagster import Field, Noneable, Permissive, ScalarUnion, Selector, Shape
 from dagster.config.errors import DagsterEvaluationErrorReason
 from dagster.config.field import resolve_to_config_type
-from dagster.config.stack import EvaluationStackListItemEntry, EvaluationStackPathEntry
+from dagster.config.stack import (
+    EvaluationStackKeyedCollectionItemEntry,
+    EvaluationStackListItemEntry,
+    EvaluationStackPathEntry,
+)
 from dagster.config.validate import validate_config
 
 
@@ -331,6 +335,59 @@ def test_selector_within_dict_no_subfields():
         "Must specify a field at path root:selector if more than one field "
         "is defined. Defined fields: ['option_one', 'option_two']"
     )
+
+
+def test_evaluate_keyed_collection_string():
+    result = validate_config({str: str}, {"x": "foo"})
+    assert result.success
+    assert result.value == {"x": "foo"}
+
+
+def test_evaluate_keyed_collection_error_item_mismatch():
+    result = validate_config({str: str}, {"x": 5})
+    assert not result.success
+    assert len(result.errors) == 1
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+
+
+def test_evaluate_keyed_collection_error_top_level_mismatch():
+    result = validate_config({str: str}, 1)
+    assert not result.success
+    assert len(result.errors) == 1
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+
+
+def test_evaluate_double_keyed_collection():
+    result = validate_config({str: {str: str}}, {"a": {"b": "foo"}})
+    assert result.success
+    assert result.value == {"a": {"b": "foo"}}
+
+
+def test_config_keyed_collection_in_dict():
+    nested_keyed_collection_type = {"nested_keyed_collection": {str: int}}
+
+    value = {"nested_keyed_collection": {"a": 1, "b": 2}}
+    result = validate_config(nested_keyed_collection_type, value)
+    assert result.success
+    assert result.value == value
+
+
+def test_config_keyed_collection_in_dict_error():
+    nested_keyed_collection = {"nested_keyed_collection": {str: int}}
+
+    value = {"nested_keyed_collection": {"a": 1, "b": "bar", "c": 3}}
+    result = validate_config(nested_keyed_collection, value)
+    assert not result.success
+    assert len(result.errors) == 1
+    error = result.errors[0]
+    assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+    assert len(error.stack.entries) == 2
+    stack_entry = error.stack.entries[0]
+    assert isinstance(stack_entry, EvaluationStackPathEntry)
+    assert stack_entry.field_name == "nested_keyed_collection"
+    keyed_collection_entry = error.stack.entries[1]
+    assert isinstance(keyed_collection_entry, EvaluationStackKeyedCollectionItemEntry)
+    assert keyed_collection_entry.keyed_collection_key == "b"
 
 
 def test_evaluate_list_string():

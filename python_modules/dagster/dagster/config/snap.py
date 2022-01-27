@@ -114,7 +114,11 @@ class ConfigTypeSnap(
     @property
     def inner_type_key(self) -> str:
         # valid for Noneable and Array
-        check.invariant(self.kind == ConfigTypeKind.NONEABLE or self.kind == ConfigTypeKind.ARRAY)
+        check.invariant(
+            self.kind == ConfigTypeKind.NONEABLE
+            or self.kind == ConfigTypeKind.ARRAY
+            or self.kind == ConfigTypeKind.KEYED_COLLECTION
+        )
         type_param_keys = check.is_list(self.type_param_keys, of_type=str)
         check.invariant(len(type_param_keys) == 1)
         return type_param_keys[0]
@@ -284,6 +288,8 @@ def minimal_config_for_type_snap(
         return defaults.get(config_type_snap.given_name, "<unknown>")  # type: ignore
     elif config_type_snap.kind == ConfigTypeKind.ARRAY:
         return []
+    elif config_type_snap.kind == ConfigTypeKind.KEYED_COLLECTION:
+        return {}
     elif config_type_snap.kind == ConfigTypeKind.ENUM:
         # guard against the edge case that an enum is defined with zero options
         return (

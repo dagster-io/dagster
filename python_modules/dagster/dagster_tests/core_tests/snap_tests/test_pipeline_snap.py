@@ -9,6 +9,7 @@ from dagster import (
     Permissive,
     Selector,
     Shape,
+    KeyedCollection,
     pipeline,
     solid,
 )
@@ -249,6 +250,12 @@ def _array_has_stable_hashes(hydrated_array, snapshot_config_snap_map):
     assert hydrated_array.inner_type.key in snapshot_config_snap_map
 
 
+def _keyed_collection_has_stable_hashes(hydrated_keyed_collection, snapshot_config_snap_map):
+    assert isinstance(hydrated_keyed_collection, KeyedCollection)
+    assert hydrated_keyed_collection.key in snapshot_config_snap_map
+    assert hydrated_keyed_collection.inner_type.key in snapshot_config_snap_map
+
+
 def test_deserialize_solid_def_snaps_default_field():
     @solid(
         config_schema={
@@ -379,6 +386,25 @@ def test_deserialize_solid_def_snaps_array():
     )
 
 
+def test_deserialize_solid_def_snaps_keyed_collection():
+    @solid(config_schema=Field({str: str}))
+    def noop_solid(_):
+        pass
+
+    @pipeline
+    def noop_pipeline():
+        noop_solid()
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
+    solid_def_snap = pipeline_snapshot.get_node_def_snap("noop_solid")
+    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    assert isinstance(recevied_config_type, KeyedCollection)
+    assert isinstance(recevied_config_type.inner_type, String)
+    _keyed_collection_has_stable_hashes(
+        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+    )
+
+
 def test_deserialize_solid_def_snaps_noneable():
     @solid(config_schema=Field(Noneable(str)))
     def noop_solid(_):
@@ -438,6 +464,24 @@ def test_deserialize_solid_def_snaps_multi_type_config(snapshot):
 @pytest.mark.parametrize("dict_config_type", [Selector, Permissive, Shape])
 def test_multi_type_config_array_dict_fields(dict_config_type, snapshot):
     @solid(config_schema=Array(dict_config_type({"foo": Field(int), "bar": Field(str)})))
+    def fancy_solid(_):
+        pass
+
+    @pipeline
+    def noop_pipeline():
+        fancy_solid()
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
+    solid_def_snap = pipeline_snapshot.get_node_def_snap("fancy_solid")
+    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    snapshot.assert_match(serialize_pp(snap_from_config_type(recevied_config_type)))
+    _array_has_stable_hashes(
+        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+    )
+
+
+def test_multi_type_config_array_keyed_collection(snapshot):
+    @solid(config_schema=Array(KeyedCollection(int)))
     def fancy_solid(_):
         pass
 

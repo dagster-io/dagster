@@ -142,6 +142,22 @@ class Shape(_ConfigHasFields):
         )
 
 
+class KeyedCollection(ConfigType):
+    def __init__(self, inner_type):
+        from .field import resolve_to_config_type
+
+        self.inner_type = resolve_to_config_type(inner_type)
+        super(KeyedCollection, self).__init__(
+            key="KeyedCollection.{inner_type}".format(inner_type=self.inner_type.key),
+            type_params=[self.inner_type],
+            kind=ConfigTypeKind.KEYED_COLLECTION,
+        )
+
+    @property
+    def description(self):
+        return "Keyed Collection of {inner_type}".format(inner_type=self.key)
+
+
 def _define_permissive_dict_key(fields, description):
     return (
         "Permissive." + _compute_fields_hash(fields, description=description)
@@ -306,6 +322,34 @@ def expand_list(original_root: object, the_list: List[object], stack: List[str])
     return Array(inner_type)
 
 
+def expand_keyed_collection(
+    original_root: object, the_dict: Dict[object, object], stack: List[str]
+) -> KeyedCollection:
+
+    if len(the_dict) != 1:
+        raise DagsterInvalidConfigDefinitionError(
+            original_root, the_dict, stack, "KeyedCollection dict must be of length 1"
+        )
+
+    if str not in the_dict:
+        raise DagsterInvalidConfigDefinitionError(
+            original_root, the_dict, stack, "KeyedCollection dict must have str as its only key"
+        )
+
+    inner_type = _convert_potential_type(original_root, the_dict[str], stack)
+    if not inner_type:
+        raise DagsterInvalidConfigDefinitionError(
+            original_root,
+            the_dict,
+            stack,
+            "KeyedCollection must have a single value and contain a valid type i.e. {{str: int}}. Got item {}".format(
+                repr(the_dict[str])
+            ),
+        )
+
+    return KeyedCollection(inner_type)
+
+
 def convert_potential_field(potential_field: object) -> "Field":
     return _convert_potential_field(potential_field, potential_field, [])
 
@@ -314,7 +358,10 @@ def _convert_potential_type(original_root: object, potential_type, stack: List[s
     from .field import resolve_to_config_type
 
     if isinstance(potential_type, dict):
-        return Shape(_expand_fields_dict(original_root, potential_type, stack))
+        if str in potential_type:
+            return expand_keyed_collection(original_root, potential_type, stack)
+        else:
+            return Shape(_expand_fields_dict(original_root, potential_type, stack))
 
     if isinstance(potential_type, list):
         return expand_list(original_root, potential_type, stack)

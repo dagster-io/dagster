@@ -24,6 +24,11 @@ class EvaluationStack(NamedTuple("_EvaluationStack", [("entries", List["Evaluati
     def for_array_index(self, list_index: int) -> "EvaluationStack":
         return EvaluationStack(entries=self.entries + [EvaluationStackListItemEntry(list_index)])
 
+    def for_keyed_collection_key(self, keyed_collection_key: str) -> "EvaluationStack":
+        return EvaluationStack(
+            entries=self.entries + [EvaluationStackKeyedCollectionItemEntry(keyed_collection_key)]
+        )
+
 
 class EvaluationStackEntry:  # marker interface
     pass
@@ -48,6 +53,17 @@ class EvaluationStackListItemEntry(
         return super(EvaluationStackListItemEntry, cls).__new__(cls, list_index)
 
 
+class EvaluationStackKeyedCollectionItemEntry(
+    NamedTuple("_EvaluationStackKeyedCollectionItemEntry", [("keyed_collection_key", str)]),
+    EvaluationStackEntry,
+):
+    def __new__(cls, keyed_collection_key: str):
+        check.str_param(keyed_collection_key, "keyed_collection_key")
+        return super(EvaluationStackKeyedCollectionItemEntry, cls).__new__(
+            cls, keyed_collection_key
+        )
+
+
 def get_friendly_path_msg(stack: EvaluationStack) -> str:
     return get_friendly_path_info(stack)[0]
 
@@ -64,6 +80,9 @@ def get_friendly_path_info(stack: EvaluationStack) -> Tuple[str, str]:
                 comps.append(comp)
             elif isinstance(entry, EvaluationStackListItemEntry):
                 comps.append("[{i}]".format(i=entry.list_index))
+            elif isinstance(entry, EvaluationStackKeyedCollectionItemEntry):
+                comp = ":" + entry.keyed_collection_key
+                comps.append(comp)
             else:
                 check.failed("unsupported")
 
