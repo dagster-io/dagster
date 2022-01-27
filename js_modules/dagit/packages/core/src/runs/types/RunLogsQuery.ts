@@ -14,7 +14,7 @@ export interface RunLogsQuery_pipelineRunOrError_RunNotFoundError {
 }
 
 export interface RunLogsQuery_pipelineRunOrError_Run_events_ExecutionStepSkippedEvent {
-  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "ObservationEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent";
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent";
   runId: string;
   message: string;
   timestamp: string;
@@ -125,6 +125,110 @@ export interface RunLogsQuery_pipelineRunOrError_Run_events_MaterializationEvent
   label: string;
   description: string | null;
   metadataEntries: RunLogsQuery_pipelineRunOrError_Run_events_MaterializationEvent_metadataEntries[];
+}
+
+export interface RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry {
+  __typename: "EventTableSchemaMetadataEntry" | "EventTableMetadataEntry";
+  label: string;
+  description: string | null;
+}
+
+export interface RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventMarkdownMetadataEntry {
+  __typename: "EventMarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventPythonArtifactMetadataEntry {
+  __typename: "EventPythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventFloatMetadataEntry {
+  __typename: "EventFloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventIntMetadataEntry {
+  __typename: "EventIntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventPipelineRunMetadataEntry {
+  __typename: "EventPipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventAssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventAssetMetadataEntry {
+  __typename: "EventAssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventAssetMetadataEntry_assetKey;
+}
+
+export type RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries = RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry | RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventPathMetadataEntry | RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventJsonMetadataEntry | RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventUrlMetadataEntry | RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventTextMetadataEntry | RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventMarkdownMetadataEntry | RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventPythonArtifactMetadataEntry | RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventFloatMetadataEntry | RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventIntMetadataEntry | RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventPipelineRunMetadataEntry | RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries_EventAssetMetadataEntry;
+
+export interface RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent {
+  __typename: "ObservationEvent";
+  runId: string;
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  stepKey: string | null;
+  eventType: DagsterEventType | null;
+  assetKey: RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_assetKey | null;
+  label: string;
+  description: string | null;
+  metadataEntries: RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent_metadataEntries[];
 }
 
 export interface RunLogsQuery_pipelineRunOrError_Run_events_RunFailureEvent_pipelineFailureError_cause {
@@ -1030,7 +1134,7 @@ export interface RunLogsQuery_pipelineRunOrError_Run_events_LogsCapturedEvent {
   pid: number | null;
 }
 
-export type RunLogsQuery_pipelineRunOrError_Run_events = RunLogsQuery_pipelineRunOrError_Run_events_ExecutionStepSkippedEvent | RunLogsQuery_pipelineRunOrError_Run_events_MaterializationEvent | RunLogsQuery_pipelineRunOrError_Run_events_RunFailureEvent | RunLogsQuery_pipelineRunOrError_Run_events_ExecutionStepFailureEvent | RunLogsQuery_pipelineRunOrError_Run_events_ExecutionStepInputEvent | RunLogsQuery_pipelineRunOrError_Run_events_ExecutionStepOutputEvent | RunLogsQuery_pipelineRunOrError_Run_events_StepExpectationResultEvent | RunLogsQuery_pipelineRunOrError_Run_events_ObjectStoreOperationEvent | RunLogsQuery_pipelineRunOrError_Run_events_HandledOutputEvent | RunLogsQuery_pipelineRunOrError_Run_events_LoadedInputEvent | RunLogsQuery_pipelineRunOrError_Run_events_EngineEvent | RunLogsQuery_pipelineRunOrError_Run_events_HookErroredEvent | RunLogsQuery_pipelineRunOrError_Run_events_LogsCapturedEvent;
+export type RunLogsQuery_pipelineRunOrError_Run_events = RunLogsQuery_pipelineRunOrError_Run_events_ExecutionStepSkippedEvent | RunLogsQuery_pipelineRunOrError_Run_events_MaterializationEvent | RunLogsQuery_pipelineRunOrError_Run_events_ObservationEvent | RunLogsQuery_pipelineRunOrError_Run_events_RunFailureEvent | RunLogsQuery_pipelineRunOrError_Run_events_ExecutionStepFailureEvent | RunLogsQuery_pipelineRunOrError_Run_events_ExecutionStepInputEvent | RunLogsQuery_pipelineRunOrError_Run_events_ExecutionStepOutputEvent | RunLogsQuery_pipelineRunOrError_Run_events_StepExpectationResultEvent | RunLogsQuery_pipelineRunOrError_Run_events_ObjectStoreOperationEvent | RunLogsQuery_pipelineRunOrError_Run_events_HandledOutputEvent | RunLogsQuery_pipelineRunOrError_Run_events_LoadedInputEvent | RunLogsQuery_pipelineRunOrError_Run_events_EngineEvent | RunLogsQuery_pipelineRunOrError_Run_events_HookErroredEvent | RunLogsQuery_pipelineRunOrError_Run_events_LogsCapturedEvent;
 
 export interface RunLogsQuery_pipelineRunOrError_Run {
   __typename: "Run";

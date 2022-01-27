@@ -10,7 +10,7 @@ import { LogLevel, DagsterEventType, ErrorSource, ObjectStoreOperationType } fro
 // ====================================================
 
 export interface RunDagsterRunEventFragment_ExecutionStepSkippedEvent {
-  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "ObservationEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent";
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
@@ -119,6 +119,109 @@ export interface RunDagsterRunEventFragment_MaterializationEvent {
   label: string;
   description: string | null;
   metadataEntries: RunDagsterRunEventFragment_MaterializationEvent_metadataEntries[];
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry {
+  __typename: "EventTableSchemaMetadataEntry" | "EventTableMetadataEntry";
+  label: string;
+  description: string | null;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventMarkdownMetadataEntry {
+  __typename: "EventMarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventPythonArtifactMetadataEntry {
+  __typename: "EventPythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventFloatMetadataEntry {
+  __typename: "EventFloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventIntMetadataEntry {
+  __typename: "EventIntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventPipelineRunMetadataEntry {
+  __typename: "EventPipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventAssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventAssetMetadataEntry {
+  __typename: "EventAssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventAssetMetadataEntry_assetKey;
+}
+
+export type RunDagsterRunEventFragment_ObservationEvent_metadataEntries = RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventPathMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventJsonMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventUrlMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventTextMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventMarkdownMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventPythonArtifactMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventFloatMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventIntMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventPipelineRunMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_EventAssetMetadataEntry;
+
+export interface RunDagsterRunEventFragment_ObservationEvent {
+  __typename: "ObservationEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  stepKey: string | null;
+  eventType: DagsterEventType | null;
+  assetKey: RunDagsterRunEventFragment_ObservationEvent_assetKey | null;
+  label: string;
+  description: string | null;
+  metadataEntries: RunDagsterRunEventFragment_ObservationEvent_metadataEntries[];
 }
 
 export interface RunDagsterRunEventFragment_RunFailureEvent_pipelineFailureError_cause {
@@ -1013,4 +1116,4 @@ export interface RunDagsterRunEventFragment_LogsCapturedEvent {
   pid: number | null;
 }
 
-export type RunDagsterRunEventFragment = RunDagsterRunEventFragment_ExecutionStepSkippedEvent | RunDagsterRunEventFragment_MaterializationEvent | RunDagsterRunEventFragment_RunFailureEvent | RunDagsterRunEventFragment_ExecutionStepFailureEvent | RunDagsterRunEventFragment_ExecutionStepInputEvent | RunDagsterRunEventFragment_ExecutionStepOutputEvent | RunDagsterRunEventFragment_StepExpectationResultEvent | RunDagsterRunEventFragment_ObjectStoreOperationEvent | RunDagsterRunEventFragment_HandledOutputEvent | RunDagsterRunEventFragment_LoadedInputEvent | RunDagsterRunEventFragment_EngineEvent | RunDagsterRunEventFragment_HookErroredEvent | RunDagsterRunEventFragment_LogsCapturedEvent;
+export type RunDagsterRunEventFragment = RunDagsterRunEventFragment_ExecutionStepSkippedEvent | RunDagsterRunEventFragment_MaterializationEvent | RunDagsterRunEventFragment_ObservationEvent | RunDagsterRunEventFragment_RunFailureEvent | RunDagsterRunEventFragment_ExecutionStepFailureEvent | RunDagsterRunEventFragment_ExecutionStepInputEvent | RunDagsterRunEventFragment_ExecutionStepOutputEvent | RunDagsterRunEventFragment_StepExpectationResultEvent | RunDagsterRunEventFragment_ObjectStoreOperationEvent | RunDagsterRunEventFragment_HandledOutputEvent | RunDagsterRunEventFragment_LoadedInputEvent | RunDagsterRunEventFragment_EngineEvent | RunDagsterRunEventFragment_HookErroredEvent | RunDagsterRunEventFragment_LogsCapturedEvent;

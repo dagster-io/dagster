@@ -6,16 +6,14 @@ import {Link, useLocation} from 'react-router-dom';
 
 import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
+import {AssetKey} from '../assets/types';
 import {ErrorSource} from '../types/globalTypes';
 
 import {EventTypeColumn} from './LogsRowComponents';
 import {LogRowStructuredContentTable, MetadataEntries, MetadataEntryLink} from './MetadataEntry';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
-import {
-  LogsRowStructuredFragment,
-  LogsRowStructuredFragment_MaterializationEvent,
-} from './types/LogsRowStructuredFragment';
+import {LogsRowStructuredFragment} from './types/LogsRowStructuredFragment';
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 
 interface IStructuredContentProps {
@@ -123,19 +121,22 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
       );
     case 'MaterializationEvent':
       return (
-        <MaterializationContent
+        <AssetMetadataContent
           message={node.message}
-          materialization={node}
+          assetKey={node.assetKey}
+          metadataEntries={node.metadataEntries}
           eventType={eventType}
           timestamp={node.timestamp}
         />
       );
     case 'ObservationEvent':
       return (
-        <DefaultContent
-          message={node.message}
+        <AssetMetadataContent
+          message=""
+          assetKey={node.assetKey}
+          metadataEntries={node.metadataEntries}
           eventType={eventType}
-          eventColor="rgba(173, 185, 152, 0.3)"
+          timestamp={node.timestamp}
         />
       );
     case 'ObjectStoreOperationEvent':
@@ -345,24 +346,23 @@ const FailureContent: React.FunctionComponent<{
   );
 };
 
-const MaterializationContent: React.FC<{
+const AssetMetadataContent: React.FC<{
   message: string;
-  materialization: LogsRowStructuredFragment_MaterializationEvent;
+  assetKey: AssetKey | null;
+  metadataEntries: MetadataEntryFragment[];
   eventType: string;
   timestamp: string;
-}> = ({message, materialization, eventType, timestamp}) => {
-  if (!materialization.assetKey) {
+}> = ({message, assetKey, metadataEntries, eventType, timestamp}) => {
+  if (!assetKey) {
     return (
       <DefaultContent message={message} eventType={eventType}>
-        <MetadataEntries entries={materialization.metadataEntries} />
+        <MetadataEntries entries={metadataEntries} />
       </DefaultContent>
     );
   }
 
   const asOf = qs.stringify({asOf: timestamp});
-  const to = `/instance/assets/${materialization.assetKey.path
-    .map(encodeURIComponent)
-    .join('/')}?${asOf}`;
+  const to = `/instance/assets/${assetKey.path.map(encodeURIComponent).join('/')}?${asOf}`;
 
   const assetDashboardLink = (
     <span style={{marginLeft: 10}}>
@@ -379,7 +379,7 @@ const MaterializationContent: React.FC<{
               label: 'asset_key',
               item: (
                 <>
-                  {displayNameForAssetKey(materialization.assetKey)}
+                  {displayNameForAssetKey(assetKey)}
                   {assetDashboardLink}
                 </>
               ),
@@ -387,7 +387,7 @@ const MaterializationContent: React.FC<{
           ]}
           styles={{paddingBottom: 0}}
         />
-        <MetadataEntries entries={materialization.metadataEntries} />
+        <MetadataEntries entries={metadataEntries} />
       </>
     </DefaultContent>
   );
