@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='jp_morgan',
+    name='bollinger',
     version='dev',
     packages=find_packages(),    
     install_requires=[
