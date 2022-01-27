@@ -343,6 +343,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
         self._launch_k8s_job_with_args(job_name, args, run, pipeline_origin)
 
+    @property
+    def supports_resume_run(self):
+        return True
+
     def resume_run(self, context: ResumeRunContext) -> None:
         run = context.pipeline_run
         job_name = get_job_name_from_run_id(

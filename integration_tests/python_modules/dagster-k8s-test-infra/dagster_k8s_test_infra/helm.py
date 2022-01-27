@@ -870,6 +870,10 @@ def _base_helm_config(docker_image):
                 "failureThreshold": 12,
                 "timeoutSeconds": 12,
             },
+            "runMonitoring": {
+                "enabled": True,
+                "pollIntervalSeconds": 5,
+            },
         },
         # Used to set the environment variables in dagster.shared_env that determine the run config
         "pipelineRun": {"image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy}},
