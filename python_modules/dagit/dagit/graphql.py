@@ -5,6 +5,7 @@ from typing import Any, AsyncGenerator, Dict, List, Union
 
 from dagit.templates.playground import TEMPLATE
 from dagster import check
+from dagster.seven import json
 from graphene import Schema
 from graphql.error import GraphQLError
 from graphql.error import format_error as format_graphql_error
@@ -79,7 +80,6 @@ class GraphQLServer(ABC):
                 return HTMLResponse(text)
 
             data: Union[Dict[str, str], QueryParams] = request.query_params
-
         elif request.method == "POST":
             content_type = request.headers.get("Content-Type", "")
 
@@ -89,28 +89,31 @@ class GraphQLServer(ABC):
                 body = await request.body()
                 text = body.decode()
                 data = {"query": text}
-            elif "query" in request.query_params:
-                data = request.query_params
             else:
-                return PlainTextResponse(
-                    "Unsupported Media Type",
-                    status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-                )
-
+                data = request.query_params
         else:
             return PlainTextResponse(
                 "Method Not Allowed", status_code=status.HTTP_405_METHOD_NOT_ALLOWED
             )
 
-        if "query" not in data:
+        query = data.get("query")
+        variables = data.get("variables")
+        operation_name = data.get("operationName")
+
+        if query is None:
             return PlainTextResponse(
                 "No GraphQL query found in the request",
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        query = data["query"]
-        variables = data.get("variables")
-        operation_name = data.get("operationName")
+        if isinstance(variables, str):
+            try:
+                variables = json.loads(variables)
+            except json.JSONDecodeError:
+                return PlainTextResponse(
+                    f"Malformed GraphQL variables. Passed as string but not valid JSON:\n{variables}",
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                )
 
         result = await run_in_threadpool(
             self._graphql_schema.execute,
