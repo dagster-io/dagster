@@ -7,12 +7,6 @@
 // GraphQL fragment: MetadataEntryFragment
 // ====================================================
 
-export interface MetadataEntryFragment_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry" | "EventTableMetadataEntry";
-  label: string;
-  description: string | null;
-}
-
 export interface MetadataEntryFragment_EventPathMetadataEntry {
   __typename: "EventPathMetadataEntry";
   label: string;
@@ -90,12 +84,6 @@ export interface MetadataEntryFragment_EventAssetMetadataEntry {
   assetKey: MetadataEntryFragment_EventAssetMetadataEntry_assetKey;
 }
 
-<<<<<<< HEAD
-export type MetadataEntryFragment = MetadataEntryFragment_EventTableSchemaMetadataEntry | MetadataEntryFragment_EventPathMetadataEntry | MetadataEntryFragment_EventJsonMetadataEntry | MetadataEntryFragment_EventUrlMetadataEntry | MetadataEntryFragment_EventTextMetadataEntry | MetadataEntryFragment_EventMarkdownMetadataEntry | MetadataEntryFragment_EventPythonArtifactMetadataEntry | MetadataEntryFragment_EventFloatMetadataEntry | MetadataEntryFragment_EventIntMetadataEntry | MetadataEntryFragment_EventPipelineRunMetadataEntry | MetadataEntryFragment_EventAssetMetadataEntry;
-=======
-<<<<<<< HEAD
-export type MetadataEntryFragment = MetadataEntryFragment_EventPathMetadataEntry | MetadataEntryFragment_EventJsonMetadataEntry | MetadataEntryFragment_EventUrlMetadataEntry | MetadataEntryFragment_EventTextMetadataEntry | MetadataEntryFragment_EventMarkdownMetadataEntry | MetadataEntryFragment_EventPythonArtifactMetadataEntry | MetadataEntryFragment_EventFloatMetadataEntry | MetadataEntryFragment_EventIntMetadataEntry | MetadataEntryFragment_EventPipelineRunMetadataEntry | MetadataEntryFragment_EventAssetMetadataEntry;
-=======
 export interface MetadataEntryFragment_EventTableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
@@ -169,5 +157,3 @@ export interface MetadataEntryFragment_EventTableSchemaMetadataEntry {
 }
 
 export type MetadataEntryFragment = MetadataEntryFragment_EventPathMetadataEntry | MetadataEntryFragment_EventJsonMetadataEntry | MetadataEntryFragment_EventUrlMetadataEntry | MetadataEntryFragment_EventTextMetadataEntry | MetadataEntryFragment_EventMarkdownMetadataEntry | MetadataEntryFragment_EventPythonArtifactMetadataEntry | MetadataEntryFragment_EventFloatMetadataEntry | MetadataEntryFragment_EventIntMetadataEntry | MetadataEntryFragment_EventPipelineRunMetadataEntry | MetadataEntryFragment_EventAssetMetadataEntry | MetadataEntryFragment_EventTableMetadataEntry | MetadataEntryFragment_EventTableSchemaMetadataEntry;
->>>>>>> 54b3ea81e ([dagit-type-metadata] update graphql types)
->>>>>>> 3bea9c582 ([dagit-type-metadata] update graphql types)
