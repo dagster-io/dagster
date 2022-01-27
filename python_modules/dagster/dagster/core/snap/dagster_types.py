@@ -1,10 +1,10 @@
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple, Optional, Set
 
 from dagster import check
 from dagster.core.definitions.event_metadata import EventMetadataEntry
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 
 def build_dagster_type_namespace_snapshot(
@@ -55,7 +55,13 @@ class DagsterTypeNamespaceSnapshot(
         return self.all_dagster_type_snaps_by_key[key]
 
 
-@whitelist_for_serdes
+class DagsterTypeSnapSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def skip_when_empty(cls) -> Set[str]:
+        return {"metadata_entries"}  # Maintain stable snapshot ID for back-compat purposes
+
+
+@whitelist_for_serdes(serializer=DagsterTypeSnapSerializer)
 class DagsterTypeSnap(
     NamedTuple(
         "_DagsterTypeSnap",
