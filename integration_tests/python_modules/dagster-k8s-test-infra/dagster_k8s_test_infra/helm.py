@@ -1,7 +1,7 @@
 # pylint: disable=print-call, redefined-outer-name
 import base64
-import os
 import json
+import os
 import subprocess
 import time
 from contextlib import contextmanager
@@ -164,12 +164,12 @@ def aws_configmap(namespace, should_cleanup):
             sm_client = boto3.client("secretsmanager", region_name="us-west-1")
             try:
                 creds = json.loads(
-                    sm_client.get_secret_value(SecretId="development/DOCKER_AWS_CREDENTIAL").get(
-                        "SecretString"
-                    )
+                    sm_client.get_secret_value(
+                        SecretId=os.getenv("AWS_SSM_REFERENCE", "development/DOCKER_AWS_CREDENTIAL")
+                    ).get("SecretString")
                 )
-                aws_data["AWS_ACCESS_KEY_ID"] = creds['aws_access_key_id']
-                aws_data["AWS_SECRET_ACCESS_KEY"] = creds['aws_secret_access_key']
+                aws_data["AWS_ACCESS_KEY_ID"] = creds["aws_access_key_id"]
+                aws_data["AWS_SECRET_ACCESS_KEY"] = creds["aws_secret_access_key"]
             except:
                 raise Exception(
                     "Must have AWS credentials set in AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY "
