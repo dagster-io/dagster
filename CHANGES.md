@@ -11,7 +11,7 @@
 * [dagster-aws] When using the emr_pyspark_step_launcher to run Dagster ops in an Amazon EMR cluster, the raw stdout output of the Spark driver is now written to stdout and will appear in the compute logs for the op in dagit, rather than being written to the Dagster event log.
 * [dagit] Improved performance loading the Asset entry page in Dagit.
 
-Bugfixes
+### Bugfixes
 
 * [dagster-mysql] Added a schema migration script that was mistakenly omitted from 0.13.16.  Migrating instance storage using dagster instance migrate should now complete without error.
 * [dagster-airbyte] Fixed a packaging dependency issue with dagster-airbyte.  (Thanks [bollwyvl](https://github.com/bollwyvl)!)
@@ -20,11 +20,11 @@ Bugfixes
 * [dagit] The asset graph’s filter input now allows you to filter on assets with multi-component key paths.
 * [dagit] The asset graph properly displays downstream asset links to other asset jobs in your workspace.
 
-Experimental
+### Experimental
 
 * [dagster-celery-k8s] Experimental run monitoring is now supported with the CeleryK8sRunLauncher. This will detect when a run worker K8s Job has failed (due to an OOM, a Node shutting down, etc.) and mark the run as failed so that it doesn’t hang in STARTED. To enable this feature, set dagsterDaemon.runMonitoring.enabled to true in your Helm values.
 
-Documentation
+### Documentation
 
 * [dagster-snowflake] Fixed some example code in the API doc for snowflake_resource, which incorrectly constructed a Dagster job using the snowflake resource.
 
