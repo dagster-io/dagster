@@ -172,6 +172,7 @@ type OutputDefinition {
   description: String
   isDynamic: Boolean
   type: DagsterType!
+  metadataEntries: [EventMetadataEntry!]!
 }
 
 interface DagsterType {

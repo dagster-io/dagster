@@ -1,6 +1,7 @@
-import {Box, ColorsWIP, IconWIP, StyledTable} from '@dagster-io/ui';
+import {Box, ColorsWIP, IconWIP, MetadataTable, StyledTable} from '@dagster-io/ui';
 import styled from 'styled-components/macro';
-import React, {useEffect, useLayoutEffect, useState} from 'react';
+import * as React from 'react';
+import {useEffect, useLayoutEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {displayNameForAssetKey} from '../../app/Util';
@@ -14,20 +15,34 @@ import {RepoAddress} from '../types';
 
 import {LiveDataForNode} from './Utils';
 import {AssetGraphQuery_pipelineOrError_Pipeline_assetNodes} from './types/AssetGraphQuery';
-import {METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
+import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
 import {gql, useQuery} from '@apollo/client';
 import {isTableSchemaMetadataEntry, TableSchema} from '../../runs/TableSchema';
 import {
   DagsterTypeForAssetOp,
+  DagsterTypeForAssetOp_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_metadataEntries,
   DagsterTypeForAssetOp_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_type,
 } from './types/DagsterTypeForAssetOp';
+import {MetadataEntryFragment} from '../../runs/types/MetadataEntryFragment';
 
-type AssetType = DagsterTypeForAssetOp_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_type;
+export type AssetType = DagsterTypeForAssetOp_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_type;
+export type AssetMetadata = DagsterTypeForAssetOp_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_metadataEntries[];
 
 // TODO: needs to be renamed
 export const extractOutputType = (result: DagsterTypeForAssetOp): AssetType | null => {
   if (result.repositoryOrError.__typename === 'Repository') {
     const outputType = result.repositoryOrError?.usedSolid?.definition.outputDefinitions[0]?.type;
+    return outputType || null;
+  } else {
+    return null;
+  }
+};
+
+// TODO: needs to be renamed
+export const extractOutputMetadata = (result: DagsterTypeForAssetOp): AssetMetadata | null => {
+  if (result.repositoryOrError.__typename === 'Repository') {
+    const outputType =
+      result.repositoryOrError?.usedSolid?.definition.outputDefinitions[0]?.metadataEntries;
     return outputType || null;
   } else {
     return null;
@@ -40,7 +55,7 @@ const AssetTypeInfoRoot = styled.div`
   gap: 8px;
 `;
 
-export const AssetTypeInfo: React.FC<{type: AssetType | null}> = ({type}) => {
+export const AssetTypeInfo: React.FC<{type: AssetType}> = ({type}) => {
   if (type) {
     const tableSchemaEntry = type.metadataEntries.find(isTableSchemaMetadataEntry);
     return (
@@ -56,13 +71,57 @@ export const AssetTypeInfo: React.FC<{type: AssetType | null}> = ({type}) => {
   }
 };
 
+const DescriptionSidebarSection: React.FC<{
+  description: string;
+  definition: GraphExplorerSolidHandleFragment_solid_definition;
+  repoAddress: RepoAddress;
+}> = ({description, definition, repoAddress}) => {
+  const Plugin = pluginForMetadata(definition.metadata);
+  return (
+    <SidebarSection title="Description">
+      <Box padding={{vertical: 16, horizontal: 24}}>
+        <Description description={description} />
+      </Box>
+
+      {definition.metadata && Plugin && Plugin.SidebarComponent && (
+        <Plugin.SidebarComponent definition={definition} repoAddress={repoAddress} />
+      )}
+    </SidebarSection>
+  );
+};
+
+const TypeSidebarSection: React.FC<{
+  assetType: AssetType;
+}> = ({assetType}) => (
+  <SidebarSection title="Type">
+    <AssetTypeInfo type={assetType} />
+  </SidebarSection>
+);
+
+const MetadataSidebarSection: React.FC<{
+  assetMetadata: AssetMetadata;
+}> = ({assetMetadata}) => {
+  const rows = assetMetadata.map((entry) => {
+    return {
+      key: entry.label,
+      value: <MetadataEntry entry={entry} />,
+    };
+  });
+  return (
+    <SidebarSection title="Metadata">
+      <Box padding={{vertical: 16, horizontal: 24}}>
+        <MetadataTable rows={rows} />
+      </Box>
+    </SidebarSection>
+  );
+};
+
 export const SidebarAssetInfo: React.FC<{
   definition: GraphExplorerSolidHandleFragment_solid_definition;
   node: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
   liveData: LiveDataForNode;
   repoAddress: RepoAddress;
 }> = ({node, definition, repoAddress, liveData}) => {
-  const Plugin = pluginForMetadata(definition.metadata);
   const {lastMaterialization} = liveData || {};
   const displayName = displayNameForAssetKey(node.assetKey);
 
@@ -82,10 +141,12 @@ export const SidebarAssetInfo: React.FC<{
       notifyOnNetworkStatusChange: true,
     },
   );
-  const [dagsterType, setDagsterType] = useState<AssetType | null>(null);
+  const [assetType, setAssetType] = useState<AssetType | null>(null);
+  const [assetMetadata, setAssetMetadata] = useState<AssetMetadata | null>(null);
   useEffect(() => {
     if (dagsterTypeQueryPayload) {
-      setDagsterType(extractOutputType(dagsterTypeQueryPayload));
+      setAssetType(extractOutputType(dagsterTypeQueryPayload));
+      setAssetMetadata(extractOutputMetadata(dagsterTypeQueryPayload));
     }
   }, [dagsterTypeQueryPayload]);
 
@@ -106,31 +167,19 @@ export const SidebarAssetInfo: React.FC<{
         </AssetCatalogLink>
       </Box>
 
-      {(node.description || !dagsterType) && (
-        <>
-          <SidebarSection title="Description">
-            <Box padding={{vertical: 16, horizontal: 24}}>
-              <Description description={node.description || 'No description provided'} />
-            </Box>
+      {node.description ||
+        (!(node.description || assetType || assetMetadata) && (
+          <DescriptionSidebarSection
+            description={node.description || 'No description provided'}
+            definition={definition}
+            repoAddress={repoAddress}
+          />
+        ))}
 
-            {definition.metadata && Plugin && Plugin.SidebarComponent && (
-              <Plugin.SidebarComponent definition={definition} repoAddress={repoAddress} />
-            )}
-          </SidebarSection>
-
-          {dagsterType && (
-            <SidebarSection title="Type">
-              <AssetTypeInfo type={dagsterType} />
-            </SidebarSection>
-          )}
-        </>
+      {assetMetadata && (
+        <MetadataSidebarSection assetMetadata={assetMetadata}></MetadataSidebarSection>
       )}
-
-      {!node.description && dagsterType && (
-        <SidebarSection title="Type">
-          <AssetTypeInfo type={dagsterType} />
-        </SidebarSection>
-      )}
+      {assetType && <TypeSidebarSection assetType={assetType}></TypeSidebarSection>}
 
       {node.partitionDefinition && (
         <SidebarSection title="Partitions">
@@ -168,6 +217,7 @@ const AssetCatalogLink = styled(Link)`
 
 // TODO: Not sure if it's best to run a new query here or alter an upstream
 // query to provide the needed info, but this will do for now.
+// TODO: Need to rename this query to something that accounns for pulling output metadata
 export const DAGSTER_TYPE_FOR_ASSET_OP_QUERY = gql`
   query DagsterTypeForAssetOp($repoSelector: RepositorySelector!, $assetOpName: String!) {
     repositoryOrError(repositorySelector: $repoSelector) {
@@ -176,12 +226,14 @@ export const DAGSTER_TYPE_FOR_ASSET_OP_QUERY = gql`
         usedSolid(name: $assetOpName) {
           definition {
             outputDefinitions {
+              metadataEntries {
+                ...MetadataEntryFragment
+              }
               type {
                 ... on DagsterType {
                   name
                   description
                   metadataEntries {
-                    label
                     ...MetadataEntryFragment
                   }
                 }

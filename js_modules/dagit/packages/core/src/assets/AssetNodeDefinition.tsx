@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, IconWIP, Caption, Subheading, Mono} from '@dagster-io/ui';
+import {Box, ColorsWIP, IconWIP, Caption, Subheading, Mono, MetadataTable} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -7,11 +7,15 @@ import {displayNameForAssetKey, tokenForAssetKey} from '../app/Util';
 import {Description} from '../pipelines/Description';
 import {explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
+import {MetadataEntry} from '../runs/MetadataEntry';
 import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
 import {
   AssetTypeInfo,
   DAGSTER_TYPE_FOR_ASSET_OP_QUERY,
   extractOutputType,
+  extractOutputMetadata,
+  AssetMetadata,
+  AssetType,
 } from '../workspace/asset-graph/SidebarAssetInfo';
 import {DagsterTypeForAssetOp} from '../workspace/asset-graph/types/DagsterTypeForAssetOp';
 import {LiveData} from '../workspace/asset-graph/Utils';
@@ -23,23 +27,50 @@ import {AssetNodeList} from './AssetNodeList';
 import {PartitionHealthSummary} from './PartitionHealthSummary';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
+const AssetMetadataTable: React.FC<{
+  assetMetadata: AssetMetadata;
+}> = ({assetMetadata}) => {
+  const rows = assetMetadata.map((entry) => {
+    return {
+      key: entry.label,
+      value: <MetadataEntry entry={entry} />,
+    };
+  });
+  return (
+    <Box padding={{vertical: 16, horizontal: 24}}>
+      <MetadataTable rows={rows} />
+    </Box>
+  );
+};
+
 export const AssetNodeDefinition: React.FC<{
   repoAddress: RepoAddress;
   assetNode: AssetNodeDefinitionFragment;
   liveDataByNode: LiveData;
 }> = ({repoAddress, assetNode, liveDataByNode}) => {
-  const queryResult = useQuery<DagsterTypeForAssetOp>(DAGSTER_TYPE_FOR_ASSET_OP_QUERY, {
-    variables: {
-      repoSelector: {
-        repositoryName: repoAddress.name,
-        repositoryLocationName: repoAddress.location,
+  const {data: dagsterTypeQueryPayload} = useQuery<DagsterTypeForAssetOp>(
+    DAGSTER_TYPE_FOR_ASSET_OP_QUERY,
+    {
+      variables: {
+        repoSelector: {
+          repositoryName: repoAddress.name,
+          repositoryLocationName: repoAddress.location,
+        },
+        assetOpName: assetNode.opName,
       },
-      assetOpName: assetNode.opName,
+      fetchPolicy: 'cache-and-network',
+      partialRefetch: true,
+      notifyOnNetworkStatusChange: true,
     },
-    fetchPolicy: 'cache-and-network',
-    partialRefetch: true,
-    notifyOnNetworkStatusChange: true,
-  });
+  );
+  const [assetType, setAssetType] = React.useState<AssetType | null>(null);
+  const [assetMetadata, setAssetMetadata] = React.useState<AssetMetadata | null>(null);
+  React.useEffect(() => {
+    if (dagsterTypeQueryPayload) {
+      setAssetType(extractOutputType(dagsterTypeQueryPayload));
+      setAssetMetadata(extractOutputMetadata(dagsterTypeQueryPayload));
+    }
+  }, [dagsterTypeQueryPayload]);
 
   return (
     <>
@@ -85,7 +116,21 @@ export const AssetNodeDefinition: React.FC<{
             />
           </Box>
 
-          {queryResult.data && (
+          {assetMetadata && (
+            <>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+                flex={{justifyContent: 'space-between', gap: 8}}
+              >
+                <Subheading>Metadata</Subheading>
+              </Box>
+              <Box padding={{top: 16, bottom: 4}} style={{flex: 1}}>
+                <AssetMetadataTable assetMetadata={assetMetadata} />
+              </Box>
+            </>
+          )}
+          {assetType && (
             <>
               <Box
                 padding={{vertical: 16, horizontal: 24}}
@@ -95,7 +140,7 @@ export const AssetNodeDefinition: React.FC<{
                 <Subheading>Type</Subheading>
               </Box>
               <Box padding={{top: 16, bottom: 4}} style={{flex: 1}}>
-                <AssetTypeInfo type={extractOutputType(queryResult.data)} />
+                <AssetTypeInfo type={assetType} />
               </Box>
             </>
           )}
