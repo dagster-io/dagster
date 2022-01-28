@@ -25,7 +25,11 @@ import {
   ConfigPartitionSelectionQuery,
   ConfigPartitionSelectionQueryVariables,
 } from '../../launchpad/types/ConfigPartitionSelectionQuery';
-import {assembleIntoSpans, PartitionRangeInput} from '../../partitions/PartitionRangeInput';
+import {
+  assembleIntoSpans,
+  PartitionRangeInput,
+  stringForSpan,
+} from '../../partitions/PartitionRangeInput';
 import {
   LAUNCH_PARTITION_BACKFILL_MUTATION,
   messageForLaunchBackfillError,
@@ -279,13 +283,7 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
               title="Upstream Data Missing"
               description={
                 <>
-                  {upstreamUnavailableSpans
-                    .map((a) =>
-                      a.startIdx === a.endIdx
-                        ? `${selected[a.startIdx]}`
-                        : `${selected[a.startIdx]} through ${selected[a.endIdx]}`,
-                    )
-                    .join(', ')}
+                  {upstreamUnavailableSpans.map((span) => stringForSpan(span, selected)).join(', ')}
                   {
                     ' cannot be materialized because upstream materializations are missing. Consider materializing upstream assets or '
                   }
