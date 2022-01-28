@@ -1,6 +1,6 @@
 import {gql, QueryResult, useQuery} from '@apollo/client';
 import {Box, ColorsWIP, IconWIP, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
-import _, {uniq, without} from 'lodash';
+import _, {flatMap, uniq, uniqBy, without} from 'lodash';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -204,6 +204,9 @@ const AssetGraphExplorerWithData: React.FC<
     selectedAssetValues.includes(tokenForAssetKey(node.definition.assetKey)),
   );
   const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1];
+  const launchAssetNodes = selectedGraphNodes.length
+    ? selectedGraphNodes
+    : Object.values(assetGraphData.nodes);
 
   const onSelectNode = React.useCallback(
     async (e: React.MouseEvent<any>, assetKey: {path: string[]}, node: Node | null) => {
@@ -348,10 +351,14 @@ const AssetGraphExplorerWithData: React.FC<
             <LaunchAssetExecutionButton
               title={titleForLaunch(selectedGraphNodes, liveDataByNode)}
               assetJobName={explorerPath.pipelineName}
-              assets={(selectedGraphNodes.length
-                ? selectedGraphNodes
-                : Object.values(assetGraphData.nodes)
-              ).map((n) => n.definition)}
+              assets={launchAssetNodes.map((n) => n.definition)}
+              upstreamAssetKeys={uniqBy(
+                flatMap(launchAssetNodes.map((n) => n.definition.dependencyKeys)),
+                (key) => JSON.stringify(key),
+              ).filter(
+                (key) =>
+                  !launchAssetNodes.some((n) => JSON.stringify(n.assetKey) === JSON.stringify(key)),
+              )}
             />
           </div>
           <div style={{position: 'absolute', left: 24, top: 16}}>

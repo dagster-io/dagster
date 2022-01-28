@@ -1,6 +1,6 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql, useApolloClient} from '@apollo/client';
 import {Tooltip, Spinner, Box, ColorsWIP} from '@dagster-io/ui';
-import {keyBy} from 'lodash';
+import {fromPairs} from 'lodash';
 import React from 'react';
 
 import {displayNameForAssetKey} from '../app/Util';
@@ -9,57 +9,88 @@ import {assembleIntoSpans} from '../partitions/PartitionRangeInput';
 import {AssetKey} from './types';
 import {PartitionHealthQuery, PartitionHealthQueryVariables} from './types/PartitionHealthQuery';
 
-export function usePartitionHealthData(assetKey: AssetKey) {
-  const {data, loading} = useQuery<PartitionHealthQuery, PartitionHealthQueryVariables>(
-    PARTITION_HEALTH_QUERY,
-    {
-      variables: {assetKey: {path: assetKey.path}},
-      fetchPolicy: 'cache-and-network',
-    },
+interface PartitionHealthData {
+  assetKey: AssetKey;
+  keys: string[];
+  spans: {startIdx: number; endIdx: number; status: boolean}[];
+  statusByPartition: {[partitionName: string]: boolean};
+  indexToPct: (idx: number) => string;
+}
+
+export function usePartitionHealthData(assetKeys: AssetKey[]) {
+  const [result, setResult] = React.useState<PartitionHealthData[]>([]);
+  const client = useApolloClient();
+
+  const assetKeyJSONs = assetKeys.map((k) => JSON.stringify(k));
+  const missingKeyJSON = assetKeyJSONs.find(
+    (k) => !result.some((r) => JSON.stringify(r.assetKey) === k),
   );
 
-  const {spans, keys, indexToPct} = React.useMemo(() => {
-    const latest =
-      (data &&
-        data.assetNodeOrError.__typename === 'AssetNode' &&
-        data.assetNodeOrError.materializationCountByPartition) ||
-      [];
+  React.useMemo(() => {
+    if (!missingKeyJSON) {
+      return;
+    }
+    const loadKey: AssetKey = JSON.parse(missingKeyJSON);
+    const load = async () => {
+      const {data} = await client.query<PartitionHealthQuery, PartitionHealthQueryVariables>({
+        query: PARTITION_HEALTH_QUERY,
+        variables: {
+          assetKey: {path: loadKey.path},
+        },
+      });
+      const latest =
+        (data &&
+          data.assetNodeOrError.__typename === 'AssetNode' &&
+          data.assetNodeOrError.materializationCountByPartition) ||
+        [];
 
-    const keys =
-      data && data.assetNodeOrError.__typename === 'AssetNode'
-        ? data.assetNodeOrError.materializationCountByPartition.map(({partition}) => partition)
-        : [];
+      const keys =
+        data && data.assetNodeOrError.__typename === 'AssetNode'
+          ? data.assetNodeOrError.materializationCountByPartition.map(({partition}) => partition)
+          : [];
 
-    const latestByKey = keyBy(latest, (l) => l.partition);
-    const spans = assembleIntoSpans(keys, (key) => !!latestByKey[key].materializationCount);
+      const statusByPartition = fromPairs(
+        latest.map((l) => [l.partition, !!l.materializationCount]),
+      );
+      const spans = assembleIntoSpans(keys, (key) => statusByPartition[key]);
 
-    return {
-      keys,
-      spans,
-      indexToPct: (idx: number) => `${((idx * 100) / keys.length).toFixed(3)}%`,
+      setResult((result) => [
+        ...result,
+        {
+          keys,
+          spans,
+          assetKey: loadKey,
+          statusByPartition,
+          indexToPct: (idx: number) => `${((idx * 100) / keys.length).toFixed(3)}%`,
+        },
+      ]);
     };
-  }, [data]);
+    load();
+  }, [client, missingKeyJSON]);
 
-  return {spans, keys, indexToPct, loading};
+  return result.filter((r) => assetKeyJSONs.includes(JSON.stringify(r.assetKey)));
 }
 
 export const PartitionHealthSummary: React.FC<{
   assetKey: AssetKey;
   selected?: string[];
   showAssetKey?: boolean;
-}> = ({showAssetKey, assetKey, selected}) => {
-  const {spans, keys, indexToPct, loading} = usePartitionHealthData(assetKey);
-  const selectedSpans = selected
-    ? assembleIntoSpans(keys, (key) => selected.includes(key)).filter((s) => s.status)
-    : [];
+  data: PartitionHealthData[];
+}> = ({showAssetKey, assetKey, selected, data}) => {
+  const assetData = data.find((d) => JSON.stringify(d.assetKey) === JSON.stringify(assetKey));
 
-  if (loading) {
+  if (!assetData) {
     return (
       <div style={{minHeight: 55, position: 'relative'}}>
         <Spinner purpose="section" />
       </div>
     );
   }
+
+  const {spans, keys, indexToPct} = assetData;
+  const selectedSpans = selected
+    ? assembleIntoSpans(keys, (key) => selected.includes(key)).filter((s) => s.status)
+    : [];
 
   const populated = spans
     .filter((s) => s.status === true)

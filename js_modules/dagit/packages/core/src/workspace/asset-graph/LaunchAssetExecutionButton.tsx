@@ -1,6 +1,7 @@
 import {ButtonWIP, IconWIP, Tooltip} from '@dagster-io/ui';
 import React from 'react';
 
+import {AssetKey} from '../../assets/types';
 import {LaunchRootExecutionButton} from '../../launchpad/LaunchRootExecutionButton';
 import {buildRepoAddress} from '../buildRepoAddress';
 
@@ -16,8 +17,9 @@ type AssetMinimal = {
 export const LaunchAssetExecutionButton: React.FC<{
   assetJobName: string;
   assets: AssetMinimal[];
+  upstreamAssetKeys: AssetKey[];
   title?: string;
-}> = ({assets, assetJobName, title}) => {
+}> = ({assets, assetJobName, upstreamAssetKeys, title}) => {
   const [showingPartitionDialog, setShowingPartitionDialog] = React.useState(false);
   const repoAddress = buildRepoAddress(
     assets[0]?.repository.name || '',
@@ -66,9 +68,10 @@ export const LaunchAssetExecutionButton: React.FC<{
           <LaunchAssetChoosePartitionsDialog
             assets={assets}
             assetJobName={assetJobName}
+            upstreamAssetKeys={upstreamAssetKeys}
+            repoAddress={repoAddress}
             open={showingPartitionDialog}
             setOpen={setShowingPartitionDialog}
-            repoAddress={repoAddress}
           />
         </>
       ) : (
