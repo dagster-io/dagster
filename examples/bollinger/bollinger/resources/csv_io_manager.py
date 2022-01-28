@@ -2,10 +2,10 @@ import os
 import textwrap
 
 import pandas as pd
-from dagster import AssetKey, EventMetadataEntry, IOManager, io_manager
+from dagster import AssetKey, EventMetadataEntry, MemoizableIOManager, io_manager
 
 
-class LocalCsvIOManager(IOManager):
+class LocalCsvIOManager(MemoizableIOManager):
     """Translates between Pandas DataFrames and CSVs on the local filesystem."""
 
     def __init__(self, base_dir):
@@ -20,10 +20,14 @@ class LocalCsvIOManager(IOManager):
         fpath = self._get_fs_path(context.asset_key)
         os.makedirs(os.path.dirname(fpath), exist_ok=True)
         obj.to_csv(fpath)
+        with open(fpath + ".version", "w") as f:
+            f.write(context.version)
+
         yield EventMetadataEntry.int(obj.shape[0], "Rows")
         yield EventMetadataEntry.path(fpath, "Path")
         yield EventMetadataEntry.md(obj.head(5).to_markdown(), "Sample")
         yield EventMetadataEntry.md(pandas_columns_to_markdown(obj), "Columns")
+        yield EventMetadataEntry.text(context.version, "Resolved version")
 
     def load_input(self, context):
         """This reads a dataframe from a CSV."""
@@ -34,6 +38,16 @@ class LocalCsvIOManager(IOManager):
             if table_col.type == "datetime64[ns]"
         ]
         return pd.read_csv(fpath, parse_dates=date_col_names)
+
+    def has_output(self, context) -> bool:
+        fpath = self._get_fs_path(context.asset_key)
+        version_fpath = fpath + ".version"
+        if not os.path.exists(version_fpath):
+            return False
+        with open(version_fpath, "r") as f:
+            version = f.read()
+
+        return version == context.version
 
 
 @io_manager

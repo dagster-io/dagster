@@ -2,6 +2,7 @@ import pandas as pd
 import pandera as pa
 from bollinger.lib import compute_bollinger
 from bollinger.resources.csv_io_manager import local_csv_io_manager
+from dagster import MEMOIZED_RUN_TAG
 from dagster.core.asset_defs import asset, build_assets_job
 from dagster_pandera import pandera_schema_to_dagster_type
 from pandera.typing import Series
@@ -84,6 +85,7 @@ AnomalousEventsDgType = pandera_schema_to_dagster_type(
 @asset(
     dagster_type=Sp500PricesDgType,
     metadata={"owner": "alice@example.com"},
+    version="1",
 )
 def sp500_prices():
     path = "examples/bollinger/data/all_stocks_5yr.csv"
@@ -96,6 +98,7 @@ def sp500_prices():
 @asset(
     dagster_type=BollingerDgType,
     metadata={"owner": "alice@example.com"},
+    version="1",
 )
 def bollinger(sp500_prices):
     odf = sp500_prices.groupby("name").apply(lambda idf: compute_bollinger(idf, dropna=False))
@@ -105,6 +108,7 @@ def bollinger(sp500_prices):
 @asset(
     dagster_type=AnomalousEventsDgType,
     metadata={"owner": "alice@example.com"},
+    version="1",
 )
 def anomalous_events(bollinger):
     idf = bollinger[
@@ -122,4 +126,5 @@ bollinger_sda = build_assets_job(
     "bollinger_sda",
     assets=[anomalous_events, bollinger, sp500_prices],
     resource_defs={"io_manager": local_csv_io_manager},
+    tags={MEMOIZED_RUN_TAG: True},
 )
