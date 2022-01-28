@@ -100,7 +100,7 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
                     node_type=context.solid_def.node_type_str,
                 )
             )
-        metadata = context.get_metadata_for_output(output_defs[0].name)
+        metadata = context.get_output_metadata(output_defs[0].name)
         yield Output(value=result, output_name=output_defs[0].name, metadata=metadata)
     elif len(output_defs) > 1 and isinstance(result, tuple):
         if len(result) != len(output_defs):
@@ -110,7 +110,7 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
             )
 
         for output_def, element in zip(output_defs, result):
-            metadata = context.get_metadata_for_output(output_def.name)
+            metadata = context.get_output_metadata(output_def.name)
             yield Output(output_name=output_def.name, value=element, metadata=metadata)
     elif result is not None:
         if not output_defs:

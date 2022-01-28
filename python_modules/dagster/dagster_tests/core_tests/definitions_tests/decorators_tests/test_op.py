@@ -608,7 +608,7 @@ def test_yield_event_ordering():
 def test_metadata_logging():
     @op
     def basic(context):
-        context.log_metadata_for_output({"foo": "bar"})
+        context.add_output_metadata({"foo": "bar"})
         return "baz"
 
     result = execute_op_in_graph(basic)

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Any, Dict, Iterator, List, Optional
+from typing import Any, Mapping, Dict, Iterator, List, Optional
 
 from dagster import check
 from dagster.core.definitions.dependency import Node, NodeHandle
@@ -296,7 +296,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         else:
             check.failed("Unexpected event {event}".format(event=event))
 
-    def log_metadata_for_output(self, metadata: Dict[str, Any], output_name: Optional[str] = None):
+    def add_output_metadata(self, metadata: Mapping[str, Any], output_name: Optional[str] = None):
         metadata = check.dict_param(metadata, "metadata", key_type=str)
         output_name = check.opt_str_param(output_name, "output_name")
 
@@ -304,13 +304,13 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
             output_name = self.solid_def.output_defs[0].name
         elif output_name is None:
             raise DagsterInvariantViolationError(
-                "Attempted to log metadata without providing output_name, but multiple outputs exist. Please provide an output_name to the invocation of `context.log_metadata_for_output`."
+                "Attempted to log metadata without providing output_name, but multiple outputs exist. Please provide an output_name to the invocation of `context.add_output_metadata`."
             )
         self._output_metadata[output_name] = merge_dicts(
             self._output_metadata.get(output_name, {}), metadata
         )
 
-    def get_metadata_for_output(self, output_name: str) -> Optional[Dict[str, Any]]:
+    def get_output_metadata(self, output_name: str) -> Optional[Mapping[str, Any]]:
         return self._output_metadata.get(output_name)
 
     def get_step_execution_context(self) -> StepExecutionContext:
