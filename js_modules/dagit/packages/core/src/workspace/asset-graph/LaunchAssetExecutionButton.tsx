@@ -68,11 +68,11 @@ export const LaunchAssetExecutionButton: React.FC<{
               mode: 'default',
               executionMetadata: {},
               runConfigData: {},
+              stepKeys: assets.map((o) => o.opName!),
               selector: {
                 repositoryLocationName: repoAddress.location,
                 repositoryName: repoAddress.name,
                 pipelineName: assetJobName,
-                solidSelection: assets.map((o) => o.opName!),
               },
             },
           })}
