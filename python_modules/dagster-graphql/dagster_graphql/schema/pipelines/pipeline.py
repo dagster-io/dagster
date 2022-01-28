@@ -23,6 +23,7 @@ from ..logs.compute_logs import GrapheneComputeLogs
 from ..logs.events import (
     GrapheneDagsterRunEvent,
     GrapheneMaterializationEvent,
+    GrapheneObservationEvent,
     GrapheneRunStepStats,
 )
 from ..paging import GrapheneCursor
@@ -58,6 +59,28 @@ COMPLETED_STATUSES = {
 }
 
 
+def parse_time_range_args(args):
+    try:
+        before_timestamp = (
+            int(args.get("beforeTimestampMillis")) / 1000.0
+            if args.get("beforeTimestampMillis")
+            else None
+        )
+    except ValueError:
+        before_timestamp = None
+
+    try:
+        after_timestamp = (
+            int(args.get("afterTimestampMillis")) / 1000.0
+            if args.get("afterTimestampMillis")
+            else None
+        )
+    except ValueError:
+        after_timestamp = None
+
+    return before_timestamp, after_timestamp
+
+
 class GrapheneMaterializationCount(graphene.ObjectType):
     partition = graphene.NonNull(graphene.String)
     materializationCount = graphene.NonNull(graphene.Int)
@@ -71,6 +94,14 @@ class GrapheneAsset(graphene.ObjectType):
     key = graphene.NonNull(GrapheneAssetKey)
     assetMaterializations = graphene.Field(
         non_null_list(GrapheneMaterializationEvent),
+        partitions=graphene.List(graphene.String),
+        partitionInLast=graphene.Int(),
+        beforeTimestampMillis=graphene.String(),
+        afterTimestampMillis=graphene.String(),
+        limit=graphene.Int(),
+    )
+    assetObservations = graphene.Field(
+        non_null_list(GrapheneObservationEvent),
         partitions=graphene.List(graphene.String),
         partitionInLast=graphene.Int(),
         beforeTimestampMillis=graphene.String(),
@@ -92,23 +123,7 @@ class GrapheneAsset(graphene.ObjectType):
     def resolve_assetMaterializations(self, graphene_info, **kwargs):
         from ...implementation.fetch_assets import get_asset_materializations
 
-        try:
-            before_timestamp = (
-                int(kwargs.get("beforeTimestampMillis")) / 1000.0
-                if kwargs.get("beforeTimestampMillis")
-                else None
-            )
-        except ValueError:
-            before_timestamp = None
-        try:
-            after_timestamp = (
-                int(kwargs.get("afterTimestampMillis")) / 1000.0
-                if kwargs.get("afterTimestampMillis")
-                else None
-            )
-        except ValueError:
-            after_timestamp = None
-
+        before_timestamp, after_timestamp = parse_time_range_args(kwargs)
         limit = kwargs.get("limit")
         partitions = kwargs.get("partitions")
         partitionInLast = kwargs.get("partitionInLast")
@@ -126,6 +141,28 @@ class GrapheneAsset(graphene.ObjectType):
         run_ids = [event.run_id for event in events]
         loader = BatchRunLoader(graphene_info.context.instance, run_ids) if run_ids else None
         return [GrapheneMaterializationEvent(event=event, loader=loader) for event in events]
+
+    def resolve_assetObservations(self, graphene_info, **kwargs):
+        from ...implementation.fetch_assets import get_asset_observations
+
+        before_timestamp, after_timestamp = parse_time_range_args(kwargs)
+        limit = kwargs.get("limit")
+        partitions = kwargs.get("partitions")
+        partitionInLast = kwargs.get("partitionInLast")
+        if partitionInLast and self._definition:
+            partitions = self._definition.get_partition_keys()[-int(partitionInLast) :]
+
+        return [
+            GrapheneObservationEvent(event=event)
+            for event in get_asset_observations(
+                graphene_info,
+                self.key,
+                partitions=partitions,
+                before_timestamp=before_timestamp,
+                after_timestamp=after_timestamp,
+                limit=limit,
+            )
+        ]
 
 
 class GraphenePipelineRun(graphene.Interface):

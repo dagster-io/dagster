@@ -17,7 +17,7 @@ import {
 } from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {AssetMaterializations} from './AssetMaterializations';
+import {AssetMaterializations} from './AssetEvents';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetKey} from './types';

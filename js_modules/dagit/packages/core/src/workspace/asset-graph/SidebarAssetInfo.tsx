@@ -4,7 +4,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../../app/Util';
-import {AssetMaterializations} from '../../assets/AssetMaterializations';
+import {AssetMaterializations} from '../../assets/AssetEvents';
 import {PartitionHealthSummary} from '../../assets/PartitionHealthSummary';
 import {Description} from '../../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';

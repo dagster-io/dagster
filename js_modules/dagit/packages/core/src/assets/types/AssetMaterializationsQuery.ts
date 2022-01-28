@@ -18,6 +18,134 @@ export interface AssetMaterializationsQuery_assetOrError_Asset_key {
   path: string[];
 }
 
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetObservations_runOrError_RunNotFoundError {
+  __typename: "RunNotFoundError" | "PythonError";
+}
+
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetObservations_runOrError_Run_repositoryOrigin {
+  __typename: "RepositoryOrigin";
+  id: string;
+  repositoryName: string;
+  repositoryLocationName: string;
+}
+
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetObservations_runOrError_Run {
+  __typename: "Run";
+  id: string;
+  runId: string;
+  mode: string;
+  repositoryOrigin: AssetMaterializationsQuery_assetOrError_Asset_assetObservations_runOrError_Run_repositoryOrigin | null;
+  status: RunStatus;
+  pipelineName: string;
+  pipelineSnapshotId: string | null;
+}
+
+export type AssetMaterializationsQuery_assetOrError_Asset_assetObservations_runOrError = AssetMaterializationsQuery_assetOrError_Asset_assetObservations_runOrError_RunNotFoundError | AssetMaterializationsQuery_assetOrError_Asset_assetObservations_runOrError_Run;
+
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetObservations_stepStats {
+  __typename: "RunStepStats";
+  endTime: number | null;
+  startTime: number | null;
+}
+
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventTableSchemaMetadataEntry {
+  __typename: "EventTableSchemaMetadataEntry" | "EventTableMetadataEntry";
+  label: string;
+  description: string | null;
+}
+
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventMarkdownMetadataEntry {
+  __typename: "EventMarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventPythonArtifactMetadataEntry {
+  __typename: "EventPythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventFloatMetadataEntry {
+  __typename: "EventFloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventIntMetadataEntry {
+  __typename: "EventIntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventPipelineRunMetadataEntry {
+  __typename: "EventPipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventAssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventAssetMetadataEntry {
+  __typename: "EventAssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventAssetMetadataEntry_assetKey;
+}
+
+export type AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries = AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventTableSchemaMetadataEntry | AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventPathMetadataEntry | AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventJsonMetadataEntry | AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventUrlMetadataEntry | AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventTextMetadataEntry | AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventMarkdownMetadataEntry | AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventPythonArtifactMetadataEntry | AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventFloatMetadataEntry | AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventIntMetadataEntry | AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventPipelineRunMetadataEntry | AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries_EventAssetMetadataEntry;
+
+export interface AssetMaterializationsQuery_assetOrError_Asset_assetObservations {
+  __typename: "ObservationEvent";
+  partition: string | null;
+  runOrError: AssetMaterializationsQuery_assetOrError_Asset_assetObservations_runOrError;
+  runId: string;
+  timestamp: string;
+  stepKey: string | null;
+  stepStats: AssetMaterializationsQuery_assetOrError_Asset_assetObservations_stepStats;
+  label: string;
+  description: string | null;
+  metadataEntries: AssetMaterializationsQuery_assetOrError_Asset_assetObservations_metadataEntries[];
+}
+
 export interface AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations_runOrError_RunNotFoundError {
   __typename: "RunNotFoundError" | "PythonError";
 }
@@ -168,6 +296,7 @@ export interface AssetMaterializationsQuery_assetOrError_Asset {
   __typename: "Asset";
   id: string;
   key: AssetMaterializationsQuery_assetOrError_Asset_key;
+  assetObservations: AssetMaterializationsQuery_assetOrError_Asset_assetObservations[];
   assetMaterializations: AssetMaterializationsQuery_assetOrError_Asset_assetMaterializations[];
   definition: AssetMaterializationsQuery_assetOrError_Asset_definition | null;
 }

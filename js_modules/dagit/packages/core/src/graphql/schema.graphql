@@ -556,6 +556,13 @@ type Asset {
     afterTimestampMillis: String
     limit: Int
   ): [MaterializationEvent!]!
+  assetObservations(
+    partitions: [String]
+    partitionInLast: Int
+    beforeTimestampMillis: String
+    afterTimestampMillis: String
+    limit: Int
+  ): [ObservationEvent!]!
   definition: AssetNode
 }
 
@@ -662,6 +669,23 @@ type AssetLineageInfo {
   partitions: [String!]!
 }
 
+type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  assetKey: AssetKey
+  runOrError: RunOrError!
+  stepStats: RunStepStats!
+  partition: String
+}
+
 type AssetNode {
   id: ID!
   assetKey: AssetKey!
@@ -682,12 +706,6 @@ type AssetNode {
   partitionDefinition: String
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
   materializationCountByPartition: [MaterializationCountByPartition!]!
-  assetObservations(
-    partitions: [String]
-    beforeTimestampMillis: String
-    afterTimestampMillis: String
-    limit: Int
-  ): [ObservationEvent!]!
 }
 
 type AssetDependency {
@@ -698,23 +716,6 @@ type AssetDependency {
 type MaterializationCountByPartition {
   partition: String!
   materializationCount: Int!
-}
-
-type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
-  runId: String!
-  message: String!
-  timestamp: String!
-  level: LogLevel!
-  stepKey: String
-  solidHandleID: String
-  eventType: DagsterEventType
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  assetKey: AssetKey
-  runOrError: RunOrError!
-  stepStats: RunStepStats!
-  partition: String
 }
 
 union DagsterRunEvent =
