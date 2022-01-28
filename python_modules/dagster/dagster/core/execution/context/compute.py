@@ -258,7 +258,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         self._events = []
         yield from events
 
-    def report_event(self, event: UserEvent) -> None:
+    def log_event(self, event: UserEvent) -> None:
         """Log an AssetMaterialization, AssetObservation, or ExpectationResult from within the body of an op.
 
         Events logged with this method will appear in the list of DagsterEvents, as well as the event log.
@@ -273,7 +273,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
             @op
             def log_materialization(context):
-                context.report_event(AssetMaterialization("foo"))
+                context.log_event(AssetMaterialization("foo"))
         """
 
         if isinstance(event, (AssetMaterialization, Materialization)):
