@@ -295,8 +295,8 @@ def build_asset_ins(
         )
 
     for asset_key in non_argument_deps:
-        stringified_asset_key = asset_key.to_string(legacy=True)
+        stringified_asset_key = "_".join(asset_key.path)
         if stringified_asset_key:
-            ins[str(stringified_asset_key)] = In(dagster_type=Nothing, asset_key=asset_key)
+            ins[stringified_asset_key] = In(dagster_type=Nothing, asset_key=asset_key)
 
     return ins
