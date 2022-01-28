@@ -172,6 +172,8 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             )
             return False
 
+        print("TERMINATING RUN")
+
         self._instance.report_run_canceling(run)
         res = deserialize_json_to_dagster_namedtuple(
             client.cancel_execution(CancelExecutionRequest(run_id=run_id))

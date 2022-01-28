@@ -1,4 +1,5 @@
 import os
+import pytest
 from time import sleep
 
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -582,7 +583,7 @@ class TestRetryExecutionAsyncOnlyBehavior(
         while instance.get_run_stats(run_id).steps_succeeded < 1:
             sleep(0.1)
         # Terminate the current pipeline run at the second step
-        graphql_context.instance.run_launcher.terminate(run_id)
+        assert graphql_context.instance.run_launcher.terminate(run_id)
 
         records = instance.all_logs(run_id)
 

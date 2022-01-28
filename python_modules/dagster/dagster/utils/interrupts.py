@@ -68,10 +68,6 @@ def raise_interrupts_as(error_cls):
         yield
         return
 
-    if _received_interrupt["received"]:
-        _received_interrupt["received"] = False
-        raise error_cls()
-
     original_signal_handler = signal.getsignal(signal.SIGINT)
 
     def _new_signal_handler(signo, _):
@@ -82,6 +78,12 @@ def raise_interrupts_as(error_cls):
     try:
         _replace_interrupt_signal(_new_signal_handler)
         signal_replaced = True
+
+        # Raise if the previous signal handler received anything
+        if _received_interrupt["received"]:
+            _received_interrupt["received"] = False
+            raise error_cls()
+
         yield
     finally:
         if signal_replaced:

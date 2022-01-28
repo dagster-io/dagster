@@ -52,12 +52,7 @@ def dagster():
     # If we're in a Phabricator diff and are only making dagit changes, skip the
     # remaining steps since they're not relevant to the diff.
     if not dagit_only:
-        all_steps += dagster_steps()
-
-        all_steps += [wait_step()]
-
-        if DO_COVERAGE:
-            all_steps += [coverage_step()]
+        all_steps = dagster_steps()
 
     buildkite_yaml = buildkite_yaml_for_steps(all_steps)
     print(buildkite_yaml)  # pylint: disable=print-call

@@ -79,7 +79,7 @@ class ModuleBuildSpec(
             cls,
             directory,
             env_vars or [],
-            supported_pythons or SupportedPythons,
+            supported_pythons or ["3.6.12"],
             extra_cmds_fn,
             depends_on_fn,
             tox_file,
@@ -99,7 +99,7 @@ class ModuleBuildSpec(
 
         for version in self.supported_pythons:
             for tox_env_suffix in tox_env_suffixes:
-                label = package + tox_env_suffix
+                label = tox_env_suffix
 
                 extra_cmds = self.extra_cmds_fn(version) if self.extra_cmds_fn else []
 
@@ -139,34 +139,5 @@ class ModuleBuildSpec(
                     step = step.on_queue(self.queue)
 
                 tests.append(step.build())
-
-        # We expect the tox file to define a pylint testenv, and we'll construct a separate
-        # buildkite build step for the pylint testenv.
-        tests.append(
-            StepBuilder(f":lint-roller: {package}")
-            .run(
-                "pip install -U virtualenv",
-                f"cd {self.directory}",
-                "tox -vv -e pylint",
-            )
-            .on_integration_image(SupportedPython.V3_8)
-            .build()
-        )
-
-        # We expect the tox file to define a mypy testenv, and we'll construct a separate
-        # buildkite build step for the mypy testenv.
-        if self.directory not in MYPY_EXCLUDES:
-            tests.append(
-                StepBuilder(f":mypy: {package}")
-                .run(
-                    "pip install -e python_modules/dagster[mypy]",
-                    # mypy raises an error for missing stubs. We try to specify them in
-                    # dependencies, but inclusion of `--install-types
-                    # --non-interactive` will cause mypy to automatically download any missing ones.
-                    f"mypy --config-file mypy/config --install-types --non-interactive {self.directory}",
-                )
-                .on_integration_image(SupportedPython.V3_8)
-                .build()
-            )
 
         return tests

@@ -593,6 +593,7 @@ class DagsterApiServer(DagsterApiServicer):
         success = False
         message = None
         serializable_error_info = None
+        sys.stderr.write("CANCELING EXECUTION\n")
         try:
             cancel_execution_request = check.inst(
                 deserialize_json_to_dagster_namedtuple(request.serialized_cancel_execution_request),
@@ -600,6 +601,7 @@ class DagsterApiServer(DagsterApiServicer):
             )
             with self._execution_lock:
                 if cancel_execution_request.run_id in self._executions:
+                    sys.stderr.write("SET EXECUTION REQUEST\n")
                     self._termination_events[cancel_execution_request.run_id].set()
                     self._termination_times[cancel_execution_request.run_id] = time.time()
                     success = True
