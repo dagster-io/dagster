@@ -7,7 +7,7 @@ for that.
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from datetime import datetime
-from typing import Dict, List, Mapping, Optional, Sequence, Set, Tuple
+from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple
 
 from dagster import StaticPartitionsDefinition, check
 from dagster.core.asset_defs import ForeignAsset
@@ -34,19 +34,26 @@ from dagster.utils.error import SerializableErrorInfo
 
 @whitelist_for_serdes
 class ExternalRepositoryData(
-    namedtuple(
+    NamedTuple(
         "_ExternalRepositoryData",
-        "name external_pipeline_datas external_schedule_datas external_partition_set_datas external_sensor_datas external_asset_graph_data",
+        [
+            ("name", str),
+            ("external_pipeline_datas", List["ExternalPipelineData"]),
+            ("external_schedule_datas", List["ExternalScheduleData"]),
+            ("external_partition_set_datas", List["ExternalPartitionSetData"]),
+            ("external_sensor_datas", List["ExternalSensorData"]),
+            ("external_asset_graph_data", List["ExternalAssetNode"]),
+        ],
     )
 ):
     def __new__(
         cls,
-        name,
-        external_pipeline_datas,
-        external_schedule_datas,
-        external_partition_set_datas,
-        external_sensor_datas=None,
-        external_asset_graph_data=None,
+        name: str,
+        external_pipeline_datas: List["ExternalPipelineData"],
+        external_schedule_datas: List["ExternalScheduleData"],
+        external_partition_set_datas: List["ExternalPartitionSetData"],
+        external_sensor_datas: Optional[List["ExternalSensorData"]]=None,
+        external_asset_graph_data: Optional[List["ExternalAssetNode"]]=None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
@@ -74,7 +81,7 @@ class ExternalRepositoryData(
             ),
         )
 
-    def get_pipeline_snapshot(self, name):
+    def get_pipeline_snapshot(self, name: str) -> PipelineSnapshot:
         check.str_param(name, "name")
 
         for external_pipeline_data in self.external_pipeline_datas:
@@ -137,13 +144,19 @@ class ExternalPipelineSubsetResult(
 
 @whitelist_for_serdes
 class ExternalPipelineData(
-    namedtuple(
+    NamedTuple(
         "_ExternalPipelineData",
-        "name pipeline_snapshot active_presets parent_pipeline_snapshot is_job",
+        [
+            ("name", str),
+            ("pipeline_snapshot", PipelineSnapshot),
+            ("active_presets", List["ExternalPresetData"]),
+            ("parent_pipeline_snapshot", Optional[PipelineSnapshot]),
+            ("is_job", bool),
+        ],
     )
 ):
     def __new__(
-        cls, name, pipeline_snapshot, active_presets, parent_pipeline_snapshot, is_job=False
+        cls, name: str, pipeline_snapshot: PipelineSnapshot, active_presets: List["ExternalPresetData"], parent_pipeline_snapshot: Optional[PipelineSnapshot], is_job=False
     ):
         return super(ExternalPipelineData, cls).__new__(
             cls,
@@ -151,11 +164,11 @@ class ExternalPipelineData(
             pipeline_snapshot=check.inst_param(
                 pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot
             ),
-            parent_pipeline_snapshot=check.opt_inst_param(
-                parent_pipeline_snapshot, "parent_pipeline_snapshot", PipelineSnapshot
-            ),
             active_presets=check.list_param(
                 active_presets, "active_presets", of_type=ExternalPresetData
+            ),
+            parent_pipeline_snapshot=check.opt_inst_param(
+                parent_pipeline_snapshot, "parent_pipeline_snapshot", PipelineSnapshot
             ),
             is_job=check.bool_param(is_job, "is_job"),
         )
@@ -180,22 +193,32 @@ class ExternalPresetData(
 
 @whitelist_for_serdes
 class ExternalScheduleData(
-    namedtuple(
+    NamedTuple(
         "_ExternalScheduleData",
-        "name cron_schedule pipeline_name solid_selection mode environment_vars partition_set_name execution_timezone description",
+        [
+            ("name", str),
+            ("cron_schedule", str),
+            ("pipeline_name", str),
+            ("solid_selection", Optional[List[str]]),
+            ("mode", Optional[str]),
+            ("environment_vars", Dict[str, str]),
+            ("partition_set_name", Optional[str]),
+            ("execution_timezone", Optional[str]),
+            ("description", Optional[str]),
+        ],
     )
 ):
     def __new__(
         cls,
-        name,
-        cron_schedule,
-        pipeline_name,
-        solid_selection,
-        mode,
-        environment_vars,
-        partition_set_name,
-        execution_timezone,
-        description=None,
+        name: str,
+        cron_schedule: str,
+        pipeline_name: str,
+        solid_selection: Optional[List[str]],
+        mode: Optional[str],
+        environment_vars: Dict[str, str],
+        partition_set_name: Optional[str],
+        execution_timezone: Optional[str],
+        description: Optional[str]=None,
     ):
         return super(ExternalScheduleData, cls).__new__(
             cls,
