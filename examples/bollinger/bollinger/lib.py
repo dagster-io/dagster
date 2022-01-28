@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import pandera as pa
 from dagster_pandera import pandera_schema_to_dagster_type
@@ -85,6 +87,12 @@ AnomalousEventsDgType = pandera_schema_to_dagster_type(
 
 # ****************************************************************************
 # ***** FUNCTIONS ************************************************************
+
+# TODO: need a better solution
+DATA_ROOT = os.path.join(os.path.dirname(__file__), "../data")
+
+def resolve_data_path(relative_path: str):
+    return os.path.join(DATA_ROOT, relative_path)
 
 
 def load_sp500_prices() -> pd.DataFrame:
