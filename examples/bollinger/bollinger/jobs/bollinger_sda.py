@@ -80,8 +80,12 @@ AnomalousEventsDgType = pandera_schema_to_dagster_type(
     },
 )
 
+USER_EMAIL = "alice@example.com"
 
-@asset(dagster_type=Sp500PricesDgType)
+@asset(
+    dagster_type=Sp500PricesDgType,
+    metadata={"user": "alice@example.com"},
+)
 def sp500_prices():
     path = "examples/bollinger/data/all_stocks_5yr.csv"
     df = pd.read_csv(path, parse_dates=["date"])
@@ -90,13 +94,19 @@ def sp500_prices():
     return df
 
 
-@asset(dagster_type=BollingerDgType)
+@asset(
+    dagster_type=BollingerDgType,
+    metadata={"user": "alice@example.com"},
+)
 def bollinger(sp500_prices):
     odf = sp500_prices.groupby("name").apply(lambda idf: compute_bollinger(idf, dropna=False))
     return odf
 
 
-@asset(dagster_type=AnomalousEventsDgType)
+@asset(
+    dagster_type=AnomalousEventsDgType,
+    metadata={"user": "alice@example.com"},
+)
 def anomalous_events(bollinger):
     idf = bollinger[
         (bollinger.price > bollinger.upper) | (bollinger.price < bollinger.lower)
