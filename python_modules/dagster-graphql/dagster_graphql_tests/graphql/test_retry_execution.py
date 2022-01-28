@@ -1,7 +1,9 @@
 import os
 from time import sleep
 
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import RESUME_RETRY_TAG
+from dagster.core.test_utils import poll_for_finished_run
 from dagster.core.utils import make_new_run_id
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
@@ -596,6 +598,10 @@ class TestRetryExecutionAsyncOnlyBehavior(
         )
         assert step_did_not_run_in_records(records, "get_input_two")
         assert step_did_not_run_in_records(records, "sum_inputs")
+
+        # Wait for the original run to finish
+        poll_for_finished_run(instance, run_id, timeout=30)
+        assert instance.get_run_by_id(run_id).status == PipelineRunStatus.CANCELED
 
         # Start retry
         new_run_id = make_new_run_id()
