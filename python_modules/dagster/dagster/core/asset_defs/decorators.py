@@ -32,6 +32,7 @@ def asset(
     dagster_type: Optional[DagsterType] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
+    version: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute an asset.
 
@@ -94,6 +95,7 @@ def asset(
             dagster_type=dagster_type,
             partitions_def=partitions_def,
             partition_mappings=partition_mappings,
+            version=version,
         )(fn)
 
     return inner
@@ -114,6 +116,7 @@ class _Asset:
         dagster_type: Optional[DagsterType] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
+        version: Optional[str] = None,
     ):
         self.name = name
         # if user inputs a single string, coerce to list
@@ -128,6 +131,7 @@ class _Asset:
         self.dagster_type = dagster_type
         self.partitions_def = partitions_def
         self.partition_mappings = partition_mappings
+        self.version = version
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -166,6 +170,7 @@ class _Asset:
                     "output_partitions": Field(dict, is_required=False),
                 }
             },
+            version=self.version,
         )(fn)
 
         return AssetsDefinition(
