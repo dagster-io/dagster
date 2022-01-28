@@ -1,4 +1,5 @@
 import os
+import textwrap
 
 import pandas as pd
 from dagster import AssetKey, EventMetadataEntry, IOManager, io_manager
@@ -20,13 +21,33 @@ class LocalCsvIOManager(IOManager):
         os.makedirs(os.path.dirname(fpath), exist_ok=True)
         obj.to_csv(fpath)
         yield EventMetadataEntry.int(obj.shape[0], "Rows")
+        yield EventMetadataEntry.path(fpath, "Path")
+        yield EventMetadataEntry.md(obj.head(5).to_markdown(), "Sample")
+        yield EventMetadataEntry.md(pandas_columns_to_markdown(obj), "Columns")
 
     def load_input(self, context):
         """This reads a dataframe from a CSV."""
         fpath = self._get_fs_path(context.asset_key)
-        return pd.read_csv(fpath)
+        date_col_names = [
+            table_col.name
+            for table_col in context.upstream_output.dagster_type.metadata["schema"].schema.columns
+            if table_col.type == "datetime64[ns]"
+        ]
+        return pd.read_csv(fpath, parse_dates=date_col_names)
 
 
 @io_manager
 def local_csv_io_manager(context):
     return LocalCsvIOManager(context.instance.storage_directory())
+
+
+def pandas_columns_to_markdown(dataframe: pd.DataFrame) -> str:
+    return (
+        textwrap.dedent(
+            """
+        | Name | Type |
+        | ---- | ---- |
+    """
+        )
+        + "\n".join([f"| {name} | {dtype} |" for name, dtype in dataframe.dtypes.iteritems()])
+    )
