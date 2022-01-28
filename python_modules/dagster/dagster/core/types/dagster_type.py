@@ -180,6 +180,10 @@ class DagsterType:
         return self._metadata_entries  # type: ignore
 
     @property
+    def metadata(self) -> t.Dict[str, object]:
+        return {entry.label: entry.entry_data for entry in self._metadata_entries}
+
+    @property
     def display_name(self) -> str:
         """Either the name or key (if name is `None`) of the type, overridden in many subclasses"""
         return cast(str, self._name or self.key)
