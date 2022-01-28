@@ -16,43 +16,44 @@ import {LiveDataForNode} from './Utils';
 import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
 import { METADATA_ENTRY_FRAGMENT } from '../../runs/MetadataEntry';
 import { gql, useQuery } from '@apollo/client';
-import { SidebarAssetDetail, SidebarAssetDetail_repositoryOrError_Repository_usedSolid_definition, SidebarAssetDetail_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_type } from './types/SidebarAssetDetail';
-import { Loading } from '../../ui/Loading';
 import { isTableSchemaMetadataEntry, TableSchema } from '../../runs/TableSchema';
+import {
+  DagsterTypeForAssetOp,
+  DagsterTypeForAssetOp_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_type,
+} from './types/DagsterTypeForAssetOp';
 
-type DagsterTypeinfo = SidebarAssetDetail_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_type
-type SolidDefinition = SidebarAssetDetail_repositoryOrError_Repository_usedSolid_definition
-type AssetType = SidebarAssetDetail_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_type
+type AssetType = DagsterTypeForAssetOp_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_type;
 
-const extractOutputType = (result: SidebarAssetDetail): AssetType | null => {
+const extractOutputType = (result: DagsterTypeForAssetOp): AssetType | null => {
   if (result.repositoryOrError.__typename === 'Repository') {
     const outputType = result.repositoryOrError?.usedSolid?.definition.outputDefinitions[0]?.type;
     return outputType || null;
   } else {
     return null;
   }
-}
+};
 
 const AssetTypeInfoRoot = styled.div`
   display: flex;
   flex-direction: column;
   gap: 8px;
-`
+`;
 
 const AssetTypeInfo: React.FC<{type: AssetType | null}> = ({type}) => {
   if (type) {
     const tableSchemaEntry = type.metadataEntries.find(isTableSchemaMetadataEntry);
-    return <AssetTypeInfoRoot>
-      <Box padding={{vertical: 16, horizontal: 24}}>
-        <Description description={type.description || 'No description provided'} />
-      </Box>
-      {tableSchemaEntry && TableSchema(tableSchemaEntry)}
-    </AssetTypeInfoRoot>
+    return (
+      <AssetTypeInfoRoot>
+        <Box padding={{vertical: 16, horizontal: 24}}>
+          <Description description={type.description || 'No description provided'} />
+        </Box>
+        {tableSchemaEntry && TableSchema(tableSchemaEntry)}
+      </AssetTypeInfoRoot>
+    );
   } else {
     return null;
   }
-}
->>>>>>> 30aaa1369 ([dagit-type-metadata] table schema for assets)
+};
 
 export const SidebarAssetInfo: React.FC<{
   definition?: GraphExplorerSolidHandleFragment_solid_definition;
@@ -65,10 +66,13 @@ export const SidebarAssetInfo: React.FC<{
   const displayName = displayNameForAssetKey(node.assetKey);
   const repoAddress = buildRepoAddress(node.repository.name, node.repository.location.name);
 
-  const queryResult = useQuery<SidebarAssetDetail>(SIDEBAR_ASSET_DETAIL_QUERY, {
+  const queryResult = useQuery<DagsterTypeForAssetOp>(DAGSTER_TYPE_FOR_ASSET_OP_QUERY, {
     variables: {
-      repoSelector: { repositoryName: repoAddress.name, repositoryLocationName: repoAddress.location },
-      opName: definition.name,
+      repoSelector: {
+        repositoryName: repoAddress.name,
+        repositoryLocationName: repoAddress.location,
+      },
+      assetOpName: definition.name,
     },
     fetchPolicy: 'cache-and-network',
     partialRefetch: true,
@@ -104,7 +108,7 @@ export const SidebarAssetInfo: React.FC<{
 
       {queryResult.data && (
         <SidebarSection title="Type">
-          {queryResult.data && <AssetTypeInfo type={extractOutputType(queryResult.data)}/>}
+          {queryResult.data && <AssetTypeInfo type={extractOutputType(queryResult.data)} />}
         </SidebarSection>
       )}
 
@@ -144,12 +148,12 @@ const AssetCatalogLink = styled(Link)`
 
 // TODO: Not sure if it's best to run a new query here or alter an upstream
 // query to provide the needed info, but this will do for now.
-const SIDEBAR_ASSET_DETAIL_QUERY = gql`
-  query SidebarAssetDetail($repoSelector: RepositorySelector!, $opName: String!) {
+export const DAGSTER_TYPE_FOR_ASSET_OP_QUERY = gql`
+  query DagsterTypeForAssetOp($repoSelector: RepositorySelector!, $assetOpName: String!) {
     repositoryOrError(repositorySelector: $repoSelector) {
       ... on Repository {
         id
-        usedSolid(name: $opName) {
+        usedSolid(name: $assetOpName) {
           definition {
             outputDefinitions {
               type {
