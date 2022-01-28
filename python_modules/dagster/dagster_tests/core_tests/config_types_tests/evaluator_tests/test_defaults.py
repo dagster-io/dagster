@@ -35,22 +35,16 @@ def test_post_process_config():
     assert post_process_config(nullable_list_config_type, [None]).value == [None]
     assert post_process_config(nullable_list_config_type, None).value == []
 
-    keyed_collection_config_type = resolve_to_config_type({str: int})
-    assert post_process_config(keyed_collection_config_type, {"foo": 5}).value == {"foo": 5}
-    assert post_process_config(keyed_collection_config_type, None).value == {}
-    with pytest.raises(CheckError, match="Null keyed collection member not caught"):
-        assert post_process_config(keyed_collection_config_type, {"foo": None}).value == {
-            "foo": None
-        }
+    map_config_type = resolve_to_config_type({str: int})
+    assert post_process_config(map_config_type, {"foo": 5}).value == {"foo": 5}
+    assert post_process_config(map_config_type, None).value == {}
+    with pytest.raises(CheckError, match="Null map member not caught"):
+        assert post_process_config(map_config_type, {"foo": None}).value == {"foo": None}
 
-    nullable_keyed_collection_config_type = resolve_to_config_type({str: Noneable(int)})
-    assert post_process_config(nullable_keyed_collection_config_type, {"foo": 5}).value == {
-        "foo": 5
-    }
-    assert post_process_config(nullable_keyed_collection_config_type, {"foo": None}).value == {
-        "foo": None
-    }
-    assert post_process_config(nullable_keyed_collection_config_type, None).value == {}
+    nullable_map_config_type = resolve_to_config_type({str: Noneable(int)})
+    assert post_process_config(nullable_map_config_type, {"foo": 5}).value == {"foo": 5}
+    assert post_process_config(nullable_map_config_type, {"foo": None}).value == {"foo": None}
+    assert post_process_config(nullable_map_config_type, None).value == {}
 
     composite_config_type = resolve_to_config_type(
         {

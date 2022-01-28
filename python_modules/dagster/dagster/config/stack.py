@@ -24,15 +24,11 @@ class EvaluationStack(NamedTuple("_EvaluationStack", [("entries", List["Evaluati
     def for_array_index(self, list_index: int) -> "EvaluationStack":
         return EvaluationStack(entries=self.entries + [EvaluationStackListItemEntry(list_index)])
 
-    def for_keyed_collection_key(self, keyed_collection_key: object) -> "EvaluationStack":
-        return EvaluationStack(
-            entries=self.entries + [EvaluationStackKeyedCollectionKeyEntry(keyed_collection_key)]
-        )
+    def for_map_key(self, map_key: object) -> "EvaluationStack":
+        return EvaluationStack(entries=self.entries + [EvaluationStackMapKeyEntry(map_key)])
 
-    def for_keyed_collection_value(self, keyed_collection_key: object) -> "EvaluationStack":
-        return EvaluationStack(
-            entries=self.entries + [EvaluationStackKeyedCollectionValueEntry(keyed_collection_key)]
-        )
+    def for_map_value(self, map_key: object) -> "EvaluationStack":
+        return EvaluationStack(entries=self.entries + [EvaluationStackMapValueEntry(map_key)])
 
 
 class EvaluationStackEntry:  # marker interface
@@ -58,22 +54,20 @@ class EvaluationStackListItemEntry(
         return super(EvaluationStackListItemEntry, cls).__new__(cls, list_index)
 
 
-class EvaluationStackKeyedCollectionKeyEntry(
-    NamedTuple("EvaluationStackKeyedCollectionKeyEntry", [("keyed_collection_key", object)]),
+class EvaluationStackMapKeyEntry(
+    NamedTuple("EvaluationStackMapKeyEntry", [("map_key", object)]),
     EvaluationStackEntry,
 ):
-    def __new__(cls, keyed_collection_key: object):
-        return super(EvaluationStackKeyedCollectionKeyEntry, cls).__new__(cls, keyed_collection_key)
+    def __new__(cls, map_key: object):
+        return super(EvaluationStackMapKeyEntry, cls).__new__(cls, map_key)
 
 
-class EvaluationStackKeyedCollectionValueEntry(
-    NamedTuple("_EvaluationStackKeyedCollectionItemEntry", [("keyed_collection_key", object)]),
+class EvaluationStackMapValueEntry(
+    NamedTuple("_EvaluationStackMapItemEntry", [("map_key", object)]),
     EvaluationStackEntry,
 ):
-    def __new__(cls, keyed_collection_key: object):
-        return super(EvaluationStackKeyedCollectionValueEntry, cls).__new__(
-            cls, keyed_collection_key
-        )
+    def __new__(cls, map_key: object):
+        return super(EvaluationStackMapValueEntry, cls).__new__(cls, map_key)
 
 
 def get_friendly_path_msg(stack: EvaluationStack) -> str:
@@ -92,11 +86,11 @@ def get_friendly_path_info(stack: EvaluationStack) -> Tuple[str, str]:
                 comps.append(comp)
             elif isinstance(entry, EvaluationStackListItemEntry):
                 comps.append("[{i}]".format(i=entry.list_index))
-            elif isinstance(entry, EvaluationStackKeyedCollectionKeyEntry):
-                comp = ":" + repr(entry.keyed_collection_key) + ":key"
+            elif isinstance(entry, EvaluationStackMapKeyEntry):
+                comp = ":" + repr(entry.map_key) + ":key"
                 comps.append(comp)
-            elif isinstance(entry, EvaluationStackKeyedCollectionValueEntry):
-                comp = ":" + repr(entry.keyed_collection_key) + ":value"
+            elif isinstance(entry, EvaluationStackMapValueEntry):
+                comp = ":" + repr(entry.map_key) + ":value"
                 comps.append(comp)
             else:
                 check.failed("unsupported")

@@ -59,8 +59,8 @@ def _recursively_resolve_defaults(
         return _recurse_in_to_shape(context, config_value)
     elif kind == ConfigTypeKind.ARRAY:
         return _recurse_in_to_array(context, config_value)
-    elif kind == ConfigTypeKind.KEYED_COLLECTION:
-        return _recurse_in_to_keyed_collection(context, config_value)
+    elif kind == ConfigTypeKind.map:
+        return _recurse_in_to_map(context, config_value)
     elif kind == ConfigTypeKind.NONEABLE:
         if config_value is None:
             return EvaluateValueResult.for_value(None)
@@ -210,12 +210,10 @@ def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> Evalua
     return EvaluateValueResult.for_value(frozenlist([result.value for result in results]))
 
 
-def _recurse_in_to_keyed_collection(
-    context: TraversalContext, config_value: Any
-) -> EvaluateValueResult:
+def _recurse_in_to_map(context: TraversalContext, config_value: Any) -> EvaluateValueResult:
     check.invariant(
-        context.config_type.kind == ConfigTypeKind.KEYED_COLLECTION,
-        "Unexpected non keyed collection type",
+        context.config_type.kind == ConfigTypeKind.map,
+        "Unexpected non map type",
     )
 
     if not config_value:
@@ -224,13 +222,13 @@ def _recurse_in_to_keyed_collection(
     config_value = cast(Dict[object, object], config_value)
 
     if any((ck is None for ck in config_value.keys())):
-        check.failed("Null keyed collection key not caught in validation")
+        check.failed("Null map key not caught in validation")
     if context.config_type.inner_type.kind != ConfigTypeKind.NONEABLE:  # type: ignore
         if any((cv is None for cv in config_value.values())):
-            check.failed("Null keyed collection member not caught in validation")
+            check.failed("Null map member not caught in validation")
 
     results = {
-        key: _recursively_process_config(context.for_keyed_collection(key), item)
+        key: _recursively_process_config(context.for_map(key), item)
         for key, item in config_value.items()
     }
 

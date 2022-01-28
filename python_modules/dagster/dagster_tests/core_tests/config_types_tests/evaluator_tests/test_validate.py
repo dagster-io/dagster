@@ -2,9 +2,9 @@ from dagster import Field, Noneable, Permissive, ScalarUnion, Selector, Shape
 from dagster.config.errors import DagsterEvaluationErrorReason
 from dagster.config.field import resolve_to_config_type
 from dagster.config.stack import (
-    EvaluationStackKeyedCollectionKeyEntry,
-    EvaluationStackKeyedCollectionValueEntry,
     EvaluationStackListItemEntry,
+    EvaluationStackMapKeyEntry,
+    EvaluationStackMapValueEntry,
     EvaluationStackPathEntry,
 )
 from dagster.config.validate import validate_config
@@ -338,71 +338,71 @@ def test_selector_within_dict_no_subfields():
     )
 
 
-def test_evaluate_keyed_collection_string():
+def test_evaluate_map_string():
     result = validate_config({str: str}, {"x": "foo"})
     assert result.success
     assert result.value == {"x": "foo"}
 
 
-def test_evaluate_keyed_collection_int():
+def test_evaluate_map_int():
     result = validate_config({int: str}, {5: "foo"})
     assert result.success
     assert result.value == {5: "foo"}
 
 
-def test_evaluate_keyed_collection_bool():
+def test_evaluate_map_bool():
     result = validate_config({bool: int}, {False: 10})
     assert result.success
     assert result.value == {False: 10}
 
 
-def test_evaluate_keyed_collection_float():
+def test_evaluate_map_float():
     result = validate_config({float: bool}, {5.5: True})
     assert result.success
     assert result.value == {5.5: True}
 
 
-def test_evaluate_keyed_collection_error_item_mismatch():
+def test_evaluate_map_error_item_mismatch():
     result = validate_config({str: str}, {"x": 5})
     assert not result.success
     assert len(result.errors) == 1
     assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
 
-def test_evaluate_keyed_collection_error_key_mismatch():
+def test_evaluate_map_error_key_mismatch():
     result = validate_config({str: str}, {5: "foo"})
     assert not result.success
     assert len(result.errors) == 1
     assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
 
-def test_evaluate_keyed_collection_error_top_level_mismatch():
+def test_evaluate_map_error_top_level_mismatch():
     result = validate_config({str: str}, 1)
     assert not result.success
     assert len(result.errors) == 1
     assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
 
-def test_evaluate_double_keyed_collection():
+def test_evaluate_double_map():
     result = validate_config({str: {int: str}}, {"a": {5: "foo"}})
     assert result.success
     assert result.value == {"a": {5: "foo"}}
 
 
-def test_config_keyed_collection_in_dict():
-    nested_keyed_collection_type = {"nested_keyed_collection": {str: int}}
+def test_config_map_in_dict():
+    nested_map_type = {"nested_map": {str: int}}
 
-    value = {"nested_keyed_collection": {"a": 1, "b": 2}}
-    result = validate_config(nested_keyed_collection_type, value)
+    value = {"nested_map": {"a": 1, "b": 2}}
+    result = validate_config(nested_map_type, value)
     assert result.success
     assert result.value == value
 
 
-def test_config_keyed_collection_in_dict_error():
-    nested_keyed_collection = {"nested_keyed_collection": {str: int}}
+def test_config_map_in_dict_error():
+    nested_map = {"nested_map": {str: int}}
 
-    value = {"nested_keyed_collection": {"a": 1, "b": "bar", "c": 3}}
-    result = validate_config(nested_keyed_collection, value)
+    value = {"nested_map": {"a": 1, "b": "bar", "c": 3}}
+    result = validate_config(nested_map, value)
     assert not result.success
     assert len(result.errors) == 1
     error = result.errors[0]
@@ -410,17 +410,17 @@ def test_config_keyed_collection_in_dict_error():
     assert len(error.stack.entries) == 2
     stack_entry = error.stack.entries[0]
     assert isinstance(stack_entry, EvaluationStackPathEntry)
-    assert stack_entry.field_name == "nested_keyed_collection"
-    keyed_collection_entry = error.stack.entries[1]
-    assert isinstance(keyed_collection_entry, EvaluationStackKeyedCollectionValueEntry)
-    assert keyed_collection_entry.keyed_collection_key == "b"
+    assert stack_entry.field_name == "nested_map"
+    map_entry = error.stack.entries[1]
+    assert isinstance(map_entry, EvaluationStackMapValueEntry)
+    assert map_entry.map_key == "b"
 
 
-def test_config_keyed_collection_in_dict_error_double_error():
-    nested_keyed_collection = {"nested_keyed_collection": {str: int}}
+def test_config_map_in_dict_error_double_error():
+    nested_map = {"nested_map": {str: int}}
 
-    value = {"nested_keyed_collection": {"a": 1, 3: 3, "c": "asdf"}}
-    result = validate_config(nested_keyed_collection, value)
+    value = {"nested_map": {"a": 1, 3: 3, "c": "asdf"}}
+    result = validate_config(nested_map, value)
     assert not result.success
     assert len(result.errors) == 2
     error = result.errors[0]
@@ -428,13 +428,13 @@ def test_config_keyed_collection_in_dict_error_double_error():
     assert len(error.stack.entries) == 2
     stack_entry = error.stack.entries[0]
     assert isinstance(stack_entry, EvaluationStackPathEntry)
-    assert stack_entry.field_name == "nested_keyed_collection"
-    keyed_collection_entry = error.stack.entries[1]
-    assert isinstance(keyed_collection_entry, EvaluationStackKeyedCollectionKeyEntry)
-    assert keyed_collection_entry.keyed_collection_key == 3
-    keyed_collection_entry = result.errors[1].stack.entries[1]
-    assert isinstance(keyed_collection_entry, EvaluationStackKeyedCollectionValueEntry)
-    assert keyed_collection_entry.keyed_collection_key == "c"
+    assert stack_entry.field_name == "nested_map"
+    map_entry = error.stack.entries[1]
+    assert isinstance(map_entry, EvaluationStackMapKeyEntry)
+    assert map_entry.map_key == 3
+    map_entry = result.errors[1].stack.entries[1]
+    assert isinstance(map_entry, EvaluationStackMapValueEntry)
+    assert map_entry.map_key == "c"
 
 
 def test_evaluate_list_string():

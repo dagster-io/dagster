@@ -47,7 +47,7 @@ def _do_print(config_schema_snapshot, config_type_key, printer, with_lines=True)
         printer.append(" | ")
         _do_print(config_schema_snapshot, config_type_snap.non_scalar_type_key, printer)
         printer.append(")")
-    elif kind == ConfigTypeKind.KEYED_COLLECTION:
+    elif kind == ConfigTypeKind.map:
         line_break_fn("{")
         with printer.with_indent():
             printer.append("[")

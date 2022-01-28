@@ -49,10 +49,10 @@ def test_invalid_list_element():
         _ = List[Noneable(int)]
 
 
-def test_non_scalar_key_keyed_collection():
+def test_non_scalar_key_map():
     with pytest.raises(
         DagsterInvalidConfigDefinitionError,
-        match=re.escape("KeyedCollection dict must have a scalar type as its only key."),
+        match=re.escape("Map dict must have a scalar type as its only key."),
     ):
 
         @solid(config_schema={Noneable(int): str})

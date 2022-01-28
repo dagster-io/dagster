@@ -14,7 +14,7 @@ from dagster import (
 )
 from dagster.config.config_type import ConfigTypeKind
 from dagster.config.field import resolve_to_config_type
-from dagster.config.field_utils import KeyedCollection
+from dagster.config.field_utils import Map
 from dagster.core.snap import (
     ConfigEnumValueSnap,
     build_config_schema_snapshot,
@@ -156,33 +156,33 @@ def test_selector_of_things():
     assert field_snap.type_key == "Int"
 
 
-def test_basic_keyed_collection():
-    keyed_collection_snap = snap_from_dagster_type(KeyedCollection(str, int))
-    assert keyed_collection_snap.key.startswith("KeyedCollection")
-    child_type_keys = keyed_collection_snap.get_child_type_keys()
+def test_basic_map():
+    map_snap = snap_from_dagster_type(Map(str, int))
+    assert map_snap.key.startswith("Map")
+    child_type_keys = map_snap.get_child_type_keys()
     assert child_type_keys
     assert len(child_type_keys) == 2
     assert child_type_keys[0] == "String"
     assert child_type_keys[1] == "Int"
 
 
-def test_basic_keyed_collection_nested():
-    keyed_collection_snap = snap_from_dagster_type({int: {str: int}})
-    assert keyed_collection_snap.key.startswith("KeyedCollection")
-    child_type_keys = keyed_collection_snap.get_child_type_keys()
+def test_basic_map_nested():
+    map_snap = snap_from_dagster_type({int: {str: int}})
+    assert map_snap.key.startswith("Map")
+    child_type_keys = map_snap.get_child_type_keys()
     assert child_type_keys
     assert len(child_type_keys) == 2
     assert child_type_keys[0] == "Int"
-    assert child_type_keys[1] == "KeyedCollection.String.Int"
-    assert keyed_collection_snap.enum_values is None
+    assert child_type_keys[1] == "Map.String.Int"
+    assert map_snap.enum_values is None
 
 
-def test_keyed_collection_of_dict():
+def test_map_of_dict():
     inner_dict_dagster_type = Shape({"foo": Field(str)})
-    keyed_collection_of_dict_snap = snap_from_dagster_type({str: inner_dict_dagster_type})
+    map_of_dict_snap = snap_from_dagster_type({str: inner_dict_dagster_type})
 
-    assert keyed_collection_of_dict_snap.key.startswith("KeyedCollection")
-    child_type_keys = keyed_collection_of_dict_snap.get_child_type_keys()
+    assert map_of_dict_snap.key.startswith("Map")
+    child_type_keys = map_of_dict_snap.get_child_type_keys()
     assert child_type_keys
     assert len(child_type_keys) == 2
     assert child_type_keys[0] == "String"
@@ -200,8 +200,8 @@ def test_kitchen_sink():
                         Selector({"some_field": int, "more_list": Noneable([bool])})
                     ),
                 },
-                "keyed_collection": {
-                    str: {"keyed_collection_a": int, "keyed_collection_b": [str]},
+                "map": {
+                    str: {"map_a": int, "map_b": [str]},
                 },
             }
         ]
@@ -301,8 +301,8 @@ def test_kitchen_sink_break_out():
                         {"some_field": int, "noneable_list": Noneable([bool])}
                     ),
                 },
-                "keyed_collection": {
-                    str: {"keyed_collection_a": int, "keyed_collection_b": [str]},
+                "map": {
+                    str: {"map_a": int, "map_b": [str]},
                 },
             }
         ]
@@ -339,14 +339,12 @@ def test_kitchen_sink_break_out():
     list_bool = config_snaps[noneable_list_bool.inner_type_key]
     assert list_bool.kind == ConfigTypeKind.ARRAY
 
-    keyed_collection = config_snaps[dict_within_list.get_field("keyed_collection").type_key]
-    assert keyed_collection.kind == ConfigTypeKind.KEYED_COLLECTION
-    keyed_collection_dict = config_snaps[keyed_collection.inner_type_key]
-    assert len(keyed_collection_dict.fields) == 2
-    keyed_collection_a = config_snaps[
-        keyed_collection_dict.get_field("keyed_collection_a").type_key
-    ]
-    assert keyed_collection_a.kind == ConfigTypeKind.SCALAR
+    map = config_snaps[dict_within_list.get_field("map").type_key]
+    assert map.kind == ConfigTypeKind.map
+    map_dict = config_snaps[map.inner_type_key]
+    assert len(map_dict.fields) == 2
+    map_a = config_snaps[map_dict.get_field("map_a").type_key]
+    assert map_a.kind == ConfigTypeKind.SCALAR
 
 
 def test_multiple_modes():
