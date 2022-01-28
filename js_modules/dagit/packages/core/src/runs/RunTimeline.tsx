@@ -25,6 +25,7 @@ import {
 } from './RunStatuses';
 import {TimeElapsed} from './TimeElapsed';
 import {RunTimelineQuery, RunTimelineQueryVariables} from './types/RunTimelineQuery';
+import {LoadingSpinner} from '../ui/Loading';
 
 const ROW_HEIGHT = 24;
 const TIME_HEADER_HEIGHT = 36;
@@ -46,6 +47,8 @@ export type TimelineJob = {
   runs: TimelineRun[];
 };
 
+export type HourWindow = '1' | '6' | '12' | '24';
+
 export const makeJobKey = (repoAddress: RepoAddress, jobName: string) => {
   return `${jobName}-${repoAddressAsString(repoAddress)}`;
 };
@@ -53,12 +56,16 @@ export const makeJobKey = (repoAddress: RepoAddress, jobName: string) => {
 export const RunTimelineContainer = ({
   range,
   jobs,
+  hourWindow,
 }: {
   range: [number, number];
   jobs: TimelineJob[];
+  hourWindow: HourWindow;
 }) => {
   const [start, end] = range;
   const [jobsWithRuns, setJobsWithRuns] = React.useState<TimelineJob[]>([]);
+  const [loadedWindow, setLoadedWindow] = React.useState<HourWindow>();
+
   const {data, loading} = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(
     RUN_TIMELINE_QUERY,
     {
@@ -187,8 +194,12 @@ export const RunTimelineContainer = ({
     }, {} as {[jobKey: string]: number});
 
     setJobsWithRuns(jobs.sort((a, b) => earliest[a.key] - earliest[b.key]));
+    setLoadedWindow(hourWindow);
   }, [data, start, end, loading, jobsByKey]);
 
+  if (loading && hourWindow !== loadedWindow) {
+    return <LoadingSpinner purpose="section" />;
+  }
   return <RunTimeline range={[start, end]} jobs={jobsWithRuns} />;
 };
 
