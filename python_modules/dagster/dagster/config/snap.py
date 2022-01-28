@@ -112,16 +112,30 @@ class ConfigTypeSnap(
         )
 
     @property
+    def key_type_key(self) -> str:
+        # valid for KeyedCollection
+        check.invariant(self.kind == ConfigTypeKind.KEYED_COLLECTION)
+
+        type_param_keys = check.is_list(self.type_param_keys, of_type=str)
+        check.invariant(len(type_param_keys) == 2)
+        return type_param_keys[0]
+
+    @property
     def inner_type_key(self) -> str:
-        # valid for Noneable and Array
+        # valid for Noneable, KeyedCollection, and Array
         check.invariant(
             self.kind == ConfigTypeKind.NONEABLE
             or self.kind == ConfigTypeKind.ARRAY
             or self.kind == ConfigTypeKind.KEYED_COLLECTION
         )
+
         type_param_keys = check.is_list(self.type_param_keys, of_type=str)
-        check.invariant(len(type_param_keys) == 1)
-        return type_param_keys[0]
+        if self.kind == ConfigTypeKind.KEYED_COLLECTION:
+            check.invariant(len(type_param_keys) == 2)
+            return type_param_keys[1]
+        else:
+            check.invariant(len(type_param_keys) == 1)
+            return type_param_keys[0]
 
     @property
     def scalar_type_key(self) -> str:

@@ -28,6 +28,7 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.check import ParameterCheckError
 from dagster.config.errors import DagsterEvaluationErrorReason
 from dagster.config.field_utils import KeyedCollection, Shape, convert_potential_field
 from dagster.config.validate import process_config, validate_config
@@ -303,7 +304,7 @@ def test_permissive_multiple_required_fields_failing():
 def test_keyed_collection_passing():
     # Ensure long form works
     assert _validate(
-        Field(KeyedCollection(inner_type=str)),
+        Field(KeyedCollection(key_type=str, inner_type=str)),
         {
             "field_one": "value_one",
             "field_two": "value_two",
@@ -313,6 +314,14 @@ def test_keyed_collection_passing():
         "field_two": "value_two",
     }
 
+    assert (
+        _validate(
+            Field(KeyedCollection(key_type=int, inner_type=float)),
+            {5: 5.5, 3: 3.5},
+        )
+        == {5: 5.5, 3: 3.5}
+    )
+
     # Ensure short form works
     assert _validate(Field({str: int}), {"field_one": 2, "field_two": 5,},) == {
         "field_one": 2,
@@ -321,9 +330,48 @@ def test_keyed_collection_passing():
 
 
 def test_keyed_collection_failing():
+    with pytest.raises(ParameterCheckError):
+        _validate(
+            Field(KeyedCollection(key_type="asdf", inner_type=str)),
+            {
+                "field_one": "value_one",
+                "field_two": 2,
+            },
+        )
+
+    with pytest.raises(ParameterCheckError) as e:
+        _validate(
+            Field(KeyedCollection(Noneable(str), str)),
+            {
+                "field_one": "value_one",
+                "field_two": 2,
+            },
+        )
+    assert "must be a scalar" in str(e)
+
+    with pytest.raises(DagsterInvalidDefinitionError) as e:
+        _validate(
+            Field({55: str}),
+            {
+                "field_one": "value_one",
+                "field_two": 2,
+            },
+        )
+    assert "Invalid key" in str(e)
+
+    with pytest.raises(DagsterInvalidDefinitionError) as e:
+        _validate(
+            Field({Noneable(str): str}),
+            {
+                "field_one": "value_one",
+                "field_two": 2,
+            },
+        )
+    assert "Non-scalar key" in str(e)
+
     with pytest.raises(AssertionError):
         _validate(
-            Field(KeyedCollection(inner_type=str)),
+            Field(KeyedCollection(key_type=str, inner_type=str)),
             {
                 "field_one": "value_one",
                 "field_two": 2,
@@ -334,7 +382,7 @@ def test_keyed_collection_failing():
 def test_keyed_collection_shape_complex():
     # Long form
     assert _validate(
-        Field(KeyedCollection(Shape({"name": Field(str), "number": Field(int)}))),
+        Field(KeyedCollection(str, Shape({"name": Field(str), "number": Field(int)}))),
         {
             "foo": {
                 "name": "test_name",
@@ -389,7 +437,7 @@ def test_keyed_collection_shape_complex():
 
     with pytest.raises(AssertionError):
         _validate(
-            Field(KeyedCollection(Shape({"name": Field(str), "number": Field(int)}))),
+            Field(KeyedCollection(str, Shape({"name": Field(str), "number": Field(int)}))),
             {
                 "foo": {
                     "name": "test_name",
@@ -404,7 +452,7 @@ def test_keyed_collection_shape_complex():
 
     with pytest.raises(AssertionError):
         _validate(
-            Field(KeyedCollection(Shape({"name": Field(str), "number": Field(int)}))),
+            Field(KeyedCollection(str, Shape({"name": Field(str), "number": Field(int)}))),
             {
                 "foo": {
                     "name": "test_name",
@@ -921,7 +969,7 @@ def test_item_error_keyed_collection_path():
     assert rtm.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
     assert (
-        "Invalid scalar at path root:solids:required_keyed_collection_int_solid:config:bar"
+        "Invalid scalar at path root:solids:required_keyed_collection_int_solid:config:'bar'"
         in str(pe)
     )
 

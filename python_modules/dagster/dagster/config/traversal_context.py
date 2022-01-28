@@ -72,14 +72,22 @@ class ValidationContext(ContextData):
             stack=self.stack.for_array_index(index),
         )
 
-    def for_keyed_collection(self, key: str) -> "ValidationContext":
-        check.str_param(key, "key")
+    def for_keyed_collection_key(self, key: object) -> "ValidationContext":
+        return ValidationContext(
+            config_schema_snapshot=self.config_schema_snapshot,
+            config_type_snap=self.config_schema_snapshot.get_config_snap(
+                self.config_type_snap.key_type_key
+            ),
+            stack=self.stack.for_keyed_collection_key(key),
+        )
+
+    def for_keyed_collection_value(self, key: object) -> "ValidationContext":
         return ValidationContext(
             config_schema_snapshot=self.config_schema_snapshot,
             config_type_snap=self.config_schema_snapshot.get_config_snap(
                 self.config_type_snap.inner_type_key
             ),
-            stack=self.stack.for_keyed_collection_key(key),
+            stack=self.stack.for_keyed_collection_value(key),
         )
 
     def for_new_config_type_key(self, config_type_key: str) -> "ValidationContext":
@@ -167,15 +175,14 @@ class TraversalContext(ContextData):
             all_config_types=self.all_config_types,
         )
 
-    def for_keyed_collection(self, key: str) -> "TraversalContext":
-        check.str_param(key, "key")
+    def for_keyed_collection(self, key: object) -> "TraversalContext":
         return TraversalContext(
             config_schema_snapshot=self.config_schema_snapshot,
             config_type_snap=self.config_schema_snapshot.get_config_snap(
                 self.config_type_snap.inner_type_key
             ),
             config_type=self.config_type.inner_type,  # type: ignore
-            stack=self.stack.for_keyed_collection_key(key),
+            stack=self.stack.for_keyed_collection_value(key),
             traversal_type=self.traversal_type,
             all_config_types=self.all_config_types,
         )

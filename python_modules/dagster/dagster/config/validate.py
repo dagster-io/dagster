@@ -311,10 +311,12 @@ def validate_keyed_collection_config(
 
     if not isinstance(config_value, dict):
         return EvaluateValueResult.for_error(create_keyed_collection_error(context, config_value))
-    config_value = cast(Dict[str, object], config_value)
+    config_value = cast(Dict[object, object], config_value)
 
     evaluation_results = [
-        _validate_config(context.for_keyed_collection(key), config_item)
+        _validate_config(context.for_keyed_collection_key(key), key) for key in config_value.keys()
+    ] + [
+        _validate_config(context.for_keyed_collection_value(key), config_item)
         for key, config_item in config_value.items()
     ]
 

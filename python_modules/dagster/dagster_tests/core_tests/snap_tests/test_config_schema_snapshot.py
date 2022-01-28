@@ -157,21 +157,23 @@ def test_selector_of_things():
 
 
 def test_basic_keyed_collection():
-    keyed_collection_snap = snap_from_dagster_type(KeyedCollection(int))
+    keyed_collection_snap = snap_from_dagster_type(KeyedCollection(str, int))
     assert keyed_collection_snap.key.startswith("KeyedCollection")
     child_type_keys = keyed_collection_snap.get_child_type_keys()
     assert child_type_keys
-    assert len(child_type_keys) == 1
-    assert child_type_keys[0] == "Int"
+    assert len(child_type_keys) == 2
+    assert child_type_keys[0] == "String"
+    assert child_type_keys[1] == "Int"
 
 
 def test_basic_keyed_collection_nested():
-    keyed_collection_snap = snap_from_dagster_type({str: {str: int}})
+    keyed_collection_snap = snap_from_dagster_type({int: {str: int}})
     assert keyed_collection_snap.key.startswith("KeyedCollection")
     child_type_keys = keyed_collection_snap.get_child_type_keys()
     assert child_type_keys
-    assert len(child_type_keys) == 1
-    assert child_type_keys[0] == "KeyedCollection.Int"
+    assert len(child_type_keys) == 2
+    assert child_type_keys[0] == "Int"
+    assert child_type_keys[1] == "KeyedCollection.String.Int"
     assert keyed_collection_snap.enum_values is None
 
 
@@ -182,8 +184,9 @@ def test_keyed_collection_of_dict():
     assert keyed_collection_of_dict_snap.key.startswith("KeyedCollection")
     child_type_keys = keyed_collection_of_dict_snap.get_child_type_keys()
     assert child_type_keys
-    assert len(child_type_keys) == 1
-    assert child_type_keys[0].startswith("Shape")
+    assert len(child_type_keys) == 2
+    assert child_type_keys[0] == "String"
+    assert child_type_keys[1].startswith("Shape")
 
 
 def test_kitchen_sink():

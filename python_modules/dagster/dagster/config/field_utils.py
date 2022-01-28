@@ -143,19 +143,31 @@ class Shape(_ConfigHasFields):
 
 
 class KeyedCollection(ConfigType):
-    def __init__(self, inner_type):
+    def __init__(self, key_type, inner_type):
         from .field import resolve_to_config_type
 
+        self.key_type = resolve_to_config_type(key_type)
         self.inner_type = resolve_to_config_type(inner_type)
+
+        check.inst_param(self.key_type, "key_type", ConfigType)
+        check.inst_param(self.inner_type, "inner_type", ConfigType)
+        check.param_invariant(
+            self.key_type.kind == ConfigTypeKind.SCALAR, "key_type", "Key type must be a scalar"
+        )
+
         super(KeyedCollection, self).__init__(
-            key="KeyedCollection.{inner_type}".format(inner_type=self.inner_type.key),
-            type_params=[self.inner_type],
+            key="KeyedCollection.{key_type}.{inner_type}".format(
+                key_type=self.key_type.key, inner_type=self.inner_type.key
+            ),
+            type_params=[self.key_type, self.inner_type],
             kind=ConfigTypeKind.KEYED_COLLECTION,
         )
 
     @property
     def description(self):
-        return "Keyed Collection of {inner_type}".format(inner_type=self.key)
+        return "Keyed Collection {key_type} -> {inner_type}".format(
+            key_type=self.key_type.key, inner_type=self.inner_type.key
+        )
 
 
 def _define_permissive_dict_key(fields, description):
@@ -331,23 +343,30 @@ def expand_keyed_collection(
             original_root, the_dict, stack, "KeyedCollection dict must be of length 1"
         )
 
-    if str not in the_dict:
+    key = list(the_dict.keys())[0]
+    key_type = _convert_potential_type(original_root, key, stack)
+    if not key_type or not key_type.kind == ConfigTypeKind.SCALAR:
         raise DagsterInvalidConfigDefinitionError(
-            original_root, the_dict, stack, "KeyedCollection dict must have str as its only key"
+            original_root,
+            the_dict,
+            stack,
+            "KeyedCollection dict must have a scalar type as its only key. Got key {}".format(
+                repr(key)
+            ),
         )
 
-    inner_type = _convert_potential_type(original_root, the_dict[str], stack)
+    inner_type = _convert_potential_type(original_root, the_dict[key], stack)
     if not inner_type:
         raise DagsterInvalidConfigDefinitionError(
             original_root,
             the_dict,
             stack,
             "KeyedCollection must have a single value and contain a valid type i.e. {{str: int}}. Got item {}".format(
-                repr(the_dict[str])
+                repr(the_dict[key])
             ),
         )
 
-    return KeyedCollection(inner_type)
+    return KeyedCollection(key_type, inner_type)
 
 
 def convert_potential_field(potential_field: object) -> "Field":
@@ -358,10 +377,11 @@ def _convert_potential_type(original_root: object, potential_type, stack: List[s
     from .field import resolve_to_config_type
 
     if isinstance(potential_type, dict):
-        if str in potential_type:
-            return expand_keyed_collection(original_root, potential_type, stack)
-        else:
-            return Shape(_expand_fields_dict(original_root, potential_type, stack))
+        if len(potential_type) == 1:
+            key = list(potential_type.keys())[0]
+            if not isinstance(key, str) and _convert_potential_type(original_root, key, stack):
+                return expand_keyed_collection(original_root, potential_type, stack)
+        return Shape(_expand_fields_dict(original_root, potential_type, stack))
 
     if isinstance(potential_type, list):
         return expand_list(original_root, potential_type, stack)

@@ -221,8 +221,10 @@ def _recurse_in_to_keyed_collection(
     if not config_value:
         return EvaluateValueResult.for_value({})
 
-    config_value = cast(Dict[str, object], config_value)
+    config_value = cast(Dict[object, object], config_value)
 
+    if any((ck is None for ck in config_value.keys())):
+        check.failed("Null keyed collection key not caught in validation")
     if context.config_type.inner_type.kind != ConfigTypeKind.NONEABLE:  # type: ignore
         if any((cv is None for cv in config_value.values())):
             check.failed("Null keyed collection member not caught in validation")

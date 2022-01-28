@@ -52,48 +52,56 @@ def test_basic_keyed_collection_type_print():
     assert (
         print_config_type_to_string({str: int})
         == """{
-  *String: Int
+  [String]: Int
 }"""
     )
-    assert_inner_types({str: int}, int)
+    assert_inner_types({str: int}, int, str)
+
+    assert (
+        print_config_type_to_string({int: int})
+        == """{
+  [Int]: Int
+}"""
+    )
+    assert_inner_types({int: int}, int, int)
 
 
 def test_double_keyed_collection_type_print():
     assert (
         print_config_type_to_string({str: {str: int}})
         == """{
-  *String: {
-    *String: Int
+  [String]: {
+    [String]: Int
   }
 }"""
     )
     int_keyed_collection = {str: int}
     keyed_collection_int_keyed_collection = {str: int_keyed_collection}
-    assert_inner_types(keyed_collection_int_keyed_collection, Int, int_keyed_collection)
+    assert_inner_types(keyed_collection_int_keyed_collection, Int, int_keyed_collection, String)
 
 
 def test_list_keyed_collection_nullable_combos():
     # Don't care about newlines here for brevity's sake, those are tested elsewhere
-    assert print_config_type_to_string({str: [int]}, with_lines=False) == "{ *String: [Int] }"
+    assert print_config_type_to_string({str: [int]}, with_lines=False) == "{ [String]: [Int] }"
     assert (
         print_config_type_to_string(Noneable({str: [int]}), with_lines=False)
-        == "{ *String: [Int] }?"
+        == "{ [String]: [Int] }?"
     )
     assert (
         print_config_type_to_string({str: Noneable([int])}, with_lines=False)
-        == "{ *String: [Int]? }"
+        == "{ [String]: [Int]? }"
     )
     assert (
         print_config_type_to_string({str: [Noneable(int)]}, with_lines=False)
-        == "{ *String: [Int?] }"
+        == "{ [String]: [Int?] }"
     )
     assert (
         print_config_type_to_string(Noneable({str: [Noneable(int)]}), with_lines=False)
-        == "{ *String: [Int?] }?"
+        == "{ [String]: [Int?] }?"
     )
     assert (
         print_config_type_to_string(Noneable({str: Noneable([Noneable(int)])}), with_lines=False)
-        == "{ *String: [Int?]? }?"
+        == "{ [String]: [Int?]? }?"
     )
 
 
@@ -160,7 +168,7 @@ def test_single_level_dict_lists_keyed_collections_and_nullable():
   optional_int_field?: Int
   string_list_field: [String]
   zkeyed_collection_list_field: {
-    *String: Int
+    [String]: Int
   }
 }"""
 
@@ -171,9 +179,9 @@ def test_nested_dicts_and_keyed_collections():
     output = print_config_type_to_string({"field_one": {str: {"field_two": {str: int}}}})
     expected = """{
   field_one: {
-    *String: {
+    [String]: {
       field_two: {
-        *String: Int
+        [String]: Int
       }
     }
   }
