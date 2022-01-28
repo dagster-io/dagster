@@ -20,6 +20,8 @@ interface IOpSelectorProps {
   value: string[] | null;
   query: string | null;
   onChange: (value: string[] | null, query: string | null) => void;
+  flattenGraphs: boolean;
+  onFlattenGraphsChange: (v: boolean) => void;
   repoAddress: RepoAddress;
 }
 
@@ -53,11 +55,17 @@ const SOLID_SELECTOR_QUERY = gql`
 `;
 
 export const OpSelector = (props: IOpSelectorProps) => {
-  const {serverProvidedSubsetError, onChange, pipelineName, repoAddress} = props;
+  const {
+    serverProvidedSubsetError,
+    onChange,
+    pipelineName,
+    repoAddress,
+    onFlattenGraphsChange,
+  } = props;
   const [focused, setFocused] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const [flattenGraphs, setFlattenGraphs] = React.useState(false);
 
+  const flattenGraphs = props.flattenGraphs || false;
   const selector = {...repoAddressToSelector(repoAddress), pipelineName};
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
@@ -145,7 +153,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
             flattenGraphsEnabled={flattenGraphsEnabled}
             flattenGraphs={flattenGraphs}
             setFlattenGraphs={() => {
-              setFlattenGraphs(!flattenGraphs);
+              onFlattenGraphsChange(!flattenGraphs);
             }}
           />
         </ShortcutHandler>
