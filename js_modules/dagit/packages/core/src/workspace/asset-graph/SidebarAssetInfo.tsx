@@ -10,21 +10,20 @@ import {Description} from '../../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';
 import {GraphExplorerSolidHandleFragment_solid_definition} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {pluginForMetadata} from '../../plugins';
-import {RepoAddress} from '../types';
+import {buildRepoAddress} from '../buildRepoAddress';
 
 import {LiveDataForNode} from './Utils';
-import {AssetGraphQuery_pipelineOrError_Pipeline_assetNodes} from './types/AssetGraphQuery';
+import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
 
 export const SidebarAssetInfo: React.FC<{
-  definition: GraphExplorerSolidHandleFragment_solid_definition;
-  node: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
+  definition?: GraphExplorerSolidHandleFragment_solid_definition;
+  node: AssetGraphQuery_assetNodes;
   liveData: LiveDataForNode;
-  repoAddress: RepoAddress;
-}> = ({node, definition, repoAddress, liveData}) => {
-  const Plugin = pluginForMetadata(definition.metadata);
+}> = ({node, definition, liveData}) => {
+  const Plugin = pluginForMetadata(definition?.metadata || []);
   const {lastMaterialization} = liveData || {};
   const displayName = displayNameForAssetKey(node.assetKey);
-
+  const repoAddress = buildRepoAddress(node.repository.name, node.repository.location.name);
   return (
     <>
       <Box flex={{gap: 4, direction: 'column'}} margin={{left: 24, right: 12, vertical: 16}}>
@@ -48,7 +47,7 @@ export const SidebarAssetInfo: React.FC<{
           <Description description={node.description || 'No description provided'} />
         </Box>
 
-        {definition.metadata && Plugin && Plugin.SidebarComponent && (
+        {definition?.metadata && Plugin && Plugin.SidebarComponent && (
           <Plugin.SidebarComponent definition={definition} repoAddress={repoAddress} />
         )}
       </SidebarSection>

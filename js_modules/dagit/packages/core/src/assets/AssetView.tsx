@@ -114,7 +114,6 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
                 assets={[definition]}
                 assetJobName={definition.jobs[0].name}
                 title={lastMaterializedAt ? 'Rematerialize' : 'Materialize'}
-                repoAddress={repoAddress}
               />
             )}
           </Box>
@@ -140,12 +139,8 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               hasDefinition={!!definition}
             />
           </Box>
-        ) : definition && repoAddress ? (
-          <AssetNodeDefinition
-            repoAddress={repoAddress}
-            assetNode={definition}
-            liveDataByNode={liveDataByNode}
-          />
+        ) : definition ? (
+          <AssetNodeDefinition assetNode={definition} liveDataByNode={liveDataByNode} />
         ) : undefined}
       </div>
       {isDefinitionLoaded && (

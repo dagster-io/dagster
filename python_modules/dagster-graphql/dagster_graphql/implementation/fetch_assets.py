@@ -76,7 +76,7 @@ def get_asset_node(graphene_info, asset_key):
     from ..schema.errors import GrapheneAssetNotFoundError
 
     check.inst_param(asset_key, "asset_key", AssetKey)
-    node = next((n for n in get_asset_nodes(graphene_info) if n.assetKey == asset_key), None)
+    node = get_asset_nodes_by_asset_key(graphene_info).get(asset_key, None)
     if not node:
         return GrapheneAssetNotFoundError(asset_key=asset_key)
     return node

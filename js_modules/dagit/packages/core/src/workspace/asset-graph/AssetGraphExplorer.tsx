@@ -16,10 +16,9 @@ import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';
 import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {useDidLaunchEvent} from '../../runs/RunUtils';
+import {PipelineSelector} from '../../types/globalTypes';
 import {GraphQueryInput} from '../../ui/GraphQueryInput';
 import {Loading} from '../../ui/Loading';
-import {buildPipelineSelector} from '../WorkspaceContext';
-import {RepoAddress} from '../types';
 
 import {AssetLinks} from './AssetLinks';
 import {AssetNode, ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
@@ -40,23 +39,24 @@ import {AssetGraphLiveQuery, AssetGraphLiveQueryVariables} from './types/AssetGr
 import {
   AssetGraphQuery,
   AssetGraphQueryVariables,
-  AssetGraphQuery_pipelineOrError_Pipeline_assetNodes,
+  AssetGraphQuery_assetNodes,
 } from './types/AssetGraphQuery';
 import {useFindAssetInWorkspace} from './useFindAssetInWorkspace';
 
-type AssetNode = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
+type AssetNode = AssetGraphQuery_assetNodes;
 
 interface Props {
-  repoAddress: RepoAddress;
+  pipelineSelector?: PipelineSelector;
+  handles?: GraphExplorerSolidHandleFragment[];
+
   explorerPath: ExplorerPath;
-  handles: GraphExplorerSolidHandleFragment[];
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
 }
 
-function buildGraphQueryItems(nodes: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes[]) {
+function buildGraphQueryItems(nodes: AssetNode[]) {
   const items: {
     [name: string]: GraphQueryItem & {
-      node: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
+      node: AssetNode;
     };
   } = {};
 
@@ -77,12 +77,7 @@ function buildGraphQueryItems(nodes: AssetGraphQuery_pipelineOrError_Pipeline_as
 }
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
-  const {repoAddress, explorerPath} = props;
-  const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
-  const repositorySelector = {
-    repositoryLocationName: repoAddress.location,
-    repositoryName: repoAddress.name,
-  };
+  const {pipelineSelector, explorerPath} = props;
 
   const queryResult = useQuery<AssetGraphQuery, AssetGraphQueryVariables>(ASSETS_GRAPH_QUERY, {
     variables: {pipelineSelector},
@@ -95,7 +90,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     graphAssetKeys,
     applyingEmptyDefault,
   } = React.useMemo(() => {
-    if (queryResult.data?.pipelineOrError.__typename !== 'Pipeline') {
+    if (queryResult.data?.assetNodes === undefined) {
       return {
         graphAssetKeys: [],
         graphQueryItems: [],
@@ -103,7 +98,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
         applyingEmptyDefault: false,
       };
     }
-    const graphQueryItems = buildGraphQueryItems(queryResult.data.pipelineOrError.assetNodes);
+    const graphQueryItems = buildGraphQueryItems(queryResult.data.assetNodes);
     const {all, applyingEmptyDefault} = filterByQuery(graphQueryItems, explorerPath.opsQuery);
 
     return {
@@ -118,7 +113,13 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     ASSETS_GRAPH_LIVE_QUERY,
     {
       skip: graphAssetKeys.length === 0,
-      variables: {pipelineSelector, repositorySelector, assetKeys: graphAssetKeys},
+      variables: {
+        assetKeys: graphAssetKeys,
+        repositorySelector: {
+          repositoryLocationName: pipelineSelector?.repositoryLocationName || '',
+          repositoryName: pipelineSelector?.repositoryName || '',
+        },
+      },
       notifyOnNetworkStatusChange: true,
       pollInterval: 5 * 1000,
     },
@@ -129,9 +130,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
       return {};
     }
 
-    const {repositoryOrError, pipelineOrError} = liveResult.data;
-    const liveAssetNodes =
-      pipelineOrError.__typename === 'Pipeline' ? pipelineOrError.assetNodes : [];
+    const {repositoryOrError, assetNodes: liveAssetNodes} = liveResult.data;
     const inProgressRunsByStep =
       repositoryOrError.__typename === 'Repository' ? repositoryOrError.inProgressRunsByStep : [];
 
@@ -186,8 +185,7 @@ const AssetGraphExplorerWithData: React.FC<
   } & Props
 > = (props) => {
   const {
-    repoAddress,
-    handles,
+    handles = [],
     explorerPath,
     onChangeExplorerPath,
     liveDataQueryResult,
@@ -195,6 +193,7 @@ const AssetGraphExplorerWithData: React.FC<
     assetGraphData,
     graphQueryItems,
     applyingEmptyDefault,
+    pipelineSelector,
   } = props;
 
   const history = useHistory();
@@ -330,7 +329,6 @@ const AssetGraphExplorerWithData: React.FC<
                           }
                           selected={selectedGraphNodes.includes(graphNode)}
                           jobName={explorerPath.pipelineName}
-                          repoAddress={repoAddress}
                         />
                       )}
                     </foreignObject>
@@ -340,7 +338,7 @@ const AssetGraphExplorerWithData: React.FC<
             )}
           </SVGViewport>
 
-          {handles.length === 0 ? (
+          {Object.keys(assetGraphData.nodes).length === 0 ? (
             <EmptyDAGNotice nodeType="asset" isGraph />
           ) : applyingEmptyDefault ? (
             <LargeDAGNotice nodeType="asset" />
@@ -349,7 +347,6 @@ const AssetGraphExplorerWithData: React.FC<
           <div style={{position: 'absolute', right: 12, top: 12}}>
             <LaunchAssetExecutionButton
               title={titleForLaunch(selectedGraphNodes, liveDataByNode)}
-              repoAddress={repoAddress}
               assetJobName={explorerPath.pipelineName}
               assets={(selectedGraphNodes.length
                 ? selectedGraphNodes
@@ -390,11 +387,10 @@ const AssetGraphExplorerWithData: React.FC<
                     (h) => h.solid.definition.name === selectedGraphNodes[0].definition.opName,
                   )!.solid.definition
                 }
-                repoAddress={repoAddress}
               />
-            ) : (
-              <SidebarPipelineOrJobOverview repoAddress={repoAddress} explorerPath={explorerPath} />
-            )}
+            ) : pipelineSelector ? (
+              <SidebarPipelineOrJobOverview pipelineSelector={pipelineSelector} />
+            ) : undefined}
           </RightInfoPanelContent>
         </RightInfoPanel>
       }
@@ -404,7 +400,6 @@ const AssetGraphExplorerWithData: React.FC<
 
 const ASSETS_GRAPH_LIVE_QUERY = gql`
   query AssetGraphLiveQuery(
-    $pipelineSelector: PipelineSelector!
     $repositorySelector: RepositorySelector!
     $assetKeys: [AssetKeyInput!]
   ) {
@@ -418,14 +413,9 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
         }
       }
     }
-    pipelineOrError(params: $pipelineSelector) {
-      ... on Pipeline {
-        id
-        assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
-          id
-          ...AssetNodeLiveFragment
-        }
-      }
+    assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
+      id
+      ...AssetNodeLiveFragment
     }
   }
   ${IN_PROGRESS_RUNS_FRAGMENT}
@@ -433,20 +423,15 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
 `;
 
 const ASSETS_GRAPH_QUERY = gql`
-  query AssetGraphQuery($pipelineSelector: PipelineSelector!) {
-    pipelineOrError(params: $pipelineSelector) {
-      ... on Pipeline {
-        id
-        assetNodes {
-          id
-          ...AssetNodeFragment
-          dependencyKeys {
-            path
-          }
-          dependedByKeys {
-            path
-          }
-        }
+  query AssetGraphQuery($pipelineSelector: PipelineSelector) {
+    assetNodes(pipeline: $pipelineSelector) {
+      id
+      ...AssetNodeFragment
+      dependencyKeys {
+        path
+      }
+      dependedByKeys {
+        path
       }
     }
   }

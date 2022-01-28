@@ -9,24 +9,11 @@ import { PipelineSelector } from "./../../types/globalTypes";
 // GraphQL query operation: PipelineExplorerRootQuery
 // ====================================================
 
-export interface PipelineExplorerRootQuery_pipelineOrError_PipelineNotFoundError {
-  __typename: "PipelineNotFoundError" | "InvalidSubsetError" | "PythonError";
-}
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline_assetNodes {
+export interface PipelineExplorerRootQuery_assetNodes {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
 }
-
-export interface PipelineExplorerRootQuery_pipelineOrError_Pipeline {
-  __typename: "Pipeline";
-  id: string;
-  isAssetJob: boolean;
-  assetNodes: PipelineExplorerRootQuery_pipelineOrError_Pipeline_assetNodes[];
-}
-
-export type PipelineExplorerRootQuery_pipelineOrError = PipelineExplorerRootQuery_pipelineOrError_PipelineNotFoundError | PipelineExplorerRootQuery_pipelineOrError_Pipeline;
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -1217,7 +1204,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError {
 export type PipelineExplorerRootQuery_pipelineSnapshotOrError = PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineNotFoundError | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundError | PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError;
 
 export interface PipelineExplorerRootQuery {
-  pipelineOrError: PipelineExplorerRootQuery_pipelineOrError;
+  assetNodes: PipelineExplorerRootQuery_assetNodes[];
   pipelineSnapshotOrError: PipelineExplorerRootQuery_pipelineSnapshotOrError;
 }
 

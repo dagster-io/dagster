@@ -88,8 +88,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._latest_materialization = check.opt_inst_param(
             latest_materialization, "latest_materialization", EventLogEntry
         )
-        # we need a separate flag, because the asset might not have been materialized, so the None
-        # value has significance
+        # we need a separate flag, because the asset might not have been materialized,
+        # so the None value has significance
         self._fetched_materialization = check.bool_param(
             fetched_materialization, "fetched_materialization"
         )
@@ -100,6 +100,12 @@ class GrapheneAssetNode(graphene.ObjectType):
             opName=external_asset_node.op_name,
             description=external_asset_node.op_description,
         )
+
+    def get_external_asset_node(self):
+        return self._external_asset_node
+
+    def get_external_repository(self):
+        return self._external_repository
 
     def resolve_repository(self, graphene_info):
         loc = None
@@ -274,7 +280,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 else None
             )
         except ValueError:
-            before_timestamp = None
+            after_timestamp = None
 
         return [
             GrapheneObservationEvent(event=event)

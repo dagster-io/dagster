@@ -9,6 +9,7 @@ import {explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
 import {LiveData} from '../workspace/asset-graph/Utils';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -18,10 +19,14 @@ import {PartitionHealthSummary} from './PartitionHealthSummary';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeDefinition: React.FC<{
-  repoAddress: RepoAddress;
   assetNode: AssetNodeDefinitionFragment;
   liveDataByNode: LiveData;
-}> = ({repoAddress, assetNode, liveDataByNode}) => {
+}> = ({assetNode, liveDataByNode}) => {
+  const repoAddress = buildRepoAddress(
+    assetNode.repository.name,
+    assetNode.repository.location.name,
+  );
+
   return (
     <>
       <AssetDefinedInMultipleReposNotice assetId={assetNode.id} loadedFromRepo={repoAddress} />
@@ -97,11 +102,7 @@ export const AssetNodeDefinition: React.FC<{
             <Subheading>Upstream Assets ({assetNode.dependencies.length})</Subheading>
             <JobGraphLink repoAddress={repoAddress} assetNode={assetNode} direction="upstream" />
           </Box>
-          <AssetNodeList
-            items={assetNode.dependencies}
-            liveDataByNode={liveDataByNode}
-            repoAddress={repoAddress}
-          />
+          <AssetNodeList items={assetNode.dependencies} liveDataByNode={liveDataByNode} />
           <Box
             padding={{vertical: 16, left: 24, right: 12}}
             flex={{justifyContent: 'space-between'}}
@@ -110,11 +111,7 @@ export const AssetNodeDefinition: React.FC<{
             <Subheading>Downstream Assets ({assetNode.dependedBy.length})</Subheading>
             <JobGraphLink repoAddress={repoAddress} assetNode={assetNode} direction="downstream" />
           </Box>
-          <AssetNodeList
-            items={assetNode.dependedBy}
-            liveDataByNode={liveDataByNode}
-            repoAddress={repoAddress}
-          />
+          <AssetNodeList items={assetNode.dependedBy} liveDataByNode={liveDataByNode} />
         </Box>
       </Box>
     </>
@@ -164,6 +161,14 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
     jobs {
       id
       name
+    }
+    repository {
+      id
+      name
+      location {
+        id
+        name
+      }
     }
 
     ...AssetNodeFragment
