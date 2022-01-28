@@ -158,7 +158,7 @@ def test_asset_key_for_asset_with_namespace():
     @asset(
         ins={"foo": AssetIn(asset_key=AssetKey("asset_foo"))}
     )  # Should fail because asset_foo is defined with namespace, so has asset key ["hello", "asset_foo"]
-    def failing_asset(foo):
+    def failing_asset(foo):  # pylint: disable=unused-argument
         pass
 
     with pytest.raises(
