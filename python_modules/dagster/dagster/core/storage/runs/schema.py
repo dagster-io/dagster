@@ -91,7 +91,7 @@ db.Index("idx_run_status", RunsTable.c.status, mysql_length=32)
 db.Index(
     "idx_run_range",
     RunsTable.c.status,
-    RunsTable.c.update_timestamp.desc(),
+    RunsTable.c.update_timestamp,
     RunsTable.c.create_timestamp,
     mysql_length={
         "status": 32,

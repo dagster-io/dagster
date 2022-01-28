@@ -214,11 +214,11 @@ def create_run_range_indices():
         op.create_index(
             "idx_run_range",
             "runs",
-            ["status", db.text("update_timestamp desc"), "create_timestamp"],
+            ["status", "update_timestamp", "create_timestamp"],
             unique=False,
             mysql_length={
                 "status": 32,
-                "create_timestamp": 8,
                 "update_timestamp": 8,
+                "create_timestamp": 8,
             },
         )
