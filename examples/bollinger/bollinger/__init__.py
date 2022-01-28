@@ -6,7 +6,7 @@ warnings.filterwarnings("ignore", category=ExperimentalWarning)
 from .jobs import bollinger_sda, bollinger_vanilla
 from . import lib
 
-@repository
+@repository(name='bollinger')
 def repo():
     return [
         bollinger_sda,
