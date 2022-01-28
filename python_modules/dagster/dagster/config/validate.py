@@ -111,7 +111,7 @@ def _validate_config(context: ValidationContext, config_value: object) -> Evalua
         return validate_shape_config(context, config_value)
     elif kind == ConfigTypeKind.PERMISSIVE_SHAPE:
         return validate_permissive_shape_config(context, config_value)
-    elif kind == ConfigTypeKind.map:
+    elif kind == ConfigTypeKind.MAP:
         return validate_map_config(context, config_value)
     elif kind == ConfigTypeKind.ARRAY:
         return validate_array_config(context, config_value)
@@ -306,7 +306,7 @@ def validate_map_config(
     context: ValidationContext, config_value: object
 ) -> EvaluateValueResult[Dict[str, object]]:
     check.inst_param(context, "context", ValidationContext)
-    check.invariant(context.config_type_snap.kind == ConfigTypeKind.map)
+    check.invariant(context.config_type_snap.kind == ConfigTypeKind.MAP)
     check.not_none_param(config_value, "config_value")
 
     if not isinstance(config_value, dict):

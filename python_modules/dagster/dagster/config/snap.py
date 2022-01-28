@@ -114,7 +114,7 @@ class ConfigTypeSnap(
     @property
     def key_type_key(self) -> str:
         # valid for Map
-        check.invariant(self.kind == ConfigTypeKind.map)
+        check.invariant(self.kind == ConfigTypeKind.MAP)
 
         type_param_keys = check.is_list(self.type_param_keys, of_type=str)
         check.invariant(len(type_param_keys) == 2)
@@ -126,11 +126,11 @@ class ConfigTypeSnap(
         check.invariant(
             self.kind == ConfigTypeKind.NONEABLE
             or self.kind == ConfigTypeKind.ARRAY
-            or self.kind == ConfigTypeKind.map
+            or self.kind == ConfigTypeKind.MAP
         )
 
         type_param_keys = check.is_list(self.type_param_keys, of_type=str)
-        if self.kind == ConfigTypeKind.map:
+        if self.kind == ConfigTypeKind.MAP:
             check.invariant(len(type_param_keys) == 2)
             return type_param_keys[1]
         else:
@@ -302,7 +302,7 @@ def minimal_config_for_type_snap(
         return defaults.get(config_type_snap.given_name, "<unknown>")  # type: ignore
     elif config_type_snap.kind == ConfigTypeKind.ARRAY:
         return []
-    elif config_type_snap.kind == ConfigTypeKind.map:
+    elif config_type_snap.kind == ConfigTypeKind.MAP:
         return {}
     elif config_type_snap.kind == ConfigTypeKind.ENUM:
         # guard against the edge case that an enum is defined with zero options
