@@ -1,7 +1,7 @@
-import {Box, ColorsWIP, IconWIP} from '@dagster-io/ui';
+import {Box, ColorsWIP, IconWIP, StyledTable} from '@dagster-io/ui';
+import styled from 'styled-components/macro';
 import React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../../app/Util';
 import {AssetEvents} from '../../assets/AssetEvents';
@@ -14,6 +14,45 @@ import {buildRepoAddress} from '../buildRepoAddress';
 
 import {LiveDataForNode} from './Utils';
 import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
+import { METADATA_ENTRY_FRAGMENT } from '../../runs/MetadataEntry';
+import { gql, useQuery } from '@apollo/client';
+import { SidebarAssetDetail, SidebarAssetDetail_repositoryOrError_Repository_usedSolid_definition, SidebarAssetDetail_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_type } from './types/SidebarAssetDetail';
+import { Loading } from '../../ui/Loading';
+import { isTableSchemaMetadataEntry, TableSchema } from '../../runs/TableSchema';
+
+type DagsterTypeinfo = SidebarAssetDetail_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_type
+type SolidDefinition = SidebarAssetDetail_repositoryOrError_Repository_usedSolid_definition
+type AssetType = SidebarAssetDetail_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_type
+
+const extractOutputType = (result: SidebarAssetDetail): AssetType | null => {
+  if (result.repositoryOrError.__typename === 'Repository') {
+    const outputType = result.repositoryOrError?.usedSolid?.definition.outputDefinitions[0]?.type;
+    return outputType || null;
+  } else {
+    return null;
+  }
+}
+
+const AssetTypeInfoRoot = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`
+
+const AssetTypeInfo: React.FC<{type: AssetType | null}> = ({type}) => {
+  if (type) {
+    const tableSchemaEntry = type.metadataEntries.find(isTableSchemaMetadataEntry);
+    return <AssetTypeInfoRoot>
+      <Box padding={{vertical: 16, horizontal: 24}}>
+        <Description description={type.description || 'No description provided'} />
+      </Box>
+      {tableSchemaEntry && TableSchema(tableSchemaEntry)}
+    </AssetTypeInfoRoot>
+  } else {
+    return null;
+  }
+}
+>>>>>>> 30aaa1369 ([dagit-type-metadata] table schema for assets)
 
 export const SidebarAssetInfo: React.FC<{
   definition?: GraphExplorerSolidHandleFragment_solid_definition;
@@ -25,6 +64,17 @@ export const SidebarAssetInfo: React.FC<{
   const {lastMaterialization} = liveData || {};
   const displayName = displayNameForAssetKey(node.assetKey);
   const repoAddress = buildRepoAddress(node.repository.name, node.repository.location.name);
+
+  const queryResult = useQuery<SidebarAssetDetail>(SIDEBAR_ASSET_DETAIL_QUERY, {
+    variables: {
+      repoSelector: { repositoryName: repoAddress.name, repositoryLocationName: repoAddress.location },
+      opName: definition.name,
+    },
+    fetchPolicy: 'cache-and-network',
+    partialRefetch: true,
+    notifyOnNetworkStatusChange: true,
+  });
+
   return (
     <>
       <Box flex={{gap: 4, direction: 'column'}} margin={{left: 24, right: 12, vertical: 16}}>
@@ -33,7 +83,6 @@ export const SidebarAssetInfo: React.FC<{
           {displayName !== node.opName ? (
             <Box style={{opacity: 0.5}} flex={{gap: 6, alignItems: 'center'}}>
               <IconWIP name="op" size={16} />
-              {node.opName}
             </Box>
           ) : undefined}
         </SidebarTitle>
@@ -52,6 +101,12 @@ export const SidebarAssetInfo: React.FC<{
           <Plugin.SidebarComponent definition={definition} repoAddress={repoAddress} />
         )}
       </SidebarSection>
+
+      {queryResult.data && (
+        <SidebarSection title="Type">
+          {queryResult.data && <AssetTypeInfo type={extractOutputType(queryResult.data)}/>}
+        </SidebarSection>
+      )}
 
       {node.partitionDefinition && (
         <SidebarSection title="Partitions">
@@ -85,4 +140,33 @@ const AssetCatalogLink = styled(Link)`
   margin: -6px;
   align-items: center;
   white-space: nowrap;
+`;
+
+// TODO: Not sure if it's best to run a new query here or alter an upstream
+// query to provide the needed info, but this will do for now.
+const SIDEBAR_ASSET_DETAIL_QUERY = gql`
+  query SidebarAssetDetail($repoSelector: RepositorySelector!, $opName: String!) {
+    repositoryOrError(repositorySelector: $repoSelector) {
+      ... on Repository {
+        id
+        usedSolid(name: $opName) {
+          definition {
+            outputDefinitions {
+              type {
+                ... on DagsterType {
+                  name
+                  description
+                  metadataEntries {
+                    label
+                    ...MetadataEntryFragment
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  ${METADATA_ENTRY_FRAGMENT}
 `;
