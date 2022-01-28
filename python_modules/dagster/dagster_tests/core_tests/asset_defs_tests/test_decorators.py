@@ -118,12 +118,20 @@ def test_input_asset_key_and_namespace():
             assert arg1
 
 
-def test_input_namespace():
+def test_input_namespace_str():
     @asset(ins={"arg1": AssetIn(namespace="abc")})
     def my_asset(arg1):
         assert arg1
 
     assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey(["abc", "arg1"])
+
+
+def test_input_namespace_list():
+    @asset(ins={"arg1": AssetIn(namespace=["abc", "xyz"])})
+    def my_asset(arg1):
+        assert arg1
+
+    assert my_asset.op.input_defs[0].get_asset_key(None) == AssetKey(["abc", "xyz", "arg1"])
 
 
 def test_input_metadata():

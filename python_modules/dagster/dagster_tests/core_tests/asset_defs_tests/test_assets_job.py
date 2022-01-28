@@ -150,8 +150,8 @@ def test_asset_key_and_inferred():
     assert result.output_for_node("asset_baz") == 7
 
 
-def test_asset_key_for_asset_with_namespace():
-    @asset(namespace="hello")
+def test_asset_key_for_asset_with_namespace_list():
+    @asset(namespace=["hell", "o"])
     def asset_foo():
         return "foo"
 
@@ -165,6 +165,22 @@ def test_asset_key_for_asset_with_namespace():
         DagsterInvalidDefinitionError,
     ):
         build_assets_job("lol", [asset_foo, failing_asset])
+
+    @asset(ins={"foo": AssetIn(asset_key=AssetKey(["hell", "o", "asset_foo"]))})
+    def success_asset(foo):
+        return foo
+
+    job = build_assets_job("lol", [asset_foo, success_asset])
+
+    result = job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("success_asset") == "foo"
+
+
+def test_asset_key_for_asset_with_namespace_str():
+    @asset(namespace="hello")
+    def asset_foo():
+        return "foo"
 
     @asset(ins={"foo": AssetIn(asset_key=AssetKey(["hello", "asset_foo"]))})
     def success_asset(foo):
