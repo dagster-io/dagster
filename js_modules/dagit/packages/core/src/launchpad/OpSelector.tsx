@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, Checkbox, ColorsWIP, Popover} from '@dagster-io/ui';
+import {Box, ColorsWIP, Popover} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -56,13 +56,13 @@ export const OpSelector = (props: IOpSelectorProps) => {
   const {serverProvidedSubsetError, onChange, pipelineName, repoAddress} = props;
   const [focused, setFocused] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
-  const [explodeComposites, setExplodeComposites] = React.useState(false);
+  const [flattenGraphs, setFlattenGraphs] = React.useState(false);
 
   const selector = {...repoAddressToSelector(repoAddress), pipelineName};
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
   const {data, loading} = useQuery<OpSelectorQuery>(SOLID_SELECTOR_QUERY, {
-    variables: {selector: selector, requestScopeHandleID: explodeComposites ? undefined : ''},
+    variables: {selector: selector, requestScopeHandleID: flattenGraphs ? undefined : ''},
     fetchPolicy: 'cache-and-network',
   });
 
@@ -70,13 +70,13 @@ export const OpSelector = (props: IOpSelectorProps) => {
 
   const opHandles =
     data?.pipelineOrError.__typename === 'Pipeline'
-      ? explodeComposites
+      ? flattenGraphs
         ? explodeCompositesInHandleGraph(data.pipelineOrError.solidHandles)
         : data.pipelineOrError.solidHandles
       : [];
   const ops = opHandles.map((h) => h.solid);
-  const explodeCompositesEnabled =
-    explodeComposites || ops.some((f) => f.definition.__typename === 'CompositeSolidDefinition');
+  const flattenGraphsEnabled =
+    flattenGraphs || ops.some((f) => f.definition.__typename === 'CompositeSolidDefinition');
 
   const opsFetchError =
     (data?.pipelineOrError.__typename !== 'Pipeline' && data?.pipelineOrError.message) || null;
@@ -127,7 +127,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
           onShortcut={() => inputRef.current?.focus()}
         >
           <GraphQueryInput
-            width={(query !== '*' && query !== '') || focused ? 350 : 90}
+            width={(query !== '*' && query !== '') || focused || flattenGraphsEnabled ? 350 : 90}
             intent={errorMessage ? 'danger' : 'none'}
             items={ops}
             ref={inputRef}
@@ -142,20 +142,14 @@ export const OpSelector = (props: IOpSelectorProps) => {
               pipelineName: pipelineName,
               isJob,
             }}
-            explodeComposites={explodeComposites}
+            flattenGraphsEnabled={flattenGraphsEnabled}
+            flattenGraphs={flattenGraphs}
+            setFlattenGraphs={() => {
+              setFlattenGraphs(!flattenGraphs);
+            }}
           />
         </ShortcutHandler>
       </Popover>
-
-      {explodeCompositesEnabled && (
-        <Checkbox
-          label="Explode composites"
-          checked={explodeComposites ?? false}
-          onChange={() => {
-            setExplodeComposites(!explodeComposites);
-          }}
-        />
-      )}
     </Box>
   );
 };

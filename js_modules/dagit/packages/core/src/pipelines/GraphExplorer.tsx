@@ -213,7 +213,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
           {explodeCompositesEnabled && (
             <OptionsOverlay>
               <Checkbox
-                label="Explode composites"
+                label="Explode graphs"
                 checked={options.explodeComposites}
                 onChange={() => {
                   handleQueryChange('');

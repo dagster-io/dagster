@@ -2,12 +2,14 @@ import {Intent} from '@blueprintjs/core';
 import {
   Box,
   ButtonWIP,
+  Checkbox,
   ColorsWIP,
   IconWIP,
   MenuItemWIP,
   MenuWIP,
   Popover,
   TextInput,
+  Tooltip,
 } from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
@@ -37,7 +39,9 @@ interface GraphQueryInputProps {
     isJob: boolean;
   };
 
-  explodeComposites?: boolean;
+  flattenGraphsEnabled?: boolean;
+  flattenGraphs?: boolean;
+  setFlattenGraphs?: () => void;
   onChange: (value: string) => void;
   onKeyDown?: (e: React.KeyboardEvent<any>) => void;
   onFocus?: () => void;
@@ -203,11 +207,12 @@ export const GraphQueryInput = React.memo(
     };
 
     const uncomitted = (pendingValue || '*') !== (props.value || '*');
-    const explodeCompositesFlag = props.explodeComposites ? '!' : '';
+    const flattenGraphsFlag = props.flattenGraphs ? '!' : '';
 
     return (
       <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
         <Popover
+          enforceFocus={false}
           isOpen={focused}
           position="top-left"
           content={
@@ -253,6 +258,27 @@ export const GraphQueryInput = React.memo(
               style={{width: props.width || '30vw'}}
               className={props.className}
               ref={inputRef}
+              rightElement={
+                props.flattenGraphsEnabled ? (
+                  <Tooltip
+                    content={`${
+                      props.flattenGraphs ? 'Select flattened ops' : 'Select top-level nodes'
+                    }`}
+                    placement="right"
+                  >
+                    <div style={{position: 'absolute', right: '6px', top: '6px'}}>
+                      <Checkbox
+                        checked={props.flattenGraphs ?? false}
+                        onChange={() => {
+                          props.setFlattenGraphs?.();
+                          setFocused(true);
+                        }}
+                        format="switch"
+                      />
+                    </div>
+                  </Tooltip>
+                ) : undefined
+              }
             />
             {focused && uncomitted && <EnterHint>Enter</EnterHint>}
             {focused && props.linkToPreview && (
@@ -264,7 +290,7 @@ export const GraphQueryInput = React.memo(
                   onMouseDown={(e) => e.currentTarget.click()}
                   to={workspacePipelinePath({
                     ...props.linkToPreview,
-                    pipelineName: `${props.linkToPreview.pipelineName}~${explodeCompositesFlag}${pendingValue}`,
+                    pipelineName: `${props.linkToPreview.pipelineName}~${flattenGraphsFlag}${pendingValue}`,
                   })}
                 >
                   Graph Preview <IconWIP color={ColorsWIP.Link} name="open_in_new" />
@@ -337,7 +363,7 @@ const OpCountWrap = styled.div`
 
 const EnterHint = styled.div`
   position: absolute;
-  right: 6px;
+  right: 40px;
   top: 5px;
   border-radius: 5px;
   border: 1px solid ${ColorsWIP.Gray500};
