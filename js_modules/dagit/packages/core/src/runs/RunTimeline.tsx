@@ -58,28 +58,35 @@ export const RunTimelineContainer = ({
   jobs: TimelineJob[];
 }) => {
   const [start, end] = range;
-  const {data} = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(RUN_TIMELINE_QUERY, {
-    fetchPolicy: 'network-only',
-    notifyOnNetworkStatusChange: true,
-    variables: {
-      inProgressFilter: {
-        statuses: [RunStatus.CANCELING, RunStatus.STARTED],
-        createdBefore: end / 1000.0,
-      },
-      terminatedFilter: {
-        statuses: Array.from(doneStatuses),
-        createdBefore: end / 1000.0,
-        updatedAfter: start / 1000.0,
+  const [jobsWithRuns, setJobsWithRuns] = React.useState<TimelineJob[]>([]);
+  const {data, loading} = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(
+    RUN_TIMELINE_QUERY,
+    {
+      fetchPolicy: 'network-only',
+      notifyOnNetworkStatusChange: true,
+      variables: {
+        inProgressFilter: {
+          statuses: [RunStatus.CANCELING, RunStatus.STARTED],
+          createdBefore: end / 1000.0,
+        },
+        terminatedFilter: {
+          statuses: Array.from(doneStatuses),
+          createdBefore: end / 1000.0,
+          updatedAfter: start / 1000.0,
+        },
       },
     },
-  });
+  );
   const jobsByKey = React.useMemo(() => {
     return jobs.reduce((accum, job: TimelineJob) => {
       return {...accum, [job.key]: job};
     }, {} as {[key: string]: TimelineJob});
   }, [jobs]);
 
-  const jobsWithRuns = React.useMemo(() => {
+  React.useEffect(() => {
+    if (loading) {
+      return;
+    }
     const {unterminated, terminated, workspaceOrError} = data || {};
 
     const runsByJob: {[jobName: string]: TimelineRun[]} = {};
@@ -179,8 +186,8 @@ export const RunTimelineContainer = ({
       return {...accum, [job.key]: Math.min(...startTimes)};
     }, {} as {[jobKey: string]: number});
 
-    return jobs.sort((a, b) => earliest[a.key] - earliest[b.key]);
-  }, [data, start, end, jobsByKey]);
+    setJobsWithRuns(jobs.sort((a, b) => earliest[a.key] - earliest[b.key]));
+  }, [data, start, end, loading, jobsByKey]);
 
   return <RunTimeline range={[start, end]} jobs={jobsWithRuns} />;
 };
