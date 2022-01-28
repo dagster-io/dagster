@@ -1,6 +1,6 @@
 from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Union, cast
 
-from dagster import Field, Permissive, Selector, Shape, check, KeyedCollection
+from dagster import Field, KeyedCollection, Permissive, Selector, Shape, check
 from dagster.config.config_type import (
     Array,
     ConfigTypeKind,

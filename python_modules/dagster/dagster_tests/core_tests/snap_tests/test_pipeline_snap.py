@@ -4,12 +4,12 @@ import pytest
 from dagster import (
     Field,
     InputDefinition,
+    KeyedCollection,
     Nothing,
     OutputDefinition,
     Permissive,
     Selector,
     Shape,
-    KeyedCollection,
     pipeline,
     solid,
 )
