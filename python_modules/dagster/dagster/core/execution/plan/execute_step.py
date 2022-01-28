@@ -248,9 +248,10 @@ def _type_check_output(
 
     if not type_check.success:
         raise DagsterTypeCheckDidNotPass(
-            description='Type check failed for step output "{output_name}" - expected type "{dagster_type}".'.format(
-                output_name=output.output_name,
-                dagster_type=dagster_type.display_name,
+            description=(
+                f'Type check failed for step output "{output.output_name}" - '
+                f'expected type "{dagster_type.display_name}". '
+                f"Description: {type_check.description}"
             ),
             metadata_entries=type_check.metadata_entries,
             dagster_type=dagster_type,
