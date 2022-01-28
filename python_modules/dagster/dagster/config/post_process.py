@@ -59,7 +59,7 @@ def _recursively_resolve_defaults(
         return _recurse_in_to_shape(context, config_value)
     elif kind == ConfigTypeKind.ARRAY:
         return _recurse_in_to_array(context, config_value)
-    elif kind == ConfigTypeKind.map:
+    elif kind == ConfigTypeKind.MAP:
         return _recurse_in_to_map(context, config_value)
     elif kind == ConfigTypeKind.NONEABLE:
         if config_value is None:
@@ -212,7 +212,7 @@ def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> Evalua
 
 def _recurse_in_to_map(context: TraversalContext, config_value: Any) -> EvaluateValueResult:
     check.invariant(
-        context.config_type.kind == ConfigTypeKind.map,
+        context.config_type.kind == ConfigTypeKind.MAP,
         "Unexpected non map type",
     )
 

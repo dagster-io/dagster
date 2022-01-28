@@ -15,7 +15,7 @@ class ConfigTypeKind(PythonEnum):
     SELECTOR = "SELECTOR"
     STRICT_SHAPE = "STRICT_SHAPE"
     PERMISSIVE_SHAPE = "PERMISSIVE_SHAPE"
-    map = "map"
+    MAP = "MAP"
     SCALAR_UNION = "SCALAR_UNION"
 
     @staticmethod
@@ -34,7 +34,7 @@ class ConfigTypeKind(PythonEnum):
             kind == ConfigTypeKind.ARRAY
             or kind == ConfigTypeKind.NONEABLE
             or kind == ConfigTypeKind.SCALAR_UNION
-            or kind == ConfigTypeKind.map
+            or kind == ConfigTypeKind.MAP
         )
 
     @staticmethod

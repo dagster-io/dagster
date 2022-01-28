@@ -405,7 +405,7 @@ def construct_config_type_from_snap(
         return _construct_scalar_union_from_snap(config_type_snap, config_snap_map)
     elif config_type_snap.kind == ConfigTypeKind.ARRAY:
         return _construct_array_from_snap(config_type_snap, config_snap_map)
-    elif config_type_snap.kind == ConfigTypeKind.map:
+    elif config_type_snap.kind == ConfigTypeKind.MAP:
         return _construct_map_from_snap(config_type_snap, config_snap_map)
     elif config_type_snap.kind == ConfigTypeKind.NONEABLE:
         return _construct_noneable_from_snap(config_type_snap, config_snap_map)

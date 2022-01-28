@@ -182,7 +182,7 @@ class Map(ConfigType):
                 key_type=self.key_type.key, inner_type=self.inner_type.key
             ),
             type_params=[self.key_type, self.inner_type],
-            kind=ConfigTypeKind.map,
+            kind=ConfigTypeKind.MAP,
         )
 
     @property
