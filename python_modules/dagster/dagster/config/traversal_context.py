@@ -167,7 +167,7 @@ class TraversalContext(ContextData):
             all_config_types=self.all_config_types,
         )
 
-    def for_keyed_collection(self, key: int) -> "TraversalContext":
+    def for_keyed_collection(self, key: str) -> "TraversalContext":
         check.str_param(key, "key")
         return TraversalContext(
             config_schema_snapshot=self.config_schema_snapshot,
