@@ -10,6 +10,7 @@ from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 
 RUN_PARTITIONS = "run_partitions"
 RUN_START_END = "run_start_end"
+OVERWRITE_RUN_START_END = "overwrite_run_start_end"
 
 # for `dagster instance migrate`, paired with schema changes
 REQUIRED_DATA_MIGRATIONS = {
@@ -18,9 +19,17 @@ REQUIRED_DATA_MIGRATIONS = {
 # for `dagster instance reindex`, optionally run for better read performance
 OPTIONAL_DATA_MIGRATIONS = {
     RUN_START_END: lambda: migrate_run_start_end,
+    OVERWRITE_RUN_START_END: lambda: overwrite_run_start_end,  # fixes bad start/end times, stemming from non-UTC timestamps being written
 }
 
 RUN_CHUNK_SIZE = 100
+
+UNSTARTED_RUN_STATUSES = {
+    PipelineRunStatus.QUEUED,
+    PipelineRunStatus.NOT_STARTED,
+    PipelineRunStatus.MANAGED,
+    PipelineRunStatus.STARTING,
+}
 
 
 def chunked_run_iterator(storage, print_fn=None, chunk_size=RUN_CHUNK_SIZE):
@@ -95,13 +104,7 @@ def migrate_run_start_end(storage, print_fn=None):
         print_fn("Querying run and event log storage.")
 
     for run_record in chunked_run_records_iterator(storage, print_fn):
-        # Skip runs that have not yet started
-        if run_record.pipeline_run.status in {
-            PipelineRunStatus.QUEUED,
-            PipelineRunStatus.NOT_STARTED,
-            PipelineRunStatus.MANAGED,
-            PipelineRunStatus.STARTING,
-        }:
+        if run_record.pipeline_run.status in UNSTARTED_RUN_STATUSES:
             continue
 
         if run_record.start_time:
@@ -134,3 +137,20 @@ def add_run_stats(run_storage: RunStorage, run_id: str) -> None:
                 end_time=run_stats.end_time,
             )
         )
+
+
+def overwrite_run_start_end(storage, print_fn=None):
+    """
+    Utility method that updates the start and end times of historical runs using the completed
+    event log. This overwrites start/end times even if they exist on the run record, because they
+    may have been written with a non-UTC timestamp.
+    """
+
+    if print_fn:
+        print_fn("Querying run and event log storage.")
+
+    for run_record in chunked_run_records_iterator(storage, print_fn):
+        if run_record.pipeline_run.status in UNSTARTED_RUN_STATUSES:
+            continue
+
+        add_run_stats(storage, run_record.pipeline_run.run_id)

@@ -1,4 +1,5 @@
 import logging
+import time
 import uuid
 import zlib
 from abc import abstractmethod
@@ -141,15 +142,20 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         run_stats_cols_in_index = self.has_run_stats_index_cols()
 
         kwargs = {}
+
+        # consider changing the `handle_run_event` signature to get timestamp off of the
+        # EventLogEntry instead of the DagsterEvent, for consistency
+        now = time.time()
+
         if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:
-            kwargs["start_time"] = datetime_as_float(datetime.now())
+            kwargs["start_time"] = now
 
         if run_stats_cols_in_index and event.event_type in {
             DagsterEventType.PIPELINE_CANCELED,
             DagsterEventType.PIPELINE_FAILURE,
             DagsterEventType.PIPELINE_SUCCESS,
         }:
-            kwargs["end_time"] = datetime_as_float(datetime.now())
+            kwargs["end_time"] = now
 
         with self.connect() as conn:
 
