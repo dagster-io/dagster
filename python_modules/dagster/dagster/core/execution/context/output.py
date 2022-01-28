@@ -419,7 +419,7 @@ class OutputContext:
         else:
             check.failed("Unexpected event {event}".format(event=event))
 
-    def retrieve_events(self) -> Iterator["DagsterEvent"]:
+    def consume_events(self) -> Iterator["DagsterEvent"]:
         while self._events:
             yield self._events.pop(0)
 
