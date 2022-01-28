@@ -1,6 +1,6 @@
 import {Box, ColorsWIP, IconWIP, StyledTable} from '@dagster-io/ui';
 import styled from 'styled-components/macro';
-import React from 'react';
+import React, {useEffect, useLayoutEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
 
 import {displayNameForAssetKey} from '../../app/Util';
@@ -67,18 +67,27 @@ export const SidebarAssetInfo: React.FC<{
   const displayName = displayNameForAssetKey(node.assetKey);
 
   // TODO: not sure about the fetchPolicy etc here
-  const queryResult = useQuery<DagsterTypeForAssetOp>(DAGSTER_TYPE_FOR_ASSET_OP_QUERY, {
-    variables: {
-      repoSelector: {
-        repositoryName: repoAddress.name,
-        repositoryLocationName: repoAddress.location,
+  const {data: dagsterTypeQueryPayload} = useQuery<DagsterTypeForAssetOp>(
+    DAGSTER_TYPE_FOR_ASSET_OP_QUERY,
+    {
+      variables: {
+        repoSelector: {
+          repositoryName: repoAddress.name,
+          repositoryLocationName: repoAddress.location,
+        },
+        assetOpName: definition.name,
       },
-      assetOpName: definition.name,
+      fetchPolicy: 'cache-and-network',
+      partialRefetch: true,
+      notifyOnNetworkStatusChange: true,
     },
-    fetchPolicy: 'cache-and-network',
-    partialRefetch: true,
-    notifyOnNetworkStatusChange: true,
-  });
+  );
+  const [dagsterType, setDagsterType] = useState<AssetType | null>(null);
+  useEffect(() => {
+    if (dagsterTypeQueryPayload) {
+      setDagsterType(extractOutputType(dagsterTypeQueryPayload));
+    }
+  }, [dagsterTypeQueryPayload]);
 
   return (
     <>
@@ -97,19 +106,29 @@ export const SidebarAssetInfo: React.FC<{
         </AssetCatalogLink>
       </Box>
 
-      <SidebarSection title="Description">
-        <Box padding={{vertical: 16, horizontal: 24}}>
-          <Description description={node.description || 'No description provided'} />
-        </Box>
+      {(node.description || !dagsterType) && (
+        <>
+          <SidebarSection title="Description">
+            <Box padding={{vertical: 16, horizontal: 24}}>
+              <Description description={node.description || 'No description provided'} />
+            </Box>
 
-        {definition.metadata && Plugin && Plugin.SidebarComponent && (
-          <Plugin.SidebarComponent definition={definition} repoAddress={repoAddress} />
-        )}
-      </SidebarSection>
+            {definition.metadata && Plugin && Plugin.SidebarComponent && (
+              <Plugin.SidebarComponent definition={definition} repoAddress={repoAddress} />
+            )}
+          </SidebarSection>
 
-      {queryResult.data && (
+          {dagsterType && (
+            <SidebarSection title="Type">
+              <AssetTypeInfo type={dagsterType} />
+            </SidebarSection>
+          )}
+        </>
+      )}
+
+      {!node.description && dagsterType && (
         <SidebarSection title="Type">
-          {queryResult.data && <AssetTypeInfo type={extractOutputType(queryResult.data)} />}
+          <AssetTypeInfo type={dagsterType} />
         </SidebarSection>
       )}
 
