@@ -22,7 +22,7 @@ def test_kitchen_sink():
                 {"select_list_dict_field": [{"an_int": int}], "select_int": int}
             ),
             "keyed_collection_int": {str: int},
-            "keyed_collection_keyed_collection_int": {str: {str: int}},
+            "keyed_collection_keyed_collection_int": {int: {str: int}},
             "keyed_collection_dict_field": {str: {"an_int": int}},
             # this is a good argument to use () instead of [] for type parameterization in
             # the config system
@@ -41,7 +41,7 @@ def test_kitchen_sink():
         "list_dict_field": [{"an_int": 2}, {"an_int": 4}],
         "selector_of_things": {"select_int": 3},
         "keyed_collection_int": {"a": 1},
-        "keyed_collection_keyed_collection_int": {"a": {"b": 1}},
+        "keyed_collection_keyed_collection_int": {5: {"b": 1}},
         "keyed_collection_dict_field": {"a": {"an_int": 5}},
         "optional_list_of_optional_string": ["foo", None],
     }
@@ -63,7 +63,7 @@ def test_kitchen_sink():
         "list_dict_field": [{"an_int": 2}, {"an_int": 4}],
         "selector_of_things": {"select_list_dict_field": [{"an_int": 5}]},
         "keyed_collection_int": {"b": 2},
-        "keyed_collection_keyed_collection_int": {"b": {"b": 3}},
+        "keyed_collection_keyed_collection_int": {6: {"b": 3}},
         "keyed_collection_dict_field": {"b": {"an_int": 6}},
         "optional_list_of_optional_string": None,
     }

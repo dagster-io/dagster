@@ -24,9 +24,14 @@ class EvaluationStack(NamedTuple("_EvaluationStack", [("entries", List["Evaluati
     def for_array_index(self, list_index: int) -> "EvaluationStack":
         return EvaluationStack(entries=self.entries + [EvaluationStackListItemEntry(list_index)])
 
-    def for_keyed_collection_key(self, keyed_collection_key: str) -> "EvaluationStack":
+    def for_keyed_collection_key(self, keyed_collection_key: object) -> "EvaluationStack":
         return EvaluationStack(
-            entries=self.entries + [EvaluationStackKeyedCollectionItemEntry(keyed_collection_key)]
+            entries=self.entries + [EvaluationStackKeyedCollectionKeyEntry(keyed_collection_key)]
+        )
+
+    def for_keyed_collection_value(self, keyed_collection_key: object) -> "EvaluationStack":
+        return EvaluationStack(
+            entries=self.entries + [EvaluationStackKeyedCollectionValueEntry(keyed_collection_key)]
         )
 
 
@@ -53,13 +58,20 @@ class EvaluationStackListItemEntry(
         return super(EvaluationStackListItemEntry, cls).__new__(cls, list_index)
 
 
-class EvaluationStackKeyedCollectionItemEntry(
-    NamedTuple("_EvaluationStackKeyedCollectionItemEntry", [("keyed_collection_key", str)]),
+class EvaluationStackKeyedCollectionKeyEntry(
+    NamedTuple("EvaluationStackKeyedCollectionKeyEntry", [("keyed_collection_key", object)]),
     EvaluationStackEntry,
 ):
-    def __new__(cls, keyed_collection_key: str):
-        check.str_param(keyed_collection_key, "keyed_collection_key")
-        return super(EvaluationStackKeyedCollectionItemEntry, cls).__new__(
+    def __new__(cls, keyed_collection_key: object):
+        return super(EvaluationStackKeyedCollectionKeyEntry, cls).__new__(cls, keyed_collection_key)
+
+
+class EvaluationStackKeyedCollectionValueEntry(
+    NamedTuple("_EvaluationStackKeyedCollectionItemEntry", [("keyed_collection_key", object)]),
+    EvaluationStackEntry,
+):
+    def __new__(cls, keyed_collection_key: object):
+        return super(EvaluationStackKeyedCollectionValueEntry, cls).__new__(
             cls, keyed_collection_key
         )
 
@@ -80,8 +92,11 @@ def get_friendly_path_info(stack: EvaluationStack) -> Tuple[str, str]:
                 comps.append(comp)
             elif isinstance(entry, EvaluationStackListItemEntry):
                 comps.append("[{i}]".format(i=entry.list_index))
-            elif isinstance(entry, EvaluationStackKeyedCollectionItemEntry):
-                comp = ":" + entry.keyed_collection_key
+            elif isinstance(entry, EvaluationStackKeyedCollectionKeyEntry):
+                comp = ":" + repr(entry.keyed_collection_key) + ":key"
+                comps.append(comp)
+            elif isinstance(entry, EvaluationStackKeyedCollectionValueEntry):
+                comp = ":" + repr(entry.keyed_collection_key) + ":value"
                 comps.append(comp)
             else:
                 check.failed("unsupported")

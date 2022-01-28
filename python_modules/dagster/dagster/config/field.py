@@ -52,20 +52,36 @@ def resolve_to_config_type(dagster_type) -> Union[ConfigType, bool]:
         return dagster_type
 
     if isinstance(dagster_type, dict):
-        # Dicts of the special form {str: value} are treated as KeyedCollections
-        # mapping from strings to value type, otherwise treat as dict type
-        if str in dagster_type and len(dagster_type) == 1:
-            inner_type = resolve_to_config_type(dagster_type[str])
-
-            if not inner_type:
-                raise DagsterInvalidDefinitionError(
-                    "Invalid member of array specification: {value} in keyed collection {collection}".format(
-                        value=repr(dagster_type[str]), collection=dagster_type
+        # Dicts of the special form {type: value} are treated as KeyedCollections
+        # mapping from the type to value type, otherwise treat as dict type
+        if len(dagster_type) == 1:
+            key = list(dagster_type.keys())[0]
+            key_type = resolve_to_config_type(key)
+            if not isinstance(key, str):
+                if not key_type:
+                    raise DagsterInvalidDefinitionError(
+                        "Invalid key in keyed collection specification: {key} collection {collection}".format(
+                            key=repr(key), collection=dagster_type
+                        )
                     )
-                )
-            return KeyedCollection(inner_type)
-        else:
-            return convert_fields_to_dict_type(dagster_type)
+
+                if not key_type.kind == ConfigTypeKind.SCALAR:
+                    raise DagsterInvalidDefinitionError(
+                        "Non-scalar key in keyed collection specification: {key} collection {collection}".format(
+                            key=repr(key), collection=dagster_type
+                        )
+                    )
+
+                inner_type = resolve_to_config_type(dagster_type[key])
+
+                if not inner_type:
+                    raise DagsterInvalidDefinitionError(
+                        "Invalid value in keyed collection specification: {value} collection {collection}".format(
+                            value=repr(dagster_type[str]), collection=dagster_type
+                        )
+                    )
+                return KeyedCollection(key_type, inner_type)
+        return convert_fields_to_dict_type(dagster_type)
 
     if isinstance(dagster_type, list):
         if len(dagster_type) != 1:

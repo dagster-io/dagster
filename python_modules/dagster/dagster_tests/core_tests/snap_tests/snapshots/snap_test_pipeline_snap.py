@@ -4497,17 +4497,17 @@ snapshots['test_multi_type_config_array_dict_fields[Shape] 1'] = '''{
 
 snapshots['test_multi_type_config_array_keyed_collection 1'] = '''{
   "__class__": "ConfigTypeSnap",
-  "description": "List of Array.KeyedCollection.Int",
+  "description": "List of Array.KeyedCollection.String.Int",
   "enum_values": null,
   "fields": null,
   "given_name": null,
-  "key": "Array.KeyedCollection.Int",
+  "key": "Array.KeyedCollection.String.Int",
   "kind": {
     "__enum__": "ConfigTypeKind.ARRAY"
   },
   "scalar_kind": null,
   "type_param_keys": [
-    "KeyedCollection.Int"
+    "KeyedCollection.String.Int"
   ]
 }'''
 

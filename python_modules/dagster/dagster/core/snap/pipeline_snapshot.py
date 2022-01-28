@@ -352,17 +352,21 @@ def _construct_array_from_snap(config_type_snap, config_snap_map):
 def _construct_keyed_collection_from_snap(config_type_snap, config_snap_keyed_collection):
     check.list_param(config_type_snap.type_param_keys, "type_param_keys", str)
     check.invariant(
-        len(config_type_snap.type_param_keys) == 1,
-        "Expect KEYED_COLLECTION to provide a single inner type. Snapshot provided: {}".format(
+        len(config_type_snap.type_param_keys) == 2,
+        "Expect KEYED_COLLECTION to provide exactly two types. Snapshot provided: {}".format(
             config_type_snap.type_param_keys
         ),
     )
 
     return KeyedCollection(
-        inner_type=construct_config_type_from_snap(
+        key_type=construct_config_type_from_snap(
             config_snap_keyed_collection[config_type_snap.type_param_keys[0]],
             config_snap_keyed_collection,
-        )
+        ),
+        inner_type=construct_config_type_from_snap(
+            config_snap_keyed_collection[config_type_snap.type_param_keys[1]],
+            config_snap_keyed_collection,
+        ),
     )
 
 

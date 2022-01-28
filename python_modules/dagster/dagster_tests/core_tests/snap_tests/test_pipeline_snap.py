@@ -254,6 +254,7 @@ def _keyed_collection_has_stable_hashes(hydrated_keyed_collection, snapshot_conf
     assert isinstance(hydrated_keyed_collection, KeyedCollection)
     assert hydrated_keyed_collection.key in snapshot_config_snap_map
     assert hydrated_keyed_collection.inner_type.key in snapshot_config_snap_map
+    assert hydrated_keyed_collection.key_type.key in snapshot_config_snap_map
 
 
 def test_deserialize_solid_def_snaps_default_field():
@@ -481,7 +482,7 @@ def test_multi_type_config_array_dict_fields(dict_config_type, snapshot):
 
 
 def test_multi_type_config_array_keyed_collection(snapshot):
-    @solid(config_schema=Array(KeyedCollection(int)))
+    @solid(config_schema=Array(KeyedCollection(str, int)))
     def fancy_solid(_):
         pass
 
