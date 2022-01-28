@@ -2,7 +2,6 @@ import pandas as pd
 import pandera as pa
 from dagster_pandera import pandera_schema_to_dagster_type
 from pandera.typing import Series
-from playground.util import resolve_data_path
 
 # ****************************************************************************
 # ***** TYPES ****************************************************************

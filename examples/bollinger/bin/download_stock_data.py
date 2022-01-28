@@ -16,3 +16,5 @@ if not os.path.exists(DATA_ROOT):
 
 with open(TARGET_PATH, "wb") as f:
     f.write(requests.get(DATA_URL).content)
+
+print(f"Wrote to {TARGET_PATH}")
