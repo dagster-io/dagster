@@ -11,6 +11,7 @@ from dagster.core.definitions import (
     PipelineDefinition,
     SolidDefinition,
 )
+from dagster.core.definitions.event_metadata import EventMetadataEntry
 from dagster.serdes import whitelist_for_serdes
 
 from .dep_snapshot import (
@@ -53,6 +54,7 @@ class OutputDefSnap(
             ("dagster_type_key", str),
             ("description", Optional[str]),
             ("is_required", bool),
+            ("metadata_entries", List[EventMetadataEntry]),
             ("is_dynamic", bool),
         ],
     )
@@ -63,6 +65,7 @@ class OutputDefSnap(
         dagster_type_key: str,
         description: Optional[str],
         is_required: bool,
+        metadata_entries: List[EventMetadataEntry],
         is_dynamic: bool = False,
     ):
         return super(OutputDefSnap, cls).__new__(
@@ -71,6 +74,9 @@ class OutputDefSnap(
             dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
             description=check.opt_str_param(description, "description"),
             is_required=check.bool_param(is_required, "is_required"),
+            metadata_entries=check.opt_list_param(
+                metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            ),
             is_dynamic=check.bool_param(is_dynamic, "is_dynamic"),
         )
 
@@ -152,6 +158,7 @@ def build_output_def_snap(output_def: OutputDefinition) -> OutputDefSnap:
         dagster_type_key=output_def.dagster_type.key,
         description=output_def.description,
         is_required=output_def.is_required,
+        metadata_entries=output_def.metadata_entries,
         is_dynamic=output_def.is_dynamic,
     )
 
