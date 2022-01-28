@@ -109,6 +109,16 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
         ...MetadataEntryFragment
       }
     }
+    ... on ObservationEvent {
+      assetKey {
+        path
+      }
+      label
+      description
+      metadataEntries {
+        ...MetadataEntryFragment
+      }
+    }
     ... on RunFailureEvent {
       pipelineFailureError: error {
         ...PythonErrorFragment

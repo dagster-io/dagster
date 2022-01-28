@@ -10,7 +10,7 @@ import { DagsterEventType, LogLevel, ErrorSource, ObjectStoreOperationType } fro
 // ====================================================
 
 export interface LogsRowStructuredFragment_ExecutionStepSkippedEvent {
-  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "ObservationEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent";
+  __typename: "ExecutionStepSkippedEvent" | "ExecutionStepStartEvent" | "ExecutionStepSuccessEvent" | "ExecutionStepUpForRetryEvent" | "ExecutionStepRestartEvent" | "LogMessageEvent" | "RunStartEvent" | "RunEnqueuedEvent" | "RunDequeuedEvent" | "RunStartingEvent" | "RunCancelingEvent" | "RunCanceledEvent" | "RunSuccessEvent" | "HookCompletedEvent" | "HookSkippedEvent" | "AlertStartEvent" | "AlertSuccessEvent";
   message: string;
   eventType: DagsterEventType | null;
   timestamp: string;
@@ -119,6 +119,109 @@ export interface LogsRowStructuredFragment_MaterializationEvent {
   label: string;
   description: string | null;
   metadataEntries: LogsRowStructuredFragment_MaterializationEvent_metadataEntries[];
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry {
+  __typename: "EventTableSchemaMetadataEntry" | "EventTableMetadataEntry";
+  label: string;
+  description: string | null;
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventPathMetadataEntry {
+  __typename: "EventPathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventJsonMetadataEntry {
+  __typename: "EventJsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventUrlMetadataEntry {
+  __typename: "EventUrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTextMetadataEntry {
+  __typename: "EventTextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventMarkdownMetadataEntry {
+  __typename: "EventMarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventPythonArtifactMetadataEntry {
+  __typename: "EventPythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventFloatMetadataEntry {
+  __typename: "EventFloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventIntMetadataEntry {
+  __typename: "EventIntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventPipelineRunMetadataEntry {
+  __typename: "EventPipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventAssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventAssetMetadataEntry {
+  __typename: "EventAssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventAssetMetadataEntry_assetKey;
+}
+
+export type LogsRowStructuredFragment_ObservationEvent_metadataEntries = LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventPathMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventJsonMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventUrlMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTextMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventMarkdownMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventPythonArtifactMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventFloatMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventIntMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventPipelineRunMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventAssetMetadataEntry;
+
+export interface LogsRowStructuredFragment_ObservationEvent {
+  __typename: "ObservationEvent";
+  message: string;
+  eventType: DagsterEventType | null;
+  timestamp: string;
+  level: LogLevel;
+  stepKey: string | null;
+  assetKey: LogsRowStructuredFragment_ObservationEvent_assetKey | null;
+  label: string;
+  description: string | null;
+  metadataEntries: LogsRowStructuredFragment_ObservationEvent_metadataEntries[];
 }
 
 export interface LogsRowStructuredFragment_RunFailureEvent_pipelineFailureError_cause {
@@ -1010,4 +1113,4 @@ export interface LogsRowStructuredFragment_LogsCapturedEvent {
   stepKeys: string[] | null;
 }
 
-export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_MaterializationEvent | LogsRowStructuredFragment_RunFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent | LogsRowStructuredFragment_HandledOutputEvent | LogsRowStructuredFragment_LoadedInputEvent | LogsRowStructuredFragment_EngineEvent | LogsRowStructuredFragment_HookErroredEvent | LogsRowStructuredFragment_LogsCapturedEvent;
+export type LogsRowStructuredFragment = LogsRowStructuredFragment_ExecutionStepSkippedEvent | LogsRowStructuredFragment_MaterializationEvent | LogsRowStructuredFragment_ObservationEvent | LogsRowStructuredFragment_RunFailureEvent | LogsRowStructuredFragment_ExecutionStepFailureEvent | LogsRowStructuredFragment_ExecutionStepInputEvent | LogsRowStructuredFragment_ExecutionStepOutputEvent | LogsRowStructuredFragment_StepExpectationResultEvent | LogsRowStructuredFragment_ObjectStoreOperationEvent | LogsRowStructuredFragment_HandledOutputEvent | LogsRowStructuredFragment_LoadedInputEvent | LogsRowStructuredFragment_EngineEvent | LogsRowStructuredFragment_HookErroredEvent | LogsRowStructuredFragment_LogsCapturedEvent;
