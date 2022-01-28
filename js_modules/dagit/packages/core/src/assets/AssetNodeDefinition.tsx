@@ -15,13 +15,14 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
 import {AssetNodeList} from './AssetNodeList';
-import {PartitionHealthSummary} from './PartitionHealthSummary';
+import {PartitionHealthSummary, usePartitionHealthData} from './PartitionHealthSummary';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeDefinition: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
   liveDataByNode: LiveData;
 }> = ({assetNode, liveDataByNode}) => {
+  const partitionHealthData = usePartitionHealthData([assetNode.assetKey]);
   const repoAddress = buildRepoAddress(
     assetNode.repository.name,
     assetNode.repository.location.name,
@@ -84,7 +85,7 @@ export const AssetNodeDefinition: React.FC<{
                 flex={{direction: 'column', gap: 16}}
               >
                 <p>{assetNode.partitionDefinition}</p>
-                <PartitionHealthSummary assetKey={assetNode.assetKey} />
+                <PartitionHealthSummary assetKey={assetNode.assetKey} data={partitionHealthData} />
               </Box>
             </>
           )}

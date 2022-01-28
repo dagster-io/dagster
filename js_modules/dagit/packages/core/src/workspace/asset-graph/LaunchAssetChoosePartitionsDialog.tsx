@@ -8,8 +8,9 @@ import {
   ButtonWIP,
   ButtonLink,
   DialogFooter,
+  Alert,
 } from '@dagster-io/ui';
-import {flatten, pick} from 'lodash';
+import {pick, reject} from 'lodash';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
 import * as yaml from 'yaml';
@@ -18,12 +19,17 @@ import {AppContext} from '../../app/AppContext';
 import {SharedToaster} from '../../app/DomUtils';
 import {displayNameForAssetKey} from '../../app/Util';
 import {PartitionHealthSummary, usePartitionHealthData} from '../../assets/PartitionHealthSummary';
+import {AssetKey} from '../../assets/types';
 import {CONFIG_PARTITION_SELECTION_QUERY} from '../../launchpad/ConfigEditorConfigPicker';
 import {
   ConfigPartitionSelectionQuery,
   ConfigPartitionSelectionQueryVariables,
 } from '../../launchpad/types/ConfigPartitionSelectionQuery';
-import {PartitionRangeInput} from '../../partitions/PartitionRangeInput';
+import {
+  assembleIntoSpans,
+  PartitionRangeInput,
+  stringForSpan,
+} from '../../partitions/PartitionRangeInput';
 import {
   LAUNCH_PARTITION_BACKFILL_MUTATION,
   messageForLaunchBackfillError,
@@ -50,28 +56,27 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
   setOpen: (open: boolean) => void;
   repoAddress: RepoAddress;
   assetJobName: string;
-  assets: {assetKey: {path: string[]}; opName: string | null; partitionDefinition: string | null}[];
-}> = ({open, setOpen, assets, repoAddress, assetJobName}) => {
-  const data = usePartitionHealthData(assets[0].assetKey);
+  assets: {assetKey: AssetKey; opName: string | null; partitionDefinition: string | null}[];
+  upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
+}> = ({open, setOpen, assets, repoAddress, assetJobName, upstreamAssetKeys}) => {
+  const data = usePartitionHealthData(assets.map((a) => a.assetKey));
+  const upstreamData = usePartitionHealthData(upstreamAssetKeys);
+
+  const allKeys = data[0] ? data[0].keys : [];
+  const mostRecentKey = allKeys[allKeys.length - 1];
 
   const [selected, setSelected] = React.useState<string[]>([]);
   const [previewCount, setPreviewCount] = React.useState(4);
   const [launching, setLaunching] = React.useState(false);
 
-  const setMostRecent = () => setSelected([data.keys[data.keys.length - 1]]);
-  const setAll = () => setSelected([...data.keys]);
+  const setMostRecent = () => setSelected([mostRecentKey]);
+  const setAll = () => setSelected([...allKeys]);
   const setMissing = () =>
-    setSelected(
-      flatten(
-        data.spans
-          .filter((s) => s.status === false)
-          .map((s) => data.keys.slice(s.startIdx, s.endIdx + 1)),
-      ),
-    );
+    setSelected(allKeys.filter((key) => data.every((d) => !d.statusByPartition[key])));
 
   React.useEffect(() => {
-    setSelected([data.keys[data.keys.length - 1]]);
-  }, [data.keys]);
+    setSelected([mostRecentKey]);
+  }, [mostRecentKey]);
 
   const title = `Launch runs to materialize ${
     assets.length > 1 ? `${assets.length} assets` : displayNameForAssetKey(assets[0].assetKey)
@@ -208,6 +213,17 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
     }
   };
 
+  const upstreamUnavailable = (key: string) =>
+    upstreamData.length > 0 &&
+    upstreamData.some((a) => a.keys.includes(key) && !a.statusByPartition[key]);
+
+  const upstreamUnavailableSpans = assembleIntoSpans(selected, upstreamUnavailable).filter(
+    (s) => s.status === true,
+  );
+  const onRemoveUpstreamUnavailable = () => {
+    setSelected(reject(selected, upstreamUnavailable));
+  };
+
   return (
     <DialogWIP
       style={{width: 700}}
@@ -225,7 +241,7 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
               <PartitionRangeInput
                 value={selected}
                 onChange={setSelected}
-                partitionNames={data.keys}
+                partitionNames={allKeys}
               />
             </Box>
             <ButtonWIP small onClick={setMostRecent}>
@@ -248,6 +264,7 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
               assetKey={a.assetKey}
               showAssetKey
               key={displayNameForAssetKey(a.assetKey)}
+              data={data}
               selected={selected}
             />
           ))}
@@ -259,6 +276,24 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
             </Box>
           ) : undefined}
         </Box>
+        {upstreamUnavailableSpans.length > 0 && (
+          <Box margin={{top: 16}}>
+            <Alert
+              intent="warning"
+              title="Upstream Data Missing"
+              description={
+                <>
+                  {upstreamUnavailableSpans.map((span) => stringForSpan(span, selected)).join(', ')}
+                  {
+                    ' cannot be materialized because upstream materializations are missing. Consider materializing upstream assets or '
+                  }
+                  <a onClick={onRemoveUpstreamUnavailable}>remove these partitions</a>
+                  {` to avoid failures.`}
+                </>
+              }
+            />
+          </Box>
+        )}
       </DialogBody>
       <DialogFooter
         left={partitionSet && <RunningBackfillsNotice partitionSetName={partitionSet.name} />}
