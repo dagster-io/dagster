@@ -10,6 +10,7 @@ import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {InstigationStatus, RunStatus} from '../types/globalTypes';
+import {LoadingSpinner} from '../ui/Loading';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -25,7 +26,6 @@ import {
 } from './RunStatuses';
 import {TimeElapsed} from './TimeElapsed';
 import {RunTimelineQuery, RunTimelineQueryVariables} from './types/RunTimelineQuery';
-import {LoadingSpinner} from '../ui/Loading';
 
 const ROW_HEIGHT = 24;
 const TIME_HEADER_HEIGHT = 36;
@@ -195,7 +195,7 @@ export const RunTimelineContainer = ({
 
     setJobsWithRuns(jobs.sort((a, b) => earliest[a.key] - earliest[b.key]));
     setLoadedWindow(hourWindow);
-  }, [data, start, end, loading, jobsByKey]);
+  }, [data, start, end, loading, jobsByKey, hourWindow]);
 
   if (loading && hourWindow !== loadedWindow) {
     return <LoadingSpinner purpose="section" />;
