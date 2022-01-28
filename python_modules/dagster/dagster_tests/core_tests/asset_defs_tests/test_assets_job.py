@@ -257,7 +257,7 @@ def test_multiple_non_argument_deps():
     def foo():
         pass
 
-    @asset
+    @asset(namespace="namespace")
     def bar():
         pass
 
@@ -265,7 +265,7 @@ def test_multiple_non_argument_deps():
     def baz():
         return 1
 
-    @asset(non_argument_deps={AssetKey("foo"), AssetKey("bar")})
+    @asset(non_argument_deps={AssetKey("foo"), AssetKey(["namespace", "bar"])})
     def qux(baz):
         return baz
 
@@ -281,7 +281,7 @@ def test_multiple_non_argument_deps():
     assert index.get_upstream_outputs("qux", "foo") == [
         OutputHandleSnap("foo", "result"),
     ]
-    assert index.get_upstream_outputs("qux", "bar") == [OutputHandleSnap("bar", "result")]
+    assert index.get_upstream_outputs("qux", "namespace_bar") == [OutputHandleSnap("bar", "result")]
     assert index.get_upstream_outputs("qux", "baz") == [OutputHandleSnap("baz", "result")]
 
     result = job.execute_in_process()
