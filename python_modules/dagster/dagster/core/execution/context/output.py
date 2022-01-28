@@ -462,13 +462,58 @@ class OutputContext:
 
         return self._user_events
 
-    def log_metadata(self, metadata: Union[EventMetadataEntry, PartitionMetadataEntry]) -> None:
+    def add_metadata_entry(
+        self, metadata: Union[EventMetadataEntry, PartitionMetadataEntry]
+    ) -> None:
+        """Add a metadata entry to the handled output.
+
+        Metadata entries added will show up in the HANDLED_OUTPUT event for the run.
+
+        Args:
+            metadata (Union[EventMetadataEntry, PartitionMetadataEntry]): A metadata entry to log
+
+        Examples:
+
+        .. code-block:: python
+            from dagster import IOManager
+
+            class MyIOManager(IOManager):
+                def handle_output(self, context, obj):
+                    context.add_metadata_entry(EventMetadataEntry(...))
+        """
         self._metadata_entries.append(metadata)
 
     def get_metadata_entries(self) -> List[Union[EventMetadataEntry, PartitionMetadataEntry]]:
+        """Get the list of metadata entries that have been logged for use with this output."""
         return self._metadata_entries
 
     def scrub_metadata_entries(self) -> None:
+        """Delete all metadata entries that have been logged for use with the last output.
+
+        This will erase all logged metadata entries from memory, and is only recommended to be used in a testing context when passing the same OutputContext to multiple invocations of ``IOManager.handle_output``.
+
+        Examples:
+
+        .. code-block:: python
+            from dagster import IOManager, build_output_context
+
+            class MyFirstIOManager(IOManager):
+                ...
+
+            class MySecondIOManager(IOManager):
+                ...
+
+            def test_my_io_manager_handle_output():
+                context = build_output_context()
+                MyFirstIOManager().handle_output(context, ...)
+                metadata_entries = context.get_metadata_entries()
+                ... # do something with entries
+                context.scrub_events() # clear events before using in another io manager
+                MySecondIOManager().handle_output(context, ...)
+                ...
+
+
+        """
         self._metadata_entries = []
 
     def retrieve_metadata_entries(
