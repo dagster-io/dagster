@@ -48,7 +48,7 @@ def test_nullable_list_combos():
     assert print_config_type_to_string(Noneable([Noneable(int)])) == "[Int?]?"
 
 
-def test_basic_keyed_collection_type_print():
+def test_basic_map_type_print():
     assert (
         print_config_type_to_string({str: int})
         == """{
@@ -66,7 +66,7 @@ def test_basic_keyed_collection_type_print():
     assert_inner_types({int: int}, int, int)
 
 
-def test_double_keyed_collection_type_print():
+def test_double_map_type_print():
     assert (
         print_config_type_to_string({str: {str: int}})
         == """{
@@ -75,12 +75,12 @@ def test_double_keyed_collection_type_print():
   }
 }"""
     )
-    int_keyed_collection = {str: int}
-    keyed_collection_int_keyed_collection = {str: int_keyed_collection}
-    assert_inner_types(keyed_collection_int_keyed_collection, Int, int_keyed_collection, String)
+    int_map = {str: int}
+    map_int_map = {str: int_map}
+    assert_inner_types(map_int_map, Int, int_map, String)
 
 
-def test_list_keyed_collection_nullable_combos():
+def test_list_map_nullable_combos():
     # Don't care about newlines here for brevity's sake, those are tested elsewhere
     assert print_config_type_to_string({str: [int]}, with_lines=False) == "{ [String]: [Int] }"
     assert (
@@ -153,13 +153,13 @@ def test_optional_field():
     assert output == expected
 
 
-def test_single_level_dict_lists_keyed_collections_and_nullable():
+def test_single_level_dict_lists_maps_and_nullable():
     output = print_config_type_to_string(
         {
             "nullable_int_field": Noneable(int),
             "optional_int_field": Field(int, is_required=False),
             "string_list_field": [str],
-            "zkeyed_collection_list_field": {str: int},
+            "zmap_list_field": {str: int},
         }
     )
 
@@ -167,7 +167,7 @@ def test_single_level_dict_lists_keyed_collections_and_nullable():
   nullable_int_field?: Int?
   optional_int_field?: Int
   string_list_field: [String]
-  zkeyed_collection_list_field: {
+  zmap_list_field: {
     [String]: Int
   }
 }"""
@@ -175,7 +175,7 @@ def test_single_level_dict_lists_keyed_collections_and_nullable():
     assert output == expected
 
 
-def test_nested_dicts_and_keyed_collections():
+def test_nested_dicts_and_maps():
     output = print_config_type_to_string({"field_one": {str: {"field_two": {str: int}}}})
     expected = """{
   field_one: {

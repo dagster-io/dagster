@@ -142,7 +142,7 @@ class Shape(_ConfigHasFields):
         )
 
 
-class KeyedCollection(ConfigType):
+class Map(ConfigType):
     def __init__(self, key_type, inner_type):
         from .field import resolve_to_config_type
 
@@ -155,17 +155,17 @@ class KeyedCollection(ConfigType):
             self.key_type.kind == ConfigTypeKind.SCALAR, "key_type", "Key type must be a scalar"
         )
 
-        super(KeyedCollection, self).__init__(
-            key="KeyedCollection.{key_type}.{inner_type}".format(
+        super(Map, self).__init__(
+            key="Map.{key_type}.{inner_type}".format(
                 key_type=self.key_type.key, inner_type=self.inner_type.key
             ),
             type_params=[self.key_type, self.inner_type],
-            kind=ConfigTypeKind.KEYED_COLLECTION,
+            kind=ConfigTypeKind.map,
         )
 
     @property
     def description(self):
-        return "Keyed Collection {key_type} -> {inner_type}".format(
+        return "map {key_type} -> {inner_type}".format(
             key_type=self.key_type.key, inner_type=self.inner_type.key
         )
 
@@ -334,13 +334,11 @@ def expand_list(original_root: object, the_list: List[object], stack: List[str])
     return Array(inner_type)
 
 
-def expand_keyed_collection(
-    original_root: object, the_dict: Dict[object, object], stack: List[str]
-) -> KeyedCollection:
+def expand_map(original_root: object, the_dict: Dict[object, object], stack: List[str]) -> Map:
 
     if len(the_dict) != 1:
         raise DagsterInvalidConfigDefinitionError(
-            original_root, the_dict, stack, "KeyedCollection dict must be of length 1"
+            original_root, the_dict, stack, "Map dict must be of length 1"
         )
 
     key = list(the_dict.keys())[0]
@@ -350,9 +348,7 @@ def expand_keyed_collection(
             original_root,
             the_dict,
             stack,
-            "KeyedCollection dict must have a scalar type as its only key. Got key {}".format(
-                repr(key)
-            ),
+            "Map dict must have a scalar type as its only key. Got key {}".format(repr(key)),
         )
 
     inner_type = _convert_potential_type(original_root, the_dict[key], stack)
@@ -361,12 +357,12 @@ def expand_keyed_collection(
             original_root,
             the_dict,
             stack,
-            "KeyedCollection must have a single value and contain a valid type i.e. {{str: int}}. Got item {}".format(
+            "Map must have a single value and contain a valid type i.e. {{str: int}}. Got item {}".format(
                 repr(the_dict[key])
             ),
         )
 
-    return KeyedCollection(key_type, inner_type)
+    return Map(key_type, inner_type)
 
 
 def convert_potential_field(potential_field: object) -> "Field":
@@ -380,7 +376,7 @@ def _convert_potential_type(original_root: object, potential_type, stack: List[s
         if len(potential_type) == 1:
             key = list(potential_type.keys())[0]
             if not isinstance(key, str) and _convert_potential_type(original_root, key, stack):
-                return expand_keyed_collection(original_root, potential_type, stack)
+                return expand_map(original_root, potential_type, stack)
         return Shape(_expand_fields_dict(original_root, potential_type, stack))
 
     if isinstance(potential_type, list):

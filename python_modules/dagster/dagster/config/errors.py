@@ -254,11 +254,9 @@ def create_array_error(context, config_value):
     )
 
 
-def create_keyed_collection_error(context, config_value):
+def create_map_error(context, config_value):
     check.inst_param(context, "context", ContextData)
-    check.param_invariant(
-        context.config_type_snap.kind == ConfigTypeKind.KEYED_COLLECTION, "config_type"
-    )
+    check.param_invariant(context.config_type_snap.kind == ConfigTypeKind.map, "config_type")
 
     return EvaluationError(
         stack=context.stack,

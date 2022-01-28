@@ -47,7 +47,7 @@ def scaffold_type(config_type, skip_non_required=True):
         return defaults[config_type.given_name]
     elif config_type.kind == ConfigTypeKind.ARRAY:
         return []
-    elif config_type.kind == ConfigTypeKind.KEYED_COLLECTION:
+    elif config_type.kind == ConfigTypeKind.map:
         return {}
     elif config_type.kind == ConfigTypeKind.ENUM:
         return "|".join(sorted(map(lambda v: v.config_value, config_type.enum_values)))

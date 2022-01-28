@@ -52,27 +52,27 @@ def test_list_nullable_int():
     assert not validate_config(lni, [1, "absdf"]).success
 
 
-def test_keyed_collection_int():
-    keyed_collection_str_int = resolve_to_config_type({str: Int})
+def test_map_int():
+    map_str_int = resolve_to_config_type({str: Int})
 
-    assert validate_config(keyed_collection_str_int, {"a": 1}).success
-    assert validate_config(keyed_collection_str_int, {"a": 1, "b": 2}).success
-    assert validate_config(keyed_collection_str_int, {}).success
-    assert not validate_config(keyed_collection_str_int, {"a": None}).success
-    assert not validate_config(keyed_collection_str_int, {"a": 1, "b": None}).success
-    assert not validate_config(keyed_collection_str_int, None).success
-    assert not validate_config(keyed_collection_str_int, {"a": 1, "b": "absdf"}).success
-    assert not validate_config(keyed_collection_str_int, {"a": 1, 4: 4}).success
-    assert not validate_config(keyed_collection_str_int, {"a": 1, None: 4}).success
+    assert validate_config(map_str_int, {"a": 1}).success
+    assert validate_config(map_str_int, {"a": 1, "b": 2}).success
+    assert validate_config(map_str_int, {}).success
+    assert not validate_config(map_str_int, {"a": None}).success
+    assert not validate_config(map_str_int, {"a": 1, "b": None}).success
+    assert not validate_config(map_str_int, None).success
+    assert not validate_config(map_str_int, {"a": 1, "b": "absdf"}).success
+    assert not validate_config(map_str_int, {"a": 1, 4: 4}).success
+    assert not validate_config(map_str_int, {"a": 1, None: 4}).success
 
-    keyed_collection_int_int = resolve_to_config_type({Int: Int})
+    map_int_int = resolve_to_config_type({Int: Int})
 
-    assert validate_config(keyed_collection_int_int, {1: 1}).success
-    assert validate_config(keyed_collection_int_int, {2: 1, 3: 2}).success
-    assert validate_config(keyed_collection_int_int, {}).success
-    assert not validate_config(keyed_collection_int_int, {1: None}).success
-    assert not validate_config(keyed_collection_int_int, {1: 1, 2: None}).success
-    assert not validate_config(keyed_collection_int_int, None).success
-    assert not validate_config(keyed_collection_int_int, {1: 1, 2: "absdf"}).success
-    assert not validate_config(keyed_collection_int_int, {4: 1, "a": 4}).success
-    assert not validate_config(keyed_collection_int_int, {5: 1, None: 4}).success
+    assert validate_config(map_int_int, {1: 1}).success
+    assert validate_config(map_int_int, {2: 1, 3: 2}).success
+    assert validate_config(map_int_int, {}).success
+    assert not validate_config(map_int_int, {1: None}).success
+    assert not validate_config(map_int_int, {1: 1, 2: None}).success
+    assert not validate_config(map_int_int, None).success
+    assert not validate_config(map_int_int, {1: 1, 2: "absdf"}).success
+    assert not validate_config(map_int_int, {4: 1, "a": 4}).success
+    assert not validate_config(map_int_int, {5: 1, None: 4}).success

@@ -30,7 +30,7 @@ from dagster import (
 )
 from dagster.check import ParameterCheckError
 from dagster.config.errors import DagsterEvaluationErrorReason
-from dagster.config.field_utils import KeyedCollection, Shape, convert_potential_field
+from dagster.config.field_utils import Map, Shape, convert_potential_field
 from dagster.config.validate import process_config, validate_config
 
 
@@ -301,10 +301,10 @@ def test_permissive_multiple_required_fields_failing():
         )
 
 
-def test_keyed_collection_passing():
+def test_map_passing():
     # Ensure long form works
     assert _validate(
-        Field(KeyedCollection(key_type=str, inner_type=str)),
+        Field(Map(key_type=str, inner_type=str)),
         {
             "field_one": "value_one",
             "field_two": "value_two",
@@ -316,7 +316,7 @@ def test_keyed_collection_passing():
 
     assert (
         _validate(
-            Field(KeyedCollection(key_type=int, inner_type=float)),
+            Field(Map(key_type=int, inner_type=float)),
             {5: 5.5, 3: 3.5},
         )
         == {5: 5.5, 3: 3.5}
@@ -329,10 +329,10 @@ def test_keyed_collection_passing():
     }
 
 
-def test_keyed_collection_failing():
+def test_map_failing():
     with pytest.raises(ParameterCheckError):
         _validate(
-            Field(KeyedCollection(key_type="asdf", inner_type=str)),
+            Field(Map(key_type="asdf", inner_type=str)),
             {
                 "field_one": "value_one",
                 "field_two": 2,
@@ -341,7 +341,7 @@ def test_keyed_collection_failing():
 
     with pytest.raises(ParameterCheckError) as e:
         _validate(
-            Field(KeyedCollection(Noneable(str), str)),
+            Field(Map(Noneable(str), str)),
             {
                 "field_one": "value_one",
                 "field_two": 2,
@@ -371,7 +371,7 @@ def test_keyed_collection_failing():
 
     with pytest.raises(AssertionError):
         _validate(
-            Field(KeyedCollection(key_type=str, inner_type=str)),
+            Field(Map(key_type=str, inner_type=str)),
             {
                 "field_one": "value_one",
                 "field_two": 2,
@@ -379,10 +379,10 @@ def test_keyed_collection_failing():
         )
 
 
-def test_keyed_collection_shape_complex():
+def test_map_shape_complex():
     # Long form
     assert _validate(
-        Field(KeyedCollection(str, Shape({"name": Field(str), "number": Field(int)}))),
+        Field(Map(str, Shape({"name": Field(str), "number": Field(int)}))),
         {
             "foo": {
                 "name": "test_name",
@@ -437,7 +437,7 @@ def test_keyed_collection_shape_complex():
 
     with pytest.raises(AssertionError):
         _validate(
-            Field(KeyedCollection(str, Shape({"name": Field(str), "number": Field(int)}))),
+            Field(Map(str, Shape({"name": Field(str), "number": Field(int)}))),
             {
                 "foo": {
                     "name": "test_name",
@@ -452,7 +452,7 @@ def test_keyed_collection_shape_complex():
 
     with pytest.raises(AssertionError):
         _validate(
-            Field(KeyedCollection(str, Shape({"name": Field(str), "number": Field(int)}))),
+            Field(Map(str, Shape({"name": Field(str), "number": Field(int)}))),
             {
                 "foo": {
                     "name": "test_name",
@@ -918,48 +918,44 @@ def test_list_in_config_error():
             pass
 
 
-def test_working_keyed_collection_path():
+def test_working_map_path():
     called = {}
 
     @solid(config_schema={str: int})
-    def required_keyed_collection_int_solid(context):
+    def required_map_int_solid(context):
         assert context.solid_config == {"foo": 1, "bar": 2}
         called["yup"] = True
 
     @pipeline
     def pipeline_def():
-        required_keyed_collection_int_solid()
+        required_map_int_solid()
 
     result = execute_pipeline(
         pipeline_def,
-        run_config={
-            "solids": {"required_keyed_collection_int_solid": {"config": {"foo": 1, "bar": 2}}}
-        },
+        run_config={"solids": {"required_map_int_solid": {"config": {"foo": 1, "bar": 2}}}},
     )
 
     assert result.success
     assert called["yup"]
 
 
-def test_item_error_keyed_collection_path():
+def test_item_error_map_path():
     called = {}
 
     @solid(config_schema={str: int})
-    def required_keyed_collection_int_solid(context):
+    def required_map_int_solid(context):
         assert context.solid_config == {"foo": 1, "bar": 2}
         called["yup"] = True
 
     @pipeline
     def pipeline_def():
-        required_keyed_collection_int_solid()
+        required_map_int_solid()
 
     with pytest.raises(DagsterInvalidConfigError) as pe_info:
         execute_pipeline(
             pipeline_def,
             run_config={
-                "solids": {
-                    "required_keyed_collection_int_solid": {"config": {"foo": 1, "bar": "nope"}}
-                }
+                "solids": {"required_map_int_solid": {"config": {"foo": 1, "bar": "nope"}}}
             },
         )
 
@@ -968,10 +964,7 @@ def test_item_error_keyed_collection_path():
     rtm = pe.errors[0]
     assert rtm.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
 
-    assert (
-        "Invalid scalar at path root:solids:required_keyed_collection_int_solid:config:'bar'"
-        in str(pe)
-    )
+    assert "Invalid scalar at path root:solids:required_map_int_solid:config:'bar'" in str(pe)
 
 
 def test_required_resource_not_given():

@@ -8,7 +8,7 @@ from dagster.utils import is_enum_value
 from dagster.utils.typing_api import is_closed_python_optional_type, is_typing_type
 
 from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
-from .field_utils import FIELD_NO_DEFAULT_PROVIDED, KeyedCollection, all_optional_type
+from .field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, all_optional_type
 
 
 def _is_config_type_class(obj):
@@ -52,7 +52,7 @@ def resolve_to_config_type(dagster_type) -> Union[ConfigType, bool]:
         return dagster_type
 
     if isinstance(dagster_type, dict):
-        # Dicts of the special form {type: value} are treated as KeyedCollections
+        # Dicts of the special form {type: value} are treated as Maps
         # mapping from the type to value type, otherwise treat as dict type
         if len(dagster_type) == 1:
             key = list(dagster_type.keys())[0]
@@ -60,14 +60,14 @@ def resolve_to_config_type(dagster_type) -> Union[ConfigType, bool]:
             if not isinstance(key, str):
                 if not key_type:
                     raise DagsterInvalidDefinitionError(
-                        "Invalid key in keyed collection specification: {key} collection {collection}".format(
+                        "Invalid key in map specification: {key} in map {collection}".format(
                             key=repr(key), collection=dagster_type
                         )
                     )
 
                 if not key_type.kind == ConfigTypeKind.SCALAR:
                     raise DagsterInvalidDefinitionError(
-                        "Non-scalar key in keyed collection specification: {key} collection {collection}".format(
+                        "Non-scalar key in map specification: {key} in map {collection}".format(
                             key=repr(key), collection=dagster_type
                         )
                     )
@@ -76,11 +76,11 @@ def resolve_to_config_type(dagster_type) -> Union[ConfigType, bool]:
 
                 if not inner_type:
                     raise DagsterInvalidDefinitionError(
-                        "Invalid value in keyed collection specification: {value} collection {collection}".format(
+                        "Invalid value in map specification: {value} in map {collection}".format(
                             value=repr(dagster_type[str]), collection=dagster_type
                         )
                     )
-                return KeyedCollection(key_type, inner_type)
+                return Map(key_type, inner_type)
         return convert_fields_to_dict_type(dagster_type)
 
     if isinstance(dagster_type, list):
