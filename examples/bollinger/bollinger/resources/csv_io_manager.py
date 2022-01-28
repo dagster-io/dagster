@@ -1,7 +1,7 @@
 import os
 
 import pandas as pd
-from dagster import AssetKey, IOManager, io_manager
+from dagster import AssetKey, EventMetadataEntry, IOManager, io_manager
 
 
 class LocalCsvIOManager(IOManager):
@@ -19,6 +19,7 @@ class LocalCsvIOManager(IOManager):
         fpath = self._get_fs_path(context.asset_key)
         os.makedirs(os.path.dirname(fpath), exist_ok=True)
         obj.to_csv(fpath)
+        yield EventMetadataEntry.int(obj.shape[0], "Rows")
 
     def load_input(self, context):
         """This reads a dataframe from a CSV."""
