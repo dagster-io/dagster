@@ -143,6 +143,28 @@ class Shape(_ConfigHasFields):
 
 
 class Map(ConfigType):
+    """Defines a config dict with arbitrary scalar keys and typed values.
+
+    A map can contrain arbitrary keys of the specified scalar type, each of which has
+    type checked values. Unlike :py:class:`Shape` and :py:class:`Permissive`, scalar
+    keys other than strings can be used, and unlike :py:class:`Permissive`, all
+    values are type checked.
+
+    Args:
+        key_type (type):
+            The type of keys this map can contain. Must be a scalar type.
+        inner_type (type):
+            The type of the values that this map type can contain.
+
+    **Examples:**
+
+    .. code-block:: python
+
+        @op(config_schema=Field(Map({str: int})))
+        def partially_specified_config(context) -> List:
+            return sorted(list(context.op_config.items()))
+    """
+
     def __init__(self, key_type, inner_type):
         from .field import resolve_to_config_type
 

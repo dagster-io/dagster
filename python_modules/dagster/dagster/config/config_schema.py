@@ -28,6 +28,7 @@ class ConfigSchema:
        * :py:data:`~dagster.IntSource`
        * :py:data:`~dagster.Noneable`
        * :py:class:`~dagster.Permissive`
+       * :py:class:`~dagster.Map`
        * :py:class:`~dagster.ScalarUnion`
        * :py:class:`~dagster.Selector`
        * :py:class:`~dagster.Shape`
