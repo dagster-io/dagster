@@ -89,24 +89,39 @@ const NonNullableTag = <TagWIP intent="warning">non-nullable</TagWIP>;
 
 const UniqueTag = <TagWIP intent="success">unique</TagWIP>;
 
-const OtherTag: React.FC<{other: string[]}> = ({other}) => {
-  const content = (
-    <ColumnConstraintsTooltipContent>
-      {other.map((constraint, i) => (
-        <ColumnConstraintsTooltipContentItem key={i}>
-          {constraint}
-        </ColumnConstraintsTooltipContentItem>
-      ))}
-    </ColumnConstraintsTooltipContent>
-  );
-  return (
-    <Tooltip content={content}>
-      <TagWIP intent="warning">
-        {other.length} constraint{other.length === 1 ? '' : 's'}…
-      </TagWIP>
-    </Tooltip>
-  );
+const MAX_BADGE_CHARS = 30;
+
+const ArbitraryConstraintTag: React.FC<{constraint: string}> = ({constraint}) => {
+  if (constraint.length > MAX_BADGE_CHARS) {
+    const content = constraint.substring(0, MAX_BADGE_CHARS - 3) + '...';
+    return (
+      <Tooltip content={<div>{constraint}</div>}>
+        <TagWIP intent="warning">{content}</TagWIP>
+      </Tooltip>
+    );
+  } else {
+    return <TagWIP intent="warning">{constraint}</TagWIP>;
+  }
 };
+
+{/* const OtherTag: React.FC<{other: string[]}> = ({other}) => { */}
+{/*   const content = ( */}
+{/*     <ColumnConstraintsTooltipContent> */}
+{/*       {other.map((constraint, i) => ( */}
+{/*         <ColumnConstraintsTooltipContentItem key={i}> */}
+{/*           {constraint} */}
+{/*         </ColumnConstraintsTooltipContentItem> */}
+{/*       ))} */}
+{/*     </ColumnConstraintsTooltipContent> */}
+{/*   ); */}
+{/*   return ( */}
+{/*     <Tooltip content={content}> */}
+{/*       <TagWIP intent="warning"> */}
+{/*         {other.length} constraint{other.length === 1 ? '' : 's'}… */}
+{/*       </TagWIP> */}
+{/*     </Tooltip> */}
+{/*   ); */}
+{/* }; */}
 
 const ColumnItem: React.FC<{
   name: string;
@@ -121,7 +136,9 @@ const ColumnItem: React.FC<{
         <TypeTag type={type} />
         {!constraints.nullable && NonNullableTag}
         {constraints.unique && UniqueTag}
-        {constraints.other?.length > 0 && <OtherTag other={constraints.other} />}
+        {constraints.other.map((constraint, i) => (
+          <ArbitraryConstraintTag key={i} constraint={constraint} />
+        ))}
       </ColumnMetadata>
       {description && <ColumnDescription>{description}</ColumnDescription>}
     </ColumnItemContainer>
