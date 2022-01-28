@@ -17,6 +17,7 @@ class LocalCsvIOManager(IOManager):
     def handle_output(self, context, obj: pd.DataFrame):
         """This saves the dataframe as a CSV."""
         fpath = self._get_fs_path(context.asset_key)
+        os.makedirs(os.path.dirname(fpath), exist_ok=True)
         obj.to_csv(fpath)
 
     def load_input(self, context):
