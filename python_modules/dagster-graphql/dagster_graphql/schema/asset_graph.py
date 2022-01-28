@@ -11,7 +11,7 @@ from dagster.core.host_representation.external_data import (
 from . import external
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
-from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
+from .logs.events import GrapheneMaterializationEvent
 from .pipelines.pipeline import GrapheneMaterializationCount, GraphenePipeline
 from .util import non_null_list
 
