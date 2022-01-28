@@ -24,10 +24,7 @@ import {AssetViewParams} from './AssetView';
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {AssetEventGroup, groupByPartition} from './groupByPartition';
 import {AssetKey} from './types';
-import {
-  AssetMaterializationsQuery,
-  AssetMaterializationsQueryVariables,
-} from './types/AssetMaterializationsQuery';
+import {AssetEventsQuery, AssetEventsQueryVariables} from './types/AssetEventsQuery';
 
 interface Props {
   assetKey: AssetKey;
@@ -55,7 +52,7 @@ const LABEL_STEP_EXECUTION_TIME = 'Step Execution Time';
  * still show these "By partition" (and the gaps problem above exists), but we don't have
  * a choice.
  */
-function useRecentMaterializations(
+function useRecentAssetEvents(
   assetKey: AssetKey,
   assetHasDefinedPartitions: boolean,
   xAxis: 'partition' | 'time',
@@ -63,22 +60,22 @@ function useRecentMaterializations(
 ) {
   const loadUsingPartitionKeys = assetHasDefinedPartitions && xAxis === 'partition';
 
-  const {data, loading, refetch} = useQuery<
-    AssetMaterializationsQuery,
-    AssetMaterializationsQueryVariables
-  >(ASSET_MATERIALIZATIONS_QUERY, {
-    variables: loadUsingPartitionKeys
-      ? {
-          assetKey: {path: assetKey.path},
-          before: before,
-          partitionInLast: 120,
-        }
-      : {
-          assetKey: {path: assetKey.path},
-          before: before,
-          limit: 100,
-        },
-  });
+  const {data, loading, refetch} = useQuery<AssetEventsQuery, AssetEventsQueryVariables>(
+    ASSET_EVENTS_QUERY,
+    {
+      variables: loadUsingPartitionKeys
+        ? {
+            assetKey: {path: assetKey.path},
+            before: before,
+            partitionInLast: 120,
+          }
+        : {
+            assetKey: {path: assetKey.path},
+            before: before,
+            limit: 100,
+          },
+    },
+  );
 
   return React.useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
@@ -95,7 +92,7 @@ function useRecentMaterializations(
   }, [data, loading, refetch, loadUsingPartitionKeys]);
 }
 
-export const AssetMaterializations: React.FC<Props> = ({
+export const AssetEvents: React.FC<Props> = ({
   assetKey,
   assetLastMaterializedAt,
   assetHasDefinedPartitions,
@@ -120,7 +117,7 @@ export const AssetMaterializations: React.FC<Props> = ({
     observations,
     loading,
     refetch,
-  } = useRecentMaterializations(assetKey, assetHasDefinedPartitions, xAxis, before);
+  } = useRecentAssetEvents(assetKey, assetHasDefinedPartitions, xAxis, before);
 
   React.useEffect(() => {
     if (params.asOf) {
@@ -455,8 +452,8 @@ const extractNumericData = (datapoints: AssetEventGroup[], xAxis: 'time' | 'part
   return series;
 };
 
-const ASSET_MATERIALIZATIONS_QUERY = gql`
-  query AssetMaterializationsQuery(
+const ASSET_EVENTS_QUERY = gql`
+  query AssetEventsQuery(
     $assetKey: AssetKeyInput!
     $limit: Int
     $before: String

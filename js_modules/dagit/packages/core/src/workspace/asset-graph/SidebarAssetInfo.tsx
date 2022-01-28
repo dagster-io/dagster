@@ -4,8 +4,8 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../../app/Util';
-import {AssetMaterializations} from '../../assets/AssetEvents';
-import {PartitionHealthSummary} from '../../assets/PartitionHealthSummary';
+import {AssetEvents} from '../../assets/AssetEvents';
+import {PartitionHealthSummary, usePartitionHealthData} from '../../assets/PartitionHealthSummary';
 import {Description} from '../../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';
 import {GraphExplorerSolidHandleFragment_solid_definition} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
@@ -20,6 +20,7 @@ export const SidebarAssetInfo: React.FC<{
   node: AssetGraphQuery_assetNodes;
   liveData: LiveDataForNode;
 }> = ({node, definition, liveData}) => {
+  const partitionHealthData = usePartitionHealthData([node.assetKey]);
   const Plugin = pluginForMetadata(definition?.metadata || []);
   const {lastMaterialization} = liveData || {};
   const displayName = displayNameForAssetKey(node.assetKey);
@@ -56,14 +57,14 @@ export const SidebarAssetInfo: React.FC<{
         <SidebarSection title="Partitions">
           <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'column', gap: 16}}>
             <p>{node.partitionDefinition}</p>
-            <PartitionHealthSummary assetKey={node.assetKey} />
+            <PartitionHealthSummary assetKey={node.assetKey} data={partitionHealthData} />
           </Box>
         </SidebarSection>
       )}
 
       <div style={{borderBottom: `2px solid ${ColorsWIP.Gray300}`}} />
 
-      <AssetMaterializations
+      <AssetEvents
         assetKey={node.assetKey}
         assetLastMaterializedAt={lastMaterialization?.timestamp}
         assetHasDefinedPartitions={!!node.partitionDefinition}

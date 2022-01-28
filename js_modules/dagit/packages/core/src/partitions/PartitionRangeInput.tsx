@@ -62,6 +62,13 @@ export function assembleIntoSpans(keys: string[], keyTestFn: (key: string) => bo
   return spans;
 }
 
+export function stringForSpan(
+  {startIdx, endIdx}: {startIdx: number; endIdx: number},
+  all: string[],
+) {
+  return startIdx === endIdx ? all[startIdx] : `[${all[startIdx]}...${all[endIdx]}]`;
+}
+
 function placeholderForPartitions(names: string[]) {
   if (names.length < 4) {
     return `ex: ${names[0]}, ${names[1]}`;
@@ -100,12 +107,8 @@ function textToPartitions(selected: string, all: string[]) {
 }
 
 function partitionsToText(selected: string[], all: string[]) {
-  const spans = assembleIntoSpans(all, (key) => selected.includes(key));
-  const spanStrings = [];
-  for (const {startIdx, endIdx, status} of spans) {
-    if (status) {
-      spanStrings.push(startIdx === endIdx ? all[startIdx] : `[${all[startIdx]}...${all[endIdx]}]`);
-    }
-  }
-  return spanStrings.join(', ');
+  return assembleIntoSpans(all, (key) => selected.includes(key))
+    .filter((s) => s.status)
+    .map((s) => stringForSpan(s, all))
+    .join(', ');
 }
