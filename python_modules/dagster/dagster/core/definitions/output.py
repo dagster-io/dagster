@@ -4,6 +4,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    List,
     NamedTuple,
     Optional,
     Set,
@@ -13,6 +14,7 @@ from typing import (
 )
 
 from dagster import check
+from dagster.core.definitions.event_metadata import EventMetadataEntry, parse_metadata
 from dagster.core.definitions.events import AssetKey
 from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
@@ -91,7 +93,10 @@ class OutputDefinition:
         self._manager_key = check.opt_str_param(
             io_manager_key, "io_manager_key", default="io_manager"
         )
-        self._metadata = metadata
+        self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        self._metadata_entries = check.is_list(
+            parse_metadata(self._metadata, []), EventMetadataEntry
+        )
 
         if asset_key:
             experimental_arg_warning("asset_key", "OutputDefinition.__init__")
@@ -150,6 +155,10 @@ class OutputDefinition:
     @property
     def metadata(self):
         return self._metadata
+
+    @property
+    def metadata_entries(self):
+        return self._metadata_entries
 
     @property
     def is_dynamic(self):

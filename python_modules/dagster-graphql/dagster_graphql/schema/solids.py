@@ -6,7 +6,8 @@ from dagster.core.definitions import NodeHandle
 from dagster.core.host_representation import RepresentedPipeline
 from dagster.core.snap import CompositeSolidDefSnap, DependencyStructureIndex, SolidDefSnap
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
-from dagster_graphql.schema.logs.events import GrapheneRunStepStats
+from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.schema.logs.events import GrapheneEventMetadataEntry, GrapheneRunStepStats
 
 from .config_types import GrapheneConfigTypeField
 from .dagster_types import GrapheneDagsterType, to_dagster_type
@@ -58,6 +59,7 @@ class GrapheneOutputDefinition(graphene.ObjectType):
     description = graphene.String()
     is_dynamic = graphene.Boolean()
     type = graphene.NonNull(GrapheneDagsterType)
+    metadata_entries = non_null_list(GrapheneEventMetadataEntry)
 
     class Meta:
         name = "OutputDefinition"
@@ -86,6 +88,9 @@ class GrapheneOutputDefinition(graphene.ObjectType):
 
     def resolve_solid_definition(self, _graphene_info):
         return build_solid_definition(self._represented_pipeline, self._solid_def_snap.name)
+
+    def resolve_metadata_entries(self, _graphene_info):
+        return list(iterate_metadata_entries(self._output_def_snap.metadata_entries))
 
 
 class GrapheneInput(graphene.ObjectType):
