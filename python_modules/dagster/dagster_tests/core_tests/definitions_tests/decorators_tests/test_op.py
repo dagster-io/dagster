@@ -498,11 +498,11 @@ def test_error_message_mixed_ops_and_solids():
 def test_log_events():
     @op
     def basic_op(context):
-        context.log_event(AssetMaterialization("first"))
-        context.log_event(Materialization("second"))
-        context.log_event(AssetMaterialization("third"))
-        context.log_event(ExpectationResult(success=True))
-        context.log_event(AssetObservation("fourth"))
+        context.report_event(AssetMaterialization("first"))
+        context.report_event(Materialization("second"))
+        context.report_event(AssetMaterialization("third"))
+        context.report_event(ExpectationResult(success=True))
+        context.report_event(AssetObservation("fourth"))
 
     with instance_for_test() as instance:
         result = execute_op_in_graph(basic_op, instance=instance)
@@ -554,10 +554,10 @@ def test_log_events():
 def test_yield_event_ordering():
     @op
     def yielding_op(context):
-        context.log_event(AssetMaterialization("first"))
+        context.report_event(AssetMaterialization("first"))
         time.sleep(1)
         context.log.debug("A log")
-        context.log_event(AssetMaterialization("second"))
+        context.report_event(AssetMaterialization("second"))
         yield AssetMaterialization("third")
         yield Output("foo")
 
