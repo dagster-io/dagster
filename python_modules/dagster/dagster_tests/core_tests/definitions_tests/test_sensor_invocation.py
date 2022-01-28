@@ -4,10 +4,12 @@ import pytest
 from dagster import (
     DagsterInstance,
     DagsterInvariantViolationError,
+    PipelineRunStatus,
     RunRequest,
     SensorEvaluationContext,
     SensorExecutionContext,
     build_sensor_context,
+    run_status_sensor,
     sensor,
 )
 from dagster.core.errors import DagsterInvalidInvocationError
@@ -92,3 +94,15 @@ def test_instance_access_built_sensor():
 def test_instance_access_with_mock():
     mock_instance = mock.MagicMock(spec=DagsterInstance)
     assert build_sensor_context(instance=mock_instance).instance == mock_instance
+
+
+def test_run_status_sensor_invocation():
+    @run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
+    def the_sensor(_):
+        pass
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="Direct invocation of RunStatusSensors is not yet supported.",
+    ):
+        the_sensor(None)
