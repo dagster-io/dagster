@@ -384,12 +384,12 @@ class OutputContext:
     def log_event(
         self, event: Union[AssetObservation, AssetMaterialization, Materialization]
     ) -> None:
-        """Log an AssetMaterialization, AssetObservation, or ExpectationResult from within the body of an io manager's `handle_output` method.
+        """Log an AssetMaterialization or AssetObservation from within the body of an io manager's `handle_output` method.
 
         Events logged with this method will appear in the list of DagsterEvents, as well as the event log.
 
         Args:
-            event (Union[AssetMaterialization, Materialization, AssetObservation, ExpectationResult]): The event to log.
+            event (Union[AssetMaterialization, Materialization, AssetObservation]): The event to log.
 
         Examples:
 
@@ -420,6 +420,11 @@ class OutputContext:
             check.failed("Unexpected event {event}".format(event=event))
 
     def consume_events(self) -> Iterator["DagsterEvent"]:
+        """Yields all user-generated events that have been recorded from this context since the last consumption event.
+
+        Designed for internal use. Users should never need to invoke this method.
+        """
+
         while self._events:
             yield self._events.pop(0)
 
