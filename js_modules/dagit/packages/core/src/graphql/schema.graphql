@@ -54,7 +54,7 @@ type DagitQuery {
   assetNodes(
     pipeline: PipelineSelector
     assetKeys: [AssetKeyInput!]
-    loadMaterializations: Boolean = false
+    loadLatestMaterializations: Boolean = false
   ): [AssetNode!]!
   assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
@@ -697,13 +697,9 @@ type AssetNode {
   dependedBy: [AssetDependency!]!
   dependencyKeys: [AssetKey!]!
   dependedByKeys: [AssetKey!]!
-  assetMaterializations(
-    partitions: [String]
-    beforeTimestampMillis: String
-    limit: Int
-  ): [MaterializationEvent!]!
   partitionKeys: [String!]!
   partitionDefinition: String
+  latestMaterialization: MaterializationEvent
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
   materializationCountByPartition: [MaterializationCountByPartition!]!
 }

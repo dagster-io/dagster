@@ -126,6 +126,17 @@ GET_ASSET_PARTITIONS = """
     }
 """
 
+GET_LATEST_MATERIALIZATIONS = """
+    query AssetNodeQuery($pipelineSelector: PipelineSelector!) {
+        assetNodes(pipeline: $pipelineSelector) {
+            id
+            latestMaterialization {
+                partition
+            }
+        }
+    }
+"""
+
 GET_LATEST_MATERIALIZATION_PER_PARTITION = """
     query AssetNodeQuery($pipelineSelector: PipelineSelector!, $partitions: [String!]) {
         assetNodes(pipeline: $pipelineSelector) {
@@ -472,6 +483,20 @@ class TestAssetAwareEventLog(
         assert asset_node["partitionKeys"] and len(asset_node["partitionKeys"]) > 100
         assert asset_node["partitionKeys"][0] == "2021-05-05-01:00"
         assert asset_node["partitionKeys"][1] == "2021-05-05-02:00"
+
+    def test_latest_materialization(self, graphql_context):
+        _create_run(graphql_context, "partition_materialization_job")
+
+        selector = infer_pipeline_selector(graphql_context, "partition_materialization_job")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_LATEST_MATERIALIZATIONS,
+            variables={"pipelineSelector": selector},
+        )
+        assert result.data
+        assert result.data["assetNodes"]
+        asset_node = result.data["assetNodes"][0]
+        assert asset_node["latestMaterialization"]["partition"] == "c"
 
     def test_latest_materialization_per_partition(self, graphql_context):
         _create_run(graphql_context, "partition_materialization_job")

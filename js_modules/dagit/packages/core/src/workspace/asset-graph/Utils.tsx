@@ -6,7 +6,7 @@ import {AssetNodeDefinitionFragment} from '../../assets/types/AssetNodeDefinitio
 
 import {getNodeDimensions} from './AssetNode';
 import {getForeignNodeDimensions} from './ForeignNode';
-import {AssetGraphLiveQuery_assetNodes_assetMaterializations} from './types/AssetGraphLiveQuery';
+import {AssetGraphLiveQuery_assetNodes_latestMaterialization} from './types/AssetGraphLiveQuery';
 import {
   AssetGraphQuery_assetNodes,
   AssetGraphQuery_assetNodes_assetKey,
@@ -250,7 +250,7 @@ export interface LiveDataForNode {
   computeStatus: Status;
   unstartedRunIds: string[]; // run in progress and step not started
   inProgressRunIds: string[]; // run in progress and step in progress
-  lastMaterialization: AssetGraphLiveQuery_assetNodes_assetMaterializations | null;
+  lastMaterialization: AssetGraphLiveQuery_assetNodes_latestMaterialization | null;
   lastStepStart: number;
 }
 export interface LiveData {
@@ -270,7 +270,7 @@ export const buildLiveData = (
       continue;
     }
 
-    const lastMaterialization = liveNode.assetMaterializations[0] || null;
+    const lastMaterialization = liveNode.latestMaterialization;
     const lastStepStart = lastMaterialization?.stepStats?.startTime || 0;
     const isForeignNode = !liveNode.opName;
     const isPartitioned = graphNode.definition.partitionDefinition;

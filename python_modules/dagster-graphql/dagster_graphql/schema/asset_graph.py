@@ -48,14 +48,9 @@ class GrapheneAssetNode(graphene.ObjectType):
     dependedBy = non_null_list(GrapheneAssetDependency)
     dependencyKeys = non_null_list(GrapheneAssetKey)
     dependedByKeys = non_null_list(GrapheneAssetKey)
-    assetMaterializations = graphene.Field(
-        non_null_list(GrapheneMaterializationEvent),
-        partitions=graphene.List(graphene.String),
-        beforeTimestampMillis=graphene.String(),
-        limit=graphene.Int(),
-    )
     partitionKeys = non_null_list(graphene.String)
     partitionDefinition = graphene.String()
+    latestMaterialization = graphene.Field(GrapheneMaterializationEvent)
     latestMaterializationByPartition = graphene.Field(
         graphene.NonNull(graphene.List(GrapheneMaterializationEvent)),
         partitions=graphene.List(graphene.String),
@@ -141,41 +136,27 @@ class GrapheneAssetNode(graphene.ObjectType):
             for dep in self._external_asset_node.depended_by
         ]
 
-    def resolve_assetMaterializations(self, graphene_info, **kwargs):
+    def resolve_latestMaterialization(self, graphene_info):
         from ..implementation.fetch_assets import get_asset_materializations
 
-        try:
-            before_timestamp = (
-                int(kwargs.get("beforeTimestampMillis")) / 1000.0
-                if kwargs.get("beforeTimestampMillis")
-                else None
-            )
-        except ValueError:
-            before_timestamp = None
-
-        limit = kwargs.get("limit")
-        partitions = kwargs.get("partitions")
-        if self._fetched_materialization and limit == 1 and not partitions and not before_timestamp:
-            return (
-                [
-                    GrapheneMaterializationEvent(
-                        event=self._latest_materialization,
+        if not self._fetched_materialization:
+            self._fetched_materialization = True
+            self._latest_materialization = next(
+                iter(
+                    get_asset_materializations(
+                        graphene_info,
+                        self._external_asset_node.asset_key,
+                        limit=1,
                     )
-                ]
-                if self._latest_materialization
-                else []
+                ),
+                None,
             )
 
-        return [
-            GrapheneMaterializationEvent(event=event)
-            for event in get_asset_materializations(
-                graphene_info,
-                self._external_asset_node.asset_key,
-                partitions,
-                before_timestamp=before_timestamp,
-                limit=limit,
-            )
-        ]
+        return (
+            GrapheneMaterializationEvent(event=self._latest_materialization)
+            if self._latest_materialization
+            else None
+        )
 
     def resolve_jobs(self, _graphene_info):
         job_names = self._external_asset_node.job_names or []

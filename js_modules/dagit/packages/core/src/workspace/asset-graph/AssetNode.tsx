@@ -202,7 +202,7 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     id
     opName
 
-    assetMaterializations(limit: 1) {
+    latestMaterialization {
       ...LatestMaterializationMetadataFragment
 
       metadataEntries {

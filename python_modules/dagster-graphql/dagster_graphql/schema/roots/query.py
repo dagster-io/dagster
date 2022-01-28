@@ -235,7 +235,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         non_null_list(GrapheneAssetNode),
         pipeline=graphene.Argument(GraphenePipelineSelector),
         assetKeys=graphene.Argument(graphene.List(graphene.NonNull(GrapheneAssetKeyInput))),
-        loadMaterializations=graphene.Boolean(default_value=False),
+        loadLatestMaterializations=graphene.Boolean(default_value=False),
     )
 
     assetNodeOrError = graphene.Field(
@@ -422,7 +422,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return GrapheneInstance(graphene_info.context.instance)
 
     def resolve_assetNodes(self, graphene_info, **kwargs):
-        load_materializations = kwargs.get("loadMaterializations")
+        load_latest_materializations = kwargs.get("loadLatestMaterializations")
         asset_keys = set(
             AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
         )
@@ -445,7 +445,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
         results = [node for node in results if not asset_keys or node.assetKey in asset_keys]
 
         # Attach latest materialization if requested to avoid N queries later
-        if results and load_materializations:
+        if results and load_latest_materializations:
             keys = [node.assetKey for node in results]
             events_by_key = graphene_info.context.instance.get_latest_materialization_events(keys)
             results = [

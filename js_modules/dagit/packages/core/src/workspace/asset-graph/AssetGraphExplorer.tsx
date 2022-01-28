@@ -420,7 +420,7 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
         }
       }
     }
-    assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
+    assetNodes(assetKeys: $assetKeys, loadLatestMaterializations: true) {
       id
       ...AssetNodeLiveFragment
     }
