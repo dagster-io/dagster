@@ -1626,6 +1626,17 @@
                             "type": "null"
                         }
                     ]
+                },
+                "failPodOnRunFailure": {
+                    "title": "Failpodonrunfailure",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -1736,6 +1747,17 @@
                     "anyOf": [
                         {
                             "type": "object"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
+                },
+                "failPodOnRunFailure": {
+                    "title": "Failpodonrunfailure",
+                    "anyOf": [
+                        {
+                            "type": "boolean"
                         },
                         {
                             "type": "null"

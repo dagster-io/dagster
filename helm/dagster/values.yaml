@@ -470,6 +470,9 @@ runLauncher:
       #   my_label_key: my_label_value
       labels: {}
 
+      # Whether the launched Kubernetes Jobs and Pods should fail if the Dagster run fails.
+      failPodOnRunFailure: false
+
     # This configuration will only be used if the CeleryK8sRunLauncher is selected
     celeryK8sRunLauncher:
       # Change with caution! If you're using a fixed tag for pipeline run images, changing the
@@ -606,6 +609,9 @@ runLauncher:
       # labels:
       #   my_label_key: my_label_value
       labels: {}
+
+      # Whether the launched Kubernetes Jobs and Pods should fail if the Dagster run fails.
+      failPodOnRunFailure: false
 
     ## Uncomment this configuration will only be used if the CustomRunLauncher is selected.
     ## Using this setting requires a custom Dagit image that defines the user specified
