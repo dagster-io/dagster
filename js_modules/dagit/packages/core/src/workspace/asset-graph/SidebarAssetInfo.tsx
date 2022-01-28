@@ -24,7 +24,8 @@ import {
 
 type AssetType = DagsterTypeForAssetOp_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_type;
 
-const extractOutputType = (result: DagsterTypeForAssetOp): AssetType | null => {
+// TODO: needs to be renamed
+export const extractOutputType = (result: DagsterTypeForAssetOp): AssetType | null => {
   if (result.repositoryOrError.__typename === 'Repository') {
     const outputType = result.repositoryOrError?.usedSolid?.definition.outputDefinitions[0]?.type;
     return outputType || null;
@@ -39,7 +40,7 @@ const AssetTypeInfoRoot = styled.div`
   gap: 8px;
 `;
 
-const AssetTypeInfo: React.FC<{type: AssetType | null}> = ({type}) => {
+export const AssetTypeInfo: React.FC<{type: AssetType | null}> = ({type}) => {
   if (type) {
     const tableSchemaEntry = type.metadataEntries.find(isTableSchemaMetadataEntry);
     return (
@@ -65,6 +66,7 @@ export const SidebarAssetInfo: React.FC<{
   const {lastMaterialization} = liveData || {};
   const displayName = displayNameForAssetKey(node.assetKey);
 
+  // TODO: not sure about the fetchPolicy etc here
   const queryResult = useQuery<DagsterTypeForAssetOp>(DAGSTER_TYPE_FOR_ASSET_OP_QUERY, {
     variables: {
       repoSelector: {

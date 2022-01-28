@@ -1,4 +1,4 @@
-import {gql} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, ColorsWIP, IconWIP, Caption, Subheading, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -8,6 +8,12 @@ import {Description} from '../pipelines/Description';
 import {explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
+import {
+  AssetTypeInfo,
+  DAGSTER_TYPE_FOR_ASSET_OP_QUERY,
+  extractOutputType,
+} from '../workspace/asset-graph/SidebarAssetInfo';
+import {DagsterTypeForAssetOp} from '../workspace/asset-graph/types/DagsterTypeForAssetOp';
 import {LiveData} from '../workspace/asset-graph/Utils';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -22,6 +28,19 @@ export const AssetNodeDefinition: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
   liveDataByNode: LiveData;
 }> = ({repoAddress, assetNode, liveDataByNode}) => {
+  const queryResult = useQuery<DagsterTypeForAssetOp>(DAGSTER_TYPE_FOR_ASSET_OP_QUERY, {
+    variables: {
+      repoSelector: {
+        repositoryName: repoAddress.name,
+        repositoryLocationName: repoAddress.location,
+      },
+      assetOpName: assetNode.opName,
+    },
+    fetchPolicy: 'cache-and-network',
+    partialRefetch: true,
+    notifyOnNetworkStatusChange: true,
+  });
+
   return (
     <>
       <AssetDefinedInMultipleReposNotice assetId={assetNode.id} loadedFromRepo={repoAddress} />
@@ -59,12 +78,27 @@ export const AssetNodeDefinition: React.FC<{
               )}
             </Box>
           </Box>
-          <Box padding={{top: 16, horizontal: 24, bottom: 4}} style={{flex: 1}}>
+          <Box padding={{top: 16, horizontal: 24, bottom: 16}} style={{flex: 1}}>
             <Description
               description={assetNode.description || 'No description provided.'}
               maxHeight={260}
             />
           </Box>
+
+          {queryResult.data && (
+            <>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+                flex={{justifyContent: 'space-between', gap: 8}}
+              >
+                <Subheading>Type</Subheading>
+              </Box>
+              <Box padding={{top: 16, bottom: 4}} style={{flex: 1}}>
+                <AssetTypeInfo type={extractOutputType(queryResult.data)} />
+              </Box>
+            </>
+          )}
           {assetNode.partitionDefinition && (
             <>
               <Box
