@@ -146,11 +146,11 @@ def _yield_compute_results(
         user_event_generator,
     ):
         if context.has_events():
-            yield from context.retrieve_events()
+            yield from context.consume_events()
         yield _validate_event(event, step_context)
 
     if context.has_events():
-        yield from context.retrieve_events()
+        yield from context.consume_events()
 
 
 def execute_core_compute(
