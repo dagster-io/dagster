@@ -145,17 +145,17 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         # consider changing the `handle_run_event` signature to get timestamp off of the
         # EventLogEntry instead of the DagsterEvent, for consistency
-        now = time.time()
+        now = pendulum.now("UTC")
 
         if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:
-            kwargs["start_time"] = now
+            kwargs["start_time"] = now.timestamp()
 
         if run_stats_cols_in_index and event.event_type in {
             DagsterEventType.PIPELINE_CANCELED,
             DagsterEventType.PIPELINE_FAILURE,
             DagsterEventType.PIPELINE_SUCCESS,
         }:
-            kwargs["end_time"] = now
+            kwargs["end_time"] = now.timestamp()
 
         with self.connect() as conn:
 
@@ -165,7 +165,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 .values(
                     status=new_pipeline_status.value,
                     run_body=serialize_dagster_namedtuple(run.with_status(new_pipeline_status)),
-                    update_timestamp=pendulum.now("UTC"),
+                    update_timestamp=now,
                     **kwargs,
                 )
             )
