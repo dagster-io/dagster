@@ -77,6 +77,19 @@ class DagsterDaemon(AbstractContextManager):
                             not until or pendulum.now("UTC") < until
                         ):
                             try:
+                                try:
+                                    self._check_add_heartbeat(
+                                        instance,
+                                        daemon_uuid,
+                                        heartbeat_interval_seconds,
+                                        error_interval_seconds,
+                                    )
+                                except Exception:
+                                    self._logger.error(
+                                        "Failed to add heartbeat: \n{}".format(
+                                            serializable_error_info_from_exc_info(sys.exc_info())
+                                        )
+                                    )
                                 result = check.opt_inst(
                                     next(daemon_generator), SerializableErrorInfo
                                 )
@@ -95,20 +108,6 @@ class DagsterDaemon(AbstractContextManager):
                                 self._errors.appendleft((error_info, pendulum.now("UTC")))
                                 daemon_generator.close()
                                 daemon_generator = self.core_loop(instance, workspace)
-                            finally:
-                                try:
-                                    self._check_add_heartbeat(
-                                        instance,
-                                        daemon_uuid,
-                                        heartbeat_interval_seconds,
-                                        error_interval_seconds,
-                                    )
-                                except Exception:
-                                    self._logger.error(
-                                        "Failed to add heartbeat: \n{}".format(
-                                            serializable_error_info_from_exc_info(sys.exc_info())
-                                        )
-                                    )
                     finally:
                         # cleanup the generator if it was stopped part-way through
                         daemon_generator.close()
