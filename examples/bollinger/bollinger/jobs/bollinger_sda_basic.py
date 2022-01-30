@@ -14,13 +14,13 @@ def sp500_prices():
 
 
 @asset
-def bollinger(sp500_prices):
+def sp500_bollinger_bands(sp500_prices):
     odf = sp500_prices.groupby("name").apply(lambda idf: compute_bollinger(idf, dropna=False))
     return odf.dropna().reset_index()
 
 
 @asset
-def anomalous_events(sp500_prices, bollinger):
+def sp500_anomalous_events(sp500_prices, bollinger):
     df = pd.concat([sp500_prices, bollinger.add_prefix("bol_")], axis=1)
     df["event"] = pd.Series(
         pd.NA, index=df.index, dtype=pd.CategoricalDtype(categories=["high", "low"])
@@ -32,6 +32,6 @@ def anomalous_events(sp500_prices, bollinger):
 
 bollinger_sda_basic = build_assets_job(
     "bollinger_sda_basic",
-    assets=[anomalous_events, bollinger, sp500_prices],
+    assets=[sp500_anomalous_events, sp500_bollinger_bands, sp500_prices],
     resource_defs={"io_manager": local_csv_io_manager},
 )
