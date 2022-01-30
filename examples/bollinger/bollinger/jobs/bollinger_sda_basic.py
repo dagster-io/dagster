@@ -20,8 +20,8 @@ def sp500_bollinger_bands(sp500_prices):
 
 
 @asset
-def sp500_anomalous_events(sp500_prices, bollinger):
-    df = pd.concat([sp500_prices, bollinger.add_prefix("bol_")], axis=1)
+def sp500_anomalous_events(sp500_prices, sp500_bollinger_bands):
+    df = pd.concat([sp500_prices, sp500_bollinger_bands.add_prefix("bol_")], axis=1)
     df["event"] = pd.Series(
         pd.NA, index=df.index, dtype=pd.CategoricalDtype(categories=["high", "low"])
     )
