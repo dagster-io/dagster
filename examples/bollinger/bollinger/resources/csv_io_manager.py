@@ -21,7 +21,7 @@ class LocalCsvIOManager(MemoizableIOManager):
         os.makedirs(os.path.dirname(fpath), exist_ok=True)
         obj.to_csv(fpath)
         with open(fpath + ".version", "w") as f:
-            f.write(context.version)
+            f.write(context.version if context.version else "None")
 
         yield EventMetadataEntry.int(obj.shape[0], "Rows")
         yield EventMetadataEntry.path(fpath, "Path")
