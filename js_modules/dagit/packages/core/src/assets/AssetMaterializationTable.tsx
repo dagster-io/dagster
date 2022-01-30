@@ -75,7 +75,7 @@ const AssetMaterializationRow: React.FC<{
   const [isExpanded, setIsExpanded] = React.useState(true);
 
   const focusCss = isFocused
-    ? {paddingLeft: 4, borderLeft: `4px solid ${ColorsWIP.HighlightGreen}`}
+    ? {paddingLeft: 4, borderLeft: `4px solid ${ColorsWIP.WashGray}`}
     : {paddingLeft: 8};
 
   const run = latest?.runOrError.__typename === 'Run' ? latest.runOrError : undefined;
@@ -98,7 +98,8 @@ const AssetMaterializationRow: React.FC<{
     return <span />;
   }
   const {metadataEntries, assetLineage, stepKey, description} = latest;
-
+  const typeCheck: any = metadataEntries.find((entry) => entry.label === 'Type check succeeded');
+  const materializationFailed = typeCheck?.text === '\u274c' || false;
   return (
     <>
       <HoverableRow
@@ -111,6 +112,7 @@ const AssetMaterializationRow: React.FC<{
           }
           setFocused?.(group);
         }}
+        style={{background: materializationFailed ? ColorsWIP.Red50 : undefined}}
       >
         {hasPartitions && (
           <td style={{whiteSpace: 'nowrap', ...focusCss}}>
