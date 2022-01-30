@@ -38,7 +38,6 @@ Sp500PricesDgType = pandera_schema_to_dagster_type(
 class Bollinger(pa.SchemaModel):
     name: Series[str] = pa.Field()
     date: Series[pd.Timestamp] = pa.Field()
-    price: Series[float] = pa.Field()
     upper: Series[float] = pa.Field()
     lower: Series[float] = pa.Field()
 
@@ -50,7 +49,6 @@ BollingerDgType = pandera_schema_to_dagster_type(
         "columns": {
             "name": "Ticker symbol of stock",
             "date": "Date of prices",
-            "price": "Representative price for day",
             "upper": "Upper Bollinger band",
             "lower": "Lower Bollinger band",
         },
@@ -61,7 +59,7 @@ BollingerDgType = pandera_schema_to_dagster_type(
 class AnomalousEvents(pa.SchemaModel):
     date: Series[pd.Timestamp] = pa.Field()
     name: Series[str] = pa.Field()
-    type: Series[pd.CategoricalDtype] = pa.Field()
+    event: Series[pd.CategoricalDtype] = pa.Field()
 
 
 AnomalousEventsDgType = pandera_schema_to_dagster_type(
@@ -76,7 +74,7 @@ AnomalousEventsDgType = pandera_schema_to_dagster_type(
         "columns": {
             "date": "Date of event",
             "name": "Ticker symbol of stock",
-            "type": "Type of event: 'high' or 'low'",
+            "event": "Type of event: 'high' or 'low'",
         },
     },
 )
@@ -110,16 +108,14 @@ def bollinger(sp500_prices):
     metadata={"owner": "alice@example.com"},
     version="1",
 )
-def anomalous_events(bollinger):
-    idf = bollinger[
-        (bollinger.price > bollinger.upper) | (bollinger.price < bollinger.lower)
-    ].reset_index()
-    idf["type"] = (
-        (idf.price > idf.upper)
-        .astype("category")
-        .cat.rename_categories({True: "high", False: "low"})
+def anomalous_events(sp500_prices, bollinger):
+    df = pd.concat([sp500_prices, bollinger.add_prefix("bol_")], axis=1)
+    df["event"] = pd.Series(
+        pd.NA, index=df.index, dtype=pd.CategoricalDtype(categories=["high", "low"])
     )
-    return idf[["date", "name", "type"]]
+    df["event"][df["close"] > df["bol_upper"]] = "high"
+    df["event"][df["close"] < df["bol_lower"]] = "low"
+    return df[df["event"].notna()][["name", "date", "event"]].reset_index()
 
 
 bollinger_sda = build_assets_job(

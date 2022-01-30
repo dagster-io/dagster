@@ -32,14 +32,15 @@ def van_bollinger(sp500_prices):
 
 @op(
     ins={
+        "sp500_prices": In(dagster_type=Sp500PricesDgType),
         "bollinger": In(dagster_type=BollingerDgType),
     },
     out=Out(dagster_type=AnomalousEventsDgType),
 )
-def van_anomalous_events(bollinger):
-    return compute_anomalous_events(bollinger)
+def van_anomalous_events(sp500_prices, bollinger):
+    return compute_anomalous_events(sp500_prices, bollinger)
 
 
 @job
 def bollinger_vanilla():
-    van_anomalous_events(van_bollinger(van_sp500_prices()))
+    van_anomalous_events(van_sp500_prices(), van_bollinger(van_sp500_prices()))
