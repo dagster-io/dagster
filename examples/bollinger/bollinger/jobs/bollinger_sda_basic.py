@@ -20,16 +20,14 @@ def bollinger(sp500_prices):
 
 
 @asset
-def anomalous_events(bollinger):
-    idf = bollinger[
-        (bollinger.price > bollinger.upper) | (bollinger.price < bollinger.lower)
-    ].reset_index()
-    idf["type"] = (
-        (idf.price > idf.upper)
-        .astype("category")
-        .cat.rename_categories({True: "high", False: "low"})
+def anomalous_events(sp500_prices, bollinger):
+    df = pd.concat([sp500_prices, bollinger.add_prefix("bol_")], axis=1)
+    df["event"] = pd.Series(
+        pd.NA, index=df.index, dtype=pd.CategoricalDtype(categories=["high", "low"])
     )
-    return idf[["date", "name", "type"]]
+    df["event"][df["close"] > df["bol_upper"]] = "high"
+    df["event"][df["close"] < df["bol_lower"]] = "low"
+    return df[df["event"].notna()][["name", "date", "event"]].reset_index()
 
 
 bollinger_sda_basic = build_assets_job(
