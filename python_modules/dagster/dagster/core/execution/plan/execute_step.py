@@ -207,7 +207,7 @@ def _type_check_output(
     step_output_handle: StepOutputHandle,
     output: Any,
     version: Optional[str],
-) -> Iterator[DagsterEvent]:
+) -> DagsterEvent:
     check.inst_param(step_context, "step_context", StepExecutionContext)
     check.inst_param(output, "output", (Output, DynamicOutput))
 
@@ -229,7 +229,7 @@ def _type_check_output(
     ):
         type_check = do_type_check(type_check_context, dagster_type, output.value)
 
-    yield DagsterEvent.step_output_event(
+    return DagsterEvent.step_output_event(
         step_context=step_context,
         step_output_data=StepOutputData(
             step_output_handle=step_output_handle,
@@ -245,17 +245,6 @@ def _type_check_output(
             ],
         ),
     )
-
-    if not type_check.success:
-        raise DagsterTypeCheckDidNotPass(
-            description=(
-                f'Type check failed for step output "{output.output_name}" - '
-                f'expected type "{dagster_type.display_name}". '
-                f"Description: {type_check.description}"
-            ),
-            metadata_entries=type_check.metadata_entries,
-            dagster_type=dagster_type,
-        )
 
 
 def core_dagster_event_sequence_for_step(
@@ -381,10 +370,13 @@ def _type_check_and_store_output(
         else None
     )
 
-    for output_event in _type_check_output(step_context, step_output_handle, output, version):
-        yield output_event
+    type_check_event = _type_check_output(step_context, step_output_handle, output, version)
+    yield type_check_event
+    type_check_data = type_check_event.step_output_data.type_check_data
 
-    for evt in _store_output(step_context, step_output_handle, output, input_lineage):
+    for evt in _store_output(
+        step_context, step_output_handle, output, input_lineage, type_check_data
+    ):
         yield evt
 
     for evt in _create_type_materializations(step_context, output.output_name, output.value):
@@ -419,7 +411,7 @@ def _asset_key_and_partitions_for_output(
 
 
 def _dedup_asset_lineage(asset_lineage: List[AssetLineageInfo]) -> List[AssetLineageInfo]:
-    """Method to remove duplicate specifications of the same Asset/Partition pair from the lineage
+    """Method to remove duplicate specififations of the same Asset/Partition pair from the lineage
     information. Duplicates can occur naturally when calculating transitive dependencies from solids
     with multiple Outputs, which in turn have multiple Inputs (because each Output of the solid will
     inherit all dependencies from all of the solid Inputs).
@@ -443,9 +435,18 @@ def _get_output_asset_materializations(
     output: Union[Output, DynamicOutput],
     output_def: OutputDefinition,
     io_manager_metadata_entries: List[Union[EventMetadataEntry, PartitionMetadataEntry]],
+    type_check_data: Optional[TypeCheckData],
 ) -> Iterator[AssetMaterialization]:
 
-    all_metadata = output.metadata_entries + io_manager_metadata_entries
+    type_check_metadata_entries = [
+        EventMetadataEntry.text(
+            label="Type check succeeded",
+            text="\U00002705" if type_check_data.success else "\U0000274c",
+        )
+    ] + (type_check_data.metadata_entries or [])
+    all_metadata = (
+        output.metadata_entries + io_manager_metadata_entries + type_check_metadata_entries
+    )
 
     if asset_partitions:
         metadata_mapping: Dict[str, List["EventMetadataEntry"]] = {
@@ -488,6 +489,7 @@ def _store_output(
     step_output_handle: StepOutputHandle,
     output: Union[Output, DynamicOutput],
     input_lineage: List[AssetLineageInfo],
+    type_check_data: Optional[TypeCheckData],
 ) -> Iterator[DagsterEvent]:
 
     output_def = step_context.solid_def.output_def_named(step_output_handle.output_name)
@@ -554,6 +556,7 @@ def _store_output(
             output,
             output_def,
             manager_metadata_entries,
+            type_check_data,
         ):
             yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
 
