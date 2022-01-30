@@ -1,8 +1,9 @@
+import {gql, useQuery} from '@apollo/client';
 import {Box, ColorsWIP, IconWIP, MetadataTable, StyledTable} from '@dagster-io/ui';
-import styled from 'styled-components/macro';
 import * as React from 'react';
 import {useEffect, useLayoutEffect, useState} from 'react';
 import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../../app/Util';
 import {AssetMaterializations} from '../../assets/AssetMaterializations';
@@ -11,19 +12,22 @@ import {Description} from '../../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';
 import {GraphExplorerSolidHandleFragment_solid_definition} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {pluginForMetadata} from '../../plugins';
+import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
+import {
+  isTableSchemaMetadataEntry,
+  TableSchema,
+  TTableSchemaMetadataEntry,
+} from '../../runs/TableSchema';
+import {MetadataEntryFragment} from '../../runs/types/MetadataEntryFragment';
 import {RepoAddress} from '../types';
 
 import {LiveDataForNode} from './Utils';
 import {AssetGraphQuery_pipelineOrError_Pipeline_assetNodes} from './types/AssetGraphQuery';
-import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
-import {gql, useQuery} from '@apollo/client';
-import {isTableSchemaMetadataEntry, TableSchema} from '../../runs/TableSchema';
 import {
   DagsterTypeForAssetOp,
   DagsterTypeForAssetOp_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_metadataEntries,
   DagsterTypeForAssetOp_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_type,
 } from './types/DagsterTypeForAssetOp';
-import {MetadataEntryFragment} from '../../runs/types/MetadataEntryFragment';
 
 export type AssetType = DagsterTypeForAssetOp_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_type;
 export type AssetMetadata = DagsterTypeForAssetOp_repositoryOrError_Repository_usedSolid_definition_outputDefinitions_metadataEntries[];
@@ -33,6 +37,24 @@ export const extractOutputType = (result: DagsterTypeForAssetOp): AssetType | nu
   if (result.repositoryOrError.__typename === 'Repository') {
     const outputType = result.repositoryOrError?.usedSolid?.definition.outputDefinitions[0]?.type;
     return outputType || null;
+  } else {
+    return null;
+  }
+};
+
+export const extractOutputTableSchemaMetadataEntry = (
+  result: DagsterTypeForAssetOp,
+): TTableSchemaMetadataEntry | null => {
+  const type = extractOutputType(result);
+  // TODO don't know why this isn't working, type inference is wrong
+  // const x = type.metadataEntries.find((entry) => isTableSchemaMetadataEntry(entry));
+  if (type !== null) {
+    for (const entry of type.metadataEntries) {
+      if (isTableSchemaMetadataEntry(entry)) {
+        return entry;
+      }
+    }
+    return null;
   } else {
     return null;
   }
@@ -49,26 +71,18 @@ export const extractOutputMetadata = (result: DagsterTypeForAssetOp): AssetMetad
   }
 };
 
-const AssetTypeInfoRoot = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-`;
-
-export const AssetTypeInfo: React.FC<{type: AssetType}> = ({type}) => {
-  if (type) {
-    const tableSchemaEntry = type.metadataEntries.find(isTableSchemaMetadataEntry);
-    return (
-      <AssetTypeInfoRoot>
-        <Box padding={{vertical: 16, horizontal: 24}}>
-          <Description description={type.description || 'No description provided'} />
-        </Box>
+export const AssetTypeSidebarInfo: React.FC<{type: AssetType}> = ({type}) => {
+  const tableSchemaEntry = type.metadataEntries.find(isTableSchemaMetadataEntry);
+  return (
+    <Box flex={{direction: 'column'}}>
+      <Box padding={{vertical: 16, horizontal: 24}}>
+        <Description description={type.description || 'No description provided'} />
+      </Box>
+      <Box padding={{left: 16}}>
         {tableSchemaEntry && TableSchema(tableSchemaEntry)}
-      </AssetTypeInfoRoot>
-    );
-  } else {
-    return null;
-  }
+      </Box>
+    </Box>
+  );
 };
 
 const DescriptionSidebarSection: React.FC<{
@@ -94,7 +108,7 @@ const TypeSidebarSection: React.FC<{
   assetType: AssetType;
 }> = ({assetType}) => (
   <SidebarSection title="Type">
-    <AssetTypeInfo type={assetType} />
+    <AssetTypeSidebarInfo type={assetType} />
   </SidebarSection>
 );
 

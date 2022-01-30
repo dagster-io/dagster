@@ -1,24 +1,20 @@
 import {gql} from '@apollo/client';
-import {Box, Heading, MetadataTable, Subheading, Table} from '@dagster-io/ui';
+import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
+import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
+import {isTableSchemaMetadataEntry, TableSchema} from '../runs/TableSchema';
 
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from './ConfigTypeSchema';
 import {TypeExplorerFragment} from './types/TypeExplorerFragment';
-
-import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
-import { isTableSchemaMetadataEntry, TableSchema } from '../runs/TableSchema';
-import { MetadataEntryFragment } from '../runs/types/MetadataEntryFragment';
 
 interface ITypeExplorerProps {
   isGraph: boolean;
   type: TypeExplorerFragment;
 }
-
-// TODO: how to put key on metadata entries?
 
 export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
   const {name, metadataEntries, inputSchemaType, outputSchemaType, description} = props.type;
@@ -38,9 +34,7 @@ export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
         <Box padding={{vertical: 16, horizontal: 24}}>
           <Description description={description || 'No Description Provided'} />
         </Box>
-        {tableSchema && (
-            <TableSchema schema={tableSchema} />
-        )}
+        <Box padding={{left: 16}}>{tableSchema && <TableSchema schema={tableSchema} />}</Box>
       </SidebarSection>
       {inputSchemaType && (
         <SidebarSection title="Input">
@@ -65,9 +59,6 @@ export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
     </div>
   );
 };
-
-// const ColumnDescription = React.FC<EventMetadata
-// }>
 
 export const TYPE_EXPLORER_FRAGMENT = gql`
   fragment TypeExplorerFragment on DagsterType {

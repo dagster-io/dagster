@@ -8,17 +8,19 @@ import {Description} from '../pipelines/Description';
 import {explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {MetadataEntry} from '../runs/MetadataEntry';
+import {TableSchema, TTableSchemaMetadataEntry} from '../runs/TableSchema';
 import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
 import {
-  AssetTypeInfo,
+  AssetTypeSidebarInfo,
   DAGSTER_TYPE_FOR_ASSET_OP_QUERY,
   extractOutputType,
   extractOutputMetadata,
   AssetMetadata,
   AssetType,
+  extractOutputTableSchemaMetadataEntry,
 } from '../workspace/asset-graph/SidebarAssetInfo';
-import {DagsterTypeForAssetOp} from '../workspace/asset-graph/types/DagsterTypeForAssetOp';
 import {LiveData} from '../workspace/asset-graph/Utils';
+import {DagsterTypeForAssetOp} from '../workspace/asset-graph/types/DagsterTypeForAssetOp';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -64,10 +66,17 @@ export const AssetNodeDefinition: React.FC<{
     },
   );
   const [assetType, setAssetType] = React.useState<AssetType | null>(null);
+  const [
+    assetTableSchemaMetadataEntry,
+    setAssetTableSchemaMetadataEntry,
+  ] = React.useState<TTableSchemaMetadataEntry | null>(null);
   const [assetMetadata, setAssetMetadata] = React.useState<AssetMetadata | null>(null);
   React.useEffect(() => {
     if (dagsterTypeQueryPayload) {
       setAssetType(extractOutputType(dagsterTypeQueryPayload));
+      setAssetTableSchemaMetadataEntry(
+        extractOutputTableSchemaMetadataEntry(dagsterTypeQueryPayload),
+      );
       setAssetMetadata(extractOutputMetadata(dagsterTypeQueryPayload));
     }
   }, [dagsterTypeQueryPayload]);
@@ -86,7 +95,8 @@ export const AssetNodeDefinition: React.FC<{
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>Definition in Repository</Subheading>
-            <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}}>
+            {/* Need a better way than height 0 to prevent PipelineReference from being too tall */}
+            <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}} style={{height: 0}}>
               {assetNode.jobs.map((job) => (
                 <Mono key={job.id}>
                   <PipelineReference
@@ -109,13 +119,12 @@ export const AssetNodeDefinition: React.FC<{
               )}
             </Box>
           </Box>
-          <Box padding={{top: 16, horizontal: 24, bottom: 16}} style={{flex: 1}}>
+          <Box padding={{top: 16, horizontal: 24, bottom: 16}} style={{minHeight: 112}}>
             <Description
               description={assetNode.description || 'No description provided.'}
               maxHeight={260}
             />
           </Box>
-
           {assetMetadata && (
             <>
               <Box
@@ -127,20 +136,6 @@ export const AssetNodeDefinition: React.FC<{
               </Box>
               <Box padding={{top: 16, bottom: 4}} style={{flex: 1}}>
                 <AssetMetadataTable assetMetadata={assetMetadata} />
-              </Box>
-            </>
-          )}
-          {assetType && (
-            <>
-              <Box
-                padding={{vertical: 16, horizontal: 24}}
-                border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
-                flex={{justifyContent: 'space-between', gap: 8}}
-              >
-                <Subheading>Type</Subheading>
-              </Box>
-              <Box padding={{top: 16, bottom: 4}} style={{flex: 1}}>
-                <AssetTypeInfo type={assetType} />
               </Box>
             </>
           )}
@@ -163,9 +158,34 @@ export const AssetNodeDefinition: React.FC<{
             </>
           )}
         </Box>
+        {assetType && (
+          <Box
+            // padding={{vertical: 16, horizontal: 24}}
+            border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}
+            flex={{direction: 'column'}}
+          >
+            <Box
+              padding={{vertical: 16, left: 24, right: 12}}
+              border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+            >
+              <Subheading>Type</Subheading>
+            </Box>
+            <Box padding={{top: 16, horizontal: 16, bottom: 16}} style={{flex: 1}}>
+              <Description
+                description={assetType.description || 'No description provided.'}
+                maxHeight={260}
+              />
+            </Box>
+            {assetTableSchemaMetadataEntry && (
+              <Box padding={{horizontal: 8, bottom: 8}}>
+                <TableSchema schema={assetTableSchemaMetadataEntry.schema} />
+              </Box>
+            )}
+          </Box>
+        )}
         <Box
           border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}
-          style={{width: '40%', height: 330}}
+          style={{width: '40%'}}
           flex={{direction: 'column'}}
         >
           <Box

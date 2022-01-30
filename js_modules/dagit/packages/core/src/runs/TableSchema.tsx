@@ -3,23 +3,22 @@ import styled from 'styled-components/macro';
 
 import {ColorsWIP, TagWIP, Tooltip} from '../../../ui/src';
 
+import {IMetadataEntries} from './MetadataEntry';
 import {
   MetadataEntryFragment,
   MetadataEntryFragment_EventTableSchemaMetadataEntry,
   MetadataEntryFragment_EventTableSchemaMetadataEntry_schema,
-  MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_columns,
   MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_columns_constraints,
-  MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_constraints,
 } from './types/MetadataEntryFragment';
 
-// TODO is there a better way to do this?
-type TableSchemaType = MetadataEntryFragment_EventTableSchemaMetadataEntry_schema;
+export type TTableSchemaMetadataEntry = MetadataEntryFragment_EventTableSchemaMetadataEntry;
+export type TTableSchema = MetadataEntryFragment_EventTableSchemaMetadataEntry_schema;
 type ColumnConstraints = MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_columns_constraints;
 
 const SectionHeader = styled.div`
   height: 24px;
-  padding-left: 24px;
-  padding-right: 8px;
+  padding-left: 8px;
+  // padding-right: 8px;
   background: ${ColorsWIP.White};
   border-top: 1px solid ${ColorsWIP.KeylineGray};
   border-bottom: 1px solid ${ColorsWIP.KeylineGray};
@@ -36,11 +35,11 @@ const SectionHeader = styled.div`
 const ColumnItemContainer = styled.div`
   padding-top: 12px;
   padding-bottom: 12px;
-  padding-left: 24px;
+  padding-left: 8px;
   padding-right: 8px;
   background: ${ColorsWIP.White};
   border-top: 1px solid ${ColorsWIP.KeylineGray};
-  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+  // border-bottom: 1px solid ${ColorsWIP.KeylineGray};
   color: ${ColorsWIP.Gray900};
   cursor: pointer;
   justify-content: start;
@@ -67,22 +66,6 @@ const ColumnDescription = styled.div`
   color: ${ColorsWIP.Gray700};
 `;
 
-const ColumnConstraintsTooltipContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  padding: 8px;
-  div:first-child {
-    border-top: none;
-  }
-`;
-
-const ColumnConstraintsTooltipContentItem = styled.div`
-  border-top: 1px solid ${ColorsWIP.KeylineGray};
-  padding: 4px;
-  width: 300px;
-`;
-
 const TypeTag: React.FC<{type: string}> = ({type}) => <TagWIP intent="none">{type}</TagWIP>;
 
 const NonNullableTag = <TagWIP intent="warning">non-nullable</TagWIP>;
@@ -103,25 +86,6 @@ const ArbitraryConstraintTag: React.FC<{constraint: string}> = ({constraint}) =>
     return <TagWIP intent="warning">{constraint}</TagWIP>;
   }
 };
-
-{/* const OtherTag: React.FC<{other: string[]}> = ({other}) => { */}
-{/*   const content = ( */}
-{/*     <ColumnConstraintsTooltipContent> */}
-{/*       {other.map((constraint, i) => ( */}
-{/*         <ColumnConstraintsTooltipContentItem key={i}> */}
-{/*           {constraint} */}
-{/*         </ColumnConstraintsTooltipContentItem> */}
-{/*       ))} */}
-{/*     </ColumnConstraintsTooltipContent> */}
-{/*   ); */}
-{/*   return ( */}
-{/*     <Tooltip content={content}> */}
-{/*       <TagWIP intent="warning"> */}
-{/*         {other.length} constraint{other.length === 1 ? '' : 's'}… */}
-{/*       </TagWIP> */}
-{/*     </Tooltip> */}
-{/*   ); */}
-{/* }; */}
 
 const ColumnItem: React.FC<{
   name: string;
@@ -145,6 +109,10 @@ const ColumnItem: React.FC<{
   );
 };
 
+export const hasTableSchema = (obj: IMetadataEntries): boolean => {
+  return obj.metadataEntries.find(isTableSchemaMetadataEntry) !== undefined;
+};
+
 export const isTableSchemaMetadataEntry = (
   metadataEntry: MetadataEntryFragment,
 ): metadataEntry is MetadataEntryFragment_EventTableSchemaMetadataEntry => {
@@ -152,7 +120,7 @@ export const isTableSchemaMetadataEntry = (
 };
 
 export const TableSchema: React.FC<{
-  schema: TableSchemaType;
+  schema: TTableSchema;
 }> = ({schema}) => {
   return (
     <div>

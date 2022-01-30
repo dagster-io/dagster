@@ -21,6 +21,10 @@ import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
 
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 
+export interface IMetadataEntries {
+  metadataEntries: MetadataEntryFragment[];
+}
+
 export const LogRowStructuredContentTable: React.FC<{
   rows: {label: string; item: JSX.Element}[];
   styles?: React.CSSProperties;
