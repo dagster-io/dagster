@@ -89,7 +89,7 @@ def sp500_prices():
     path = "examples/bollinger/data/all_stocks_5yr.csv"
     df = pd.read_csv(path, parse_dates=["date"])
     df = df.rename(columns={"Name": "name"})
-    df = df.dropna()
+    # df = df.dropna()
     return df
 
 
@@ -100,7 +100,8 @@ def sp500_prices():
 )
 def bollinger(sp500_prices):
     odf = sp500_prices.groupby("name").apply(lambda idf: compute_bollinger(idf, dropna=False))
-    return odf.dropna().reset_index()
+    return odf
+    # return odf.dropna().reset_index()
 
 
 @asset(
