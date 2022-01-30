@@ -19,7 +19,7 @@ const SectionHeader = styled.div`
   height: 24px;
   padding-left: 8px;
   // padding-right: 8px;
-  background: ${ColorsWIP.White};
+  // background: ${ColorsWIP.White};
   border-top: 1px solid ${ColorsWIP.KeylineGray};
   border-bottom: 1px solid ${ColorsWIP.KeylineGray};
   color: ${ColorsWIP.Gray900};
@@ -37,7 +37,7 @@ const ColumnItemContainer = styled.div`
   padding-bottom: 12px;
   padding-left: 8px;
   padding-right: 8px;
-  background: ${ColorsWIP.White};
+  // background: ${ColorsWIP.White};
   border-top: 1px solid ${ColorsWIP.KeylineGray};
   // border-bottom: 1px solid ${ColorsWIP.KeylineGray};
   color: ${ColorsWIP.Gray900};
@@ -121,10 +121,12 @@ export const isTableSchemaMetadataEntry = (
 
 export const TableSchema: React.FC<{
   schema: TTableSchema;
-}> = ({schema}) => {
+  includeHeader?: boolean;
+}> = ({schema, includeHeader}) => {
+  const useHeader = includeHeader !== false;
   return (
     <div>
-      <SectionHeader>columns</SectionHeader>
+      {useHeader && <SectionHeader>columns</SectionHeader>}
       {schema.columns.map((column) => {
         return (
           <ColumnItem
