@@ -89,7 +89,7 @@ def sp500_prices():
     path = "examples/bollinger/data/all_stocks_5yr.csv"
     df = pd.read_csv(path, parse_dates=["date"])
     df = df.rename(columns={"Name": "name"})
-    # df = df.dropna()
+    df = df.dropna()
     return df
 
 
