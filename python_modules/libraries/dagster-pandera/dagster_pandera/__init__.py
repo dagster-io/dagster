@@ -89,9 +89,11 @@ def pandera_schema_to_dagster_type(
                     success=False,
                     description=str(e),
                     metadata_entries=[
-                        EventMetadataEntry.int(len(e.failure_cases), "num_failures"),
+                        EventMetadataEntry.int(len(e.failure_cases), "Num failures"),
                         # TODO this will incorporate new Table event type
-                        EventMetadataEntry.md(e.failure_cases.to_markdown(), "failure_cases"),
+                        EventMetadataEntry.md(
+                            e.failure_cases.head(10).to_markdown(), "Failure cases (first 10)"
+                        ),
                     ],
                 )
         else:
@@ -108,26 +110,27 @@ def pandera_schema_to_dagster_type(
     return DagsterType(
         type_check_fn=type_check_fn,
         name=name,
-        description=description.get('summary'),
+        description=description.get("summary"),
         metadata_entries=[
             EventMetadataEntry.text("foo", label="test"),
             EventMetadataEntry.table_schema(tschema, label="schema"),
         ],
     )
 
-def _normalize_schema_description(schema: pa.DataFrameSchema, description: Optional[Union[str, Dict[str, Any]]]) -> Dict[str, Any]:
+
+def _normalize_schema_description(
+    schema: pa.DataFrameSchema, description: Optional[Union[str, Dict[str, Any]]]
+) -> Dict[str, Any]:
     if isinstance(description, str):
-        return { 'summary': description }
+        return {"summary": description}
     elif isinstance(description, dict):
-        col_descs = description.get('columns', {})
+        col_descs = description.get("columns", {})
         return {
-            'summary': description.get('summary'),
-            'columns': {
-                k: col_descs.get(k) for k in schema.columns.keys()
-            }
+            "summary": description.get("summary"),
+            "columns": {k: col_descs.get(k) for k in schema.columns.keys()},
         }
     else:
-        return { 'summary': None, 'columns': { k: None for k in schema.columns.keys() } }
+        return {"summary": None, "columns": {k: None for k in schema.columns.keys()}}
 
 
 # TODO: implement TableConstraints
