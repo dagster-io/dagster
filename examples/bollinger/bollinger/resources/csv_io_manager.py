@@ -26,8 +26,12 @@ class LocalCsvIOManager(MemoizableIOManager):
         yield EventMetadataEntry.int(obj.shape[0], "Rows")
         yield EventMetadataEntry.path(fpath, "Path")
         yield EventMetadataEntry.md(obj.head(5).to_markdown(), "Sample")
-        yield EventMetadataEntry.md(pandas_columns_to_markdown(obj), "Columns")
         yield EventMetadataEntry.text(context.version, "Resolved version")
+        yield EventMetadataEntry.table_schema(
+            context.dagster_type.metadata["schema"].schema,
+            "Schema",
+        )
+
 
     def load_input(self, context):
         """This reads a dataframe from a CSV."""

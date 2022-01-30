@@ -18,6 +18,7 @@ import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
+import { TableSchema } from './TableSchema';
 
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 
@@ -164,7 +165,7 @@ export const MetadataEntry: React.FC<{
     case 'EventTableMetadataEntry':
       return <>TableMetadata</>;
     case 'EventTableSchemaMetadataEntry':
-      return <>TableSchemaMetadata</>;
+      return <TableSchema schema={entry.schema} includeHeader={false}/>;
     default:
       return assertUnreachable(entry);
   }
