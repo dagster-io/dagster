@@ -43,4 +43,5 @@ def van_anomalous_events(sp500_prices, bollinger):
 
 @job
 def bollinger_vanilla():
-    van_anomalous_events(van_sp500_prices(), van_bollinger(van_sp500_prices()))
+    prices = van_sp500_prices()
+    van_anomalous_events(prices, van_bollinger(prices))
