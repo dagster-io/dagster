@@ -72,6 +72,8 @@ const AssetMaterializationRow: React.FC<{
 }> = React.memo(({group, hasPartitions, hasLineage, isFocused, setFocused}) => {
   const {latest, partition, timestamp, predecessors} = group;
 
+  const [isExpanded, setIsExpanded] = React.useState(true);
+
   const focusCss = isFocused
     ? {paddingLeft: 4, borderLeft: `4px solid ${ColorsWIP.HighlightGreen}`}
     : {paddingLeft: 8};
@@ -120,7 +122,12 @@ const AssetMaterializationRow: React.FC<{
         )}
         <td style={hasPartitions ? {} : focusCss}>
           <Group direction="row" spacing={4}>
-            {!hasPartitions && <DisclosureTriangle open={isFocused} />}
+            {!hasPartitions && (
+              <DisclosureTriangle
+                open={isFocused && isExpanded}
+                onClick={() => setIsExpanded(!isExpanded)}
+              />
+            )}
             <Group direction="column" spacing={4}>
               <Timestamp timestamp={{ms: Number(timestamp)}} />
               {predecessors?.length ? (
@@ -166,7 +173,7 @@ const AssetMaterializationRow: React.FC<{
           </Box>
         </td>
       </HoverableRow>
-      {isFocused && (
+      {isFocused && isExpanded && (
         <tr style={{background: ColorsWIP.Gray50}}>
           <td colSpan={6} style={{fontSize: 14, padding: 0}}>
             {description && <Box padding={{horizontal: 24, vertical: 12}}>{description}</Box>}
