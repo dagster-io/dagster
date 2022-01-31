@@ -13,7 +13,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.config.config_type import Array, Enum, EnumValue, Int, Noneable, String
+from dagster.config.config_type import Array, Bool, Enum, EnumValue, Float, Int, Noneable, String
 from dagster.core.snap import (
     DependencyStructureIndex,
     PipelineSnapshot,
@@ -400,7 +400,29 @@ def test_deserialize_solid_def_snaps_map():
     solid_def_snap = pipeline_snapshot.get_node_def_snap("noop_solid")
     recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
     assert isinstance(recevied_config_type, Map)
+    assert isinstance(recevied_config_type.key_type, String)
     assert isinstance(recevied_config_type.inner_type, String)
+    _map_has_stable_hashes(
+        recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
+    )
+
+
+def test_deserialize_solid_def_snaps_map_with_name():
+    @solid(config_schema=Field(Map(bool, float, name="title")))
+    def noop_solid(_):
+        pass
+
+    @pipeline
+    def noop_pipeline():
+        noop_solid()
+
+    pipeline_snapshot = PipelineSnapshot.from_pipeline_def(noop_pipeline)
+    solid_def_snap = pipeline_snapshot.get_node_def_snap("noop_solid")
+    recevied_config_type = pipeline_snapshot.get_config_type_from_solid_def_snap(solid_def_snap)
+    assert isinstance(recevied_config_type, Map)
+    assert isinstance(recevied_config_type.key_type, Bool)
+    assert isinstance(recevied_config_type.inner_type, Float)
+    assert recevied_config_type.given_name == "title"
     _map_has_stable_hashes(
         recevied_config_type, pipeline_snapshot.config_schema_snapshot.all_config_snaps_by_key
     )

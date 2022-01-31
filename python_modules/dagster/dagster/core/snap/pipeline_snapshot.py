@@ -367,6 +367,7 @@ def _construct_map_from_snap(config_type_snap, config_snap_map):
             config_snap_map[config_type_snap.type_param_keys[1]],
             config_snap_map,
         ),
+        name=config_type_snap.given_name,
     )
 
 
