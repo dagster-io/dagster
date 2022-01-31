@@ -5,9 +5,11 @@ so we have a different layer of objects that encode the explicit public API
 in the user_context module
 """
 from abc import ABC, abstractproperty
-from typing import TYPE_CHECKING, Any, Dict, Iterable, NamedTuple, Optional, Set, cast
+from collections import defaultdict
+from typing import TYPE_CHECKING, Any, Dict, Iterable, List, NamedTuple, Optional, Set, cast
 
 from dagster import check
+from dagster.core.definitions.events import AssetKey, AssetLineageInfo
 from dagster.core.definitions.hook_definition import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.op_definition import OpDefinition
@@ -29,7 +31,7 @@ from dagster.core.storage.io_manager import IOManager
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import PARTITION_NAME_TAG
 from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.core.types.dagster_type import DagsterType
+from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 
 from .input import InputContext
 from .output import OutputContext, get_output_context
@@ -339,6 +341,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             self._required_resource_keys
         )
         self._previous_attempt_count = previous_attempt_count
+        self._input_lineage: List[AssetLineageInfo] = []
 
         resources_iter = cast(Iterable, self._resources)
 
@@ -628,6 +631,41 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 f"Tried to access partition key for output '{output_name}' of step '{self.step.key}', "
                 f"but the step output has a partition range: '{start}' to '{end}'."
             )
+
+    def get_input_lineage(self) -> List[AssetLineageInfo]:
+        if not self._input_lineage:
+
+            for step_input in self.step.step_inputs:
+                input_def = step_input.source.get_input_def(self.pipeline_def)
+                dagster_type = input_def.dagster_type
+
+                if dagster_type.kind == DagsterTypeKind.NOTHING:
+                    continue
+
+                self._input_lineage.extend(step_input.source.get_asset_lineage(self))
+
+        self._input_lineage = _dedup_asset_lineage(self._input_lineage)
+
+        return self._input_lineage
+
+
+def _dedup_asset_lineage(asset_lineage: List[AssetLineageInfo]) -> List[AssetLineageInfo]:
+    """Method to remove duplicate specifications of the same Asset/Partition pair from the lineage
+    information. Duplicates can occur naturally when calculating transitive dependencies from solids
+    with multiple Outputs, which in turn have multiple Inputs (because each Output of the solid will
+    inherit all dependencies from all of the solid Inputs).
+    """
+    key_partition_mapping: Dict[AssetKey, Set[str]] = defaultdict(set)
+
+    for lineage_info in asset_lineage:
+        if not lineage_info.partitions:
+            key_partition_mapping[lineage_info.asset_key] |= set()
+        for partition in lineage_info.partitions:
+            key_partition_mapping[lineage_info.asset_key].add(partition)
+    return [
+        AssetLineageInfo(asset_key=asset_key, partitions=partitions)
+        for asset_key, partitions in key_partition_mapping.items()
+    ]
 
 
 class TypeCheckContext:

@@ -14,6 +14,7 @@ from dagster.core.definitions import (
     Output,
 )
 from dagster.core.errors import DagsterExecutionStepExecutionError, DagsterInvariantViolationError
+from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.system import StepExecutionContext
 from dagster.core.system_config.objects import ResolvedRunConfig
@@ -29,6 +30,7 @@ SolidOutputUnion = Union[
     Materialization,
     ExpectationResult,
     AssetObservation,
+    DagsterEvent,
 ]
 
 
@@ -72,6 +74,7 @@ def _validate_event(event: Any, step_context: StepExecutionContext) -> SolidOutp
             Materialization,
             ExpectationResult,
             AssetObservation,
+            DagsterEvent,
         ),
     ):
         raise DagsterInvariantViolationError(
@@ -108,7 +111,8 @@ def _yield_compute_results(
 ) -> Iterator[SolidOutputUnion]:
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
-    user_event_generator = compute_fn(SolidExecutionContext(step_context), inputs)
+    context = SolidExecutionContext(step_context)
+    user_event_generator = compute_fn(context, inputs)
 
     if isinstance(user_event_generator, Output):
         raise DagsterInvariantViolationError(
@@ -141,7 +145,12 @@ def _yield_compute_results(
         ),
         user_event_generator,
     ):
+        if context.has_events():
+            yield from context.consume_events()
         yield _validate_event(event, step_context)
+
+    if context.has_events():
+        yield from context.consume_events()
 
 
 def execute_core_compute(

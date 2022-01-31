@@ -1,12 +1,17 @@
+import time
 from typing import Dict, Generator, Tuple
 
 import pytest
 from dagster import (
+    AssetMaterialization,
+    AssetObservation,
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
     DagsterType,
     DagsterTypeCheckDidNotPass,
+    ExpectationResult,
     In,
+    Materialization,
     Nothing,
     Out,
     Output,
@@ -17,15 +22,16 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.test_utils import instance_for_test
 from dagster.core.types.dagster_type import Int, String
 
 
-def execute_op_in_graph(an_op):
+def execute_op_in_graph(an_op, instance=None):
     @graph
     def my_graph():
         an_op()
 
-    result = my_graph.execute_in_process()
+    result = my_graph.execute_in_process(instance=instance)
     return result
 
 
@@ -487,3 +493,113 @@ def test_error_message_mixed_ops_and_solids():
         "{'config': {'foo': '...'}}}}}",
     ):
         nested_job.execute_in_process()
+
+
+def test_log_events():
+    @op
+    def basic_op(context):
+        context.log_event(AssetMaterialization("first"))
+        context.log_event(Materialization("second"))
+        context.log_event(AssetMaterialization("third"))
+        context.log_event(ExpectationResult(success=True))
+        context.log_event(AssetObservation("fourth"))
+
+    with instance_for_test() as instance:
+        result = execute_op_in_graph(basic_op, instance=instance)
+        asset_materialization_keys = [
+            materialization.label
+            for materialization in result.asset_materializations_for_node("basic_op")
+        ]
+
+        assert asset_materialization_keys == ["first", "second", "third"]
+
+        relevant_events_from_execution = [
+            event
+            for event in result.all_node_events
+            if event.is_asset_observation
+            or event.is_step_materialization
+            or event.is_expectation_result
+        ]
+
+        relevant_events_from_event_log = [
+            event_log.dagster_event
+            for event_log in instance.all_logs(result.run_id)
+            if event_log.dagster_event is not None
+            and (
+                event_log.dagster_event.is_asset_observation
+                or event_log.dagster_event.is_step_materialization
+                or event_log.dagster_event.is_expectation_result
+            )
+        ]
+
+        def _assertions_from_event_list(events):
+            assert events[0].is_step_materialization
+            assert events[0].event_specific_data.materialization.label == "first"
+
+            assert events[1].is_step_materialization
+            assert events[1].event_specific_data.materialization.label == "second"
+
+            assert events[2].is_step_materialization
+            assert events[2].event_specific_data.materialization.label == "third"
+
+            assert events[3].is_expectation_result
+
+            assert events[4].is_asset_observation
+
+        _assertions_from_event_list(relevant_events_from_execution)
+
+        _assertions_from_event_list(relevant_events_from_event_log)
+
+
+def test_yield_event_ordering():
+    @op
+    def yielding_op(context):
+        context.log_event(AssetMaterialization("first"))
+        time.sleep(1)
+        context.log.debug("A log")
+        context.log_event(AssetMaterialization("second"))
+        yield AssetMaterialization("third")
+        yield Output("foo")
+
+    with instance_for_test() as instance:
+        result = execute_op_in_graph(yielding_op, instance=instance)
+
+        assert result.success
+
+        asset_materialization_keys = [
+            materialization.label
+            for materialization in result.asset_materializations_for_node("yielding_op")
+        ]
+
+        assert asset_materialization_keys == ["first", "second", "third"]
+
+        relevant_event_logs = [
+            event_log
+            for event_log in instance.all_logs(result.run_id)
+            if event_log.dagster_event is not None
+            and (
+                event_log.dagster_event.is_asset_observation
+                or event_log.dagster_event.is_step_materialization
+                or event_log.dagster_event.is_expectation_result
+            )
+        ]
+
+        log_entries = [
+            event_log
+            for event_log in instance.all_logs(result.run_id)
+            if event_log.dagster_event is None
+        ]
+        log = log_entries[0]
+        assert log.user_message == "A log"
+
+        first = relevant_event_logs[0]
+        assert first.dagster_event.event_specific_data.materialization.label == "first"
+
+        second = relevant_event_logs[1]
+        assert second.dagster_event.event_specific_data.materialization.label == "second"
+
+        third = relevant_event_logs[2]
+        assert third.dagster_event.event_specific_data.materialization.label == "third"
+
+        assert second.timestamp - first.timestamp >= 1
+        assert log.timestamp - first.timestamp >= 1
