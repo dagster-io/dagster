@@ -250,9 +250,9 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         return bool(self._events)
 
     def consume_events(self) -> Iterator[DagsterEvent]:
-        """Yields all user-generated events that have been recorded from this context since the last consumption event.
+        """Pops and yields all user-generated events that have been recorded from this context.
 
-        Designed for internal use. Users should never need to invoke this method.
+        If consume_events has not yet been called, this will yield all logged events since the beginning of the op's computation. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
         """
         events = self._events
         self._events = []
