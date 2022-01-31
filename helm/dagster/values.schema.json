@@ -311,6 +311,20 @@
                         "$ref": "#/definitions/SecretEnvSource"
                     }
                 },
+                "deploymentLabels": {
+                    "title": "Deploymentlabels",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "labels": {
+                    "title": "Labels",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
                 "nodeSelector": {
                     "$ref": "#/definitions/NodeSelector"
                 },
@@ -362,6 +376,8 @@
                 "env",
                 "envConfigMaps",
                 "envSecrets",
+                "deploymentLabels",
+                "labels",
                 "nodeSelector",
                 "affinity",
                 "tolerations",
@@ -2155,6 +2171,20 @@
                         "$ref": "#/definitions/SecretEnvSource"
                     }
                 },
+                "deploymentLabels": {
+                    "title": "Deploymentlabels",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "labels": {
+                    "title": "Labels",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
                 "nodeSelector": {
                     "$ref": "#/definitions/NodeSelector"
                 },
@@ -2195,6 +2225,8 @@
                 "env",
                 "envConfigMaps",
                 "envSecrets",
+                "deploymentLabels",
+                "labels",
                 "nodeSelector",
                 "affinity",
                 "tolerations",

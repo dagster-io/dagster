@@ -23,6 +23,8 @@ class Dagit(BaseModel):
     env: Dict[str, str]
     envConfigMaps: List[kubernetes.ConfigMapEnvSource]
     envSecrets: List[kubernetes.SecretEnvSource]
+    deploymentLabels: Dict[str, str]
+    labels: Dict[str, str]
     nodeSelector: kubernetes.NodeSelector
     affinity: kubernetes.Affinity
     tolerations: kubernetes.Tolerations

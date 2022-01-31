@@ -90,6 +90,22 @@ dagit:
   #   - name: secret
   envSecrets: []
 
+  # Additional labels that should be included on the deployment. See:
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+  #
+  # Example:
+  # labels:
+  #   my-label-key: my_label-value
+  deploymentLabels: {}
+
+  # Additional labels that should be included on the pod. See:
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+  #
+  # Example:
+  # labels:
+  #   my-label-key: my_label-value
+  labels: {}
+
   # Support Node, affinity and tolerations for Dagit pod assignment. See:
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#nodeselector
   # https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
@@ -981,6 +997,22 @@ dagsterDaemon:
   # envSecrets:
   #   - name: secret
   envSecrets: []
+
+  # Additional labels that should be included on the deployment. See:
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+  #
+  # Example:
+  # deploymentLabels:
+  #   my-label-key: my_label-value
+  deploymentLabels: {}
+
+  # Additional labels that should be included on the pod. See:
+  # https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+  #
+  # Example:
+  # labels:
+  #   my-label-key: my_label-value
+  labels: {}
 
   annotations: {}
   nodeSelector: {}
