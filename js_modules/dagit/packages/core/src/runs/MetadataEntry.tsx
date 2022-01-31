@@ -165,7 +165,7 @@ export const MetadataEntry: React.FC<{
     case 'EventTableMetadataEntry':
       return <>TableMetadata</>;
     case 'EventTableSchemaMetadataEntry':
-      return <TableSchema schema={entry.schema} includeHeader={false}/>;
+      return <TableSchema schema={entry.schema}/>;
     default:
       return assertUnreachable(entry);
   }
