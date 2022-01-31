@@ -91,11 +91,11 @@ export const AssetNode: React.FC<{
             </div>
             <div style={{flex: 1}} />
             {liveData && liveData.inProgressRunIds.length > 0 ? (
-              <Tooltip content="A run is currently refreshing this asset.">
+              <Tooltip content="A run is currently rematerializing this asset.">
                 <Spinner purpose="body-text" />
               </Tooltip>
             ) : liveData && liveData.unstartedRunIds.length > 0 ? (
-              <Tooltip content="A run has started that will refresh this asset soon.">
+              <Tooltip content="A run has started that will rematerialize this asset soon.">
                 <Spinner purpose="body-text" stopped />
               </Tooltip>
             ) : undefined}
