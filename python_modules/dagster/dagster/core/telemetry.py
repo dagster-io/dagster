@@ -18,9 +18,9 @@ import os
 import platform
 import sys
 import uuid
-from collections import namedtuple
 from functools import wraps
 from logging.handlers import RotatingFileHandler
+from typing import Dict, NamedTuple, Optional
 
 import click
 import yaml
@@ -128,10 +128,22 @@ def get_python_version():
 
 
 class TelemetryEntry(
-    namedtuple(
-        "TelemetryEntry",
-        "action client_time elapsed_time event_id instance_id pipeline_name_hash "
-        "num_pipelines_in_repo repo_hash python_version metadata version dagster_version os_desc os_platform run_storage_id",
+    NamedTuple(
+        "_TelemetryEntry",
+        [
+            ("action", str),
+            ("client_time", str),
+            ("event_id", str),
+            ("elapsed_time", str),
+            ("instance_id", str),
+            ("metadata", Dict[str, str]),
+            ("python_version", str),
+            ("version", str),
+            ("dagster_version", str),
+            ("os_desc", str),
+            ("os_platform", str),
+            ("run_storage_id", str),
+        ],
     )
 ):
     """
@@ -145,10 +157,7 @@ class TelemetryEntry(
     elapsed_time - Time elapsed between start of function and end of function call
     event_id - Unique id for the event
     instance_id - Unique id for dagster instance
-    pipeline_name_hash - Hash of pipeline name, if any
     python_version - Python version
-    repo_hash - Hash of repo name, if any
-    num_pipelines_in_repo - Number of pipelines in repo, if any
     metadata - More information i.e. pipeline success (boolean)
     version - Schema version
     dagster_version - Version of the project being used.
@@ -162,16 +171,13 @@ class TelemetryEntry(
 
     def __new__(
         cls,
-        action,
-        client_time,
-        event_id,
-        instance_id,
-        elapsed_time=None,
-        pipeline_name_hash=None,
-        num_pipelines_in_repo=None,
-        repo_hash=None,
-        metadata=None,
-        run_storage_id=None,
+        action: str,
+        client_time: str,
+        event_id: str,
+        instance_id: str,
+        metadata: Optional[Dict[str, str]] = None,
+        elapsed_time: Optional[str] = None,
+        run_storage_id: Optional[str] = None,
     ):
         action = check.str_param(action, "action")
         client_time = check.str_param(client_time, "action")
@@ -179,15 +185,7 @@ class TelemetryEntry(
         event_id = check.str_param(event_id, "event_id")
         instance_id = check.str_param(instance_id, "instance_id")
         metadata = check.opt_dict_param(metadata, "metadata")
-        run_storage_id = check.opt_str_param(run_storage_id, "run_storage_id")
-
-        pipeline_name_hash = check.opt_str_param(
-            pipeline_name_hash, "pipeline_name_hash", default=""
-        )
-        num_pipelines_in_repo = check.opt_str_param(
-            num_pipelines_in_repo, "num_pipelines_in_repo", default=""
-        )
-        repo_hash = check.opt_str_param(repo_hash, "repo_hash", default="")
+        run_storage_id = check.opt_str_param(run_storage_id, "run_storage_id", default="")
 
         return super(TelemetryEntry, cls).__new__(
             cls,
@@ -196,9 +194,6 @@ class TelemetryEntry(
             elapsed_time=elapsed_time,
             event_id=event_id,
             instance_id=instance_id,
-            pipeline_name_hash=pipeline_name_hash,
-            num_pipelines_in_repo=num_pipelines_in_repo,
-            repo_hash=repo_hash,
             python_version=get_python_version(),
             metadata=metadata,
             version=TELEMETRY_VERSION,
@@ -391,6 +386,8 @@ def log_external_repo_stats(instance, source, external_repo, external_pipeline=N
         pipeline_name_hash = hash_name(external_pipeline.name) if external_pipeline else ""
         repo_hash = hash_name(external_repo.name)
         num_pipelines_in_repo = len(external_repo.get_all_external_pipelines())
+        num_schedules_in_repo = len(external_repo.get_external_schedules())
+        num_sensors_in_repo = len(external_repo.get_external_sensors())
 
         write_telemetry_log_line(
             TelemetryEntry(
@@ -398,10 +395,14 @@ def log_external_repo_stats(instance, source, external_repo, external_pipeline=N
                 client_time=str(datetime.datetime.now()),
                 event_id=str(uuid.uuid4()),
                 instance_id=instance_id,
-                pipeline_name_hash=pipeline_name_hash,
-                num_pipelines_in_repo=str(num_pipelines_in_repo),
-                repo_hash=repo_hash,
-                metadata={"source": source},
+                metadata={
+                    "source": source,
+                    "pipeline_name_hash": pipeline_name_hash,
+                    "num_pipelines_in_repo": str(num_pipelines_in_repo),
+                    "num_schedules_in_repo": str(num_schedules_in_repo),
+                    "num_sensors_in_repo": str(num_sensors_in_repo),
+                    "repo_hash": repo_hash,
+                },
             )._asdict()
         )
 
@@ -420,15 +421,21 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
             repository = pipeline.get_reconstructable_repository().get_definition()
             repo_hash = hash_name(repository.name)
             num_pipelines_in_repo = len(repository.pipeline_names)
+            num_schedules_in_repo = len(repository.schedule_defs)
+            num_sensors_in_repo = len(repository.sensor_defs)
         elif isinstance(repo, ReconstructableRepository):
             pipeline_name_hash = ""
             repository = repo.get_definition()
             repo_hash = hash_name(repository.name)
             num_pipelines_in_repo = len(repository.pipeline_names)
+            num_schedules_in_repo = len(repository.schedule_defs)
+            num_sensors_in_repo = len(repository.sensor_defs)
         else:
             pipeline_name_hash = hash_name(pipeline.get_definition().name)
             repo_hash = hash_name(get_ephemeral_repository_name(pipeline.get_definition().name))
             num_pipelines_in_repo = 1
+            num_schedules_in_repo = 0
+            num_sensors_in_repo = 0
 
         write_telemetry_log_line(
             TelemetryEntry(
@@ -436,10 +443,14 @@ def log_repo_stats(instance, source, pipeline=None, repo=None):
                 client_time=str(datetime.datetime.now()),
                 event_id=str(uuid.uuid4()),
                 instance_id=instance_id,
-                pipeline_name_hash=pipeline_name_hash,
-                num_pipelines_in_repo=str(num_pipelines_in_repo),
-                repo_hash=repo_hash,
-                metadata={"source": source},
+                metadata={
+                    "source": source,
+                    "pipeline_name_hash": pipeline_name_hash,
+                    "num_pipelines_in_repo": str(num_pipelines_in_repo),
+                    "num_schedules_in_repo": str(num_schedules_in_repo),
+                    "num_sensors_in_repo": str(num_sensors_in_repo),
+                    "repo_hash": repo_hash,
+                },
             )._asdict()
         )
 
@@ -465,8 +476,6 @@ def log_action(
     client_time=None,
     elapsed_time=None,
     metadata=None,
-    pipeline_name_hash=None,
-    repo_hash=None,
 ):
     check.inst_param(instance, "instance", DagsterInstance)
     if client_time is None:
@@ -486,8 +495,6 @@ def log_action(
                 event_id=str(uuid.uuid4()),
                 instance_id=instance_id,
                 metadata=metadata,
-                repo_hash=repo_hash,
-                pipeline_name_hash=pipeline_name_hash,
                 run_storage_id=run_storage_id,
             )._asdict()
         )
