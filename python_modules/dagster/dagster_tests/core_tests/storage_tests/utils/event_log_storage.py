@@ -8,6 +8,7 @@ import pytest
 from dagster import (
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     DagsterInstance,
     InputDefinition,
     ModeDefinition,
@@ -1412,6 +1413,7 @@ class TestEventLogStorage:
             yield AssetMaterialization(AssetKey("b"), tags={"num": str(1)})
             yield AssetMaterialization(AssetKey("c"), tags={"num": str(1)})
             yield AssetMaterialization(AssetKey("d"), tags={"num": str(1)})
+            yield AssetObservation(AssetKey("a"), metadata={"foo": "bar"})
             yield Output(1)
 
         @solid
@@ -1421,6 +1423,7 @@ class TestEventLogStorage:
             yield Output(2)
 
         def _event_tags(event):
+            assert event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
             return event.dagster_event.step_materialization_data.materialization.tags
 
         def _fetch_events(storage):

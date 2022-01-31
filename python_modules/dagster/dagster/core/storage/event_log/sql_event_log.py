@@ -710,8 +710,12 @@ class SqlEventLogStorage(EventLogStorage):
                     ]
                 )
                 .where(
-                    SqlEventLogStorageTable.c.asset_key.in_(
-                        [asset_key.to_string() for asset_key in to_backcompat_fetch]
+                    db.and_(
+                        SqlEventLogStorageTable.c.asset_key.in_(
+                            [asset_key.to_string() for asset_key in to_backcompat_fetch]
+                        ),
+                        SqlEventLogStorageTable.c.dagster_event_type
+                        == DagsterEventType.ASSET_MATERIALIZATION.value,
                     )
                 )
                 .group_by(SqlEventLogStorageTable.c.asset_key)
