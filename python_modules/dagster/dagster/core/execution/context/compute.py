@@ -295,7 +295,37 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         else:
             check.failed("Unexpected event {event}".format(event=event))
 
-    def add_output_metadata(self, metadata: Mapping[str, Any], output_name: Optional[str] = None):
+    def add_output_metadata(
+        self, metadata: Mapping[str, Any], output_name: Optional[str] = None
+    ) -> None:
+        """Add metadata to one of the outputs of an op.
+
+        This can only be used once per output in the body of an op. Using this method with the same output_name more than once within an op will result in an error.
+
+        Args:
+            metadata (Mapping[str, Any]): The metadata to attach to the output
+            output_name (Optional[str]): The name of the output to attach metadata to. If there is only one output on the op, then this argument does not need to be provided. The metadata will automatically be attached to the only output.
+
+        **Examples:**
+
+        .. code-block:: python
+
+            from dagster import Out, op
+            from typing import Tuple
+
+            @op
+            def add_metadata(context):
+                context.add_output_metadata({"foo", "bar"})
+                return 5 # Since the default output is called "result", metadata will be attached to the output "result".
+
+            @op(out={"a": Out(), "b": Out()})
+            def add_metadata_two_outputs(context) -> Tuple[str, int]:
+                context.add_output_metadata({"foo": "bar"}, output_name="b")
+                context.add_output_metadata({"baz": "bat"}, output_name="a")
+
+                return ("dog", 5)
+
+        """
         metadata = check.dict_param(metadata, "metadata", key_type=str)
         output_name = check.opt_str_param(output_name, "output_name")
 
