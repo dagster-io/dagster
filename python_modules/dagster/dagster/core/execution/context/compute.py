@@ -266,9 +266,10 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         Args:
             event (Union[AssetMaterialization, Materialization, AssetObservation, ExpectationResult]): The event to log.
 
-        Examples:
+        **Examples:**
 
         .. code-block:: python
+
             from dagster import op, AssetMaterialization
 
             @op
