@@ -440,7 +440,7 @@ def _get_output_asset_materializations(
 
     type_check_metadata_entries = [
         EventMetadataEntry.text(
-            label="Type check succeeded",
+            label="Quality check succeeded",
             text="\U00002705" if type_check_data.success else "\U0000274c",
         )
     ] + (type_check_data.metadata_entries or [])
