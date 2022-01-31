@@ -21,17 +21,15 @@ class Sp500Prices(pa.SchemaModel):
 
 Sp500PricesDgType = pandera_schema_to_dagster_type(
     Sp500Prices,
-    description={
-        "summary": "Historical stock prices for the S&P 500.",
-        "columns": {
-            "name": "Ticker symbol of stock",
-            "date": "Date of prices",
-            "open": "Price at market open",
-            "high": "Highest price of the day",
-            "low": "Lowest price of the day",
-            "close": "Price at market close",
-            "volume": "Number of shares traded for day",
-        },
+    description="Historical stock prices for the S&P 500.",
+    column_descriptions={
+        "name": "Ticker symbol of stock",
+        "date": "Date of prices",
+        "open": "Price at market open",
+        "high": "Highest price of the day",
+        "low": "Lowest price of the day",
+        "close": "Price at market close",
+        "volume": "Number of shares traded for day",
     },
 )
 
@@ -45,14 +43,12 @@ class Bollinger(pa.SchemaModel):
 
 BollingerDgType = pandera_schema_to_dagster_type(
     Bollinger,
-    description={
-        "summary": "Bollinger bands for a set of stock prices.",
-        "columns": {
-            "name": "Ticker symbol of stock",
-            "date": "Date of prices",
-            "upper": "Upper Bollinger band",
-            "lower": "Lower Bollinger band",
-        },
+    description="Bollinger bands for a set of stock prices.",
+    column_descriptions={
+        "name": "Ticker symbol of stock",
+        "date": "Date of prices",
+        "upper": "Upper Bollinger band",
+        "lower": "Lower Bollinger band",
     },
 )
 
@@ -67,18 +63,16 @@ class AnomalousEvents(pa.SchemaModel):
 
 AnomalousEventsDgType = pandera_schema_to_dagster_type(
     AnomalousEvents,
-    description={
-        "summary": """
+    description="""
         Anomalous price events, defined by a day on which a stock's price strayed above or below its
         Bollinger bands.
     """.replace(
-            r"\n\s+", " "
-        ),
-        "columns": {
-            "date": "Date of event",
-            "name": "Ticker symbol of stock",
-            "event": "Type of event: 'high' or 'low'",
-        },
+        r"\n\s+", " "
+    ),
+    column_descriptions={
+        "date": "Date of event",
+        "name": "Ticker symbol of stock",
+        "event": "Type of event: 'high' or 'low'",
     },
 )
 
