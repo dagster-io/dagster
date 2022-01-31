@@ -15,17 +15,18 @@ class ConfigTypeKind(PythonEnum):
     SELECTOR = "SELECTOR"
     STRICT_SHAPE = "STRICT_SHAPE"
     PERMISSIVE_SHAPE = "PERMISSIVE_SHAPE"
-    MAP = "MAP"
     SCALAR_UNION = "SCALAR_UNION"
+
+    MAP = "MAP"
+
+    # Closed generic types
+    ARRAY = "ARRAY"
+    NONEABLE = "NONEABLE"
 
     @staticmethod
     def has_fields(kind: "ConfigTypeKind") -> bool:
         check.inst_param(kind, "kind", ConfigTypeKind)
         return kind == ConfigTypeKind.SELECTOR or ConfigTypeKind.is_shape(kind)
-
-    # Closed generic types
-    ARRAY = "ARRAY"
-    NONEABLE = "NONEABLE"
 
     @staticmethod
     def is_closed_generic(kind: "ConfigTypeKind") -> bool:

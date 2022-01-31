@@ -48,6 +48,10 @@ def _do_print(config_schema_snapshot, config_type_key, printer, with_lines=True)
         _do_print(config_schema_snapshot, config_type_snap.non_scalar_type_key, printer)
         printer.append(")")
     elif kind == ConfigTypeKind.MAP:
+        # e.g.
+        # {
+        #   [String]: Int
+        # }
         line_break_fn("{")
         with printer.with_indent():
             printer.append("[")

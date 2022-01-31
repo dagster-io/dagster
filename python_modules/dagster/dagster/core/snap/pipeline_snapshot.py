@@ -353,7 +353,7 @@ def _construct_map_from_snap(config_type_snap, config_snap_map):
     check.list_param(config_type_snap.type_param_keys, "type_param_keys", str)
     check.invariant(
         len(config_type_snap.type_param_keys) == 2,
-        "Expect map to provide exactly two types. Snapshot provided: {}".format(
+        "Expect map to provide exactly two types (key, value). Snapshot provided: {}".format(
             config_type_snap.type_param_keys
         ),
     )
