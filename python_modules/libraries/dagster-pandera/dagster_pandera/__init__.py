@@ -1,5 +1,5 @@
 import itertools
-from typing import TYPE_CHECKING, Any, Dict, Generator, Optional, Tuple, Type, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Generator, Mapping, Optional, Tuple, Type, Union, cast
 
 import dagster.check as check
 import dask
@@ -66,7 +66,8 @@ _anonymous_type_name = _anonymous_type_name_func()
 def pandera_schema_to_dagster_type(
     schema: Union[pa.DataFrameSchema, Type[pa.SchemaModel]],
     name: Optional[str] = None,
-    description: Optional[Union[str, Dict[str, Any]]] = None,
+    description: Optional[str] = None,
+    column_descriptions: Optional[Mapping[str, str]] = None,
 ):
 
     if isinstance(schema, type) and issubclass(schema, pa.SchemaModel):
@@ -76,8 +77,6 @@ def pandera_schema_to_dagster_type(
         name = name or f"DagsterPanderaDataframe{next(_anonymous_type_name)}"
     else:
         raise TypeError("schema must be a DataFrameSchema or a subclass of SchemaModel")
-
-    description = _normalize_schema_description(schema, description)
 
     def type_check_fn(_context, value: object) -> TypeCheck:
         if isinstance(value, VALIDATABLE_DATA_FRAME_CLASSES):
@@ -104,33 +103,17 @@ def pandera_schema_to_dagster_type(
 
         return TypeCheck(success=True)
 
-    col_descs = cast(Dict[str, str], description.get("columns"))
-    tschema = pandera_schema_to_table_schema(schema, col_descs)
+    tschema = pandera_schema_to_table_schema(schema, column_descriptions or {})
 
     return DagsterType(
         type_check_fn=type_check_fn,
         name=name,
-        description=description.get("summary"),
+        description=description,
         metadata_entries=[
             EventMetadataEntry.text("foo", label="test"),
             EventMetadataEntry.table_schema(tschema, label="schema"),
         ],
     )
-
-
-def _normalize_schema_description(
-    schema: pa.DataFrameSchema, description: Optional[Union[str, Dict[str, Any]]]
-) -> Dict[str, Any]:
-    if isinstance(description, str):
-        return {"summary": description}
-    elif isinstance(description, dict):
-        col_descs = description.get("columns", {})
-        return {
-            "summary": description.get("summary"),
-            "columns": {k: col_descs.get(k) for k in schema.columns.keys()},
-        }
-    else:
-        return {"summary": None, "columns": {k: None for k in schema.columns.keys()}}
 
 
 # TODO: implement TableConstraints
