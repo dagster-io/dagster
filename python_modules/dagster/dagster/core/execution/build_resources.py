@@ -78,9 +78,9 @@ def build_resources(
         def the_resource():
             return "foo"
 
-        with build_resources(resources={"from_def": the_resource, "from_val": "foo"}) as resources:
+        with build_resources(resources={"from_def": the_resource, "from_val": "bar"}) as resources:
             assert resources.from_def == "foo"
-            assert resources.from_val == "foo"
+            assert resources.from_val == "bar"
 
     """
 

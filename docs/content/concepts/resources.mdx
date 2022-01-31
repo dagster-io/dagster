@@ -195,7 +195,7 @@ def test_cm_resource():
 
 ## Initializing Resources Outside of Execution
 
-There are scenarios where you might want to reuse the code written within your resources outside of the context of execution. Consider that I have a resource `db_connection`, and I want to use that resource outside of the context of an execution. I can use the <PyObject object="build_resources"/> API to initialize this resource outside of execution.
+There are scenarios where you might want to reuse the code written within your resources outside of the context of execution. Consider a case where you have a resource `db_connection`, and you want to use that resource outside of the context of an execution. You can use the <PyObject object="build_resources"/> API to initialize this resource outside of execution.
 
 ```python file=/concepts/resources/resources.py startafter=start_build_resources_example endbefore=end_build_resources_example
 from dagster import resource, build_resources
