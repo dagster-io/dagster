@@ -154,6 +154,8 @@ class Map(ConfigType):
             The type of keys this map can contain. Must be a scalar type.
         inner_type (type):
             The type of the values that this map type can contain.
+        name (string):
+            Optional name which describes the role of keys in the map.
 
     **Examples:**
 
@@ -164,22 +166,27 @@ class Map(ConfigType):
             return sorted(list(context.op_config.items()))
     """
 
-    def __init__(self, key_type, inner_type):
+    def __init__(self, key_type, inner_type, name=None):
         from .field import resolve_to_config_type
 
         self.key_type = resolve_to_config_type(key_type)
         self.inner_type = resolve_to_config_type(inner_type)
+        self.given_name = name
 
         check.inst_param(self.key_type, "key_type", ConfigType)
         check.inst_param(self.inner_type, "inner_type", ConfigType)
         check.param_invariant(
             self.key_type.kind == ConfigTypeKind.SCALAR, "key_type", "Key type must be a scalar"
         )
+        check.opt_str_param(self.given_name, "name")
 
         super(Map, self).__init__(
-            key="Map.{key_type}.{inner_type}".format(
-                key_type=self.key_type.key, inner_type=self.inner_type.key
+            key="Map.{key_type}.{inner_type}{name_key}".format(
+                key_type=self.key_type.key,
+                inner_type=self.inner_type.key,
+                name_key=f":name: {name}" if name else "",
             ),
+            given_name=name,
             type_params=[self.key_type, self.inner_type],
             kind=ConfigTypeKind.MAP,
         )
