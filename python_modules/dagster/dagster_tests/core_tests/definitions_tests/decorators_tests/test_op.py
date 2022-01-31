@@ -603,3 +603,31 @@ def test_yield_event_ordering():
 
         assert second.timestamp - first.timestamp >= 1
         assert log.timestamp - first.timestamp >= 1
+
+
+def test_metadata_logging():
+    @op
+    def basic(context):
+        context.add_output_metadata({"foo": "bar"})
+        return "baz"
+
+    result = execute_op_in_graph(basic)
+    assert result.success
+    assert result.output_for_node("basic") == "baz"
+    events = result.events_for_node("basic")
+    metadata_entry = events[1].event_specific_data.metadata_entries[0]
+    assert metadata_entry.label == "foo"
+    assert metadata_entry.entry_data.text == "bar"
+
+
+def test_metadata_logging_multiple_entries():
+    @op
+    def basic(context):
+        context.add_output_metadata({"foo": "bar"})
+        context.add_output_metadata({"baz": "bat"})
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="In op 'basic', attempted to log metadata for output 'result' more than once.",
+    ):
+        execute_op_in_graph(basic)
