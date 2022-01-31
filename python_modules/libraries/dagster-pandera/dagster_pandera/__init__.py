@@ -53,7 +53,7 @@ VALIDATABLE_DATA_FRAME_CLASSES = get_validatable_dataframe_classes()
 
 def _anonymous_type_name_func() -> Generator[str, None, None]:
     for i in itertools.count(start=1):
-        yield f"DagsterPandasDataframe{i}"
+        yield f"DagsterPanderaDataframe{i}"
 
 
 _anonymous_type_name = _anonymous_type_name_func()
@@ -120,7 +120,7 @@ def pandera_schema_to_dagster_type(
 
 
 def pandera_schema_to_table_schema(
-    schema: pa.DataFrameSchema, column_descriptions: Dict[str, str]
+    schema: pa.DataFrameSchema, column_descriptions: Mapping[str, str]
 ) -> TableSchema:
     """Convert a pandera schema to a Dagster `TableSchema`.
 
