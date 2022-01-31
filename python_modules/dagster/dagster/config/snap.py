@@ -113,7 +113,8 @@ class ConfigTypeSnap(
 
     @property
     def key_type_key(self) -> str:
-        # valid for Map
+        """For a type which has keys such as Map, returns the type of the key."""
+        # valid for Map, which has its key type as the first entry in type_param_keys
         check.invariant(self.kind == ConfigTypeKind.MAP)
 
         type_param_keys = check.is_list(self.type_param_keys, of_type=str)
@@ -122,6 +123,7 @@ class ConfigTypeSnap(
 
     @property
     def inner_type_key(self) -> str:
+        """For container types such as Array or Noneable, the contained type. For a Map, the value type."""
         # valid for Noneable, Map, and Array
         check.invariant(
             self.kind == ConfigTypeKind.NONEABLE
@@ -131,6 +133,7 @@ class ConfigTypeSnap(
 
         type_param_keys = check.is_list(self.type_param_keys, of_type=str)
         if self.kind == ConfigTypeKind.MAP:
+            # For a Map, the inner (value) type is the second entry (the first is the key type)
             check.invariant(len(type_param_keys) == 2)
             return type_param_keys[1]
         else:

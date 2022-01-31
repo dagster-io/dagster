@@ -149,7 +149,6 @@ class Map(ConfigType):
     type checked values. Unlike :py:class:`Shape` and :py:class:`Permissive`, scalar
     keys other than strings can be used, and unlike :py:class:`Permissive`, all
     values are type checked.
-
     Args:
         key_type (type):
             The type of keys this map can contain. Must be a scalar type.
@@ -395,10 +394,13 @@ def _convert_potential_type(original_root: object, potential_type, stack: List[s
     from .field import resolve_to_config_type
 
     if isinstance(potential_type, dict):
+        # A dictionary, containing a single key which is a type (int, str, etc) and not a string is interpreted as a Map
         if len(potential_type) == 1:
             key = list(potential_type.keys())[0]
             if not isinstance(key, str) and _convert_potential_type(original_root, key, stack):
                 return expand_map(original_root, potential_type, stack)
+
+        # Otherwise, the dictionary is interpreted as a Shape
         return Shape(_expand_fields_dict(original_root, potential_type, stack))
 
     if isinstance(potential_type, list):
