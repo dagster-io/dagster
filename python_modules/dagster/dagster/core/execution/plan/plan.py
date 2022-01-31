@@ -237,17 +237,15 @@ class _PlanBuilder:
         # Expects that if step_keys_to_execute was set, that the `plan` variable will have the
         # reflected step_keys_to_execute
         if pipeline_def.is_using_memoization(self._tags) and len(step_output_versions) == 0:
-            if self.step_keys_to_execute is not None:
-                raise DagsterInvariantViolationError(
-                    "Cannot use both memoization and re-execution at this time."
-                )
             if self._instance_ref is None:
                 raise DagsterInvariantViolationError(
                     "Attempted to build memoized execution plan without providing a persistent "
                     "DagsterInstance to create_execution_plan."
                 )
             instance = DagsterInstance.from_ref(self._instance_ref)
-            plan = plan.build_memoized_plan(pipeline_def, self.resolved_run_config, instance)
+            plan = plan.build_memoized_plan(
+                pipeline_def, self.resolved_run_config, instance, self.step_keys_to_execute
+            )
 
         return plan
 
@@ -668,6 +666,13 @@ class ExecutionPlan(
     def step_keys_to_execute(self) -> List[str]:
         return [handle.to_key() for handle in self.step_handles_to_execute]
 
+    @property
+    def step_keys_to_skip(self) -> List[str]:
+        return list(
+            set(handle.to_key() for handle in self.step_dict.keys())
+            - set(self.step_keys_to_execute)
+        )
+
     def get_step_output(self, step_output_handle: StepOutputHandle) -> StepOutput:
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
         return _get_step_output(self.step_dict_by_key, step_output_handle)
@@ -826,6 +831,7 @@ class ExecutionPlan(
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
         instance: DagsterInstance,
+        selected_step_keys: List[str],
     ) -> "ExecutionPlan":
         """
         Returns:
@@ -907,6 +913,8 @@ class ExecutionPlan(
                 if not io_manager.has_output(context):
                     unmemoized_step_keys.add(step_output_handle.step_key)
 
+        if selected_step_keys is not None:
+            unmemoized_step_keys = unmemoized_step_keys & set(selected_step_keys)
         return self.build_subset_plan(
             list(unmemoized_step_keys),
             pipeline_def,
