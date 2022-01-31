@@ -119,9 +119,9 @@ class FivetranResource:
         """
         connector_details = self.get_connector_details(connector_id)
         if connector_details["paused"]:
-            raise Failure("Connector '{connector_id}' cannot be synced as it is currently paused.")
+            raise Failure(f"Connector '{connector_id}' cannot be synced as it is currently paused.")
         if connector_details["status"]["setup_state"] != "connected":
-            raise Failure("Connector '{connector_id}' cannot be synced as it has not been setup")
+            raise Failure(f"Connector '{connector_id}' cannot be synced as it has not been setup")
 
     def get_connector_sync_status(self, connector_id: str) -> Tuple[datetime.datetime, bool, str]:
         """
@@ -180,7 +180,7 @@ class FivetranResource:
             Dict[str, Any]: Parsed json data representing the API response.
         """
         if schedule_type not in ["auto", "manual"]:
-            check.failed("schedule_type must be either 'auto' or 'manual'.")
+            check.failed(f"schedule_type must be either 'auto' or 'manual': got '{schedule_type}'")
         return self.update_connector(connector_id, properties={"schedule_type": schedule_type})
 
     def get_connector_schema_config(self, connector_id: str) -> Dict[str, Any]:
@@ -252,7 +252,8 @@ class FivetranResource:
                 seconds=poll_timeout
             ):
                 raise Failure(
-                    f"Sync for connector '{connector_id}' timed out after {datetime.datetime.now() - poll_start}."
+                    f"Sync for connector '{connector_id}' timed out after "
+                    f"{datetime.datetime.now() - poll_start}."
                 )
 
             # Sleep for the configured time interval before polling again.
