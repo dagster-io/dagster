@@ -99,6 +99,10 @@ spec:
           livenessProbe:
             {{- toYaml .Values.dagit.livenessProbe | nindent 12 }}
         {{- end }}
+        {{- if .Values.dagit.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.dagit.readinessProbe | nindent 12 }}
+        {{- end }}
         {{- if .Values.dagit.startupProbe.enabled}}
           {{- $startupProbe := omit .Values.dagit.startupProbe "enabled" }}
           startupProbe:

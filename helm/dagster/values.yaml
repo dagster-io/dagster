@@ -115,16 +115,23 @@ dagit:
     httpGet:
       path: "/dagit_info"
       port: 80
-    # initialDelaySeconds: 60
     periodSeconds: 20
     timeoutSeconds: 3
     successThreshold: 1
     failureThreshold: 3
-  # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
+
+  # Readiness probe that always succeeds - workaround for
+  # https://github.com/kubernetes/kubernetes/issues/95140 causing
+  # redeploys to take longer than needed when a startupProbe but no readinessProbe is defined
+  readinessProbe:
+    exec:
+      command:
+        - "echo"
+        - "READY"
+
+  # Startup probe is used at pod startup. Once it has succeeded,
   # then liveness probe takes over. Current delay is 2 min (10 sec * 12) but can be increased based
   # on workspace load times.
-  # If on kubernetes < v1.16, then disable `startupProbe` and comment in
-  # `initialDelaySeconds: 60` under `livenessProbe`
   startupProbe:
     enabled: true
     httpGet:
@@ -319,10 +326,17 @@ dagster-user-deployments:
         successThreshold: 1
         failureThreshold: 3
 
-      # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
+      # Readiness probe that always succeeds - workaround for
+      # https://github.com/kubernetes/kubernetes/issues/95140 causing
+      # redeploys to take longer than needed when a startupProbe but no readinessProbe is defined
+      readinessProbe:
+        exec:
+          command:
+            - "echo"
+            - "READY"
+
+      # Startup probe is used at pod startup. Once it has succeeded,
       # then liveness probe takes over.
-      # If on kubernetes < v1.16, then disable `startupProbe` and comment in
-      # `initialDelaySeconds: 60` under `livenessProbe`
       startupProbe:
         enabled: true
         # If `startupProbe` has no `exec` field, then the following default will be used:
@@ -774,14 +788,11 @@ flower:
   livenessProbe:
     tcpSocket:
       port: "flower"
-    # initialDelaySeconds: 60
     periodSeconds: 20
     failureThreshold: 3
 
-  # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
+  # Startup probe is used at pod startup. Once it has succeeded,
   # then liveness probe takes over.
-  # If on kubernetes < v1.16, then comment out `startupProbe` lines and comment in
-  # `initialDelaySeconds: 60` under `livenessProbe`
   startupProbe:
     tcpSocket:
       port: "flower"
@@ -988,21 +999,22 @@ dagsterDaemon:
   securityContext: {}
   resources: {}
 
-  livenessProbe:
+  # The daemon pod will automatically shut itself down if a thread hangs, so by default
+  # no liveness probe is implemented for the daemon.
+  livenessProbe: ~
+
+  # Readiness probe that always succeeds - workaround for
+  # https://github.com/kubernetes/kubernetes/issues/95140 causing
+  # redeploys to take longer than needed when a startupProbe but no readinessProbe is defined
+  readinessProbe:
     exec:
       command:
-        - "dagster-daemon"
-        - "liveness-check"
-    # initialDelaySeconds: 60
-    periodSeconds: 30
-    failureThreshold: 3
-    timeoutSeconds: 3
+        - "echo"
+        - "READY"
 
-  # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
+  # Startup probe is used at pod startup. Once it has succeeded,
   # then liveness probe takes over. Current delay is 2 min (10 sec * 12) but can be increased based
   # on workspace load times.
-  # If on kubernetes < v1.16, then disable `startupProbe` and comment in
-  # `initialDelaySeconds: 60` under `livenessProbe`
   startupProbe:
     enabled: true
     exec:

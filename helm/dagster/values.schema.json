@@ -2174,7 +2174,15 @@
                     "$ref": "#/definitions/Resources"
                 },
                 "livenessProbe": {
-                    "$ref": "#/definitions/LivenessProbe"
+                    "title": "LivenessProbe",
+                    "anyOf": [
+                        {
+                            "$ref": "#/definitions/LivenessProbe"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ]
                 },
                 "startupProbe": {
                     "$ref": "#/definitions/StartupProbe"
@@ -2201,7 +2209,6 @@
                 "podSecurityContext",
                 "securityContext",
                 "resources",
-                "livenessProbe",
                 "startupProbe",
                 "annotations",
                 "runMonitoring"

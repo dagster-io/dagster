@@ -74,7 +74,7 @@ class Daemon(BaseModel):
     podSecurityContext: kubernetes.PodSecurityContext
     securityContext: kubernetes.SecurityContext
     resources: kubernetes.Resources
-    livenessProbe: kubernetes.LivenessProbe
+    livenessProbe: Optional[kubernetes.LivenessProbe]
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations
     runMonitoring: Dict[str, Any]

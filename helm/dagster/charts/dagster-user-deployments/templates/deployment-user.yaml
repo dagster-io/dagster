@@ -91,9 +91,13 @@ spec:
             failureThreshold:
               {{- toYaml $deployment.livenessProbe.failureThreshold | nindent 14 }}
             {{- end }}
-          {{- else}}
+          {{- else }}
           livenessProbe: {{ $deployment.livenessProbe | toYaml | nindent 12 }}
           {{- end }}
+        {{- end }}
+        {{- if $deployment.readinessProbe }}
+          readinessProbe:
+            {{- toYaml $deployment.readinessProbe | nindent 12 }}
         {{- end }}
         {{- if $deployment.startupProbe }}
         {{- if $deployment.startupProbe.enabled }}
