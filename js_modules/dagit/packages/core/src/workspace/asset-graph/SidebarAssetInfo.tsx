@@ -181,14 +181,14 @@ export const SidebarAssetInfo: React.FC<{
         </AssetCatalogLink>
       </Box>
 
-      {node.description ||
-        (!(node.description || assetType || assetMetadata) && (
+      {(node.description ||
+        !(node.description || assetType || assetMetadata)) && (
           <DescriptionSidebarSection
             description={node.description || 'No description provided'}
             definition={definition}
             repoAddress={repoAddress}
           />
-        ))}
+        )}
 
       {assetMetadata && (
         <MetadataSidebarSection assetMetadata={assetMetadata}></MetadataSidebarSection>
