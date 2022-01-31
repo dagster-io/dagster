@@ -98,7 +98,7 @@ const AssetMaterializationRow: React.FC<{
     return <span />;
   }
   const {metadataEntries, assetLineage, stepKey, description} = latest;
-  const typeCheck: any = metadataEntries.find((entry) => entry.label === 'Type check succeeded');
+  const typeCheck: any = metadataEntries.find((entry) => entry.label === 'Quality check succeeded');
   const materializationFailed = typeCheck?.text === '\u274c' || false;
   return (
     <>
