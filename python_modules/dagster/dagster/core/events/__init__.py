@@ -1334,13 +1334,20 @@ class EngineEventData(
 
     @staticmethod
     def multiprocess(
-        pid: int, step_keys_to_execute: Optional[List[str]] = None
+        pid: int,
+        step_keys_to_execute: Optional[List[str]] = None,
+        step_keys_to_skip: Optional[List[str]] = None,
     ) -> "EngineEventData":
         return EngineEventData(
             metadata_entries=[EventMetadataEntry.text(str(pid), "pid")]
             + (
                 [EventMetadataEntry.text(str(step_keys_to_execute), "step_keys")]
                 if step_keys_to_execute
+                else []
+            )
+            + (
+                [EventMetadataEntry.text(str(step_keys_to_skip), "skipped_step_keys")]
+                if step_keys_to_skip
                 else []
             )
         )

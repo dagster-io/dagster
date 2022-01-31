@@ -108,7 +108,9 @@ class MultiprocessExecutor(Executor):
                 pid=os.getpid()
             ),
             event_specific_data=EngineEventData.multiprocess(
-                os.getpid(), step_keys_to_execute=execution_plan.step_keys_to_execute
+                os.getpid(),
+                step_keys_to_execute=execution_plan.step_keys_to_execute,
+                step_keys_to_skip=execution_plan.step_keys_to_skip,
             ),
         )
 

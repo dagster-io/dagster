@@ -668,6 +668,13 @@ class ExecutionPlan(
     def step_keys_to_execute(self) -> List[str]:
         return [handle.to_key() for handle in self.step_handles_to_execute]
 
+    @property
+    def step_keys_to_skip(self) -> List[str]:
+        return list(
+            set(handle.to_key() for handle in self.step_dict.keys())
+            - set(self.step_keys_to_execute)
+        )
+
     def get_step_output(self, step_output_handle: StepOutputHandle) -> StepOutput:
         check.inst_param(step_output_handle, "step_output_handle", StepOutputHandle)
         return _get_step_output(self.step_dict_by_key, step_output_handle)
