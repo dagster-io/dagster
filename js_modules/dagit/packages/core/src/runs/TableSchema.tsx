@@ -15,31 +15,15 @@ export type TTableSchemaMetadataEntry = MetadataEntryFragment_EventTableSchemaMe
 export type TTableSchema = MetadataEntryFragment_EventTableSchemaMetadataEntry_schema;
 type ColumnConstraints = MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_columns_constraints;
 
-const SectionHeader = styled.div`
-  height: 24px;
-  padding-left: 8px;
-  // padding-right: 8px;
-  // background: ${ColorsWIP.White};
-  border-top: 1px solid ${ColorsWIP.KeylineGray};
-  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
-  color: ${ColorsWIP.Gray900};
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 12px;
-  font-weight: 700;
-  user-select: none;
-`;
-
 const ColumnItemContainer = styled.div`
   padding-top: 12px;
   padding-bottom: 12px;
   padding-left: 8px;
   padding-right: 8px;
-  // background: ${ColorsWIP.White};
   border-top: 1px solid ${ColorsWIP.KeylineGray};
-  // border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+  :first-child {
+    border-top: none;
+  }
   color: ${ColorsWIP.Gray900};
   cursor: pointer;
   justify-content: start;
@@ -121,12 +105,9 @@ export const isTableSchemaMetadataEntry = (
 
 export const TableSchema: React.FC<{
   schema: TTableSchema;
-  includeHeader?: boolean;
-}> = ({schema, includeHeader}) => {
-  const useHeader = includeHeader !== false;
+}> = ({schema}) => {
   return (
     <div>
-      {useHeader && <SectionHeader>columns</SectionHeader>}
       {schema.columns.map((column) => {
         return (
           <ColumnItem
