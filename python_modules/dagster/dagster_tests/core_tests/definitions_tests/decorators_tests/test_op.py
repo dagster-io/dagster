@@ -618,3 +618,16 @@ def test_metadata_logging():
     metadata_entry = events[1].event_specific_data.metadata_entries[0]
     assert metadata_entry.label == "foo"
     assert metadata_entry.entry_data.text == "bar"
+
+
+def test_metadata_logging_multiple_entries():
+    @op
+    def basic(context):
+        context.add_output_metadata({"foo": "bar"})
+        context.add_output_metadata({"baz": "bat"})
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="In op 'basic', attempted to log metadata for output 'result' more than once.",
+    ):
+        execute_op_in_graph(basic)

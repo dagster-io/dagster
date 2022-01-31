@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Any, Mapping, Dict, Iterator, List, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from dagster import check
 from dagster.core.definitions.dependency import Node, NodeHandle
@@ -19,7 +19,6 @@ from dagster.core.events import DagsterEvent
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.utils import merge_dicts
 from dagster.utils.forked_pdb import ForkedPdb
 
 from .system import StepExecutionContext
@@ -306,9 +305,11 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
             raise DagsterInvariantViolationError(
                 "Attempted to log metadata without providing output_name, but multiple outputs exist. Please provide an output_name to the invocation of `context.add_output_metadata`."
             )
-        self._output_metadata[output_name] = merge_dicts(
-            self._output_metadata.get(output_name, {}), metadata
-        )
+        if output_name in self._output_metadata:
+            raise DagsterInvariantViolationError(
+                f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log metadata for output '{output_name}' more than once."
+            )
+        self._output_metadata[output_name] = metadata
 
     def get_output_metadata(self, output_name: str) -> Optional[Mapping[str, Any]]:
         return self._output_metadata.get(output_name)
