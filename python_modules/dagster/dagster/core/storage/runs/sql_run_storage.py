@@ -1,5 +1,4 @@
 import logging
-import time
 import uuid
 import zlib
 from abc import abstractmethod
@@ -33,7 +32,7 @@ from dagster.serdes import (
     serialize_dagster_namedtuple,
 )
 from dagster.seven import JSONDecodeError
-from dagster.utils import datetime_as_float, merge_dicts, utc_datetime_from_timestamp
+from dagster.utils import merge_dicts, utc_datetime_from_timestamp
 
 from ..pipeline_run import JobBucket, PipelineRun, PipelineRunsFilter, RunRecord, TagBucket
 from .base import RunStorage
