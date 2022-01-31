@@ -32,7 +32,7 @@ def asset(
     dagster_type: Optional[DagsterType] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
-    version: Optional[str] = None,
+    op_version: Optional[str] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a definition for how to compute an asset.
 
@@ -69,6 +69,9 @@ def asset(
             If no entry is provided for a particular asset dependency, the partition mapping defaults
             to the default partition mapping for the partitions definition, which is typically maps
             partition keys to the same partition keys in upstream assets.
+        op_version (Optional[str]): (Experimental) The version of the asset's op. Op versions can
+            be used to determine whether the asset can be memoized.
+
 
     Examples:
 
@@ -95,7 +98,7 @@ def asset(
             dagster_type=dagster_type,
             partitions_def=partitions_def,
             partition_mappings=partition_mappings,
-            version=version,
+            op_version=op_version,
         )(fn)
 
     return inner
@@ -116,7 +119,7 @@ class _Asset:
         dagster_type: Optional[DagsterType] = None,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
-        version: Optional[str] = None,
+        op_version: Optional[str] = None,
     ):
         self.name = name
         # if user inputs a single string, coerce to list
@@ -131,7 +134,7 @@ class _Asset:
         self.dagster_type = dagster_type
         self.partitions_def = partitions_def
         self.partition_mappings = partition_mappings
-        self.version = version
+        self.op_version = op_version
 
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
@@ -170,7 +173,7 @@ class _Asset:
                     "output_partitions": Field(dict, is_required=False),
                 }
             },
-            version=self.version,
+            version=self.op_version,
         )(fn)
 
         return AssetsDefinition(

@@ -156,6 +156,7 @@ def test_all_fields():
         io_manager_key="my_io_key",
         description="some description",
         metadata={"metakey": "metaval"},
+        op_version="yolo",
     )
     def my_asset():
         pass
@@ -166,6 +167,7 @@ def test_all_fields():
     output_def = my_asset.op.output_defs[0]
     assert output_def.io_manager_key == "my_io_key"
     assert output_def.metadata["metakey"] == "metaval"
+    assert my_asset.op.version == "yolo"
 
 
 def test_infer_input_dagster_type():
