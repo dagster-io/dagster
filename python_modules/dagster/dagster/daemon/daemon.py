@@ -140,9 +140,9 @@ class DagsterDaemon(AbstractContextManager):
             and last_stored_heartbeat
             and last_stored_heartbeat.daemon_id != daemon_uuid
         ):
-            self._logger.warning(
-                "Taking over from another {} daemon process. If this "
-                "message reoccurs, you may have multiple daemons running which is not supported. "
+            self._logger.error(
+                "Another {} daemon is still sending heartbeats. You likely have multiple "
+                "daemon processes running at once, which is not supported. "
                 "Last heartbeat daemon id: {}, "
                 "Current daemon_id: {}".format(
                     daemon_type,
