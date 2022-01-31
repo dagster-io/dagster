@@ -170,12 +170,14 @@ export const AssetNodeDefinition: React.FC<{
             >
               <Subheading>Type</Subheading>
             </Box>
-            <Box padding={{top: 16, horizontal: 16, bottom: 16}} style={{flex: 1}}>
-              <Description
-                description={assetType.description || 'No description provided.'}
-                maxHeight={260}
-              />
-            </Box>
+            {assetType.description && (
+              <Box padding={{top: 16, horizontal: 16, bottom: 16}} style={{flex: 1}}>
+                <Description
+                  description={assetType.description || 'No description provided.'}
+                  maxHeight={260}
+                />
+              </Box>
+            )}
             {assetTableSchemaMetadataEntry && (
               <Box padding={{horizontal: 8, bottom: 8}}>
                 <TableSchema schema={assetTableSchemaMetadataEntry.schema} />

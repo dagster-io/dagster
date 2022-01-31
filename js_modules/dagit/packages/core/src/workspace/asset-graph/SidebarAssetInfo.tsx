@@ -75,9 +75,11 @@ export const AssetTypeSidebarInfo: React.FC<{type: AssetType}> = ({type}) => {
   const tableSchemaEntry = type.metadataEntries.find(isTableSchemaMetadataEntry);
   return (
     <Box flex={{direction: 'column'}}>
-      <Box padding={{vertical: 16, horizontal: 24}}>
-        <Description description={type.description || 'No description provided'} />
-      </Box>
+      {type.description && (
+        <Box padding={{vertical: 16, horizontal: 24}}>
+          <Description description={type.description} />
+        </Box>
+      )}
       <Box padding={{left: 16}}>
         {tableSchemaEntry && TableSchema(tableSchemaEntry)}
       </Box>
