@@ -237,17 +237,15 @@ class _PlanBuilder:
         # Expects that if step_keys_to_execute was set, that the `plan` variable will have the
         # reflected step_keys_to_execute
         if pipeline_def.is_using_memoization(self._tags) and len(step_output_versions) == 0:
-            if self.step_keys_to_execute is not None:
-                raise DagsterInvariantViolationError(
-                    "Cannot use both memoization and re-execution at this time."
-                )
             if self._instance_ref is None:
                 raise DagsterInvariantViolationError(
                     "Attempted to build memoized execution plan without providing a persistent "
                     "DagsterInstance to create_execution_plan."
                 )
             instance = DagsterInstance.from_ref(self._instance_ref)
-            plan = plan.build_memoized_plan(pipeline_def, self.resolved_run_config, instance)
+            plan = plan.build_memoized_plan(
+                pipeline_def, self.resolved_run_config, instance, self.step_keys_to_execute
+            )
 
         return plan
 
@@ -826,6 +824,7 @@ class ExecutionPlan(
         pipeline_def: PipelineDefinition,
         resolved_run_config: ResolvedRunConfig,
         instance: DagsterInstance,
+        selected_step_keys: Optional[List[str]],
     ) -> "ExecutionPlan":
         """
         Returns:
@@ -907,8 +906,13 @@ class ExecutionPlan(
                 if not io_manager.has_output(context):
                     unmemoized_step_keys.add(step_output_handle.step_key)
 
+        if selected_step_keys is not None:
+            # Take the intersection unmemoized steps and selected steps
+            step_keys_to_execute = list(unmemoized_step_keys & set(selected_step_keys))
+        else:
+            step_keys_to_execute = list(unmemoized_step_keys)
         return self.build_subset_plan(
-            list(unmemoized_step_keys),
+            step_keys_to_execute,
             pipeline_def,
             resolved_run_config,
             step_output_versions=step_output_versions,
