@@ -426,19 +426,23 @@ def test_async_solid():
 
 def test_async_gen_invocation():
     @solid
-    async def aio_gen():
+    async def aio_gen(_):
         await asyncio.sleep(0.01)
         yield Output("done")
+        yield AssetMaterialization("first")
+
+    context = build_solid_context()
 
     async def get_results():
         res = []
-        async for output in aio_gen():
+        async for output in aio_gen(context):
             res.append(output)
         return res
 
     loop = asyncio.get_event_loop()
     output = loop.run_until_complete(get_results())[0]
     assert output.value == "done"
+    assert len(context.get_events()) == 1
 
 
 def test_multiple_outputs_iterator():
@@ -940,12 +944,15 @@ def test_logged_user_events():
         context.log_event(Materialization("second"))
         context.log_event(ExpectationResult(success=True))
         context.log_event(AssetObservation("fourth"))
+        yield AssetMaterialization("fifth")
+        yield Output("blah")
 
     context = build_op_context()
-    logs_events(context)
+    list(logs_events(context))
     assert [type(event) for event in context.get_events()] == [
         AssetMaterialization,
         Materialization,
         ExpectationResult,
         AssetObservation,
+        AssetMaterialization,
     ]
