@@ -8,6 +8,7 @@ from dagster.core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 
+from ..implementation.loader import BatchMaterializationLoader
 from . import external
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
@@ -76,8 +77,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         self,
         external_repository,
         external_asset_node,
-        latest_materialization=None,
-        fetched_materialization=False,
+        materialization_loader=None,
     ):
         self._external_repository = check.inst_param(
             external_repository, "external_repository", ExternalRepository
@@ -85,13 +85,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._external_asset_node = check.inst_param(
             external_asset_node, "external_asset_node", ExternalAssetNode
         )
-        self._latest_materialization = check.opt_inst_param(
-            latest_materialization, "latest_materialization", EventLogEntry
-        )
-        # we need a separate flag, because the asset might not have been materialized,
-        # so the None value has significance
-        self._fetched_materialization = check.bool_param(
-            fetched_materialization, "fetched_materialization"
+        self._latest_materialization_loader = check.opt_inst_param(
+            materialization_loader, "materialization_loader", BatchMaterializationLoader
         )
 
         super().__init__(
@@ -162,16 +157,22 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         limit = kwargs.get("limit")
         partitions = kwargs.get("partitions")
-        if self._fetched_materialization and limit == 1 and not partitions and not before_timestamp:
-            return (
-                [
-                    GrapheneMaterializationEvent(
-                        event=self._latest_materialization,
-                    )
-                ]
-                if self._latest_materialization
-                else []
+        if (
+            self._latest_materialization_loader
+            and limit == 1
+            and not partitions
+            and not before_timestamp
+        ):
+            latest_materialization_event = (
+                self._latest_materialization_loader.get_latest_materialization_for_asset_key(
+                    self._external_asset_node.asset_key
+                )
             )
+
+            if not latest_materialization_event:
+                return []
+
+            return [GrapheneMaterializationEvent(event=latest_materialization_event)]
 
         return [
             GrapheneMaterializationEvent(event=event)
