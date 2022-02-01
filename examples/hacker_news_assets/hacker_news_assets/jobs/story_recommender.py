@@ -16,16 +16,6 @@ assets = [
 
 source_assets = [comments, stories]
 
-story_recommender_prod_job = build_assets_job(
-    "story_recommender_prod",
-    assets=assets,
-    source_assets=source_assets,
-    resource_defs=RESOURCES_PROD,
-)
+from ..asset_collection import asset_collection
 
-story_recommender_staging_job = build_assets_job(
-    "story_recommender_staging",
-    assets=assets,
-    source_assets=source_assets,
-    resource_defs=RESOURCES_STAGING,
-)
+asset_collection.build_asset_job(subset="comment_stories*")

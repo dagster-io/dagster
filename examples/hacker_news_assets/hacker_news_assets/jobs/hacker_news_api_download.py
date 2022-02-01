@@ -16,34 +16,6 @@ DOWNLOAD_TAGS = {
 }
 
 
-ASSETS = [id_range_for_time, items, comments, stories]
+from ..asset_collection import asset_collection
 
-
-download_prod_job = build_assets_job(
-    "hacker_news_api_download",
-    assets=ASSETS,
-    resource_defs={
-        **{"hn_client": hn_api_subsample_client.configured({"sample_rate": 10})},
-        **RESOURCES_PROD,
-    },
-    tags=DOWNLOAD_TAGS,
-)
-
-
-download_staging_job = build_assets_job(
-    "hacker_news_api_download",
-    assets=ASSETS,
-    resource_defs={
-        **{"hn_client": hn_api_subsample_client.configured({"sample_rate": 10})},
-        **RESOURCES_STAGING,
-    },
-    tags=DOWNLOAD_TAGS,
-)
-
-download_local_job = build_assets_job(
-    "hacker_news_api_download",
-    assets=ASSETS,
-    resource_defs={**{"hn_client": hn_snapshot_client}, **RESOURCES_LOCAL},
-    tags=DOWNLOAD_TAGS,
-    executor_def=in_process_executor,
-)
+download_job = asset_collection.build_asset_job(subset="id_range_for_time*", tags=DOWNLOAD_TAGS)

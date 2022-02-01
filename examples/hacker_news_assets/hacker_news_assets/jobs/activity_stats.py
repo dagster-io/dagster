@@ -39,16 +39,3 @@ assets = load_assets_from_dbt_manifest(
     runtime_metadata_fn=asset_metadata,
     io_manager_key="warehouse_io_manager",
 )
-activity_stats_staging_job = build_assets_job(
-    "activity_stats",
-    assets,
-    [],
-    resource_defs={**RESOURCES_STAGING, **{"dbt": dbt_prod_resource}},
-)
-
-activity_stats_prod_job = build_assets_job(
-    "activity_stats",
-    assets,
-    [],
-    resource_defs={**RESOURCES_PROD, **{"dbt": dbt_prod_resource}},
-)

@@ -9,15 +9,16 @@ from dagster import (
     SensorDefinition,
     sensor,
 )
+from ..asset_collection import asset_collection
 
 
-def make_hn_tables_updated_sensor(job: JobDefinition) -> SensorDefinition:
+def make_hn_tables_updated_sensor(subset: str, name=None) -> SensorDefinition:
     """
     Returns a sensor that launches the given job when the HN "comments" and "stories" tables have
     both been updated.
     """
 
-    @sensor(name=f"{job.name}_on_hn_tables_updated", job=job)
+    @sensor(name=name, collection=asset_collection, subset=subset)
     def hn_tables_updated_sensor(context):
         cursor_dict = json.loads(context.cursor) if context.cursor else {}
         comments_cursor = cursor_dict.get("comments")
