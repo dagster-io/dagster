@@ -949,5 +949,3 @@ def test_logged_user_events():
         ExpectationResult,
         AssetObservation,
     ]
-    context.scrub_events()
-    assert context.get_events() == []

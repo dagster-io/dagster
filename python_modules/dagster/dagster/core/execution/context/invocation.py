@@ -245,9 +245,6 @@ class UnboundSolidExecutionContext(OpExecutionContext):
     def get_events(self) -> List[UserEvent]:
         return self._user_events
 
-    def scrub_events(self) -> None:
-        self._user_events = []
-
 
 def _validate_resource_requirements(resources: "Resources", solid_def: SolidDefinition) -> None:
     """Validate correctness of resources against required resource keys"""
