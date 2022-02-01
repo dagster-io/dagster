@@ -36,7 +36,7 @@ if __name__ == "__main__":
             "docker",
             "python-dateutil>=2.8.0",
             "lazy_object_proxy",
-            "pendulum==1.4.4",
+            "pendulum>=1.4.4",
             # https://issues.apache.org/jira/browse/AIRFLOW-6854
             'typing_extensions; python_version>="3.8"',
         ],
