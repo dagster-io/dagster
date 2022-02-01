@@ -16,7 +16,7 @@ export interface PipelineExplorerRootQuery_assetNodes {
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -71,7 +71,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 export type PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes = PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -80,7 +80,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -145,7 +145,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -218,7 +218,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -283,7 +283,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -363,7 +363,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -418,7 +418,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 export type PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes = PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -427,7 +427,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -492,7 +492,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -565,7 +565,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -630,7 +630,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -815,7 +815,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandle_solid_definition_SolidDefinition_configField_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType";
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
   description: string | null;
 }
@@ -1044,7 +1044,7 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_configField_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType";
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
   description: string | null;
 }

@@ -30,6 +30,11 @@ interface CompositeTypeData extends CommonTypeData {
   fields: FieldData[];
 }
 
+interface MapTypeData extends CommonTypeData {
+  __typename: 'MapConfigType';
+  typeParamKeys: string[];
+}
+
 interface ListTypeData extends CommonTypeData {
   __typename: 'ArrayConfigType';
   typeParamKeys: string[];
@@ -59,6 +64,7 @@ interface ScalarUnionTypeData extends CommonTypeData {
 export type TypeData =
   | CompositeTypeData
   | ListTypeData
+  | MapTypeData
   | NullableTypeData
   | RegularTypeData
   | EnumTypeData
@@ -98,6 +104,22 @@ function renderTypeRecursive(
   if (type.__typename === 'ArrayConfigType') {
     const ofTypeKey = type.typeParamKeys[0];
     return <>[{renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props)}]</>;
+  }
+  if (type.__typename === 'MapConfigType') {
+    const keyTypeKey = type.typeParamKeys[0];
+    const ofTypeKey = type.typeParamKeys[1];
+    const innerIndent = '  '.repeat(depth + 1);
+    return (
+      <>
+        {`{`}
+        <DictEntry>
+          {innerIndent}[location_name:{' '}
+          {renderTypeRecursive(typeLookup[keyTypeKey], typeLookup, depth + 1, props)}]{`: `}
+          {renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth + 1, props)}
+        </DictEntry>
+        {'  '.repeat(depth) + '}'}
+      </>
+    );
   }
   if (type.__typename === 'NullableConfigType') {
     const ofTypeKey = type.typeParamKeys[0];

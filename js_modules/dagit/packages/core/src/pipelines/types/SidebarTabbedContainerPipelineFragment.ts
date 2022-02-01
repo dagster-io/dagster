@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -63,7 +63,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_resources_configFi
 export type SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes = SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -72,7 +72,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_resources_configFi
 }
 
 export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -137,7 +137,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_resources_configFi
 }
 
 export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -210,7 +210,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_resources_configFi
 }
 
 export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -275,7 +275,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_resources_configFi
 }
 
 export interface SidebarTabbedContainerPipelineFragment_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -355,7 +355,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_resources {
 }
 
 export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -410,7 +410,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configFiel
 export type SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes = SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -419,7 +419,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configFiel
 }
 
 export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -484,7 +484,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configFiel
 }
 
 export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -557,7 +557,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configFiel
 }
 
 export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -622,7 +622,7 @@ export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configFiel
 }
 
 export interface SidebarTabbedContainerPipelineFragment_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;

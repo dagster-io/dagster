@@ -48,7 +48,7 @@ export interface SidebarOpDefinitionFragment_SolidDefinition_requiredResources {
 }
 
 export interface SidebarOpDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -103,7 +103,7 @@ export interface SidebarOpDefinitionFragment_SolidDefinition_configField_configT
 export type SidebarOpDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes = SidebarOpDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | SidebarOpDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | SidebarOpDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | SidebarOpDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | SidebarOpDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface SidebarOpDefinitionFragment_SolidDefinition_configField_configType_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -112,7 +112,7 @@ export interface SidebarOpDefinitionFragment_SolidDefinition_configField_configT
 }
 
 export interface SidebarOpDefinitionFragment_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -177,7 +177,7 @@ export interface SidebarOpDefinitionFragment_SolidDefinition_configField_configT
 }
 
 export interface SidebarOpDefinitionFragment_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -250,7 +250,7 @@ export interface SidebarOpDefinitionFragment_SolidDefinition_configField_configT
 }
 
 export interface SidebarOpDefinitionFragment_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -315,7 +315,7 @@ export interface SidebarOpDefinitionFragment_SolidDefinition_configField_configT
 }
 
 export interface SidebarOpDefinitionFragment_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;

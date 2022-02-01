@@ -10,7 +10,7 @@ import { GraphSelector } from "./../../types/globalTypes";
 // ====================================================
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -65,7 +65,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
 export type GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes = GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -74,7 +74,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -139,7 +139,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -212,7 +212,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -277,7 +277,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_confi
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -357,7 +357,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_resources {
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -412,7 +412,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
 export type GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes = GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -421,7 +421,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -486,7 +486,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -559,7 +559,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -624,7 +624,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configF
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_modes_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -809,7 +809,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_def
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_configField_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType";
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
   description: string | null;
 }
@@ -1038,7 +1038,7 @@ export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_de
 }
 
 export interface GraphExplorerRootQuery_graphOrError_Graph_solidHandles_solid_definition_SolidDefinition_configField_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType";
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
   description: string | null;
 }

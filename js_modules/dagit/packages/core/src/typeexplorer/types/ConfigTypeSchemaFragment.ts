@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface ConfigTypeSchemaFragment_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;

@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -63,7 +63,7 @@ export interface TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveC
 export type TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes = TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface TypeExplorerFragment_inputSchemaType_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -72,7 +72,7 @@ export interface TypeExplorerFragment_inputSchemaType_ArrayConfigType {
 }
 
 export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -137,7 +137,7 @@ export interface TypeExplorerFragment_inputSchemaType_EnumConfigType {
 }
 
 export interface TypeExplorerFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -210,7 +210,7 @@ export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_fields
 }
 
 export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -275,7 +275,7 @@ export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType {
 }
 
 export interface TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -343,7 +343,7 @@ export interface TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType {
 export type TypeExplorerFragment_inputSchemaType = TypeExplorerFragment_inputSchemaType_ArrayConfigType | TypeExplorerFragment_inputSchemaType_EnumConfigType | TypeExplorerFragment_inputSchemaType_RegularConfigType | TypeExplorerFragment_inputSchemaType_CompositeConfigType | TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType;
 
 export interface TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -398,7 +398,7 @@ export interface TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursive
 export type TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes = TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface TypeExplorerFragment_outputSchemaType_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -407,7 +407,7 @@ export interface TypeExplorerFragment_outputSchemaType_ArrayConfigType {
 }
 
 export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -472,7 +472,7 @@ export interface TypeExplorerFragment_outputSchemaType_EnumConfigType {
 }
 
 export interface TypeExplorerFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -545,7 +545,7 @@ export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_field
 }
 
 export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -610,7 +610,7 @@ export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType {
 }
 
 export interface TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;

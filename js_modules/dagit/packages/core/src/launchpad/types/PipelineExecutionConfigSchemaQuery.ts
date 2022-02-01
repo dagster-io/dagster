@@ -14,12 +14,12 @@ export interface PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_Pipel
 }
 
 export interface PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_rootConfigType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType";
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
 }
 
 export interface PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;

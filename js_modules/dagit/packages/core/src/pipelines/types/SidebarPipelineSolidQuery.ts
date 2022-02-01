@@ -128,7 +128,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -183,7 +183,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
 export type SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes = SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -192,7 +192,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -257,7 +257,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -330,7 +330,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -395,7 +395,7 @@ export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_
 }
 
 export interface SidebarPipelineSolidQuery_pipelineOrError_Pipeline_solidHandle_solid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;

@@ -58,6 +58,12 @@ export const CONFIG_EDITOR_VALIDATION_FRAGMENT = gql`
             ... on EvaluationStackListItemEntry {
               listIndex
             }
+            ... on EvaluationStackMapKeyEntry {
+              mapKey
+            }
+            ... on EvaluationStackMapValueEntry {
+              mapKey
+            }
           }
         }
       }
@@ -73,12 +79,28 @@ type StackEntry =
   | {
       __typename: 'EvaluationStackListItemEntry';
       listIndex: number;
+    }
+  | {
+      __typename: 'EvaluationStackMapKeyEntry';
+      mapKey: object;
+    }
+  | {
+      __typename: 'EvaluationStackMapValueEntry';
+      mapKey: object;
     };
 
 export function errorStackToYamlPath(entries: StackEntry[]) {
-  return entries.map((entry) =>
-    entry.__typename === 'EvaluationStackPathEntry' ? entry.fieldName : `${entry.listIndex}`,
-  );
+  return entries.map((entry) => {
+    switch (entry.__typename) {
+      case 'EvaluationStackPathEntry':
+        return entry.fieldName;
+      case 'EvaluationStackListItemEntry':
+        return `${entry.listIndex}`;
+      case 'EvaluationStackMapKeyEntry':
+      case 'EvaluationStackMapValueEntry':
+        return `${entry.mapKey}`;
+    }
+  });
 }
 
 export function responseToYamlValidationResult(

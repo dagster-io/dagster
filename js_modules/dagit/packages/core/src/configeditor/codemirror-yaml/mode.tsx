@@ -6,7 +6,10 @@ import 'codemirror/addon/dialog/dialog';
 import 'codemirror/addon/dialog/dialog.css';
 import * as yaml from 'yaml';
 
-import {ConfigEditorRunConfigSchemaFragment} from '../types/ConfigEditorRunConfigSchemaFragment';
+import {
+  ConfigEditorRunConfigSchemaFragment,
+  ConfigEditorRunConfigSchemaFragment_allConfigTypes as AllConfigTypes,
+} from '../types/ConfigEditorRunConfigSchemaFragment';
 
 // Example YAML for testing this parser:
 // https://gist.github.com/bengotow/0b700e7d0367750cb31eaf697f865d70
@@ -367,7 +370,11 @@ CodeMirror.registerHelper(
       if (!type) {
         return false;
       }
-      return type.__typename === 'ArrayConfigType' || type.__typename === 'CompositeConfigType';
+      return (
+        type.__typename === 'ArrayConfigType' ||
+        type.__typename === 'CompositeConfigType' ||
+        type.__typename === 'MapConfigType'
+      );
     };
 
     const formatReplacement = (
@@ -530,34 +537,48 @@ function findAutocompletionContext(
   }
 
   let type = schema.allConfigTypes.find((t) => t.key === schema.rootConfigType.key);
-  if (!type || type.__typename !== 'CompositeConfigType') {
+  if (!type || (type.__typename !== 'CompositeConfigType' && type.__typename !== 'MapConfigType')) {
     return null;
   }
 
-  let available = type.fields;
-  let closestCompositeType = type;
+  let available = type.__typename === 'CompositeConfigType' ? type.fields : [];
+  let closestCompositeType: AllConfigTypes = type;
   let inArray = false;
+  let nextTypeKey: string | null =
+    type.__typename === 'MapConfigType' ? type.typeParamKeys[1] : null;
 
-  if (available && parents.length > 0) {
+  if ((available || type.__typename === 'MapConfigType') && parents.length > 0) {
     for (const parent of parents) {
       const parentTypeDef = available.find(({name}) => parent.key === name);
-      if (!parentTypeDef) {
+      if (!parentTypeDef && !nextTypeKey) {
         return null;
       }
 
       // The current composite type's available "fields" each only have a configType key.
       // The rest of the configType's information is in the top level schema.allConfigTypes
       // to avoid superlinear GraphQL response size.
-      const parentConfigType = schema.allConfigTypes.find(
-        (t) => t.key === parentTypeDef.configTypeKey,
-      )!;
-      let childTypeKey = parentConfigType.key;
-      let childEntriesUnique = true;
+      let childTypeKey = nextTypeKey;
+      let childEntriesUnique = false;
+      nextTypeKey = null;
+      if (parentTypeDef) {
+        const parentConfigType = schema.allConfigTypes.find(
+          (t) => t.key === parentTypeDef.configTypeKey,
+        )!;
+        childTypeKey = parentConfigType.key;
+        childEntriesUnique = true;
 
-      inArray = parentConfigType.__typename === 'ArrayConfigType';
-      if (inArray) {
-        childTypeKey = parentConfigType.typeParamKeys[0];
-        childEntriesUnique = false;
+        inArray = parentConfigType.__typename === 'ArrayConfigType';
+        if (inArray) {
+          childTypeKey = parentConfigType.typeParamKeys[0];
+          childEntriesUnique = false;
+        }
+
+        const inMap = parentConfigType.__typename === 'MapConfigType';
+        if (inMap) {
+          nextTypeKey = parentConfigType.typeParamKeys[1];
+          closestCompositeType = type;
+          continue;
+        }
       }
 
       type = schema.allConfigTypes.find((t) => t.key === childTypeKey);

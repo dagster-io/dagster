@@ -128,7 +128,7 @@ export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_def
 }
 
 export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -183,7 +183,7 @@ export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_def
 export type SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes = SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_configField_configType_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -192,7 +192,7 @@ export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_def
 }
 
 export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -257,7 +257,7 @@ export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_def
 }
 
 export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -330,7 +330,7 @@ export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_def
 }
 
 export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -395,7 +395,7 @@ export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_def
 }
 
 export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;

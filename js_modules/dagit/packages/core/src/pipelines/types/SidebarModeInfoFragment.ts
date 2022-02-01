@@ -8,7 +8,7 @@
 // ====================================================
 
 export interface SidebarModeInfoFragment_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -63,7 +63,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_ArrayC
 export type SidebarModeInfoFragment_resources_configField_configType_ArrayConfigType_recursiveConfigTypes = SidebarModeInfoFragment_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | SidebarModeInfoFragment_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | SidebarModeInfoFragment_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | SidebarModeInfoFragment_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | SidebarModeInfoFragment_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface SidebarModeInfoFragment_resources_configField_configType_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -72,7 +72,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_ArrayC
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -137,7 +137,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_EnumCo
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -210,7 +210,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_Compos
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -275,7 +275,7 @@ export interface SidebarModeInfoFragment_resources_configField_configType_Compos
 }
 
 export interface SidebarModeInfoFragment_resources_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -355,7 +355,7 @@ export interface SidebarModeInfoFragment_resources {
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -410,7 +410,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_ArrayCon
 export type SidebarModeInfoFragment_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes = SidebarModeInfoFragment_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | SidebarModeInfoFragment_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | SidebarModeInfoFragment_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | SidebarModeInfoFragment_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | SidebarModeInfoFragment_loggers_configField_configType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType;
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -419,7 +419,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_ArrayCon
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -484,7 +484,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_EnumConf
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -557,7 +557,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_Composit
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -622,7 +622,7 @@ export interface SidebarModeInfoFragment_loggers_configField_configType_Composit
 }
 
 export interface SidebarModeInfoFragment_loggers_configField_configType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
