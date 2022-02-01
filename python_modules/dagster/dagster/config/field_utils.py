@@ -184,12 +184,6 @@ class Map(ConfigType):
             kind=ConfigTypeKind.MAP,
         )
 
-    @property
-    def description(self):
-        return "map {key_type} -> {inner_type}".format(
-            key_type=self.key_type.key, inner_type=self.inner_type.key
-        )
-
 
 def _define_permissive_dict_key(fields, description):
     return (
