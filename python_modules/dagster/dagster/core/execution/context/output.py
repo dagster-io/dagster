@@ -420,19 +420,40 @@ class OutputContext:
             check.failed("Unexpected event {event}".format(event=event))
 
     def consume_events(self) -> Iterator["DagsterEvent"]:
-        """Yields all user-generated events that have been recorded from this context since the last consumption event.
+        """Pops and yields all user-generated events that have been recorded from this context.
 
-        Designed for internal use. Users should never need to invoke this method.
+        If consume_events has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
         """
 
         while self._events:
             yield self._events.pop(0)
 
     def get_events(self) -> List[Union[AssetMaterialization, Materialization, AssetObservation]]:
-        return self._user_events
+        """Retrieve the list of user-generated events that were logged via the context.
 
-    def scrub_events(self) -> None:
-        self._user_events = []
+
+        User-generated events that were yielded will not appear in this list.
+
+        **Examples:**
+
+        .. code-block:: python
+
+            from dagster import IOManager, build_output_context, AssetMaterialization
+
+            class MyIOManager(IOManager):
+                def handle_output(self, context, obj):
+                    ...
+
+            def test_handle_output():
+                mgr = MyIOManager()
+                context = build_output_context()
+                mgr.handle_output(context)
+                all_user_events = context.get_events()
+                materializations = [event for event in all_user_events if isinstance(event, AssetMaterialization)]
+                ...
+        """
+
+        return self._user_events
 
 
 def get_output_context(
