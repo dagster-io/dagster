@@ -18,4 +18,6 @@ DOWNLOAD_TAGS = {
 
 from ..asset_collection import asset_collection
 
+hn_client = hn_api_subsample_client.configured({"sample_rate": 10})
+
 download_job = asset_collection.build_asset_job(subset="id_range_for_time*", tags=DOWNLOAD_TAGS)
