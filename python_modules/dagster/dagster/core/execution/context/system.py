@@ -21,6 +21,10 @@ from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
+from dagster.core.definitions.time_window_partitions import (
+    TimeWindow,
+    TimeWindowPartitionsDefinition,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import ExecutionStep
@@ -631,6 +635,33 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
                 f"Tried to access partition key for output '{output_name}' of step '{self.step.key}', "
                 f"but the step output has a partition range: '{start}' to '{end}'."
             )
+
+    def asset_partitions_time_window_for_output(self, output_name: str) -> TimeWindow:
+        """The time window for the partitions of the asset correponding to the given output.
+
+        Raises an error if either of the following are true:
+        - The output asset has no partitioning.
+        - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
+        """
+        partitions_def = self.solid_def.output_def_named(output_name).asset_partitions_def
+
+        if not partitions_def:
+            raise ValueError(
+                "Tried to get asset partitions for an output that does not correspond to a "
+                "partitioned asset."
+            )
+
+        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            raise ValueError(
+                "Tried to get asset partitions for an output that correponds to a partitioned "
+                "asset that is not partitioned with a TimeWindowPartitionsDefinition."
+            )
+
+        partition_key_range = self.asset_partition_key_range_for_output(output_name)
+        return TimeWindow(
+            partitions_def.time_window_for_partition_key(partition_key_range.start).start,
+            partitions_def.time_window_for_partition_key(partition_key_range.end).end,
+        )
 
     def get_input_lineage(self) -> List[AssetLineageInfo]:
         if not self._input_lineage:

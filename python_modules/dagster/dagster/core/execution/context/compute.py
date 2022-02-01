@@ -14,6 +14,7 @@ from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
+from dagster.core.definitions.time_window_partitions import TimeWindow
 from dagster.core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent
 from dagster.core.instance import DagsterInstance
@@ -224,6 +225,15 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         name of the default output.
         """
         return self._step_execution_context.asset_partition_key_for_output(output_name)
+
+    def output_asset_partitions_time_window(self, output_name: str = "result") -> TimeWindow:
+        """The time window for the partitions of the output asset.
+
+        Raises an error if either of the following are true:
+        - The output asset has no partitioning.
+        - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
+        """
+        return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
 
     def has_tag(self, key: str) -> bool:
         """Check if a logging tag is set.
