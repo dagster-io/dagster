@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 import sys
 import tempfile
@@ -14,7 +15,6 @@ from dagster.core.storage.event_log import (
     SqliteEventLogStorage,
 )
 from dagster.core.storage.sql import create_engine
-from dagster.seven import multiprocessing
 
 from .utils.event_log_storage import TestEventLogStorage
 
@@ -89,10 +89,11 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
 
     def test_concurrent_sqlite_event_log_connections(self, storage):
         tmpdir_path = storage._base_dir  # pylint: disable=protected-access
-        exceptions = multiprocessing.Queue()
+        ctx = multiprocessing.get_context("spawn")
+        exceptions = ctx.Queue()
         ps = []
         for _ in range(5):
-            ps.append(multiprocessing.Process(target=self.cmd, args=(exceptions, tmpdir_path)))
+            ps.append(ctx.Process(target=self.cmd, args=(exceptions, tmpdir_path)))
         for p in ps:
             p.start()
 

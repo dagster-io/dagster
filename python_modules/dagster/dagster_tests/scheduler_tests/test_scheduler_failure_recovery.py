@@ -11,8 +11,9 @@ from dagster.core.test_utils import (
     get_terminate_signal,
 )
 from dagster.scheduler.scheduler import launch_scheduled_runs
-from dagster.seven import IS_WINDOWS, multiprocessing
+from dagster.seven import IS_WINDOWS
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster.utils import get_dagster_multiproc_ctx
 
 from .test_scheduler_run import (
     logger,
@@ -61,7 +62,7 @@ def test_failure_recovery_before_run_created(instance, external_repo, crash_loca
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
 
-        scheduler_process = multiprocessing.Process(
+        scheduler_process = get_dagster_multiproc_ctx().Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, debug_crash_flags],
         )
@@ -78,7 +79,7 @@ def test_failure_recovery_before_run_created(instance, external_repo, crash_loca
 
     frozen_datetime = frozen_datetime.add(minutes=5)
     with pendulum.test(frozen_datetime):
-        scheduler_process = multiprocessing.Process(
+        scheduler_process = get_dagster_multiproc_ctx().Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, None],
         )
@@ -121,7 +122,7 @@ def test_failure_recovery_after_run_created(instance, external_repo, crash_locat
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
 
-        scheduler_process = multiprocessing.Process(
+        scheduler_process = get_dagster_multiproc_ctx().Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, debug_crash_flags],
         )
@@ -164,7 +165,7 @@ def test_failure_recovery_after_run_created(instance, external_repo, crash_locat
     with pendulum.test(frozen_datetime):
 
         # Running again just launches the existing run and marks the tick as success
-        scheduler_process = multiprocessing.Process(
+        scheduler_process = get_dagster_multiproc_ctx().Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, None],
         )
@@ -203,7 +204,7 @@ def test_failure_recovery_after_tick_success(instance, external_repo, crash_loca
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
 
-        scheduler_process = multiprocessing.Process(
+        scheduler_process = get_dagster_multiproc_ctx().Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, debug_crash_flags],
         )
@@ -241,7 +242,7 @@ def test_failure_recovery_after_tick_success(instance, external_repo, crash_loca
     frozen_datetime = frozen_datetime.add(minutes=1)
     with pendulum.test(frozen_datetime):
         # Running again just marks the tick as success since the run has already started
-        scheduler_process = multiprocessing.Process(
+        scheduler_process = get_dagster_multiproc_ctx().Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, None],
         )
@@ -279,7 +280,7 @@ def test_failure_recovery_between_multi_runs(instance, external_repo, crash_loca
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
 
-        scheduler_process = multiprocessing.Process(
+        scheduler_process = get_dagster_multiproc_ctx().Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, debug_crash_flags],
         )
@@ -297,7 +298,7 @@ def test_failure_recovery_between_multi_runs(instance, external_repo, crash_loca
 
     frozen_datetime = frozen_datetime.add(minutes=1)
     with pendulum.test(frozen_datetime):
-        scheduler_process = multiprocessing.Process(
+        scheduler_process = get_dagster_multiproc_ctx().Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, None],
         )

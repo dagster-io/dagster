@@ -1,8 +1,14 @@
+import multiprocessing
 import os
 import sys
+from typing import List, Optional
 
 from dagster import EventMetadataEntry, check
-from dagster.core.errors import DagsterExecutionInterruptedError, DagsterSubprocessError
+from dagster.core.errors import (
+    DagsterExecutionInterruptedError,
+    DagsterSubprocessError,
+    DagsterUnmetExecutorRequirementsError,
+)
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.context.system import PlanOrchestrationContext
@@ -11,7 +17,6 @@ from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.retries import RetryMode
 from dagster.core.executor.base import Executor
 from dagster.core.instance import DagsterInstance
-from dagster.seven import multiprocessing
 from dagster.utils import start_termination_thread
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.timing import format_duration, time_execution_scope
@@ -85,10 +90,29 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
 
 
 class MultiprocessExecutor(Executor):
-    def __init__(self, retries, max_concurrent=None):
+    def __init__(
+        self,
+        retries: RetryMode,
+        max_concurrent: int,
+        start_method: Optional[str] = None,
+        explicit_forkserver_preload: Optional[List[str]] = None,
+    ):
         self._retries = check.inst_param(retries, "retries", RetryMode)
         max_concurrent = max_concurrent if max_concurrent else multiprocessing.cpu_count()
-        self.max_concurrent = check.int_param(max_concurrent, "max_concurrent")
+        self._max_concurrent = check.int_param(max_concurrent, "max_concurrent")
+        start_method = check.opt_str_param(start_method, "start_method")
+        valid_starts = multiprocessing.get_all_start_methods()
+
+        if start_method is None:
+            start_method = "spawn"
+
+        if start_method not in valid_starts:
+            raise DagsterUnmetExecutorRequirementsError(
+                f"The selected start_method '{start_method}' is not available. "
+                f"Only {valid_starts} are valid options on {sys.platform} python {sys.version}.",
+            )
+        self._start_method = start_method
+        self._explicit_forkserver_preload = explicit_forkserver_preload
 
     @property
     def retries(self):
@@ -100,7 +124,23 @@ class MultiprocessExecutor(Executor):
 
         pipeline = plan_context.reconstructable_pipeline
 
-        limit = self.max_concurrent
+        multiproc_ctx = multiprocessing.get_context(self._start_method)
+        if self._start_method == "forkserver":
+            # if explicitly listed in config we will use that
+            if self._explicit_forkserver_preload is not None:
+                preload = self._explicit_forkserver_preload
+
+            # or if the reconstructable pipeline has a module target, we will use that
+            elif pipeline.get_module():
+                preload = [pipeline.get_module()]
+
+            # base case is to preload the dagster library
+            else:
+                preload = ["dagster"]
+
+            multiproc_ctx.set_forkserver_preload(preload)
+
+        limit = self._max_concurrent
 
         yield DagsterEvent.engine_event(
             plan_context,
@@ -146,13 +186,15 @@ class MultiprocessExecutor(Executor):
 
                         for step in steps:
                             step_context = plan_context.for_step(step)
-                            term_events[step.key] = multiprocessing.Event()
-                            active_iters[step.key] = self.execute_step_out_of_process(
+                            term_events[step.key] = multiproc_ctx.Event()
+                            active_iters[step.key] = execute_step_out_of_process(
+                                multiproc_ctx,
                                 pipeline,
                                 step_context,
                                 step,
                                 errors,
                                 term_events,
+                                self.retries,
                                 active_execution.get_known_state(),
                             )
 
@@ -244,32 +286,40 @@ class MultiprocessExecutor(Executor):
             event_specific_data=EngineEventData.multiprocess(os.getpid()),
         )
 
-    def execute_step_out_of_process(
-        self, pipeline, step_context, step, errors, term_events, known_state
-    ):
-        command = MultiprocessExecutorChildProcessCommand(
-            run_config=step_context.run_config,
-            pipeline_run=step_context.pipeline_run,
-            step_key=step.key,
-            instance_ref=step_context.instance.get_ref(),
-            term_event=term_events[step.key],
-            recon_pipeline=pipeline,
-            retry_mode=self.retries,
-            known_state=known_state,
-        )
 
-        yield DagsterEvent.engine_event(
-            step_context,
-            "Launching subprocess for {}".format(step.key),
-            EngineEventData(marker_start=DELEGATE_MARKER),
-            step_handle=step.handle,
-        )
+def execute_step_out_of_process(
+    multiproc_ctx,
+    pipeline,
+    step_context,
+    step,
+    errors,
+    term_events,
+    retries,
+    known_state,
+):
+    command = MultiprocessExecutorChildProcessCommand(
+        run_config=step_context.run_config,
+        pipeline_run=step_context.pipeline_run,
+        step_key=step.key,
+        instance_ref=step_context.instance.get_ref(),
+        term_event=term_events[step.key],
+        recon_pipeline=pipeline,
+        retry_mode=retries,
+        known_state=known_state,
+    )
 
-        for ret in execute_child_process_command(command):
-            if ret is None or isinstance(ret, DagsterEvent):
-                yield ret
-            elif isinstance(ret, ChildProcessEvent):
-                if isinstance(ret, ChildProcessSystemErrorEvent):
-                    errors[ret.pid] = ret.error_info
-            else:
-                check.failed("Unexpected return value from child process {}".format(type(ret)))
+    yield DagsterEvent.engine_event(
+        step_context,
+        "Launching subprocess for {}".format(step.key),
+        EngineEventData(marker_start=DELEGATE_MARKER),
+        step_handle=step.handle,
+    )
+
+    for ret in execute_child_process_command(multiproc_ctx, command):
+        if ret is None or isinstance(ret, DagsterEvent):
+            yield ret
+        elif isinstance(ret, ChildProcessEvent):
+            if isinstance(ret, ChildProcessSystemErrorEvent):
+                errors[ret.pid] = ret.error_info
+        else:
+            check.failed("Unexpected return value from child process {}".format(type(ret)))

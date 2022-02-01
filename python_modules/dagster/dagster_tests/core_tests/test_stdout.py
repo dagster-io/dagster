@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 import random
 import string
@@ -21,7 +22,6 @@ from dagster.core.execution.compute_logs import should_disable_io_stream_redirec
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.test_utils import create_run_for_test, instance_for_test
-from dagster.seven import multiprocessing
 from dagster.utils import ensure_dir, touch_file
 
 HELLO_SOLID = "HELLO SOLID"
@@ -345,6 +345,8 @@ def test_compute_log_base_with_spaces():
     should_disable_io_stream_redirect(), reason="compute logs disabled for win / py3.6+"
 )
 def test_multi():
+    ctx = multiprocessing.get_context("spawn")
+
     with instance_for_test() as instance:
         pipeline_name = "foo_pipeline"
         pipeline_run = create_run_for_test(instance, pipeline_name=pipeline_name)
@@ -357,7 +359,7 @@ def test_multi():
             print("outer 3")  # pylint: disable=print-call
 
             for step_key in step_keys:
-                process = multiprocessing.Process(
+                process = ctx.Process(
                     target=execute_inner, args=(step_key, pipeline_run, instance.get_ref())
                 )
                 process.start()

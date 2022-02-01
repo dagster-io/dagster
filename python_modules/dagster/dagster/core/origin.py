@@ -1,4 +1,3 @@
-from collections import namedtuple
 from typing import List, NamedTuple, Optional
 
 from dagster import check
@@ -61,8 +60,16 @@ class RepositoryPythonOrigin(
 
 
 @whitelist_for_serdes
-class PipelinePythonOrigin(namedtuple("_PipelinePythonOrigin", "pipeline_name repository_origin")):
-    def __new__(cls, pipeline_name, repository_origin):
+class PipelinePythonOrigin(
+    NamedTuple(
+        "_PipelinePythonOrigin",
+        [
+            ("pipeline_name", str),
+            ("repository_origin", RepositoryPythonOrigin),
+        ],
+    )
+):
+    def __new__(cls, pipeline_name: str, repository_origin: RepositoryPythonOrigin):
         return super(PipelinePythonOrigin, cls).__new__(
             cls,
             check.str_param(pipeline_name, "pipeline_name"),
@@ -76,5 +83,5 @@ class PipelinePythonOrigin(namedtuple("_PipelinePythonOrigin", "pipeline_name re
     def executable_path(self):
         return self.repository_origin.executable_path
 
-    def get_repo_pointer(self):
+    def get_repo_pointer(self) -> CodePointer:
         return self.repository_origin.code_pointer
