@@ -28,7 +28,6 @@ from dagster import (
     IOManagerDefinition,
     InputDefinition,
     Int,
-    Map,
     Materialization,
     ModeDefinition,
     Noneable,
@@ -319,26 +318,6 @@ def more_complicated_config():
 
     noop_solid()
     a_solid_with_three_field_config()
-
-
-@pipeline
-def config_with_map():
-    @solid(
-        config_schema={
-            "field_one": Field(Map(str, int, name="username")),
-            "field_two": Field({bool: int}, is_required=False),
-            "field_three": Field(
-                {str: {"nested": [Noneable(int)]}},
-                is_required=False,
-                default_value={"test": {"nested": [None, 1, 2]}},
-            ),
-        }
-    )
-    def a_solid_with_map_config(_context):
-        return None
-
-    noop_solid()
-    a_solid_with_map_config()
 
 
 @pipeline
@@ -1463,7 +1442,6 @@ def define_pipelines():
         materialization_pipeline,
         more_complicated_config,
         more_complicated_nested_config,
-        config_with_map,
         multi_asset_pipeline,
         multi_mode_with_loggers,
         multi_mode_with_resources,
