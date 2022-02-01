@@ -1333,15 +1333,18 @@ class TestRunStorage:
             a()
 
         with tempfile.TemporaryDirectory() as temp_dir:
-            instance = DagsterInstance(
-                instance_type=InstanceType.EPHEMERAL,
-                local_artifact_storage=LocalArtifactStorage(temp_dir),
-                run_storage=storage,
-                event_storage=InMemoryEventLogStorage(),
-                compute_log_manager=NoOpComputeLogManager(),
-                run_coordinator=DefaultRunCoordinator(),
-                run_launcher=SyncInMemoryRunLauncher(),
-            )
+            if storage._instance:  # pylint: disable=protected-access
+                instance = storage._instance  # pylint: disable=protected-access
+            else:
+                instance = DagsterInstance(
+                    instance_type=InstanceType.EPHEMERAL,
+                    local_artifact_storage=LocalArtifactStorage(temp_dir),
+                    run_storage=storage,
+                    event_storage=InMemoryEventLogStorage(),
+                    compute_log_manager=NoOpComputeLogManager(),
+                    run_coordinator=DefaultRunCoordinator(),
+                    run_launcher=SyncInMemoryRunLauncher(),
+                )
 
             freeze_datetime = to_timezone(
                 create_pendulum_time(2019, 11, 2, 0, 0, 0, tz="US/Central"), "US/Pacific"
@@ -1354,5 +1357,5 @@ class TestRunStorage:
                 )
                 assert len(records) == 1
                 record = records[0]
-                assert record.start_time == 1572670800.0
-                assert record.end_time == 1572670800.0
+                assert record.start_time == freeze_datetime.timestamp()
+                assert record.end_time == freeze_datetime.timestamp()
