@@ -567,29 +567,26 @@ function findAutocompletionContext(
       // The current composite type's available "fields" each only have a configType key.
       // The rest of the configType's information is in the top level schema.allConfigTypes
       // to avoid superlinear GraphQL response size.
-      let childTypeKey = nextTypeKey;
-      let childEntriesUnique = false;
+      const typeKey = nextTypeKey ? nextTypeKey : parentTypeDef?.configTypeKey;
       nextTypeKey = null;
-      if (parentTypeDef) {
-        const parentConfigType = schema.allConfigTypes.find(
-          (t) => t.key === parentTypeDef.configTypeKey,
-        )!;
-        childTypeKey = parentConfigType.key;
-        childEntriesUnique = true;
 
-        inArray = parentConfigType.__typename === 'ArrayConfigType';
-        if (inArray) {
-          childTypeKey = parentConfigType.typeParamKeys[0];
-          childEntriesUnique = false;
-        }
+      const parentConfigType = schema.allConfigTypes.find((t) => t.key === typeKey)!;
+      let childTypeKey = parentConfigType.key;
+      let childEntriesUnique = true;
 
-        // Maps provide no direct autocompletions, but they do act as the closesetMappingType,
-        // meaning they show up in the schema sidebar
-        if (parentConfigType.__typename === 'MapConfigType') {
-          nextTypeKey = parentConfigType.typeParamKeys[1];
-          closestMappingType = parentConfigType;
-          continue;
-        }
+      inArray = parentConfigType.__typename === 'ArrayConfigType';
+      if (inArray) {
+        childTypeKey = parentConfigType.typeParamKeys[0];
+        childEntriesUnique = false;
+      }
+
+      // Maps provide no direct autocompletions, but they do act as the closestMappingType,
+      // meaning they show up in the schema sidebar
+      if (parentConfigType.__typename === 'MapConfigType') {
+        nextTypeKey = parentConfigType.typeParamKeys[1];
+        closestMappingType = parentConfigType;
+        available = [];
+        continue;
       }
 
       type = schema.allConfigTypes.find((t) => t.key === childTypeKey);
