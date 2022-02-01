@@ -81,6 +81,7 @@ module.exports = {
                 "colors.gray.900",
                 defaultTheme.colors.gray[900]
               ),
+              overflowWrap: "break-word",
             },
             "code::before": {
               content: '""',
@@ -107,6 +108,7 @@ module.exports = {
               color: theme("colors.primary.900"),
               transition: ".3s all",
               textDecoration: "none",
+              overflowWrap: "break-word",
             },
             "a:hover": {
               textDecoration: "underline",
