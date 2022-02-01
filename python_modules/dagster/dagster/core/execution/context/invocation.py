@@ -243,6 +243,27 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         )
 
     def get_events(self) -> List[UserEvent]:
+        """Retrieve the list of user-generated events that were either yielded or logged via the context.
+
+        **Examples:**
+
+        .. code-block:: python
+
+            from dagster import op, build_op_context, AssetMaterialization, ExpectationResult
+
+            @op
+            def my_op(context):
+                ...
+
+            def test_my_op():
+                context = build_op_context()
+                my_op(context)
+                all_user_events = context.get_events()
+                materializations = [event for event in all_user_events if isinstance(event, AssetMaterialization)]
+                expectation_results = [event for event in all_user_events if isinstance(event, ExpectationResult)]
+                ...
+        """
+
         return self._user_events
 
 
