@@ -56,6 +56,12 @@ query PipelineQuery(
                         ... on EvaluationStackListItemEntry {
                             listIndex
                         }
+                        ... on EvaluationStackMapKeyEntry {
+                            mapKey
+                        }
+                        ... on EvaluationStackMapValueEntry {
+                            mapKey
+                        }
                     }
                 }
             }
@@ -527,6 +533,113 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert last_entry["__typename"] == "EvaluationStackListItemEntry"
         assert last_entry["listIndex"] == 1
 
+    def test_config_map(self, graphql_context):
+        # Check validity
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name="config_with_map",
+            run_config={
+                "solids": {"a_solid_with_map_config": {"config": {"field_one": {"test": 5}}}}
+            },
+            mode="default",
+        )
+
+        assert not result.errors
+        assert result.data
+        valid_data = result.data["isPipelineConfigValid"]
+        assert valid_data["__typename"] == "PipelineConfigValidationValid"
+        assert valid_data["pipelineName"] == "config_with_map"
+
+        # Sanity check GraphQL result for types
+        selector = infer_pipeline_selector(graphql_context, "config_with_map")
+        result = execute_dagster_graphql(
+            graphql_context,
+            ALL_CONFIG_TYPES_QUERY,
+            {"selector": selector, "mode": "default"},
+        )
+        config_types_data = result.data["runConfigSchemaOrError"]["allConfigTypes"]
+        # Ensure the first config type, Map(str, int, name="username") is in the result
+        assert any(
+            config_type_data.get("name") == "username"
+            and config_type_data.get("keyType", {}).get("key", "") == "String"
+            and config_type_data.get("ofType", {}).get("key", "") == "Int"
+            for config_type_data in config_types_data
+        )
+
+    def test_config_map_invalid(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name="config_with_map",
+            run_config={
+                "solids": {"a_solid_with_map_config": {"config": {"field_one": "not_a_map"}}}
+            },
+            mode="default",
+        )
+
+        assert not result.errors
+        assert result.data
+        valid_data = result.data["isPipelineConfigValid"]
+        assert valid_data["__typename"] == "RunConfigValidationInvalid"
+        assert valid_data["pipelineName"] == "config_with_map"
+        assert len(valid_data["errors"]) == 1
+        assert ["solids", "a_solid_with_map_config", "config", "field_one"] == field_stack(
+            valid_data["errors"][0]
+        )
+
+    def test_config_map_key_invalid(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name="config_with_map",
+            run_config={"solids": {"a_solid_with_map_config": {"config": {"field_one": {5: 5}}}}},
+            mode="default",
+        )
+
+        assert not result.errors
+        assert result.data
+        valid_data = result.data["isPipelineConfigValid"]
+        assert valid_data["__typename"] == "RunConfigValidationInvalid"
+        assert valid_data["pipelineName"] == "config_with_map"
+        assert len(valid_data["errors"]) == 1
+        entries = valid_data["errors"][0]["stack"]["entries"]
+        assert len(entries) == 5
+        assert ["solids", "a_solid_with_map_config", "config", "field_one"] == field_stack(
+            valid_data["errors"][0]
+        )
+
+        last_entry = entries[4]
+        assert last_entry["__typename"] == "EvaluationStackMapKeyEntry"
+        assert last_entry["mapKey"] == 5
+
+    def test_config_map_value_invalid(self, graphql_context):
+        result = execute_config_graphql(
+            graphql_context,
+            pipeline_name="config_with_map",
+            run_config={
+                "solids": {
+                    "a_solid_with_map_config": {
+                        "config": {"field_one": {"test": "not_a_valid_int_value"}}
+                    }
+                }
+            },
+            mode="default",
+        )
+
+        assert not result.errors
+        assert result.data
+        valid_data = result.data["isPipelineConfigValid"]
+        assert valid_data["__typename"] == "RunConfigValidationInvalid"
+        assert valid_data["pipelineName"] == "config_with_map"
+        assert len(valid_data["errors"]) == 1
+        entries = valid_data["errors"][0]["stack"]["entries"]
+        assert len(entries) == 5
+        assert ["solids", "a_solid_with_map_config", "config", "field_one"] == field_stack(
+            valid_data["errors"][0]
+        )
+
+        last_entry = entries[4]
+        assert last_entry["__typename"] == "EvaluationStackMapValueEntry"
+        assert last_entry["mapKey"] == "test"
+
     def test_smoke_test_config_type_system(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "more_complicated_nested_config")
         result = execute_dagster_graphql(
@@ -606,6 +719,11 @@ fragment configTypeFragment on ConfigType {
   }
   ... on WrappingConfigType {
     ofType { key }
+  }
+  ... on MapConfigType {
+    ofType { key }
+    keyType { key }
+    name
   }
   ... on ScalarUnionConfigType {
     scalarType { key }
