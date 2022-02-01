@@ -38,7 +38,12 @@ class S3FakeSession:
 
     def put_object(self, Bucket, Key, Body, *args, **kwargs):
         self.mock_extras.put_object(*args, **kwargs)
-        self.buckets[Bucket][Key] = Body.read()
+        if isinstance(Body, io.IOBase):
+            self.buckets[Bucket][Key] = Body.read()
+        elif isinstance(Body, str):
+            self.buckets[Bucket][Key] = Body.encode()
+        else:
+            self.buckets[Bucket][Key] = Body
 
     def get_object(self, Bucket, Key, *args, **kwargs):
         if not self.has_object(Bucket, Key):
