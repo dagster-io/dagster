@@ -13,7 +13,7 @@ export interface ConfigEditorRunConfigSchemaFragment_rootConfigType {
 }
 
 export interface ConfigEditorRunConfigSchemaFragment_allConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -27,6 +27,15 @@ export interface ConfigEditorRunConfigSchemaFragment_allConfigTypes_RegularConfi
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+}
+
+export interface ConfigEditorRunConfigSchemaFragment_allConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  name: string | null;
 }
 
 export interface ConfigEditorRunConfigSchemaFragment_allConfigTypes_EnumConfigType_values {
@@ -72,7 +81,7 @@ export interface ConfigEditorRunConfigSchemaFragment_allConfigTypes_ScalarUnionC
   nonScalarTypeKey: string;
 }
 
-export type ConfigEditorRunConfigSchemaFragment_allConfigTypes = ConfigEditorRunConfigSchemaFragment_allConfigTypes_ArrayConfigType | ConfigEditorRunConfigSchemaFragment_allConfigTypes_RegularConfigType | ConfigEditorRunConfigSchemaFragment_allConfigTypes_EnumConfigType | ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType | ConfigEditorRunConfigSchemaFragment_allConfigTypes_ScalarUnionConfigType;
+export type ConfigEditorRunConfigSchemaFragment_allConfigTypes = ConfigEditorRunConfigSchemaFragment_allConfigTypes_ArrayConfigType | ConfigEditorRunConfigSchemaFragment_allConfigTypes_RegularConfigType | ConfigEditorRunConfigSchemaFragment_allConfigTypes_MapConfigType | ConfigEditorRunConfigSchemaFragment_allConfigTypes_EnumConfigType | ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType | ConfigEditorRunConfigSchemaFragment_allConfigTypes_ScalarUnionConfigType;
 
 export interface ConfigEditorRunConfigSchemaFragment {
   __typename: "RunConfigSchema";

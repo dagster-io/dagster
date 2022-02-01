@@ -19,7 +19,7 @@ export interface PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunCo
 }
 
 export interface PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_ArrayConfigType {
-  __typename: "ArrayConfigType" | "NullableConfigType" | "MapConfigType";
+  __typename: "ArrayConfigType" | "NullableConfigType";
   key: string;
   description: string | null;
   isSelector: boolean;
@@ -33,6 +33,15 @@ export interface PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunCo
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+}
+
+export interface PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  name: string | null;
 }
 
 export interface PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_EnumConfigType_values {
@@ -78,7 +87,7 @@ export interface PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunCo
   nonScalarTypeKey: string;
 }
 
-export type PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes = PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_ArrayConfigType | PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_RegularConfigType | PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_EnumConfigType | PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_CompositeConfigType | PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_ScalarUnionConfigType;
+export type PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes = PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_ArrayConfigType | PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_RegularConfigType | PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_MapConfigType | PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_EnumConfigType | PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_CompositeConfigType | PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_ScalarUnionConfigType;
 
 export interface PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema {
   __typename: "RunConfigSchema";

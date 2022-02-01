@@ -33,6 +33,7 @@ interface CompositeTypeData extends CommonTypeData {
 interface MapTypeData extends CommonTypeData {
   __typename: 'MapConfigType';
   typeParamKeys: string[];
+  name: string | null;
 }
 
 interface ListTypeData extends CommonTypeData {
@@ -106,6 +107,10 @@ function renderTypeRecursive(
     return <>[{renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props)}]</>;
   }
   if (type.__typename === 'MapConfigType') {
+    // e.g.
+    // {
+    //   [name_hint: String]: Int
+    // }
     const keyTypeKey = type.typeParamKeys[0];
     const ofTypeKey = type.typeParamKeys[1];
     const innerIndent = '  '.repeat(depth + 1);
@@ -113,7 +118,7 @@ function renderTypeRecursive(
       <>
         {`{`}
         <DictEntry>
-          {innerIndent}[location_name:{' '}
+          {innerIndent}[{type.name ? `${type.name}: ` : null}
           {renderTypeRecursive(typeLookup[keyTypeKey], typeLookup, depth + 1, props)}]{`: `}
           {renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth + 1, props)}
         </DictEntry>
@@ -173,6 +178,7 @@ export const ConfigTypeSchema = React.memo((props: ConfigTypeSchemaProps) => {
 
 export const CONFIG_TYPE_SCHEMA_FRAGMENT = gql`
   fragment ConfigTypeSchemaFragment on ConfigType {
+    __typename
     ... on EnumConfigType {
       givenName
     }
@@ -194,6 +200,9 @@ export const CONFIG_TYPE_SCHEMA_FRAGMENT = gql`
     ... on ScalarUnionConfigType {
       scalarTypeKey
       nonScalarTypeKey
+    }
+    ... on MapConfigType {
+      name
     }
   }
 `;

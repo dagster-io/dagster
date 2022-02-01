@@ -17,6 +17,9 @@ export const CONFIG_EDITOR_RUN_CONFIG_SCHEMA_FRAGMENT = gql`
       ... on RegularConfigType {
         givenName
       }
+      ... on MapConfigType {
+        name
+      }
       ... on EnumConfigType {
         givenName
         values {
