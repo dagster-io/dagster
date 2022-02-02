@@ -11,6 +11,7 @@ import {
   Table,
   Mono,
 } from '@dagster-io/ui';
+import moment from 'moment';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
@@ -89,6 +90,14 @@ const MetadataEntriesRow: React.FC<{
   }
   const assetLineage = latest.__typename === 'MaterializationEvent' ? latest.assetLineage : [];
 
+  const observationsAboutLatest =
+    latest.__typename === 'MaterializationEvent'
+      ? group.all.filter(
+          (e) =>
+            e.__typename === 'ObservationEvent' && Number(e.timestamp) > Number(latest.timestamp),
+        )
+      : [];
+
   return (
     <tr style={{background: ColorsWIP.Gray50}}>
       <td colSpan={6} style={{fontSize: 14, padding: 0}}>
@@ -98,15 +107,44 @@ const MetadataEntriesRow: React.FC<{
         {latest.metadataEntries.length || hasLineage ? (
           <DetailsTable>
             <tbody>
-              {(latest.metadataEntries || []).map((entry) => (
+              {latest.metadataEntries.map((entry) => (
                 <tr key={`metadata-${entry.label}`}>
-                  <td>{entry.label}</td>
+                  <td style={{maxWidth: 300}}>{entry.label}</td>
                   <td>
                     <MetadataEntry entry={entry} expandSmallValues={true} />
                   </td>
-                  <td style={{opacity: 0.6}}>{entry.description}</td>
+                  <td style={{opacity: 0.7}}>{entry.description}</td>
                 </tr>
               ))}
+              {observationsAboutLatest.map((obs) => (
+                <React.Fragment key={obs.timestamp}>
+                  {obs.metadataEntries.map((entry) => (
+                    <tr key={`metadata-${obs.timestamp}-${entry.label}`}>
+                      <td>{entry.label}</td>
+                      <td>
+                        <MetadataEntry entry={entry} expandSmallValues={true} />
+                      </td>
+                      <td style={{opacity: 0.7}}>
+                        <Box flex={{gap: 8, alignItems: 'center'}}>
+                          <IconWIP name="observation" size={16} />
+                          <span>
+                            {`${obs.stepKey} in `}
+                            <Link to={`/instance/runs/${obs.runId}?timestamp=${obs.timestamp}`}>
+                              <Mono>{titleForRun({runId: obs.runId})}</Mono>
+                            </Link>
+                            {` (${moment(Number(obs.timestamp)).from(
+                              Number(timestamp),
+                              true,
+                            )} later)`}
+                          </span>
+                        </Box>
+                        {entry.description}
+                      </td>
+                    </tr>
+                  ))}
+                </React.Fragment>
+              ))}
+
               {hasLineage && (
                 <tr>
                   <td>Parent Materializations</td>
@@ -234,6 +272,7 @@ const HoverableRow = styled.tr`
 `;
 
 const DetailsTable = styled.table`
+  width: 100%;
   margin: -2px -2px -3px;
   tr td {
     font-size: 14px;

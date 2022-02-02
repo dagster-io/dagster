@@ -38,26 +38,7 @@ export const groupByPartition = (
     .map((key) => {
       const sorted = [...(grouped[key] || [])].sort(sortByEventTimestamp);
       const latestMaterialization = sorted.find((a) => a.__typename === 'MaterializationEvent');
-      let latest = latestMaterialization || sorted[0] || null;
-
-      if (latest && latest.__typename === 'MaterializationEvent') {
-        const observationsAboutLatest = sorted.filter(
-          (e) =>
-            e.__typename === 'ObservationEvent' && Number(e.timestamp) > Number(latest.timestamp),
-        );
-
-        latest = {...latest, metadataEntries: [...latest.metadataEntries]};
-        for (const observation of observationsAboutLatest) {
-          latest.metadataEntries.push(
-            ...observation.metadataEntries.map((e) => ({
-              ...e,
-              description: `Observed by ${observation.stepKey}${e.description?.length ? ': ' : ''}${
-                e.description || ''
-              }`,
-            })),
-          );
-        }
-      }
+      const latest = latestMaterialization || sorted[0] || null;
 
       return {
         all: sorted,
