@@ -1,14 +1,14 @@
 # pylint: disable=redefined-outer-name
 import random
 
-from dagster import AssetIn, MetadataValue, Output, asset
+from dagster import AssetIn, MetadataValue, asset
 from hacker_news_assets.assets.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame, Series
 from sklearn.decomposition import TruncatedSVD
 
 
 @asset
-def recommender_model(user_story_matrix: IndexedCooMatrix):
+def recommender_model(context, user_story_matrix: IndexedCooMatrix) -> TruncatedSVD:
     """
     An SVD model for collaborative filtering-based recommendation.
     """
@@ -18,13 +18,14 @@ def recommender_model(user_story_matrix: IndexedCooMatrix):
 
     total_explained_variance = svd.explained_variance_ratio_.sum()
 
-    yield Output(
-        svd,
-        metadata={
+    context.add_output_metadata(
+        {
             "Total explained variance ratio": total_explained_variance,
             "Number of components": n_components,
-        },
+        }
     )
+
+    return svd
 
 
 @asset(
@@ -32,8 +33,11 @@ def recommender_model(user_story_matrix: IndexedCooMatrix):
     io_manager_key="warehouse_io_manager",
 )
 def component_top_stories(
-    recommender_model: TruncatedSVD, user_story_matrix: IndexedCooMatrix, stories: DataFrame
-):
+    context,
+    recommender_model: TruncatedSVD,
+    user_story_matrix: IndexedCooMatrix,
+    stories: DataFrame,
+) -> DataFrame:
     """
     For each component in the collaborative filtering model, the titles of the top stories
     it's associated with.
@@ -59,14 +63,14 @@ def component_top_stories(
         {"component_index": Series(components_column), "title": Series(titles_column)}
     )
 
-    yield Output(
-        component_top_stories,
-        metadata={
+    context.add_output_metadata(
+        {
             "Top component top stories": MetadataValue.md(
                 top_components_to_markdown(component_top_stories)
-            ),
-        },
+            )
+        }
     )
+    return component_top_stories
 
 
 def top_components_to_markdown(component_top_stories: DataFrame) -> str:

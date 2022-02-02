@@ -1,6 +1,6 @@
 import random
 
-from dagster import In, InputDefinition, MetadataValue, Out, Output, op
+from dagster import In, InputDefinition, MetadataValue, Out, op
 from dagster.utils import file_relative_path
 from dagstermill import define_dagstermill_solid
 from hacker_news.ops.user_story_matrix import IndexedCooMatrix
@@ -8,8 +8,8 @@ from pandas import DataFrame, Series
 from sklearn.decomposition import TruncatedSVD
 
 
-@op(out=Out(dagster_type=TruncatedSVD, metadata={"key": "recommender_model"}))
-def build_recommender_model(user_story_matrix: IndexedCooMatrix):
+@op(out=Out(metadata={"key": "recommender_model"}))
+def build_recommender_model(context, user_story_matrix: IndexedCooMatrix) -> TruncatedSVD:
     """
     Trains an SVD model for collaborative filtering-based recommendation.
     """
@@ -19,13 +19,13 @@ def build_recommender_model(user_story_matrix: IndexedCooMatrix):
 
     total_explained_variance = svd.explained_variance_ratio_.sum()
 
-    yield Output(
-        svd,
-        metadata={
+    context.add_output_metadata(
+        {
             "Total explained variance ratio": total_explained_variance,
             "Number of components": n_components,
         },
     )
+    return svd
 
 
 model_perf_notebook = define_dagstermill_solid(
@@ -47,14 +47,13 @@ model_perf_notebook = define_dagstermill_solid(
         ),
     },
     out=Out(
-        dagster_type=DataFrame,
         io_manager_key="warehouse_io_manager",
         metadata={"table": "hackernews.component_top_stories"},
     ),
 )
 def build_component_top_stories(
-    model: TruncatedSVD, user_story_matrix: IndexedCooMatrix, story_titles: DataFrame
-):
+    context, model: TruncatedSVD, user_story_matrix: IndexedCooMatrix, story_titles: DataFrame
+) -> DataFrame:
     """
     For each component in the collaborative filtering model, finds the titles of the top stories
     it's associated with.
@@ -80,14 +79,14 @@ def build_component_top_stories(
         {"component_index": Series(components_column), "title": Series(titles_column)}
     )
 
-    yield Output(
-        component_top_stories,
-        metadata={
+    context.add_output_metadata(
+        {
             "Top component top stories": MetadataValue.md(
                 top_components_to_markdown(component_top_stories)
             ),
         },
     )
+    return component_top_stories
 
 
 def top_components_to_markdown(component_top_stories: DataFrame) -> str:

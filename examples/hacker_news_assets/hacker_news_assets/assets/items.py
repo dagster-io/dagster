@@ -2,7 +2,7 @@
 
 from typing import Tuple
 
-from dagster import Output, asset
+from dagster import asset
 from hacker_news_assets.partitions import hourly_partitions
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF
@@ -32,7 +32,7 @@ ITEM_FIELD_NAMES = [field.name for field in HN_ITEMS_SCHEMA.fields]
     required_resource_keys={"hn_client"},
     partitions_def=hourly_partitions,
 )
-def items(context, id_range_for_time: Tuple[int, int]):
+def items(context, id_range_for_time: Tuple[int, int]) -> DataFrame:
     """Items from the Hacker News API: each is a story or a comment on a story."""
     start_id, end_id = id_range_for_time
 
@@ -48,10 +48,10 @@ def items(context, id_range_for_time: Tuple[int, int]):
     result = DataFrame(non_none_rows, columns=ITEM_FIELD_NAMES).drop_duplicates(subset=["id"])
     result.rename(columns={"by": "user_id"}, inplace=True)
 
-    return Output(
-        result,
-        metadata={"Non-empty items": len(non_none_rows), "Empty items": rows.count(None)},
+    context.add_output_metadata(
+        {"Non-empty items": len(non_none_rows), "Empty items": rows.count(None)},
     )
+    return result
 
 
 @asset(io_manager_key="warehouse_io_manager", partitions_def=hourly_partitions)

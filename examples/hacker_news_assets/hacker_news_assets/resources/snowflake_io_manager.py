@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import Optional, Sequence, Tuple, Union
 
-from dagster import IOManager, InputContext, MetadataEntry, OutputContext, io_manager
+from dagster import IOManager, InputContext, MetadataValue, OutputContext, io_manager
 from pandas import DataFrame as PandasDataFrame
 from pandas import read_sql
 from pyspark.sql import DataFrame as SparkDataFrame
@@ -79,29 +79,34 @@ class SnowflakeIOManager(IOManager):
             con.execute(self._get_cleanup_statement(table, schema, time_window))
 
         if isinstance(obj, SparkDataFrame):
-            yield from self._handle_spark_output(obj, schema, table)
+            self._handle_spark_output(context, obj, schema, table)
         elif isinstance(obj, PandasDataFrame):
-            yield from self._handle_pandas_output(obj, schema, table)
+            self._handle_pandas_output(context, obj, schema, table)
         else:
             raise Exception(
                 "SnowflakeIOManager only supports pandas DataFrames and spark DataFrames"
             )
 
-        yield MetadataEntry.text(
-            self._get_select_statement(
-                table,
-                schema,
-                None,
-                time_window,
-            ),
-            "Query",
+        context.add_output_metadata(
+            {
+                "Query": self._get_select_statement(
+                    table,
+                    schema,
+                    None,
+                    time_window,
+                )
+            }
         )
 
-    def _handle_pandas_output(self, obj: PandasDataFrame, schema: str, table: str):
+    def _handle_pandas_output(self, context, obj: PandasDataFrame, schema: str, table: str):
         from snowflake import connector  # pylint: disable=no-name-in-module
 
-        yield MetadataEntry.int(obj.shape[0], "Rows")
-        yield MetadataEntry.md(pandas_columns_to_markdown(obj), "DataFrame columns")
+        context.add_output_metadata(
+            {
+                "Rows": obj.shape[0],
+                "DataFrame columns": MetadataValue.md(pandas_columns_to_markdown(obj)),
+            }
+        )
 
         connector.paramstyle = "pyformat"
         with connect_snowflake(config=self._config, schema=schema) as con:
@@ -114,7 +119,7 @@ class SnowflakeIOManager(IOManager):
                 method=pd_writer,
             )
 
-    def _handle_spark_output(self, df: SparkDataFrame, schema: str, table: str):
+    def _handle_spark_output(self, context, df: SparkDataFrame, schema: str, table: str):
         options = {
             "sfURL": f"{self._config['account']}.snowflakecomputing.com",
             "sfUser": self._config["user"],
@@ -124,7 +129,9 @@ class SnowflakeIOManager(IOManager):
             "sfWarehouse": self._config["warehouse"],
             "dbtable": table,
         }
-        yield MetadataEntry.md(spark_columns_to_markdown(df.schema), "DataFrame columns")
+        context.add_output_metadata(
+            {"DataFrame columns": MetadataValue.md(spark_columns_to_markdown(df.schema))}
+        )
 
         df.write.format("net.snowflake.spark.snowflake").options(**options).mode("append").save()
 

@@ -1,6 +1,6 @@
 from typing import Tuple
 
-from dagster import Out, Output, op
+from dagster import Out, op
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql.types import ArrayType, DoubleType, LongType, StringType, StructField, StructType
@@ -25,16 +25,10 @@ ACTION_FIELD_NAMES = [field.name for field in HN_ACTION_SCHEMA.fields]
 
 
 @op(
-    out={
-        "items": Out(
-            io_manager_key="parquet_io_manager",
-            metadata={"partitioned": True},
-            dagster_type=DataFrame,
-        )
-    },
+    out={"items": Out(io_manager_key="parquet_io_manager", metadata={"partitioned": True})},
     required_resource_keys={"hn_client"},
 )
-def download_items(context, id_range: Tuple[int, int]) -> Output:
+def download_items(context, id_range: Tuple[int, int]) -> DataFrame:
     """
     Downloads all of the items for the id range passed in as input and creates a DataFrame with
     all the entries.
@@ -53,11 +47,11 @@ def download_items(context, id_range: Tuple[int, int]) -> Output:
     result = DataFrame(non_none_rows, columns=ACTION_FIELD_NAMES).drop_duplicates(subset=["id"])
     result.rename(columns={"by": "user_id"}, inplace=True)
 
-    return Output(
-        result,
-        "items",
-        metadata={"Non-empty items": len(non_none_rows), "Empty items": rows.count(None)},
+    context.add_output_metadata(
+        {"Non-empty items": len(non_none_rows), "Empty items": rows.count(None)},
     )
+
+    return result
 
 
 @op(
