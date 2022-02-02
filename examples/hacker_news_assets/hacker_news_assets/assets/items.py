@@ -31,14 +31,10 @@ ITEM_FIELD_NAMES = [field.name for field in HN_ITEMS_SCHEMA.fields]
 @asset(
     io_manager_key="parquet_io_manager",
     required_resource_keys={"hn_client"},
-    description="Items from the Hacker News API: each is a story or a comment on a story.",
     partitions_def=hourly_partitions,
 )
 def items(context, id_range_for_time: Tuple[int, int]):
-    """
-    Downloads all of the items for the id range passed in as input and creates a DataFrame with
-    all the entries.
-    """
+    """Items from the Hacker News API: each is a story or a comment on a story."""
     start_id, end_id = id_range_for_time
 
     context.log.info(f"Downloading range {start_id} up to {end_id}: {end_id - start_id} items.")

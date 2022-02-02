@@ -17,14 +17,14 @@ assets = [
 source_assets = [comments, stories]
 
 story_recommender_prod_job = build_assets_job(
-    "story_recommender_prod",
+    "story_recommender",
     assets=assets,
     source_assets=source_assets,
     resource_defs=RESOURCES_PROD,
 )
 
 story_recommender_staging_job = build_assets_job(
-    "story_recommender_staging",
+    "story_recommender",
     assets=assets,
     source_assets=source_assets,
     resource_defs=RESOURCES_STAGING,
