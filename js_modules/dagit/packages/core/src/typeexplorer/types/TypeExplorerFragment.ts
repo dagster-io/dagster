@@ -66,7 +66,7 @@ export interface TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveC
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
 }
 
 export type TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes = TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
@@ -139,7 +139,7 @@ export interface TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveCo
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
 }
 
 export type TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes = TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType | TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | TypeExplorerFragment_inputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType;
@@ -213,7 +213,7 @@ export interface TypeExplorerFragment_inputSchemaType_RegularConfigType_recursiv
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
 }
 
 export type TypeExplorerFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes = TypeExplorerFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType | TypeExplorerFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | TypeExplorerFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | TypeExplorerFragment_inputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType;
@@ -295,7 +295,7 @@ export interface TypeExplorerFragment_inputSchemaType_CompositeConfigType_recurs
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
 }
 
 export type TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes = TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | TypeExplorerFragment_inputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
@@ -369,7 +369,7 @@ export interface TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType_recu
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
 }
 
 export type TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes = TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | TypeExplorerFragment_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
@@ -444,7 +444,7 @@ export interface TypeExplorerFragment_inputSchemaType_MapConfigType_recursiveCon
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
 }
 
 export type TypeExplorerFragment_inputSchemaType_MapConfigType_recursiveConfigTypes = TypeExplorerFragment_inputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerFragment_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType | TypeExplorerFragment_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType | TypeExplorerFragment_inputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | TypeExplorerFragment_inputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType;
@@ -455,7 +455,7 @@ export interface TypeExplorerFragment_inputSchemaType_MapConfigType {
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
   recursiveConfigTypes: TypeExplorerFragment_inputSchemaType_MapConfigType_recursiveConfigTypes[];
 }
 
@@ -520,7 +520,7 @@ export interface TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursive
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
 }
 
 export type TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes = TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | TypeExplorerFragment_outputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
@@ -593,7 +593,7 @@ export interface TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveC
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
 }
 
 export type TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes = TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType | TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | TypeExplorerFragment_outputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType;
@@ -667,7 +667,7 @@ export interface TypeExplorerFragment_outputSchemaType_RegularConfigType_recursi
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
 }
 
 export type TypeExplorerFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes = TypeExplorerFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType | TypeExplorerFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | TypeExplorerFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | TypeExplorerFragment_outputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType;
@@ -749,7 +749,7 @@ export interface TypeExplorerFragment_outputSchemaType_CompositeConfigType_recur
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
 }
 
 export type TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes = TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | TypeExplorerFragment_outputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
@@ -823,7 +823,7 @@ export interface TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType_rec
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
 }
 
 export type TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes = TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | TypeExplorerFragment_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
@@ -898,7 +898,7 @@ export interface TypeExplorerFragment_outputSchemaType_MapConfigType_recursiveCo
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
 }
 
 export type TypeExplorerFragment_outputSchemaType_MapConfigType_recursiveConfigTypes = TypeExplorerFragment_outputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType | TypeExplorerFragment_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType | TypeExplorerFragment_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType | TypeExplorerFragment_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType | TypeExplorerFragment_outputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | TypeExplorerFragment_outputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType;
@@ -909,7 +909,7 @@ export interface TypeExplorerFragment_outputSchemaType_MapConfigType {
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
   recursiveConfigTypes: TypeExplorerFragment_outputSchemaType_MapConfigType_recursiveConfigTypes[];
 }
 

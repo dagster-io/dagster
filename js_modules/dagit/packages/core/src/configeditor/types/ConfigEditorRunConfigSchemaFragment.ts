@@ -35,7 +35,7 @@ export interface ConfigEditorRunConfigSchemaFragment_allConfigTypes_MapConfigTyp
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
 }
 
 export interface ConfigEditorRunConfigSchemaFragment_allConfigTypes_EnumConfigType_values {

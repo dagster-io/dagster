@@ -41,7 +41,7 @@ export interface PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunCo
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
 }
 
 export interface PipelineExecutionConfigSchemaQuery_runConfigSchemaOrError_RunConfigSchema_allConfigTypes_EnumConfigType_values {

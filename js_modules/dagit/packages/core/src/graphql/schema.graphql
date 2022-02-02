@@ -2354,7 +2354,7 @@ type MapConfigType implements ConfigType {
   isSelector: Boolean!
   keyType: ConfigType!
   ofType: ConfigType!
-  name: String
+  keyLabelName: String
 }
 
 type ListDagsterType implements DagsterType & WrappingDagsterType {

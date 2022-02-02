@@ -33,7 +33,7 @@ interface CompositeTypeData extends CommonTypeData {
 interface MapTypeData extends CommonTypeData {
   __typename: 'MapConfigType';
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
 }
 
 interface ListTypeData extends CommonTypeData {
@@ -118,7 +118,7 @@ function renderTypeRecursive(
       <>
         {`{`}
         <DictEntry>
-          {innerIndent}[{type.name ? `${type.name}: ` : null}
+          {innerIndent}[{type.keyLabelName ? `${type.keyLabelName}: ` : null}
           {renderTypeRecursive(typeLookup[keyTypeKey], typeLookup, depth + 1, props)}]{`: `}
           {renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth + 1, props)}
         </DictEntry>
@@ -202,7 +202,7 @@ export const CONFIG_TYPE_SCHEMA_FRAGMENT = gql`
       nonScalarTypeKey
     }
     ... on MapConfigType {
-      name
+      keyLabelName
     }
   }
 `;

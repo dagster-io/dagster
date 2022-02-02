@@ -66,7 +66,7 @@ export interface ConfigTypeSchemaFragment_MapConfigType {
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
 }
 
 export type ConfigTypeSchemaFragment = ConfigTypeSchemaFragment_ArrayConfigType | ConfigTypeSchemaFragment_EnumConfigType | ConfigTypeSchemaFragment_RegularConfigType | ConfigTypeSchemaFragment_CompositeConfigType | ConfigTypeSchemaFragment_ScalarUnionConfigType | ConfigTypeSchemaFragment_MapConfigType;

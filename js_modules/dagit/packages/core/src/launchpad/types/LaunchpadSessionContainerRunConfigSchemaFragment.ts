@@ -39,7 +39,7 @@ export interface LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchem
   description: string | null;
   isSelector: boolean;
   typeParamKeys: string[];
-  name: string | null;
+  keyLabelName: string | null;
 }
 
 export interface LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_allConfigTypes_EnumConfigType_values {
