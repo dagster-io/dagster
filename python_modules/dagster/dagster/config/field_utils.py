@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Any, Dict, List
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidConfigDefinitionError
-from zmq import GSSAPI_SERVICE_PRINCIPAL
 
 from .config_type import Array, ConfigType, ConfigTypeKind
 
