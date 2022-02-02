@@ -14,6 +14,7 @@ from dagster.core.test_utils import (
     instance_for_test,
 )
 from dagster.grpc.types import ExecuteRunArgs
+from dagster.utils import merge_dicts
 from dagster.utils.hosted_user_process import external_pipeline_from_recon_pipeline
 from dagster_celery_k8s.config import get_celery_engine_config, get_celery_engine_job_config
 from dagster_celery_k8s.executor import CELERY_K8S_CONFIG_KEY
@@ -273,6 +274,42 @@ def test_get_validated_celery_k8s_executor_config_for_job():
             "volume_mounts": [],
             "volumes": [],
         }
+
+
+def test_launcher_from_config(kubeconfig_file):
+    default_config = {
+        "instance_config_map": "dagster-instance",
+        "postgres_password_secret": "dagster-postgresql-secret",
+        "dagster_home": "/opt/dagster/dagster_home",
+        "load_incluster_config": False,
+        "kubeconfig_file": kubeconfig_file,
+    }
+
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster_celery_k8s",
+                "class": "CeleryK8sRunLauncher",
+                "config": default_config,
+            }
+        }
+    ) as instance:
+        run_launcher = instance.run_launcher
+        assert isinstance(run_launcher, CeleryK8sRunLauncher)
+        assert run_launcher._fail_pod_on_run_failure == None  # pylint: disable=protected-access
+
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster_celery_k8s",
+                "class": "CeleryK8sRunLauncher",
+                "config": merge_dicts(default_config, {"fail_pod_on_run_failure": True}),
+            }
+        }
+    ) as instance:
+        run_launcher = instance.run_launcher
+        assert isinstance(run_launcher, CeleryK8sRunLauncher)
+        assert run_launcher._fail_pod_on_run_failure  # pylint: disable=protected-access
 
 
 def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):

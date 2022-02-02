@@ -201,6 +201,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return self._labels
 
     @property
+    def fail_pod_on_run_failure(self):
+        return self._fail_pod_on_run_failure
+
+    @property
     def _batch_api(self):
         return self._fixed_batch_api if self._fixed_batch_api else kubernetes.client.BatchV1Api()
 

@@ -11,9 +11,48 @@ from dagster.core.test_utils import (
     instance_for_test,
 )
 from dagster.grpc.types import ExecuteRunArgs
+from dagster.utils import merge_dicts
 from dagster.utils.hosted_user_process import external_pipeline_from_recon_pipeline
 from dagster_k8s import K8sRunLauncher
 from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, UserDefinedDagsterK8sConfig
+
+
+def test_launcher_from_config(kubeconfig_file):
+    default_config = {
+        "service_account_name": "dagit-admin",
+        "instance_config_map": "dagster-instance",
+        "postgres_password_secret": "dagster-postgresql-secret",
+        "dagster_home": "/opt/dagster/dagster_home",
+        "job_image": "fake_job_image",
+        "load_incluster_config": False,
+        "kubeconfig_file": kubeconfig_file,
+    }
+
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster_k8s",
+                "class": "K8sRunLauncher",
+                "config": default_config,
+            }
+        }
+    ) as instance:
+        run_launcher = instance.run_launcher
+        assert isinstance(run_launcher, K8sRunLauncher)
+        assert run_launcher.fail_pod_on_run_failure == None
+
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster_k8s",
+                "class": "K8sRunLauncher",
+                "config": merge_dicts(default_config, {"fail_pod_on_run_failure": True}),
+            }
+        }
+    ) as instance:
+        run_launcher = instance.run_launcher
+        assert isinstance(run_launcher, K8sRunLauncher)
+        assert run_launcher.fail_pod_on_run_failure
 
 
 def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
