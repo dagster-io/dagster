@@ -410,7 +410,7 @@ def test_get_asset_keys(asset_aware_context):
 
 @asset_test
 def test_get_observation(asset_aware_context):
-    a = AssetKey(["a"])
+    a = AssetKey(["key_a"])
 
     @op
     def gen_op():
