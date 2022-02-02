@@ -425,8 +425,9 @@ class OutputContext:
         If consume_events has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
         """
 
-        while self._events:
-            yield self._events.pop(0)
+        events = self._events
+        self._events = []
+        yield from events
 
     def get_events(self) -> List[Union[AssetMaterialization, Materialization, AssetObservation]]:
         """Retrieve the list of user-generated events that were logged via the context.
