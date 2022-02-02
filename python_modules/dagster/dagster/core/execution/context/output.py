@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.output import AssetOutputDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.time_window_partitions import (
@@ -233,10 +234,10 @@ class OutputContext:
         matching_output_defs = [
             output_def
             for output_def in cast(SolidDefinition, self._solid_def).output_defs
-            if output_def.name == self.name
+            if output_def.name == self.name and isinstance(output_def, AssetOutputDefinition)
         ]
         check.invariant(len(matching_output_defs) == 1)
-        return matching_output_defs[0].get_asset_key(self)
+        return matching_output_defs[0].asset_key
 
     @property
     def step_context(self) -> "StepExecutionContext":

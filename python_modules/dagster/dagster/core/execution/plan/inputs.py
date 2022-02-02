@@ -334,7 +334,7 @@ class FromStepOutput(
             ).output_def_named(upstream_output.name)
             lineage_info = _get_asset_lineage_from_fns(
                 load_context.upstream_output,
-                output_def.get_asset_key,
+                lambda _: output_def.asset_key,
                 output_def.get_asset_partitions,
             )
             return [lineage_info] if lineage_info else []

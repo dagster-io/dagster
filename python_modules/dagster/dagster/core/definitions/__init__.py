@@ -79,6 +79,8 @@ from .logger_definition import LoggerDefinition, build_init_logger_context, logg
 from .mode import ModeDefinition
 from .op_definition import OpDefinition
 from .output import (
+    AssetOut,
+    AssetOutputDefinition,
     DynamicOut,
     DynamicOutputDefinition,
     GraphOut,

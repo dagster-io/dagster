@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Set, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Sequence, Set, Union
 
 from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
@@ -35,7 +35,7 @@ class _Op:
         decorator_takes_context: Optional[bool] = True,
         retry_policy: Optional[RetryPolicy] = None,
         ins: Optional[Dict[str, In]] = None,
-        out: Optional[Union[Out, Dict[str, Out]]] = None,
+        out: Optional[Union[Out, Mapping[str, Out]]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
         self.input_defs = check.opt_nullable_list_param(
@@ -126,7 +126,7 @@ class _Op:
 
 
 def _resolve_output_defs_from_outs(
-    inferred_out: InferredOutputProps, out: Optional[Union[Out, dict]]
+    inferred_out: InferredOutputProps, out: Optional[Union[Out, Mapping[str, Out]]]
 ) -> Optional[List[OutputDefinition]]:
     if out is None:
         return None

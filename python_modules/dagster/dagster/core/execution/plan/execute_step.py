@@ -7,6 +7,7 @@ from dagster.core.definitions import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    AssetOutputDefinition,
     ExpectationResult,
     Materialization,
     Output,
@@ -396,17 +397,17 @@ def _asset_key_and_partitions_for_output(
 
     manager_asset_key = output_manager.get_output_asset_key(output_context)
 
-    if output_def.is_asset:
+    if isinstance(output_def, AssetOutputDefinition):
         if manager_asset_key is not None:
             solid_def = cast(SolidDefinition, output_context.solid_def)
             raise DagsterInvariantViolationError(
-                f'Both the OutputDefinition and the IOManager of output "{output_def.name}" on '
-                f'solid "{solid_def.name}" associate it with an asset. Either remove '
-                "the asset_key parameter on the OutputDefinition or use an IOManager that does not "
-                "specify an AssetKey in its get_output_asset_key() function."
+                f'The output "{output_def.name}" on op "{solid_def.name}" is an AssetOutputDefinition, '
+                "but the io_manager also associates it with an asset. Either convert this output "
+                "to a regular OutputDefinition or use an IOManager that does not specify an AssetKey "
+                "in its get_output_asset_key() function."
             )
         return (
-            output_def.get_asset_key(output_context),
+            output_def.asset_key,
             output_def.get_asset_partitions(output_context) or set(),
         )
     elif manager_asset_key:

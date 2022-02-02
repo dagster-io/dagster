@@ -1,7 +1,7 @@
 import re
 import warnings
 from enum import Enum
-from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
+from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Sequence, Tuple, Union, cast
 
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidAssetKey
@@ -34,7 +34,7 @@ def parse_asset_key_string(s: str) -> List[str]:
 
 
 @whitelist_for_serdes
-class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str]])])):
+class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], Sequence[str]])])):
     """Object representing the structure of an asset key.  Takes in a sanitized string, list of
     strings, or tuple of strings.
 
@@ -70,7 +70,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str
             represent the hierarchical structure of the asset_key.
     """
 
-    def __new__(cls, path: Optional[Union[str, List[str], Tuple[str, ...]]] = None):
+    def __new__(cls, path: Optional[Union[str, Sequence[str], Tuple[str, ...]]] = None):
         if isinstance(path, str):
             path = [path]
         elif isinstance(path, list):

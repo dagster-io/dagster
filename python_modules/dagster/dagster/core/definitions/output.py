@@ -2,10 +2,11 @@ from collections import namedtuple
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     Dict,
+    Mapping,
     NamedTuple,
     Optional,
+    Sequence,
     Set,
     Type,
     TypeVar,
@@ -16,7 +17,6 @@ from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
-from dagster.utils.backcompat import experimental_arg_warning
 
 from .inference import InferredOutputProps
 from .input import NoValueSentinel
@@ -26,6 +26,7 @@ if TYPE_CHECKING:
     from dagster.core.definitions.partition import PartitionsDefinition
 
 TOut = TypeVar("TOut", bound="OutputDefinition")
+TAssetOut = TypeVar("TAssetOut", bound="AssetOutputDefinition")
 
 
 class NoNameSentinel:
@@ -56,12 +57,6 @@ class OutputDefinition:
             For example, users can provide a file path if the data object will be stored in a
             filesystem, or provide information of a database table when it is going to load the data
             into the table.
-        asset_key (Optional[Union[AssetKey, OutputContext -> AssetKey]]): (Experimental) An AssetKey
-            (or function that produces an AssetKey from the OutputContext) which should be associated
-            with this OutputDefinition. Used for tracking lineage information through Dagster.
-        asset_partitions (Optional[Union[Set[str], OutputContext -> Set[str]]]): (Experimental) A
-            set of partitions of the given asset_key (or a function that produces this list of
-            partitions from the OutputContext) which should be associated with this OutputDefinition.
     """
 
     def __init__(
@@ -72,13 +67,8 @@ class OutputDefinition:
         is_required=None,
         io_manager_key=None,
         metadata=None,
-        asset_key=None,
-        asset_partitions=None,
-        asset_partitions_def=None
         # make sure new parameters are updated in combine_with_inferred below
     ):
-        from dagster.core.definitions.partition import PartitionsDefinition
-
         self._name = (
             check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))
             if name is not NoNameSentinel
@@ -92,36 +82,6 @@ class OutputDefinition:
             io_manager_key, "io_manager_key", default="io_manager"
         )
         self._metadata = metadata
-
-        if asset_key:
-            experimental_arg_warning("asset_key", "OutputDefinition.__init__")
-
-        if not callable(asset_key):
-            check.opt_inst_param(asset_key, "asset_key", AssetKey)
-
-        self._asset_key = asset_key
-
-        if asset_partitions:
-            experimental_arg_warning("asset_partitions", "OutputDefinition.__init__")
-            check.param_invariant(
-                asset_key is not None,
-                "asset_partitions",
-                'Cannot specify "asset_partitions" argument without also specifying "asset_key"',
-            )
-
-        if callable(asset_partitions):
-            self._asset_partitions_fn = asset_partitions
-        elif asset_partitions is not None:
-            asset_partitions = check.opt_set_param(asset_partitions, "asset_partitions", str)
-            self._asset_partitions_fn = lambda _: asset_partitions
-        else:
-            self._asset_partitions_fn = None
-
-        if asset_partitions_def:
-            experimental_arg_warning("asset_partitions_def", "OutputDefinition.__init__")
-        self._asset_partitions_def = check.opt_inst_param(
-            asset_partitions_def, "asset_partition_def", PartitionsDefinition
-        )
 
     @property
     def name(self):
@@ -157,44 +117,7 @@ class OutputDefinition:
 
     @property
     def is_asset(self):
-        return self._asset_key is not None
-
-    @property
-    def asset_partitions_def(self):
-        return self._asset_partitions_def
-
-    @property
-    def hardcoded_asset_key(self) -> Optional[AssetKey]:
-        if not callable(self._asset_key):
-            return self._asset_key
-        else:
-            return None
-
-    def get_asset_key(self, context) -> Optional[AssetKey]:
-        """Get the AssetKey associated with this OutputDefinition for the given
-        :py:class:`OutputContext` (if any).
-
-        Args:
-            context (OutputContext): The OutputContext that this OutputDefinition is being evaluated
-                in
-        """
-        if callable(self._asset_key):
-            return self._asset_key(context)
-        else:
-            return self.hardcoded_asset_key
-
-    def get_asset_partitions(self, context) -> Optional[Set[str]]:
-        """Get the set of partitions associated with this OutputDefinition for the given
-        :py:class:`OutputContext` (if any).
-
-        Args:
-            context (OutputContext): The OutputContext that this OutputDefinition is being evaluated
-            in
-        """
-        if self._asset_partitions_fn is None:
-            return None
-
-        return self._asset_partitions_fn(context)
+        return False
 
     def mapping_from(self, solid_name, output_name=None):
         """Create an output mapping from an output of a child solid.
@@ -221,6 +144,15 @@ class OutputDefinition:
             description=inferred.description,
         )
 
+    def to_out(self) -> "Out":
+        return Out(
+            dagster_type=self.dagster_type,
+            description=self.description,
+            is_required=self.is_required,
+            io_manager_key=self.io_manager_key,
+            metadata=self.metadata,
+        )
+
     def combine_with_inferred(self: TOut, inferred: InferredOutputProps) -> TOut:
         dagster_type = self._dagster_type
         if self._type_not_set:
@@ -237,9 +169,134 @@ class OutputDefinition:
             is_required=self._is_required,
             io_manager_key=self._manager_key,
             metadata=self._metadata,
+        )
+
+
+class AssetOutputDefinition(OutputDefinition):
+    """
+    Variant of :py:class:`OutputDefinition <dagster.OutputDefinition>` for an output that will be
+    used to generate a tracked asset at runtime.
+
+    Args:
+        asset_key (Union[AssetKey, str, Sequence[str]]): The AssetKey representing the asset that
+            will be updated using the data associated with this output.
+        dagster_type (Optional[Union[Type, DagsterType]]]):
+            The type of this output. Should only be set if the correct type can not
+            be inferred directly from the type signature of the decorated function.
+        name (Optional[str]): Name of the output. (default: "result")
+        description (Optional[str]): Human-readable description of the output.
+        is_required (Optional[bool]): Whether the presence of this field is required. (default: True)
+        io_manager_key (Optional[str]): The resource key of the output manager used for this output.
+            (default: "io_manager").
+        metadata (Optional[Dict[str, Any]]): A dict of the metadata for the output.
+            For example, users can provide a file path if the data object will be stored in a
+            filesystem, or provide information of a database table when it is going to load the data
+            into the table.
+        asset_partitions_fn (Optional[OutputContext -> Set[str]]): A function that produces a set of
+            partitions from the OutputContext) which should be associated with this Out.
+        asset_partitions_def (Optional[PartitionsDefinition]): Defines the entire set of partitions
+            on the asset associated with this AssetOut.
+        dependencies (Optional[Union[Set[AssetKey]]): The set of AssetKeys
+            that this particular AssetOut depends on. If not included, this set will be inferred
+            to be the set of AssetKeys attached to inputs of this AssetOut's Op.
+    """
+
+    def __init__(
+        self,
+        asset_key,
+        dagster_type=None,
+        name=None,
+        description=None,
+        is_required=None,
+        io_manager_key=None,
+        metadata=None,
+        asset_partitions_fn=None,
+        asset_partitions_def=None,
+        dependencies=None,
+    ):
+        from dagster.core.definitions.partition import PartitionsDefinition
+
+        super().__init__(
+            dagster_type=dagster_type,
+            name=name,
+            description=description,
+            is_required=is_required,
+            io_manager_key=io_manager_key,
+            metadata=metadata,
+        )
+
+        self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
+        self._asset_partitions_fn = check.opt_callable_param(
+            asset_partitions_fn, "asset_partitions_fn"
+        )
+        self._asset_partitions_def = check.opt_inst_param(
+            asset_partitions_def, "asset_partition_def", PartitionsDefinition
+        )
+        check.opt_set_param(dependencies, "dependencies", AssetKey)
+        self._dependencies = dependencies
+
+    @property
+    def is_asset(self):
+        return True
+
+    @property
+    def asset_partitions_def(self):
+        return self._asset_partitions_def
+
+    @property
+    def asset_key(self) -> AssetKey:
+        return self._asset_key
+
+    @property
+    def dependencies(self) -> Optional[Set[AssetKey]]:
+        return self._dependencies
+
+    def get_asset_partitions(self, context) -> Optional[Set[str]]:
+        """Get the set of partitions associated with this AssetOutputDefinition for the given
+        :py:class:`OutputContext` (if any).
+
+        Args:
+            context (OutputContext): The OutputContext that this AssetOutputDefinition is being
+                evaluated in
+        """
+        if self._asset_partitions_fn is None:
+            return None
+
+        return self._asset_partitions_fn(context)
+
+    def to_out(self) -> "AssetOut":
+        return AssetOut(
+            dagster_type=self.dagster_type,
+            description=self.description,
+            is_required=self.is_required,
+            io_manager_key=self.io_manager_key,
+            metadata=self.metadata,
+            asset_key=self.asset_key,
+            asset_partitions_fn=self._asset_partitions_fn,
+            asset_partitions_def=self.asset_partitions_def,
+            dependencies=self.dependencies,
+        )
+
+    def combine_with_inferred(self: TAssetOut, inferred: InferredOutputProps) -> TAssetOut:
+        dagster_type = self._dagster_type
+        if self._type_not_set:
+            dagster_type = _checked_inferred_type(inferred.annotation)
+        if self._description is None:
+            description = inferred.description
+        else:
+            description = self.description
+
+        return self.__class__(
+            name=self._name,
+            dagster_type=dagster_type,
+            description=description,
+            is_required=self._is_required,
+            io_manager_key=self._manager_key,
+            metadata=self._metadata,
             asset_key=self._asset_key,
-            asset_partitions=self._asset_partitions_fn,
-            asset_partitions_def=self._asset_partitions_def,
+            asset_partitions_fn=self._asset_partitions_fn,
+            asset_partitions_def=self.asset_partitions_def,
+            dependencies=self.dependencies,
         )
 
 
@@ -331,9 +388,6 @@ class Out(
             ("is_required", Optional[bool]),
             ("io_manager_key", Optional[str]),
             ("metadata", Optional[Dict[str, Any]]),
-            ("asset_key", Optional[Union[AssetKey, Callable[..., AssetKey]]]),
-            ("asset_partitions", Optional[Union[Set[str], Callable[..., Set[str]]]]),
-            ("asset_partitions_def", Optional["PartitionsDefinition"]),
         ],
     )
 ):
@@ -359,12 +413,6 @@ class Out(
             For example, users can provide a file path if the data object will be stored in a
             filesystem, or provide information of a database table when it is going to load the data
             into the table.
-        asset_key (Optional[Union[AssetKey, OutputContext -> AssetKey]]): (Experimental) An AssetKey
-            (or function that produces an AssetKey from the OutputContext) which should be associated
-            with this Out. Used for tracking lineage information through Dagster.
-        asset_partitions (Optional[Union[Set[str], OutputContext -> Set[str]]]): (Experimental) A
-            set of partitions of the given asset_key (or a function that produces this list of
-            partitions from the OutputContext) which should be associated with this Out.
     """
 
     def __new__(
@@ -374,13 +422,7 @@ class Out(
         is_required=None,
         io_manager_key=None,
         metadata=None,
-        asset_key=None,
-        asset_partitions=None,
-        asset_partitions_def=None,
-        # make sure new parameters are updated in combine_with_inferred below
     ):
-        if asset_partitions_def:
-            experimental_arg_warning("assets_definition", "Out.__new__")
         return super(Out, cls).__new__(
             cls,
             dagster_type=dagster_type,
@@ -388,22 +430,6 @@ class Out(
             is_required=is_required,
             io_manager_key=io_manager_key,
             metadata=metadata,
-            asset_key=asset_key,
-            asset_partitions=asset_partitions,
-            asset_partitions_def=asset_partitions_def,
-        )
-
-    @staticmethod
-    def from_definition(output_def: "OutputDefinition"):
-        return Out(
-            dagster_type=output_def.dagster_type,
-            description=output_def.description,
-            is_required=output_def.is_required,
-            io_manager_key=output_def.io_manager_key,
-            metadata=output_def.metadata,
-            asset_key=output_def._asset_key,  # pylint: disable=protected-access
-            asset_partitions=output_def._asset_partitions_fn,  # pylint: disable=protected-access
-            asset_partitions_def=output_def._asset_partitions_def,  # pylint: disable=protected-access
         )
 
     def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
@@ -418,9 +444,102 @@ class Out(
             is_required=self.is_required,
             io_manager_key=self.io_manager_key,
             metadata=self.metadata,
+        )
+
+
+class AssetOut(Out):
+    """
+    Variant of :py:class:`Out <dagster.Out>` for an output that will be used to generate a tracked
+    asset at runtime.
+
+    Args:
+        asset_key (Union[AssetKey, str, Sequence[str]]): The AssetKey representing the asset that
+            will be updated using the data associated with this output.
+        dagster_type (Optional[Union[Type, DagsterType]]]):
+            The type of this output. Should only be set if the correct type can not
+            be inferred directly from the type signature of the decorated function.
+        description (Optional[str]): Human-readable description of the output.
+        is_required (Optional[bool]): Whether the presence of this field is required. (default: True)
+        io_manager_key (Optional[str]): The resource key of the output manager used for this output.
+            (default: "io_manager").
+        metadata (Optional[Dict[str, Any]]): A dict of the metadata for the output.
+            For example, users can provide a file path if the data object will be stored in a
+            filesystem, or provide information of a database table when it is going to load the data
+            into the table.
+        asset_partitions_fn (Optional[OutputContext -> Set[str]]): A function that produces a set of
+            partitions from the OutputContext) which should be associated with this Out.
+        asset_partitions_def (Optional[PartitionsDefinition]): Defines the entire set of partitions
+            on the asset associated with this AssetOut.
+        dependencies (Optional[Union[Set[AssetKey], Sequence[AssetKey]]]): The set of AssetKeys
+            that this particular AssetOut depends on. If not included, this set will be inferred
+            to be the set of AssetKeys attached to inputs of this AssetOut's Op.
+    """
+
+    _asset_key: AssetKey
+    _asset_partitions_fn: Any
+    _asset_partitions_def: Any
+    _dependencies: Optional[Set[AssetKey]]
+
+    def __new__(
+        cls,
+        asset_key: Union[AssetKey, str, Sequence[str]],
+        dagster_type=NoValueSentinel,
+        description: str = None,
+        is_required: bool = None,
+        io_manager_key: str = None,
+        metadata: Mapping[str, Any] = None,
+        asset_partitions_fn=None,
+        asset_partitions_def=None,
+        dependencies: Optional[Union[Set[AssetKey], Sequence[AssetKey]]] = None,
+    ):
+        instance = super().__new__(
+            cls,
+            dagster_type=dagster_type,
+            description=description,
+            is_required=is_required,
+            io_manager_key=io_manager_key,
+            metadata=metadata,
+        )
+
+        instance._asset_key = asset_key if isinstance(asset_key, AssetKey) else AssetKey(asset_key)
+        instance._asset_partitions_fn = asset_partitions_fn
+        instance._asset_partitions_def = asset_partitions_def
+
+        # coerce to list for convenience
+        if isinstance(dependencies, list):
+            dependencies = set(dependencies)
+        check.opt_set_param(dependencies, "dependencies", AssetKey)
+        instance._dependencies = dependencies
+        return instance
+
+    @property
+    def asset_key(self) -> AssetKey:
+        return self._asset_key
+
+    @property
+    def asset_partitions_def(self):
+        return self._asset_partitions_def
+
+    @property
+    def dependencies(self) -> Optional[Set[AssetKey]]:
+        return self._dependencies
+
+    def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":
+        dagster_type = (
+            self.dagster_type if self.dagster_type is not NoValueSentinel else annotation_type
+        )
+
+        return AssetOutputDefinition(
+            dagster_type=dagster_type,
+            name=name,
+            description=self.description,
+            is_required=self.is_required,
+            io_manager_key=self.io_manager_key,
+            metadata=self.metadata,
             asset_key=self.asset_key,
-            asset_partitions=self.asset_partitions,
+            asset_partitions_fn=self._asset_partitions_fn,
             asset_partitions_def=self.asset_partitions_def,
+            dependencies=self.dependencies,
         )
 
 
@@ -474,8 +593,6 @@ class DynamicOut(Out):
             is_required=self.is_required,
             io_manager_key=self.io_manager_key,
             metadata=self.metadata,
-            asset_key=self.asset_key,
-            asset_partitions=self.asset_partitions,
         )
 
 

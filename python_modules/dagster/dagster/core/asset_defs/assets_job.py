@@ -13,7 +13,7 @@ from dagster.core.definitions.executor_definition import ExecutorDefinition
 from dagster.core.definitions.graph_definition import GraphDefinition
 from dagster.core.definitions.job_definition import JobDefinition
 from dagster.core.definitions.op_definition import OpDefinition
-from dagster.core.definitions.output import Out, OutputDefinition
+from dagster.core.definitions.output import AssetOut, OutputDefinition
 from dagster.core.definitions.partition import PartitionedConfig, PartitionsDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.resource_definition import ResourceDefinition
@@ -236,7 +236,7 @@ def build_root_manager(
         source_asset_key = cast(AssetKey, input_context.asset_key)
         source_asset = source_assets_by_key[source_asset_key]
 
-        @op(out={source_asset_key.path[-1]: Out(asset_key=source_asset_key)})
+        @op(out={source_asset_key.path[-1]: AssetOut(asset_key=source_asset_key)})
         def _op():
             pass
 

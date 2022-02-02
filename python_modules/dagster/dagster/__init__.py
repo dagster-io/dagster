@@ -6,6 +6,8 @@ from dagster.core.definitions import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    AssetOut,
+    AssetOutputDefinition,
     AssetSensorDefinition,
     CompositeSolidDefinition,
     ConfigMapping,

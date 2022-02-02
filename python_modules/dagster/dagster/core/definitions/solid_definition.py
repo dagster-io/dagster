@@ -31,7 +31,7 @@ from .dependency import IDependencyDefinition, NodeHandle, NodeInvocation
 from .graph_definition import GraphDefinition
 from .input import InputDefinition, InputMapping
 from .node_definition import NodeDefinition
-from .output import OutputDefinition, OutputMapping
+from .output import AssetOutputDefinition, OutputDefinition, OutputMapping
 from .solid_invocation import solid_invocation_result
 
 if TYPE_CHECKING:
@@ -126,6 +126,20 @@ class SolidDefinition(NodeDefinition):
             if isinstance(self._compute_fn, DecoratedSolidFunction)
             else None
         )
+
+        valid_asset_deps = set(filter(None, (id.hardcoded_asset_key for id in input_defs))).union(
+            set(od.asset_key for od in output_defs if isinstance(od, AssetOutputDefinition))
+        )
+        for output_def in output_defs:
+            if isinstance(output_def, AssetOutputDefinition) and output_def.dependencies:
+                invalid_deps = output_def.dependencies.difference(valid_asset_deps)
+                if invalid_deps:
+                    raise DagsterInvalidDefinitionError(
+                        f'AssetOutputDefinition "{output_def.name}" on node "{name}" depends on invalid '
+                        f"AssetKey(s): {invalid_deps}. Dependencies defined on output definitions "
+                        "must come from other inputs or outputs defined on the same node. Valid "
+                        f"asset dependencies: {valid_asset_deps}."
+                    )
 
         super(SolidDefinition, self).__init__(
             name=name,

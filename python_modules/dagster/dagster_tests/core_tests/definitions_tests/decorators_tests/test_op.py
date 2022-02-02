@@ -3,8 +3,10 @@ from typing import Dict, Generator, Tuple
 
 import pytest
 from dagster import (
+    AssetKey,
     AssetMaterialization,
     AssetObservation,
+    AssetOut,
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
     DagsterType,
@@ -22,6 +24,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.test_utils import instance_for_test
 from dagster.core.types.dagster_type import Int, String
 
@@ -160,6 +163,70 @@ def test_multi_out_optional():
     assert result.output_for_node("my_op", "b") == 2
 
     assert [output.value for output in my_op()] == [2]
+
+
+def test_asset_out():
+    @op(out=AssetOut("a"))
+    def my_op():
+        return 1
+
+    result = execute_op_in_graph(my_op)
+    asset_mats = [
+        evt.event_specific_data.materialization
+        for evt in result.all_node_events
+        if evt.event_type_value == "ASSET_MATERIALIZATION"
+    ]
+    assert AssetMaterialization(AssetKey("a")) in asset_mats
+    assert len(asset_mats) == 1
+    assert result.output_for_node("my_op", "result") == 1
+
+
+def test_multi_asset_out():
+    @op(out={"a": AssetOut("a"), "b": AssetOut("b"), "c": Out()})
+    def my_op():
+        return 1, 2, 3
+
+    result = execute_op_in_graph(my_op)
+    asset_mats = [
+        evt.event_specific_data.materialization
+        for evt in result.all_node_events
+        if evt.event_type_value == "ASSET_MATERIALIZATION"
+    ]
+    assert AssetMaterialization(AssetKey("a")) in asset_mats
+    assert AssetMaterialization(AssetKey("b")) in asset_mats
+    assert len(asset_mats) == 2
+    assert result.output_for_node("my_op", "a") == 1
+    assert result.output_for_node("my_op", "b") == 2
+
+
+def test_asset_out_fails_with_invalid_deps():
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Dependencies defined on output definitions must come from other inputs or outputs",
+    ):
+
+        @op(out=AssetOut("foo", dependencies=[AssetKey("bar")]))
+        def _my_op():
+            return 1
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Dependencies defined on output definitions must come from other inputs or outputs",
+    ):
+
+        @op(out=AssetOut("foo", dependencies=[AssetKey("bar")]))
+        def _my_op2():
+            return 1
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Dependencies defined on output definitions must come from other inputs or outputs",
+    ):
+
+        @op(out={"foo": AssetOut("foo", dependencies=[AssetKey("bar")]), "bar": Out()})
+        def _my_op3():
+            return 1, 2
 
 
 def test_ins_dict():

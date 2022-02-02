@@ -7,7 +7,7 @@ from dagster.core.decorator_utils import get_function_params, get_valid_name_per
 from dagster.core.definitions.decorators.op import _Op
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.input import In
-from dagster.core.definitions.output import Out
+from dagster.core.definitions.output import AssetOut
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterType
@@ -143,13 +143,13 @@ class _Asset:
                 return [context.partition_key]
 
         out_asset_key = AssetKey(list(filter(None, [*(self.namespace or []), asset_name])))
-        out = Out(
+        out = AssetOut(
             asset_key=out_asset_key,
             metadata=self.metadata or {},
             io_manager_key=self.io_manager_key,
             dagster_type=self.dagster_type,
             asset_partitions_def=self.partitions_def,
-            asset_partitions=partition_fn,
+            asset_partitions_fn=partition_fn,
         )
         op = _Op(
             name=asset_name,
@@ -186,7 +186,7 @@ class _Asset:
 
 @experimental_decorator
 def multi_asset(
-    outs: Dict[str, Out],
+    outs: Dict[str, AssetOut],
     name: Optional[str] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Set[AssetKey]] = None,
@@ -202,7 +202,7 @@ def multi_asset(
 
     Args:
         name (Optional[str]): The name of the op.
-        outs: (Optional[Dict[str, Out]]): The Outs representing the produced assets.
+        outs: (Optional[Dict[str, AssetOut]]): The AssetOuts representing the produced assets.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
             and namespaces.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
@@ -234,10 +234,7 @@ def multi_asset(
             input_names_by_asset_key={
                 in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
             },
-            output_names_by_asset_key={
-                out.asset_key if isinstance(out.asset_key, AssetKey) else AssetKey([name]): name
-                for name, out in outs.items()
-            },
+            output_names_by_asset_key={out.asset_key: name for name, out in outs.items()},
             op=op,
         )
 

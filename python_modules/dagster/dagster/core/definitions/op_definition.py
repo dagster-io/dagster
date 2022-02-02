@@ -20,4 +20,4 @@ class OpDefinition(SolidDefinition):
 
     @property
     def outs(self) -> Dict[str, Out]:
-        return {output_def.name: Out.from_definition(output_def) for output_def in self.output_defs}
+        return {output_def.name: output_def.to_out() for output_def in self.output_defs}
