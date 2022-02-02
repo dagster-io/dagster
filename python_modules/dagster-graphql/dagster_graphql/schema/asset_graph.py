@@ -1,6 +1,5 @@
 import graphene
 from dagster import AssetKey, check
-from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.host_representation.external_data import (
     ExternalAssetNode,
