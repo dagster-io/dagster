@@ -63,13 +63,6 @@ export interface AssetGraphLiveQuery_assetNodes_assetMaterializations_runOrError
 
 export type AssetGraphLiveQuery_assetNodes_assetMaterializations_runOrError = AssetGraphLiveQuery_assetNodes_assetMaterializations_runOrError_RunNotFoundError | AssetGraphLiveQuery_assetNodes_assetMaterializations_runOrError_Run;
 
-export interface AssetGraphLiveQuery_assetNodes_assetMaterializations_stepStats {
-  __typename: "RunStepStats";
-  endTime: number | null;
-  startTime: number | null;
-  stepKey: string;
-}
-
 export interface AssetGraphLiveQuery_assetNodes_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry {
   __typename: "EventTableSchemaMetadataEntry" | "EventTableMetadataEntry";
   label: string;
@@ -166,6 +159,13 @@ export interface AssetGraphLiveQuery_assetNodes_assetMaterializations_assetLinea
   partitions: string[];
 }
 
+export interface AssetGraphLiveQuery_assetNodes_assetMaterializations_stepStats {
+  __typename: "RunStepStats";
+  stepKey: string;
+  startTime: number | null;
+  endTime: number | null;
+}
+
 export interface AssetGraphLiveQuery_assetNodes_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
@@ -173,9 +173,9 @@ export interface AssetGraphLiveQuery_assetNodes_assetMaterializations {
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: AssetGraphLiveQuery_assetNodes_assetMaterializations_stepStats;
   metadataEntries: AssetGraphLiveQuery_assetNodes_assetMaterializations_metadataEntries[];
   assetLineage: AssetGraphLiveQuery_assetNodes_assetMaterializations_assetLineage[];
+  stepStats: AssetGraphLiveQuery_assetNodes_assetMaterializations_stepStats;
 }
 
 export interface AssetGraphLiveQuery_assetNodes {

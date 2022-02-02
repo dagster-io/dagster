@@ -30,12 +30,6 @@ export interface LatestMaterializationMetadataFragment_runOrError_Run {
 
 export type LatestMaterializationMetadataFragment_runOrError = LatestMaterializationMetadataFragment_runOrError_RunNotFoundError | LatestMaterializationMetadataFragment_runOrError_Run;
 
-export interface LatestMaterializationMetadataFragment_stepStats {
-  __typename: "RunStepStats";
-  endTime: number | null;
-  startTime: number | null;
-}
-
 export interface LatestMaterializationMetadataFragment_metadataEntries_EventTableSchemaMetadataEntry {
   __typename: "EventTableSchemaMetadataEntry" | "EventTableMetadataEntry";
   label: string;
@@ -139,7 +133,6 @@ export interface LatestMaterializationMetadataFragment {
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: LatestMaterializationMetadataFragment_stepStats;
   metadataEntries: LatestMaterializationMetadataFragment_metadataEntries[];
   assetLineage: LatestMaterializationMetadataFragment_assetLineage[];
 }

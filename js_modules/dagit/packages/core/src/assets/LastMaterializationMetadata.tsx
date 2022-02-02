@@ -154,10 +154,6 @@ export const LATEST_MATERIALIZATION_METADATA_FRAGMENT = gql`
     runId
     timestamp
     stepKey
-    stepStats {
-      endTime
-      startTime
-    }
     metadataEntries {
       ...MetadataEntryFragment
     }
