@@ -230,16 +230,13 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         with self.run_connection(run_id) as conn:
             conn.execute(insert_event_statement)
 
-        if (
-            event.is_dagster_event
-            and event.dagster_event.is_step_materialization
-            and event.dagster_event.asset_key
-        ):
+        if event.is_dagster_event and event.dagster_event.asset_key:
             # mirror the event in the cross-run index database
             with self.index_connection() as conn:
                 conn.execute(insert_event_statement)
 
-            self.store_asset(event)
+            if event.dagster_event.is_step_materialization:
+                self.store_asset(event)
 
     def get_event_records(
         self,
@@ -256,13 +253,13 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         check.opt_int_param(limit, "limit")
         check.bool_param(ascending, "ascending")
 
-        is_asset_query = (
-            event_records_filter
-            and event_records_filter.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        is_asset_query = event_records_filter and (
+            event_records_filter.event_type == DagsterEventType.ASSET_MATERIALIZATION
+            or event_records_filter.event_type == DagsterEventType.ASSET_OBSERVATION
         )
         if is_asset_query:
-            # asset materializations get mirrored into the index shard, so no custom run shard-aware
-            # cursor logic needed
+            # asset materializations and observations get mirrored into the index shard, so no
+            # custom run shard-aware cursor logic needed
             return super(SqliteEventLogStorage, self).get_event_records(
                 event_records_filter=event_records_filter, limit=limit, ascending=ascending
             )
