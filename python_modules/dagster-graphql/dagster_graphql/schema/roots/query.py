@@ -35,6 +35,7 @@ from ...implementation.fetch_schedules import (
 )
 from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from ...implementation.fetch_solids import get_graph_or_error
+from ...implementation.loader import BatchMaterializationLoader
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
 from ...implementation.utils import graph_selector_from_graphql, pipeline_selector_from_graphql
 from ..asset_graph import GrapheneAssetNode, GrapheneAssetNodeOrError
@@ -422,7 +423,6 @@ class GrapheneDagitQuery(graphene.ObjectType):
         return GrapheneInstance(graphene_info.context.instance)
 
     def resolve_assetNodes(self, graphene_info, **kwargs):
-        load_materializations = kwargs.get("loadMaterializations")
         asset_keys = set(
             AssetKey.from_graphql_input(asset_key) for asset_key in kwargs.get("assetKeys", [])
         )
@@ -444,21 +444,20 @@ class GrapheneDagitQuery(graphene.ObjectType):
         # Filter down to requested asset keys
         results = [node for node in results if not asset_keys or node.assetKey in asset_keys]
 
-        # Attach latest materialization if requested to avoid N queries later
-        if results and load_materializations:
-            keys = [node.assetKey for node in results]
-            events_by_key = graphene_info.context.instance.get_latest_materialization_events(keys)
-            results = [
-                GrapheneAssetNode(
-                    node.get_external_repository(),
-                    node.get_external_asset_node(),
-                    events_by_key.get(node.assetKey),
-                    True,
-                )
-                for node in results
-            ]
+        if not results:
+            return []
 
-        return results
+        materialization_loader = BatchMaterializationLoader(
+            instance=graphene_info.context.instance, asset_keys=[node.assetKey for node in results]
+        )
+        return [
+            GrapheneAssetNode(
+                node.get_external_repository(),
+                node.get_external_asset_node(),
+                materialization_loader=materialization_loader,
+            )
+            for node in results
+        ]
 
     def resolve_assetNodeOrError(self, graphene_info, **kwargs):
         return get_asset_node(graphene_info, AssetKey.from_graphql_input(kwargs["assetKey"]))

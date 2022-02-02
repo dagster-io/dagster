@@ -3,6 +3,8 @@ from enum import Enum
 from typing import Any, Dict, Iterable, List, Optional, Set
 
 from dagster import DagsterInstance, check
+from dagster.core.definitions.events import AssetKey
+from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.scheduler.instigation import InstigatorType
 from dagster.core.storage.pipeline_run import JobBucket, PipelineRunsFilter, RunRecord, TagBucket
@@ -169,3 +171,29 @@ class BatchRunLoader:
         records = self._instance.get_run_records(PipelineRunsFilter(run_ids=list(self._run_ids)))
         for record in records:
             self._records[record.pipeline_run.run_id] = record
+
+
+class BatchMaterializationLoader:
+    """
+    A batch loader that fetches materializations for asset keys.  This loader is expected to be
+    instantiated with a set of asset keys.
+    """
+
+    def __init__(self, instance: DagsterInstance, asset_keys: Iterable[AssetKey]):
+        self._instance = instance
+        self._asset_keys: List[AssetKey] = list(asset_keys)
+        self._fetched = False
+        self._materializations: Dict[AssetKey, EventLogEntry] = {}
+
+    def get_latest_materialization_for_asset_key(self, asset_key: AssetKey) -> EventLogEntry:
+        if asset_key not in self._asset_keys:
+            check.failed(
+                f"Asset key {asset_key} not recognized for this loader.  Expected one of: {self._asset_keys}"
+            )
+        if self._materializations.get(asset_key) is None:
+            self._fetch()
+        return self._materializations.get(asset_key)
+
+    def _fetch(self):
+        self._fetched = True
+        self._materializations = self._instance.get_latest_materialization_events(self._asset_keys)
