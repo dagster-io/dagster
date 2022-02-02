@@ -113,7 +113,7 @@ class GrapheneMapConfigType(ConfigTypeMixin, graphene.ObjectType):
 
     key_type = graphene.Field(graphene.NonNull(GrapheneConfigType))
     of_type = graphene.Field(graphene.NonNull(GrapheneConfigType))
-    name = graphene.Field(graphene.String)
+    key_label_name = graphene.Field(graphene.String)
 
     class Meta:
         interfaces = (GrapheneConfigType,)
@@ -131,7 +131,7 @@ class GrapheneMapConfigType(ConfigTypeMixin, graphene.ObjectType):
             self._config_type_snap.inner_type_key,
         )
 
-    def resolve_name(self, _graphene_info):
+    def resolve_key_label_name(self, _graphene_info):
         return self._config_type_snap.given_name
 
 

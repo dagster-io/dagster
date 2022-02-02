@@ -330,7 +330,7 @@ def more_complicated_config():
 def config_with_map():
     @solid(
         config_schema={
-            "field_one": Field(Map(str, int, name="username")),
+            "field_one": Field(Map(str, int, key_label_name="username")),
             "field_two": Field({bool: int}, is_required=False),
             "field_three": Field(
                 {str: {"nested": [Noneable(int)]}},

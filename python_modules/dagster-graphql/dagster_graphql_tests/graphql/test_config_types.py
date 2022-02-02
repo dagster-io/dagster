@@ -560,7 +560,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         config_types_data = result.data["runConfigSchemaOrError"]["allConfigTypes"]
         # Ensure the first config type, Map(str, int, name="username") is in the result
         assert any(
-            config_type_data.get("name") == "username"
+            config_type_data.get("keyLabelName") == "username"
             and config_type_data.get("keyType", {}).get("key", "") == "String"
             and config_type_data.get("ofType", {}).get("key", "") == "Int"
             for config_type_data in config_types_data
@@ -723,7 +723,7 @@ fragment configTypeFragment on ConfigType {
   ... on MapConfigType {
     ofType { key }
     keyType { key }
-    name
+    keyLabelName
   }
   ... on ScalarUnionConfigType {
     scalarType { key }
