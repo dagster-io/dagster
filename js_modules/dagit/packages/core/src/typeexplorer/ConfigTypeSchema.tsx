@@ -112,7 +112,7 @@ function renderTypeRecursive(
     //   [name_hint: String]: Int
     // }
     const keyTypeKey = type.typeParamKeys[0];
-    const ofTypeKey = type.typeParamKeys[1];
+    const valueTypeKey = type.typeParamKeys[1];
     const innerIndent = '  '.repeat(depth + 1);
     return (
       <>
@@ -120,7 +120,7 @@ function renderTypeRecursive(
         <DictEntry>
           {innerIndent}[{type.keyLabelName ? `${type.keyLabelName}: ` : null}
           {renderTypeRecursive(typeLookup[keyTypeKey], typeLookup, depth + 1, props)}]{`: `}
-          {renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth + 1, props)}
+          {renderTypeRecursive(typeLookup[valueTypeKey], typeLookup, depth + 1, props)}
         </DictEntry>
         {'  '.repeat(depth) + '}'}
       </>
