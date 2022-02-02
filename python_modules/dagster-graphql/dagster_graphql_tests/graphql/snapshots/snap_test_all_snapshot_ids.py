@@ -4054,7 +4054,7 @@ snapshots['test_all_snapshot_ids 13'] = '''{
       },
       "Map.Bool.Int": {
         "__class__": "ConfigTypeSnap",
-        "description": "Map Bool -> <dagster.config.config_type.Int object at 0x108023d60>",
+        "description": null,
         "enum_values": null,
         "fields": null,
         "given_name": null,
@@ -4070,7 +4070,7 @@ snapshots['test_all_snapshot_ids 13'] = '''{
       },
       "Map.String.Int:name: username": {
         "__class__": "ConfigTypeSnap",
-        "description": "Map String -> <dagster.config.config_type.Int object at 0x108023d60>",
+        "description": null,
         "enum_values": null,
         "fields": null,
         "given_name": "username",
@@ -4086,7 +4086,7 @@ snapshots['test_all_snapshot_ids 13'] = '''{
       },
       "Map.String.Shape.c509723c946dae900588fedb3aad4c7e4a3bd168": {
         "__class__": "ConfigTypeSnap",
-        "description": "Map String -> <dagster.config.field_utils.Shape object at 0x10cab85b0>",
+        "description": null,
         "enum_values": null,
         "fields": null,
         "given_name": null,
@@ -5229,7 +5229,7 @@ snapshots['test_all_snapshot_ids 13'] = '''{
   "tags": {}
 }'''
 
-snapshots['test_all_snapshot_ids 14'] = 'ef1333edcd1bffdce3e3fd6df9006c19a2f934a9'
+snapshots['test_all_snapshot_ids 14'] = 'be3f8b8b11722e0bfbf9c0b35130aaac94e4d414'
 
 snapshots['test_all_snapshot_ids 15'] = '''{
   "__class__": "PipelineSnapshot",
