@@ -562,7 +562,7 @@ class TestConfigTypes(NonLaunchableGraphQLContextTestMatrix):
         assert any(
             config_type_data.get("keyLabelName") == "username"
             and config_type_data.get("keyType", {}).get("key", "") == "String"
-            and config_type_data.get("ofType", {}).get("key", "") == "Int"
+            and config_type_data.get("valueType", {}).get("key", "") == "Int"
             for config_type_data in config_types_data
         )
 
@@ -721,8 +721,8 @@ fragment configTypeFragment on ConfigType {
     ofType { key }
   }
   ... on MapConfigType {
-    ofType { key }
     keyType { key }
+    valueType { key }
     keyLabelName
   }
   ... on ScalarUnionConfigType {
