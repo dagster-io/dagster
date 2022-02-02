@@ -13,6 +13,8 @@ metadata:
     {{- end }}
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       {{- include "dagster.selectorLabels" $ | nindent 6 }}

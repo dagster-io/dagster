@@ -121,10 +121,10 @@ export const SidebarOpContainer: React.FC<SidebarOpContainerProps> = ({
   }
 
   if (!solidContainer) {
-    console.error('Could not load solids');
+    console.error('Could not load ops');
     return (
       <Box padding={{vertical: 16, horizontal: 24}} style={{color: ColorsWIP.Gray500}}>
-        Could not load solids.
+        Could not load ops.
       </Box>
     );
   }

@@ -1,38 +1,63 @@
-from dagster import AssetKey, EventRecordsFilter, RunRequest, sensor
-from hacker_news_assets.pipelines.story_recommender import story_recommender_prod
+import json
+
+from dagster import (
+    AssetKey,
+    DagsterEventType,
+    EventRecordsFilter,
+    JobDefinition,
+    RunRequest,
+    SensorDefinition,
+    sensor,
+)
 
 
-@sensor(job=story_recommender_prod)
-def story_recommender_on_hn_table_update(context):
-    """Kick off a run if both the stories and comments tables have received updates"""
-    if context.last_run_key:
-        last_comments_key, last_stories_key = list(map(int, context.last_run_key.split("|")))
-    else:
-        last_comments_key, last_stories_key = None, None
+def make_hn_tables_updated_sensor(job: JobDefinition) -> SensorDefinition:
+    """
+    Returns a sensor that launches the given job when the HN "comments" and "stories" tables have
+    both been updated.
+    """
 
-    comments_event_records = context.instance.get_event_records(
-        EventRecordsFilter(
-            asset_key=AssetKey(["snowflake", "hackernews", "comments"]),
-            after_cursor=last_comments_key,
-        ),
-        ascending=False,
-        limit=1,
-    )
+    @sensor(name=f"{job.name}_on_hn_tables_updated", job=job)
+    def hn_tables_updated_sensor(context):
+        cursor_dict = json.loads(context.cursor) if context.cursor else {}
+        comments_cursor = cursor_dict.get("comments")
+        stories_cursor = cursor_dict.get("stories")
 
-    stories_event_records = context.instance.get_event_records(
-        EventRecordsFilter(
-            asset_key=AssetKey(["snowflake", "hackernews", "stories"]),
-            after_cursor=last_stories_key,
-        ),
-        ascending=False,
-        limit=1,
-    )
+        comments_event_records = context.instance.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=AssetKey(["snowflake", "hackernews", "comments"]),
+                after_cursor=comments_cursor,
+            ),
+            ascending=False,
+            limit=1,
+        )
+        stories_event_records = context.instance.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_MATERIALIZATION,
+                asset_key=AssetKey(["snowflake", "hackernews", "stories"]),
+                after_cursor=stories_cursor,
+            ),
+            ascending=False,
+            limit=1,
+        )
 
-    if not comments_event_records or not stories_event_records:
-        return
+        if not comments_event_records or not stories_event_records:
+            return
 
-    last_comments_record_id = comments_event_records[0].storage_id
-    last_stories_record_id = stories_event_records[0].storage_id
-    run_key = f"{last_comments_record_id}|{last_stories_record_id}"
+        # make sure we only generate events if both table_a and table_b have been materialized since
+        # the last evaluation.
+        yield RunRequest(run_key=None)
 
-    yield RunRequest(run_key=run_key)
+        # update the sensor cursor by combining the individual event cursors from the two separate
+        # asset event streams
+        context.update_cursor(
+            json.dumps(
+                {
+                    "comments": comments_event_records[0].storage_id,
+                    "stories": stories_event_records[0].storage_id,
+                }
+            )
+        )
+
+    return hn_tables_updated_sensor

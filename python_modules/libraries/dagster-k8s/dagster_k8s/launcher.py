@@ -97,6 +97,8 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
         labels (Optional[Dict[str, str]]): Additional labels that should be included in the Job's Pod. See:
             https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+        fail_pod_on_run_failure (Optional[bool): Whether the launched Kubernetes Jobs and Pods
+            should fail if the Dagster run fails. Default: False
     """
 
     def __init__(
@@ -119,6 +121,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         volume_mounts=None,
         volumes=None,
         labels=None,
+        fail_pod_on_run_failure=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
@@ -159,6 +162,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._volume_mounts = check.opt_list_param(volume_mounts, "volume_mounts")
         self._volumes = check.opt_list_param(volumes, "volumes")
         self._labels = check.opt_dict_param(labels, "labels", key_type=str, value_type=str)
+        self._fail_pod_on_run_failure = check.opt_bool_param(
+            fail_pod_on_run_failure, "fail_pod_on_run_failure"
+        )
 
         super().__init__()
 
@@ -339,6 +345,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             pipeline_origin=pipeline_origin,
             pipeline_run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
+            set_exit_code_on_failure=self._fail_pod_on_run_failure,
         ).get_command_args()
 
         self._launch_k8s_job_with_args(job_name, args, run, pipeline_origin)
@@ -358,6 +365,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             pipeline_origin=pipeline_origin,
             pipeline_run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
+            set_exit_code_on_failure=self._fail_pod_on_run_failure,
         ).get_command_args()
 
         self._launch_k8s_job_with_args(job_name, args, run, pipeline_origin)

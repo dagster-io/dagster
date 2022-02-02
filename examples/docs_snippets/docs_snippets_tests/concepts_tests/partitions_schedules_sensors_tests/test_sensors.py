@@ -14,6 +14,7 @@ from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors import 
     sensor_B,
     test_my_directory_sensor_cursor,
     test_sensor,
+    uses_db_connection,
 )
 
 
@@ -71,3 +72,7 @@ def test_run_failure_sensor_def():
 def test_sensor_testing_example():
     test_sensor()
     test_my_directory_sensor_cursor()
+
+
+def test_resource_sensor_example():
+    uses_db_connection()

@@ -31,6 +31,7 @@ export interface IExecutionSession {
   needsRefresh: boolean;
   solidSelection: string[] | null;
   solidSelectionQuery: string | null;
+  flattenGraphs: boolean;
   tags: PipelineRunTag[] | null;
 
   // this is set when you execute the session and freeze it
@@ -90,6 +91,7 @@ export function applyCreateSession(
         needsRefresh: false,
         solidSelection: null,
         solidSelectionQuery: '*',
+        flattenGraphs: false,
         tags: null,
         runId: undefined,
         ...initial,

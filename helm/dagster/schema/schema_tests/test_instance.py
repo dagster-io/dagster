@@ -161,6 +161,33 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
     assert run_launcher_config["config"]["volumes"] == volumes
     assert run_launcher_config["config"]["labels"] == labels
 
+    assert not "fail_pod_on_run_failure" in run_launcher_config["config"]
+
+
+def test_k8s_run_launcher_fail_pod_on_run_failure(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.K8S,
+            config=RunLauncherConfig.construct(
+                k8sRunLauncher=K8sRunLauncherConfig.construct(
+                    imagePullPolicy="Always",
+                    loadInclusterConfig=True,
+                    envConfigMaps=[],
+                    envSecrets=[],
+                    envVars=[],
+                    volumeMounts=[],
+                    volumes=[],
+                    failPodOnRunFailure=True,
+                )
+            ),
+        )
+    )
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+
+    assert run_launcher_config["config"]["fail_pod_on_run_failure"]
+
 
 def test_celery_k8s_run_launcher_config(template: HelmTemplate):
     image = {"repository": "test_repo", "tag": "test_tag", "pullPolicy": "Always"}
@@ -237,6 +264,8 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
 
     assert run_launcher_config["config"]["service_account_name"] == "RELEASE-NAME-dagster"
 
+    assert not "fail_pod_on_run_failure" in run_launcher_config["config"]
+
     helm_values_with_image_pull_policy = DagsterHelmValues.construct(
         runLauncher=RunLauncher.construct(
             type=RunLauncherType.CELERY,
@@ -257,6 +286,25 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     run_launcher_config = instance["run_launcher"]
     assert run_launcher_config["config"]["image_pull_policy"] == "IfNotPresent"
+
+    helm_values_with_fail_pod_on_run_failure = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.CELERY,
+            config=RunLauncherConfig.construct(
+                celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct(
+                    image=image,
+                    configSource=configSource,
+                    workerQueues=workerQueues,
+                    failPodOnRunFailure=True,
+                )
+            ),
+        ),
+    )
+
+    configmaps = template.render(helm_values_with_fail_pod_on_run_failure)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+    assert run_launcher_config["config"]["fail_pod_on_run_failure"]
 
 
 @pytest.mark.parametrize("enabled", [True, False])
