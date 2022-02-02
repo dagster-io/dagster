@@ -59,6 +59,6 @@ export const LayoutProvider: React.FC = (props) => {
     }),
     [navOpen, isInstancePage, isSmallScreen, flagCollapseInstancePagesSidebar],
   );
-  console.log(value);
+
   return <LayoutContext.Provider value={value}>{props.children}</LayoutContext.Provider>;
 };
