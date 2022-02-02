@@ -17,7 +17,7 @@ import {
 } from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {AssetMaterializations} from './AssetMaterializations';
+import {AssetEvents} from './AssetEvents';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetKey} from './types';
@@ -145,7 +145,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         ) : undefined}
       </div>
       {isDefinitionLoaded && (
-        <AssetMaterializations
+        <AssetEvents
           assetKey={assetKey}
           assetLastMaterializedAt={lastMaterializedAt}
           assetHasDefinedPartitions={!!definition?.partitionDefinition}

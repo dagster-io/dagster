@@ -11,7 +11,7 @@ from ..implementation.loader import BatchMaterializationLoader
 from . import external
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
-from .logs.events import GrapheneMaterializationEvent, GrapheneObservationEvent
+from .logs.events import GrapheneMaterializationEvent
 from .pipelines.pipeline import GrapheneMaterializationCount, GraphenePipeline
 from .util import non_null_list
 
@@ -61,13 +61,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         partitions=graphene.List(graphene.String),
     )
     materializationCountByPartition = non_null_list(GrapheneMaterializationCount)
-    assetObservations = graphene.Field(
-        non_null_list(GrapheneObservationEvent),
-        partitions=graphene.List(graphene.String),
-        beforeTimestampMillis=graphene.String(),
-        afterTimestampMillis=graphene.String(),
-        limit=graphene.Int(),
-    )
 
     class Meta:
         name = "AssetNode"
@@ -259,39 +252,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         return [
             GrapheneMaterializationCount(partition_key, count_by_partition.get(partition_key, 0))
             for partition_key in partition_keys
-        ]
-
-    def resolve_assetObservations(self, graphene_info, **kwargs):
-        from ..implementation.fetch_assets import get_asset_observations
-
-        try:
-            before_timestamp = (
-                int(kwargs.get("beforeTimestampMillis")) / 1000.0
-                if kwargs.get("beforeTimestampMillis")
-                else None
-            )
-        except ValueError:
-            before_timestamp = None
-
-        try:
-            after_timestamp = (
-                int(kwargs.get("afterTimestampMillis")) / 1000.0
-                if kwargs.get("afterTimestampMillis")
-                else None
-            )
-        except ValueError:
-            after_timestamp = None
-
-        return [
-            GrapheneObservationEvent(event=event)
-            for event in get_asset_observations(
-                graphene_info,
-                self._external_asset_node.asset_key,
-                kwargs.get("partitions"),
-                before_timestamp=before_timestamp,
-                after_timestamp=after_timestamp,
-                limit=kwargs.get("limit"),
-            )
         ]
 
 

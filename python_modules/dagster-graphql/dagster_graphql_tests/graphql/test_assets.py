@@ -142,29 +142,25 @@ GET_LATEST_MATERIALIZATION_PER_PARTITION = """
 """
 
 GET_ASSET_OBSERVATIONS = """
-    query AssetGraphQuery($repositorySelector: RepositorySelector!) {
-        repositoryOrError(repositorySelector: $repositorySelector) {
-            ... on Repository {
-                assetNodes {
-                    opName
+    query AssetGraphQuery($assetKey: AssetKeyInput!) {
+        assetOrError(assetKey: $assetKey) {
+            ... on Asset {
+                assetObservations {
+                    label
                     description
-                    assetObservations {
+                    runOrError {
+                        ... on Run {
+                            jobName
+                        }
+                    }
+                    assetKey {
+                        path
+                    }
+                    metadataEntries {
                         label
                         description
-                        runOrError {
-                            ... on Run {
-                                jobName
-                            }
-                        }
-                        assetKey {
-                            path
-                        }
-                        metadataEntries {
-                            label
-                            description
-                            ... on EventTextMetadataEntry {
-                                text
-                            }
+                        ... on EventTextMetadataEntry {
+                            text
                         }
                     }
                 }
@@ -601,31 +597,25 @@ class TestAssetAwareEventLog(
         result = execute_dagster_graphql(
             graphql_context,
             GET_ASSET_OBSERVATIONS,
-            variables={"repositorySelector": infer_repository_selector(graphql_context)},
+            variables={"assetKey": {"path": ["asset_yields_observation"]}},
         )
 
         assert result.data
-        assert result.data["repositoryOrError"] and result.data["repositoryOrError"]["assetNodes"]
+        assert result.data["assetOrError"]
+        observations = result.data["assetOrError"]["assetObservations"]
 
-        asset_node = [
-            asset_node
-            for asset_node in result.data["repositoryOrError"]["assetNodes"]
-            if asset_node["opName"] == "asset_yields_observation"
-        ][0]
+        assert observations
+        assert observations[0]["runOrError"]["jobName"] == "observation_job"
 
-        assert asset_node["assetObservations"]
-
-        assert asset_node["assetObservations"][0]["runOrError"]["jobName"] == "observation_job"
-
-        asset_key_path = asset_node["assetObservations"][0]["assetKey"]["path"]
+        asset_key_path = observations[0]["assetKey"]["path"]
         assert asset_key_path
         assert asset_key_path == ["asset_yields_observation"]
 
-        metadata = asset_node["assetObservations"][0]["metadataEntries"]
+        metadata = observations[0]["metadataEntries"]
         assert metadata
         assert metadata[0]["text"] == "FOO"
 
-        assert asset_node["assetObservations"][0]["label"] == "asset_yields_observation"
+        assert observations[0]["label"] == "asset_yields_observation"
 
 
 class TestPersistentInstanceAssetInProgress(

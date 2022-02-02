@@ -10,6 +10,8 @@ export const Icons = {
   // Core icons
   asset: require('../icon-svgs/table_view.svg'),
   expectation: require('../icon-svgs/bp-automatic-updates.svg'),
+  materialization: require('../icon-svgs/materialization.svg'),
+  observation: require('../icon-svgs/observation.svg'),
   job: require('../icon-svgs/job.svg'),
   op: require('../icon-svgs/bp-git-commit.svg'),
   op_selector: require('../icon-svgs/bp-send-to-graph.svg'),
