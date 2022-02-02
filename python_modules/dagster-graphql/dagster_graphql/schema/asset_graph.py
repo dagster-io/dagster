@@ -23,17 +23,21 @@ class GrapheneAssetDependency(graphene.ObjectType):
     inputName = graphene.NonNull(graphene.String)
     asset = graphene.NonNull("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
 
-    def __init__(self, external_repository, input_name, asset_key):
+    def __init__(self, external_repository, input_name, asset_key, materialization_loader=None):
         self._external_repository = check.inst_param(
             external_repository, "external_repository", ExternalRepository
         )
         self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
+        self._latest_materialization_loader = check.opt_inst_param(
+            materialization_loader, "materialization_loader", BatchMaterializationLoader
+        )
         super().__init__(inputName=input_name)
 
     def resolve_asset(self, _graphene_info):
         return GrapheneAssetNode(
             self._external_repository,
             self._external_repository.get_external_asset_node(self._asset_key),
+            self._latest_materialization_loader,
         )
 
 
@@ -103,22 +107,39 @@ class GrapheneAssetNode(graphene.ObjectType):
             graphene_info.context.instance, self._external_repository, loc
         )
 
-    def resolve_dependencies(self, _graphene_info):
+    def resolve_dependencies(self, graphene_info):
+        if not self._external_asset_node.dependencies:
+            return []
+
+        materialization_loader = BatchMaterializationLoader(
+            instance=graphene_info.context.instance,
+            asset_keys=[dep.upstream_asset_key for dep in self._external_asset_node.dependencies],
+        )
         return [
             GrapheneAssetDependency(
                 external_repository=self._external_repository,
                 input_name=dep.input_name,
                 asset_key=dep.upstream_asset_key,
+                materialization_loader=materialization_loader,
             )
             for dep in self._external_asset_node.dependencies
         ]
 
-    def resolve_dependedBy(self, _graphene_info):
+    def resolve_dependedBy(self, graphene_info):
+        if not self._external_asset_node.depended_by:
+            return []
+
+        materialization_loader = BatchMaterializationLoader(
+            instance=graphene_info.context.instance,
+            asset_keys=[dep.downstream_asset_key for dep in self._external_asset_node.depended_by],
+        )
+
         return [
             GrapheneAssetDependency(
                 external_repository=self._external_repository,
                 input_name=dep.input_name,
                 asset_key=dep.downstream_asset_key,
+                materialization_loader=materialization_loader,
             )
             for dep in self._external_asset_node.depended_by
         ]
