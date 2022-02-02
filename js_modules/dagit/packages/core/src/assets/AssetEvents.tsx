@@ -40,8 +40,6 @@ interface Props {
   assetHasDefinedPartitions: boolean;
 }
 
-const LABEL_STEP_EXECUTION_TIME = 'Step Execution Time';
-
 /**
  * If the asset has a defined partition space, we load all materializations in the
  * last 100 partitions. This ensures that if you run a huge backfill of old partitions,
