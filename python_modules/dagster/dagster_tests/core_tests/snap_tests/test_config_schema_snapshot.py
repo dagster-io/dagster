@@ -167,7 +167,7 @@ def test_basic_map():
 
 
 def test_named_map():
-    map_snap = snap_from_dagster_type(Map(str, float, name="title"))
+    map_snap = snap_from_dagster_type(Map(str, float, key_label_name="title"))
     assert map_snap.key.startswith("Map")
     assert map_snap.given_name == "title"
     child_type_keys = map_snap.get_child_type_keys()

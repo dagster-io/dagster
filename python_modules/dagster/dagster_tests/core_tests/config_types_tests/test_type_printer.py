@@ -68,14 +68,14 @@ def test_basic_map_type_print():
 
 def test_map_name_print():
     assert (
-        print_config_type_to_string(Map(str, int, name="name"))
+        print_config_type_to_string(Map(str, int, key_label_name="name"))
         == """{
   [name: String]: Int
 }"""
     )
 
     assert (
-        print_config_type_to_string(Map(int, float, name="title"))
+        print_config_type_to_string(Map(int, float, key_label_name="title"))
         == """{
   [title: Int]: Float
 }"""

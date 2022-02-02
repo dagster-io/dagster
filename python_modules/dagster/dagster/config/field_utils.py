@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, List
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidConfigDefinitionError
+from zmq import GSSAPI_SERVICE_PRINCIPAL
 
 from .config_type import Array, ConfigType, ConfigTypeKind
 
@@ -154,7 +155,7 @@ class Map(ConfigType):
             The type of keys this map can contain. Must be a scalar type.
         inner_type (type):
             The type of the values that this map type can contain.
-        name (string):
+        key_label_name (string):
             Optional name which describes the role of keys in the map.
 
     **Examples:**
@@ -166,12 +167,12 @@ class Map(ConfigType):
             return sorted(list(context.op_config.items()))
     """
 
-    def __init__(self, key_type, inner_type, name=None):
+    def __init__(self, key_type, inner_type, key_label_name=None):
         from .field import resolve_to_config_type
 
         self.key_type = resolve_to_config_type(key_type)
         self.inner_type = resolve_to_config_type(inner_type)
-        self.given_name = name
+        self.given_name = key_label_name
 
         check.inst_param(self.key_type, "key_type", ConfigType)
         check.inst_param(self.inner_type, "inner_type", ConfigType)
@@ -184,12 +185,18 @@ class Map(ConfigType):
             key="Map.{key_type}.{inner_type}{name_key}".format(
                 key_type=self.key_type.key,
                 inner_type=self.inner_type.key,
-                name_key=f":name: {name}" if name else "",
+                name_key=f":name: {key_label_name}" if key_label_name else "",
             ),
-            given_name=name,
+            # We use the given name field to store the key label name
+            # this is used elsewhere to give custom types names
+            given_name=key_label_name,
             type_params=[self.key_type, self.inner_type],
             kind=ConfigTypeKind.MAP,
         )
+
+    @property
+    def key_label_name(self):
+        return self.given_name
 
 
 def _define_permissive_dict_key(fields, description):

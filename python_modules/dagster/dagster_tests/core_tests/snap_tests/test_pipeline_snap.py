@@ -408,7 +408,7 @@ def test_deserialize_solid_def_snaps_map():
 
 
 def test_deserialize_solid_def_snaps_map_with_name():
-    @solid(config_schema=Field(Map(bool, float, name="title")))
+    @solid(config_schema=Field(Map(bool, float, key_label_name="title")))
     def noop_solid(_):
         pass
 
