@@ -19,6 +19,7 @@ import renderToString from "next-mdx-remote/render-to-string";
 import { useRouter } from "next/router";
 import { useVersion } from "../util/useVersion";
 import visit from "unist-util-visit";
+import { Shimmer } from "components/Shimmer";
 
 const components: MdxRemote.Components = MDXComponents;
 
@@ -199,18 +200,10 @@ function HTMLRenderer({ data }: { data: HTMLData }) {
 export default function MdxPage(props: Props) {
   const router = useRouter();
 
-  // If the page is not yet generated, this will be displayed
+  // If the page is not yet generated, this shimmer/skeleton will be displayed
   // initially until getStaticProps() finishes running
   if (router.isFallback) {
-    return (
-      <div className="w-full my-12 h-96 animate-pulse prose max-w-none">
-        <div className="bg-gray-200 px-4 w-48 h-12"></div>
-        <div className="bg-gray-200 mt-12 px-4 w-1/2 h-6"></div>
-        <div className="bg-gray-200 mt-5 px-4 w-2/3 h-6"></div>
-        <div className="bg-gray-200 mt-5 px-4 w-1/3 h-6"></div>
-        <div className="bg-gray-200 mt-5 px-4 w-1/2 h-6"></div>
-      </div>
-    );
+    return <Shimmer />;
   }
 
   if (props.type == PageType.MDX) {
