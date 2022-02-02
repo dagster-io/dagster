@@ -72,6 +72,7 @@ RUN echo "--- \033[32m:debian: Install Debian packages\033[0m" \
     gcc \
     git \
     make \
+    mysql-client \
     nodejs \
     openjdk-11-jdk-headless \
     openjdk-11-jre-headless \
