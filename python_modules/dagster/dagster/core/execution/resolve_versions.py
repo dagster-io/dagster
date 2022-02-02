@@ -111,7 +111,7 @@ def resolve_step_versions(pipeline_def, execution_plan, resolved_run_config):
             raise DagsterInvariantViolationError(
                 f"While using memoization, version for {node_label} was None. Please "
                 "either provide a versioning strategy for your job, or provide a version using the "
-                "solid decorator."
+                f"{solid_def.node_type_str} decorator."
             )
 
         check_valid_version(solid_def_version)
