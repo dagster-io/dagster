@@ -37,6 +37,9 @@ interface Props {
   // This timestamp is a "hint", when it changes this component will refetch
   // to retrieve new data. Just don't want to poll the entire table query.
   assetLastMaterializedAt: string | undefined;
+
+  // This is passed in because we need to know whether to default to partition
+  // grouping /before/ loading all the data.
   assetHasDefinedPartitions: boolean;
 }
 
@@ -45,10 +48,6 @@ interface Props {
  * last 100 partitions. This ensures that if you run a huge backfill of old partitions,
  * you still see accurate info for the last 100 partitions in the UI. A count-based
  * limit could cause random partitions to disappear if materializations were out of order.
- *
- * For non-SDA-partitioned assets, we load the most recent 100 materializations. We might
- * still show these "By partition" (and the gaps problem above exists), but we don't have
- * a choice.
  */
 function useRecentAssetEvents(
   assetKey: AssetKey,
@@ -81,12 +80,12 @@ function useRecentAssetEvents(
     const observations = asset?.assetObservations || [];
 
     const allPartitionKeys = asset?.definition?.partitionKeys;
-    const requestedPartitionKeys =
+    const loadedPartitionKeys =
       loadUsingPartitionKeys && allPartitionKeys
         ? allPartitionKeys.slice(allPartitionKeys.length - 120)
         : undefined;
 
-    return {asset, requestedPartitionKeys, materializations, observations, loading, refetch};
+    return {asset, loadedPartitionKeys, materializations, observations, loading, refetch};
   }, [data, loading, refetch, loadUsingPartitionKeys]);
 }
 
@@ -100,19 +99,18 @@ export const AssetEvents: React.FC<Props> = ({
   liveData,
 }) => {
   const before = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
+  const xAxisDefault = assetHasDefinedPartitions ? 'partition' : 'time';
   const xAxis =
-    params.partition !== undefined
+    assetHasDefinedPartitions && params.partition !== undefined
       ? 'partition'
       : params.time !== undefined || before
       ? 'time'
-      : assetHasDefinedPartitions
-      ? 'partition'
-      : 'time';
+      : xAxisDefault;
 
   const {
-    requestedPartitionKeys,
     materializations,
     observations,
+    loadedPartitionKeys,
     loading,
     refetch,
   } = useRecentAssetEvents(assetKey, assetHasDefinedPartitions, xAxis, before);
@@ -124,14 +122,13 @@ export const AssetEvents: React.FC<Props> = ({
     refetch();
   }, [params.asOf, assetLastMaterializedAt, refetch]);
 
-  const hasLineage = materializations.some((m) => m.assetLineage.length > 0);
-  const hasPartitions = materializations.some((m) => m.partition) || assetHasDefinedPartitions;
-
   const grouped = React.useMemo<AssetEventGroup[]>(() => {
     const events = [...materializations, ...observations].sort(
       (b, a) => Number(a.timestamp) - Number(b.timestamp),
     );
-    if (!hasPartitions || xAxis !== 'partition') {
+    if (xAxis === 'partition' && loadedPartitionKeys) {
+      return groupByPartition(events, loadedPartitionKeys);
+    } else {
       // return a group for every materialization to achieve un-grouped rendering
       return events.map((event) => ({
         latest: event,
@@ -140,8 +137,7 @@ export const AssetEvents: React.FC<Props> = ({
         all: [],
       }));
     }
-    return groupByPartition(events, requestedPartitionKeys);
-  }, [requestedPartitionKeys, hasPartitions, materializations, observations, xAxis]);
+  }, [loadedPartitionKeys, materializations, observations, xAxis]);
 
   const activeItems = React.useMemo(() => new Set([xAxis]), [xAxis]);
 
@@ -234,7 +230,7 @@ export const AssetEvents: React.FC<Props> = ({
           style={{marginBottom: -1}}
         >
           <Subheading>Asset Activity</Subheading>
-          {hasPartitions ? (
+          {assetHasDefinedPartitions ? (
             <div style={{margin: '-6px 0 '}}>
               <ButtonGroup
                 activeItems={activeItems}
@@ -256,8 +252,8 @@ export const AssetEvents: React.FC<Props> = ({
         <CurrentRunsBanner liveData={liveData} />
         {grouped.length > 0 ? (
           <AssetEventsTable
-            hasPartitions={hasPartitions}
-            hasLineage={hasLineage}
+            hasPartitions={assetHasDefinedPartitions}
+            hasLineage={materializations.some((m) => m.assetLineage.length > 0)}
             groups={grouped}
             focused={focused}
             setFocused={onSetFocused}
@@ -274,9 +270,9 @@ export const AssetEvents: React.FC<Props> = ({
             />
           </Box>
         )}
-        {requestedPartitionKeys && (
+        {loadedPartitionKeys && (
           <Box padding={{vertical: 16, horizontal: 24}} style={{color: ColorsWIP.Gray400}}>
-            Showing materializations for the last {requestedPartitionKeys.length} partitions.
+            Showing materializations for the last {loadedPartitionKeys.length} partitions.
           </Box>
         )}
       </Box>
