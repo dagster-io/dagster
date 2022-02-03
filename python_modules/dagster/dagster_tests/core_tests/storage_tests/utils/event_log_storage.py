@@ -1697,29 +1697,29 @@ class TestEventLogStorage:
                 for asset_key in asset_keys:
                     storage.wipe_asset(asset_key)
 
-            asset_keys = storage.all_asset_keys()
-            assert len(asset_keys) == 0
-            assert not storage.has_asset_key(AssetKey("asset_1"))
-            asset_events = storage.get_asset_events(AssetKey("asset_1"))
-            assert len(asset_events) == 0
-            asset_run_ids = storage.get_asset_run_ids(AssetKey("asset_1"))
-            assert set(asset_run_ids) == set()
-            assert log_count == len(storage.get_logs_for_run(one_run_id))
+                asset_keys = storage.all_asset_keys()
+                assert len(asset_keys) == 0
+                assert not storage.has_asset_key(AssetKey("asset_1"))
+                asset_events = storage.get_asset_events(AssetKey("asset_1"))
+                assert len(asset_events) == 0
+                asset_run_ids = storage.get_asset_run_ids(AssetKey("asset_1"))
+                assert set(asset_run_ids) == set()
+                assert log_count == len(storage.get_logs_for_run(one_run_id))
 
-            one_run_id = "one_run_id_2"
-            events_one, _ = _synthesize_events(
-                lambda: one_solid(), run_id=one_run_id, instance=instance
-            )
-            for event in events_one:
-                storage.store_event(event)
+                one_run_id = "one_run_id_2"
+                events_one, _ = _synthesize_events(
+                    lambda: one_solid(), run_id=one_run_id, instance=instance
+                )
+                for event in events_one:
+                    storage.store_event(event)
 
-            asset_keys = storage.all_asset_keys()
-            assert len(asset_keys) == 1
-            assert storage.has_asset_key(AssetKey("asset_1"))
-            asset_events = storage.get_asset_events(AssetKey("asset_1"))
-            assert len(asset_events) == 1
-            asset_run_ids = storage.get_asset_run_ids(AssetKey("asset_1"))
-            assert set(asset_run_ids) == set([one_run_id])
+                asset_keys = storage.all_asset_keys()
+                assert len(asset_keys) == 1
+                assert storage.has_asset_key(AssetKey("asset_1"))
+                asset_events = storage.get_asset_events(AssetKey("asset_1"))
+                assert len(asset_events) == 1
+                asset_run_ids = storage.get_asset_run_ids(AssetKey("asset_1"))
+                assert set(asset_run_ids) == set([one_run_id])
 
     def test_asset_secondary_index(self, storage):
         with instance_for_test() as instance:
