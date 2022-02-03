@@ -665,8 +665,8 @@ def external_asset_graph_from_defs(
         # temporary workaround to retrieve asset partition definition from job
         partitions_def_data = None
 
-        if output_def and output_def.hardcoded_asset_key:
-            partitions_def = output_def.asset_partitions_def
+        if output_def and output_def._asset_partitions_def:  # pylint: disable=protected-access
+            partitions_def = output_def._asset_partitions_def  # pylint: disable=protected-access
             if partitions_def:
                 if isinstance(partitions_def, TimeWindowPartitionsDefinition):
                     partitions_def_data = external_time_window_partitions_definition_from_def(

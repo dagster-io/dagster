@@ -283,22 +283,23 @@ def multi_asset(
         )
 
         # validate that the internal_asset_deps make sense
-        valid_asset_deps = set(in_def.asset_key for in_def in ins_by_input_names.values())
-        valid_asset_deps.update(asset_keys_by_out_name.values())
-        for out_name, asset_keys in internal_asset_deps.items():
-            check.invariant(
-                out_name in outs,
-                f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for asset "
-                f"{asset_name}. Must be one of the outs for this multi_asset {list(outs.keys())}.",
-            )
-            invalid_asset_deps = asset_keys.difference(valid_asset_deps)
-            check.invariant(
-                not invalid_asset_deps,
-                f"Invalid asset dependencies: {invalid_asset_deps} specified in `internal_asset_deps` "
-                f"argument for asset '{asset_name}' on key '{out_name}'. Each specified asset key "
-                "must be associated with an input to the asset or produced by this asset. Valid "
-                f"keys: {valid_asset_deps}",
-            )
+        if internal_asset_deps:
+            valid_asset_deps = set(in_def.asset_key for in_def in ins_by_input_names.values())
+            valid_asset_deps.update(asset_keys_by_out_name.values())
+            for out_name, asset_keys in internal_asset_deps.items():
+                check.invariant(
+                    out_name in outs,
+                    f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for asset "
+                    f"{asset_name}. Must be one of the outs for this multi_asset {list(outs.keys())}.",
+                )
+                invalid_asset_deps = asset_keys.difference(valid_asset_deps)
+                check.invariant(
+                    not invalid_asset_deps,
+                    f"Invalid asset dependencies: {invalid_asset_deps} specified in `internal_asset_deps` "
+                    f"argument for asset '{asset_name}' on key '{out_name}'. Each specified asset key "
+                    "must be associated with an input to the asset or produced by this asset. Valid "
+                    f"keys: {valid_asset_deps}",
+                )
 
         # for any Outs that do not specify an AssetKey, create one matching the name of the Out
         op = _Op(
