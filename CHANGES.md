@@ -23,6 +23,7 @@
 - When Dagit fails to load a list of ops, the error message used the legacy term “solids”. Now it uses “ops”.
 - Runs created using dagster versions `0.13.15` / `0.13.16` / `0.13.17` might display an incorrect timestamp for its start time on the Runs page. This would only happen if you had run a schema migration (using one of those versions) with the `dagster instance migrate` CLI command. Running the `dagster instance reindex` command should run a data migration that resolves this issue.
 - When attempting to invoke run status sensors or run failure sensors, it will now incur an error. Run status/failure sensor invocation is not yet supported.
+- [dagster-k8s] Fixed a bug in the sanitization of K8s label values with uppercase characters and underscores
 
 ### Community Contributions
 
@@ -57,7 +58,7 @@
 - [dagit] The asset graph view now supports ops that yield multiple assets and renders long asset key paths correctly.
 - [dagit] The asset graph’s filter input now allows you to filter on assets with multi-component key paths.
 - [dagit] The asset graph properly displays downstream asset links to other asset jobs in your workspace.
-[dagster-k8s] Fixed a bug in the sanitization of K8s label values with uppercase characters and underscores
+
 ### Experimental
 
 - [dagster-celery-k8s] Experimental run monitoring is now supported with the CeleryK8sRunLauncher. This will detect when a run worker K8s Job has failed (due to an OOM, a Node shutting down, etc.) and mark the run as failed so that it doesn’t hang in STARTED. To enable this feature, set dagsterDaemon.runMonitoring.enabled to true in your Helm values.
