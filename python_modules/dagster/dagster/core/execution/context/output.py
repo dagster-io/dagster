@@ -487,35 +487,6 @@ class OutputContext:
         """Get the list of metadata entries that have been logged for use with this output."""
         return self._metadata_entries
 
-    def scrub_metadata_entries(self) -> None:
-        """Delete all metadata entries that have been logged for use with the last output.
-
-        This will erase all logged metadata entries from memory, and is only recommended to be used in a testing context when passing the same OutputContext to multiple invocations of ``IOManager.handle_output``.
-
-        Examples:
-
-        .. code-block:: python
-            from dagster import IOManager, build_output_context
-
-            class MyFirstIOManager(IOManager):
-                ...
-
-            class MySecondIOManager(IOManager):
-                ...
-
-            def test_my_io_manager_handle_output():
-                context = build_output_context()
-                MyFirstIOManager().handle_output(context, ...)
-                metadata_entries = context.get_metadata_entries()
-                ... # do something with entries
-                context.scrub_events() # clear events before using in another io manager
-                MySecondIOManager().handle_output(context, ...)
-                ...
-
-
-        """
-        self._metadata_entries = []
-
     def retrieve_metadata_entries(
         self,
     ) -> Iterator[Union[PartitionMetadataEntry, EventMetadataEntry]]:

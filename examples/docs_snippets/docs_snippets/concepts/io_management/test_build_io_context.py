@@ -114,6 +114,3 @@ def test_context_logging_metadata():
     context.add_metadata_entry(EventMetadataEntry.text(label="bar", text="bar"))
 
     assert [entry.label for entry in context.get_metadata_entries()] == ["foo", "bar"]
-
-    context.scrub_metadata_entries()
-    assert context.get_metadata_entries() == []
