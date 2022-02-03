@@ -1597,7 +1597,11 @@ type EvaluationStack {
   entries: [EvaluationStackEntry!]!
 }
 
-union EvaluationStackEntry = EvaluationStackListItemEntry | EvaluationStackPathEntry
+union EvaluationStackEntry =
+    EvaluationStackListItemEntry
+  | EvaluationStackPathEntry
+  | EvaluationStackMapKeyEntry
+  | EvaluationStackMapValueEntry
 
 type EvaluationStackListItemEntry {
   listIndex: Int!
@@ -1605,6 +1609,16 @@ type EvaluationStackListItemEntry {
 
 type EvaluationStackPathEntry {
   fieldName: String!
+}
+
+type EvaluationStackMapKeyEntry {
+  mapKey: GenericScalar!
+}
+
+scalar GenericScalar
+
+type EvaluationStackMapValueEntry {
+  mapKey: GenericScalar!
 }
 
 enum EvaluationErrorReason {
@@ -2330,6 +2344,17 @@ type ScalarUnionConfigType implements ConfigType {
   nonScalarType: ConfigType!
   scalarTypeKey: String!
   nonScalarTypeKey: String!
+}
+
+type MapConfigType implements ConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  keyType: ConfigType!
+  valueType: ConfigType!
+  keyLabelName: String
 }
 
 type ListDagsterType implements DagsterType & WrappingDagsterType {

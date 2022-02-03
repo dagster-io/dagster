@@ -60,4 +60,13 @@ export interface ConfigTypeSchemaFragment_ScalarUnionConfigType {
   nonScalarTypeKey: string;
 }
 
-export type ConfigTypeSchemaFragment = ConfigTypeSchemaFragment_ArrayConfigType | ConfigTypeSchemaFragment_EnumConfigType | ConfigTypeSchemaFragment_RegularConfigType | ConfigTypeSchemaFragment_CompositeConfigType | ConfigTypeSchemaFragment_ScalarUnionConfigType;
+export interface ConfigTypeSchemaFragment_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type ConfigTypeSchemaFragment = ConfigTypeSchemaFragment_ArrayConfigType | ConfigTypeSchemaFragment_EnumConfigType | ConfigTypeSchemaFragment_RegularConfigType | ConfigTypeSchemaFragment_CompositeConfigType | ConfigTypeSchemaFragment_ScalarUnionConfigType | ConfigTypeSchemaFragment_MapConfigType;
