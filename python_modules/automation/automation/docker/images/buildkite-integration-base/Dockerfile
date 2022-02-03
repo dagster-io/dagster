@@ -103,10 +103,10 @@ RUN echo "--- \033[32m:linux: Misc installs and cleanup\033[0m" \
     && curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
     && chmod +x /usr/local/bin/docker-compose \
     && curl -fsSL "https://download.docker.com/linux/ubuntu/gpg" | apt-key add - \
-    # Add SBT debian pkg
+    # Install SBT pkg from github
     && curl -L0 "https://github.com/sbt/sbt/releases/download/v$SBT_VERSION/sbt-$SBT_VERSION.tgz" | tar zxf - -C /usr/share \
     && cd /usr/share/sbt/bin \
-    && rm sbt.bat sbtn-x86_64-pc-linux \
+    && rm sbt.bat sbtn-x86_64-apple-darwin sbtn-x86_64-pc-linux sbtn-x86_64-pc-win32.exe \
     && ln -s /usr/share/sbt/bin/sbt /usr/local/bin/sbt \
     && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
     && apt-get -yqq update \
