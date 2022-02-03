@@ -17,6 +17,8 @@ from .asset import AssetsDefinition
 from .asset_in import AssetIn
 from .partition_mapping import PartitionMapping
 
+ASSET_DEPENDENCY_METADATA_KEY = ".dagster/asset_deps"
+
 
 @experimental_decorator
 def asset(
@@ -193,6 +195,7 @@ def multi_asset(
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
     compute_kind: Optional[str] = None,
+    internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -211,7 +214,42 @@ def multi_asset(
             (default: "io_manager").
         compute_kind (Optional[str]): A string to represent the kind of computation that produces
             the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
+        internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
+            that all assets produced by a multi_asset depend on all assets that are consumed by that
+            multi asset. If this default is not correct, you pass in a map of output names to a
+            corrected set of AssetKeys that they depend on. Any AssetKeys in this list must be either
+            used as input to the asset or produced within the op.
     """
+
+    check.invariant(
+        all(out.asset_key is None or isinstance(out.asset_key, AssetKey) for out in outs.values()),
+        "The asset_key argument for Outs supplied to a multi_asset must be a constant or None, not a function. ",
+    )
+    internal_asset_deps = check.opt_dict_param(
+        internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
+    )
+
+    # if an AssetKey is not supplied, create one based off of the out's name
+    asset_keys_by_out_name = {
+        out_name: out.asset_key if isinstance(out.asset_key, AssetKey) else AssetKey([out_name])
+        for out_name, out in outs.items()
+    }
+
+    # update asset_key if necessary, add metadata indicating inter asset deps
+    outs = {
+        out_name: out._replace(
+            asset_key=asset_keys_by_out_name[out_name],
+            metadata=dict(
+                **(out.metadata or {}),
+                **(
+                    {ASSET_DEPENDENCY_METADATA_KEY: internal_asset_deps[out_name]}
+                    if out_name in internal_asset_deps
+                    else {}
+                ),
+            ),
+        )
+        for out_name, out in outs.items()
+    }
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         asset_name = name or fn.__name__
@@ -219,6 +257,25 @@ def multi_asset(
             fn, None, ins or {}, non_argument_deps
         )
 
+        # validate that the internal_asset_deps make sense
+        valid_asset_deps = set(in_def.asset_key for in_def in ins_by_input_names.values())
+        valid_asset_deps.update(asset_keys_by_out_name.values())
+        for out_name, asset_keys in internal_asset_deps.items():
+            check.invariant(
+                out_name in outs,
+                f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for asset "
+                f"{asset_name}. Must be one of the outs for this multi_asset {list(outs.keys())}.",
+            )
+            invalid_asset_deps = asset_keys.difference(valid_asset_deps)
+            check.invariant(
+                not invalid_asset_deps,
+                f"Invalid asset dependencies: {invalid_asset_deps} specified in `internal_asset_deps` "
+                f"argument for asset '{asset_name}' on key '{out_name}'. Each specified asset key "
+                "must be associated with an input to the asset or produced by this asset. Valid "
+                f"keys: {valid_asset_deps}",
+            )
+
+        # for any Outs that do not specify an AssetKey, create one matching the name of the Out
         op = _Op(
             name=asset_name,
             description=description,
@@ -235,8 +292,7 @@ def multi_asset(
                 in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
             },
             output_names_by_asset_key={
-                out.asset_key if isinstance(out.asset_key, AssetKey) else AssetKey([name]): name
-                for name, out in outs.items()
+                asset_key: out_name for out_name, asset_key in asset_keys_by_out_name.items()
             },
             op=op,
         )
