@@ -14,6 +14,7 @@ from dagster import (
 )
 from dagster.config.config_type import ConfigTypeKind
 from dagster.config.field import resolve_to_config_type
+from dagster.config.field_utils import Map
 from dagster.core.snap import (
     ConfigEnumValueSnap,
     build_config_schema_snapshot,
@@ -155,6 +156,39 @@ def test_selector_of_things():
     assert field_snap.type_key == "Int"
 
 
+def test_basic_map():
+    map_snap = snap_from_dagster_type(Map(str, int))
+    assert map_snap.key.startswith("Map")
+    child_type_keys = map_snap.get_child_type_keys()
+    assert child_type_keys
+    assert len(child_type_keys) == 2
+    assert child_type_keys[0] == "String"
+    assert child_type_keys[1] == "Int"
+
+
+def test_basic_map_nested():
+    map_snap = snap_from_dagster_type({int: {str: int}})
+    assert map_snap.key.startswith("Map")
+    child_type_keys = map_snap.get_child_type_keys()
+    assert child_type_keys
+    assert len(child_type_keys) == 2
+    assert child_type_keys[0] == "Int"
+    assert child_type_keys[1] == "Map.String.Int"
+    assert map_snap.enum_values is None
+
+
+def test_map_of_dict():
+    inner_dict_dagster_type = Shape({"foo": Field(str)})
+    map_of_dict_snap = snap_from_dagster_type({str: inner_dict_dagster_type})
+
+    assert map_of_dict_snap.key.startswith("Map")
+    child_type_keys = map_of_dict_snap.get_child_type_keys()
+    assert child_type_keys
+    assert len(child_type_keys) == 2
+    assert child_type_keys[0] == "String"
+    assert child_type_keys[1].startswith("Shape")
+
+
 def test_kitchen_sink():
     kitchen_sink = resolve_to_config_type(
         [
@@ -165,6 +199,9 @@ def test_kitchen_sink():
                     "nested_selector": Field(
                         Selector({"some_field": int, "more_list": Noneable([bool])})
                     ),
+                },
+                "map": {
+                    str: {"map_a": int, "map_b": [str]},
                 },
             }
         ]
@@ -264,6 +301,9 @@ def test_kitchen_sink_break_out():
                         {"some_field": int, "noneable_list": Noneable([bool])}
                     ),
                 },
+                "map": {
+                    str: {"map_a": int, "map_b": [str]},
+                },
             }
         ]
     )
@@ -284,7 +324,7 @@ def test_kitchen_sink_break_out():
 
     dict_within_list = config_snaps[solid_config_snap.inner_type_key]
 
-    assert len(dict_within_list.fields) == 2
+    assert len(dict_within_list.fields) == 3
 
     opt_field = dict_within_list.get_field("opt_list_of_int")
 
@@ -298,6 +338,13 @@ def test_kitchen_sink_break_out():
     assert noneable_list_bool.kind == ConfigTypeKind.NONEABLE
     list_bool = config_snaps[noneable_list_bool.inner_type_key]
     assert list_bool.kind == ConfigTypeKind.ARRAY
+
+    map = config_snaps[dict_within_list.get_field("map").type_key]
+    assert map.kind == ConfigTypeKind.MAP
+    map_dict = config_snaps[map.inner_type_key]
+    assert len(map_dict.fields) == 2
+    map_a = config_snaps[map_dict.get_field("map_a").type_key]
+    assert map_a.kind == ConfigTypeKind.SCALAR
 
 
 def test_multiple_modes():
