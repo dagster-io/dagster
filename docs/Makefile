@@ -11,4 +11,4 @@ snapshot:
 	cd next; yarn snapshot; cd ..;
 
 reindex_search:
-	docker run -it --env-file=.env -e "CONFIG=$(cat ./config.json | jq -r tostring)" algolia/docsearch-scraper
+	docker run -it --env-file=.env -e "CONFIG=$$(cat ./config.json | jq -r tostring)" algolia/docsearch-scraper
