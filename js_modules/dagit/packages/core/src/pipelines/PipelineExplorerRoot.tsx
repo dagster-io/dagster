@@ -12,6 +12,7 @@ import {explodeCompositesInHandleGraph} from './CompositeSupport';
 import {
   GraphExplorer,
   GraphExplorerOptions,
+  GRAPH_EXPLORER_ASSET_NODE_FRAGMENT,
   GRAPH_EXPLORER_FRAGMENT,
   GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT,
 } from './GraphExplorer';
@@ -69,7 +70,7 @@ export const PipelineExplorerContainer: React.FC<{
 
   return (
     <Loading<PipelineExplorerRootQuery> queryResult={pipelineResult}>
-      {({pipelineSnapshotOrError: result, assetNodes}) => {
+      {({pipelineSnapshotOrError: result}) => {
         if (result.__typename !== 'PipelineSnapshot') {
           return <NonIdealPipelineQueryResult isGraph={isGraph} result={result} />;
         }
@@ -78,22 +79,11 @@ export const PipelineExplorerContainer: React.FC<{
         const displayedHandles = options.explodeComposites
           ? explodeCompositesInHandleGraph(result.solidHandles)
           : result.solidHandles;
+        const assetNodesPresent = result.solidHandles.some(
+          (h) => h.solid.definition.assetNodes.length > 0,
+        );
 
-        if (options.preferAssetRendering && assetNodes.length > 0) {
-          const unrepresentedOps = result.solidHandles.filter(
-            (handle) => !assetNodes.some((asset) => asset.opName === handle.handleID),
-          );
-          if (unrepresentedOps.length) {
-            console.error(
-              `The following ops are not represented in the ${
-                explorerPath.pipelineName
-              } asset graph: ${unrepresentedOps
-                .map((h) => h.solid.name)
-                .join(
-                  ', ',
-                )}. Does this graph have a mix of ops and assets? This isn't currently supported.`,
-            );
-          }
+        if (options.preferAssetRendering && assetNodesPresent) {
           return (
             <AssetGraphExplorer
               options={options}
@@ -110,7 +100,6 @@ export const PipelineExplorerContainer: React.FC<{
           <GraphExplorer
             options={options}
             setOptions={setOptions}
-            showAssetRenderingOption={assetNodes.length > 0}
             explorerPath={explorerPath}
             onChangeExplorerPath={onChangeExplorerPath}
             pipelineOrGraph={result}
@@ -138,10 +127,6 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
     $rootHandleID: String!
     $requestScopeHandleID: String
   ) {
-    assetNodes(pipeline: $pipelineSelector) {
-      id
-      opName
-    }
     pipelineSnapshotOrError(
       snapshotId: $snapshotId
       activePipelineSelector: $snapshotPipelineSelector
@@ -158,6 +143,13 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
           handleID
           solid {
             name
+            definition {
+              assetNodes {
+                assetKey {
+                  path
+                }
+              }
+            }
           }
           ...GraphExplorerSolidHandleFragment
         }
@@ -175,4 +167,5 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
   }
   ${GRAPH_EXPLORER_FRAGMENT}
   ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
+  ${GRAPH_EXPLORER_ASSET_NODE_FRAGMENT}
 `;

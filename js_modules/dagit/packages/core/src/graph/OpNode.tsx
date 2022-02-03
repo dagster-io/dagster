@@ -165,6 +165,15 @@ export class OpNode extends React.Component<IOpNodeProps> {
           {!minified && (
             <div className="description">{(definition.description || '').split('\n')[0]}</div>
           )}
+          {!minified && definition.assetNodes.length > 0 && (
+            <div className="assets">
+              <IconWIP name="asset" size={16} />
+              {definition.assetNodes[0]}
+              {definition.assetNodes.length > 1
+                ? ` +${definition.assetNodes.length - 1} assets`
+                : ''}
+            </div>
+          )}
         </div>
 
         {tags.length > 0 && (
@@ -231,6 +240,12 @@ export const OP_NODE_DEFINITION_FRAGMENT = gql`
     metadata {
       key
       value
+    }
+    assetNodes {
+      id
+      assetKey {
+        path
+      }
     }
     inputDefinitions {
       name
@@ -350,6 +365,7 @@ const NodeContainer = styled.div<{
       text-overflow: ellipsis;
     }
   }
+  .assets,
   .description {
     padding: 0 8px;
     white-space: nowrap;

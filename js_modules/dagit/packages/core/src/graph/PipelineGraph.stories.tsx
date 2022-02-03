@@ -57,6 +57,7 @@ function buildGraphSolidFragment(sname: string, ins: string[], outs: string[], e
         isDynamic: false,
       })),
       configField: null,
+      assetNodes: [],
     },
     inputs: ins.map((iname) => ({
       __typename: 'Input',

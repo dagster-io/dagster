@@ -9,10 +9,16 @@ import { PipelineSelector } from "./../../types/globalTypes";
 // GraphQL query operation: PipelineExplorerRootQuery
 // ====================================================
 
+export interface PipelineExplorerRootQuery_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface PipelineExplorerRootQuery_assetNodes {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  assetKey: PipelineExplorerRootQuery_assetNodes_assetKey;
 }
 
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot_modes_resources_configField_configType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {

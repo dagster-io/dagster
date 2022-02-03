@@ -1,10 +1,13 @@
 import {gql} from '@apollo/client';
-import {Box, ColorsWIP, IconWIP} from '@dagster-io/ui';
+import {Box, ColorsWIP, FontFamily, IconWIP} from '@dagster-io/ui';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components';
 
-import {breakOnUnderscores} from '../app/Util';
+import {breakOnUnderscores, displayNameForAssetKey} from '../app/Util';
 import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignature';
 import {pluginForMetadata} from '../plugins';
+import {OpColumnContainer} from '../runs/LogsRowComponents';
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
 import {RepoAddress} from '../workspace/types';
@@ -146,6 +149,19 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
           ))}
         </Box>
       </SidebarSection>
+      {definition.assetNodes.length > 0 && (
+        <SidebarSection title="Yielded Assets">
+          <Box padding={{vertical: 16, horizontal: 24}}>
+            {definition.assetNodes.map((node) => (
+              <Link key={node.id} to={`/instance/assets/${node.assetKey.path.join('/')}`}>
+                <AssetNodeListItem>
+                  <IconWIP name="asset" /> {displayNameForAssetKey(node.assetKey)}
+                </AssetNodeListItem>
+              </Link>
+            ))}
+          </Box>
+        </SidebarSection>
+      )}
       {getInvocations && (
         <SidebarSection title="All Invocations">
           <InvocationList
@@ -167,6 +183,12 @@ export const SIDEBAR_SOLID_DEFINITION_FRAGMENT = gql`
     metadata {
       key
       value
+    }
+    assetNodes {
+      id
+      assetKey {
+        path
+      }
     }
     outputDefinitions {
       name
@@ -256,3 +278,20 @@ const InvocationList: React.FC<{
     </>
   );
 };
+
+const AssetNodeListItem = styled.div`
+  user-select: none;
+  padding: 12px 24px;
+  cursor: pointer;
+  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: ${ColorsWIP.Gray50};
+  }
+
+  font-family: ${FontFamily.monospace};
+`;

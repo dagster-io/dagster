@@ -59,7 +59,6 @@ const initialState: State = {
 export const PipelineGraphContainer: React.FC<Props> = (props) => {
   const {
     pipelineName,
-
     ops,
     focusOps,
     highlightedOps,

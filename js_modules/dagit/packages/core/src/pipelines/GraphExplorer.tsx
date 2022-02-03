@@ -20,6 +20,7 @@ import {
   SidebarTabbedContainer,
   SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT,
 } from './SidebarTabbedContainer';
+import {GraphExplorerAssetNodeFragment} from './types/GraphExplorerAssetNodeFragment';
 import {GraphExplorerFragment} from './types/GraphExplorerFragment';
 import {GraphExplorerSolidHandleFragment} from './types/GraphExplorerSolidHandleFragment';
 
@@ -33,7 +34,6 @@ interface GraphExplorerProps {
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
   options: GraphExplorerOptions;
   setOptions: (options: GraphExplorerOptions) => void;
-  showAssetRenderingOption?: boolean;
   pipelineOrGraph: GraphExplorerFragment;
   repoAddress?: RepoAddress;
   handles: GraphExplorerSolidHandleFragment[];
@@ -47,7 +47,6 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
     getInvocations,
     handles,
     options,
-    showAssetRenderingOption,
     pipelineOrGraph,
     explorerPath,
     onChangeExplorerPath,
@@ -144,6 +143,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
 
   const solids = React.useMemo(() => handles.map((h) => h.solid), [handles]);
   const solidsQueryEnabled = !parentHandle && !explorerPath.snapshotId;
+  const showAssetRenderingOption = solids.some((s) => s.definition.assetNodes.length > 0);
   const explodeCompositesEnabled =
     !parentHandle &&
     (options.explodeComposites ||
@@ -184,9 +184,11 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
             )}
             {showAssetRenderingOption && (
               <Checkbox
-                label="View as Op Graph"
-                checked={!options.preferAssetRendering}
+                format="switch"
+                label="View as Asset Graph"
+                checked={options.preferAssetRendering}
                 onChange={() => {
+                  onChangeExplorerPath({...explorerPath, opNames: []}, 'replace');
                   setOptions({
                     ...options,
                     preferAssetRendering: !options.preferAssetRendering,
@@ -283,6 +285,15 @@ export const GRAPH_EXPLORER_FRAGMENT = gql`
     ...SidebarTabbedContainerPipelineFragment
   }
   ${SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT}
+`;
+
+export const GRAPH_EXPLORER_ASSET_NODE_FRAGMENT = gql`
+  fragment GraphExplorerAssetNodeFragment on AssetNode {
+    opName
+    assetKey {
+      path
+    }
+  }
 `;
 
 export const GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`

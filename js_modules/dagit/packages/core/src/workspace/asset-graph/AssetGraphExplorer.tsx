@@ -366,9 +366,20 @@ const AssetGraphExplorerWithData: React.FC<
 
           <PathOverlay>
             <Checkbox
-              label="View as Op Graph"
-              checked={!options.preferAssetRendering}
+              format="switch"
+              label="View as Asset Graph"
+              checked={options.preferAssetRendering}
               onChange={() => {
+                onChangeExplorerPath(
+                  {
+                    ...explorerPath,
+                    opNames:
+                      selectedGraphNodes.length && selectedGraphNodes[0].definition.opName
+                        ? [selectedGraphNodes[0].definition.opName]
+                        : [],
+                  },
+                  'replace',
+                );
                 setOptions({
                   ...options,
                   preferAssetRendering: !options.preferAssetRendering,
