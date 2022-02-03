@@ -1,4 +1,4 @@
-from dagster import Field, Int, Noneable, PipelineDefinition, ScalarUnion, String, solid
+from dagster import Field, Int, Map, Noneable, PipelineDefinition, ScalarUnion, String, solid
 from dagster.config.field import resolve_to_config_type
 from dagster.config.iterate_types import config_schema_snapshot_from_config_type
 from dagster.config.snap import get_recursive_type_keys, snap_from_config_type
@@ -64,6 +64,22 @@ def test_basic_map_type_print():
 }"""
     )
     assert_inner_types({int: int}, int, int)
+
+
+def test_map_name_print():
+    assert (
+        print_config_type_to_string(Map(str, int, key_label_name="name"))
+        == """{
+  [name: String]: Int
+}"""
+    )
+
+    assert (
+        print_config_type_to_string(Map(int, float, key_label_name="title"))
+        == """{
+  [title: Int]: Float
+}"""
+    )
 
 
 def test_double_map_type_print():
