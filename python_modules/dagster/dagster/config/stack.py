@@ -24,6 +24,12 @@ class EvaluationStack(NamedTuple("_EvaluationStack", [("entries", List["Evaluati
     def for_array_index(self, list_index: int) -> "EvaluationStack":
         return EvaluationStack(entries=self.entries + [EvaluationStackListItemEntry(list_index)])
 
+    def for_map_key(self, map_key: object) -> "EvaluationStack":
+        return EvaluationStack(entries=self.entries + [EvaluationStackMapKeyEntry(map_key)])
+
+    def for_map_value(self, map_key: object) -> "EvaluationStack":
+        return EvaluationStack(entries=self.entries + [EvaluationStackMapValueEntry(map_key)])
+
 
 class EvaluationStackEntry:  # marker interface
     pass
@@ -48,6 +54,22 @@ class EvaluationStackListItemEntry(
         return super(EvaluationStackListItemEntry, cls).__new__(cls, list_index)
 
 
+class EvaluationStackMapKeyEntry(
+    NamedTuple("EvaluationStackMapKeyEntry", [("map_key", object)]),
+    EvaluationStackEntry,
+):
+    def __new__(cls, map_key: object):
+        return super(EvaluationStackMapKeyEntry, cls).__new__(cls, map_key)
+
+
+class EvaluationStackMapValueEntry(
+    NamedTuple("_EvaluationStackMapItemEntry", [("map_key", object)]),
+    EvaluationStackEntry,
+):
+    def __new__(cls, map_key: object):
+        return super(EvaluationStackMapValueEntry, cls).__new__(cls, map_key)
+
+
 def get_friendly_path_msg(stack: EvaluationStack) -> str:
     return get_friendly_path_info(stack)[0]
 
@@ -64,6 +86,12 @@ def get_friendly_path_info(stack: EvaluationStack) -> Tuple[str, str]:
                 comps.append(comp)
             elif isinstance(entry, EvaluationStackListItemEntry):
                 comps.append("[{i}]".format(i=entry.list_index))
+            elif isinstance(entry, EvaluationStackMapKeyEntry):
+                comp = ":" + repr(entry.map_key) + ":key"
+                comps.append(comp)
+            elif isinstance(entry, EvaluationStackMapValueEntry):
+                comp = ":" + repr(entry.map_key) + ":value"
+                comps.append(comp)
             else:
                 check.failed("unsupported")
 
