@@ -104,7 +104,3 @@ def test_context_logging_user_events():
     context.log_event(AssetMaterialization("first"))
     context.log_event(AssetMaterialization("second"))
     assert [event.label for event in context.get_logged_events()] == ["first", "second"]
-
-    context.scrub_events()
-
-    assert context.get_logged_events() == []
