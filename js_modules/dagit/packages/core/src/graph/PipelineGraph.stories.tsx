@@ -104,7 +104,6 @@ export const Basic = () => {
 
   return (
     <PipelineGraph
-      backgroundColor={ColorsWIP.White}
       pipelineName="Test Pipeline"
       ops={ops}
       layout={getDagrePipelineLayout(ops)}
@@ -133,7 +132,6 @@ export const FanOut = () => {
 
   return (
     <PipelineGraph
-      backgroundColor={ColorsWIP.White}
       pipelineName="Test Pipeline"
       ops={ops}
       layout={getDagrePipelineLayout(ops)}
@@ -159,7 +157,6 @@ export const Tagged = () => {
 
   return (
     <PipelineGraph
-      backgroundColor={ColorsWIP.White}
       pipelineName="Test Pipeline"
       ops={ops}
       layout={getDagrePipelineLayout(ops)}
@@ -216,7 +213,6 @@ export const Composite = () => {
 
   return (
     <PipelineGraph
-      backgroundColor={ColorsWIP.White}
       pipelineName="Test Pipeline"
       ops={parentOp ? childOps : ops}
       parentOp={parentOp}

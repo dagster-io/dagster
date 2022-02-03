@@ -2,7 +2,6 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Loading} from '../ui/Loading';
 import {buildPipelineSelector} from '../workspace/WorkspaceContext';
@@ -49,11 +48,11 @@ export const PipelineExplorerContainer: React.FC<{
 }> = ({explorerPath, repoAddress, onChangeExplorerPath, isGraph = false}) => {
   const [options, setOptions] = React.useState<GraphExplorerOptions>({
     explodeComposites: explorerPath.explodeComposites ?? false,
+    preferAssetRendering: true,
   });
 
   const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
   const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
-  const {flagAssetGraph} = useFeatureFlags();
 
   const pipelineResult = useQuery<PipelineExplorerRootQuery, PipelineExplorerRootQueryVariables>(
     PIPELINE_EXPLORER_ROOT_QUERY,
@@ -80,7 +79,7 @@ export const PipelineExplorerContainer: React.FC<{
           ? explodeCompositesInHandleGraph(result.solidHandles)
           : result.solidHandles;
 
-        if (flagAssetGraph && assetNodes.length > 0) {
+        if (options.preferAssetRendering && assetNodes.length > 0) {
           const unrepresentedOps = result.solidHandles.filter(
             (handle) => !assetNodes.some((asset) => asset.opName === handle.handleID),
           );
@@ -97,6 +96,8 @@ export const PipelineExplorerContainer: React.FC<{
           }
           return (
             <AssetGraphExplorer
+              options={options}
+              setOptions={setOptions}
               pipelineSelector={pipelineSelector}
               handles={displayedHandles}
               explorerPath={explorerPath}
@@ -109,6 +110,7 @@ export const PipelineExplorerContainer: React.FC<{
           <GraphExplorer
             options={options}
             setOptions={setOptions}
+            showAssetRenderingOption={assetNodes.length > 0}
             explorerPath={explorerPath}
             onChangeExplorerPath={onChangeExplorerPath}
             pipelineOrGraph={result}
