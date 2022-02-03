@@ -386,7 +386,7 @@ class OutputContext:
     ) -> None:
         """Log an AssetMaterialization or AssetObservation from within the body of an io manager's `handle_output` method.
 
-        Events logged with this method will appear in the list of DagsterEvents, as well as the event log.
+        Events logged with this method will appear in the event log.
 
         Args:
             event (Union[AssetMaterialization, Materialization, AssetObservation]): The event to log.
@@ -394,6 +394,7 @@ class OutputContext:
         Examples:
 
         .. code-block:: python
+
             from dagster import IOManager, AssetMaterialization
 
             class MyIOManager(IOManager):
