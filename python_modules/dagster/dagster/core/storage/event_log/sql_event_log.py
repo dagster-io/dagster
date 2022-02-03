@@ -184,6 +184,9 @@ class SqlEventLogStorage(EventLogStorage):
             and event.dagster_event.is_step_materialization
             and event.dagster_event.asset_key
         ):
+            # Currently, only materializations are stored in the asset catalog.
+            # We will store observations after adding a column migration to
+            # store latest asset observation timestamp in the asset key table.
             self.store_asset(event)
 
     def get_logs_for_run_by_log_id(
