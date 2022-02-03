@@ -6,23 +6,12 @@ import tempfile
 
 from dagster.core.instance import DagsterInstance
 from dagster.utils import file_relative_path
-from sqlalchemy import create_engine
 
 
 def _reconstruct_from_file(hostname, path, username="root", password="test"):
     env = os.environ.copy()
     env["MYSQL_PWD"] = "test"
-    cmd = [
-        "mysql",
-        "-u",
-        "root",
-        "-h",
-        hostname,
-        "test",
-        "-e",
-        f"source {path}",
-    ]
-    subprocess.check_call(cmd, env=env)
+    subprocess.check_call(f"mysql -uroot -h{hostname} test < {path}", shell=True, env=env)
 
 
 def test_0_13_17_mysql_convert_float_cols(hostname, conn_string):
