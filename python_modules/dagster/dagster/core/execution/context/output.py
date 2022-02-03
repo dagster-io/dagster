@@ -467,7 +467,7 @@ class OutputContext:
     ) -> None:
         """Add a metadata entry to the handled output.
 
-        Metadata entries added will show up in the HANDLED_OUTPUT event for the run.
+        Metadata entries added will show up in the HANDLED_OUTPUT and ASSET_MATERIALIZATION events for the run.
 
         Args:
             metadata (Union[EventMetadataEntry, PartitionMetadataEntry]): A metadata entry to log
