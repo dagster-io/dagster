@@ -104,7 +104,7 @@ def test_context_logging_user_events():
 
     context.log_event(AssetMaterialization("first"))
     context.log_event(AssetMaterialization("second"))
-    assert [event.label for event in context.get_events()] == ["first", "second"]
+    assert [event.label for event in context.get_logged_events()] == ["first", "second"]
 
 
 def test_context_logging_metadata():
@@ -113,4 +113,4 @@ def test_context_logging_metadata():
     context.add_metadata_entry(EventMetadataEntry.text(label="foo", text="foo"))
     context.add_metadata_entry(EventMetadataEntry.text(label="bar", text="bar"))
 
-    assert [entry.label for entry in context.get_metadata_entries()] == ["foo", "bar"]
+    assert [entry.label for entry in context.get_logged_metadata_entries()] == ["foo", "bar"]

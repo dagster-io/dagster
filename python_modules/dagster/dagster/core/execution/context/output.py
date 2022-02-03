@@ -483,7 +483,9 @@ class OutputContext:
         """
         self._metadata_entries.append(metadata)
 
-    def get_metadata_entries(self) -> List[Union[EventMetadataEntry, PartitionMetadataEntry]]:
+    def get_logged_metadata_entries(
+        self,
+    ) -> List[Union[EventMetadataEntry, PartitionMetadataEntry]]:
         """Get the list of metadata entries that have been logged for use with this output."""
         return self._metadata_entries
 
