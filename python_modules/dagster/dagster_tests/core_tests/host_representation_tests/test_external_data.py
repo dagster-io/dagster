@@ -1,5 +1,5 @@
 import pytest
-from dagster import AssetKey, Out, DagsterInvariantViolationError
+from dagster import AssetKey, DagsterInvariantViolationError, Out
 from dagster.check import CheckError
 from dagster.core.asset_defs import AssetIn, ForeignAsset, asset, build_assets_job, multi_asset
 from dagster.core.host_representation.external_data import (
