@@ -254,6 +254,49 @@ def multi_asset(
         internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
     )
 
+    def inner(fn: Callable[..., Any]) -> AssetsDefinition:
+        asset_name = name or fn.__name__
+        ins_by_input_names: Mapping[str, In] = build_asset_ins(
+            fn, None, ins or {}, non_argument_deps
+        )
+        outs_by_output_names: Mapping[str, Out] = build_asset_outs(
+            asset_name, outs, ins_by_input_names, internal_asset_deps or {}
+        )
+
+        op = _Op(
+            name=asset_name,
+            description=description,
+            ins={
+                input_name: in_def for input_name, in_def in ins_by_input_names.items()
+            },  # convert Mapping object to dict
+            out={
+                output_name: out_def for output_name, out_def in outs_by_output_names.items()
+            },  # convert Mapping object to dict
+            required_resource_keys=required_resource_keys,
+            tags={"kind": compute_kind} if compute_kind else None,
+        )(fn)
+
+        return AssetsDefinition(
+            input_names_by_asset_key={
+                in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
+            },
+            output_names_by_asset_key={
+                out_def.asset_key: output_name  # type: ignore
+                for output_name, out_def in outs_by_output_names.items()
+            },
+            op=op,
+        )
+
+    return inner
+
+
+def build_asset_outs(
+    asset_name: str,
+    outs: Mapping[str, Out],
+    ins: Mapping[str, In],
+    internal_asset_deps: Mapping[str, Set[AssetKey]],
+):
+
     # if an AssetKey is not supplied, create one based off of the out's name
     asset_keys_by_out_name = {
         out_name: out.asset_key if isinstance(out.asset_key, AssetKey) else AssetKey([out_name])
@@ -276,54 +319,25 @@ def multi_asset(
         for out_name, out in outs.items()
     }
 
-    def inner(fn: Callable[..., Any]) -> AssetsDefinition:
-        asset_name = name or fn.__name__
-        ins_by_input_names: Mapping[str, In] = build_asset_ins(
-            fn, None, ins or {}, non_argument_deps
+    # validate that the internal_asset_deps make sense
+    valid_asset_deps = set(in_def.asset_key for in_def in ins.values())
+    valid_asset_deps.update(asset_keys_by_out_name.values())
+    for out_name, asset_keys in internal_asset_deps.items():
+        check.invariant(
+            out_name in outs,
+            f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for asset "
+            f"{asset_name}. Must be one of the outs for this multi_asset {list(outs.keys())}.",
+        )
+        invalid_asset_deps = asset_keys.difference(valid_asset_deps)
+        check.invariant(
+            not invalid_asset_deps,
+            f"Invalid asset dependencies: {invalid_asset_deps} specified in `internal_asset_deps` "
+            f"argument for asset '{asset_name}' on key '{out_name}'. Each specified asset key "
+            "must be associated with an input to the asset or produced by this asset. Valid "
+            f"keys: {valid_asset_deps}",
         )
 
-        # validate that the internal_asset_deps make sense
-        if internal_asset_deps:
-            valid_asset_deps = set(in_def.asset_key for in_def in ins_by_input_names.values())
-            valid_asset_deps.update(asset_keys_by_out_name.values())
-            for out_name, asset_keys in internal_asset_deps.items():
-                check.invariant(
-                    out_name in outs,
-                    f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for asset "
-                    f"{asset_name}. Must be one of the outs for this multi_asset {list(outs.keys())}.",
-                )
-                invalid_asset_deps = asset_keys.difference(valid_asset_deps)
-                check.invariant(
-                    not invalid_asset_deps,
-                    f"Invalid asset dependencies: {invalid_asset_deps} specified in `internal_asset_deps` "
-                    f"argument for asset '{asset_name}' on key '{out_name}'. Each specified asset key "
-                    "must be associated with an input to the asset or produced by this asset. Valid "
-                    f"keys: {valid_asset_deps}",
-                )
-
-        # for any Outs that do not specify an AssetKey, create one matching the name of the Out
-        op = _Op(
-            name=asset_name,
-            description=description,
-            ins={
-                input_name: in_def for input_name, in_def in ins_by_input_names.items()
-            },  # convert Mapping object to dict
-            out=outs,
-            required_resource_keys=required_resource_keys,
-            tags={"kind": compute_kind} if compute_kind else None,
-        )(fn)
-
-        return AssetsDefinition(
-            input_names_by_asset_key={
-                in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
-            },
-            output_names_by_asset_key={
-                asset_key: out_name for out_name, asset_key in asset_keys_by_out_name.items()
-            },
-            op=op,
-        )
-
-    return inner
+    return outs
 
 
 def build_asset_ins(
