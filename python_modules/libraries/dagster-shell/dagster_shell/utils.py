@@ -25,6 +25,8 @@ from subprocess import PIPE, STDOUT, Popen
 from dagster import check
 from dagster.utils import safe_tempfile_path
 
+OUTPUT_LOGGING_OPTIONS = ["STREAM", "BUFFER", "NONE"]
+
 
 def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=None):
     """Execute a shell script file specified by the argument ``shell_command``. The script will be
@@ -82,31 +84,29 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
         log.info(f"Command pid: {sub_process.pid}")
 
         # Will return the string result of reading stdout of the shell command
-        output = ""
-
-        if output_logging not in ["STREAM", "BUFFER", "NONE"]:
+        if output_logging not in OUTPUT_LOGGING_OPTIONS:
             raise Exception("Unrecognized output_logging %s" % output_logging)
 
-        # Stream back logs as they are emitted
+        output = ""
         if output_logging == "STREAM":
-            for raw_line in iter(sub_process.stdout.readline, b""):
+            # Stream back logs as they are emitted
+            lines = []
+            for raw_line in sub_process.stdout:
                 line = raw_line.decode("utf-8")
                 log.info(line.rstrip())
-                output += line
+                lines.append(line)
+            output = "".join(lines)
+        elif output_logging == "BUFFER":
+            # Collect and buffer all logs, then emit
+            output, _ = sub_process.communicate()
+            output = output.decode("utf-8")
+            log.info(output)
+        elif output_logging == "NONE":
+            # no logging in this case
+            # todo: don't PIPE output from subprocess if not logging
+            sub_process.communicate()
 
         sub_process.wait()
-
-        # Collect and buffer all logs, then emit
-        if output_logging == "BUFFER":
-            output = "".join(
-                [raw_line.decode("utf-8") for raw_line in iter(sub_process.stdout.readline, b"")]
-            )
-            log.info(output)
-
-        # no logging in this case
-        elif output_logging == "NONE":
-            pass
-
         log.info("Command exited with return code {retcode}".format(retcode=sub_process.returncode))
 
         return output, sub_process.returncode
