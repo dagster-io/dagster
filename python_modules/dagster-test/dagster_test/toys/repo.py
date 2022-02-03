@@ -1,6 +1,7 @@
 import pendulum
 from dagster import AssetMaterialization, Output, pipeline, repository, solid
 from dagster_test.toys.asset_lineage import asset_lineage_partition_set, asset_lineage_pipeline
+from dagster_test.toys.assets import asset_lst
 from dagster_test.toys.branches import branch_pipeline
 from dagster_test.toys.composition import composition
 from dagster_test.toys.dynamic import dynamic_pipeline
@@ -58,4 +59,5 @@ def toys_repository():
         ]
         + get_toys_schedules()
         + get_toys_sensors()
+        + asset_lst
     )
