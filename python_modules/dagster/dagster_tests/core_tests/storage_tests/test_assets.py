@@ -6,7 +6,9 @@ import pytest
 from dagster import (
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     DagsterEventType,
+    EventRecordsFilter,
     Field,
     Output,
     execute_pipeline,

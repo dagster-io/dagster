@@ -1940,3 +1940,28 @@ class TestEventLogStorage:
                 materialization_count_by_partition = _fetch_counts(storage)
                 assert materialization_count_by_partition.get(c)["a"] == 1
                 assert materialization_count_by_partition.get(d)["x"] == 2
+
+    def test_get_observation(self, storage):
+        a = AssetKey(["key_a"])
+
+        @op
+        def gen_op():
+            yield AssetObservation(asset_key=a, metadata={"foo": "bar"})
+            yield Output(1)
+
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            events_one, _ = _synthesize_events(lambda: gen_op(), instance=instance)
+            for event in events_one:
+                storage.store_event(event)
+
+            records = storage.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_OBSERVATION,
+                    asset_key=a,
+                )
+            )
+
+            assert len(records) == 1
