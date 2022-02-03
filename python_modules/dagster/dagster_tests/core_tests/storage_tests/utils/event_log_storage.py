@@ -1885,6 +1885,7 @@ class TestEventLogStorage:
         a = AssetKey("no_materializations_asset")
         b = AssetKey("no_partitions_asset")
         c = AssetKey("two_partitions_asset")
+        d = AssetKey("one_partition_asset")
 
         @op
         def materialize():
@@ -1894,9 +1895,13 @@ class TestEventLogStorage:
 
         @op
         def materialize_two():
+            yield AssetMaterialization(d, partition="x")
             yield AssetMaterialization(c, partition="a")
             yield AssetMaterialization(c, partition="b")
             yield Output(None)
+
+        def _fetch_counts(storage):
+            return storage.get_materialization_count_by_partition([c, d])
 
         with instance_for_test() as instance:
             if not storage._instance:  # pylint: disable=protected-access
@@ -1920,3 +1925,18 @@ class TestEventLogStorage:
             materialization_count_by_key = storage.get_materialization_count_by_partition([a, b, c])
             assert materialization_count_by_key.get(c)["a"] == 2
             assert materialization_count_by_key.get(c)["b"] == 1
+
+            # wipe asset, make sure we respect that
+            if self.can_wipe():
+                storage.wipe_asset(c)
+                materialization_count_by_partition = _fetch_counts(storage)
+                assert materialization_count_by_partition.get(c) == {}
+
+                # rematerialize wiped asset
+                events, _ = _synthesize_events(lambda: materialize_two(), instance=instance)
+                for event in events:
+                    storage.store_event(event)
+
+                materialization_count_by_partition = _fetch_counts(storage)
+                assert materialization_count_by_partition.get(c)["a"] == 1
+                assert materialization_count_by_partition.get(d)["x"] == 2
