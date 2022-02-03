@@ -57,7 +57,7 @@
 - [dagit] The asset graph view now supports ops that yield multiple assets and renders long asset key paths correctly.
 - [dagit] The asset graph’s filter input now allows you to filter on assets with multi-component key paths.
 - [dagit] The asset graph properly displays downstream asset links to other asset jobs in your workspace.
-
+[dagster-k8s] Fixed a bug in the sanitization of K8s label values with uppercase characters and underscores
 ### Experimental
 
 - [dagster-celery-k8s] Experimental run monitoring is now supported with the CeleryK8sRunLauncher. This will detect when a run worker K8s Job has failed (due to an OOM, a Node shutting down, etc.) and mark the run as failed so that it doesn’t hang in STARTED. To enable this feature, set dagsterDaemon.runMonitoring.enabled to true in your Helm values.
