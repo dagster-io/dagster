@@ -7,6 +7,7 @@ const allConfigTypes: ConfigEditorRunConfigSchemaFragment_allConfigTypes[] = [
   {"__typename":"RegularConfigType","key":"Any","description":null,"isSelector":false,"typeParamKeys":[],"givenName":"Any"},
   {"__typename":"ArrayConfigType","key":"Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b","description":"List of Array.Shape.41de0e2d7b75524510155d0bdab8723c6feced3b","isSelector":false,"typeParamKeys":["Shape.41de0e2d7b75524510155d0bdab8723c6feced3b"]},
   {"__typename":"ArrayConfigType","key":"Array.String","description":"List of Array.String","isSelector":false,"typeParamKeys":["String"]},
+  {"__typename":"MapConfigType","key":"Map.String.Int","description":"Map from String to Int","isSelector":false,"typeParamKeys":["String", "Int"],"keyLabelName": null},
   {"__typename":"RegularConfigType","key":"Bool","description":"","isSelector":false,"typeParamKeys":[],"givenName":"Bool"},
   {"__typename":"EnumConfigType","key":"CowboyType","description":null,"isSelector":false,"typeParamKeys":[],"givenName":"CowboyType","values":[{"__typename":"EnumConfigValue","value":"good","description":null},{"__typename":"EnumConfigValue","value":"bad","description":null},{"__typename":"EnumConfigValue","value":"ugly","description":null}]},
   {"__typename":"RegularConfigType","key":"Float","description":"","isSelector":false,"typeParamKeys":[],"givenName":"Float"},
@@ -59,6 +60,7 @@ describe('scaffoldType', () => {
   it('`RegularConfigType` scaffolding', () => {
     expect(scaffoldType('Any', typeLookup)).toEqual('AnyType');
     expect(scaffoldType('Array.String', typeLookup)).toEqual([]);
+    expect(scaffoldType('Map.String.Int', typeLookup)).toEqual({});
     expect(scaffoldType('Bool', typeLookup)).toEqual(true);
     expect(scaffoldType('String', typeLookup)).toEqual('');
     expect(scaffoldType('Int', typeLookup)).toEqual(0);
