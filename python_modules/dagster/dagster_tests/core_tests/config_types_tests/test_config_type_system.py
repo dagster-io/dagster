@@ -28,8 +28,9 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.check import ParameterCheckError
 from dagster.config.errors import DagsterEvaluationErrorReason
-from dagster.config.field_utils import convert_potential_field
+from dagster.config.field_utils import Map, Shape, convert_potential_field
 from dagster.config.validate import process_config, validate_config
 
 
@@ -297,6 +298,168 @@ def test_permissive_multiple_required_fields_failing():
         _validate(
             _multiple_required_fields_config_permissive_dict(),
             {"field_one": "value_one", "field_two": 2},
+        )
+
+
+def test_map_passing():
+    # Ensure long form works
+    assert _validate(
+        Field(Map(key_type=str, inner_type=str)),
+        {
+            "field_one": "value_one",
+            "field_two": "value_two",
+        },
+    ) == {
+        "field_one": "value_one",
+        "field_two": "value_two",
+    }
+
+    assert (
+        _validate(
+            Field(Map(key_type=int, inner_type=float)),
+            {5: 5.5, 3: 3.5},
+        )
+        == {5: 5.5, 3: 3.5}
+    )
+
+    # Ensure short form works
+    assert _validate(Field({str: int}), {"field_one": 2, "field_two": 5,},) == {
+        "field_one": 2,
+        "field_two": 5,
+    }
+
+
+def test_map_failing():
+    with pytest.raises(ParameterCheckError):
+        _validate(
+            Field(Map(key_type="asdf", inner_type=str)),
+            {
+                "field_one": "value_one",
+                "field_two": 2,
+            },
+        )
+
+    with pytest.raises(ParameterCheckError) as e:
+        _validate(
+            Field(Map(Noneable(str), str)),
+            {
+                "field_one": "value_one",
+                "field_two": 2,
+            },
+        )
+    assert "must be a scalar" in str(e)
+
+    with pytest.raises(DagsterInvalidDefinitionError) as e:
+        _validate(
+            Field({55: str}),
+            {
+                "field_one": "value_one",
+                "field_two": 2,
+            },
+        )
+    assert "Invalid key" in str(e)
+
+    with pytest.raises(DagsterInvalidDefinitionError) as e:
+        _validate(
+            Field({Noneable(str): str}),
+            {
+                "field_one": "value_one",
+                "field_two": 2,
+            },
+        )
+    assert "Non-scalar key" in str(e)
+
+    with pytest.raises(AssertionError):
+        _validate(
+            Field(Map(key_type=str, inner_type=str)),
+            {
+                "field_one": "value_one",
+                "field_two": 2,
+            },
+        )
+
+
+def test_map_shape_complex():
+    # Long form
+    assert _validate(
+        Field(Map(str, Shape({"name": Field(str), "number": Field(int)}))),
+        {
+            "foo": {
+                "name": "test_name",
+                "number": 5,
+            },
+            "bar": {
+                "name": "other_name",
+                "number": 10,
+            },
+        },
+    ) == {
+        "foo": {
+            "name": "test_name",
+            "number": 5,
+        },
+        "bar": {
+            "name": "other_name",
+            "number": 10,
+        },
+    }
+
+    # Short form
+    assert _validate(
+        Field(
+            {
+                str: {
+                    "name": Field(str),
+                    "number": Field(int),
+                },
+            }
+        ),
+        {
+            "foo": {
+                "name": "test_name",
+                "number": 5,
+            },
+            "bar": {
+                "name": "other_name",
+                "number": 10,
+            },
+        },
+    ) == {
+        "foo": {
+            "name": "test_name",
+            "number": 5,
+        },
+        "bar": {
+            "name": "other_name",
+            "number": 10,
+        },
+    }
+
+    with pytest.raises(AssertionError):
+        _validate(
+            Field(Map(str, Shape({"name": Field(str), "number": Field(int)}))),
+            {
+                "foo": {
+                    "name": "test_name",
+                    "number": "not_a_number",
+                },
+                "bar": {
+                    "name": "other_name",
+                    "number": 10,
+                },
+            },
+        )
+
+    with pytest.raises(AssertionError):
+        _validate(
+            Field(Map(str, Shape({"name": Field(str), "number": Field(int)}))),
+            {
+                "foo": {
+                    "name": "test_name",
+                    "number": 15,
+                },
+                "baz": "not_a_shape",
+            },
         )
 
 
@@ -753,6 +916,55 @@ def test_list_in_config_error():
         @solid(config_schema=List[int])
         def _no_runtime_list_in_config(_):
             pass
+
+
+def test_working_map_path():
+    called = {}
+
+    @solid(config_schema={str: int})
+    def required_map_int_solid(context):
+        assert context.solid_config == {"foo": 1, "bar": 2}
+        called["yup"] = True
+
+    @pipeline
+    def pipeline_def():
+        required_map_int_solid()
+
+    result = execute_pipeline(
+        pipeline_def,
+        run_config={"solids": {"required_map_int_solid": {"config": {"foo": 1, "bar": 2}}}},
+    )
+
+    assert result.success
+    assert called["yup"]
+
+
+def test_item_error_map_path():
+    called = {}
+
+    @solid(config_schema={str: int})
+    def required_map_int_solid(context):
+        assert context.solid_config == {"foo": 1, "bar": 2}
+        called["yup"] = True
+
+    @pipeline
+    def pipeline_def():
+        required_map_int_solid()
+
+    with pytest.raises(DagsterInvalidConfigError) as pe_info:
+        execute_pipeline(
+            pipeline_def,
+            run_config={
+                "solids": {"required_map_int_solid": {"config": {"foo": 1, "bar": "nope"}}}
+            },
+        )
+
+    pe = pe_info.value
+    assert len(pe.errors) == 1
+    rtm = pe.errors[0]
+    assert rtm.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+
+    assert "Invalid scalar at path root:solids:required_map_int_solid:config:'bar'" in str(pe)
 
 
 def test_required_resource_not_given():

@@ -316,7 +316,7 @@ const AssetMaterializationGraphs: React.FC<{
             <NonIdealState
               icon="linear_scale"
               title="No numeric metadata"
-              description="Include numeric metadata entries in your materializations and observations to see data graphed by time / partition."
+              description={`Include numeric metadata entries in your materializations and observations to see data graphed by ${props.xAxis}.`}
             />
           </Box>
         )}

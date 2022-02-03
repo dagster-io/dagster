@@ -440,6 +440,12 @@ export const RUN_PREVIEW_VALIDATION_FRAGMENT = gql`
             ... on EvaluationStackListItemEntry {
               listIndex
             }
+            ... on EvaluationStackMapKeyEntry {
+              mapKey
+            }
+            ... on EvaluationStackMapValueEntry {
+              mapKey
+            }
           }
         }
         ... on MissingFieldConfigError {

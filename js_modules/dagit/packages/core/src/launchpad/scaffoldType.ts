@@ -29,6 +29,8 @@ export const scaffoldType = (
       return config;
     case 'ArrayConfigType':
       return [];
+    case 'MapConfigType':
+      return {};
     case 'NullableConfigType':
       // If a type is nullable we include it in the scaffolded config anyway
       // by using the inner type

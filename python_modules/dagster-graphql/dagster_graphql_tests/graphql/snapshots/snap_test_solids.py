@@ -28,6 +28,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'a_solid_with_map_config'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'config_with_map'
+                        },
+                        'solidHandle': {
+                            'handleID': 'a_solid_with_map_config'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'a_solid_with_multilayered_config'
                 },
                 'invocations': [
@@ -802,6 +818,14 @@ snapshots['test_query_all_solids 1'] = {
                     {
                         'pipeline': {
                             'name': 'asset_lineage_pipeline'
+                        },
+                        'solidHandle': {
+                            'handleID': 'noop_solid'
+                        }
+                    },
+                    {
+                        'pipeline': {
+                            'name': 'config_with_map'
                         },
                         'solidHandle': {
                             'handleID': 'noop_solid'

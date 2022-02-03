@@ -12,9 +12,15 @@ from dagster.config.errors import (
     SelectorTypeErrorData,
 )
 from dagster.config.snap import ConfigSchemaSnapshot
-from dagster.config.stack import EvaluationStackListItemEntry, EvaluationStackPathEntry
+from dagster.config.stack import (
+    EvaluationStackListItemEntry,
+    EvaluationStackMapKeyEntry,
+    EvaluationStackMapValueEntry,
+    EvaluationStackPathEntry,
+)
 from dagster.core.host_representation.represented import RepresentedPipeline
 from dagster.utils.error import SerializableErrorInfo
+from graphene.types.generic import GenericScalar
 
 from ..config_types import GrapheneConfigTypeField
 from ..util import non_null_list
@@ -34,6 +40,34 @@ class GrapheneEvaluationStackListItemEntry(graphene.ObjectType):
         return self._list_index
 
 
+class GrapheneEvaluationStackMapKeyEntry(graphene.ObjectType):
+    map_key = graphene.NonNull(GenericScalar)
+
+    class Meta:
+        name = "EvaluationStackMapKeyEntry"
+
+    def __init__(self, map_key):
+        super().__init__()
+        self._map_key = map_key
+
+    def resolve_map_key(self, _info):
+        return self._map_key
+
+
+class GrapheneEvaluationStackMapValueEntry(graphene.ObjectType):
+    map_key = graphene.NonNull(GenericScalar)
+
+    class Meta:
+        name = "EvaluationStackMapValueEntry"
+
+    def __init__(self, map_key):
+        super().__init__()
+        self._map_key = map_key
+
+    def resolve_map_key(self, _info):
+        return self._map_key
+
+
 class GrapheneEvaluationStackPathEntry(graphene.ObjectType):
     field_name = graphene.NonNull(graphene.String)
 
@@ -50,7 +84,12 @@ class GrapheneEvaluationStackPathEntry(graphene.ObjectType):
 
 class GrapheneEvaluationStackEntry(graphene.Union):
     class Meta:
-        types = (GrapheneEvaluationStackListItemEntry, GrapheneEvaluationStackPathEntry)
+        types = (
+            GrapheneEvaluationStackListItemEntry,
+            GrapheneEvaluationStackPathEntry,
+            GrapheneEvaluationStackMapKeyEntry,
+            GrapheneEvaluationStackMapValueEntry,
+        )
         name = "EvaluationStackEntry"
 
     @staticmethod
@@ -59,6 +98,10 @@ class GrapheneEvaluationStackEntry(graphene.Union):
             return GrapheneEvaluationStackPathEntry(field_name=entry.field_name)
         elif isinstance(entry, EvaluationStackListItemEntry):
             return GrapheneEvaluationStackListItemEntry(list_index=entry.list_index)
+        elif isinstance(entry, EvaluationStackMapKeyEntry):
+            return GrapheneEvaluationStackMapKeyEntry(map_key=entry.map_key)
+        elif isinstance(entry, EvaluationStackMapValueEntry):
+            return GrapheneEvaluationStackMapValueEntry(map_key=entry.map_key)
         else:
             check.failed(f"Unsupported stack entry type {entry}")
 

@@ -12,7 +12,7 @@ export interface LaunchpadSessionContainerRunConfigSchemaFragment_PipelineNotFou
 }
 
 export interface LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_rootConfigType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType";
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
 }
 
@@ -31,6 +31,15 @@ export interface LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchem
   isSelector: boolean;
   typeParamKeys: string[];
   givenName: string;
+}
+
+export interface LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_allConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
 }
 
 export interface LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_allConfigTypes_EnumConfigType_values {
@@ -76,7 +85,7 @@ export interface LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchem
   nonScalarTypeKey: string;
 }
 
-export type LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_allConfigTypes = LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_allConfigTypes_ArrayConfigType | LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_allConfigTypes_RegularConfigType | LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_allConfigTypes_EnumConfigType | LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_allConfigTypes_CompositeConfigType | LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_allConfigTypes_ScalarUnionConfigType;
+export type LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_allConfigTypes = LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_allConfigTypes_ArrayConfigType | LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_allConfigTypes_RegularConfigType | LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_allConfigTypes_MapConfigType | LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_allConfigTypes_EnumConfigType | LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_allConfigTypes_CompositeConfigType | LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema_allConfigTypes_ScalarUnionConfigType;
 
 export interface LaunchpadSessionContainerRunConfigSchemaFragment_RunConfigSchema {
   __typename: "RunConfigSchema";

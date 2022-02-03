@@ -30,6 +30,12 @@ interface CompositeTypeData extends CommonTypeData {
   fields: FieldData[];
 }
 
+interface MapTypeData extends CommonTypeData {
+  __typename: 'MapConfigType';
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
 interface ListTypeData extends CommonTypeData {
   __typename: 'ArrayConfigType';
   typeParamKeys: string[];
@@ -59,6 +65,7 @@ interface ScalarUnionTypeData extends CommonTypeData {
 export type TypeData =
   | CompositeTypeData
   | ListTypeData
+  | MapTypeData
   | NullableTypeData
   | RegularTypeData
   | EnumTypeData
@@ -98,6 +105,26 @@ function renderTypeRecursive(
   if (type.__typename === 'ArrayConfigType') {
     const ofTypeKey = type.typeParamKeys[0];
     return <>[{renderTypeRecursive(typeLookup[ofTypeKey], typeLookup, depth, props)}]</>;
+  }
+  if (type.__typename === 'MapConfigType') {
+    // e.g.
+    // {
+    //   [name_hint: String]: Int
+    // }
+    const keyTypeKey = type.typeParamKeys[0];
+    const valueTypeKey = type.typeParamKeys[1];
+    const innerIndent = '  '.repeat(depth + 1);
+    return (
+      <>
+        {`{`}
+        <DictEntry>
+          {innerIndent}[{type.keyLabelName ? `${type.keyLabelName}: ` : null}
+          {renderTypeRecursive(typeLookup[keyTypeKey], typeLookup, depth + 1, props)}]{`: `}
+          {renderTypeRecursive(typeLookup[valueTypeKey], typeLookup, depth + 1, props)}
+        </DictEntry>
+        {'  '.repeat(depth) + '}'}
+      </>
+    );
   }
   if (type.__typename === 'NullableConfigType') {
     const ofTypeKey = type.typeParamKeys[0];
@@ -151,6 +178,7 @@ export const ConfigTypeSchema = React.memo((props: ConfigTypeSchemaProps) => {
 
 export const CONFIG_TYPE_SCHEMA_FRAGMENT = gql`
   fragment ConfigTypeSchemaFragment on ConfigType {
+    __typename
     ... on EnumConfigType {
       givenName
     }
@@ -172,6 +200,9 @@ export const CONFIG_TYPE_SCHEMA_FRAGMENT = gql`
     ... on ScalarUnionConfigType {
       scalarTypeKey
       nonScalarTypeKey
+    }
+    ... on MapConfigType {
+      keyLabelName
     }
   }
 `;

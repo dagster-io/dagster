@@ -60,7 +60,7 @@ This value can be a:
     - Field
     - Python primitive types that resolve to dagster config types
         - int, float, bool, str, list.
-    - A dagster config type: Int, Float, Bool, List, Optional, Selector, Shape, Permissive
+    - A dagster config type: Int, Float, Bool, Array, Optional, Selector, Shape, Permissive, Map
     - A bare python dictionary, which is wrapped in Field(Shape(...)). Any values
       in the dictionary get resolved by the same rules, recursively.
     - A python list with a single entry that can resolve to a type, e.g. [int]
