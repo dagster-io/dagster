@@ -429,7 +429,9 @@ class OutputContext:
         self._events = []
         yield from events
 
-    def get_events(self) -> List[Union[AssetMaterialization, Materialization, AssetObservation]]:
+    def get_logged_events(
+        self,
+    ) -> List[Union[AssetMaterialization, Materialization, AssetObservation]]:
         """Retrieve the list of user-generated events that were logged via the context.
 
 
@@ -449,7 +451,7 @@ class OutputContext:
                 mgr = MyIOManager()
                 context = build_output_context()
                 mgr.handle_output(context)
-                all_user_events = context.get_events()
+                all_user_events = context.get_logged_events()
                 materializations = [event for event in all_user_events if isinstance(event, AssetMaterialization)]
                 ...
         """
