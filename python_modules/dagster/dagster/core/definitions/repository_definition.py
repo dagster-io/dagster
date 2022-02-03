@@ -551,7 +551,7 @@ class CachingRepositoryData(RepositoryData):
         return CachingRepositoryData(**repository_definitions, foreign_assets={})
 
     @classmethod
-    def from_list(cls, repository_definitions):
+    def from_list(cls, repository_definitions, resource_defs):
         """Static constructor.
 
         Args:
@@ -559,13 +559,14 @@ class CachingRepositoryData(RepositoryData):
                 Use this constructor when you have no need to lazy load pipelines/jobs or other
                 definitions.
         """
-        from dagster.core.asset_defs import ForeignAsset
+        from dagster.core.asset_defs import ForeignAsset, AssetsDefinition, build_assets_job
 
         pipelines_or_jobs = {}
         partition_sets = {}
         schedules = {}
         sensors = {}
         foreign_assets = {}
+        asset_defs = {}
         for definition in repository_definitions:
             if isinstance(definition, PipelineDefinition):
                 if (
@@ -634,6 +635,12 @@ class CachingRepositoryData(RepositoryData):
                     )
                 foreign_assets[definition.key] = definition
 
+            elif isinstance(definition, AssetsDefinition):
+                if definition.op.name in asset_defs:
+                    raise DagsterInvalidDefinitionError(
+                        f"Duplicate asset found for {definition.op.name}"
+                    )
+                asset_defs[definition.op.name] = definition
             else:
                 check.failed(f"Unexpected repository entry {definition}")
 
@@ -644,6 +651,11 @@ class CachingRepositoryData(RepositoryData):
                 jobs[name] = pipeline_or_job
             else:
                 pipelines[name] = pipeline_or_job
+
+        if asset_defs:
+            jobs["__REPOSITORY_MEGA_JOB"] = build_assets_job(
+                "__REPOSITORY_MEGA_JOB", list(asset_defs.values()), resource_defs=resource_defs
+            )
 
         return CachingRepositoryData(
             pipelines=pipelines,

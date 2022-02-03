@@ -18,12 +18,15 @@ from ..sensor_definition import SensorDefinition
 
 
 class _Repository:
-    def __init__(self, name: Optional[str] = None, description: Optional[str] = None):
+    def __init__(
+        self, name: Optional[str] = None, description: Optional[str] = None, resource_defs=None
+    ):
         self.name = check.opt_str_param(name, "name")
         self.description = check.opt_str_param(description, "description")
+        self.resource_defs = resource_defs
 
     def __call__(self, fn: Callable[[], Any]) -> RepositoryDefinition:
-        from dagster.core.asset_defs import ForeignAsset
+        from dagster.core.asset_defs import ForeignAsset, AssetsDefinition
 
         check.callable_param(fn, "fn")
 
@@ -53,6 +56,7 @@ class _Repository:
                     or isinstance(definition, SensorDefinition)
                     or isinstance(definition, GraphDefinition)
                     or isinstance(definition, ForeignAsset)
+                    or isinstance(definition, AssetsDefinition)
                 ):
                     bad_definitions.append((i, type(definition)))
             if bad_definitions:
@@ -68,7 +72,9 @@ class _Repository:
                     "PartitionSetDefinition, ScheduleDefinition, SensorDefinition, or ForeignAsset. "
                     f"Got {bad_definitions_str}."
                 )
-            repository_data = CachingRepositoryData.from_list(repository_definitions)
+            repository_data = CachingRepositoryData.from_list(
+                repository_definitions, resource_defs=self.resource_defs
+            )
 
         elif isinstance(repository_definitions, dict):
             if not set(repository_definitions.keys()).issubset(VALID_REPOSITORY_DATA_DICT_KEYS):
@@ -90,7 +96,9 @@ class _Repository:
             repository_data = repository_definitions
 
         repository_def = RepositoryDefinition(
-            name=self.name, description=self.description, repository_data=repository_data
+            name=self.name,
+            description=self.description,
+            repository_data=repository_data,
         )
 
         update_wrapper(repository_def, fn)
@@ -98,7 +106,9 @@ class _Repository:
 
 
 def repository(
-    name: Union[Optional[str], Callable[..., Any]] = None, description: Optional[str] = None
+    name: Union[Optional[str], Callable[..., Any]] = None,
+    description: Optional[str] = None,
+    resource_defs=None,
 ) -> Union[_Repository, RepositoryDefinition]:
     """Create a repository from the decorated function.
 
@@ -231,4 +241,4 @@ def repository(
 
         return _Repository()(name)
 
-    return _Repository(name=name, description=description)
+    return _Repository(name=name, description=description, resource_defs=resource_defs)
