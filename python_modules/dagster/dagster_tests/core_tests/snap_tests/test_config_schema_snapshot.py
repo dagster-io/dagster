@@ -166,6 +166,17 @@ def test_basic_map():
     assert child_type_keys[1] == "Int"
 
 
+def test_named_map():
+    map_snap = snap_from_dagster_type(Map(str, float, key_label_name="title"))
+    assert map_snap.key.startswith("Map")
+    assert map_snap.given_name == "title"
+    child_type_keys = map_snap.get_child_type_keys()
+    assert child_type_keys
+    assert len(child_type_keys) == 2
+    assert child_type_keys[0] == "String"
+    assert child_type_keys[1] == "Float"
+
+
 def test_basic_map_nested():
     map_snap = snap_from_dagster_type({int: {str: int}})
     assert map_snap.key.startswith("Map")
