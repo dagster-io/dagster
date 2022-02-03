@@ -170,12 +170,6 @@ export interface AssetEventsQuery_assetOrError_Asset_assetMaterializations_runOr
 
 export type AssetEventsQuery_assetOrError_Asset_assetMaterializations_runOrError = AssetEventsQuery_assetOrError_Asset_assetMaterializations_runOrError_RunNotFoundError | AssetEventsQuery_assetOrError_Asset_assetMaterializations_runOrError_Run;
 
-export interface AssetEventsQuery_assetOrError_Asset_assetMaterializations_stepStats {
-  __typename: "RunStepStats";
-  endTime: number | null;
-  startTime: number | null;
-}
-
 export interface AssetEventsQuery_assetOrError_Asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry {
   __typename: "EventTableSchemaMetadataEntry" | "EventTableMetadataEntry";
   label: string;
@@ -279,7 +273,6 @@ export interface AssetEventsQuery_assetOrError_Asset_assetMaterializations {
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: AssetEventsQuery_assetOrError_Asset_assetMaterializations_stepStats;
   label: string;
   description: string | null;
   metadataEntries: AssetEventsQuery_assetOrError_Asset_assetMaterializations_metadataEntries[];

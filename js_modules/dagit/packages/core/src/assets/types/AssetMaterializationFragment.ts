@@ -33,12 +33,6 @@ export interface AssetMaterializationFragment_runOrError_Run {
 
 export type AssetMaterializationFragment_runOrError = AssetMaterializationFragment_runOrError_RunNotFoundError | AssetMaterializationFragment_runOrError_Run;
 
-export interface AssetMaterializationFragment_stepStats {
-  __typename: "RunStepStats";
-  endTime: number | null;
-  startTime: number | null;
-}
-
 export interface AssetMaterializationFragment_metadataEntries_EventTableSchemaMetadataEntry {
   __typename: "EventTableSchemaMetadataEntry" | "EventTableMetadataEntry";
   label: string;
@@ -142,7 +136,6 @@ export interface AssetMaterializationFragment {
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: AssetMaterializationFragment_stepStats;
   label: string;
   description: string | null;
   metadataEntries: AssetMaterializationFragment_metadataEntries[];

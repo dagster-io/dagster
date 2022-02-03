@@ -40,8 +40,6 @@ interface Props {
   assetHasDefinedPartitions: boolean;
 }
 
-const LABEL_STEP_EXECUTION_TIME = 'Step Execution Time';
-
 /**
  * If the asset has a defined partition space, we load all materializations in the
  * last 100 partitions. This ensures that if you run a huge backfill of old partitions,
@@ -317,6 +315,16 @@ const AssetMaterializationGraphs: React.FC<{
           flexDirection: 'column',
         }}
       >
+        {graphedLabels.length === 0 && (
+          <Box padding={{horizontal: 24, top: 64}}>
+            <NonIdealState
+              icon="linear_scale"
+              title="No numeric metadata"
+              description={`Include numeric metadata entries in your materializations and observations to see data graphed by ${props.xAxis}.`}
+            />
+          </Box>
+        )}
+
         {[...graphedLabels].sort().map((label) => (
           <Box
             key={label}
@@ -435,10 +443,6 @@ const extractNumericData = (datapoints: AssetEventGroup[], xAxis: 'time' | 'part
 
       append(label, {x, y});
     }
-
-    // Add step execution time as a custom dataset
-    const {startTime, endTime} = latest?.stepStats || {};
-    append(LABEL_STEP_EXECUTION_TIME, {x, y: endTime && startTime ? endTime - startTime : NaN});
   }
 
   for (const serie of Object.values(series)) {
@@ -507,10 +511,6 @@ const ASSET_EVENTS_QUERY = gql`
     runId
     timestamp
     stepKey
-    stepStats {
-      endTime
-      startTime
-    }
     label
     description
     metadataEntries {

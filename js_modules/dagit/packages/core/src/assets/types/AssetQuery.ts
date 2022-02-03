@@ -71,13 +71,6 @@ export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_
 
 export type AssetQuery_assetOrError_Asset_definition_assetMaterializations_runOrError = AssetQuery_assetOrError_Asset_definition_assetMaterializations_runOrError_RunNotFoundError | AssetQuery_assetOrError_Asset_definition_assetMaterializations_runOrError_Run;
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_stepStats {
-  __typename: "RunStepStats";
-  endTime: number | null;
-  startTime: number | null;
-  stepKey: string;
-}
-
 export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry {
   __typename: "EventTableSchemaMetadataEntry" | "EventTableMetadataEntry";
   label: string;
@@ -174,6 +167,13 @@ export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_
   partitions: string[];
 }
 
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_stepStats {
+  __typename: "RunStepStats";
+  stepKey: string;
+  startTime: number | null;
+  endTime: number | null;
+}
+
 export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
@@ -181,9 +181,9 @@ export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations 
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: AssetQuery_assetOrError_Asset_definition_assetMaterializations_stepStats;
   metadataEntries: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries[];
   assetLineage: AssetQuery_assetOrError_Asset_definition_assetMaterializations_assetLineage[];
+  stepStats: AssetQuery_assetOrError_Asset_definition_assetMaterializations_stepStats;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_jobs {
@@ -233,13 +233,6 @@ export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_ass
 }
 
 export type AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_runOrError = AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_runOrError_RunNotFoundError | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_runOrError_Run;
-
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_stepStats {
-  __typename: "RunStepStats";
-  endTime: number | null;
-  startTime: number | null;
-  stepKey: string;
-}
 
 export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry {
   __typename: "EventTableSchemaMetadataEntry" | "EventTableMetadataEntry";
@@ -337,6 +330,13 @@ export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_ass
   partitions: string[];
 }
 
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_stepStats {
+  __typename: "RunStepStats";
+  stepKey: string;
+  startTime: number | null;
+  endTime: number | null;
+}
+
 export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
@@ -344,9 +344,9 @@ export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_ass
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_stepStats;
   metadataEntries: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries[];
   assetLineage: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_assetLineage[];
+  stepStats: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_stepStats;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset {
@@ -413,13 +413,6 @@ export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_asset
 }
 
 export type AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_runOrError = AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_runOrError_RunNotFoundError | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_runOrError_Run;
-
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_stepStats {
-  __typename: "RunStepStats";
-  endTime: number | null;
-  startTime: number | null;
-  stepKey: string;
-}
 
 export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry {
   __typename: "EventTableSchemaMetadataEntry" | "EventTableMetadataEntry";
@@ -517,6 +510,13 @@ export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_asset
   partitions: string[];
 }
 
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_stepStats {
+  __typename: "RunStepStats";
+  stepKey: string;
+  startTime: number | null;
+  endTime: number | null;
+}
+
 export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
@@ -524,9 +524,9 @@ export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_asset
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_stepStats;
   metadataEntries: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries[];
   assetLineage: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_assetLineage[];
+  stepStats: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_stepStats;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset {
