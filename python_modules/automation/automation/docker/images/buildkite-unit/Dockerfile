@@ -16,7 +16,9 @@ RUN apt-get update -yqq \
         g++ \
         gcc \
         git \
-        make
+        make \
+        python-dev \
+        libevent-dev
 
 RUN git clone https://github.com/dagster-io/dagster.git \
     && cd dagster \
@@ -46,7 +48,9 @@ RUN apt-get update -yqq \
         g++ \
         gcc \
         git \
-        make
+        make \
+        python-dev \
+        libevent-dev
 
 RUN pip install -r /snapshot-reqs.txt \
     && rm /snapshot-reqs.txt
@@ -57,5 +61,7 @@ RUN apt-get remove -yqq \
         gcc \
         git \
         make \
+        python-dev \
+        libevent-dev \
     && apt-get autoremove -yqq --purge \
     && apt-get clean
