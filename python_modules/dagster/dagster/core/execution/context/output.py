@@ -106,7 +106,9 @@ class OutputContext:
 
         self._events: List["DagsterEvent"] = []
         self._user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]] = []
-        self._metadata_entries: List[Union[EventMetadataEntry, PartitionMetadataEntry]] = []
+        self._metadata_entries: Optional[
+            List[Union[EventMetadataEntry, PartitionMetadataEntry]]
+        ] = None
 
     def __enter__(self):
         if self._resources_cm:
@@ -462,15 +464,13 @@ class OutputContext:
 
         return self._user_events
 
-    def add_metadata_entry(
-        self, metadata: Union[EventMetadataEntry, PartitionMetadataEntry]
-    ) -> None:
-        """Add a metadata entry to the handled output.
+    def add_metadata(self, metadata: Dict[str, Any]) -> None:
+        """Add a dictionary of metadata to the handled output.
 
         Metadata entries added will show up in the HANDLED_OUTPUT and ASSET_MATERIALIZATION events for the run.
 
         Args:
-            metadata (Union[EventMetadataEntry, PartitionMetadataEntry]): A metadata entry to log
+            metadata (Dict[str, Any]): A metadata dictionary to log
 
         Examples:
 
@@ -479,21 +479,21 @@ class OutputContext:
 
             class MyIOManager(IOManager):
                 def handle_output(self, context, obj):
-                    context.add_metadata_entry(EventMetadataEntry(...))
+                    context.add_metadata({"foo": "bar"})
         """
-        self._metadata_entries.append(metadata)
+        from dagster.core.definitions.event_metadata import parse_metadata
+
+        if self._metadata_entries:
+            raise DagsterInvariantViolationError(
+                f"Metadata entries were already added for output {self.name}. Metadata can only be logged once per output."
+            )
+        self._metadata_entries = parse_metadata(metadata, [])
 
     def get_logged_metadata_entries(
         self,
     ) -> List[Union[EventMetadataEntry, PartitionMetadataEntry]]:
         """Get the list of metadata entries that have been logged for use with this output."""
-        return self._metadata_entries
-
-    def retrieve_metadata_entries(
-        self,
-    ) -> Iterator[Union[PartitionMetadataEntry, EventMetadataEntry]]:
-        while self._metadata_entries:
-            yield self._metadata_entries.pop(0)
+        return self._metadata_entries or []
 
 
 def get_output_context(

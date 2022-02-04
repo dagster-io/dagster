@@ -549,7 +549,7 @@ def _store_output(
         for event in output_context.consume_events():
             yield event
 
-        manager_metadata_entries.extend(output_context.retrieve_metadata_entries())
+        manager_metadata_entries.extend(output_context.get_logged_metadata_entries())
         if isinstance(elt, DagsterEvent):
             yield elt
         elif isinstance(elt, AssetMaterialization):
@@ -569,7 +569,7 @@ def _store_output(
     for event in output_context.consume_events():
         yield event
 
-    manager_metadata_entries.extend(output_context.retrieve_metadata_entries())
+    manager_metadata_entries.extend(output_context.get_logged_metadata_entries())
     # do not alter explicitly created AssetMaterializations
     for materialization in manager_materializations:
         yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
