@@ -46,6 +46,16 @@ def test_execute_file_large_output_no_logging(tmp_file):
         assert output == ""
 
 
+def test_execute_file_large_line_stream_output(tmp_file):
+    large_string = "0123456789" * (100000)  # one giant line > 2**16 buffer
+    with tmp_file(f"echo -n {large_string}") as (tmp_path, tmp_file):
+        output, retcode = execute_script_file(
+            tmp_file, output_logging="STREAM", log=logging, cwd=tmp_path
+        )
+        assert retcode == 0
+        assert output == large_string
+
+
 def test_env(tmp_file):
     cmd = "echo $TEST_VAR"
     res, retcode = execute(
