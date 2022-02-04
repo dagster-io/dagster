@@ -1,7 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, ColorsWIP, IconWIP, MetadataTable, } from '@dagster-io/ui';
 import * as React from 'react';
-import {useEffect,  useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
@@ -81,9 +80,7 @@ export const AssetTypeSidebarInfo: React.FC<{type: AssetType}> = ({type}) => {
           <Description description={type.description} />
         </Box>
       )}
-      <Box padding={{left: 16}}>
-        {tableSchemaEntry && TableSchema(tableSchemaEntry)}
-      </Box>
+      <Box padding={{left: 16}}>{tableSchemaEntry && TableSchema(tableSchemaEntry)}</Box>
     </Box>
   );
 };
@@ -160,9 +157,9 @@ export const SidebarAssetInfo: React.FC<{
       notifyOnNetworkStatusChange: true,
     },
   );
-  const [assetType, setAssetType] = useState<AssetType | null>(null);
-  const [assetMetadata, setAssetMetadata] = useState<AssetMetadata | null>(null);
-  useEffect(() => {
+  const [assetType, setAssetType] = React.useState<AssetType | null>(null);
+  const [assetMetadata, setAssetMetadata] = React.useState<AssetMetadata | null>(null);
+  React.useEffect(() => {
     if (dagsterTypeQueryPayload) {
       setAssetType(extractOutputType(dagsterTypeQueryPayload));
       setAssetMetadata(extractOutputMetadata(dagsterTypeQueryPayload));
@@ -186,14 +183,13 @@ export const SidebarAssetInfo: React.FC<{
         </AssetCatalogLink>
       </Box>
 
-      {(node.description ||
-        !(node.description || assetType || assetMetadata)) && (
-          <DescriptionSidebarSection
-            description={node.description || 'No description provided'}
-            definition={definition}
-            repoAddress={repoAddress}
-          />
-        )}
+      {(node.description || !(node.description || assetType || assetMetadata)) && (
+        <DescriptionSidebarSection
+          description={node.description || 'No description provided'}
+          definition={definition}
+          repoAddress={repoAddress}
+        />
+      )}
 
       {assetMetadata && (
         <MetadataSidebarSection assetMetadata={assetMetadata}></MetadataSidebarSection>
