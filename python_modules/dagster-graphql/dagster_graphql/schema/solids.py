@@ -340,6 +340,7 @@ class GrapheneISolidDefinition(graphene.Interface):
     metadata = non_null_list(GrapheneMetadataItemDefinition)
     input_definitions = non_null_list(GrapheneInputDefinition)
     output_definitions = non_null_list(GrapheneOutputDefinition)
+    asset_nodes = non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
 
     class Meta:
         name = "ISolidDefinition"
@@ -381,6 +382,23 @@ class ISolidDefinitionMixin:
             )
             for output_def_snap in self._solid_def_snap.output_def_snaps
         ]
+
+    def resolve_asset_nodes(self, graphene_info):
+        # NOTE: This is a temporary hack. We really should prob be resolving solids against the repo
+        # rather than pipeline, that way we would not have to refetch the repo here here in order to
+        # access the asset nodes.
+        from .asset_graph import GrapheneAssetNode
+
+        repo_handle = self._represented_pipeline.repository_handle
+        origin = repo_handle.repository_location_origin
+        location = graphene_info.context.get_location(origin)
+        ext_repo = location.get_repository(repo_handle.repository_name)
+        nodes = [
+            node
+            for node in ext_repo.get_external_asset_nodes()
+            if node.op_name == self.solid_def_name
+        ]
+        return [GrapheneAssetNode(ext_repo, node) for node in nodes]
 
 
 class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
