@@ -275,8 +275,8 @@ def test_celery_queue_volumes(deployment_template: HelmTemplate):
     rendered_volumes = celery_queue_deployments[0].spec.template.spec.volumes
 
     assert [remove_none_recursively(volume.to_dict()) for volume in rendered_volumes] == [
-        {"config_map": {"name": "RELEASE-NAME-dagster-instance"}, "name": "dagster-instance"},
-        {"config_map": {"name": "RELEASE-NAME-dagster-celery-dagster"}, "name": "dagster-celery"},
+        {"config_map": {"name": "release-name-dagster-instance"}, "name": "dagster-instance"},
+        {"config_map": {"name": "release-name-dagster-celery-dagster"}, "name": "dagster-celery"},
         {"name": "test-volume", "config_map": {"name": "test-volume-configmap"}},
         {
             "name": "test-pvc",

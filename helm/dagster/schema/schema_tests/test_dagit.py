@@ -92,8 +92,8 @@ def test_dagit_read_only_enabled(deployment_template: HelmTemplate):
         for dagit in dagit_template
     ] == [False, True]
     assert [dagit.metadata.name for dagit in dagit_template] == [
-        "RELEASE-NAME-dagit",
-        "RELEASE-NAME-dagit-read-only",
+        "release-name-dagit",
+        "release-name-dagit-read-only",
     ]
 
     assert [dagit.spec.template.metadata.labels["component"] for dagit in dagit_template] == [
@@ -145,7 +145,7 @@ def test_dagit_service(service_template):
     dagit_template = service_template.render(helm_values)
 
     assert len(dagit_template) == 1
-    assert dagit_template[0].metadata.name == "RELEASE-NAME-dagit"
+    assert dagit_template[0].metadata.name == "release-name-dagit"
 
 
 def test_dagit_service_read_only(service_template):
@@ -154,8 +154,8 @@ def test_dagit_service_read_only(service_template):
 
     assert len(dagit_template) == 2
     assert [dagit.metadata.name for dagit in dagit_template] == [
-        "RELEASE-NAME-dagit",
-        "RELEASE-NAME-dagit-read-only",
+        "release-name-dagit",
+        "release-name-dagit-read-only",
     ]
     assert [dagit.spec.selector["component"] for dagit in dagit_template] == [
         "dagit",
