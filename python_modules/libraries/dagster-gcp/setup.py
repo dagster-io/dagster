@@ -41,6 +41,7 @@ if __name__ == "__main__":
             "google-cloud-storage",
             "oauth2client",
         ],
-        extras_require={"pyarrow": ["pyarrow; python_version < '3.9'"]},
+        # we need `pyarrow` for testing read/write parquet files.
+        extras_require={"pyarrow": ["pyarrow"]},
         zip_safe=False,
     )
