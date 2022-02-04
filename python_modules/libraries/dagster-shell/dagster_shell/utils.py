@@ -57,6 +57,9 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
     check.opt_str_param(cwd, "cwd", default=os.path.dirname(shell_script_path))
     env = check.opt_dict_param(env, "env")
 
+    if output_logging not in OUTPUT_LOGGING_OPTIONS:
+        raise Exception("Unrecognized output_logging %s" % output_logging)
+
     def pre_exec():
         # Restore default signal disposition and invoke setsid
         for sig in ("SIGPIPE", "SIGXFZ", "SIGXFSZ"):
@@ -72,39 +75,35 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
     # pylint: disable=subprocess-popen-preexec-fn
     sub_process = None
     try:
+        stdout_pipe = PIPE
+        stderr_pipe = STDOUT
+        if output_logging == "NONE":
+            stdout_pipe = stderr_pipe = None
+
         sub_process = Popen(
             ["bash", shell_script_path],
-            stdout=PIPE,
-            stderr=STDOUT,
+            stdout=stdout_pipe,
+            stderr=stderr_pipe,
             cwd=cwd,
             env=env,
             preexec_fn=pre_exec,
+            encoding="UTF-8",
         )
 
         log.info(f"Command pid: {sub_process.pid}")
-
-        # Will return the string result of reading stdout of the shell command
-        if output_logging not in OUTPUT_LOGGING_OPTIONS:
-            raise Exception("Unrecognized output_logging %s" % output_logging)
 
         output = ""
         if output_logging == "STREAM":
             # Stream back logs as they are emitted
             lines = []
-            for raw_line in sub_process.stdout:
-                line = raw_line.decode("utf-8")
+            for line in sub_process.stdout:
                 log.info(line.rstrip())
                 lines.append(line)
             output = "".join(lines)
         elif output_logging == "BUFFER":
             # Collect and buffer all logs, then emit
             output, _ = sub_process.communicate()
-            output = output.decode("utf-8")
             log.info(output)
-        elif output_logging == "NONE":
-            # no logging in this case
-            # todo: don't PIPE output from subprocess if not logging
-            sub_process.communicate()
 
         sub_process.wait()
         log.info("Command exited with return code {retcode}".format(retcode=sub_process.returncode))
