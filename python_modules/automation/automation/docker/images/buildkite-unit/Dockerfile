@@ -54,14 +54,3 @@ RUN apt-get update -yqq \
 
 RUN pip install -r /snapshot-reqs.txt \
     && rm /snapshot-reqs.txt
-
-RUN apt-get remove -yqq \
-        build-essential \
-        g++ \
-        gcc \
-        git \
-        make \
-        python-dev \
-        libevent-dev \
-    && apt-get autoremove -yqq --purge \
-    && apt-get clean
