@@ -122,13 +122,19 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         with open(filepath, self.write_mode) as write_obj:
             try:
                 pickle.dump(obj, write_obj, PICKLE_PROTOCOL)
-            except (AttributeError, RecursionError, ImportError, pickle.PicklingError):
+            except (AttributeError, RecursionError, ImportError, pickle.PicklingError) as e:
                 executor = context.step_context.pipeline_def.mode_definitions[0].executor_defs[0]
 
+                if isinstance(e, RecursionError):
+                    obj_repr = f"{obj.__class__} exceeds recursion limit and"
+                else:
+                    obj_repr = obj.__str__()
+
                 raise DagsterInvariantViolationError(
-                    f"Object {obj} is not picklable. Use the mem_io_manager with an in process "
-                    "executor to avoid pickling outputs. You are currently using the "
-                    f"fs_io_manager and the {executor.name}. \n"
+                    f"Object {obj_repr} is not picklable. You are currently using the "
+                    f"fs_io_manager and the {executor.name}. You will need to use a different "
+                    "io manager to continue using this output. For example, you can use the "
+                    "mem_io_manager with an in process executor.\n"
                     "For more information on io managers, visit "
                     "https://docs.dagster.io/concepts/io-management/io-managers \n"
                     "For more information on executors, vist "

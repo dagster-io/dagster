@@ -104,33 +104,68 @@ def test_fs_io_manager_memoization():
             assert len(recorder) == 1
 
 
+# lamdba functions can't be pickled (pickle.PicklingError)
+l = lambda x: x*x
+
 def test_fs_io_manager_unpicklable():
     @op
-    def unpicklable_output():
-        # lambda functions can't be pickled
-        return lambda x: x*x
+    def unpicklable_local_func_output():
+        # locally defined functions can't be pickled (AttributeError)
+        def local_func():
+            return 1
+        return local_func
+
+    @op
+    def unpicklable_lambda_output():
+        return l
+
+    @op
+    def recursion_limit_output():
+        # a will exceed the recursion limit of 1000
+        a = []
+        for _ in range(2000):
+            a = [a]
+        return a
 
     @op
     def op_b(_i):
         return 1
 
     @graph
-    def my_graph():
-        op_b(unpicklable_output())
+    def local_func_graph():
+        op_b(unpicklable_local_func_output())
+
+    @graph
+    def lambda_graph():
+        op_b(unpicklable_lambda_output())
+
+    @graph
+    def recursion_limit_graph():
+        op_b(recursion_limit_output())
 
     with tempfile.TemporaryDirectory() as tmp_dir:
         with instance_for_test(temp_dir=tmp_dir) as instance:
             io_manager = fs_io_manager.configured({"base_dir": tmp_dir})
-            my_job = my_graph.to_job(resource_defs={"io_manager": io_manager})
+            local_func_job = local_func_graph.to_job(resource_defs={"io_manager": io_manager})
 
             with pytest.raises(
                 DagsterInvariantViolationError,
-                match=r"Object .* is not picklable. Use the mem_io_manager with an in process "
-                "executor to avoid pickling outputs. You are currently using the fs_io_manager and "
-                "the execute_in_process_executor. \n"
-                "For more information on io managers, visit "
-                "https://docs.dagster.io/concepts/io-management/io-managers \n"
-                "For more information on executors, vist "
-                "https://docs.dagster.io/deployment/executors#overview"
+                match=r"Object .* is not picklable. .*"
             ):
-                my_job.execute_in_process(instance=instance)
+                local_func_job.execute_in_process(instance=instance)
+
+            lambda_job = lambda_graph.to_job(resource_defs={"io_manager": io_manager})
+
+            with pytest.raises(
+                DagsterInvariantViolationError,
+                match=r"Object .* is not picklable. .*"
+            ):
+                lambda_job.execute_in_process(instance=instance)
+
+            recursion_job = recursion_limit_graph.to_job(resource_defs={"io_manager": io_manager})
+
+            with pytest.raises(
+                DagsterInvariantViolationError,
+                match=r"Object .* is not picklable. .*"
+            ):
+                recursion_job.execute_in_process(instance=instance)
