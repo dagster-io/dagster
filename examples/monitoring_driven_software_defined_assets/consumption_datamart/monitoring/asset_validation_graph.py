@@ -1,5 +1,7 @@
-from consumption_datamart.monitoring.report_active_customers_by_product_daily import validate_report_active_customers_by_product
 from dagster import graph
+
+from consumption_datamart.monitoring.report_active_customers_by_product_daily.validate_report_active_customers_by_product_graph import \
+    validate_report_active_customers_by_product
 
 
 @graph()
