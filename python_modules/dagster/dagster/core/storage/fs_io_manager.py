@@ -126,6 +126,8 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
                 executor = context.step_context.pipeline_def.mode_definitions[0].executor_defs[0]
 
                 if isinstance(e, RecursionError):
+                    # if obj can't be pickled because of RecursionError then __str__() will also
+                    # throw a RecursionError
                     obj_repr = f"{obj.__class__} exceeds recursion limit and"
                 else:
                     obj_repr = obj.__str__()

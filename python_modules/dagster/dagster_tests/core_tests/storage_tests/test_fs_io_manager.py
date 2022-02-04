@@ -121,7 +121,7 @@ def test_fs_io_manager_unpicklable():
 
     @op
     def recursion_limit_output():
-        # a will exceed the recursion limit of 1000
+        # a will exceed the recursion limit of 1000 and can't be pickled (RecursionError)
         a = []
         for _ in range(2000):
             a = [a]
@@ -146,8 +146,8 @@ def test_fs_io_manager_unpicklable():
     with tempfile.TemporaryDirectory() as tmp_dir:
         with instance_for_test(temp_dir=tmp_dir) as instance:
             io_manager = fs_io_manager.configured({"base_dir": tmp_dir})
-            local_func_job = local_func_graph.to_job(resource_defs={"io_manager": io_manager})
 
+            local_func_job = local_func_graph.to_job(resource_defs={"io_manager": io_manager})
             with pytest.raises(
                 DagsterInvariantViolationError,
                 match=r"Object .* is not picklable. .*"
@@ -155,7 +155,6 @@ def test_fs_io_manager_unpicklable():
                 local_func_job.execute_in_process(instance=instance)
 
             lambda_job = lambda_graph.to_job(resource_defs={"io_manager": io_manager})
-
             with pytest.raises(
                 DagsterInvariantViolationError,
                 match=r"Object .* is not picklable. .*"
@@ -163,9 +162,8 @@ def test_fs_io_manager_unpicklable():
                 lambda_job.execute_in_process(instance=instance)
 
             recursion_job = recursion_limit_graph.to_job(resource_defs={"io_manager": io_manager})
-
             with pytest.raises(
                 DagsterInvariantViolationError,
-                match=r"Object .* is not picklable. .*"
+                match=r"Object .* exceeds recursion limit and is not picklable. .*"
             ):
                 recursion_job.execute_in_process(instance=instance)
