@@ -1,4 +1,5 @@
-from dagster import build_schedule_from_partitioned_job, repository
+from dagster import build_schedule_from_partitioned_job, in_process_executor, repository
+from hacker_news.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
 
 from .jobs.dbt_metrics import dbt_prod_job, dbt_staging_job
 from .jobs.hacker_news_api_download import (
@@ -15,7 +16,7 @@ from .sensors.hn_tables_updated_sensor import make_hn_tables_updated_sensor
 from .sensors.slack_on_failure_sensor import make_slack_on_failure_sensor
 
 
-@repository
+@repository(resource_defs=RESOURCES_LOCAL, executor_def=in_process_executor)
 def hacker_news_local():
     return [
         download_local_job,
@@ -24,7 +25,7 @@ def hacker_news_local():
     ]
 
 
-@repository
+@repository(resource_defs=RESOURCES_PROD)
 def hacker_news_prod():
     return [
         build_schedule_from_partitioned_job(download_prod_job),
@@ -34,7 +35,7 @@ def hacker_news_prod():
     ]
 
 
-@repository
+@repository(resource_defs=RESOURCES_STAGING)
 def hacker_news_staging():
     return [
         build_schedule_from_partitioned_job(download_staging_job),

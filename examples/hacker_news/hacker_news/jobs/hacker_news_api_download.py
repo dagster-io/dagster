@@ -2,8 +2,6 @@ from dagster import graph, in_process_executor
 from hacker_news.ops.download_items import build_comments, build_stories, download_items
 from hacker_news.ops.id_range_for_time import id_range_for_time
 from hacker_news.partitions import hourly_partitions
-from hacker_news.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
-from hacker_news.resources.hn_resource import hn_api_subsample_client, hn_snapshot_client
 
 DOWNLOAD_TAGS = {
     "dagster-k8s/config": {
@@ -33,29 +31,14 @@ def hacker_news_api_download():
 
 
 download_prod_job = hacker_news_api_download.to_job(
-    resource_defs={
-        **{"hn_client": hn_api_subsample_client.configured({"sample_rate": 10})},
-        **RESOURCES_PROD,
-    },
-    tags=DOWNLOAD_TAGS,
-    partitions_def=hourly_partitions,
+    tags=DOWNLOAD_TAGS, partitions_def=hourly_partitions
 )
 
 
 download_staging_job = hacker_news_api_download.to_job(
-    resource_defs={
-        **{"hn_client": hn_api_subsample_client.configured({"sample_rate": 10})},
-        **RESOURCES_STAGING,
-    },
-    tags=DOWNLOAD_TAGS,
-    partitions_def=hourly_partitions,
+    tags=DOWNLOAD_TAGS, partitions_def=hourly_partitions
 )
 
 download_local_job = hacker_news_api_download.to_job(
-    resource_defs={
-        **{"hn_client": hn_snapshot_client},
-        **RESOURCES_LOCAL,
-    },
-    partitions_def=hourly_partitions,
-    executor_def=in_process_executor,
+    partitions_def=hourly_partitions, executor_def=in_process_executor
 )

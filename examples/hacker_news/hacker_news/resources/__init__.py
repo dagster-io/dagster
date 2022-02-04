@@ -4,6 +4,7 @@ from dagster import ResourceDefinition
 from dagster_aws.s3 import s3_resource
 from dagster_pyspark import pyspark_resource
 from dagstermill.io_managers import local_output_notebook_io_manager
+from hacker_news.resources.hn_resource import hn_api_subsample_client, hn_snapshot_client
 
 from .common_bucket_s3_pickle_io_manager import common_bucket_s3_pickle_io_manager
 from .parquet_io_manager import (
@@ -43,6 +44,7 @@ RESOURCES_PROD = {
     "pyspark": configured_pyspark,
     "warehouse_loader": snowflake_io_manager_prod,
     "output_notebook_io_manager": s3_notebook_io_manager,
+    "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
 }
 
 snowflake_io_manager_staging = snowflake_io_manager.configured({"database": "DEMO_DB_STAGING"})
@@ -57,6 +59,7 @@ RESOURCES_STAGING = {
     "pyspark": configured_pyspark,
     "warehouse_loader": snowflake_io_manager_staging,
     "output_notebook_io_manager": s3_notebook_io_manager,
+    "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
 }
 
 
@@ -66,4 +69,5 @@ RESOURCES_LOCAL = {
     "pyspark": configured_pyspark,
     "warehouse_loader": snowflake_io_manager_prod,
     "output_notebook_io_manager": local_output_notebook_io_manager,
+    "hn_client": hn_snapshot_client,
 }
