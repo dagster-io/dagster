@@ -159,9 +159,7 @@ class _Asset:
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
 
-        ins_by_input_names: Mapping[str, In] = build_asset_ins(
-            fn, self.namespace, self.ins or {}, self.non_argument_deps
-        )
+        asset_ins = build_asset_ins(fn, self.namespace, self.ins or {}, self.non_argument_deps)
 
         partition_fn: Optional[Callable] = None
         if self.partitions_def:
@@ -181,9 +179,7 @@ class _Asset:
         op = _Op(
             name=asset_name,
             description=self.description,
-            ins={
-                input_name: in_def for input_name, in_def in ins_by_input_names.items()
-            },  # convert Mapping object to dict
+            ins=asset_ins,
             out=out,
             required_resource_keys=self.required_resource_keys,
             tags={"kind": self.compute_kind} if self.compute_kind else None,
@@ -197,13 +193,13 @@ class _Asset:
 
         return AssetsDefinition(
             input_names_by_asset_key={
-                in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
+                in_def.asset_key: input_name for input_name, in_def in asset_ins.items()
             },
             output_names_by_asset_key={out_asset_key: "result"},
             op=op,
             partitions_def=self.partitions_def,
             partition_mappings={
-                ins_by_input_names[input_name].asset_key: partition_mapping
+                asset_ins[input_name].asset_key: partition_mapping
                 for input_name, partition_mapping in self.partition_mappings.items()
             }
             if self.partition_mappings
@@ -257,9 +253,7 @@ def multi_asset(
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         asset_name = name or fn.__name__
         asset_ins = build_asset_ins(fn, None, ins or {}, non_argument_deps)
-        asset_outs = build_asset_outs(
-            asset_name, outs, ins_by_input_names, internal_asset_deps or {}
-        )
+        asset_outs = build_asset_outs(asset_name, outs, asset_ins, internal_asset_deps or {})
 
         op = _Op(
             name=asset_name,
