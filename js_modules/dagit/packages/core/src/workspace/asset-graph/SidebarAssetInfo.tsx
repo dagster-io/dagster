@@ -5,7 +5,7 @@ import {useEffect,  useState} from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {displayNameForAssetKey} from '../../app/Util';
+import {displayNameForAssetKey, gqlTypePredicate} from '../../app/Util';
 import {AssetEvents} from '../../assets/AssetEvents';
 import {PartitionHealthSummary, usePartitionHealthData} from '../../assets/PartitionHealthSummary';
 import {Description} from '../../pipelines/Description';
@@ -73,7 +73,7 @@ export const extractOutputMetadata = (result: DagsterTypeForAssetOp): AssetMetad
 };
 
 export const AssetTypeSidebarInfo: React.FC<{type: AssetType}> = ({type}) => {
-  const tableSchemaEntry = type.metadataEntries.find(isTableSchemaMetadataEntry);
+  const tableSchemaEntry = type.metadataEntries.find(gqlTypePredicate('EventTableSchemaMetadataEntry'));
   return (
     <Box flex={{direction: 'column'}}>
       {type.description && (

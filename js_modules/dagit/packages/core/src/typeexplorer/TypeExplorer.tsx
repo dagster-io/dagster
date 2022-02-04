@@ -18,8 +18,9 @@ interface ITypeExplorerProps {
 
 export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
   const {name, metadataEntries, inputSchemaType, outputSchemaType, description} = props.type;
-  const tableSchemaEntry = metadataEntries.find(isTableSchemaMetadataEntry);
-  const tableSchema = tableSchemaEntry?.schema;
+  const tableSchema = metadataEntries.find(gqlTypePredicate('EventTableSchemaMetadataEntry'))
+    ?.schema;
+
   return (
     <div>
       <SidebarSubhead />
