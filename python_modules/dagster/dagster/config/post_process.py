@@ -59,6 +59,8 @@ def _recursively_resolve_defaults(
         return _recurse_in_to_shape(context, config_value)
     elif kind == ConfigTypeKind.ARRAY:
         return _recurse_in_to_array(context, config_value)
+    elif kind == ConfigTypeKind.MAP:
+        return _recurse_in_to_map(context, config_value)
     elif kind == ConfigTypeKind.NONEABLE:
         if config_value is None:
             return EvaluateValueResult.for_value(None)
@@ -206,3 +208,38 @@ def _recurse_in_to_array(context: TraversalContext, config_value: Any) -> Evalua
         return EvaluateValueResult.for_errors(errors)
 
     return EvaluateValueResult.for_value(frozenlist([result.value for result in results]))
+
+
+def _recurse_in_to_map(context: TraversalContext, config_value: Any) -> EvaluateValueResult:
+    check.invariant(
+        context.config_type.kind == ConfigTypeKind.MAP,
+        "Unexpected non map type",
+    )
+
+    if not config_value:
+        return EvaluateValueResult.for_value({})
+
+    config_value = cast(Dict[object, object], config_value)
+
+    if any((ck is None for ck in config_value.keys())):
+        check.failed("Null map key not caught in validation")
+    if context.config_type.inner_type.kind != ConfigTypeKind.NONEABLE:  # type: ignore
+        if any((cv is None for cv in config_value.values())):
+            check.failed("Null map member not caught in validation")
+
+    results = {
+        key: _recursively_process_config(context.for_map(key), item)
+        for key, item in config_value.items()
+    }
+
+    errors = []
+    for result in results.values():
+        if not result.success:
+            errors += cast(List[EvaluationError], result.errors)
+
+    if errors:
+        return EvaluateValueResult.for_errors(errors)
+
+    return EvaluateValueResult.for_value(
+        frozendict({key: result.value for key, result in results.items()})
+    )

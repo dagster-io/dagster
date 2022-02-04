@@ -9,14 +9,25 @@ from ..runs.schema import RunsTable
 from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 
 RUN_PARTITIONS = "run_partitions"
-RUN_START_END = "run_start_end"
+RUN_START_END = "run_start_end_overwritten"  # was run_start_end, but renamed to overwrite bad timestamps written
 
-RUN_DATA_MIGRATIONS = {
+# for `dagster instance migrate`, paired with schema changes
+REQUIRED_DATA_MIGRATIONS = {
     RUN_PARTITIONS: lambda: migrate_run_partition,
+}
+# for `dagster instance reindex`, optionally run for better read performance
+OPTIONAL_DATA_MIGRATIONS = {
     RUN_START_END: lambda: migrate_run_start_end,
 }
 
 RUN_CHUNK_SIZE = 100
+
+UNSTARTED_RUN_STATUSES = {
+    PipelineRunStatus.QUEUED,
+    PipelineRunStatus.NOT_STARTED,
+    PipelineRunStatus.MANAGED,
+    PipelineRunStatus.STARTING,
+}
 
 
 def chunked_run_iterator(storage, print_fn=None, chunk_size=RUN_CHUNK_SIZE):
@@ -91,17 +102,13 @@ def migrate_run_start_end(storage, print_fn=None):
         print_fn("Querying run and event log storage.")
 
     for run_record in chunked_run_records_iterator(storage, print_fn):
-        # Skip runs that have not yet started
-        if run_record.pipeline_run.status in {
-            PipelineRunStatus.QUEUED,
-            PipelineRunStatus.NOT_STARTED,
-            PipelineRunStatus.MANAGED,
-            PipelineRunStatus.STARTING,
-        }:
+        if run_record.pipeline_run.status in UNSTARTED_RUN_STATUSES:
             continue
 
-        if run_record.start_time:
-            continue
+        # commented out here to ensure that previously written timestamps that may not have
+        # standardized to UTC would get overwritten
+        # if run_record.start_time:
+        #     continue
 
         add_run_stats(storage, run_record.pipeline_run.run_id)
 

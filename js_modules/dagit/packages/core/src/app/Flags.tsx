@@ -9,6 +9,7 @@ export enum FeatureFlag {
   flagDebugConsoleLogging = 'flagDebugConsoleLogging',
   flagAssetGraph = 'flagAssetGraph',
   flagInstanceOverview = 'flagInstanceOverview',
+  flagCollapseInstancePagesSidebar = 'flagCollapseInstancePagesSidebar',
 }
 
 export const getFeatureFlags: () => FeatureFlag[] = memoize(

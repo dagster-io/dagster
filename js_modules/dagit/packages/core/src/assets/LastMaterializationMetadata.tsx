@@ -37,7 +37,7 @@ export const LatestMaterializationMetadata: React.FC<{
     );
   }
 
-  const latestEvent = latest?.materializationEvent;
+  const latestEvent = latest;
   const latestAssetLineage = latestEvent?.assetLineage;
 
   return (
@@ -109,12 +109,13 @@ export const LatestMaterializationMetadata: React.FC<{
             </td>
           </tr>
         ) : null}
-        {latestEvent?.materialization.metadataEntries.map((entry) => (
+        {latestEvent?.metadataEntries.map((entry) => (
           <tr key={`metadata-${entry.label}`}>
             <td>{entry.label}</td>
             <td>
               <MetadataEntry entry={entry} expandSmallValues={true} />
             </td>
+            <td>{entry.description}</td>
           </tr>
         ))}
       </tbody>
@@ -134,7 +135,7 @@ const MetadataTable = styled(Table)`
 `;
 
 export const LATEST_MATERIALIZATION_METADATA_FRAGMENT = gql`
-  fragment LatestMaterializationMetadataFragment on AssetMaterialization {
+  fragment LatestMaterializationMetadataFragment on MaterializationEvent {
     partition
     runOrError {
       ... on PipelineRun {
@@ -150,25 +151,17 @@ export const LATEST_MATERIALIZATION_METADATA_FRAGMENT = gql`
         }
       }
     }
-    materializationEvent {
-      runId
-      timestamp
-      stepKey
-      stepStats {
-        endTime
-        startTime
+    runId
+    timestamp
+    stepKey
+    metadataEntries {
+      ...MetadataEntryFragment
+    }
+    assetLineage {
+      assetKey {
+        path
       }
-      materialization {
-        metadataEntries {
-          ...MetadataEntryFragment
-        }
-      }
-      assetLineage {
-        assetKey {
-          path
-        }
-        partitions
-      }
+      partitions
     }
   }
   ${METADATA_ENTRY_FRAGMENT}

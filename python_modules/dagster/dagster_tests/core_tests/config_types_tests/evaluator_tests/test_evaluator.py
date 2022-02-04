@@ -2,7 +2,12 @@ from dagster import Any, Bool, Field, Int, Noneable, Selector, Shape, String, St
 from dagster.config.errors import DagsterEvaluationErrorReason
 from dagster.config.evaluate_value_result import EvaluateValueResult
 from dagster.config.field import resolve_to_config_type
-from dagster.config.stack import EvaluationStackListItemEntry, EvaluationStackPathEntry
+from dagster.config.stack import (
+    EvaluationStackListItemEntry,
+    EvaluationStackMapKeyEntry,
+    EvaluationStackMapValueEntry,
+    EvaluationStackPathEntry,
+)
 from dagster.config.validate import process_config
 
 
@@ -357,6 +362,143 @@ def test_selector_with_defaults():
     result = eval_config_value_from_dagster_type(SelectorWithDefaults, {})
     assert result.success
     assert result.value == {"default": "foo"}
+
+
+def test_evaluate_map_string():
+    string_map = {str: str}
+    result = eval_config_value_from_dagster_type(string_map, {"foo": "bar"})
+    assert result.success
+    assert result.value == {"foo": "bar"}
+
+
+def test_evaluate_map_int():
+    int_map = {int: str}
+    result = eval_config_value_from_dagster_type(int_map, {5: "bar"})
+    assert result.success
+    assert result.value == {5: "bar"}
+
+
+def test_evaluate_map_bool():
+    int_map = {bool: float}
+    result = eval_config_value_from_dagster_type(int_map, {False: 5.5})
+    assert result.success
+    assert result.value == {False: 5.5}
+
+
+def test_evaluate_map_float():
+    int_map = {float: bool}
+    result = eval_config_value_from_dagster_type(int_map, {5.5: True})
+    assert result.success
+    assert result.value == {5.5: True}
+
+
+def test_evaluate_map_error_item_mismatch():
+    result = eval_config_value_from_dagster_type({str: str}, {"a": 1})
+    assert not result.success
+    assert len(result.errors) == 1
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+
+
+def test_evaluate_map_error_top_level_mismatch():
+    string_map = {str: str}
+    result = eval_config_value_from_dagster_type(string_map, 1)
+    assert not result.success
+    assert len(result.errors) == 1
+    assert result.errors[0].reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+
+
+def test_evaluate_double_map():
+    string_double_map = {int: {str: str}}
+    result = eval_config_value_from_dagster_type(string_double_map, {5: {"b": "foo"}})
+    assert result.success
+    assert result.value == {5: {"b": "foo"}}
+
+
+def test_config_map_in_dict():
+    nested_map = {"nested_map": {str: int}}
+
+    value = {"nested_map": {"a": 1, "b": 2, "c": 3}}
+    result = eval_config_value_from_dagster_type(nested_map, value)
+    assert result.success
+    assert result.value == value
+
+
+def test_config_map_in_dict_error():
+    nested_map = {"nested_map": {str: int}}
+
+    value = {"nested_map": {"a": 1, "b": "bar", "c": 3}}
+    result = eval_config_value_from_dagster_type(nested_map, value)
+    assert not result.success
+    assert len(result.errors) == 1
+    error = result.errors[0]
+    assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+    assert len(error.stack.entries) == 2
+    stack_entry = error.stack.entries[0]
+    assert isinstance(stack_entry, EvaluationStackPathEntry)
+    assert stack_entry.field_name == "nested_map"
+    map_entry = error.stack.entries[1]
+    assert isinstance(map_entry, EvaluationStackMapValueEntry)
+    assert map_entry.map_key == "b"
+
+
+def test_config_map_in_dict_error_two_errors():
+    nested_map = {"nested_map": {str: int}}
+
+    value = {"nested_map": {"a": 1, 5: 3, "c": "bar"}}
+    result = eval_config_value_from_dagster_type(nested_map, value)
+    assert not result.success
+    assert len(result.errors) == 2
+    error = result.errors[0]
+    assert error.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+    assert len(error.stack.entries) == 2
+    stack_entry = error.stack.entries[0]
+    assert isinstance(stack_entry, EvaluationStackPathEntry)
+    assert stack_entry.field_name == "nested_map"
+    map_entry = error.stack.entries[1]
+    assert isinstance(map_entry, EvaluationStackMapKeyEntry)
+    assert map_entry.map_key == 5
+    map_entry = result.errors[1].stack.entries[1]
+    assert isinstance(map_entry, EvaluationStackMapValueEntry)
+    assert map_entry.map_key == "c"
+
+
+def test_config_double_map():
+    nested_maps = {
+        "nested_map_one": {str: int},
+        "nested_map_two": {int: str},
+    }
+
+    value = {
+        "nested_map_one": {"a": 1, "b": 2, "c": 3},
+        "nested_map_two": {1: "foo", 2: "bar"},
+    }
+
+    result = eval_config_value_from_dagster_type(nested_maps, value)
+    assert result.success
+    assert result.value == value
+
+    error_value = {
+        "nested_map_one": "kjdfkdj",
+        "nested_map_two": {1: "bar"},
+    }
+
+    error_result = eval_config_value_from_dagster_type(nested_maps, error_value)
+    assert not error_result.success
+
+
+def test_config_double_map_double_error():
+    nested_maps = {
+        "nested_map_one": {str: int},
+        "nested_map_two": {str: str},
+    }
+
+    error_value = {
+        "nested_map_one": "kjdfkdj",
+        "nested_map_two": {"x": "bar", 2: "y"},
+    }
+    error_result = eval_config_value_from_dagster_type(nested_maps, error_value)
+    assert not error_result.success
+    assert len(error_result.errors) == 2
 
 
 def test_evaluate_list_string():

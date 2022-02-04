@@ -14,7 +14,6 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -173,7 +172,6 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
     ...RunTimeFragment
   }
 
-  ${PYTHON_ERROR_FRAGMENT}
   ${RUN_TIME_FRAGMENT}
 `;
 

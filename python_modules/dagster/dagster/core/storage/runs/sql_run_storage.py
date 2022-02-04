@@ -1,4 +1,5 @@
 import logging
+import uuid
 import zlib
 from abc import abstractmethod
 from collections import defaultdict
@@ -31,14 +32,15 @@ from dagster.serdes import (
     serialize_dagster_namedtuple,
 )
 from dagster.seven import JSONDecodeError
-from dagster.utils import datetime_as_float, merge_dicts, utc_datetime_from_timestamp
+from dagster.utils import merge_dicts, utc_datetime_from_timestamp
 
-from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
+from ..pipeline_run import JobBucket, PipelineRun, PipelineRunsFilter, RunRecord, TagBucket
 from .base import RunStorage
-from .migration import RUN_DATA_MIGRATIONS, RUN_PARTITIONS
+from .migration import OPTIONAL_DATA_MIGRATIONS, REQUIRED_DATA_MIGRATIONS, RUN_PARTITIONS
 from .schema import (
     BulkActionsTable,
     DaemonHeartbeatsTable,
+    InstanceInfo,
     RunTagsTable,
     RunsTable,
     SecondaryIndexMigrationTable,
@@ -139,15 +141,20 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         run_stats_cols_in_index = self.has_run_stats_index_cols()
 
         kwargs = {}
+
+        # consider changing the `handle_run_event` signature to get timestamp off of the
+        # EventLogEntry instead of the DagsterEvent, for consistency
+        now = pendulum.now("UTC")
+
         if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:
-            kwargs["start_time"] = datetime_as_float(datetime.now())
+            kwargs["start_time"] = now.timestamp()
 
         if run_stats_cols_in_index and event.event_type in {
             DagsterEventType.PIPELINE_CANCELED,
             DagsterEventType.PIPELINE_FAILURE,
             DagsterEventType.PIPELINE_SUCCESS,
         }:
-            kwargs["end_time"] = datetime_as_float(datetime.now())
+            kwargs["end_time"] = now.timestamp()
 
         with self.connect() as conn:
 
@@ -157,7 +164,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 .values(
                     status=new_pipeline_status.value,
                     run_body=serialize_dagster_namedtuple(run.with_status(new_pipeline_status)),
-                    update_timestamp=pendulum.now("UTC"),
+                    update_timestamp=now,
                     **kwargs,
                 )
             )
@@ -232,6 +239,19 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return query
 
+    def _bucket_rank_column(self, bucket_by, order_by, ascending):
+        check.inst_param(bucket_by, "bucket_by", (JobBucket, TagBucket))
+        sorting_column = getattr(RunsTable.c, order_by) if order_by else RunsTable.c.id
+        direction = db.asc if ascending else db.desc
+        bucket_column = (
+            RunsTable.c.pipeline_name if isinstance(bucket_by, JobBucket) else RunTagsTable.c.value
+        )
+        return (
+            db.func.rank()
+            .over(order_by=direction(sorting_column), partition_by=bucket_column)
+            .label("rank")
+        )
+
     def _runs_query(
         self,
         filters: PipelineRunsFilter = None,
@@ -240,8 +260,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         columns: List[str] = None,
         order_by: str = None,
         ascending: bool = False,
+        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ):
-
         filters = check.opt_inst_param(
             filters, "filters", PipelineRunsFilter, default=PipelineRunsFilter()
         )
@@ -254,26 +274,63 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         if columns is None:
             columns = ["run_body"]
 
-        base_query_columns = [getattr(RunsTable.c, column) for column in columns]
+        query_columns = [getattr(RunsTable.c, column) for column in columns]
 
-        # If we have a tags filter, then we need to select from a joined table
-        if filters.tags:
-            base_query = db.select(base_query_columns).select_from(
-                RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
-            )
+        if bucket_by:
+            if limit or cursor:
+                check.failed("cannot specify bucket_by and limit/cursor at the same time")
+
+            # this is a bucketed query, so we need to calculate rank to apply bucket-based limits
+            # and ordering
+            query_columns.append(self._bucket_rank_column(bucket_by, order_by, ascending))
+
+            if isinstance(bucket_by, JobBucket):
+                base_query = (
+                    db.select(query_columns)
+                    .select_from(
+                        RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
+                        if filters.tags
+                        else RunsTable
+                    )
+                    .where(RunsTable.c.pipeline_name.in_(bucket_by.job_names))
+                )
+            else:
+                check.invariant(isinstance(bucket_by, TagBucket))
+                base_query = (
+                    db.select(query_columns)
+                    .select_from(
+                        RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
+                    )
+                    .where(RunTagsTable.c.key == bucket_by.tag_key)
+                    .where(RunTagsTable.c.value.in_(bucket_by.tag_values))
+                )
+
+            base_query = self._add_filters_to_query(base_query, filters)
+            subquery = base_query.subquery()
+            query = db.select(subquery).order_by(subquery.c.rank.asc())
+            if bucket_by.bucket_limit:
+                query = query.where(subquery.c.rank <= bucket_by.bucket_limit)
         else:
-            base_query = db.select(base_query_columns).select_from(RunsTable)
+            if filters.tags:
+                base_query = db.select(query_columns).select_from(
+                    RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
+                )
+            else:
+                base_query = db.select(query_columns).select_from(RunsTable)
 
-        query = self._add_filters_to_query(base_query, filters)
-        query = self._add_cursor_limit_to_query(query, cursor, limit, order_by, ascending)
+            query = self._add_filters_to_query(base_query, filters)
+            query = self._add_cursor_limit_to_query(query, cursor, limit, order_by, ascending)
 
         return query
 
     def get_runs(
-        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
+        self,
+        filters: PipelineRunsFilter = None,
+        cursor: str = None,
+        limit: int = None,
+        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[PipelineRun]:
-        query = self._runs_query(filters, cursor, limit)
-
+        query = self._runs_query(filters, cursor, limit, bucket_by=bucket_by)
         rows = self.fetchall(query)
         return self._rows_to_runs(rows)
 
@@ -311,11 +368,12 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         order_by: str = None,
         ascending: bool = False,
         cursor: str = None,
+        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
         filters = check.opt_inst_param(
             filters, "filters", PipelineRunsFilter, default=PipelineRunsFilter()
         )
-        limit = check.opt_int_param(limit, "limit")
+        check.opt_int_param(limit, "limit")
 
         columns = ["id", "run_body", "create_timestamp", "update_timestamp"]
 
@@ -329,6 +387,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             order_by=order_by,
             ascending=ascending,
             cursor=cursor,
+            bucket_by=bucket_by,
         )
 
         rows = self.fetchall(query)
@@ -667,6 +726,17 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             conn.execute(snapshot_insert)
             return snapshot_id
 
+    def get_run_storage_id(self) -> str:
+        query = db.select([InstanceInfo.c.run_storage_id])
+        row = self.fetchone(query)
+        if not row:
+            run_storage_id = str(uuid.uuid4())
+            with self.connect() as conn:
+                conn.execute(InstanceInfo.insert().values(run_storage_id=run_storage_id))
+            return run_storage_id
+        else:
+            return row[0]
+
     def _has_snapshot_id(self, snapshot_id: str) -> bool:
         query = db.select([SnapshotsTable.c.snapshot_id]).where(
             SnapshotsTable.c.snapshot_id == snapshot_id
@@ -710,8 +780,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     # Tracking data migrations over secondary indexes
 
-    def build_missing_indexes(self, print_fn: Callable = None, force_rebuild_all: bool = False):
-        for migration_name, migration_fn in RUN_DATA_MIGRATIONS.items():
+    def _execute_data_migrations(
+        self, migrations, print_fn: Callable = None, force_rebuild_all: bool = False
+    ):
+        for migration_name, migration_fn in migrations.items():
             if self.has_built_index(migration_name):
                 if not force_rebuild_all:
                     continue
@@ -721,6 +793,12 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             self.mark_index_built(migration_name)
             if print_fn:
                 print_fn(f"Finished data migration: {migration_name}")
+
+    def migrate(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+        self._execute_data_migrations(REQUIRED_DATA_MIGRATIONS, print_fn, force_rebuild_all)
+
+    def optimize(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+        self._execute_data_migrations(OPTIONAL_DATA_MIGRATIONS, print_fn, force_rebuild_all)
 
     def has_built_index(self, migration_name: str) -> bool:
         query = (

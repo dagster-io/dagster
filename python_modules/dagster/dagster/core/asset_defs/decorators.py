@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Mapping, Optional, Set
+from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Set
 
 from dagster import check
 from dagster.builtins import Nothing
@@ -21,7 +21,7 @@ from .partition_mapping import PartitionMapping
 @experimental_decorator
 def asset(
     name: Optional[str] = None,
-    namespace: Optional[str] = None,
+    namespace: Optional[Sequence[str]] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Set[AssetKey]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
@@ -47,7 +47,7 @@ def asset(
     Args:
         name (Optional[str]): The name of the asset.  If not provided, defaults to the name of the
             decorated function.
-        namespace (Optional[str]): The namespace that the asset resides in.  The namespace + the
+        namespace (Optional[Sequence[str]]): The namespace that the asset resides in.  The namespace + the
             name forms the asset key.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
             and namespaces.
@@ -103,7 +103,7 @@ class _Asset:
     def __init__(
         self,
         name: Optional[str] = None,
-        namespace: Optional[str] = None,
+        namespace: Optional[Sequence[str]] = None,
         ins: Optional[Mapping[str, AssetIn]] = None,
         non_argument_deps: Optional[Set[AssetKey]] = None,
         metadata: Optional[Mapping[str, Any]] = None,
@@ -116,7 +116,8 @@ class _Asset:
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     ):
         self.name = name
-        self.namespace = namespace
+        # if user inputs a single string, coerce to list
+        self.namespace = [namespace] if isinstance(namespace, str) else namespace
         self.ins = ins or {}
         self.non_argument_deps = non_argument_deps
         self.metadata = metadata
@@ -141,8 +142,9 @@ class _Asset:
             def partition_fn(context):  # pylint: disable=function-redefined
                 return [context.partition_key]
 
+        out_asset_key = AssetKey(list(filter(None, [*(self.namespace or []), asset_name])))
         out = Out(
-            asset_key=AssetKey(list(filter(None, [self.namespace, asset_name]))),
+            asset_key=out_asset_key,
             metadata=self.metadata or {},
             io_manager_key=self.io_manager_key,
             dagster_type=self.dagster_type,
@@ -166,7 +168,6 @@ class _Asset:
             },
         )(fn)
 
-        out_asset_key = AssetKey(list(filter(None, [self.namespace, asset_name])))
         return AssetsDefinition(
             input_names_by_asset_key={
                 in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
@@ -245,7 +246,7 @@ def multi_asset(
 
 def build_asset_ins(
     fn: Callable,
-    asset_namespace: Optional[str],
+    asset_namespace: Optional[Sequence[str]],
     asset_ins: Mapping[str, AssetIn],
     non_argument_deps: Optional[Set[AssetKey]],
 ) -> Mapping[str, In]:
@@ -284,7 +285,7 @@ def build_asset_ins(
             dagster_type = None
 
         asset_key = asset_key or AssetKey(
-            list(filter(None, [namespace or asset_namespace, input_name]))
+            list(filter(None, [*(namespace or asset_namespace or []), input_name]))
         )
 
         ins[input_name] = In(
@@ -295,8 +296,8 @@ def build_asset_ins(
         )
 
     for asset_key in non_argument_deps:
-        stringified_asset_key = asset_key.to_string(legacy=True)
+        stringified_asset_key = "_".join(asset_key.path)
         if stringified_asset_key:
-            ins[str(stringified_asset_key)] = In(dagster_type=Nothing, asset_key=asset_key)
+            ins[stringified_asset_key] = In(dagster_type=Nothing, asset_key=asset_key)
 
     return ins

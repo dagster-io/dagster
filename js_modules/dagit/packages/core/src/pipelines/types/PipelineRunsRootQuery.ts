@@ -22,30 +22,6 @@ export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_tags {
   value: string;
 }
 
-export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot {
-  __typename: "RunStatsSnapshot";
-  id: string;
-  enqueuedTime: number | null;
-  launchTime: number | null;
-  startTime: number | null;
-  endTime: number | null;
-}
-
-export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats_PythonError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause | null;
-}
-
-export type PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats = PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot | PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
-
 export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results {
   __typename: "Run";
   id: string;
@@ -61,7 +37,9 @@ export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs_results {
   repositoryOrigin: PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_repositoryOrigin | null;
   solidSelection: string[] | null;
   tags: PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_tags[];
-  stats: PipelineRunsRootQuery_pipelineRunsOrError_Runs_results_stats;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface PipelineRunsRootQuery_pipelineRunsOrError_Runs {

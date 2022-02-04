@@ -166,6 +166,40 @@ def test_get_required_daemon_types():
         ]
 
 
+class TestNonResumeRunLauncher(RunLauncher, ConfigurableClass):
+    def __init__(self, inst_data=None):
+        self._inst_data = inst_data
+        super().__init__()
+
+    @property
+    def inst_data(self):
+        return self._inst_data
+
+    @classmethod
+    def config_type(cls):
+        return {}
+
+    @staticmethod
+    def from_config_value(inst_data, config_value):
+        return TestNonResumeRunLauncher(inst_data=inst_data)
+
+    def launch_run(self, context):
+        raise NotImplementedError()
+
+    def join(self, timeout=30):
+        raise NotImplementedError()
+
+    def can_terminate(self, run_id):
+        raise NotImplementedError()
+
+    def terminate(self, run_id):
+        raise NotImplementedError()
+
+    @property
+    def supports_check_run_worker_health(self):
+        return True
+
+
 def test_run_monitoring():
     with pytest.raises(CheckError):
         with instance_for_test(
@@ -202,6 +236,18 @@ def test_run_monitoring():
         assert instance.run_monitoring_enabled
         assert instance.run_monitoring_settings == settings
         assert instance.run_monitoring_max_resume_run_attempts == 5
+
+    with pytest.raises(CheckError):
+        with instance_for_test(
+            overrides={
+                "run_launcher": {
+                    "module": "dagster_tests.core_tests.instance_tests.test_instance",
+                    "class": "TestNonResumeRunLauncher",
+                },
+                "run_monitoring": {"enabled": True, "max_resume_run_attempts": 10},
+            },
+        ) as _:
+            pass
 
 
 def test_cancellation_thread():

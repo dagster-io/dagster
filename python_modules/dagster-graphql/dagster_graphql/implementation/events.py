@@ -11,12 +11,15 @@ from dagster.core.definitions.event_metadata import (
     MarkdownMetadataEntryData,
     PathMetadataEntryData,
     PythonArtifactMetadataEntryData,
+    TableMetadataEntryData,
+    TableSchemaMetadataEntryData,
     TextMetadataEntryData,
     UrlMetadataEntryData,
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.plan.objects import StepFailureData
+from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
 
 MAX_INT = 2147483647
 MIN_INT = -2147483648
@@ -34,6 +37,8 @@ def iterate_metadata_entries(metadata_entries):
         GrapheneEventUrlMetadataEntry,
         GrapheneEventPipelineRunMetadataEntry,
         GrapheneEventAssetMetadataEntry,
+        GrapheneEventTableMetadataEntry,
+        GrapheneEventTableSchemaMetadataEntry,
     )
 
     check.list_param(metadata_entries, "metadata_entries", of_type=EventMetadataEntry)
@@ -112,6 +117,27 @@ def iterate_metadata_entries(metadata_entries):
                 description=metadata_entry.description,
                 assetKey=metadata_entry.entry_data.asset_key,
             )
+        elif isinstance(metadata_entry.entry_data, TableMetadataEntryData):
+            yield GrapheneEventTableMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                table=GrapheneTable(
+                    schema=metadata_entry.entry_data.schema,
+                    records=[
+                        seven.json.dumps(record.data)
+                        for record in metadata_entry.entry_data.records
+                    ],
+                ),
+            )
+        elif isinstance(metadata_entry.entry_data, TableSchemaMetadataEntryData):
+            yield GrapheneEventTableSchemaMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                schema=GrapheneTableSchema(
+                    constraints=metadata_entry.entry_data.schema.constraints,
+                    columns=metadata_entry.entry_data.schema.columns,
+                ),
+            )
         else:
             # skip rest for now
             check.not_implemented(
@@ -151,7 +177,8 @@ def from_dagster_event_record(event_record, pipeline_name):
         GrapheneRunStartingEvent,
         GrapheneRunSuccessEvent,
         GrapheneStepExpectationResultEvent,
-        GrapheneStepMaterializationEvent,
+        GrapheneMaterializationEvent,
+        GrapheneObservationEvent,
         GrapheneAlertStartEvent,
         GrapheneAlertSuccessEvent,
     )
@@ -192,12 +219,11 @@ def from_dagster_event_record(event_record, pipeline_name):
             **basic_params,
         )
     elif dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
-        materialization = dagster_event.step_materialization_data.materialization
         asset_lineage = dagster_event.step_materialization_data.asset_lineage
-        return GrapheneStepMaterializationEvent(
-            materialization=materialization,
-            assetLineage=asset_lineage,
-            **basic_params,
+        return GrapheneMaterializationEvent(event=event_record, assetLineage=asset_lineage)
+    elif dagster_event.event_type == DagsterEventType.ASSET_OBSERVATION:
+        return GrapheneObservationEvent(
+            event=event_record,
         )
     elif dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
         expectation_result = dagster_event.event_specific_data.expectation_result

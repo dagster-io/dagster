@@ -391,6 +391,7 @@ def test_0_13_12_add_start_time_end_time(hostname, conn_string):
         assert len(instance.get_runs()) == 2
 
         instance.upgrade()
+        instance.reindex()
 
         result = execute_pipeline(reconstructable(get_the_job), instance=instance)
         assert result.success

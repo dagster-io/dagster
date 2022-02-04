@@ -4,31 +4,38 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../../app/Util';
-import {AssetMaterializations} from '../../assets/AssetMaterializations';
-import {PartitionHealthSummary} from '../../assets/PartitionHealthSummary';
+import {AssetEvents} from '../../assets/AssetEvents';
+import {PartitionHealthSummary, usePartitionHealthData} from '../../assets/PartitionHealthSummary';
 import {Description} from '../../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';
 import {GraphExplorerSolidHandleFragment_solid_definition} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {pluginForMetadata} from '../../plugins';
-import {RepoAddress} from '../types';
+import {buildRepoAddress} from '../buildRepoAddress';
 
 import {LiveDataForNode} from './Utils';
-import {AssetGraphQuery_pipelineOrError_Pipeline_assetNodes} from './types/AssetGraphQuery';
+import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
 
 export const SidebarAssetInfo: React.FC<{
-  definition: GraphExplorerSolidHandleFragment_solid_definition;
-  node: AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
+  definition?: GraphExplorerSolidHandleFragment_solid_definition;
+  node: AssetGraphQuery_assetNodes;
   liveData: LiveDataForNode;
-  repoAddress: RepoAddress;
-}> = ({node, definition, repoAddress, liveData}) => {
-  const Plugin = pluginForMetadata(definition.metadata);
+}> = ({node, definition, liveData}) => {
+  const partitionHealthData = usePartitionHealthData([node.assetKey]);
+  const Plugin = pluginForMetadata(definition?.metadata || []);
   const {lastMaterialization} = liveData || {};
-
+  const displayName = displayNameForAssetKey(node.assetKey);
+  const repoAddress = buildRepoAddress(node.repository.name, node.repository.location.name);
   return (
     <>
       <Box flex={{gap: 4, direction: 'column'}} margin={{left: 24, right: 12, vertical: 16}}>
-        <SidebarTitle style={{marginBottom: 0}}>
-          {displayNameForAssetKey(node.assetKey)}
+        <SidebarTitle style={{marginBottom: 0, display: 'flex', justifyContent: 'space-between'}}>
+          {displayName}
+          {displayName !== node.opName ? (
+            <Box style={{opacity: 0.5}} flex={{gap: 6, alignItems: 'center'}}>
+              <IconWIP name="op" size={16} />
+              {node.opName}
+            </Box>
+          ) : undefined}
         </SidebarTitle>
         <AssetCatalogLink to={`/instance/assets/${node.assetKey.path.join('/')}`}>
           {'View in Asset Catalog '}
@@ -38,10 +45,10 @@ export const SidebarAssetInfo: React.FC<{
 
       <SidebarSection title="Description">
         <Box padding={{vertical: 16, horizontal: 24}}>
-          <Description description={node.description || null} />
+          <Description description={node.description || 'No description provided'} />
         </Box>
 
-        {definition.metadata && Plugin && Plugin.SidebarComponent && (
+        {definition?.metadata && Plugin && Plugin.SidebarComponent && (
           <Plugin.SidebarComponent definition={definition} repoAddress={repoAddress} />
         )}
       </SidebarSection>
@@ -50,16 +57,16 @@ export const SidebarAssetInfo: React.FC<{
         <SidebarSection title="Partitions">
           <Box padding={{vertical: 16, horizontal: 24}} flex={{direction: 'column', gap: 16}}>
             <p>{node.partitionDefinition}</p>
-            <PartitionHealthSummary assetKey={node.assetKey} />
+            <PartitionHealthSummary assetKey={node.assetKey} data={partitionHealthData} />
           </Box>
         </SidebarSection>
       )}
 
       <div style={{borderBottom: `2px solid ${ColorsWIP.Gray300}`}} />
 
-      <AssetMaterializations
+      <AssetEvents
         assetKey={node.assetKey}
-        assetLastMaterializedAt={lastMaterialization?.materializationEvent.timestamp}
+        assetLastMaterializedAt={lastMaterialization?.timestamp}
         assetHasDefinedPartitions={!!node.partitionDefinition}
         asSidebarSection
         liveData={liveData}

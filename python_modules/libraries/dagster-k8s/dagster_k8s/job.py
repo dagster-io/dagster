@@ -304,6 +304,7 @@ class DagsterK8sJobConfig(
                 ),
                 "load_incluster_config": Field(bool, is_required=False, default_value=True),
                 "kubeconfig_file": Field(Noneable(str), is_required=False, default_value=None),
+                "fail_pod_on_run_failure": Field(bool, is_required=False),
             },
             DagsterK8sJobConfig.config_type_job(),
         )

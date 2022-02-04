@@ -6,7 +6,9 @@ import pytest
 from dagster import (
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     DagsterEventType,
+    EventRecordsFilter,
     Field,
     Output,
     execute_pipeline,
@@ -404,6 +406,33 @@ def test_get_asset_keys(asset_aware_context):
             '["b", "y"]',
             '["b", "z"]',
         ]
+
+
+@asset_test
+def test_get_observation(asset_aware_context):
+    a = AssetKey(["key_a"])
+
+    @op
+    def gen_op():
+        yield AssetObservation(asset_key=a, metadata={"foo": "bar"})
+        yield Output(1)
+
+    @job
+    def gen_everything():
+        gen_op()
+
+    with asset_aware_context() as ctx:
+        instance, event_log_storage = ctx
+        gen_everything.execute_in_process(instance=instance)
+
+        records = instance.get_event_records(
+            EventRecordsFilter(
+                event_type=DagsterEventType.ASSET_OBSERVATION,
+                asset_key=a,
+            )
+        )
+
+        assert len(records) == 1
 
 
 def _materialization_event_record(run_id, asset_key):

@@ -48,10 +48,9 @@ export const PipelineExplorerContainer: React.FC<{
   isGraph?: boolean;
 }> = ({explorerPath, repoAddress, onChangeExplorerPath, isGraph = false}) => {
   const [options, setOptions] = React.useState<GraphExplorerOptions>({
-    explodeComposites: false,
+    explodeComposites: explorerPath.explodeComposites ?? false,
   });
 
-  const selectedName = explorerPath.opNames[explorerPath.opNames.length - 1];
   const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
   const pipelineSelector = buildPipelineSelector(repoAddress || null, explorerPath.pipelineName);
   const {flagAssetGraph} = useFeatureFlags();
@@ -71,7 +70,7 @@ export const PipelineExplorerContainer: React.FC<{
 
   return (
     <Loading<PipelineExplorerRootQuery> queryResult={pipelineResult}>
-      {({pipelineSnapshotOrError: result, pipelineOrError}) => {
+      {({pipelineSnapshotOrError: result, assetNodes}) => {
         if (result.__typename !== 'PipelineSnapshot') {
           return <NonIdealPipelineQueryResult isGraph={isGraph} result={result} />;
         }
@@ -81,52 +80,31 @@ export const PipelineExplorerContainer: React.FC<{
           ? explodeCompositesInHandleGraph(result.solidHandles)
           : result.solidHandles;
 
-        const selectedHandles = displayedHandles.filter((h) =>
-          selectedName.split(',').includes(h.solid.name),
-        );
-
-        // Run a few assertions on the state of the world and redirect the user
-        // back to safety if they've landed in an invalid place. Note that we can
-        // pop one layer at a time and this renders recursively until we reach a
-        // valid parent.
-        const invalidSelection = selectedName && !selectedHandles;
-        const invalidParent =
-          parentHandle && parentHandle.solid.definition.__typename !== 'CompositeSolidDefinition';
-
-        if (invalidSelection || invalidParent) {
-          onChangeExplorerPath(
-            {
-              ...explorerPath,
-              opNames: explorerPath.opNames.slice(0, explorerPath.opNames.length - 1),
-            },
-            'replace',
-          );
-        }
-
-        const isAssetJob = pipelineOrError.__typename === 'Pipeline' && pipelineOrError.isAssetJob;
-
-        if (flagAssetGraph && isAssetJob) {
+        if (flagAssetGraph && assetNodes.length > 0) {
           const unrepresentedOps = result.solidHandles.filter(
-            (handle) =>
-              !pipelineOrError.assetNodes.some((asset) => asset.opName === handle.handleID),
+            (handle) => !assetNodes.some((asset) => asset.opName === handle.handleID),
           );
           if (unrepresentedOps.length) {
             console.error(
               `The following ops are not represented in the ${
                 explorerPath.pipelineName
-              } asset graph: ${unrepresentedOps.map((h) => h.solid.name).join(', ')}`,
+              } asset graph: ${unrepresentedOps
+                .map((h) => h.solid.name)
+                .join(
+                  ', ',
+                )}. Does this graph have a mix of ops and assets? This isn't currently supported.`,
             );
           }
           return (
             <AssetGraphExplorer
-              repoAddress={repoAddress!}
+              pipelineSelector={pipelineSelector}
               handles={displayedHandles}
               explorerPath={explorerPath}
               onChangeExplorerPath={onChangeExplorerPath}
-              selectedHandles={selectedHandles}
             />
           );
         }
+
         return (
           <GraphExplorer
             options={options}
@@ -137,7 +115,6 @@ export const PipelineExplorerContainer: React.FC<{
             repoAddress={repoAddress}
             handles={displayedHandles}
             parentHandle={parentHandle ? parentHandle : undefined}
-            selectedHandle={selectedHandles[0]}
             isGraph={isGraph}
             getInvocations={(definitionName) =>
               displayedHandles
@@ -159,15 +136,9 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
     $rootHandleID: String!
     $requestScopeHandleID: String
   ) {
-    pipelineOrError(params: $pipelineSelector) {
-      ... on Pipeline {
-        id
-        isAssetJob
-        assetNodes {
-          id
-          opName
-        }
-      }
+    assetNodes(pipeline: $pipelineSelector) {
+      id
+      opName
     }
     pipelineSnapshotOrError(
       snapshotId: $snapshotId

@@ -1,10 +1,11 @@
 def types():
-    from .config_result import GraphenePipelineConfigValidationResult
     from .config import (
         GrapheneEvaluationErrorReason,
         GrapheneEvaluationStack,
         GrapheneEvaluationStackEntry,
         GrapheneEvaluationStackListItemEntry,
+        GrapheneEvaluationStackMapKeyEntry,
+        GrapheneEvaluationStackMapValueEntry,
         GrapheneEvaluationStackPathEntry,
         GrapheneFieldNotDefinedConfigError,
         GrapheneFieldsNotDefinedConfigError,
@@ -12,29 +13,29 @@ def types():
         GrapheneMissingFieldsConfigError,
         GraphenePipelineConfigValidationError,
         GraphenePipelineConfigValidationInvalid,
-        GrapheneRunConfigValidationInvalid,
         GraphenePipelineConfigValidationValid,
+        GrapheneRunConfigValidationInvalid,
         GrapheneRuntimeMismatchConfigError,
         GrapheneSelectorTypeConfigError,
     )
+    from .config_result import GraphenePipelineConfigValidationResult
     from .logger import GrapheneLogger
     from .mode import GrapheneMode
-    from .pipeline_errors import GrapheneInvalidSubsetError, GrapheneConfigTypeNotFoundError
-    from .pipeline_ref import GraphenePipelineReference, GrapheneUnknownPipeline
-    from .pipeline_run_stats import (
-        GraphenePipelineRunStatsSnapshot,
-        GrapheneRunStatsSnapshotOrError,
-        GrapheneRunStatsSnapshot,
-    )
     from .pipeline import (
         GrapheneAsset,
-        GrapheneAssetMaterialization,
         GrapheneIPipelineSnapshot,
         GraphenePipeline,
         GraphenePipelinePreset,
         GraphenePipelineRun,
-        GrapheneRunOrError,
         GrapheneRun,
+        GrapheneRunOrError,
+    )
+    from .pipeline_errors import GrapheneConfigTypeNotFoundError, GrapheneInvalidSubsetError
+    from .pipeline_ref import GraphenePipelineReference, GrapheneUnknownPipeline
+    from .pipeline_run_stats import (
+        GraphenePipelineRunStatsSnapshot,
+        GrapheneRunStatsSnapshot,
+        GrapheneRunStatsSnapshotOrError,
     )
     from .resource import GrapheneResource
     from .snapshot import GraphenePipelineSnapshot, GraphenePipelineSnapshotOrError
@@ -47,13 +48,14 @@ def types():
 
     return [
         GrapheneAsset,
-        GrapheneAssetMaterialization,
         GrapheneConfigTypeNotFoundError,
         GrapheneEvaluationErrorReason,
         GrapheneEvaluationStack,
         GrapheneEvaluationStackEntry,
         GrapheneEvaluationStackListItemEntry,
         GrapheneEvaluationStackPathEntry,
+        GrapheneEvaluationStackMapKeyEntry,
+        GrapheneEvaluationStackMapValueEntry,
         GrapheneFieldNotDefinedConfigError,
         GrapheneFieldsNotDefinedConfigError,
         GrapheneInvalidSubsetError,

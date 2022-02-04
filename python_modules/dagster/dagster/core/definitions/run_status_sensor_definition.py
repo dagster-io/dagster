@@ -11,7 +11,11 @@ from dagster.core.definitions.sensor_definition import (
     SensorEvaluationContext,
     SkipReason,
 )
-from dagster.core.errors import RunStatusSensorExecutionError, user_code_error_boundary
+from dagster.core.errors import (
+    DagsterInvalidInvocationError,
+    RunStatusSensorExecutionError,
+    user_code_error_boundary,
+)
 from dagster.core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import (
@@ -443,6 +447,11 @@ class RunStatusSensorDefinition(SensorDefinition):
             evaluation_fn=_wrapped_fn,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
+        )
+
+    def __call__(self, *args, **kwargs):
+        raise DagsterInvalidInvocationError(
+            "Direct invocation of RunStatusSensors is not yet supported."
         )
 
 

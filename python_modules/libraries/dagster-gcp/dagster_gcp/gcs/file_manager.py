@@ -9,7 +9,7 @@ from dagster.core.storage.file_manager import (
     TempfileManager,
     check_file_like_obj,
 )
-from google.cloud import storage
+from google.cloud import storage  # type: ignore
 
 
 @usable_as_dagster_type

@@ -121,13 +121,44 @@ def test_execute_run_iterator():
         ).with_status(PipelineRunStatus.SUCCESS)
 
         with pytest.raises(
-            check.CheckError,
-            match=r"Pipeline run basic_resource_pipeline \({}\) in state"
-            r" DagsterRunStatus.SUCCESS, expected NOT_STARTED or STARTING".format(
+            Exception,
+            match=r"basic_resource_pipeline \({}\) started a new "
+            r"run while the run was already in state DagsterRunStatus.SUCCESS.".format(
                 pipeline_run.run_id
             ),
         ):
             execute_run_iterator(InMemoryPipeline(pipeline_def), pipeline_run, instance=instance)
+
+        with instance_for_test(
+            overrides={
+                "run_launcher": {
+                    "module": "dagster_tests.daemon_tests.test_monitoring_daemon",
+                    "class": "TestRunLauncher",
+                },
+                "run_monitoring": {"enabled": True},
+            }
+        ) as run_monitoring_instance:
+            event = next(
+                execute_run_iterator(
+                    InMemoryPipeline(pipeline_def), pipeline_run, instance=run_monitoring_instance
+                )
+            )
+            assert (
+                "Ignoring a duplicate run that was started from somewhere other than the run monitor daemon"
+                in event.message
+            )
+
+            with pytest.raises(
+                check.CheckError,
+                match=r"in state DagsterRunStatus.SUCCESS, expected STARTED or STARTING "
+                r"because it's resuming from a run worker failure",
+            ):
+                execute_run_iterator(
+                    InMemoryPipeline(pipeline_def),
+                    pipeline_run,
+                    instance=run_monitoring_instance,
+                    resume_from_failure=True,
+                )
 
         pipeline_run = instance.create_run_for_pipeline(
             pipeline_def=pipeline_def,
@@ -225,7 +256,7 @@ def test_execute_run_bad_state():
 
         with pytest.raises(
             check.CheckError,
-            match=r"Pipeline run basic_resource_pipeline \({}\) in state"
+            match=r"Run basic_resource_pipeline \({}\) in state"
             r" DagsterRunStatus.SUCCESS, expected NOT_STARTED or STARTING".format(
                 pipeline_run.run_id
             ),

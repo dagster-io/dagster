@@ -305,8 +305,8 @@ class SensorDefinition:
 
         skip_message: Optional[str] = None
 
-        run_requests: List[Any]
-        pipeline_run_reactions: List[Any]
+        run_requests: List[RunRequest]
+        pipeline_run_reactions: List[PipelineRunReaction]
         if not result or result == [None]:
             run_requests = []
             pipeline_run_reactions = []
@@ -315,7 +315,9 @@ class SensorDefinition:
             item = result[0]
             check.inst(item, (SkipReason, RunRequest, PipelineRunReaction))
             run_requests = [item] if isinstance(item, RunRequest) else []
-            pipeline_run_reactions = [item] if isinstance(item, PipelineRunReaction) else []
+            pipeline_run_reactions = (
+                [cast(PipelineRunReaction, item)] if isinstance(item, PipelineRunReaction) else []
+            )
             skip_message = item.skip_message if isinstance(item, SkipReason) else None
         else:
             check.is_list(result, (SkipReason, RunRequest, PipelineRunReaction))
@@ -338,13 +340,13 @@ class SensorDefinition:
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")
 
             if has_run_request:
-                run_requests = result
+                run_requests = cast(List[RunRequest], result)
                 pipeline_run_reactions = []
 
             else:
                 # only run reactions
                 run_requests = []
-                pipeline_run_reactions = result
+                pipeline_run_reactions = cast(List[PipelineRunReaction], result)
 
         self.check_valid_run_requests(run_requests)
 

@@ -13,6 +13,7 @@ import {
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {timeZoneAbbr} from '../app/time/timestampToString';
 import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -177,7 +178,10 @@ const ScheduleRow: React.FC<{
       <td>
         {cronSchedule ? (
           <Tooltip position="bottom" content={cronSchedule}>
-            {humanCronString(cronSchedule)}
+            <span>
+              {humanCronString(cronSchedule)}
+              {executionTimezone ? ` ${timeZoneAbbr(executionTimezone)}` : ` UTC`}
+            </span>
           </Tooltip>
         ) : (
           <span style={{color: ColorsWIP.Gray300}}>None</span>

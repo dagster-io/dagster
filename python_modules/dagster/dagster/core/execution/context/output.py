@@ -6,10 +6,7 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.solid_definition import SolidDefinition
-from dagster.core.definitions.time_window_partitions import (
-    TimeWindow,
-    TimeWindowPartitionsDefinition,
-)
+from dagster.core.definitions.time_window_partitions import TimeWindow
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.utils import build_resources_for_manager
 
@@ -263,7 +260,10 @@ class OutputContext:
 
     @property
     def has_asset_partitions(self) -> bool:
-        return self.step_context.has_asset_partitions_for_output(self.name)
+        if self._step_context is not None:
+            return self._step_context.has_asset_partitions_for_output(self.name)
+        else:
+            return False
 
     @property
     def asset_partition_key(self) -> str:
@@ -290,25 +290,7 @@ class OutputContext:
         - The output asset has no partitioning.
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
         """
-        partitions_def = self.solid_def.output_def_named(self.name).asset_partitions_def
-
-        if not partitions_def:
-            raise ValueError(
-                "Tried to get asset partitions for an output that does not correspond to a "
-                "partitioned asset."
-            )
-
-        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            raise ValueError(
-                "Tried to get asset partitions for an output that correponds to a partitioned "
-                "asset that is not partitioned with a TimeWindowPartitionsDefinition."
-            )
-
-        partition_key_range = self.asset_partition_key_range
-        return TimeWindow(
-            partitions_def.time_window_for_partition_key(partition_key_range.start).start,
-            partitions_def.time_window_for_partition_key(partition_key_range.end).end,
-        )
+        return self.step_context.asset_partitions_time_window_for_output(self.name)
 
     def get_run_scoped_output_identifier(self) -> List[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique

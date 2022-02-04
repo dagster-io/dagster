@@ -125,7 +125,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         queued_runs = self._get_queued_runs(instance)
 
         if not queued_runs:
-            self._logger.info("Poll returned no queued runs.")
+            self._logger.debug("Poll returned no queued runs.")
         else:
             self._logger.info("Retrieved {} queued runs, checking limits.".format(len(queued_runs)))
 
@@ -170,7 +170,8 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
             yield error_info
 
-        self._logger.info("Launched {} runs.".format(num_dequeued_runs))
+        if num_dequeued_runs > 0:
+            self._logger.info("Launched {} runs.".format(num_dequeued_runs))
 
     def _get_queued_runs(self, instance):
         queued_runs_filter = PipelineRunsFilter(statuses=[PipelineRunStatus.QUEUED])

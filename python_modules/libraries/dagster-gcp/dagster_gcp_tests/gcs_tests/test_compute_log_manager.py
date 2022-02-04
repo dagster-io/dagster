@@ -12,7 +12,7 @@ from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
 from dagster.core.test_utils import environ
 from dagster_gcp.gcs import GCSComputeLogManager
-from google.cloud import storage
+from google.cloud import storage  # type: ignore
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"

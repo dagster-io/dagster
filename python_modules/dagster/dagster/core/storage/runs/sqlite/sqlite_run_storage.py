@@ -18,7 +18,7 @@ from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import mkdir_p
 from sqlalchemy.pool import NullPool
 
-from ..schema import RunStorageSqlMetadata, RunTagsTable, RunsTable
+from ..schema import InstanceInfo, RunStorageSqlMetadata, RunTagsTable, RunsTable
 from ..sql_run_storage import SqlRunStorage
 
 
@@ -81,11 +81,15 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
                 stamp_alembic_rev(alembic_config, connection)
                 should_mark_indexes = True
 
+            table_names = db.inspect(engine).get_table_names()
+            if "instance_info" not in table_names:
+                InstanceInfo.create(engine)
+
         run_storage = SqliteRunStorage(conn_string, inst_data)
 
         if should_mark_indexes:
-            # mark all secondary indexes
-            run_storage.build_missing_indexes()
+            run_storage.migrate()
+            run_storage.optimize()
 
         return run_storage
 

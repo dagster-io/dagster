@@ -3,6 +3,7 @@ import Fuse from 'fuse.js';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {displayNameForAssetKey} from '../app/Util';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
@@ -112,12 +113,10 @@ const secondaryDataToSearchResults = (data?: SearchSecondaryQuery) => {
   }
 
   const {nodes} = data.assetsOrError;
-  const allEntries = nodes.map((node) => {
-    const {key} = node;
-    const path = key.path.join(' › ');
+  const allEntries = nodes.map(({key}) => {
     return {
-      key: path,
-      label: path,
+      key: displayNameForAssetKey(key),
+      label: displayNameForAssetKey(key),
       segments: key.path,
       description: 'Asset',
       href: `/instance/assets/${key.path.map(encodeURIComponent).join('/')}`,

@@ -117,8 +117,8 @@ class GraphenePartitionBackfill(graphene.ObjectType):
 
         filters = PipelineRunsFilter.for_backfill(self._backfill_job.backfill_id)
         return [
-            GrapheneRun(r)
-            for r in graphene_info.context.instance.get_runs(
+            GrapheneRun(record)
+            for record in graphene_info.context.instance.get_run_records(
                 filters=filters,
                 limit=kwargs.get("limit"),
             )

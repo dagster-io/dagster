@@ -17,17 +17,14 @@ import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
 import {CurrentRunsBanner} from '../workspace/asset-graph/CurrentRunsBanner';
 import {LiveDataForNode} from '../workspace/asset-graph/Utils';
 
+import {AssetEventsTable} from './AssetEventsTable';
 import {ASSET_LINEAGE_FRAGMENT} from './AssetLineageElements';
-import {AssetMaterializationTable} from './AssetMaterializationTable';
 import {AssetValueGraph, AssetValueGraphData} from './AssetValueGraph';
 import {AssetViewParams} from './AssetView';
 import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
-import {MaterializationGroup, groupByPartition} from './groupByPartition';
+import {AssetEventGroup, groupByPartition} from './groupByPartition';
 import {AssetKey} from './types';
-import {
-  AssetMaterializationsQuery,
-  AssetMaterializationsQueryVariables,
-} from './types/AssetMaterializationsQuery';
+import {AssetEventsQuery, AssetEventsQueryVariables} from './types/AssetEventsQuery';
 
 interface Props {
   assetKey: AssetKey;
@@ -43,19 +40,17 @@ interface Props {
   assetHasDefinedPartitions: boolean;
 }
 
-const LABEL_STEP_EXECUTION_TIME = 'Step Execution Time';
-
 /**
  * If the asset has a defined partition space, we load all materializations in the
- * last 200 partitions. This ensures that if you run a huge backfill of old partitions,
- * you still see accurate info for the last 200 partitions in the UI. A count-based
+ * last 100 partitions. This ensures that if you run a huge backfill of old partitions,
+ * you still see accurate info for the last 100 partitions in the UI. A count-based
  * limit could cause random partitions to disappear if materializations were out of order.
  *
- * For non-SDA-partitioned assets, we load the most recent 200 materializations. We might
+ * For non-SDA-partitioned assets, we load the most recent 100 materializations. We might
  * still show these "By partition" (and the gaps problem above exists), but we don't have
  * a choice.
  */
-function useRecentMaterializations(
+function useRecentAssetEvents(
   assetKey: AssetKey,
   assetHasDefinedPartitions: boolean,
   xAxis: 'partition' | 'time',
@@ -63,37 +58,39 @@ function useRecentMaterializations(
 ) {
   const loadUsingPartitionKeys = assetHasDefinedPartitions && xAxis === 'partition';
 
-  const {data, loading, refetch} = useQuery<
-    AssetMaterializationsQuery,
-    AssetMaterializationsQueryVariables
-  >(ASSET_MATERIALIZATIONS_QUERY, {
-    variables: loadUsingPartitionKeys
-      ? {
-          assetKey: {path: assetKey.path},
-          before: before,
-          partitionInLast: 120,
-        }
-      : {
-          assetKey: {path: assetKey.path},
-          before: before,
-          limit: 200,
-        },
-  });
+  const {data, loading, refetch} = useQuery<AssetEventsQuery, AssetEventsQueryVariables>(
+    ASSET_EVENTS_QUERY,
+    {
+      variables: loadUsingPartitionKeys
+        ? {
+            assetKey: {path: assetKey.path},
+            before: before,
+            partitionInLast: 120,
+          }
+        : {
+            assetKey: {path: assetKey.path},
+            before: before,
+            limit: 100,
+          },
+    },
+  );
 
   return React.useMemo(() => {
     const asset = data?.assetOrError.__typename === 'Asset' ? data?.assetOrError : null;
     const materializations = asset?.assetMaterializations || [];
+    const observations = asset?.assetObservations || [];
+
     const allPartitionKeys = asset?.definition?.partitionKeys;
     const requestedPartitionKeys =
       loadUsingPartitionKeys && allPartitionKeys
         ? allPartitionKeys.slice(allPartitionKeys.length - 120)
         : undefined;
 
-    return {asset, requestedPartitionKeys, materializations, loading, refetch};
+    return {asset, requestedPartitionKeys, materializations, observations, loading, refetch};
   }, [data, loading, refetch, loadUsingPartitionKeys]);
 }
 
-export const AssetMaterializations: React.FC<Props> = ({
+export const AssetEvents: React.FC<Props> = ({
   assetKey,
   assetLastMaterializedAt,
   assetHasDefinedPartitions,
@@ -112,12 +109,13 @@ export const AssetMaterializations: React.FC<Props> = ({
       ? 'partition'
       : 'time';
 
-  const {requestedPartitionKeys, materializations, loading, refetch} = useRecentMaterializations(
-    assetKey,
-    assetHasDefinedPartitions,
-    xAxis,
-    before,
-  );
+  const {
+    requestedPartitionKeys,
+    materializations,
+    observations,
+    loading,
+    refetch,
+  } = useRecentAssetEvents(assetKey, assetHasDefinedPartitions, xAxis, before);
 
   React.useEffect(() => {
     if (params.asOf) {
@@ -126,33 +124,34 @@ export const AssetMaterializations: React.FC<Props> = ({
     refetch();
   }, [params.asOf, assetLastMaterializedAt, refetch]);
 
-  const hasLineage = materializations.some((m) => m.materializationEvent.assetLineage.length > 0);
+  const hasLineage = materializations.some((m) => m.assetLineage.length > 0);
   const hasPartitions = materializations.some((m) => m.partition) || assetHasDefinedPartitions;
 
-  const grouped = React.useMemo<MaterializationGroup[]>(() => {
+  const grouped = React.useMemo<AssetEventGroup[]>(() => {
+    const events = [...materializations, ...observations].sort(
+      (b, a) => Number(a.timestamp) - Number(b.timestamp),
+    );
     if (!hasPartitions || xAxis !== 'partition') {
-      return materializations.map((materialization) => ({
-        latest: materialization,
-        partition: materialization.partition || undefined,
-        timestamp: materialization.materializationEvent.timestamp,
-        predecessors: [],
+      // return a group for every materialization to achieve un-grouped rendering
+      return events.map((event) => ({
+        latest: event,
+        partition: event.partition || undefined,
+        timestamp: event.timestamp,
+        all: [],
       }));
     }
-    return groupByPartition(materializations, requestedPartitionKeys);
-  }, [requestedPartitionKeys, hasPartitions, materializations, xAxis]);
+    return groupByPartition(events, requestedPartitionKeys);
+  }, [requestedPartitionKeys, hasPartitions, materializations, observations, xAxis]);
 
   const activeItems = React.useMemo(() => new Set([xAxis]), [xAxis]);
 
-  const onSetFocused = React.useCallback(
-    (group) => {
-      const updates: Partial<AssetViewParams> =
-        xAxis === 'time'
-          ? {time: group.timestamp !== params.time ? group.timestamp : undefined}
-          : {partition: group.partition !== params.partition ? group.partition : undefined};
-      setParams({...params, ...updates});
-    },
-    [setParams, params, xAxis],
-  );
+  const onSetFocused = (group: AssetEventGroup) => {
+    const updates: Partial<AssetViewParams> =
+      xAxis === 'time'
+        ? {time: group.timestamp !== params.time ? group.timestamp : ''}
+        : {partition: group.partition !== params.partition ? group.partition : ''};
+    setParams({...params, ...updates});
+  };
 
   if (process.env.NODE_ENV === 'test') {
     return <span />; // chartjs and our useViewport hook don't play nicely with jest
@@ -185,12 +184,8 @@ export const AssetMaterializations: React.FC<Props> = ({
             </Box>
           )}
         </SidebarSection>
-        <SidebarSection title="Materialization Plots">
-          <AssetMaterializationGraphs
-            xAxis={xAxis}
-            asSidebarSection
-            assetMaterializations={grouped}
-          />
+        <SidebarSection title="Metadata Plots">
+          <AssetMaterializationGraphs xAxis={xAxis} asSidebarSection groups={grouped} />
         </SidebarSection>
       </>
     );
@@ -216,7 +211,7 @@ export const AssetMaterializations: React.FC<Props> = ({
             padding={{vertical: 16, horizontal: 24}}
             style={{marginBottom: -1}}
           >
-            <Subheading>Materializations</Subheading>
+            <Subheading>Asset Activity</Subheading>
           </Box>
           <Box padding={{vertical: 20}}>
             <Spinner purpose="section" />
@@ -238,7 +233,7 @@ export const AssetMaterializations: React.FC<Props> = ({
           padding={{vertical: 16, horizontal: 24}}
           style={{marginBottom: -1}}
         >
-          <Subheading>Materializations</Subheading>
+          <Subheading>Asset Activity</Subheading>
           {hasPartitions ? (
             <div style={{margin: '-6px 0 '}}>
               <ButtonGroup
@@ -260,7 +255,7 @@ export const AssetMaterializations: React.FC<Props> = ({
         </Box>
         <CurrentRunsBanner liveData={liveData} />
         {grouped.length > 0 ? (
-          <AssetMaterializationTable
+          <AssetEventsTable
             hasPartitions={hasPartitions}
             hasLineage={hasLineage}
             groups={grouped}
@@ -289,7 +284,7 @@ export const AssetMaterializations: React.FC<Props> = ({
         <AssetMaterializationGraphs
           xAxis={xAxis}
           asSidebarSection={asSidebarSection}
-          assetMaterializations={grouped}
+          groups={grouped}
         />
       </Box>
     </Box>
@@ -297,17 +292,17 @@ export const AssetMaterializations: React.FC<Props> = ({
 };
 
 const AssetMaterializationGraphs: React.FC<{
-  assetMaterializations: MaterializationGroup[];
+  groups: AssetEventGroup[];
   xAxis: 'partition' | 'time';
   asSidebarSection?: boolean;
 }> = (props) => {
   const [xHover, setXHover] = React.useState<string | number | null>(null);
 
-  const assetMaterializations = React.useMemo(() => {
-    return [...props.assetMaterializations].reverse();
-  }, [props.assetMaterializations]);
+  const reversed = React.useMemo(() => {
+    return [...props.groups].reverse();
+  }, [props.groups]);
 
-  const graphDataByMetadataLabel = extractNumericData(assetMaterializations, props.xAxis);
+  const graphDataByMetadataLabel = extractNumericData(reversed, props.xAxis);
   const [graphedLabels] = React.useState(() => Object.keys(graphDataByMetadataLabel).slice(0, 4));
 
   return (
@@ -320,6 +315,16 @@ const AssetMaterializationGraphs: React.FC<{
           flexDirection: 'column',
         }}
       >
+        {graphedLabels.length === 0 && (
+          <Box padding={{horizontal: 24, top: 64}}>
+            <NonIdealState
+              icon="linear_scale"
+              title="No numeric metadata"
+              description={`Include numeric metadata entries in your materializations and observations to see data graphed by ${props.xAxis}.`}
+            />
+          </Box>
+        )}
+
         {[...graphedLabels].sort().map((label) => (
           <Box
             key={label}
@@ -371,7 +376,7 @@ const AssetMaterializationGraphs: React.FC<{
  *
  * Assumes that the data is pre-sorted in ascending partition order if using xAxis = partition.
  */
-const extractNumericData = (datapoints: MaterializationGroup[], xAxis: 'time' | 'partition') => {
+const extractNumericData = (datapoints: AssetEventGroup[], xAxis: 'time' | 'partition') => {
   const series: {
     [metadataEntryLabel: string]: AssetValueGraphData;
   } = {};
@@ -379,7 +384,7 @@ const extractNumericData = (datapoints: MaterializationGroup[], xAxis: 'time' | 
   // Build a set of the numeric metadata entry labels (note they may be sparsely emitted)
   const numericMetadataLabels = uniq(
     flatMap(datapoints, (e) =>
-      (e.latest?.materializationEvent.materialization.metadataEntries || [])
+      (e.latest?.metadataEntries || [])
         .filter((k) => ['EventIntMetadataEntry', 'EventFloatMetadataEntry'].includes(k.__typename))
         .map((k) => k.label),
     ),
@@ -408,8 +413,7 @@ const extractNumericData = (datapoints: MaterializationGroup[], xAxis: 'time' | 
   };
 
   for (const {partition, latest} of datapoints) {
-    const x =
-      (xAxis === 'partition' ? partition : Number(latest?.materializationEvent.timestamp)) || null;
+    const x = (xAxis === 'partition' ? partition : Number(latest?.timestamp)) || null;
 
     if (x === null) {
       // exclude materializations where partition = null from partitioned graphs
@@ -418,9 +422,7 @@ const extractNumericData = (datapoints: MaterializationGroup[], xAxis: 'time' | 
 
     // Add an entry for every numeric metadata label
     for (const label of numericMetadataLabels) {
-      const entry = latest?.materializationEvent.materialization.metadataEntries.find(
-        (l) => l.label === label,
-      );
+      const entry = latest?.metadataEntries.find((l) => l.label === label);
       if (!entry) {
         append(label, {x, y: NaN});
         continue;
@@ -441,10 +443,6 @@ const extractNumericData = (datapoints: MaterializationGroup[], xAxis: 'time' | 
 
       append(label, {x, y});
     }
-
-    // Add step execution time as a custom dataset
-    const {startTime, endTime} = latest?.materializationEvent.stepStats || {};
-    append(LABEL_STEP_EXECUTION_TIME, {x, y: endTime && startTime ? endTime - startTime : NaN});
   }
 
   for (const serie of Object.values(series)) {
@@ -458,8 +456,8 @@ const extractNumericData = (datapoints: MaterializationGroup[], xAxis: 'time' | 
   return series;
 };
 
-const ASSET_MATERIALIZATIONS_QUERY = gql`
-  query AssetMaterializationsQuery(
+const ASSET_EVENTS_QUERY = gql`
+  query AssetEventsQuery(
     $assetKey: AssetKeyInput!
     $limit: Int
     $before: String
@@ -471,7 +469,13 @@ const ASSET_MATERIALIZATIONS_QUERY = gql`
         key {
           path
         }
-
+        assetObservations(
+          limit: $limit
+          beforeTimestampMillis: $before
+          partitionInLast: $partitionInLast
+        ) {
+          ...AssetObservationFragment
+        }
         assetMaterializations(
           limit: $limit
           beforeTimestampMillis: $before
@@ -487,7 +491,7 @@ const ASSET_MATERIALIZATIONS_QUERY = gql`
       }
     }
   }
-  fragment AssetMaterializationFragment on AssetMaterialization {
+  fragment AssetMaterializationFragment on MaterializationEvent {
     partition
     runOrError {
       ... on PipelineRun {
@@ -504,24 +508,46 @@ const ASSET_MATERIALIZATIONS_QUERY = gql`
         pipelineSnapshotId
       }
     }
-    materializationEvent {
-      runId
-      timestamp
-      stepKey
-      stepStats {
-        endTime
-        startTime
-      }
-      materialization {
-        label
-        description
-        metadataEntries {
-          ...MetadataEntryFragment
+    runId
+    timestamp
+    stepKey
+    label
+    description
+    metadataEntries {
+      ...MetadataEntryFragment
+    }
+    assetLineage {
+      ...AssetLineageFragment
+    }
+  }
+  fragment AssetObservationFragment on ObservationEvent {
+    partition
+    runOrError {
+      ... on PipelineRun {
+        id
+        runId
+        mode
+        repositoryOrigin {
+          id
+          repositoryName
+          repositoryLocationName
         }
+        status
+        pipelineName
+        pipelineSnapshotId
       }
-      assetLineage {
-        ...AssetLineageFragment
-      }
+    }
+    runId
+    timestamp
+    stepKey
+    stepStats {
+      endTime
+      startTime
+    }
+    label
+    description
+    metadataEntries {
+      ...MetadataEntryFragment
     }
   }
   ${METADATA_ENTRY_FRAGMENT}

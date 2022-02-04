@@ -13,6 +13,7 @@ from dagster import (
     Any,
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     Bool,
     DagsterInstance,
     DynamicOutput,
@@ -27,6 +28,7 @@ from dagster import (
     IOManagerDefinition,
     InputDefinition,
     Int,
+    Map,
     Materialization,
     ModeDefinition,
     Noneable,
@@ -42,6 +44,11 @@ from dagster import (
     SolidExecutionContext,
     StaticPartitionsDefinition,
     String,
+    TableColumn,
+    TableColumnConstraints,
+    TableConstraints,
+    TableRecord,
+    TableSchema,
     check,
     composite_solid,
     dagster_type_loader,
@@ -317,6 +324,26 @@ def more_complicated_config():
 
     noop_solid()
     a_solid_with_three_field_config()
+
+
+@pipeline
+def config_with_map():
+    @solid(
+        config_schema={
+            "field_one": Field(Map(str, int, key_label_name="username")),
+            "field_two": Field({bool: int}, is_required=False),
+            "field_three": Field(
+                {str: {"nested": [Noneable(int)]}},
+                is_required=False,
+                default_value={"test": {"nested": [None, 1, 2]}},
+            ),
+        }
+    )
+    def a_solid_with_map_config(_context):
+        return None
+
+    noop_solid()
+    a_solid_with_map_config()
 
 
 @pipeline
@@ -663,6 +690,29 @@ def materialization_pipeline():
                 EventMetadataEntry.int(LONG_INT, "long int"),
                 EventMetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
                 EventMetadataEntry.asset(AssetKey("my_asset"), "my asset"),
+                EventMetadataEntry.table(
+                    label="table",
+                    records=[
+                        TableRecord(foo=1, bar=2),
+                        TableRecord(foo=3, bar=4),
+                    ],
+                ),
+                EventMetadataEntry.table_schema(
+                    label="table_schema",
+                    schema=TableSchema(
+                        columns=[
+                            TableColumn(
+                                name="foo",
+                                type="integer",
+                                constraints=TableColumnConstraints(unique=True),
+                            ),
+                            TableColumn(name="bar", type="string"),
+                        ],
+                        constraints=TableConstraints(
+                            other=["some constraint"],
+                        ),
+                    ),
+                ),
             ],
         )
         yield Output(None)
@@ -1373,6 +1423,18 @@ partition_materialization_job = build_assets_job(
 )
 
 
+@asset
+def asset_yields_observation():
+    yield AssetObservation(asset_key=AssetKey("asset_yields_observation"), metadata={"text": "FOO"})
+    yield AssetMaterialization(asset_key=AssetKey("asset_yields_observation"))
+    yield Output(5)
+
+
+observation_job = build_assets_job(
+    "observation_job", assets=[asset_yields_observation], executor_def=in_process_executor
+)
+
+
 @op
 def op_1():
     return 1
@@ -1429,6 +1491,7 @@ def define_pipelines():
         materialization_pipeline,
         more_complicated_config,
         more_complicated_nested_config,
+        config_with_map,
         multi_asset_pipeline,
         multi_mode_with_loggers,
         multi_mode_with_resources,
@@ -1465,6 +1528,7 @@ def define_pipelines():
         static_partitioned_assets_job,
         time_partitioned_assets_job,
         partition_materialization_job,
+        observation_job,
     ]
 
 

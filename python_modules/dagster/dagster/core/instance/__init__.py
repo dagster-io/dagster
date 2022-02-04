@@ -43,11 +43,13 @@ from dagster.core.errors import (
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     DagsterRun,
+    JobBucket,
     PipelineRun,
     PipelineRunStatsSnapshot,
     PipelineRunStatus,
     PipelineRunsFilter,
     RunRecord,
+    TagBucket,
 )
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
 from dagster.core.system_config.objects import ResolvedRunConfig
@@ -130,24 +132,37 @@ class _EventListenerLogHandler(logging.Handler):
 
     def emit(self, record):
         from dagster.core.events.log import construct_event_record, StructuredLoggerMessage
+        from dagster.core.events import EngineEventData
+
+        event = construct_event_record(
+            StructuredLoggerMessage(
+                name=record.name,
+                message=record.msg,
+                level=record.levelno,
+                meta=record.dagster_meta,
+                record=record,
+            )
+        )
 
         try:
-            event = construct_event_record(
-                StructuredLoggerMessage(
-                    name=record.name,
-                    message=record.msg,
-                    level=record.levelno,
-                    meta=record.dagster_meta,
-                    record=record,
-                )
-            )
-
             self._instance.handle_new_event(event)
-
-        except Exception as e:  # pylint: disable=W0703
-            logging.critical("Error during instance event listen")
-            logging.exception(str(e))
-            raise
+        except Exception as e:
+            sys.stderr.write(f"Exception while writing logger call to event log: {str(e)}\n")
+            if event.dagster_event:
+                # Swallow user-generated log failures so that the entire step/run doesn't fail, but
+                # raise failures writing system-generated log events since they are the source of
+                # truth for the state of the run
+                raise
+            elif event.run_id:
+                self._instance.report_engine_event(
+                    "Exception while writing logger call to event log",
+                    pipeline_name=event.pipeline_name,
+                    run_id=event.run_id,
+                    step_key=event.step_key,
+                    engine_event_data=EngineEventData(
+                        error=serializable_error_info_from_exc_info(sys.exc_info()),
+                    ),
+                )
 
 
 class InstanceType(Enum):
@@ -322,8 +337,14 @@ class DagsterInstance:
         if self.run_monitoring_enabled:
             check.invariant(
                 self.run_launcher.supports_check_run_worker_health,
-                "Run monitoring only supports select RunLaunchers",
+                "The configured run launcher does not support run monitoring.",
             )
+
+            if self.run_monitoring_max_resume_run_attempts:
+                check.invariant(
+                    self.run_launcher.supports_resume_run,
+                    "The configured run launcher does not support resuming runs. Set max_resume_run_attempts to 0.",
+                )
 
     # ctors
 
@@ -609,7 +630,10 @@ class DagsterInstance:
 
     @property
     def run_monitoring_max_resume_run_attempts(self) -> int:
-        return self.run_monitoring_settings.get("max_resume_run_attempts", 3)
+        default_max_resume_run_attempts = 3 if self.run_launcher.supports_resume_run else 0
+        return self.run_monitoring_settings.get(
+            "max_resume_run_attempts", default_max_resume_run_attempts
+        )
 
     @property
     def run_monitoring_poll_interval_seconds(self) -> int:
@@ -641,7 +665,7 @@ class DagsterInstance:
             if print_fn:
                 print_fn("Updating run storage...")
             self._run_storage.upgrade()
-            self._run_storage.build_missing_indexes(print_fn=print_fn)
+            self._run_storage.migrate(print_fn)
 
             if print_fn:
                 print_fn("Updating event storage...")
@@ -662,6 +686,7 @@ class DagsterInstance:
         print_fn("Checking for reindexing...")
         self._event_storage.reindex_events(print_fn)
         self._event_storage.reindex_assets(print_fn)
+        self._run_storage.optimize(print_fn)
         print_fn("Done.")
 
     def dispose(self):
@@ -1069,9 +1094,13 @@ class DagsterInstance:
 
     @traced
     def get_runs(
-        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
+        self,
+        filters: PipelineRunsFilter = None,
+        cursor: str = None,
+        limit: int = None,
+        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> Iterable[PipelineRun]:
-        return self._run_storage.get_runs(filters, cursor, limit)
+        return self._run_storage.get_runs(filters, cursor, limit, bucket_by)
 
     @traced
     def get_runs_count(self, filters: PipelineRunsFilter = None) -> int:
@@ -1091,6 +1120,7 @@ class DagsterInstance:
         order_by: str = None,
         ascending: bool = False,
         cursor: str = None,
+        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
 
@@ -1104,7 +1134,9 @@ class DagsterInstance:
         Returns:
             List[RunRecord]: List of run records stored in the run storage.
         """
-        return self._run_storage.get_run_records(filters, limit, order_by, ascending, cursor)
+        return self._run_storage.get_run_records(
+            filters, limit, order_by, ascending, cursor, bucket_by
+        )
 
     def wipe(self):
         self._run_storage.wipe()
@@ -1302,10 +1334,12 @@ records = instance.get_event_records(
     def report_engine_event(
         self,
         message,
-        pipeline_run,
+        pipeline_run=None,
         engine_event_data=None,
         cls=None,
         step_key=None,
+        pipeline_name=None,
+        run_id=None,
     ):
         """
         Report a EngineEvent that occurred outside of a pipeline execution context.
@@ -1315,7 +1349,18 @@ records = instance.get_event_records(
 
         check.class_param(cls, "cls")
         check.str_param(message, "message")
-        check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
+        check.opt_inst_param(pipeline_run, "pipeline_run", PipelineRun)
+        check.opt_str_param(run_id, "run_id")
+        check.opt_str_param(pipeline_name, "pipeline_name")
+
+        check.invariant(
+            pipeline_run or (pipeline_name and run_id),
+            "Must include either pipeline_run or pipeline_name and run_id",
+        )
+
+        run_id = run_id if run_id else pipeline_run.run_id
+        pipeline_name = pipeline_name if pipeline_name else pipeline_run.pipeline_name
+
         engine_event_data = check.opt_inst_param(
             engine_event_data,
             "engine_event_data",
@@ -1332,7 +1377,7 @@ records = instance.get_event_records(
 
         dagster_event = DagsterEvent(
             event_type_value=DagsterEventType.ENGINE_EVENT.value,
-            pipeline_name=pipeline_run.pipeline_name,
+            pipeline_name=pipeline_name,
             message=message,
             event_specific_data=engine_event_data,
             step_key=step_key,
@@ -1341,8 +1386,8 @@ records = instance.get_event_records(
             message=message,
             user_message=message,
             level=log_level,
-            pipeline_name=pipeline_run.pipeline_name,
-            run_id=pipeline_run.run_id,
+            pipeline_name=pipeline_name,
+            run_id=run_id,
             error_info=None,
             timestamp=time.time(),
             step_key=step_key,

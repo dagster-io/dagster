@@ -43,12 +43,10 @@ class PartitionedParquetIOManager(IOManager):
         if context.dagster_type.typing_type == pyspark.sql.DataFrame:
             # return pyspark dataframe
             return context.resources.pyspark.spark_session.read.parquet(path)
-        elif context.dagster_type.typing_type == str:
-            # return path to parquet files
-            return path
+
         return check.failed(
             f"Inputs of type {context.dagster_type} not supported. Please specify a valid type "
-            "for this input either in the solid signature or on the corresponding InputDefinition."
+            "for this input either in the op signature or on the corresponding In."
         )
 
     def _get_path(self, context: OutputContext):

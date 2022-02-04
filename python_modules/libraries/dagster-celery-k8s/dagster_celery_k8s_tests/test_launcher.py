@@ -13,6 +13,8 @@ from dagster.core.test_utils import (
     in_process_test_workspace,
     instance_for_test,
 )
+from dagster.grpc.types import ExecuteRunArgs
+from dagster.utils import merge_dicts
 from dagster.utils.hosted_user_process import external_pipeline_from_recon_pipeline
 from dagster_celery_k8s.config import get_celery_engine_config, get_celery_engine_job_config
 from dagster_celery_k8s.executor import CELERY_K8S_CONFIG_KEY
@@ -274,6 +276,42 @@ def test_get_validated_celery_k8s_executor_config_for_job():
         }
 
 
+def test_launcher_from_config(kubeconfig_file):
+    default_config = {
+        "instance_config_map": "dagster-instance",
+        "postgres_password_secret": "dagster-postgresql-secret",
+        "dagster_home": "/opt/dagster/dagster_home",
+        "load_incluster_config": False,
+        "kubeconfig_file": kubeconfig_file,
+    }
+
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster_celery_k8s",
+                "class": "CeleryK8sRunLauncher",
+                "config": default_config,
+            }
+        }
+    ) as instance:
+        run_launcher = instance.run_launcher
+        assert isinstance(run_launcher, CeleryK8sRunLauncher)
+        assert run_launcher._fail_pod_on_run_failure == None  # pylint: disable=protected-access
+
+    with instance_for_test(
+        overrides={
+            "run_launcher": {
+                "module": "dagster_celery_k8s",
+                "class": "CeleryK8sRunLauncher",
+                "config": merge_dicts(default_config, {"fail_pod_on_run_failure": True}),
+            }
+        }
+    ) as instance:
+        run_launcher = instance.run_launcher
+        assert isinstance(run_launcher, CeleryK8sRunLauncher)
+        assert run_launcher._fail_pod_on_run_failure  # pylint: disable=protected-access
+
+
 def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
 
     labels = {"foo_label_key": "bar_label_value"}
@@ -340,11 +378,86 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             assert len(mock_method_calls) > 0
             method_name, _args, kwargs = mock_method_calls[0]
             assert method_name == "create_namespaced_job"
-            job_resources = kwargs["body"].spec.template.spec.containers[0].resources
+
+            container = kwargs["body"].spec.template.spec.containers[0]
+
+            job_resources = container.resources
             assert job_resources == expected_resources
 
             labels = kwargs["body"].spec.template.metadata.labels
             assert labels["foo_label_key"] == "bar_label_value"
+
+            args = container.args
+            assert (
+                args
+                == ExecuteRunArgs(
+                    pipeline_origin=run.pipeline_code_origin,
+                    pipeline_run_id=run.run_id,
+                    instance_ref=instance.get_ref(),
+                    set_exit_code_on_failure=None,
+                ).get_command_args()
+            )
+
+
+def test_raise_on_error(kubeconfig_file):
+    mock_k8s_client_batch_api = mock.MagicMock()
+    celery_k8s_run_launcher = CeleryK8sRunLauncher(
+        instance_config_map="dagster-instance",
+        postgres_password_secret="dagster-postgresql-secret",
+        dagster_home="/opt/dagster/dagster_home",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+        fail_pod_on_run_failure=True,
+    )
+    # Create fake external pipeline.
+    recon_pipeline = reconstructable(fake_pipeline)
+    recon_repo = recon_pipeline.repository
+    with instance_for_test() as instance:
+        with in_process_test_workspace(instance, recon_repo) as workspace:
+            location = workspace.get_repository_location(workspace.repository_location_names[0])
+
+            repo_def = recon_repo.get_definition()
+            repo_handle = RepositoryHandle(
+                repository_name=repo_def.name,
+                repository_location=location,
+            )
+            fake_external_pipeline = external_pipeline_from_recon_pipeline(
+                recon_pipeline,
+                solid_selection=None,
+                repository_handle=repo_handle,
+            )
+
+            celery_k8s_run_launcher.register_instance(instance)
+            pipeline_name = "demo_pipeline"
+            run_config = {"execution": {"celery-k8s": {"config": {"job_image": "fake-image-name"}}}}
+            run = create_run_for_test(
+                instance,
+                pipeline_name=pipeline_name,
+                run_config=run_config,
+                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
+                pipeline_code_origin=fake_external_pipeline.get_python_origin(),
+            )
+            celery_k8s_run_launcher.launch_run(LaunchRunContext(run, workspace))
+
+            # Check that user defined k8s config was passed down to the k8s job.
+            mock_method_calls = mock_k8s_client_batch_api.method_calls
+            assert len(mock_method_calls) > 0
+            method_name, _args, kwargs = mock_method_calls[0]
+            assert method_name == "create_namespaced_job"
+
+            container = kwargs["body"].spec.template.spec.containers[0]
+
+            args = container.args
+            assert (
+                args
+                == ExecuteRunArgs(
+                    pipeline_origin=run.pipeline_code_origin,
+                    pipeline_run_id=run.run_id,
+                    instance_ref=instance.get_ref(),
+                    set_exit_code_on_failure=True,
+                ).get_command_args()
+            )
 
 
 def test_k8s_executor_config_override(kubeconfig_file):

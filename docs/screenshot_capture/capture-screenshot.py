@@ -5,7 +5,7 @@ Captures a screenshot, based on a screenshot spec.
 Meant to be called from the repo root.
 
 Usage example:
-    python docs/screenshot_capture/capture_screenshot.py concepts/dagit/runs-tab.png
+    python docs/screenshot_capture/capture-screenshot.py concepts/dagit/runs-tab.png
 """
 
 import os

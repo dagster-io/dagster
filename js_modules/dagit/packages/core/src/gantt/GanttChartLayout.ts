@@ -479,7 +479,7 @@ export const interestingQueriesFor = (metadata: IRunMetadataDict, layout: GanttC
         (metadata.steps[a]!.end! - metadata.steps[a]!.start!),
     )
     .slice(0, 5)
-    .map((k) => `${k}`)
+    .map((k) => `"${k}"`)
     .join(', ');
   if (slowStepsQuery) {
     results.push({name: 'Slowest Individual Steps', value: slowStepsQuery});

@@ -7,7 +7,8 @@ from dagster.config.validate import process_config
 from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import RetryMode
 from dagster.core.launcher import LaunchRunContext, RunLauncher
-from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.launcher.base import CheckRunHealthResult, WorkerStatus
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import frozentags, merge_dicts
@@ -102,6 +103,8 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             ``"IfNotPresent"``. See: https://kubernetes.io/docs/concepts/containers/images/#updating-images.
         labels (Optional[Dict[str, str]]): Additional labels that should be included in the Job's Pod. See:
             https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+        fail_pod_on_run_failure (Optional[bool): Whether the launched Kubernetes Jobs and Pods
+            should fail if the Dagster run fails. Default: False
     """
 
     def __init__(
@@ -126,6 +129,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         image_pull_policy=None,
         image_pull_secrets=None,
         labels=None,
+        fail_pod_on_run_failure=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
 
@@ -172,6 +176,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             image_pull_secrets, "image_pull_secrets", of_type=dict
         )
         self._labels = check.opt_dict_param(labels, "labels", key_type=str, value_type=str)
+        self._fail_pod_on_run_failure = check.opt_bool_param(
+            fail_pod_on_run_failure, "fail_pod_on_run_failure"
+        )
 
         super().__init__()
 
@@ -247,11 +254,12 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             pipeline_origin=pipeline_origin,
             pipeline_run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
-        )
+            set_exit_code_on_failure=self._fail_pod_on_run_failure,
+        ).get_command_args()
 
         job = construct_dagster_k8s_job(
             job_config,
-            args=run_args.get_command_args(),
+            args=run_args,
             job_name=job_name,
             pod_name=pod_name,
             component="run_worker",
@@ -378,6 +386,25 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
         run_config = pipeline_run.run_config
         executor_config = _get_validated_celery_k8s_executor_config(run_config)
         return executor_config.get("job_namespace")
+
+    @property
+    def supports_check_run_worker_health(self):
+        return True
+
+    def check_run_worker_health(self, run: PipelineRun):
+        job_namespace = _get_validated_celery_k8s_executor_config(run.run_config).get(
+            "job_namespace"
+        )
+        job_name = get_job_name_from_run_id(run.run_id)
+        try:
+            job = self._batch_api.read_namespaced_job(namespace=job_namespace, name=job_name)
+        except Exception:
+            return CheckRunHealthResult(
+                WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
+            )
+        if job.status.failed:
+            return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
+        return CheckRunHealthResult(WorkerStatus.RUNNING)
 
 
 def _get_validated_celery_k8s_executor_config(run_config):

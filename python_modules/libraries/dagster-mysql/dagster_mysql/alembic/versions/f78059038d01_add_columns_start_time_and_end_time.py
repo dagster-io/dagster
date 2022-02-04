@@ -1,8 +1,8 @@
-"""add columns start_time and end_time
+"""add_columns_start_time_and_end_time
 
-Revision ID: 713145aa999c
-Revises: f4b6a4885876
-Create Date: 2021-12-20 13:32:49.322107
+Revision ID: f78059038d01
+Revises: 29a8e9d74220
+Create Date: 2022-01-25 09:26:35.820814
 
 """
 import sqlalchemy as sa
@@ -10,8 +10,8 @@ from alembic import op
 from sqlalchemy.engine import reflection
 
 # revision identifiers, used by Alembic.
-revision = "713145aa999c"
-down_revision = "f4b6a4885876"
+revision = "f78059038d01"
+down_revision = "29a8e9d74220"
 branch_labels = None
 depends_on = None
 

@@ -4,17 +4,10 @@ from typing import Tuple
 
 from dagster import Output
 from dagster.core.asset_defs import asset
+from hacker_news_assets.partitions import hourly_partitions
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF
-from pyspark.sql.types import (
-    ArrayType,
-    BooleanType,
-    DoubleType,
-    LongType,
-    StringType,
-    StructField,
-    StructType,
-)
+from pyspark.sql.types import ArrayType, DoubleType, LongType, StringType, StructField, StructType
 
 HN_ITEMS_SCHEMA = StructType(
     [
@@ -25,7 +18,6 @@ HN_ITEMS_SCHEMA = StructType(
         StructField("by", StringType()),
         StructField("text", StringType()),
         StructField("kids", ArrayType(LongType())),
-        StructField("dead", BooleanType()),
         StructField("score", DoubleType()),
         StructField("title", StringType()),
         StructField("descendants", DoubleType()),
@@ -40,6 +32,7 @@ ITEM_FIELD_NAMES = [field.name for field in HN_ITEMS_SCHEMA.fields]
     io_manager_key="parquet_io_manager",
     required_resource_keys={"hn_client"},
     description="Items from the Hacker News API: each is a story or a comment on a story.",
+    partitions_def=hourly_partitions,
 )
 def items(context, id_range_for_time: Tuple[int, int]):
     """
@@ -57,18 +50,20 @@ def items(context, id_range_for_time: Tuple[int, int]):
             context.log.info(f"Downloaded {len(rows)} items!")
 
     non_none_rows = [row for row in rows if row is not None]
+    result = DataFrame(non_none_rows, columns=ITEM_FIELD_NAMES).drop_duplicates(subset=["id"])
+    result.rename(columns={"by": "user_id"}, inplace=True)
 
-    yield Output(
-        DataFrame(non_none_rows).drop_duplicates(subset=["id"]),
+    return Output(
+        result,
         metadata={"Non-empty items": len(non_none_rows), "Empty items": rows.count(None)},
     )
 
 
-@asset(io_manager_key="warehouse_io_manager")
+@asset(io_manager_key="warehouse_io_manager", partitions_def=hourly_partitions)
 def comments(items: SparkDF) -> SparkDF:
-    return items.where(items["type"] == "comment").select(ITEM_FIELD_NAMES)
+    return items.where(items["type"] == "comment")
 
 
-@asset(io_manager_key="warehouse_io_manager")
+@asset(io_manager_key="warehouse_io_manager", partitions_def=hourly_partitions)
 def stories(items: SparkDF) -> SparkDF:
-    return items.where(items["type"] == "stories").select(ITEM_FIELD_NAMES)
+    return items.where(items["type"] == "stories")

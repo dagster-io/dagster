@@ -17,7 +17,7 @@ import {
 } from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {AssetMaterializations} from './AssetMaterializations';
+import {AssetEvents} from './AssetEvents';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetKey} from './types';
@@ -53,7 +53,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
 
   const {assetOrError} = queryResult.data || queryResult.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
-  const lastMaterializedAt = asset?.assetMaterializations[0]?.materializationEvent.timestamp;
+  const lastMaterializedAt = asset?.assetMaterializations[0]?.timestamp;
   const definition = asset?.definition;
 
   const repoAddress = definition
@@ -112,9 +112,9 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             {definition && definition.jobs.length > 0 && repoAddress && (
               <LaunchAssetExecutionButton
                 assets={[definition]}
+                upstreamAssetKeys={definition.dependencies.map((d) => d.asset.assetKey)}
                 assetJobName={definition.jobs[0].name}
                 title={lastMaterializedAt ? 'Rematerialize' : 'Materialize'}
-                repoAddress={repoAddress}
               />
             )}
           </Box>
@@ -140,16 +140,12 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               hasDefinition={!!definition}
             />
           </Box>
-        ) : definition && repoAddress ? (
-          <AssetNodeDefinition
-            repoAddress={repoAddress}
-            assetNode={definition}
-            liveDataByNode={liveDataByNode}
-          />
+        ) : definition ? (
+          <AssetNodeDefinition assetNode={definition} liveDataByNode={liveDataByNode} />
         ) : undefined}
       </div>
       {isDefinitionLoaded && (
-        <AssetMaterializations
+        <AssetEvents
           assetKey={assetKey}
           assetLastMaterializedAt={lastMaterializedAt}
           assetHasDefinedPartitions={!!definition?.partitionDefinition}
@@ -173,9 +169,7 @@ const ASSET_QUERY = gql`
         }
 
         assetMaterializations(limit: 1) {
-          materializationEvent {
-            timestamp
-          }
+          timestamp
         }
 
         definition {

@@ -67,7 +67,7 @@ export const SidebarOpInvocation: React.FC<ISidebarOpInvocationProps> = (props) 
                 icon={<IconWIP name="zoom_in" />}
                 onClick={() => onEnterSubgraph({name: solid.name})}
               >
-                Expand composite
+                Expand graph
               </ButtonWIP>
             </Box>
           )}

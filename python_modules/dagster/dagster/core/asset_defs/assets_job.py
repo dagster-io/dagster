@@ -244,9 +244,7 @@ def build_root_manager(
             name=source_asset_key.path[-1],
             step_key="none",
             solid_def=_op,
-            metadata=merge_dicts(
-                source_asset.metadata or {}, {"logical_asset_key": source_asset_key}
-            ),
+            metadata=source_asset.metadata,
         )
         input_context_with_upstream = build_input_context(
             name=input_context.name,

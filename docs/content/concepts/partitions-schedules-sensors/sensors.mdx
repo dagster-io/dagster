@@ -454,3 +454,32 @@ def my_s3_sensor(context):
     for s3_key in new_s3_keys:
         yield RunRequest(run_key=s3_key, run_config={})
 ```
+
+### Using resources in sensors
+
+If you want to use resources within your sensor, you can use the <PyObject object="build_resources"/> API to perform the initialization.
+
+```python file=/concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_build_resources_example endbefore=end_build_resources_example
+from dagster import resource, build_resources, sensor
+
+
+@resource
+def the_credentials():
+    ...
+
+
+@resource(required_resource_keys={"credentials"})
+def the_db_connection(init_context):
+    get_the_db_connection(init_context.resources.credentials)
+
+
+@sensor(job=the_job)
+def uses_db_connection():
+    with build_resources(
+        {"db_connection": the_db_connection, "credentials": the_credentials}
+    ) as resources:
+        conn = resources.db_connection
+        ...
+```
+
+If a resource you want to initialize has dependencies on other resources, those can be included in the dictionary passed to <PyObject object="build_resources"/>. For more in-depth usage, check out the [Initializing Resources Outside of Execution](/concepts/resources#initializing-resources-outside-of-execution) section.

@@ -204,3 +204,21 @@ def create_event_log_event_idx():
         ["dagster_event_type", "id"],
         mysql_length={"dagster_event_type": 64},
     )
+
+
+def create_run_range_indices():
+    if not has_table("runs"):
+        return
+    indices = [x.get("name") for x in get_inspector().get_indexes("runs")]
+    if not "idx_run_range" in indices:
+        op.create_index(
+            "idx_run_range",
+            "runs",
+            ["status", "update_timestamp", "create_timestamp"],
+            unique=False,
+            mysql_length={
+                "status": 32,
+                "update_timestamp": 8,
+                "create_timestamp": 8,
+            },
+        )

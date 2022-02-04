@@ -5,7 +5,13 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
+from dagster.core.storage.pipeline_run import (
+    JobBucket,
+    PipelineRun,
+    PipelineRunsFilter,
+    RunRecord,
+    TagBucket,
+)
 from dagster.daemon.types import DaemonHeartbeat
 
 
@@ -43,7 +49,11 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def get_runs(
-        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
+        self,
+        filters: PipelineRunsFilter = None,
+        cursor: str = None,
+        limit: int = None,
+        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> Iterable[PipelineRun]:
         """Return all the runs present in the storage that match the given filters.
 
@@ -142,6 +152,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         order_by: str = None,
         ascending: bool = False,
         cursor: str = None,
+        bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
 
@@ -304,9 +315,11 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     def delete_run(self, run_id: str):
         """Remove a run from storage"""
 
-    @abstractmethod
-    def build_missing_indexes(self, print_fn: Callable = None, force_rebuild_all: bool = False):
-        """Call this method to run any data migrations"""
+    def migrate(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+        """Call this method to run any required data migrations"""
+
+    def optimize(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+        """Call this method to run any optional data migrations for optimized reads"""
 
     def dispose(self):
         """Explicit lifecycle management."""

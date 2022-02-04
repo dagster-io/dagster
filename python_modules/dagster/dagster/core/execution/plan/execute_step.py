@@ -248,9 +248,10 @@ def _type_check_output(
 
     if not type_check.success:
         raise DagsterTypeCheckDidNotPass(
-            description='Type check failed for step output "{output_name}" - expected type "{dagster_type}".'.format(
-                output_name=output.output_name,
-                dagster_type=dagster_type.display_name,
+            description=(
+                f'Type check failed for step output "{output.output_name}" - '
+                f'expected type "{dagster_type.display_name}". '
+                f"Description: {type_check.description}"
             ),
             metadata_entries=type_check.metadata_entries,
             dagster_type=dagster_type,
@@ -274,7 +275,6 @@ def core_dagster_event_sequence_for_step(
         yield DagsterEvent.step_start_event(step_context)
 
     inputs = {}
-    input_lineage = []
 
     for step_input in step_context.step.step_inputs:
         input_def = step_input.source.get_input_def(step_context.pipeline_def)
@@ -282,9 +282,6 @@ def core_dagster_event_sequence_for_step(
 
         if dagster_type.kind == DagsterTypeKind.NOTHING:
             continue
-
-        input_lineage.extend(step_input.source.get_asset_lineage(step_context))
-
         for event_or_input_value in ensure_gen(step_input.source.load_input_object(step_context)):
             if isinstance(event_or_input_value, DagsterEvent):
                 yield event_or_input_value
@@ -298,7 +295,7 @@ def core_dagster_event_sequence_for_step(
         ):
             yield evt
 
-    input_lineage = _dedup_asset_lineage(input_lineage)
+    input_lineage = step_context.get_input_lineage()
 
     # The core execution loop expects a compute generator in a specific format: a generator that
     # takes a context and dictionary of inputs as input, yields output events. If a solid definition
@@ -324,8 +321,9 @@ def core_dagster_event_sequence_for_step(
         for user_event in check.generator(
             _step_output_error_checked_user_event_sequence(step_context, user_event_sequence)
         ):
-
-            if isinstance(user_event, (Output, DynamicOutput)):
+            if isinstance(user_event, DagsterEvent):
+                yield user_event
+            elif isinstance(user_event, (Output, DynamicOutput)):
                 for evt in _type_check_and_store_output(step_context, user_event, input_lineage):
                     yield evt
             # for now, I'm ignoring AssetMaterializations yielded manually, but we might want

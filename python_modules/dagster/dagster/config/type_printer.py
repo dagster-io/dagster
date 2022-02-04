@@ -47,6 +47,27 @@ def _do_print(config_schema_snapshot, config_type_key, printer, with_lines=True)
         printer.append(" | ")
         _do_print(config_schema_snapshot, config_type_snap.non_scalar_type_key, printer)
         printer.append(")")
+    elif kind == ConfigTypeKind.MAP:
+        # e.g.
+        # {
+        #   [String]: Int
+        # }
+        line_break_fn("{")
+        with printer.with_indent():
+            printer.append("[")
+            # In a Map, the given_name stores the optional key_label_name
+            if config_type_snap.given_name:
+                printer.append(f"{config_type_snap.given_name}: ")
+            _do_print(config_schema_snapshot, config_type_snap.key_type_key, printer)
+            printer.append("]: ")
+            _do_print(
+                config_schema_snapshot,
+                config_type_snap.inner_type_key,
+                printer,
+                with_lines=with_lines,
+            )
+            line_break_fn("")
+        printer.append("}")
     elif ConfigTypeKind.has_fields(kind):
         line_break_fn("{")
         with printer.with_indent():

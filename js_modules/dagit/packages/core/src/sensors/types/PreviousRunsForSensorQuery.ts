@@ -26,30 +26,6 @@ export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_tag
   value: string;
 }
 
-export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot {
-  __typename: "RunStatsSnapshot";
-  id: string;
-  enqueuedTime: number | null;
-  launchTime: number | null;
-  startTime: number | null;
-  endTime: number | null;
-}
-
-export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-}
-
-export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_PythonError {
-  __typename: "PythonError";
-  message: string;
-  stack: string[];
-  cause: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_PythonError_cause | null;
-}
-
-export type PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats = PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_RunStatsSnapshot | PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats_PythonError;
-
 export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results {
   __typename: "Run";
   id: string;
@@ -65,7 +41,9 @@ export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results {
   repositoryOrigin: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_repositoryOrigin | null;
   solidSelection: string[] | null;
   tags: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_tags[];
-  stats: PreviousRunsForSensorQuery_pipelineRunsOrError_Runs_results_stats;
+  startTime: number | null;
+  endTime: number | null;
+  updateTime: number | null;
 }
 
 export interface PreviousRunsForSensorQuery_pipelineRunsOrError_Runs {

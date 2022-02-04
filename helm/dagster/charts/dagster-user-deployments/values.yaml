@@ -100,7 +100,6 @@ deployments:
     podSecurityContext: {}
     securityContext: {}
     resources: {}
-    replicaCount: 1
     labels: {}
     # Liveness Probe and Startup Probe are optional. For more configuration docs, see:
     # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes

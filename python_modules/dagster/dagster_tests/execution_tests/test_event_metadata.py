@@ -13,7 +13,16 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.definitions.event_metadata import DagsterInvalidEventMetadata
+from dagster.check import CheckError
+from dagster.core.definitions.event_metadata import DagsterInvalidEventMetadata, EventMetadataEntry
+from dagster.core.definitions.event_metadata.table import (
+    TableColumn,
+    TableColumnConstraints,
+    TableConstraints,
+    TableRecord,
+    TableSchema,
+)
+from dagster.utils import frozendict
 
 
 def solid_events_for_type(result, solid_name, event_type):
@@ -141,4 +150,136 @@ def test_bad_json_metadata_value():
     assert str(exc_info.value) == (
         'Could not resolve the metadata value for "bad" to a JSON serializable value. '
         "Consider wrapping the value with the appropriate EventMetadata type."
+    )
+
+
+def test_table_metadata_value_schema_inference():
+
+    table_metadata_value = EventMetadataEntry.table(
+        records=[
+            TableRecord(name="foo", status=False),
+            TableRecord(name="bar", status=True),
+        ],
+        label="foo",
+    )
+
+    schema = table_metadata_value.entry_data.schema
+    assert isinstance(schema, TableSchema)
+    assert schema.columns == [
+        TableColumn(name="name", type="string"),
+        TableColumn(name="status", type="bool"),
+    ]
+
+
+bad_values = frozendict(
+    {
+        "table_schema": {"columns": False, "constraints": False},
+        "table_column": {"name": False, "type": False, "description": False, "constraints": False},
+        "table_constraints": {"other": False},
+        "table_column_constraints": {
+            "nullable": "foo",
+            "unique": "foo",
+            "other": False,
+        },
+    }
+)
+
+
+def test_table_column_keys():
+    with pytest.raises(TypeError):
+        TableColumn(bad_key="foo", description="bar", type="string")  # type: ignore
+
+
+@pytest.mark.parametrize("key,value", list(bad_values["table_column"].items()))
+def test_table_column_values(key, value):
+    kwargs = {
+        "name": "foo",
+        "type": "string",
+        "description": "bar",
+        "constraints": TableColumnConstraints(other=["foo"]),
+    }
+    kwargs[key] = value
+    with pytest.raises(CheckError):
+        TableColumn(**kwargs)
+
+
+def test_table_constraints_keys():
+    with pytest.raises(TypeError):
+        TableColumn(bad_key="foo")  # type: ignore
+
+
+@pytest.mark.parametrize("key,value", list(bad_values["table_constraints"].items()))
+def test_table_constraints(key, value):
+    kwargs = {"other": ["foo"]}
+    kwargs[key] = value
+    with pytest.raises(CheckError):
+        TableConstraints(**kwargs)
+
+
+def test_table_column_constraints_keys():
+    with pytest.raises(TypeError):
+        TableColumnConstraints(bad_key="foo")  # type: ignore
+
+
+# minimum and maximum aren't checked because they depend on the type of the column
+@pytest.mark.parametrize("key,value", list(bad_values["table_column_constraints"].items()))
+def test_table_column_constraints_values(key, value):
+    kwargs = {
+        "nullable": True,
+        "unique": True,
+        "other": ["foo"],
+    }
+    kwargs[key] = value
+    with pytest.raises(CheckError):
+        TableColumnConstraints(**kwargs)
+
+
+def test_table_schema_keys():
+    with pytest.raises(TypeError):
+        TableSchema(bad_key="foo")  # type: ignore
+
+
+@pytest.mark.parametrize("key,value", list(bad_values["table_schema"].items()))
+def test_table_schema_values(key, value):
+    kwargs = {
+        "constraints": TableConstraints(other=["foo"]),
+        "columns": [
+            TableColumn(
+                name="foo",
+                type="string",
+                description="bar",
+                constraints=TableColumnConstraints(other=["foo"]),
+            )
+        ],
+    }
+    kwargs[key] = value
+    with pytest.raises(CheckError):
+        TableSchema(**kwargs)
+
+
+def test_complex_table_schema():
+    assert isinstance(
+        TableSchema(
+            columns=[
+                TableColumn(
+                    name="foo",
+                    type="customtype",
+                    constraints=TableColumnConstraints(
+                        nullable=True,
+                        unique=True,
+                    ),
+                ),
+                TableColumn(
+                    name="bar",
+                    type="string",
+                    description="bar",
+                    constraints=TableColumnConstraints(
+                        nullable=False,
+                        other=["foo"],
+                    ),
+                ),
+            ],
+            constraints=TableConstraints(other=["foo"]),
+        ),
+        TableSchema,
     )

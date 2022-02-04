@@ -3,6 +3,8 @@ def types():
     from .events import (
         GrapheneDisplayableEvent,
         GrapheneEngineEvent,
+        GrapheneEventTableSchemaMetadataEntry,
+        GrapheneEventTableMetadataEntry,
         GrapheneEventFloatMetadataEntry,
         GrapheneEventIntMetadataEntry,
         GrapheneEventJsonMetadataEntry,
@@ -30,7 +32,6 @@ def types():
         GrapheneHookSkippedEvent,
         GrapheneLoadedInputEvent,
         GrapheneLogMessageEvent,
-        GrapheneMaterialization,
         GrapheneMessageEvent,
         GrapheneMissingRunIdErrorEvent,
         GrapheneObjectStoreOperationEvent,
@@ -49,7 +50,8 @@ def types():
         GrapheneRunSuccessEvent,
         GrapheneStepEvent,
         GrapheneStepExpectationResultEvent,
-        GrapheneStepMaterializationEvent,
+        GrapheneMaterializationEvent,
+        GrapheneObservationEvent,
         GrapheneTypeCheck,
     )
     from .log_level import GrapheneLogLevel
@@ -61,6 +63,8 @@ def types():
         GrapheneEngineEvent,
         GrapheneEventPipelineRunMetadataEntry,
         GrapheneEventAssetMetadataEntry,
+        GrapheneEventTableSchemaMetadataEntry,
+        GrapheneEventTableMetadataEntry,
         GrapheneEventFloatMetadataEntry,
         GrapheneEventIntMetadataEntry,
         GrapheneEventJsonMetadataEntry,
@@ -87,7 +91,6 @@ def types():
         GrapheneLoadedInputEvent,
         GrapheneLogLevel,
         GrapheneLogMessageEvent,
-        GrapheneMaterialization,
         GrapheneMessageEvent,
         GrapheneMissingRunIdErrorEvent,
         GrapheneObjectStoreOperationEvent,
@@ -107,6 +110,7 @@ def types():
         GrapheneRunSuccessEvent,
         GrapheneStepEvent,
         GrapheneStepExpectationResultEvent,
-        GrapheneStepMaterializationEvent,
+        GrapheneMaterializationEvent,
+        GrapheneObservationEvent,
         GrapheneTypeCheck,
     ]

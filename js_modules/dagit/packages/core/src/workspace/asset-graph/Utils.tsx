@@ -6,16 +6,16 @@ import {AssetNodeDefinitionFragment} from '../../assets/types/AssetNodeDefinitio
 
 import {getNodeDimensions} from './AssetNode';
 import {getForeignNodeDimensions} from './ForeignNode';
-import {AssetGraphLiveQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations} from './types/AssetGraphLiveQuery';
+import {AssetGraphLiveQuery_assetNodes_assetMaterializations} from './types/AssetGraphLiveQuery';
 import {
-  AssetGraphQuery_pipelineOrError_Pipeline_assetNodes,
-  AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey,
+  AssetGraphQuery_assetNodes,
+  AssetGraphQuery_assetNodes_assetKey,
 } from './types/AssetGraphQuery';
 import {AssetNodeLiveFragment} from './types/AssetNodeLiveFragment';
 import {InProgressRunsFragment} from './types/InProgressRunsFragment';
 
-type AssetNode = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
-type AssetKey = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey;
+type AssetNode = AssetGraphQuery_assetNodes;
+type AssetKey = AssetGraphQuery_assetNodes_assetKey;
 
 export interface Node {
   id: string;
@@ -250,7 +250,7 @@ export interface LiveDataForNode {
   computeStatus: Status;
   unstartedRunIds: string[]; // run in progress and step not started
   inProgressRunIds: string[]; // run in progress and step in progress
-  lastMaterialization: AssetGraphLiveQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations | null;
+  lastMaterialization: AssetGraphLiveQuery_assetNodes_assetMaterializations | null;
   lastStepStart: number;
 }
 export interface LiveData {
@@ -271,7 +271,7 @@ export const buildLiveData = (
     }
 
     const lastMaterialization = liveNode.assetMaterializations[0] || null;
-    const lastStepStart = lastMaterialization?.materializationEvent.stepStats?.startTime || 0;
+    const lastStepStart = lastMaterialization?.stepStats?.startTime || 0;
     const isForeignNode = !liveNode.opName;
     const isPartitioned = graphNode.definition.partitionDefinition;
 

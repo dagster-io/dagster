@@ -162,6 +162,10 @@ class DockerRunLauncher(RunLauncher, ConfigurableClass):
 
         self._launch_container_with_command(run, docker_image, command)
 
+    @property
+    def supports_resume_run(self):
+        return True
+
     def resume_run(self, context: ResumeRunContext) -> None:
         run = context.pipeline_run
         pipeline_code_origin = context.pipeline_code_origin

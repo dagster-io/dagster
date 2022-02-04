@@ -1,4 +1,4 @@
-from dagster import Field, Int, Noneable, PipelineDefinition, ScalarUnion, String, solid
+from dagster import Field, Int, Map, Noneable, PipelineDefinition, ScalarUnion, String, solid
 from dagster.config.field import resolve_to_config_type
 from dagster.config.iterate_types import config_schema_snapshot_from_config_type
 from dagster.config.snap import get_recursive_type_keys, snap_from_config_type
@@ -46,6 +46,79 @@ def test_nullable_list_combos():
     assert print_config_type_to_string(Noneable([int])) == "[Int]?"
     assert print_config_type_to_string([Noneable(int)]) == "[Int?]"
     assert print_config_type_to_string(Noneable([Noneable(int)])) == "[Int?]?"
+
+
+def test_basic_map_type_print():
+    assert (
+        print_config_type_to_string({str: int})
+        == """{
+  [String]: Int
+}"""
+    )
+    assert_inner_types({str: int}, int, str)
+
+    assert (
+        print_config_type_to_string({int: int})
+        == """{
+  [Int]: Int
+}"""
+    )
+    assert_inner_types({int: int}, int, int)
+
+
+def test_map_name_print():
+    assert (
+        print_config_type_to_string(Map(str, int, key_label_name="name"))
+        == """{
+  [name: String]: Int
+}"""
+    )
+
+    assert (
+        print_config_type_to_string(Map(int, float, key_label_name="title"))
+        == """{
+  [title: Int]: Float
+}"""
+    )
+
+
+def test_double_map_type_print():
+    assert (
+        print_config_type_to_string({str: {str: int}})
+        == """{
+  [String]: {
+    [String]: Int
+  }
+}"""
+    )
+    int_map = {str: int}
+    map_int_map = {str: int_map}
+    assert_inner_types(map_int_map, Int, int_map, String)
+
+
+def test_list_map_nullable_combos():
+    # Don't care about newlines here for brevity's sake, those are tested elsewhere
+    assert print_config_type_to_string({str: [int]}, with_lines=False) == "{ [String]: [Int] }"
+    assert (
+        print_config_type_to_string(Noneable({str: [int]}), with_lines=False)
+        == "{ [String]: [Int] }?"
+    )
+    assert (
+        print_config_type_to_string({str: Noneable([int])}, with_lines=False)
+        == "{ [String]: [Int]? }"
+    )
+    assert (
+        print_config_type_to_string({str: [Noneable(int)]}, with_lines=False)
+        == "{ [String]: [Int?] }"
+    )
+    assert (
+        print_config_type_to_string(Noneable({str: [Noneable(int)]}), with_lines=False)
+        == "{ [String]: [Int?] }?"
+    )
+    assert (
+        print_config_type_to_string(Noneable({str: Noneable([Noneable(int)])}), with_lines=False)
+        == "{ [String]: [Int?]? }?"
+    )
 
 
 def test_basic_dict():
@@ -96,12 +169,13 @@ def test_optional_field():
     assert output == expected
 
 
-def test_single_level_dict_lists_and_nullable():
+def test_single_level_dict_lists_maps_and_nullable():
     output = print_config_type_to_string(
         {
             "nullable_int_field": Noneable(int),
             "optional_int_field": Field(int, is_required=False),
             "string_list_field": [str],
+            "zmap_list_field": {str: int},
         }
     )
 
@@ -109,9 +183,25 @@ def test_single_level_dict_lists_and_nullable():
   nullable_int_field?: Int?
   optional_int_field?: Int
   string_list_field: [String]
+  zmap_list_field: {
+    [String]: Int
+  }
 }"""
 
     assert output == expected
+
+
+def test_nested_dicts_and_maps():
+    output = print_config_type_to_string({"field_one": {str: {"field_two": {str: int}}}})
+    expected = """{
+  field_one: {
+    [String]: {
+      field_two: {
+        [String]: Int
+      }
+    }
+  }
+}"""
 
 
 def test_nested_dict():

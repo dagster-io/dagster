@@ -377,7 +377,7 @@ def test_run_partition_data_migration():
         assert len(run_storage._get_partition_runs(partition_set_name, partition_name)) == 0
 
         # actually migrate the data
-        run_storage.build_missing_indexes(force_rebuild_all=True)
+        run_storage.migrate(force_rebuild_all=True)
 
         # ensure that we get the same partitioned runs returned
         assert run_storage.has_built_index(RUN_PARTITIONS)
@@ -606,3 +606,4 @@ def test_start_time_end_time():
         instance._run_storage._alembic_downgrade(rev="7f2b1a4ca7a5")
 
         assert get_current_alembic_version(db_path) == "7f2b1a4ca7a5"
+        assert True

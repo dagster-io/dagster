@@ -64,7 +64,7 @@ describe('useAssetSearch', () => {
     await waitFor(() => {
       // Two matches, `foo`, and Gettysburg.
       expect(screen.queryByText(/Results \(2\)/)).toBeVisible();
-      expect(screen.queryByText(/Item: foo \u203a bar/)).toBeVisible();
+      expect(screen.queryByText(/Item: foo > bar/)).toBeVisible();
     });
   });
 
@@ -85,7 +85,7 @@ describe('useAssetSearch', () => {
     await waitFor(() => {
       // No matches.
       expect(screen.queryByText(/Results \(0\)/)).toBeVisible();
-      expect(screen.queryByText(/Item: foo \u203a bar/)).toBeNull();
+      expect(screen.queryByText(/Item: foo > bar/)).toBeNull();
     });
   });
 
@@ -106,7 +106,7 @@ describe('useAssetSearch', () => {
     await waitFor(() => {
       // Gettysburg is our only match.
       expect(screen.queryByText(/Results \(1\)/)).toBeVisible();
-      expect(screen.queryByText(`Item: ${GETTYSBURG.split(' ').join(' \u203a ')}`)).toBeVisible();
+      expect(screen.queryByText(`Item: ${GETTYSBURG.split(' ').join(' > ')}`)).toBeVisible();
     });
   });
 });
