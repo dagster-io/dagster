@@ -231,33 +231,26 @@ def multi_asset(
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         asset_name = name or fn.__name__
-        ins_by_input_names: Mapping[str, In] = build_asset_ins(
-            fn, None, ins or {}, non_argument_deps
-        )
-        outs_by_output_names: Mapping[str, Out] = build_asset_outs(
+        asset_ins = build_asset_ins(fn, None, ins or {}, non_argument_deps)
+        asset_outs = build_asset_outs(
             asset_name, outs, ins_by_input_names, internal_asset_deps or {}
         )
 
         op = _Op(
             name=asset_name,
             description=description,
-            ins={
-                input_name: in_def for input_name, in_def in ins_by_input_names.items()
-            },  # convert Mapping object to dict
-            out={
-                output_name: out_def for output_name, out_def in outs_by_output_names.items()
-            },  # convert Mapping object to dict
+            ins=asset_ins,
+            out=asset_outs,
             required_resource_keys=required_resource_keys,
             tags={"kind": compute_kind} if compute_kind else None,
         )(fn)
 
         return AssetsDefinition(
             input_names_by_asset_key={
-                in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
+                in_def.asset_key: input_name for input_name, in_def in asset_ins.items()
             },
             output_names_by_asset_key={
-                out_def.asset_key: output_name  # type: ignore
-                for output_name, out_def in outs_by_output_names.items()
+                out_def.asset_key: output_name for output_name, out_def in asset_outs.items()  # type: ignore
             },
             op=op,
         )
@@ -270,7 +263,7 @@ def build_asset_outs(
     outs: Mapping[str, Out],
     ins: Mapping[str, In],
     internal_asset_deps: Mapping[str, Set[AssetKey]],
-):
+) -> Dict[str, Out]:
 
     # if an AssetKey is not supplied, create one based off of the out's name
     asset_keys_by_out_name = {
@@ -320,7 +313,7 @@ def build_asset_ins(
     asset_namespace: Optional[Sequence[str]],
     asset_ins: Mapping[str, AssetIn],
     non_argument_deps: Optional[Set[AssetKey]],
-) -> Mapping[str, In]:
+) -> Dict[str, In]:
 
     non_argument_deps = check.opt_set_param(non_argument_deps, "non_argument_deps", AssetKey)
 
