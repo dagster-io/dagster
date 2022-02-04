@@ -834,9 +834,9 @@ def test_context_logging_metadata():
             keys = tuple(context.get_output_identifier())
             self.values[keys] = obj
 
-            context.add_metadata_entry(EventMetadataEntry.text(label="foo", text="foo"))
+            context.add_metadata({"foo": "bar"})
             yield EventMetadataEntry.text(label="baz", text="baz")
-            context.add_metadata_entry(EventMetadataEntry.text(label="bar", text="bar"))
+            context.add_metadata({"bar": "bar"})
 
         def load_input(self, context):
             keys = tuple(context.upstream_output.get_output_identifier())

@@ -483,10 +483,6 @@ class OutputContext:
         """
         from dagster.core.definitions.event_metadata import parse_metadata
 
-        if self._metadata_entries:
-            raise DagsterInvariantViolationError(
-                f"Metadata entries were already added for output {self.name}. Metadata can only be logged once per output."
-            )
         self._metadata_entries = parse_metadata(metadata, [])
 
     def get_logged_metadata_entries(
@@ -494,6 +490,17 @@ class OutputContext:
     ) -> List[Union[EventMetadataEntry, PartitionMetadataEntry]]:
         """Get the list of metadata entries that have been logged for use with this output."""
         return self._metadata_entries or []
+
+    def consume_logged_metadata_entries(
+        self,
+    ) -> List[Union[EventMetadataEntry, PartitionMetadataEntry]]:
+        """Pops and yields all user-generated metadata entries that have been recorded from this context.
+
+        If consume_logged_metadata_entries has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_logged_metadata_entries has been called, it will yield all events since the last time consume_logged_metadata_entries was called. Designed for internal use. Users should never need to invoke this method.
+        """
+        result = self._metadata_entries
+        self._metadata_entries = []
+        return result or []
 
 
 def get_output_context(
