@@ -136,6 +136,13 @@ RUN echo "--- \033[32m:linux: Misc installs and cleanup\033[0m" \
 # https://github.com/docker/compose-cli/blob/main/INSTALL.md
 RUN curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
 
+# install python-dev, libevent-dev for python 3.9 greenlet
+RUN apt-get update -yqq \
+    && apt-get upgrade -yqq \
+    && apt-get install -yqq --no-install-recommends \
+    python-dev \
+    libevent-dev
+
 # Install Python deps
 ADD trigger_maven.py .
 RUN pip install -U pip setuptools wheel \
@@ -146,6 +153,9 @@ RUN pip install -U pip setuptools wheel \
     # This instigates some package downloads required by the airline-demo
     && python trigger_maven.py \
     && rm trigger_maven.py
+
+# install Cython for airflow > pandas in python 3.9
+RUN pip --no-cache-dir install Cython
 
 RUN wget http://download.redis.io/redis-stable.tar.gz \
     && tar xvzf redis-stable.tar.gz \
