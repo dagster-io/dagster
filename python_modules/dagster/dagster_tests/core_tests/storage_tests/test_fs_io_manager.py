@@ -103,6 +103,7 @@ def test_fs_io_manager_memoization():
             assert result.success
             assert len(recorder) == 1
 
+
 def test_fs_io_manager_unpicklable():
     @op
     def unpicklable_output():
@@ -133,5 +134,3 @@ def test_fs_io_manager_unpicklable():
                 "https://docs.dagster.io/deployment/executors#overview"
             ):
                 my_job.execute_in_process(instance=instance)
-
-            # assert False

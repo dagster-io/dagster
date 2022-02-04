@@ -122,7 +122,7 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         with open(filepath, self.write_mode) as write_obj:
             try:
                 pickle.dump(obj, write_obj, PICKLE_PROTOCOL)
-            except Exception as e:
+            except (AttributeError, RecursionError, ImportError, pickle.PicklingError):
                 executor = context.step_context.pipeline_def.mode_definitions[0].executor_defs[0]
 
                 raise DagsterInvariantViolationError(
