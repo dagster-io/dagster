@@ -639,7 +639,6 @@ class CachingRepositoryData(RepositoryData):
                     "__REPOSITORY_MEGA_JOB",
                     definition.assets,
                     resource_defs=definition.resource_defs,
-                    executor_def=definition.executor_def,
                 )
 
             else:

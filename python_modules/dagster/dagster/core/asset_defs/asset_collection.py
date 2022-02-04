@@ -1,6 +1,5 @@
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple
 
-from ..definitions.executor_definition import ExecutorDefinition
 from ..definitions.resource_definition import ResourceDefinition
 from .asset import AssetsDefinition
 
@@ -8,4 +7,14 @@ from .asset import AssetsDefinition
 class AssetCollection(NamedTuple):
     assets: List[AssetsDefinition]
     resource_defs: Dict[str, ResourceDefinition]
-    executor_def: Optional[ExecutorDefinition]
+
+    @staticmethod
+    def from_list(assets, resource_defs=None) -> "AssetCollection":
+        return AssetCollection(assets=assets, resource_defs=resource_defs)
+
+    @staticmethod
+    def from_package(path, resource_defs=None) -> "AssetCollection":
+        pass
+
+    def execute_in_process(self, instance):
+        pass

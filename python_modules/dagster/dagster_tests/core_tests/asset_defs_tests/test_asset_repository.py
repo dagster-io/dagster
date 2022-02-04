@@ -21,10 +21,9 @@ def test_asset_repository():
     def the_resource():
         pass
 
-    collection = AssetCollection(
+    collection = AssetCollection.from_list(
         assets=[asset_foo, asset_bar, last_asset],
         resource_defs={"the_resource": the_resource},
-        executor_def=None,
     )
 
     @repository

@@ -20,4 +20,4 @@ def last_asset(bar_in):
 
 
 asset_lst = [last_asset, asset_bar, asset_foo]
-collection = AssetCollection(assets=asset_lst, resource_defs={}, executor_def=None)
+collection = AssetCollection.from_list(assets=asset_lst)
