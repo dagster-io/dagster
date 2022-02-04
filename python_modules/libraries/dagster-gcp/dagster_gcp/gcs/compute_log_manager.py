@@ -12,7 +12,7 @@ from dagster.core.storage.compute_log_manager import (
 from dagster.core.storage.local_compute_log_manager import IO_TYPE_EXTENSION, LocalComputeLogManager
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import ensure_dir, ensure_file
-from google.cloud import storage
+from google.cloud import storage  # type: ignore
 
 
 class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
