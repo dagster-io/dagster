@@ -4,7 +4,6 @@ import subprocess
 from typing import Any, Dict
 
 from dagster import check
-from dagster.core.utils import coerce_valid_log_level
 
 from ..errors import (
     DagsterDbtCliFatalRuntimeError,
@@ -64,7 +63,7 @@ def execute_cli(
     logs = []
     output = []
 
-    process = subprocess.Popen(command_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    process = subprocess.Popen(command_list, stdout=subprocess.PIPE)
     for raw_line in process.stdout or []:
         line = raw_line.decode("utf-8")
         output.append(line)
@@ -74,10 +73,11 @@ def execute_cli(
             log.info(line.rstrip())
         else:
             logs.append(json_line)
-            level = coerce_valid_log_level(
-                json_line.get("levelname", json_line.get("level", "info"))
-            )
-            log.log(level, json_line.get("message", json_line.get("msg", line.rstrip())))
+            level = json_line.get("levelname", "").lower()
+            if hasattr(log, level):
+                getattr(log, level)(json_line.get("message", ""))
+            else:
+                log.info(line.rstrip())
 
     process.wait()
     return_code = process.returncode
