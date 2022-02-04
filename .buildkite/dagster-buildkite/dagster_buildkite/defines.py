@@ -1,4 +1,5 @@
 class SupportedPython:
+    V3_9 = "3.9.10"
     V3_8 = "3.8.7"
     V3_7 = "3.7.9"
     V3_6 = "3.6.12"
@@ -8,11 +9,13 @@ SupportedPythons = [
     SupportedPython.V3_6,
     SupportedPython.V3_7,
     SupportedPython.V3_8,
+    SupportedPython.V3_9,
 ]
 
 ExamplePythons = [SupportedPython.V3_8]
 
 TOX_MAP = {
+    SupportedPython.V3_9: "py39",
     SupportedPython.V3_8: "py38",
     SupportedPython.V3_7: "py37",
     SupportedPython.V3_6: "py36",
