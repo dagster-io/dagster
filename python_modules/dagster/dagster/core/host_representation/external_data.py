@@ -610,7 +610,7 @@ def external_asset_graph_from_defs(
                 node_defs_by_asset_key[output_asset_key].append((output_def, node_def, pipeline))
 
                 # if no deps specified, assume depends on all inputs and no outputs
-                asset_deps = output_def.metadata.get(ASSET_DEPENDENCY_METADATA_KEY)
+                asset_deps = (output_def.metadata or {}).get(ASSET_DEPENDENCY_METADATA_KEY)
                 if asset_deps is None:
                     asset_deps = node_upstream_asset_keys
 
