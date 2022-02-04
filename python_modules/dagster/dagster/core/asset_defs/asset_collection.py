@@ -18,3 +18,12 @@ class AssetCollection(NamedTuple):
 
     def execute_in_process(self, instance):
         pass
+
+    def build_job_spec(self, subset):
+        pass
+
+    def build_schedule(self):
+        pass
+
+    def build_sensor(self):
+        pass
