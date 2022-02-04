@@ -8,7 +8,7 @@ import {Description} from '../pipelines/Description';
 import {explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
-import {LiveData} from '../workspace/asset-graph/Utils';
+import {LiveData, __REPOSITORY_MEGA_JOB} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -43,16 +43,18 @@ export const AssetNodeDefinition: React.FC<{
           >
             <Subheading>Definition in Repository</Subheading>
             <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}}>
-              {assetNode.jobs.map((job) => (
-                <Mono key={job.id}>
-                  <PipelineReference
-                    isJob
-                    showIcon
-                    pipelineName={job.name}
-                    pipelineHrefContext={repoAddress}
-                  />
-                </Mono>
-              ))}
+              {assetNode.jobs
+                .filter((job) => job.name !== __REPOSITORY_MEGA_JOB)
+                .map((job) => (
+                  <Mono key={job.id}>
+                    <PipelineReference
+                      isJob
+                      showIcon
+                      pipelineName={job.name}
+                      pipelineHrefContext={repoAddress}
+                    />
+                  </Mono>
+                ))}
               {displayNameForAssetKey(assetNode.assetKey) !== assetNode.opName && (
                 <Box flex={{gap: 6, alignItems: 'center'}}>
                   <IconWIP name="op" size={16} />

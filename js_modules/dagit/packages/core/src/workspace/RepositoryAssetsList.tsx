@@ -7,6 +7,7 @@ import styled from 'styled-components/macro';
 import {displayNameForAssetKey} from '../app/Util';
 import {PipelineReference} from '../pipelines/PipelineReference';
 
+import {__REPOSITORY_MEGA_JOB} from './asset-graph/Utils';
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
@@ -109,15 +110,17 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
             </td>
             <td>
               <Box flex={{direction: 'column', gap: 2}}>
-                {asset.jobs.map(({name}) => (
-                  <PipelineReference
-                    showIcon
-                    isJob
-                    key={name}
-                    pipelineName={name}
-                    pipelineHrefContext={repoAddress}
-                  />
-                ))}
+                {asset.jobs
+                  .filter((a) => a.name !== __REPOSITORY_MEGA_JOB)
+                  .map(({name}) => (
+                    <PipelineReference
+                      showIcon
+                      isJob
+                      key={name}
+                      pipelineName={name}
+                      pipelineHrefContext={repoAddress}
+                    />
+                  ))}
               </Box>
             </td>
           </tr>

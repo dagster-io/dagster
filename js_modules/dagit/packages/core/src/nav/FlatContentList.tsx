@@ -10,6 +10,7 @@ import {
   WorkspaceRepositorySchedule,
   WorkspaceRepositorySensor,
 } from '../workspace/WorkspaceContext';
+import {__REPOSITORY_MEGA_JOB} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -54,6 +55,10 @@ export const FlatContentList: React.FC<Props> = (props) => {
 
       const {schedules, sensors} = repository;
       for (const pipeline of repository.pipelines) {
+        if (pipeline.name === __REPOSITORY_MEGA_JOB) {
+          continue;
+        }
+
         const {isJob, name} = pipeline;
         const schedule = schedules.find((schedule) => schedule.pipelineName === name) || null;
         const sensor =

@@ -23,6 +23,7 @@ import {MetadataEntry} from '../runs/MetadataEntry';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {__REPOSITORY_MEGA_JOB} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
@@ -55,7 +56,7 @@ export const AssetEventsTable: React.FC<{
                 // If you're interacting with something in the row, don't trigger a focus change.
                 // Since focus is stored in the URL bar this overwrites any link click navigation.
                 // We could alternatively e.preventDefault() on every link but it's easy to forget.
-                if (e.target instanceof HTMLAnchorElement) {
+                if (e.target instanceof HTMLElement && e.target.closest('a')) {
                   return;
                 }
                 setFocused?.(group);
@@ -230,28 +231,30 @@ const EventGroupRow: React.FC<{
         </Group>
       </td>
       <td>
-        <Box margin={{bottom: 4}}>
-          <Box padding={{left: 8}}>
-            <PipelineReference
-              showIcon
-              pipelineName={run.pipelineName}
-              pipelineHrefContext={repoAddress || 'repo-unknown'}
-              snapshotId={run.pipelineSnapshotId}
-              isJob={isThisThingAJob(repo, run.pipelineName)}
-            />
+        {run.pipelineName !== __REPOSITORY_MEGA_JOB && (
+          <Box margin={{bottom: 4}}>
+            <Box padding={{left: 8}}>
+              <PipelineReference
+                showIcon
+                pipelineName={run.pipelineName}
+                pipelineHrefContext={repoAddress || 'repo-unknown'}
+                snapshotId={run.pipelineSnapshotId}
+                isJob={isThisThingAJob(repo, run.pipelineName)}
+              />
+            </Box>
+            <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
+              <IconWIP name="linear_scale" color={ColorsWIP.Gray400} />
+              <Link
+                to={`/instance/runs/${run.runId}?${qs.stringify({
+                  selection: latest.stepKey,
+                  logs: `step:${latest.stepKey}`,
+                })}`}
+              >
+                {latest.stepKey}
+              </Link>
+            </Group>
           </Box>
-          <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
-            <IconWIP name="linear_scale" color={ColorsWIP.Gray400} />
-            <Link
-              to={`/instance/runs/${run.runId}?${qs.stringify({
-                selection: latest.stepKey,
-                logs: `step:${latest.stepKey}`,
-              })}`}
-            >
-              {latest.stepKey}
-            </Link>
-          </Group>
-        </Box>
+        )}
       </td>
       <td>
         <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>

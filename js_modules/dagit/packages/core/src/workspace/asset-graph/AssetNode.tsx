@@ -28,7 +28,7 @@ import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {buildRepoAddress} from '../buildRepoAddress';
 import {workspacePath, workspacePipelinePathGuessRepo} from '../workspacePath';
 
-import {LiveDataForNode} from './Utils';
+import {LiveDataForNode, __REPOSITORY_MEGA_JOB} from './Utils';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
 import {useLaunchSingleAssetJob} from './useLaunchSingleAssetJob';
 
@@ -115,24 +115,28 @@ export const AssetNode: React.FC<{
             <Stats>
               {runOrError?.__typename === 'Run' && (
                 <StatsRow>
-                  <Link
-                    data-tooltip={runOrError.pipelineName}
-                    data-tooltip-style={RunLinkTooltipStyle}
-                    style={{overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 8}}
-                    target={inAssetCatalog ? '_blank' : undefined}
-                    onClick={(e) => e.stopPropagation()}
-                    to={
-                      repoAddress.name
-                        ? workspacePath(
-                            repoAddress.name,
-                            repoAddress.location,
-                            `jobs/${runOrError.pipelineName}`,
-                          )
-                        : workspacePipelinePathGuessRepo(runOrError.pipelineName, true, '')
-                    }
-                  >
-                    {runOrError.pipelineName}
-                  </Link>
+                  {runOrError.pipelineName !== __REPOSITORY_MEGA_JOB ? (
+                    <Link
+                      data-tooltip={runOrError.pipelineName}
+                      data-tooltip-style={RunLinkTooltipStyle}
+                      style={{overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 8}}
+                      target={inAssetCatalog ? '_blank' : undefined}
+                      onClick={(e) => e.stopPropagation()}
+                      to={
+                        repoAddress.name
+                          ? workspacePath(
+                              repoAddress.name,
+                              repoAddress.location,
+                              `jobs/${runOrError.pipelineName}`,
+                            )
+                          : workspacePipelinePathGuessRepo(runOrError.pipelineName, true, '')
+                      }
+                    >
+                      {runOrError.pipelineName}
+                    </Link>
+                  ) : (
+                    <span />
+                  )}
                   <Link
                     style={{fontFamily: FontFamily.monospace, fontSize: 14}}
                     to={`/instance/runs/${runOrError.runId}?${qs.stringify({
