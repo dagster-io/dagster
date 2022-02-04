@@ -1,9 +1,11 @@
 import os
 import pickle
 import tempfile
+import pytest
 
 from dagster import ModeDefinition, execute_pipeline, graph, op, pipeline, solid
 from dagster.core.definitions.version_strategy import VersionStrategy
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.fs_io_manager import fs_io_manager
@@ -100,3 +102,36 @@ def test_fs_io_manager_memoization():
             result = my_job.execute_in_process(instance=instance)
             assert result.success
             assert len(recorder) == 1
+
+def test_fs_io_manager_unpicklable():
+    @op
+    def unpicklable_output():
+        # lambda functions can't be pickled
+        return lambda x: x*x
+
+    @op
+    def op_b(_i):
+        return 1
+
+    @graph
+    def my_graph():
+        op_b(unpicklable_output())
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        with instance_for_test(temp_dir=tmp_dir) as instance:
+            io_manager = fs_io_manager.configured({"base_dir": tmp_dir})
+            my_job = my_graph.to_job(resource_defs={"io_manager": io_manager})
+
+            with pytest.raises(
+                DagsterInvariantViolationError,
+                match=r"Object .* is not picklable. Use the mem_io_manager with an in process "
+                "executor to avoid pickling outputs. You are currently using the fs_io_manager and "
+                "the execute_in_process_executor. \n"
+                "For more information on io managers, visit "
+                "https://docs.dagster.io/concepts/io-management/io-managers \n"
+                "For more information on executors, vist "
+                "https://docs.dagster.io/deployment/executors#overview"
+            ):
+                my_job.execute_in_process(instance=instance)
+
+            # assert False

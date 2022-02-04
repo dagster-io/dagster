@@ -6,6 +6,7 @@ from dagster.config import Field
 from dagster.config.source import StringSource
 from dagster.core.definitions.event_metadata import EventMetadataEntry
 from dagster.core.definitions.events import AssetKey, AssetMaterialization
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.input import InputContext
 from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.io_manager import IOManager, io_manager
@@ -119,7 +120,20 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         mkdir_p(os.path.dirname(filepath))
 
         with open(filepath, self.write_mode) as write_obj:
-            pickle.dump(obj, write_obj, PICKLE_PROTOCOL)
+            try:
+                pickle.dump(obj, write_obj, PICKLE_PROTOCOL)
+            except Exception as e:
+                executor = context.step_context.pipeline_def.mode_definitions[0].executor_defs[0]
+
+                raise DagsterInvariantViolationError(
+                    f"Object {obj} is not picklable. Use the mem_io_manager with an in process "
+                    "executor to avoid pickling outputs. You are currently using the "
+                    f"fs_io_manager and the {executor.name}. \n"
+                    "For more information on io managers, visit "
+                    "https://docs.dagster.io/concepts/io-management/io-managers \n"
+                    "For more information on executors, vist "
+                    "https://docs.dagster.io/deployment/executors#overview"
+                )
 
     def load_input(self, context):
         """Unpickle the file and Load it to a data object."""
