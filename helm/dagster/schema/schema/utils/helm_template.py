@@ -24,7 +24,7 @@ class HelmTemplate:
     subchart_paths: List[str]
     output: Optional[str] = None
     model: Optional[Any] = None
-    name: str = "RELEASE-NAME"
+    name: str = "release-name"
     api_client: ApiClient = ApiClient()
 
     def render(
