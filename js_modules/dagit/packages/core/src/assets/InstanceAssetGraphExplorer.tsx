@@ -3,7 +3,10 @@ import * as React from 'react';
 import {useParams} from 'react-router';
 import {useHistory} from 'react-router-dom';
 
-import {explorerPathFromString, explorerPathToString} from '../pipelines/PipelinePathUtils';
+import {
+  instanceAssetsExplorerPathFromString,
+  instanceAssetsExplorerPathToURL,
+} from '../pipelines/PipelinePathUtils';
 import {AssetGraphExplorer} from '../workspace/asset-graph/AssetGraphExplorer';
 
 import {AssetViewModeSwitch} from './AssetViewModeSwitch';
@@ -16,7 +19,7 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
 
   // This is a bit of a hack, but our explorer path needs a job name and we'd like
   // to continue sharing the parsing/stringifying logic from the job graph UI
-  const explorerPath = explorerPathFromString('instancewide' + params[0] || '/');
+  const explorerPath = instanceAssetsExplorerPathFromString(params[0]);
 
   return (
     <Box
@@ -55,8 +58,7 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
       <AssetGraphExplorer
         explorerPath={explorerPath}
         onChangeExplorerPath={(path, mode) => {
-          const pathstring = explorerPathToString(path).replace(/instancewide/g, '');
-          history[mode](`/instance/asset-graph${pathstring}`);
+          history[mode](instanceAssetsExplorerPathToURL(path));
         }}
       />
     </Box>

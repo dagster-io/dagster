@@ -43,6 +43,17 @@ export function explorerPathFromString(path: string): ExplorerPath {
   };
 }
 
+export function instanceAssetsExplorerPathFromString(path: string): ExplorerPath {
+  return explorerPathFromString('instancewide' + path || '/');
+}
+
+export function instanceAssetsExplorerPathToURL(path: Omit<ExplorerPath, 'pipelineName'>) {
+  return (
+    '/instance/asset-graph' +
+    explorerPathToString({...path, pipelineName: 'instancewide'}).replace(/instancewide/g, '')
+  );
+}
+
 export function useStripSnapshotFromPath(params: {pipelinePath: string}) {
   const history = useHistory();
   const {pipelinePath} = params;

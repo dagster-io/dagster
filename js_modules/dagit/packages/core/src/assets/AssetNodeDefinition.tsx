@@ -5,13 +5,12 @@ import {Link} from 'react-router-dom';
 
 import {displayNameForAssetKey, tokenForAssetKey} from '../app/Util';
 import {Description} from '../pipelines/Description';
-import {explorerPathToString} from '../pipelines/PipelinePathUtils';
+import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
 import {LiveData, __REPOSITORY_MEGA_JOB} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
 import {AssetNodeList} from './AssetNodeList';
@@ -125,7 +124,7 @@ const JobGraphLink: React.FC<{
   repoAddress: RepoAddress;
   assetNode: AssetNodeDefinitionFragment;
   direction: 'upstream' | 'downstream';
-}> = ({direction, assetNode, repoAddress}) => {
+}> = ({direction, assetNode}) => {
   if (assetNode.jobNames.length === 0 || !assetNode.opName) {
     return null;
   }
@@ -139,14 +138,10 @@ const JobGraphLink: React.FC<{
 
   return (
     <Link
-      to={workspacePathFromAddress(
-        repoAddress,
-        `/jobs/${explorerPathToString({
-          pipelineName: assetNode.jobNames[0],
-          opNames: [token],
-          opsQuery: direction === 'upstream' ? `*${token}` : `${token}*`,
-        })}`,
-      )}
+      to={instanceAssetsExplorerPathToURL({
+        opNames: [token],
+        opsQuery: direction === 'upstream' ? `*${token}` : `${token}*`,
+      })}
     >
       <Box flex={{gap: 4, alignItems: 'center'}}>
         {direction === 'upstream' ? 'View upstream graph' : 'View downstream graph'}
