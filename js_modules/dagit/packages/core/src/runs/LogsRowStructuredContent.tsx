@@ -10,11 +10,11 @@ import {AssetKey} from '../assets/types';
 import {ErrorSource} from '../types/globalTypes';
 
 import {EventTypeColumn} from './LogsRowComponents';
-import {LogRowStructuredContentTable, MetadataEntries, MetadataEntryLink} from './MetadataEntry';
+import {LogRowStructuredContentTable, MetadataEntries, MetadataEntryLink} from '../metadata/MetadataEntry';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
 import {LogsRowStructuredFragment} from './types/LogsRowStructuredFragment';
-import {MetadataEntryFragment} from './types/MetadataEntryFragment';
+import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
 
 interface IStructuredContentProps {
   node: LogsRowStructuredFragment;

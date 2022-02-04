@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, IconWIP, MetadataTable, } from '@dagster-io/ui';
+import {Box, ColorsWIP, IconWIP, MetadataTable} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -15,12 +15,11 @@ import {buildRepoAddress} from '../buildRepoAddress';
 
 import {LiveDataForNode} from './Utils';
 import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
-import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
+import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntry';
 import {
-  isTableSchemaMetadataEntry,
   TableSchema,
-  TTableSchemaMetadataEntry,
-} from '../../runs/TableSchema';
+  ITableSchemaMetadataEntry,
+} from '../../metadata/TableSchema';
 import {RepoAddress} from '../types';
 
 import {
@@ -44,20 +43,9 @@ export const extractOutputType = (result: DagsterTypeForAssetOp): AssetType | nu
 
 export const extractOutputTableSchemaMetadataEntry = (
   result: DagsterTypeForAssetOp,
-): TTableSchemaMetadataEntry | null => {
+): ITableSchemaMetadataEntry | null => {
   const type = extractOutputType(result);
-  // TODO don't know why this isn't working, type inference is wrong
-  // const x = type.metadataEntries.find((entry) => isTableSchemaMetadataEntry(entry));
-  if (type !== null) {
-    for (const entry of type.metadataEntries) {
-      if (isTableSchemaMetadataEntry(entry)) {
-        return entry;
-      }
-    }
-    return null;
-  } else {
-    return null;
-  }
+  return type?.metadataEntries.find(gqlTypePredicate('EventTableSchemaMetadataEntry')) || null;
 };
 
 // TODO: needs to be renamed

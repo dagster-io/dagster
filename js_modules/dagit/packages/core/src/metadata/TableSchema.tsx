@@ -1,9 +1,8 @@
+import {ColorsWIP, TagWIP, Tooltip} from '@dagster-io/ui';
+import {gql} from 'graphql.macro';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ColorsWIP, TagWIP, Tooltip} from '../../../ui/src';
-
-import {IMetadataEntries} from './MetadataEntry';
 import {
   MetadataEntryFragment,
   MetadataEntryFragment_EventTableSchemaMetadataEntry,
@@ -11,9 +10,15 @@ import {
   MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_columns_constraints,
 } from './types/MetadataEntryFragment';
 
-export type TTableSchemaMetadataEntry = MetadataEntryFragment_EventTableSchemaMetadataEntry;
-export type TTableSchema = MetadataEntryFragment_EventTableSchemaMetadataEntry_schema;
+export type ITableSchemaMetadataEntry = MetadataEntryFragment_EventTableSchemaMetadataEntry;
+export type ITableSchema = MetadataEntryFragment_EventTableSchemaMetadataEntry_schema;
 type ColumnConstraints = MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_columns_constraints;
+
+const MAX_CONSTRAINT_TAG_CHARS = 30;
+
+// ########################
+// ##### COMPONENTS
+// ########################
 
 const ColumnItemContainer = styled.div`
   padding-top: 12px;
@@ -52,22 +57,20 @@ const ColumnDescription = styled.div`
 
 const TypeTag: React.FC<{type: string}> = ({type}) => <TagWIP intent="none">{type}</TagWIP>;
 
-const NonNullableTag = <TagWIP intent="warning">non-nullable</TagWIP>;
+const NonNullableTag = <TagWIP intent="primary">non-nullable</TagWIP>;
 
-const UniqueTag = <TagWIP intent="success">unique</TagWIP>;
-
-const MAX_BADGE_CHARS = 30;
+const UniqueTag = <TagWIP intent="primary">unique</TagWIP>;
 
 const ArbitraryConstraintTag: React.FC<{constraint: string}> = ({constraint}) => {
-  if (constraint.length > MAX_BADGE_CHARS) {
-    const content = constraint.substring(0, MAX_BADGE_CHARS - 3) + '...';
+  if (constraint.length > MAX_CONSTRAINT_TAG_CHARS) {
+    const content = constraint.substring(0, MAX_CONSTRAINT_TAG_CHARS - 3) + '...';
     return (
       <Tooltip content={<div>{constraint}</div>}>
-        <TagWIP intent="warning">{content}</TagWIP>
+        <TagWIP intent="primary">{content}</TagWIP>
       </Tooltip>
     );
   } else {
-    return <TagWIP intent="warning">{constraint}</TagWIP>;
+    return <TagWIP intent="primary">{constraint}</TagWIP>;
   }
 };
 
@@ -93,18 +96,8 @@ const ColumnItem: React.FC<{
   );
 };
 
-export const hasTableSchema = (obj: IMetadataEntries): boolean => {
-  return obj.metadataEntries.find(isTableSchemaMetadataEntry) !== undefined;
-};
-
-export const isTableSchemaMetadataEntry = (
-  metadataEntry: MetadataEntryFragment,
-): metadataEntry is MetadataEntryFragment_EventTableSchemaMetadataEntry => {
-  return metadataEntry.__typename === 'EventTableSchemaMetadataEntry';
-};
-
 export const TableSchema: React.FC<{
-  schema: TTableSchema;
+  schema: ITableSchema;
 }> = ({schema}) => {
   return (
     <div>
@@ -122,3 +115,26 @@ export const TableSchema: React.FC<{
     </div>
   );
 };
+
+// ########################
+// ##### GRAPHQL
+// ########################
+
+export const TABLE_SCHEMA_FRAGMENT = gql`
+  fragment TableSchemaFragment on TableSchema {
+    __typename
+    columns {
+      name
+      description
+      type
+      constraints {
+        nullable
+        unique
+        other
+      }
+    }
+    constraints {
+      other
+    }
+  }
+`;

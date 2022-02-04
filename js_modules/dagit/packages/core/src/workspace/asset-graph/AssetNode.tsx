@@ -22,7 +22,7 @@ import {displayNameForAssetKey} from '../../app/Util';
 import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
 import {NodeHighlightColors} from '../../graph/OpNode';
 import {OpTags} from '../../graph/OpTags';
-import {METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntry';
 import {titleForRun} from '../../runs/RunUtils';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';

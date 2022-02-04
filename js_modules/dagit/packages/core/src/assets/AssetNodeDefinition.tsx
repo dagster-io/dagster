@@ -4,11 +4,11 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {displayNameForAssetKey, tokenForAssetKey} from '../app/Util';
+import {MetadataEntry} from '../metadata/MetadataEntry';
+import {TableSchema, ITableSchemaMetadataEntry} from '../metadata/TableSchema';
 import {Description} from '../pipelines/Description';
 import {explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {MetadataEntry} from '../runs/MetadataEntry';
-import {TableSchema, TTableSchemaMetadataEntry} from '../runs/TableSchema';
 import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
 import {
   AssetTypeSidebarInfo,
@@ -74,7 +74,7 @@ export const AssetNodeDefinition: React.FC<{
   const [
     assetTableSchemaMetadataEntry,
     setAssetTableSchemaMetadataEntry,
-  ] = React.useState<TTableSchemaMetadataEntry | null>(null);
+  ] = React.useState<ITableSchemaMetadataEntry | null>(null);
   const [assetMetadata, setAssetMetadata] = React.useState<AssetMetadata | null>(null);
   React.useEffect(() => {
     if (dagsterTypeQueryPayload) {

@@ -18,8 +18,8 @@ import styled from 'styled-components/macro';
 
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
-import { TableSchema } from './TableSchema';
 
+import {TableSchema, TABLE_SCHEMA_FRAGMENT} from './TableSchema';
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 
 export interface IMetadataEntries {
@@ -165,30 +165,11 @@ export const MetadataEntry: React.FC<{
     case 'EventTableMetadataEntry':
       return <>TableMetadata</>;
     case 'EventTableSchemaMetadataEntry':
-      return <TableSchema schema={entry.schema}/>;
+      return <TableSchema schema={entry.schema} />;
     default:
       return assertUnreachable(entry);
   }
 };
-
-const TABLE_SCHEMA_FRAGMENT = gql`
-  fragment TableSchemaFragment on TableSchema {
-    __typename
-    columns {
-      name
-      description
-      type
-      constraints {
-        nullable
-        unique
-        other
-      }
-    }
-    constraints {
-      other
-    }
-  }
-`;
 
 export const METADATA_ENTRY_FRAGMENT = gql`
   fragment MetadataEntryFragment on EventMetadataEntry {

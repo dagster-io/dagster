@@ -16,7 +16,7 @@ import {
   TimestampColumn,
 } from './LogsRowComponents';
 import {LogsRowStructuredContent} from './LogsRowStructuredContent';
-import {METADATA_ENTRY_FRAGMENT} from './MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {LogsRowStructuredFragment} from './types/LogsRowStructuredFragment';
 import {LogsRowUnstructuredFragment} from './types/LogsRowUnstructuredFragment';

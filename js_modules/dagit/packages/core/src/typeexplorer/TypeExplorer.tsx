@@ -3,10 +3,11 @@ import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {gqlTypePredicate} from '../app/Util';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {TableSchema} from '../metadata/TableSchema';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
-import {METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
-import {isTableSchemaMetadataEntry, TableSchema} from '../runs/TableSchema';
 
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from './ConfigTypeSchema';
 import {TypeExplorerFragment} from './types/TypeExplorerFragment';
