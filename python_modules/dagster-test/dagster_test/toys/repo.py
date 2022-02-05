@@ -56,8 +56,8 @@ def toys_repository():
             asset_lineage_partition_set,
             model_pipeline,
             hello_world_notebook_pipeline,
-            collection,
         ]
+        + [collection, collection.build_job_spec("test", "asset_foo")]
         + get_toys_schedules()
         + get_toys_sensors()
     )

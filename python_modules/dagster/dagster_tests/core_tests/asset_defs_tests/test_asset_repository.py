@@ -28,7 +28,7 @@ def test_asset_repository():
 
     @repository
     def the_repo():
-        return [collection]
+        return [collection, collection.build_job_spec("test", "asset_bar")]
 
     mega_job = the_repo.get_all_jobs()[0]
     assert mega_job.name == "__REPOSITORY_MEGA_JOB"

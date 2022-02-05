@@ -559,12 +559,19 @@ class CachingRepositoryData(RepositoryData):
                 Use this constructor when you have no need to lazy load pipelines/jobs or other
                 definitions.
         """
-        from dagster.core.asset_defs import ForeignAsset, AssetCollection, build_assets_job
+        from dagster.core.asset_defs import (
+            ForeignAsset,
+            AssetCollection,
+            build_assets_job,
+            JobSpec,
+            build_job_from_spec,
+        )
 
         pipelines_or_jobs = {}
         partition_sets = {}
         schedules = {}
         sensors = {}
+        job_specs = {}
         foreign_assets = {}
         for definition in repository_definitions:
             if isinstance(definition, PipelineDefinition):
@@ -635,11 +642,15 @@ class CachingRepositoryData(RepositoryData):
                 foreign_assets[definition.key] = definition
 
             elif isinstance(definition, AssetCollection):
+                # TODO: standardize / constant-ize the name of repo mega job
                 pipelines_or_jobs["__REPOSITORY_MEGA_JOB"] = build_assets_job(
                     "__REPOSITORY_MEGA_JOB",
                     definition.assets,
                     resource_defs=definition.resource_defs,
                 )
+            elif isinstance(definition, JobSpec):
+                # TODO: make sure that JobSpec does not name interfere with any existing jobs
+                job_specs[definition.name] = definition
 
             else:
                 check.failed(f"Unexpected repository entry {definition}")
@@ -651,6 +662,9 @@ class CachingRepositoryData(RepositoryData):
                 jobs[name] = pipeline_or_job
             else:
                 pipelines[name] = pipeline_or_job
+
+        for name, job_spec in job_specs.items():
+            jobs[name] = build_job_from_spec(jobs["__REPOSITORY_MEGA_JOB"], job_spec)
 
         return CachingRepositoryData(
             pipelines=pipelines,

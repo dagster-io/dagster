@@ -99,6 +99,43 @@ def build_assets_job(
     )
 
 
+def build_job_from_spec(mega_job_def, job_spec):
+    from dagster.core.selector.subset_selector import parse_op_selection, OpSelectionData
+    from dagster.core.definitions.job_definition import get_subselected_graph_definition
+    from dagster.core.definitions.mode import ModeDefinition
+
+    selection = job_spec.subset.split(",")
+    resolved_op_selection_dict = parse_op_selection(mega_job_def, selection)
+
+    sub_graph = get_subselected_graph_definition(mega_job_def.graph, resolved_op_selection_dict)
+
+    orig_mode_def = mega_job_def.get_mode_definition()
+    mode_def = ModeDefinition(
+        resource_defs=orig_mode_def.resource_defs,
+        logger_defs=orig_mode_def.loggers,
+        executor_defs=[job_spec.executor_def or orig_mode_def.executor_defs[0]],
+    )
+    # TODO: add description to job_spec
+    return JobDefinition(
+        name=job_spec.name,
+        description=mega_job_def.description,
+        mode_def=mode_def,
+        preset_defs=mega_job_def.preset_defs,
+        tags=mega_job_def.tags,
+        hook_defs=mega_job_def.hook_defs,
+        op_retry_policy=mega_job_def._solid_retry_policy,
+        graph_def=sub_graph,
+        version_strategy=mega_job_def.version_strategy,
+        _op_selection_data=OpSelectionData(
+            op_selection=selection,
+            resolved_op_selection=set(
+                resolved_op_selection_dict.keys()
+            ),  # equivalent to solids_to_execute. currently only gets top level nodes.
+            parent_job_def=mega_job_def,  # used by pipeline snapshot lineage
+        ),
+    )
+
+
 def build_job_partitions_from_assets(
     assets: Sequence[AssetsDefinition],
 ) -> Optional[PartitionedConfig]:

@@ -20,9 +20,9 @@ class AssetCollection(NamedTuple):
     def execute_in_process(self, instance):
         pass
 
-    def build_job_spec(self, subset):
+    def build_job_spec(self, name, subset, executor_def=None):
         # TODO: resolve subset immediately using the asset list and make sure it doesn't error
-        return JobSpec(subset=subset)
+        return JobSpec(name=name, subset=subset, executor_def=executor_def)
 
     def build_schedule(self):
         pass
@@ -32,4 +32,6 @@ class AssetCollection(NamedTuple):
 
 
 class JobSpec(NamedTuple):
+    name: str
     subset: str
+    executor_def: ExecutorDefinition
