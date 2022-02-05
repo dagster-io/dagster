@@ -354,6 +354,12 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ),
     ModuleBuildSpec(
         "python_modules/libraries/dagster-airflow",
+        # omit python 3.9 until we add support
+        supported_pythons=[
+            SupportedPython.V3_6,
+            SupportedPython.V3_7,
+            SupportedPython.V3_8,
+        ],
         env_vars=[
             "AIRFLOW_HOME",
             "AWS_ACCOUNT_ID",
