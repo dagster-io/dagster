@@ -1,7 +1,8 @@
-from typing import Dict, List, NamedTuple
+from typing import Dict, List, NamedTuple, Optional
 
 from ..definitions.resource_definition import ResourceDefinition
 from .asset import AssetsDefinition
+from ..definitions.executor_definition import ExecutorDefinition
 
 
 class AssetCollection(NamedTuple):
@@ -20,10 +21,15 @@ class AssetCollection(NamedTuple):
         pass
 
     def build_job_spec(self, subset):
-        pass
+        # TODO: resolve subset immediately using the asset list and make sure it doesn't error
+        return JobSpec(subset=subset)
 
     def build_schedule(self):
         pass
 
     def build_sensor(self):
         pass
+
+
+class JobSpec(NamedTuple):
+    subset: str
