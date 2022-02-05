@@ -32,3 +32,8 @@ def test_asset_repository():
 
     mega_job = the_repo.get_all_jobs()[0]
     assert mega_job.name == "__REPOSITORY_MEGA_JOB"
+
+    subset_job = the_repo.get_all_jobs()[1]
+    assert subset_job.name == "test"
+    assert len(subset_job.graph.solids) == 1
+    assert subset_job.graph.solids[0].name == "asset_bar"
