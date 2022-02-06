@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+basedir="$(dirname "${BASH_SOURCE[0]}")/../../"
+pushd $basedir
+
+  CONSUMPTION_DATAMART_PATH="$PWD/schema/phase_1/consumption_datamart.db"
+  echo "(Re)creating $CONSUMPTION_DATAMART_PATH..."
+  rm $CONSUMPTION_DATAMART_PATH
+  sqlite3 $CONSUMPTION_DATAMART_PATH < schema/phase_1/consumption_datamart.sqlite3.sql
+
+  echo "DONE.  Attach using:"
+  echo "ATTACH DATABASE 'file:$CONSUMPTION_DATAMART_PATH' AS consumption_datamart;"
+popd
