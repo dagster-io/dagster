@@ -66,8 +66,6 @@ _anonymous_type_name = _anonymous_type_name_func()
 def pandera_schema_to_dagster_type(
     schema: Union[pa.DataFrameSchema, Type[pa.SchemaModel]],
     name: Optional[str] = None,
-    description: Optional[str] = None,
-    column_descriptions: Optional[Mapping[str, str]] = None,
 ):
 
     if isinstance(schema, type) and issubclass(schema, pa.SchemaModel):
@@ -103,12 +101,12 @@ def pandera_schema_to_dagster_type(
 
         return TypeCheck(success=True)
 
-    tschema = pandera_schema_to_table_schema(schema, column_descriptions or {})
+    tschema = pandera_schema_to_table_schema(schema)
 
     return DagsterType(
         type_check_fn=type_check_fn,
         name=name,
-        description=description,
+        description=schema.description,
         metadata_entries=[
             EventMetadataEntry.text("foo", label="test"),
             EventMetadataEntry.table_schema(tschema, label="schema"),
@@ -119,9 +117,7 @@ def pandera_schema_to_dagster_type(
 # TODO: implement TableConstraints
 
 
-def pandera_schema_to_table_schema(
-    schema: pa.DataFrameSchema, column_descriptions: Mapping[str, str]
-) -> TableSchema:
+def pandera_schema_to_table_schema(schema: pa.DataFrameSchema) -> TableSchema:
     """Convert a pandera schema to a Dagster `TableSchema`.
 
     Args:
@@ -130,14 +126,11 @@ def pandera_schema_to_table_schema(
     Returns:
         TableSchema: The converted table schema.
     """
-    columns = [
-        pandera_column_to_table_column(col, column_descriptions.get(cast(str, k), None))
-        for k, col in schema.columns.items()
-    ]
+    columns = [pandera_column_to_table_column(col) for k, col in schema.columns.items()]
     return TableSchema(columns=columns)
 
 
-def pandera_column_to_table_column(pa_column: pa.Column, description: Optional[str]) -> TableColumn:
+def pandera_column_to_table_column(pa_column: pa.Column) -> TableColumn:
     """Convert a pandera column to a dagster `TableColumn`.
 
     Args:
@@ -156,7 +149,7 @@ def pandera_column_to_table_column(pa_column: pa.Column, description: Optional[s
     return TableColumn(
         name=name,
         type=str(pa_column.dtype),
-        description=description,
+        description=pa_column.description,
         constraints=constraints,
     )
 
@@ -171,9 +164,7 @@ def pandera_check_to_column_constraint(pa_check: pa.Check) -> str:
     Returns:
         str: The descriptive string.
     """
-
-    # `error` is the closest thing to a "description" offered by a pandera check
-    return pa_check.error
+    return pa_check.description or pa_check.error
 
 
 __all__ = [
