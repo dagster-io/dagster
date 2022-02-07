@@ -33,7 +33,7 @@ setup(
         "gcsfs",
         "fsspec",
         "s3fs",
-        "scipy",
+        "scipy<1.8.0",
         "sklearn",
         "snowflake-sqlalchemy",
     ],
