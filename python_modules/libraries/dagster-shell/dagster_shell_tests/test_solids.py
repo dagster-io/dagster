@@ -23,9 +23,28 @@ def test_shell_command(factory):
     assert result.output_values == {"result": "this is a test message: foobar\n"}
 
 
+@pytest.mark.parametrize("factory", [create_shell_command_solid, create_shell_command_op])
+def test_shell_command_inherits_environment(monkeypatch, factory):
+    # OUTSIDE_ENV_VAR represents an environment variable that should be available
+    # to jobs. eg. 12-factor app secrets, defined in your Docker container, etc.
+    monkeypatch.setenv("OUTSIDE_ENV_VAR", "foo")
+
+    solid = factory('echo "$OUTSIDE_ENV_VAR:$MY_ENV_VAR"', name="foobar")
+
+    # inherit outside environment variables if none specified for op
+    result = execute_solid(solid)
+    assert result.output_values == {"result": "foo:\n"}
+
+    # also inherit outside environment variables if env vars specified for op
+    result = execute_solid(
+        solid,
+        run_config={"solids": {"foobar": {"config": {"env": {"MY_ENV_VAR": "bar"}}}}},
+    )
+    assert result.output_values == {"result": "foo:bar\n"}
+
+
 @pytest.mark.parametrize("shell_defn,name", [(shell_op, "shell_op"), (shell_solid, "shell_solid")])
 def test_shell(shell_defn, name):
-
     result = execute_solid(
         shell_defn,
         input_values={"shell_command": 'echo "this is a test message: $MY_ENV_VAR"'},
