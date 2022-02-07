@@ -335,6 +335,10 @@ class ExternalPipeline(RepresentedPipeline):
     def is_job(self):
         return self._external_pipeline_data.is_job
 
+    @property
+    def is_asset_job(self):
+        return self._external_pipeline_data.is_asset_job
+
 
 class ExternalExecutionPlan:
     """
