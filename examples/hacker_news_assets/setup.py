@@ -23,7 +23,7 @@ setup(
         "dagster-pyspark",
         "dagster-slack",
         "dagster-postgres",
-        "dbt>=0.19.0",
+        "dbt-core",
         "mock",
         # DataFrames were not written to Snowflake, causing errors
         "pandas<1.4.0",
