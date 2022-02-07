@@ -136,7 +136,7 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
                     f"Object {obj_repr} is not picklable. You are currently using the "
                     f"fs_io_manager and the {executor.name}. You will need to use a different "
                     "io manager to continue using this output. For example, you can use the "
-                    "mem_io_manager with an in process executor.\n"
+                    "mem_io_manager with the in_process_executor.\n"
                     "For more information on io managers, visit "
                     "https://docs.dagster.io/concepts/io-management/io-managers \n"
                     "For more information on executors, vist "

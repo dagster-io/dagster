@@ -1,8 +1,8 @@
 import os
 import pickle
 import tempfile
-import pytest
 
+import pytest
 from dagster import ModeDefinition, execute_pipeline, graph, op, pipeline, solid
 from dagster.core.definitions.version_strategy import VersionStrategy
 from dagster.core.errors import DagsterInvariantViolationError
@@ -105,7 +105,8 @@ def test_fs_io_manager_memoization():
 
 
 # lamdba functions can't be pickled (pickle.PicklingError)
-l = lambda x: x*x
+l = lambda x: x * x
+
 
 def test_fs_io_manager_unpicklable():
     @op
@@ -113,6 +114,7 @@ def test_fs_io_manager_unpicklable():
         # locally defined functions can't be pickled (AttributeError)
         def local_func():
             return 1
+
         return local_func
 
     @op
@@ -149,21 +151,19 @@ def test_fs_io_manager_unpicklable():
 
             local_func_job = local_func_graph.to_job(resource_defs={"io_manager": io_manager})
             with pytest.raises(
-                DagsterInvariantViolationError,
-                match=r"Object .* is not picklable. .*"
+                DagsterInvariantViolationError, match=r"Object .* is not picklable. .*"
             ):
                 local_func_job.execute_in_process(instance=instance)
 
             lambda_job = lambda_graph.to_job(resource_defs={"io_manager": io_manager})
             with pytest.raises(
-                DagsterInvariantViolationError,
-                match=r"Object .* is not picklable. .*"
+                DagsterInvariantViolationError, match=r"Object .* is not picklable. .*"
             ):
                 lambda_job.execute_in_process(instance=instance)
 
             recursion_job = recursion_limit_graph.to_job(resource_defs={"io_manager": io_manager})
             with pytest.raises(
                 DagsterInvariantViolationError,
-                match=r"Object .* exceeds recursion limit and is not picklable. .*"
+                match=r"Object .* exceeds recursion limit and is not picklable. .*",
             ):
                 recursion_job.execute_in_process(instance=instance)
