@@ -2,6 +2,7 @@ import pytest
 from dagster import (
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     DagsterInvariantViolationError,
     DynamicOut,
     DynamicOutput,
@@ -262,4 +263,19 @@ def test_asset_materialization():
     result = my_job.execute_in_process()
     assert result.asset_materializations_for_node("my_op") == [
         AssetMaterialization(asset_key=AssetKey(["abc"]))
+    ]
+
+
+def test_asset_observation():
+    @op(out={})
+    def my_op():
+        yield AssetObservation("abc")
+
+    @job
+    def my_job():
+        my_op()
+
+    result = my_job.execute_in_process()
+    assert result.asset_observations_for_node("my_op") == [
+        AssetObservation(asset_key=AssetKey(["abc"]))
     ]
