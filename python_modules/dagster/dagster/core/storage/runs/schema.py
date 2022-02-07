@@ -24,9 +24,9 @@ RunsTable = db.Table(
     db.Column("partition_set", db.Text),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
     db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
-    # December 2021 - Added by PR 6038
-    db.Column("start_time", db.Float),
-    db.Column("end_time", db.Float),
+    # Jan 2022 - Initially added start_time/end_time (#6038), migrated/renamed in (#6511)
+    db.Column("start_timestamp", db.types.TIMESTAMP),
+    db.Column("end_timestamp", db.types.TIMESTAMP),
 )
 
 # Secondary Index migration table, used to track data migrations, both for event_logs and runs.

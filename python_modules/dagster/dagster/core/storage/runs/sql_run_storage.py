@@ -147,14 +147,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         now = pendulum.now("UTC")
 
         if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:
-            kwargs["start_time"] = now.timestamp()
+            kwargs["start_timestamp"] = utc_datetime_from_timestamp(now.timestamp())
 
         if run_stats_cols_in_index and event.event_type in {
             DagsterEventType.PIPELINE_CANCELED,
             DagsterEventType.PIPELINE_FAILURE,
             DagsterEventType.PIPELINE_SUCCESS,
         }:
-            kwargs["end_time"] = now.timestamp()
+            kwargs["end_timestamp"] = utc_datetime_from_timestamp(now.timestamp())
 
         with self.connect() as conn:
 
@@ -378,7 +378,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         columns = ["id", "run_body", "create_timestamp", "update_timestamp"]
 
         if self.has_run_stats_index_cols():
-            columns += ["start_time", "end_time"]
+            columns += ["start_timestamp", "end_timestamp"]
         # only fetch columns we use to build RunRecord
         query = self._runs_query(
             filters=filters,
@@ -399,10 +399,12 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 ),
                 create_timestamp=check.inst(row["create_timestamp"], datetime),
                 update_timestamp=check.inst(row["update_timestamp"], datetime),
-                start_time=check.opt_inst(row["start_time"], float)
-                if "start_time" in row
+                start_timestamp=check.opt_inst(row["start_timestamp"], datetime)
+                if "start_timestamp" in row
                 else None,
-                end_time=check.opt_inst(row["end_time"], float) if "end_time" in row else None,
+                end_timestamp=check.opt_inst(row["end_timestamp"], float)
+                if "end_timestamp" in row
+                else None,
             )
             for row in rows
         ]
@@ -834,7 +836,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     def has_run_stats_index_cols(self):
         with self.connect() as conn:
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
-            return "start_time" in column_names and "end_time" in column_names
+            return "start_timestamp" in column_names and "end_timestamp" in column_names
 
     # Daemon heartbeats
 

@@ -497,8 +497,8 @@ class RunRecord(
             ("pipeline_run", PipelineRun),
             ("create_timestamp", datetime),
             ("update_timestamp", datetime),
-            ("start_time", Optional[float]),
-            ("end_time", Optional[float]),
+            ("start_timestamp", Optional[datetime]),
+            ("end_timestamp", Optional[datetime]),
         ],
     )
 ):
@@ -512,8 +512,8 @@ class RunRecord(
         pipeline_run,
         create_timestamp,
         update_timestamp,
-        start_time=None,
-        end_time=None,
+        start_timestamp=None,
+        end_timestamp=None,
     ):
         return super(RunRecord, cls).__new__(
             cls,
@@ -521,9 +521,10 @@ class RunRecord(
             pipeline_run=check.inst_param(pipeline_run, "pipeline_run", PipelineRun),
             create_timestamp=check.inst_param(create_timestamp, "create_timestamp", datetime),
             update_timestamp=check.inst_param(update_timestamp, "update_timestamp", datetime),
-            # start_time and end_time fields will be populated once the run has started and ended, respectively, but will be None beforehand.
-            start_time=check.opt_float_param(start_time, "start_time"),
-            end_time=check.opt_float_param(end_time, "end_time"),
+            # start_timestamp and end_timestamp fields will be populated once the run has started
+            # and ended, respectively, but will be None beforehand.
+            start_timestamp=check.opt_inst_param(start_timestamp, "start_timestamp", datetime),
+            end_timestamp=check.opt_inst_param(end_timestamp, "end_timestamp", datetime),
         )
 
 

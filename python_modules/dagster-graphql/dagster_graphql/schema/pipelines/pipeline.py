@@ -368,20 +368,22 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_startTime(self, graphene_info):
         run_record = self._get_run_record(graphene_info.context.instance)
-        # If a user has not migrated in 0.13.15, then run_record will not have start_time and end_time. So it will be necessary to fill this data using the run_stats. Since we potentially make this call multiple times, we cache the result.
-        if run_record.start_time is None and self._pipeline_run.status in STARTED_STATUSES:
+        # If a user has not migrated in 0.13.19, then run_record will not have start_timestamp /
+        # end_timestamp. So it will be necessary to fill this data using the run_stats. Since we
+        # potentially make this call multiple times, we cache the result.
+        if run_record.start_timestamp is None and self._pipeline_run.status in STARTED_STATUSES:
             if self._run_stats is None or self._run_stats.start_time is None:
                 self._run_stats = graphene_info.context.instance.get_run_stats(self.runId)
             return self._run_stats.start_time
-        return run_record.start_time
+        return datetime_as_float(run_record.start_timestamp) if run_record.start_timestamp else None
 
     def resolve_endTime(self, graphene_info):
         run_record = self._get_run_record(graphene_info.context.instance)
-        if run_record.end_time is None and self._pipeline_run.status in COMPLETED_STATUSES:
+        if run_record.end_timestamp is None and self._pipeline_run.status in COMPLETED_STATUSES:
             if self._run_stats is None or self._run_stats.end_time is None:
                 self._run_stats = graphene_info.context.instance.get_run_stats(self.runId)
             return self._run_stats.end_time
-        return run_record.end_time
+        return datetime_as_float(run_record.end_timestamp) if run_record.end_timestamp else None
 
     def resolve_updateTime(self, graphene_info):
         run_record = self._get_run_record(graphene_info.context.instance)

@@ -32,6 +32,7 @@ from dagster.core.utils import make_new_run_id
 from dagster.daemon.daemon import SensorDaemon
 from dagster.daemon.types import DaemonHeartbeat
 from dagster.serdes import serialize_pp
+from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 win_py36 = seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
 
@@ -1194,8 +1195,8 @@ class TestRunStorage:
 
         run_record = storage.get_run_records(PipelineRunsFilter(run_ids=[run_id]))[0]
 
-        assert run_record.start_time is None
-        assert run_record.end_time is None
+        assert run_record.start_timestamp is None
+        assert run_record.end_timestamp is None
 
         storage.handle_run_event(
             run_id,
@@ -1208,8 +1209,8 @@ class TestRunStorage:
 
         run_record = storage.get_run_records(PipelineRunsFilter(run_ids=[run_id]))[0]
 
-        assert run_record.start_time is not None
-        assert run_record.end_time is None
+        assert run_record.start_timestamp is not None
+        assert run_record.end_timestamp is None
 
         storage.handle_run_event(
             run_id,
@@ -1222,9 +1223,9 @@ class TestRunStorage:
 
         run_record = storage.get_run_records(PipelineRunsFilter(run_ids=[run_id]))[0]
 
-        assert run_record.start_time is not None
-        assert run_record.end_time is not None
-        assert run_record.end_time >= run_record.start_time
+        assert run_record.start_timestamp is not None
+        assert run_record.end_timestamp is not None
+        assert run_record.end_timestamp >= run_record.start_timestamp
 
     @pytest.mark.skipif(win_py36, reason="Sqlite rank queries not working on windows py36")
     def test_by_job(self, storage):
@@ -1310,3 +1311,44 @@ class TestRunStorage:
         assert runs_by_tag.get("1").run_id == one.run_id
         assert runs_by_tag.get("2").run_id == two.run_id
         assert runs_by_tag.get("3").run_id == three.run_id
+
+    def test_run_record_timestamps(self, storage):
+        assert storage
+
+        self._skip_in_memory(storage)
+
+        @op
+        def a():
+            pass
+
+        @job
+        def my_job():
+            a()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            if storage._instance:  # pylint: disable=protected-access
+                instance = storage._instance  # pylint: disable=protected-access
+            else:
+                instance = DagsterInstance(
+                    instance_type=InstanceType.EPHEMERAL,
+                    local_artifact_storage=LocalArtifactStorage(temp_dir),
+                    run_storage=storage,
+                    event_storage=InMemoryEventLogStorage(),
+                    compute_log_manager=NoOpComputeLogManager(),
+                    run_coordinator=DefaultRunCoordinator(),
+                    run_launcher=SyncInMemoryRunLauncher(),
+                )
+
+            freeze_datetime = to_timezone(
+                create_pendulum_time(2019, 11, 2, 0, 0, 0, tz="US/Central"), "US/Pacific"
+            )
+
+            with pendulum.test(freeze_datetime):
+                result = my_job.execute_in_process(instance=instance)
+                records = instance.get_run_records(
+                    filters=PipelineRunsFilter(run_ids=[result.run_id])
+                )
+                assert len(records) == 1
+                record = records[0]
+                assert record.start_time == freeze_datetime.timestamp()
+                assert record.end_time == freeze_datetime.timestamp()
