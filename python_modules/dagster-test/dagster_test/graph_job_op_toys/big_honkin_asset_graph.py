@@ -1,8 +1,7 @@
 import random
 from typing import Sequence
 
-from dagster import AssetKey
-from dagster.core.asset_defs import asset, build_assets_job
+from dagster import AssetKey, asset, build_assets_job
 
 N_ASSETS = 1000
 

@@ -1,4 +1,4 @@
-from dagster.core.asset_defs import build_assets_job
+from dagster import build_assets_job
 from hacker_news_assets.assets.comment_stories import comment_stories
 from hacker_news_assets.assets.items import comments, stories
 from hacker_news_assets.assets.recommender_model import component_top_stories, recommender_model

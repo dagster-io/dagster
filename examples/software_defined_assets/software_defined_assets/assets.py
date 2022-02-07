@@ -2,8 +2,7 @@
 
 # start_marker
 import pandas as pd
-from dagster import AssetKey
-from dagster.core.asset_defs import ForeignAsset, asset
+from dagster import AssetKey, ForeignAsset, asset
 from pandas import DataFrame
 
 sfo_q2_weather_sample = ForeignAsset(

@@ -1,6 +1,7 @@
 from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
-from dagster import AssetKey, check
+from dagster import check
+from dagster.core.definitions.events import AssetKey
 
 
 class AssetIn(

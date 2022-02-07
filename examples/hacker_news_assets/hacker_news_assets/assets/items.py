@@ -2,8 +2,7 @@
 
 from typing import Tuple
 
-from dagster import Output
-from dagster.core.asset_defs import asset
+from dagster import Output, asset
 from hacker_news_assets.partitions import hourly_partitions
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF

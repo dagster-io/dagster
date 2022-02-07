@@ -4,8 +4,7 @@ import uuid
 from contextlib import contextmanager
 
 import pytest
-from dagster import build_init_resource_context, build_input_context, build_output_context
-from dagster.core.asset_defs import asset
+from dagster import asset, build_init_resource_context, build_input_context, build_output_context
 from hacker_news_assets.resources.snowflake_io_manager import (
     DB_SCHEMA,
     SHARED_SNOWFLAKE_CONF,

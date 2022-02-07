@@ -1,7 +1,6 @@
 import tempfile
 
-from dagster import ResourceDefinition, fs_io_manager, mem_io_manager
-from dagster.core.asset_defs import build_assets_job
+from dagster import ResourceDefinition, build_assets_job, fs_io_manager, mem_io_manager
 from dagster_pyspark import pyspark_resource
 from hacker_news_assets.jobs.hacker_news_api_download import ASSETS
 from hacker_news_assets.resources.hn_resource import hn_snapshot_client
