@@ -222,3 +222,17 @@ def create_run_range_indices():
                 "create_timestamp": 8,
             },
         )
+
+
+def switch_to_start_timestamp_end_timestamp():
+    if not has_table("runs"):
+        return
+
+    # drop the old columns if they exist
+    if has_column("runs", "start_time"):
+        op.drop_column("runs", "start_time")
+        op.drop_column("runs", "end_time")
+
+    if not has_column("runs", "start_timestamp"):
+        op.add_column("runs", db.Column("start_timestamp", db.types.TIMESTAMP))
+        op.add_column("runs", db.Column("end_timestamp", db.types.TIMESTAMP))
