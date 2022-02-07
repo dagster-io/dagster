@@ -464,7 +464,7 @@ class OutputContext:
 
         return self._user_events
 
-    def add_metadata(self, metadata: Dict[str, Any]) -> None:
+    def add_output_metadata(self, metadata: Dict[str, Any]) -> None:
         """Add a dictionary of metadata to the handled output.
 
         Metadata entries added will show up in the HANDLED_OUTPUT and ASSET_MATERIALIZATION events for the run.
@@ -475,11 +475,12 @@ class OutputContext:
         Examples:
 
         .. code-block:: python
+
             from dagster import IOManager
 
             class MyIOManager(IOManager):
                 def handle_output(self, context, obj):
-                    context.add_metadata({"foo": "bar"})
+                    context.add_output_metadata({"foo": "bar"})
         """
         from dagster.core.definitions.event_metadata import parse_metadata
 

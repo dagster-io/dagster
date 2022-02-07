@@ -109,6 +109,6 @@ def test_context_logging_user_events():
 def test_context_logging_metadata():
     context = build_output_context()
 
-    context.add_metadata({"foo": "bar"})
+    context.add_output_metadata({"foo": "bar"})
 
     assert [entry.label for entry in context.get_logged_metadata_entries()] == ["foo"]
