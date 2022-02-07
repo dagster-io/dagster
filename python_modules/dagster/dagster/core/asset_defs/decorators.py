@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Set, Union, overload
+from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Set, Union, cast, overload
 
 from dagster import check
 from dagster.builtins import Nothing
@@ -107,7 +107,7 @@ def asset(
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         return _Asset(
-            name=name,
+            name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             namespace=namespace,
             ins=ins,
             non_argument_deps=non_argument_deps,
