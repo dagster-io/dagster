@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {gqlTypePredicate} from '../app/Util';
+import {dagsterTypeKind} from '../dagstertype/DagsterType';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {TableSchema} from '../metadata/TableSchema';
 import {Description} from '../pipelines/Description';
@@ -19,9 +20,10 @@ interface ITypeExplorerProps {
 
 export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
   const {name, metadataEntries, inputSchemaType, outputSchemaType, description} = props.type;
+  const typeKind = dagsterTypeKind(props.type);
+  const displayName = typeKind === 'standard' ? name : `${name} (${typeKind})`;
   const tableSchema = metadataEntries.find(gqlTypePredicate('EventTableSchemaMetadataEntry'))
     ?.schema;
-
   return (
     <div>
       <SidebarSubhead />
@@ -29,15 +31,19 @@ export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
         <SidebarTitle>
           <Link to="?tab=types">{props.isGraph ? 'Graph types' : 'Pipeline types'}</Link>
           {' > '}
-          {name}
+          {displayName}
         </SidebarTitle>
       </Box>
       <SidebarSection title="Description">
         <Box padding={{vertical: 16, horizontal: 24}}>
           <Description description={description || 'No Description Provided'} />
         </Box>
-        <Box padding={{left: 16}}>{tableSchema && <TableSchema schema={tableSchema} />}</Box>
       </SidebarSection>
+      {tableSchema && (
+        <SidebarSection title="Columns">
+          <TableSchema schema={tableSchema} itemHorizontalPadding={24} />
+        </SidebarSection>
+      )}
       {inputSchemaType && (
         <SidebarSection title="Input">
           <Box padding={{vertical: 16, horizontal: 24}}>

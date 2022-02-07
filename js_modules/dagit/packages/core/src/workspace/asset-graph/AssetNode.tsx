@@ -20,6 +20,7 @@ import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../../app/Util';
 import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
+import {DAGSTER_TYPE_FRAGMENT} from '../../dagstertype/DagsterType';
 import {NodeHighlightColors} from '../../graph/OpNode';
 import {OpTags} from '../../graph/OpTags';
 import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntry';
@@ -243,6 +244,18 @@ export const ASSET_NODE_FRAGMENT = gql`
   fragment AssetNodeFragment on AssetNode {
     id
     opName
+    op {
+      name
+      description
+      outputDefinitions {
+        metadataEntries {
+          ...MetadataEntryFragment
+        }
+        type {
+          ...DagsterTypeFragment
+        }
+      }
+    }
     description
     partitionDefinition
     assetKey {
@@ -257,6 +270,8 @@ export const ASSET_NODE_FRAGMENT = gql`
       }
     }
   }
+  ${METADATA_ENTRY_FRAGMENT}
+  ${DAGSTER_TYPE_FRAGMENT}
 `;
 
 export const getNodeDimensions = (def: {

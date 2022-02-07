@@ -4,23 +4,15 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {displayNameForAssetKey, tokenForAssetKey} from '../app/Util';
+import { DagsterTypeSummary } from '../dagstertype/DagsterType';
 import {MetadataEntry} from '../metadata/MetadataEntry';
-import {TableSchema, ITableSchemaMetadataEntry} from '../metadata/TableSchema';
+import {TableSchema} from '../metadata/TableSchema';
+import { MetadataEntryFragment } from '../metadata/types/MetadataEntryFragment';
 import {Description} from '../pipelines/Description';
 import {explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
-import {
-  AssetTypeSidebarInfo,
-  DAGSTER_TYPE_FOR_ASSET_OP_QUERY,
-  extractOutputType,
-  extractOutputMetadata,
-  AssetMetadata,
-  AssetType,
-  extractOutputTableSchemaMetadataEntry,
-} from '../workspace/asset-graph/SidebarAssetInfo';
 import {LiveData} from '../workspace/asset-graph/Utils';
-import {DagsterTypeForAssetOp} from '../workspace/asset-graph/types/DagsterTypeForAssetOp';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -31,7 +23,7 @@ import {PartitionHealthSummary, usePartitionHealthData} from './PartitionHealthS
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 const AssetMetadataTable: React.FC<{
-  assetMetadata: AssetMetadata;
+  assetMetadata: MetadataEntryFragment[];
 }> = ({assetMetadata}) => {
   const rows = assetMetadata.map((entry) => {
     return {
@@ -55,36 +47,8 @@ export const AssetNodeDefinition: React.FC<{
     assetNode.repository.name,
     assetNode.repository.location.name,
   );
-  const {data: dagsterTypeQueryPayload} = useQuery<DagsterTypeForAssetOp>(
-    DAGSTER_TYPE_FOR_ASSET_OP_QUERY,
-    {
-      variables: {
-        repoSelector: {
-          repositoryName: repoAddress.name,
-          repositoryLocationName: repoAddress.location,
-        },
-        assetOpName: assetNode.opName,
-      },
-      fetchPolicy: 'cache-and-network',
-      partialRefetch: true,
-      notifyOnNetworkStatusChange: true,
-    },
-  );
-  const [assetType, setAssetType] = React.useState<AssetType | null>(null);
-  const [
-    assetTableSchemaMetadataEntry,
-    setAssetTableSchemaMetadataEntry,
-  ] = React.useState<ITableSchemaMetadataEntry | null>(null);
-  const [assetMetadata, setAssetMetadata] = React.useState<AssetMetadata | null>(null);
-  React.useEffect(() => {
-    if (dagsterTypeQueryPayload) {
-      setAssetType(extractOutputType(dagsterTypeQueryPayload));
-      setAssetTableSchemaMetadataEntry(
-        extractOutputTableSchemaMetadataEntry(dagsterTypeQueryPayload),
-      );
-      setAssetMetadata(extractOutputMetadata(dagsterTypeQueryPayload));
-    }
-  }, [dagsterTypeQueryPayload]);
+  const assetType = assetNode.op?.outputDefinitions[0]?.type;
+  const assetMetadata = assetNode.op?.outputDefinitions[0]?.metadataEntries;
 
   return (
     <>
@@ -175,19 +139,7 @@ export const AssetNodeDefinition: React.FC<{
             >
               <Subheading>Type</Subheading>
             </Box>
-            {assetType.description && (
-              <Box padding={{top: 16, horizontal: 16, bottom: 16}} style={{flex: 1}}>
-                <Description
-                  description={assetType.description || 'No description provided.'}
-                  maxHeight={260}
-                />
-              </Box>
-            )}
-            {assetTableSchemaMetadataEntry && (
-              <Box padding={{horizontal: 8, bottom: 8}}>
-                <TableSchema schema={assetTableSchemaMetadataEntry.schema} />
-              </Box>
-            )}
+            <DagsterTypeSummary type={assetType} />
           </Box>
         )}
         <Box

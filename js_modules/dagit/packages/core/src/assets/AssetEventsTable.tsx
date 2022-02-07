@@ -18,17 +18,17 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Timestamp} from '../app/time/Timestamp';
-import {PipelineReference} from '../pipelines/PipelineReference';
-import {MetadataEntry} from '../runs/MetadataEntry';
-import {RunStatusWithStats} from '../runs/RunStatusDots';
-import {titleForRun} from '../runs/RunUtils';
+import {MetadataEntry} from '../metadata/MetadataEntry';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {AssetLineageElements} from './AssetLineageElements';
 import {AssetEventGroup} from './groupByPartition';
 import {AssetMaterializationFragment} from './types/AssetMaterializationFragment';
 import {AssetObservationFragment} from './types/AssetObservationFragment';
+import { titleForRun } from '../runs/RunUtils';
+import { AssetLineageElements } from './AssetLineageElements';
+import { PipelineReference } from '../pipelines/PipelineReference';
+import { RunStatusWithStats } from '../runs/RunStatusDots';
 
 export const AssetEventsTable: React.FC<{
   hasPartitions: boolean;

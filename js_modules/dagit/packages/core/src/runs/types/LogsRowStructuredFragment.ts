@@ -192,12 +192,6 @@ export interface LogsRowStructuredFragment_ObservationEvent_assetKey {
   path: string[];
 }
 
-export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry" | "EventTableMetadataEntry";
-  label: string;
-  description: string | null;
-}
-
 export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventPathMetadataEntry {
   __typename: "EventPathMetadataEntry";
   label: string;
@@ -275,7 +269,79 @@ export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_Even
   assetKey: LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventAssetMetadataEntry_assetKey;
 }
 
-export type LogsRowStructuredFragment_ObservationEvent_metadataEntries = LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventPathMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventJsonMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventUrlMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTextMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventMarkdownMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventPythonArtifactMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventFloatMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventIntMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventPipelineRunMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventAssetMetadataEntry;
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
+  constraints: LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table_schema;
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry {
+  __typename: "EventTableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table;
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
+  constraints: LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry {
+  __typename: "EventTableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema;
+}
+
+export type LogsRowStructuredFragment_ObservationEvent_metadataEntries = LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventPathMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventJsonMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventUrlMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTextMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventMarkdownMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventPythonArtifactMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventFloatMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventIntMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventPipelineRunMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventAssetMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry | LogsRowStructuredFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry;
 
 export interface LogsRowStructuredFragment_ObservationEvent {
   __typename: "ObservationEvent";

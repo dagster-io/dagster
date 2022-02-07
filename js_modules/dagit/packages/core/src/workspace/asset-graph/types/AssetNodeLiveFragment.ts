@@ -33,13 +33,6 @@ export interface AssetNodeLiveFragment_assetMaterializations_runOrError_Run {
 
 export type AssetNodeLiveFragment_assetMaterializations_runOrError = AssetNodeLiveFragment_assetMaterializations_runOrError_RunNotFoundError | AssetNodeLiveFragment_assetMaterializations_runOrError_Run;
 
-export interface AssetNodeLiveFragment_assetMaterializations_stepStats {
-  __typename: "RunStepStats";
-  endTime: number | null;
-  startTime: number | null;
-  stepKey: string;
-}
-
 export interface AssetNodeLiveFragment_assetMaterializations_metadataEntries_EventPathMetadataEntry {
   __typename: "EventPathMetadataEntry";
   label: string;
@@ -202,6 +195,13 @@ export interface AssetNodeLiveFragment_assetMaterializations_assetLineage {
   partitions: string[];
 }
 
+export interface AssetNodeLiveFragment_assetMaterializations_stepStats {
+  __typename: "RunStepStats";
+  stepKey: string;
+  startTime: number | null;
+  endTime: number | null;
+}
+
 export interface AssetNodeLiveFragment_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
@@ -209,9 +209,9 @@ export interface AssetNodeLiveFragment_assetMaterializations {
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: AssetNodeLiveFragment_assetMaterializations_stepStats;
   metadataEntries: AssetNodeLiveFragment_assetMaterializations_metadataEntries[];
   assetLineage: AssetNodeLiveFragment_assetMaterializations_assetLineage[];
+  stepStats: AssetNodeLiveFragment_assetMaterializations_stepStats;
 }
 
 export interface AssetNodeLiveFragment {

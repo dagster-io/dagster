@@ -1,10 +1,9 @@
-import {ColorsWIP, TagWIP, Tooltip} from '@dagster-io/ui';
+import {Box, ColorsWIP, TagWIP, Tooltip} from '@dagster-io/ui';
 import {gql} from 'graphql.macro';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {
-  MetadataEntryFragment,
   MetadataEntryFragment_EventTableSchemaMetadataEntry,
   MetadataEntryFragment_EventTableSchemaMetadataEntry_schema,
   MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_columns_constraints,
@@ -16,43 +15,69 @@ type ColumnConstraints = MetadataEntryFragment_EventTableSchemaMetadataEntry_sch
 
 const MAX_CONSTRAINT_TAG_CHARS = 30;
 
-// ########################
-// ##### COMPONENTS
-// ########################
+interface ITableSchemaProps {
+  schema: ITableSchema;
+  itemHorizontalPadding?: number;
+}
 
-const ColumnItemContainer = styled.div`
-  padding-top: 12px;
-  padding-bottom: 12px;
-  padding-left: 8px;
-  padding-right: 8px;
+export const TableSchema: React.FC<ITableSchemaProps> = ({schema, itemHorizontalPadding}) => {
+  return (
+    <div>
+      {schema.columns.map((column) => {
+        return (
+          <ColumnItem
+            key={column.name}
+            name={column.name}
+            type={column.type}
+            description={column.description || undefined}
+            constraints={column.constraints}
+            horizontalPadding={itemHorizontalPadding || 8}
+          />
+        );
+      })}
+    </div>
+  );
+};
+
+const _ColumnItem: React.FC<{
+  name: string;
+  type: string;
+  description?: string;
+  constraints: ColumnConstraints;
+  horizontalPadding: number;
+  className?: string;
+}> = ({name, type, description, constraints, className}) => {
+  return (
+    <div className={className}>
+      <Box flex={{wrap: 'wrap', gap: 4, alignItems: 'center'}}>
+        <ColumnName>{name}</ColumnName>
+        <TypeTag type={type} />
+        {!constraints.nullable && NonNullableTag}
+        {constraints.unique && UniqueTag}
+        {constraints.other.map((constraint, i) => (
+          <ArbitraryConstraintTag key={i} constraint={constraint} />
+        ))}
+      </Box>
+      {description && <Box>{description}</Box>}
+    </div>
+  );
+};
+
+const ColumnItem = styled(_ColumnItem)`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px ${(props) => props.horizontalPadding}px;
   border-top: 1px solid ${ColorsWIP.KeylineGray};
   :first-child {
     border-top: none;
   }
-  color: ${ColorsWIP.Gray900};
-  cursor: pointer;
-  justify-content: start;
-  align-items: center;
   font-size: 12px;
-  user-select: none;
-`;
-
-const ColumnMetadata = styled.div`
-  display: inline-flex;
-  gap: 4px;
-  align-items: center;
-  flex-wrap: wrap;
 `;
 
 const ColumnName = styled.div`
-  font-weight: 700;
+  font-weight: 600;
   padding-right: 4px;
-  align-items: center;
-`;
-
-const ColumnDescription = styled.div`
-  margin-top: 4px;
-  color: ${ColorsWIP.Gray700};
 `;
 
 const TypeTag: React.FC<{type: string}> = ({type}) => <TagWIP intent="none">{type}</TagWIP>;
@@ -73,52 +98,6 @@ const ArbitraryConstraintTag: React.FC<{constraint: string}> = ({constraint}) =>
     return <TagWIP intent="primary">{constraint}</TagWIP>;
   }
 };
-
-const ColumnItem: React.FC<{
-  name: string;
-  type: string;
-  description?: string;
-  constraints: ColumnConstraints;
-}> = ({name, type, description, constraints}) => {
-  return (
-    <ColumnItemContainer>
-      <ColumnMetadata>
-        <ColumnName>{name}</ColumnName>
-        <TypeTag type={type} />
-        {!constraints.nullable && NonNullableTag}
-        {constraints.unique && UniqueTag}
-        {constraints.other.map((constraint, i) => (
-          <ArbitraryConstraintTag key={i} constraint={constraint} />
-        ))}
-      </ColumnMetadata>
-      {description && <ColumnDescription>{description}</ColumnDescription>}
-    </ColumnItemContainer>
-  );
-};
-
-export const TableSchema: React.FC<{
-  schema: ITableSchema;
-}> = ({schema}) => {
-  return (
-    <div>
-      {schema.columns.map((column) => {
-        return (
-          <ColumnItem
-            key={column.name}
-            name={column.name}
-            type={column.type}
-            description={column.description || undefined}
-            constraints={column.constraints}
-          />
-        );
-      })}
-    </div>
-  );
-};
-
-// ########################
-// ##### GRAPHQL
-// ########################
 
 export const TABLE_SCHEMA_FRAGMENT = gql`
   fragment TableSchemaFragment on TableSchema {
