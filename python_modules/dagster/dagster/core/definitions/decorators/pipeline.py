@@ -116,7 +116,7 @@ def pipeline(
 
 @overload
 def pipeline(
-    name: Union[Callable[..., Any], Optional[str]] = ...,
+    name: Optional[str] = ...,
     description: Optional[str] = ...,
     mode_defs: Optional[List[ModeDefinition]] = ...,
     preset_defs: Optional[List[PresetDefinition]] = ...,
