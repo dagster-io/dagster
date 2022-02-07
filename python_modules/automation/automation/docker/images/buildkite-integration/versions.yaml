@@ -16,3 +16,9 @@
     source: aws
   docker_args:
     PYTHON_VERSION: 3.8.7
+3.9.10:
+  base_image:
+    name: buildkite-integration-base
+    source: aws
+  docker_args:
+    PYTHON_VERSION: 3.9.10
