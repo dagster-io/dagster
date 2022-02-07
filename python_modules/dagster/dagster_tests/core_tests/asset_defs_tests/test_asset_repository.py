@@ -42,3 +42,6 @@ def test_asset_repository():
     assert subset_job.name == "test"
     assert len(subset_job.graph.solids) == 1
     assert subset_job.graph.solids[0].name == "asset_bar"
+
+    result = collection.execute_in_process()
+    assert result.success

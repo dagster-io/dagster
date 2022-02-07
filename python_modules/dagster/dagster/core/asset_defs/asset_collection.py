@@ -36,8 +36,8 @@ class AssetCollection(
     def from_package(path, resource_defs=None) -> "AssetCollection":
         pass
 
-    def execute_in_process(self, instance):
-        pass
+    def execute_in_process(self, instance=None):
+        return self.inner_job.execute_in_process(instance=instance)
 
     def build_job(self, name, subset, executor_def=None) -> JobDefinition:
         return build_job_from_spec(
