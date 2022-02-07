@@ -23,7 +23,7 @@ class _Repository:
         self.description = check.opt_str_param(description, "description")
 
     def __call__(self, fn: Callable[[], Any]) -> RepositoryDefinition:
-        from dagster.core.asset_defs import ForeignAsset, AssetCollection, JobSpec
+        from dagster.core.asset_defs import ForeignAsset, AssetCollection
 
         check.callable_param(fn, "fn")
 
@@ -54,7 +54,6 @@ class _Repository:
                     or isinstance(definition, GraphDefinition)
                     or isinstance(definition, ForeignAsset)
                     or isinstance(definition, AssetCollection)
-                    or isinstance(definition, JobSpec)
                 ):
                     bad_definitions.append((i, type(definition)))
             if bad_definitions:

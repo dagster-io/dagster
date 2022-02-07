@@ -57,7 +57,7 @@ def toys_repository():
             model_pipeline,
             hello_world_notebook_pipeline,
         ]
-        + [collection, collection.build_job_spec("test", "asset_foo")]
+        + [collection, collection.build_job("test", "asset_foo")]
         + get_toys_schedules()
         + get_toys_sensors()
     )
