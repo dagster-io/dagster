@@ -143,6 +143,7 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
             name
             definition {
               assetNodes {
+                id
                 ...GraphExplorerAssetNodeFragment
               }
             }

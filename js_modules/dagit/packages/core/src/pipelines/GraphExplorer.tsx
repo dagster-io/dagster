@@ -20,7 +20,6 @@ import {
   SidebarTabbedContainer,
   SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT,
 } from './SidebarTabbedContainer';
-import {GraphExplorerAssetNodeFragment} from './types/GraphExplorerAssetNodeFragment';
 import {GraphExplorerFragment} from './types/GraphExplorerFragment';
 import {GraphExplorerSolidHandleFragment} from './types/GraphExplorerSolidHandleFragment';
 
@@ -289,6 +288,7 @@ export const GRAPH_EXPLORER_FRAGMENT = gql`
 
 export const GRAPH_EXPLORER_ASSET_NODE_FRAGMENT = gql`
   fragment GraphExplorerAssetNodeFragment on AssetNode {
+    id
     opName
     assetKey {
       path
