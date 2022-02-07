@@ -2,6 +2,8 @@ import {Mono} from '@dagster-io/ui';
 import React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 
+import {__REPOSITORY_MEGA_JOB} from '../workspace/asset-graph/Utils';
+
 export interface ExplorerPath {
   pipelineName: string;
   snapshotId?: string;
@@ -44,13 +46,16 @@ export function explorerPathFromString(path: string): ExplorerPath {
 }
 
 export function instanceAssetsExplorerPathFromString(path: string): ExplorerPath {
-  return explorerPathFromString('instancewide' + path || '/');
+  return explorerPathFromString(__REPOSITORY_MEGA_JOB + path || '/');
 }
 
 export function instanceAssetsExplorerPathToURL(path: Omit<ExplorerPath, 'pipelineName'>) {
   return (
     '/instance/asset-graph' +
-    explorerPathToString({...path, pipelineName: 'instancewide'}).replace(/instancewide/g, '')
+    explorerPathToString({...path, pipelineName: __REPOSITORY_MEGA_JOB}).replace(
+      /instancewide/g,
+      '',
+    )
   );
 }
 

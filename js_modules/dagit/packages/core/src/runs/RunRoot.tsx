@@ -13,6 +13,7 @@ import {Run} from './Run';
 import {RunConfigDialog, RunDetails} from './RunDetails';
 import {RunFragments} from './RunFragments';
 import {RunStatusTag} from './RunStatusTag';
+import {RunStepKeysAssetList} from './RunStepKeysAssetList';
 import {RunRootQuery} from './types/RunRootQuery';
 
 export const RunRoot = () => {
@@ -75,7 +76,8 @@ export const RunRoot = () => {
                 >
                   <TagWIP icon="info" />
                 </Popover>
-                {run.pipelineName !== __REPOSITORY_MEGA_JOB && (
+                <RunStatusTag status={run.status} />
+                {run.pipelineName !== __REPOSITORY_MEGA_JOB ? (
                   <TagWIP icon="run">
                     Run of{' '}
                     <PipelineReference
@@ -86,8 +88,9 @@ export const RunRoot = () => {
                       isJob={isJob}
                     />
                   </TagWIP>
+                ) : (
+                  <RunStepKeysAssetList stepKeys={run.stepKeysToExecute} clickableTags />
                 )}
-                <RunStatusTag status={run.status} />
               </>
             ) : null
           }

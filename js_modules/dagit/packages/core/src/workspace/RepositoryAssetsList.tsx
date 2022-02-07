@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../app/Util';
+import {RepositoryLink} from '../nav/RepositoryLink';
 import {PipelineReference} from '../pipelines/PipelineReference';
 
 import {__REPOSITORY_MEGA_JOB} from './asset-graph/Utils';
@@ -25,8 +26,15 @@ const REPOSITORY_ASSETS_LIST_QUERY = gql`
             path
           }
           opName
-          jobNames
           description
+          repository {
+            id
+            name
+            location {
+              id
+              name
+            }
+          }
         }
       }
       ... on RepositoryNotFoundError {
@@ -107,17 +115,12 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
             </td>
             <td>
               <Box flex={{direction: 'column', gap: 2}}>
-                {asset.jobNames
-                  .filter((name) => name !== __REPOSITORY_MEGA_JOB)
-                  .map((name) => (
-                    <PipelineReference
-                      showIcon
-                      isJob
-                      key={name}
-                      pipelineName={name}
-                      pipelineHrefContext={repoAddress}
-                    />
-                  ))}
+                <RepositoryLink
+                  repoAddress={{
+                    name: asset.repository.name,
+                    location: asset.repository.location.name,
+                  }}
+                />
               </Box>
             </td>
           </tr>

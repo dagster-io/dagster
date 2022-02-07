@@ -18,13 +18,26 @@ export interface RepositoryAssetsListQuery_repositoryOrError_Repository_assetNod
   path: string[];
 }
 
+export interface RepositoryAssetsListQuery_repositoryOrError_Repository_assetNodes_repository_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
+export interface RepositoryAssetsListQuery_repositoryOrError_Repository_assetNodes_repository {
+  __typename: "Repository";
+  id: string;
+  name: string;
+  location: RepositoryAssetsListQuery_repositoryOrError_Repository_assetNodes_repository_location;
+}
+
 export interface RepositoryAssetsListQuery_repositoryOrError_Repository_assetNodes {
   __typename: "AssetNode";
   id: string;
   assetKey: RepositoryAssetsListQuery_repositoryOrError_Repository_assetNodes_assetKey;
   opName: string | null;
-  jobNames: string[];
   description: string | null;
+  repository: RepositoryAssetsListQuery_repositoryOrError_Repository_assetNodes_repository;
 }
 
 export interface RepositoryAssetsListQuery_repositoryOrError_Repository {

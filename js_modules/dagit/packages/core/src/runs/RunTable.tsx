@@ -30,6 +30,7 @@ import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspac
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
 import {RunStatusTagWithStats} from './RunStatusTag';
 import {canceledStatuses, queuedStatuses} from './RunStatuses';
+import {RunStepKeysAssetList} from './RunStepKeysAssetList';
 import {RunTags} from './RunTags';
 import {RunElapsed, RunTime, RUN_TIME_FRAGMENT, titleForRun} from './RunUtils';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
@@ -235,6 +236,7 @@ const RunRow: React.FC<{
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <PipelineReference
                 isJob={isJob}
+                showIcon
                 pipelineName={run.pipelineName}
                 pipelineHrefContext="no-link"
               />
@@ -254,17 +256,7 @@ const RunRow: React.FC<{
               </Link>
             </Box>
           ) : (
-            <Box flex={{direction: 'row', gap: 16, wrap: 'wrap'}}>
-              {run.stepKeysToExecute?.slice(0, 10).map((assetName) => (
-                <Box flex={{gap: 5, alignItems: 'center'}} key={assetName}>
-                  <IconWIP name="asset" size={16} />
-                  {assetName}
-                </Box>
-              ))}
-              {run.stepKeysToExecute && run.stepKeysToExecute.length > 10
-                ? `+ ${run.stepKeysToExecute?.length - 10} more`
-                : ''}
-            </Box>
+            <RunStepKeysAssetList stepKeys={run.stepKeysToExecute} />
           )}
           <RunTags
             tags={run.tags}

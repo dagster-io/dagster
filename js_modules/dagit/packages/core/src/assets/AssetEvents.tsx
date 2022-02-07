@@ -315,17 +315,6 @@ const AssetMaterializationGraphs: React.FC<{
           flexDirection: 'column',
         }}
       >
-        {graphedLabels.length === 0 && (
-          <Box padding={{horizontal: 24, top: 64}}>
-            <NonIdealState
-              shrinkable
-              icon="linear_scale"
-              title="No numeric metadata"
-              description={`Include numeric metadata entries in your materializations and observations to see data graphed by ${props.xAxis}.`}
-            />
-          </Box>
-        )}
-
         {[...graphedLabels].sort().map((label) => (
           <Box
             key={label}
@@ -356,11 +345,22 @@ const AssetMaterializationGraphs: React.FC<{
           </Box>
         ))}
       </div>
-      {props.xAxis === 'partition' && (
-        <Box padding={{vertical: 16, horizontal: 24}} style={{color: ColorsWIP.Gray400}}>
-          When graphing values by partition, the highest data point for each materialized event
-          label is displayed.
+      {graphedLabels.length === 0 ? (
+        <Box padding={{horizontal: 24, top: 64}}>
+          <NonIdealState
+            shrinkable
+            icon="linear_scale"
+            title="No numeric metadata"
+            description={`Include numeric metadata entries in your materializations and observations to see data graphed by ${props.xAxis}.`}
+          />
         </Box>
+      ) : (
+        props.xAxis === 'partition' && (
+          <Box padding={{vertical: 16, horizontal: 24}} style={{color: ColorsWIP.Gray400}}>
+            When graphing values by partition, the highest data point for each materialized event
+            label is displayed.
+          </Box>
+        )
       )}
     </>
   );
