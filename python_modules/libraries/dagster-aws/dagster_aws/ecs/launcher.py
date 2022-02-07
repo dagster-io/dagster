@@ -7,7 +7,6 @@ from dagster.core.events import EngineEventData, EventMetadataEntry
 from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass
-from dagster.utils.backcompat import experimental
 
 from ..secretsmanager import get_secrets_from_arns, get_tagged_secrets
 from .tasks import default_ecs_task_definition, default_ecs_task_metadata
@@ -15,7 +14,6 @@ from .tasks import default_ecs_task_definition, default_ecs_task_metadata
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 
 
-@experimental
 class EcsRunLauncher(RunLauncher, ConfigurableClass):
     def __init__(
         self,
