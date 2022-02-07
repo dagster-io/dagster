@@ -588,22 +588,72 @@ def test_start_time_end_time():
         assert get_current_alembic_version(db_path) == "7f2b1a4ca7a5"
         assert "start_time" not in set(get_sqlite3_columns(db_path, "runs"))
         assert "end_time" not in set(get_sqlite3_columns(db_path, "runs"))
+        assert "start_timestamp" not in set(get_sqlite3_columns(db_path, "runs"))
+        assert "end_timestamp" not in set(get_sqlite3_columns(db_path, "runs"))
 
         # this migration was optional, so make sure things work before migrating
         instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
         assert "start_time" not in set(get_sqlite3_columns(db_path, "runs"))
         assert "end_time" not in set(get_sqlite3_columns(db_path, "runs"))
+        assert "start_timestamp" not in set(get_sqlite3_columns(db_path, "runs"))
+        assert "end_timestamp" not in set(get_sqlite3_columns(db_path, "runs"))
         assert instance.get_run_records()
         assert instance.create_run_for_pipeline(_test)
 
         instance.upgrade()
 
         # Make sure the schema is migrated
-        assert "start_time" in set(get_sqlite3_columns(db_path, "runs"))
+        # assert "start_time" in set(get_sqlite3_columns(db_path, "runs"))
+        # Changed to use timestamp columns start in 0.13.19
+        assert "start_time" not in set(get_sqlite3_columns(db_path, "runs"))
+        assert "end_time" not in set(get_sqlite3_columns(db_path, "runs"))
+        assert "start_timestamp" in set(get_sqlite3_columns(db_path, "runs"))
+        assert "end_timestamp" in set(get_sqlite3_columns(db_path, "runs"))
         assert instance.get_run_records()
         assert instance.create_run_for_pipeline(_test)
 
         instance._run_storage._alembic_downgrade(rev="7f2b1a4ca7a5")
 
         assert get_current_alembic_version(db_path) == "7f2b1a4ca7a5"
+        assert True
+
+
+def test_start_timestamp_end_timestamp():
+    src_dir = file_relative_path(__file__, "snapshot_0_13_18_start_end_timestamp")
+    with copy_directory(src_dir) as test_dir:
+
+        @job
+        def _test():
+            pass
+
+        db_path = os.path.join(test_dir, "history", "runs.db")
+        assert get_current_alembic_version(db_path) == "b37316bf5584"
+        assert "start_time" in set(get_sqlite3_columns(db_path, "runs"))
+        assert "end_time" in set(get_sqlite3_columns(db_path, "runs"))
+        assert "start_timestamp" not in set(get_sqlite3_columns(db_path, "runs"))
+        assert "end_timestamp" not in set(get_sqlite3_columns(db_path, "runs"))
+
+        # this migration was optional, so make sure things work before migrating
+        instance = DagsterInstance.from_ref(InstanceRef.from_dir(test_dir))
+        assert "start_time" in set(get_sqlite3_columns(db_path, "runs"))
+        assert "end_time" in set(get_sqlite3_columns(db_path, "runs"))
+        assert "start_timestamp" not in set(get_sqlite3_columns(db_path, "runs"))
+        assert "end_timestamp" not in set(get_sqlite3_columns(db_path, "runs"))
+        assert instance.get_run_records()
+        assert instance.create_run_for_pipeline(_test)
+
+        instance.upgrade()
+
+        # Make sure the schema is migrated
+        # Changed to use timestamp columns start in 0.13.19
+        assert "start_time" not in set(get_sqlite3_columns(db_path, "runs"))
+        assert "end_time" not in set(get_sqlite3_columns(db_path, "runs"))
+        assert "start_timestamp" in set(get_sqlite3_columns(db_path, "runs"))
+        assert "end_timestamp" in set(get_sqlite3_columns(db_path, "runs"))
+        assert instance.get_run_records()
+        assert instance.create_run_for_pipeline(_test)
+
+        instance._run_storage._alembic_downgrade(rev="b37316bf5584")
+
+        assert get_current_alembic_version(db_path) == "b37316bf5584"
         assert True

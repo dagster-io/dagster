@@ -229,10 +229,11 @@ def switch_to_start_timestamp_end_timestamp():
         return
 
     # drop the old columns if they exist
-    if has_column("runs", "start_time"):
-        op.drop_column("runs", "start_time")
-        op.drop_column("runs", "end_time")
+    with op.batch_alter_table("runs") as batch_op:
+        if has_column("runs", "start_time"):
+            batch_op.drop_column("start_time")
+            batch_op.drop_column("end_time")
 
-    if not has_column("runs", "start_timestamp"):
-        op.add_column("runs", db.Column("start_timestamp", db.types.TIMESTAMP))
-        op.add_column("runs", db.Column("end_timestamp", db.types.TIMESTAMP))
+        if not has_column("runs", "start_timestamp"):
+            batch_op.add_column(db.Column("start_timestamp", db.types.TIMESTAMP))
+            batch_op.add_column(db.Column("end_timestamp", db.types.TIMESTAMP))
