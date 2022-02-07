@@ -64,6 +64,7 @@ export interface ILayoutOp {
     }[];
   }[];
   definition: {
+    description: string | null;
     assetNodes: {
       assetKey: {
         path: string[];
@@ -466,7 +467,8 @@ export function layoutOp(op: ILayoutOp, root: IPoint): IFullOpLayout {
 
   accY += OP_BASE_HEIGHT;
 
-  if (op.definition.assetNodes.length) {
+  if (op.definition.assetNodes.length && op.definition.description) {
+    opLayout.height += IO_HEIGHT;
     accY += IO_HEIGHT;
   }
 

@@ -59,7 +59,6 @@ export const PipelineExplorerContainer: React.FC<{
     PIPELINE_EXPLORER_ROOT_QUERY,
     {
       variables: {
-        pipelineSelector: pipelineSelector,
         snapshotPipelineSelector: explorerPath.snapshotId ? undefined : pipelineSelector,
         snapshotId: explorerPath.snapshotId ? explorerPath.snapshotId : undefined,
         rootHandleID: parentNames.join('.'),
@@ -121,7 +120,6 @@ export const PipelineExplorerContainer: React.FC<{
 
 export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
   query PipelineExplorerRootQuery(
-    $pipelineSelector: PipelineSelector!
     $snapshotPipelineSelector: PipelineSelector
     $snapshotId: String
     $rootHandleID: String!
@@ -145,9 +143,7 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
             name
             definition {
               assetNodes {
-                assetKey {
-                  path
-                }
+                ...GraphExplorerAssetNodeFragment
               }
             }
           }

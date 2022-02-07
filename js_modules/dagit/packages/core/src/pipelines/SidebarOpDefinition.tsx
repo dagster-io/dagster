@@ -2,12 +2,11 @@ import {gql} from '@apollo/client';
 import {Box, ColorsWIP, FontFamily, IconWIP} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
-import styled from 'styled-components';
+import styled from 'styled-components/macro';
 
 import {breakOnUnderscores, displayNameForAssetKey} from '../app/Util';
 import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignature';
 import {pluginForMetadata} from '../plugins';
-import {OpColumnContainer} from '../runs/LogsRowComponents';
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
 import {RepoAddress} from '../workspace/types';
@@ -151,15 +150,14 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
       </SidebarSection>
       {definition.assetNodes.length > 0 && (
         <SidebarSection title="Yielded Assets">
-          <Box padding={{vertical: 16, horizontal: 24}}>
-            {definition.assetNodes.map((node) => (
-              <Link key={node.id} to={`/instance/assets/${node.assetKey.path.join('/')}`}>
-                <AssetNodeListItem>
-                  <IconWIP name="asset" /> {displayNameForAssetKey(node.assetKey)}
-                </AssetNodeListItem>
-              </Link>
-            ))}
-          </Box>
+          {definition.assetNodes.map((node) => (
+            <AssetNodeListItem
+              key={node.id}
+              to={`/instance/assets/${node.assetKey.path.join('/')}`}
+            >
+              <IconWIP name="asset" /> {displayNameForAssetKey(node.assetKey)}
+            </AssetNodeListItem>
+          ))}
         </SidebarSection>
       )}
       {getInvocations && (
@@ -279,11 +277,13 @@ const InvocationList: React.FC<{
   );
 };
 
-const AssetNodeListItem = styled.div`
+const AssetNodeListItem = styled(Link)`
   user-select: none;
   padding: 12px 24px;
   cursor: pointer;
   border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+  display: flex;
+  gap: 6px;
 
   &:last-child {
     border-bottom: none;
