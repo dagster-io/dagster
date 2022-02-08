@@ -3,7 +3,7 @@ import uuid
 import zlib
 from abc import abstractmethod
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 
@@ -147,14 +147,20 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         now = pendulum.now("UTC")
 
         if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:
-            kwargs["start_timestamp"] = utc_datetime_from_timestamp(now.timestamp())
+            # strip the timezone info here, so that the stored timestamp does not get translated
+            # based on some arbitrary timezone setting in the DB
+            # See https://docs.sqlalchemy.org/en/14/core/custom_types.html#store-timezone-aware-timestamps-as-timezone-naive-utc
+            kwargs["start_timestamp"] = now.replace(tzinfo=None)
 
         if run_stats_cols_in_index and event.event_type in {
             DagsterEventType.PIPELINE_CANCELED,
             DagsterEventType.PIPELINE_FAILURE,
             DagsterEventType.PIPELINE_SUCCESS,
         }:
-            kwargs["end_timestamp"] = utc_datetime_from_timestamp(now.timestamp())
+            # strip the timezone info here, so that the stored timestamp does not get translated
+            # based on some arbitrary timezone setting in the DB
+            # See https://docs.sqlalchemy.org/en/14/core/custom_types.html#store-timezone-aware-timestamps-as-timezone-naive-utc
+            kwargs["end_timestamp"] = now.replace(tzinfo=None)
 
         with self.connect() as conn:
 
@@ -391,6 +397,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         )
 
         rows = self.fetchall(query)
+
         return [
             RunRecord(
                 storage_id=check.int_param(row["id"], "id"),
@@ -399,11 +406,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 ),
                 create_timestamp=check.inst(row["create_timestamp"], datetime),
                 update_timestamp=check.inst(row["update_timestamp"], datetime),
-                start_timestamp=check.opt_inst(row["start_timestamp"], datetime)
-                if "start_timestamp" in row
+                # set the timezone info here on the stripped timestamp objects retrieved from
+                # storage
+                # See https://docs.sqlalchemy.org/en/14/core/custom_types.html#store-timezone-aware-timestamps-as-timezone-naive-utc
+                start_timestamp=row["start_timestamp"].replace(tzinfo=timezone.utc)
+                if "start_timestamp" in row and row["start_timestamp"]
                 else None,
-                end_timestamp=check.opt_inst(row["end_timestamp"], datetime)
-                if "end_timestamp" in row
+                end_timestamp=row["end_timestamp"].replace(tzinfo=timezone.utc)
+                if "end_timestamp" in row and row["end_timestamp"]
                 else None,
             )
             for row in rows

@@ -397,11 +397,11 @@ def test_0_13_12_add_start_time_end_time(hostname, conn_string):
         assert result.success
         assert len(instance.get_runs()) == 3
         latest_run_record = instance.get_run_records()[0]
-        assert latest_run_record.end_time > latest_run_record.start_time
+        assert latest_run_record.end_timestamp > latest_run_record.start_timestamp
 
         # Verify that historical records also get updated via data migration
         earliest_run_record = instance.get_run_records()[-1]
-        assert earliest_run_record.end_time > earliest_run_record.start_time
+        assert earliest_run_record.end_timestamp > earliest_run_record.start_timestamp
 
 
 def test_0_13_19_switch_start_end_timestamp(hostname, conn_string):

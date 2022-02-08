@@ -1358,5 +1358,5 @@ class TestRunStorage:
                 )
                 assert len(records) == 1
                 record = records[0]
-                assert datetime_as_float(record.start_timestamp) == to_timezone(freeze_datetime, "UTC").timestamp()
-                assert datetime_as_float(record.end_timestamp) == to_timezone(freeze_datetime, "UTC").timestamp()
+                assert record.start_timestamp == pendulum.now("UTC")
+                assert record.end_timestamp == pendulum.now("UTC")
