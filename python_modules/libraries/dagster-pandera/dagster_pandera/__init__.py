@@ -68,7 +68,7 @@ def pandera_schema_to_dagster_type(
     elif isinstance(schema, pa.DataFrameSchema):
         name = name or f"DagsterPanderaDataframe{next(_anonymous_type_name)}"
     else:
-        raise TypeError("schema must be a DataFrameSchema or a subclass of SchemaModel")
+        raise TypeError("schema must be a pandera `DataFrameSchema` or a subclass of a pandera `SchemaModel`")
 
     def type_check_fn(_context, value: object) -> TypeCheck:
         if isinstance(value, VALIDATABLE_DATA_FRAME_CLASSES):
@@ -95,46 +95,28 @@ def pandera_schema_to_dagster_type(
 
         return TypeCheck(success=True)
 
-    tschema = pandera_schema_to_table_schema(schema)
+    tschema = _pandera_schema_to_table_schema(schema)
 
     return DagsterType(
         type_check_fn=type_check_fn,
         name=name,
         description=schema.description,
         metadata_entries=[
-            EventMetadataEntry.text("foo", label="test"),
             EventMetadataEntry.table_schema(tschema, label="schema"),
         ],
     )
 
 
-def pandera_schema_to_table_schema(schema: pa.DataFrameSchema) -> TableSchema:
-    """Convert a pandera schema to a Dagster `TableSchema`.
-
-    Args:
-        schema (pa.DataFrameSchema): The pandera schema to convert.
-
-    Returns:
-        TableSchema: The converted table schema.
-    """
-    columns = [pandera_column_to_table_column(col) for k, col in schema.columns.items()]
+def _pandera_schema_to_table_schema(schema: pa.DataFrameSchema) -> TableSchema:
+    columns = [_pandera_column_to_table_column(col) for k, col in schema.columns.items()]
     return TableSchema(columns=columns)
 
 
-def pandera_column_to_table_column(pa_column: pa.Column) -> TableColumn:
-    """Convert a pandera column to a dagster `TableColumn`.
-
-    Args:
-        column (pa.Column): The pandera column to convert.
-        extra
-
-    Returns:
-        TableColumn: The converted table column.
-    """
+def _pandera_column_to_table_column(pa_column: pa.Column) -> TableColumn:
     constraints = TableColumnConstraints(
         nullable=pa_column.nullable,
         unique=pa_column.unique,
-        other=[pandera_check_to_column_constraint(pa_check) for pa_check in pa_column.checks],
+        other=[_pandera_check_to_column_constraint(pa_check) for pa_check in pa_column.checks],
     )
     name = check.not_none(pa_column.name, "name")
     return TableColumn(
@@ -145,16 +127,7 @@ def pandera_column_to_table_column(pa_column: pa.Column) -> TableColumn:
     )
 
 
-def pandera_check_to_column_constraint(pa_check: pa.Check) -> str:
-    """Convert a pandera check to a descriptive string for inclusion in
-    `TableColumnConstraints.other`.
-
-    Args:
-        check (pa.Check): The pandera check to convert.
-
-    Returns:
-        str: The descriptive string.
-    """
+def _pandera_check_to_column_constraint(pa_check: pa.Check) -> str:
     return pa_check.description or pa_check.error
 
 
