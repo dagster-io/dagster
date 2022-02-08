@@ -1,6 +1,6 @@
 from contextlib import ExitStack
-import sqlalchemy as db
 
+import sqlalchemy as db
 from dagster import check
 from dagster.utils import utc_datetime_from_timestamp
 from tqdm import tqdm
