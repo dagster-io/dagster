@@ -131,6 +131,9 @@ def add_run_stats(run_storage: RunStorage, run_id: str) -> None:
     )
     run_stats = instance.get_run_stats(run_id)
 
+    def _to_utc_datetime_stripped(timestamp: float):
+        return utc_datetime_from_timestamp(timestamp).replace(tzinfo=None)
+
     with run_storage.connect() as conn:
         column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
         if "start_timestamp" in column_names and "end_timestamp" in column_names:
@@ -138,8 +141,8 @@ def add_run_stats(run_storage: RunStorage, run_id: str) -> None:
                 RunsTable.update()  # pylint: disable=no-value-for-parameter
                 .where(RunsTable.c.run_id == run_id)
                 .values(
-                    start_timestamp=utc_datetime_from_timestamp(run_stats.start_time),
-                    end_timestamp=utc_datetime_from_timestamp(run_stats.end_time),
+                    start_timestamp=_to_utc_datetime_stripped(run_stats.start_time),
+                    end_timestamp=_to_utc_datetime_stripped(run_stats.end_time),
                 )
             )
         elif "start_time" in column_names and "end_time" in column_names:
