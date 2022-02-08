@@ -40,6 +40,7 @@ from dagster.daemon.daemon import SensorDaemon
 from dagster.daemon.types import DaemonHeartbeat
 from dagster.serdes import serialize_pp
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster.utils import datetime_as_float
 
 win_py36 = seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
 
@@ -1357,5 +1358,5 @@ class TestRunStorage:
                 )
                 assert len(records) == 1
                 record = records[0]
-                assert record.start_time == freeze_datetime.timestamp()
-                assert record.end_time == freeze_datetime.timestamp()
+                assert datetime_as_float(record.start_timestamp) == to_timezone(freeze_datetime, "UTC").timestamp()
+                assert datetime_as_float(record.end_timestamp) == to_timezone(freeze_datetime, "UTC").timestamp()
