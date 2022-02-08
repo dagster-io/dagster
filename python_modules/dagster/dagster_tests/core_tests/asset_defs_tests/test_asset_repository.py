@@ -1,4 +1,4 @@
-from dagster import AssetKey, repository, resource
+from dagster import AssetKey, in_process_executor, multiprocess_executor, repository, resource
 from dagster.core.asset_defs import AssetCollection, AssetIn, asset
 
 
@@ -24,13 +24,14 @@ def test_asset_repository():
     collection = AssetCollection.from_list(
         assets=[asset_foo, asset_bar, last_asset],
         resource_defs={"the_resource": the_resource},
+        executor_def=in_process_executor,
     )
 
     @repository
     def the_repo():
         return [
             collection,
-            collection.build_job("test", "asset_bar"),
+            collection.build_job("test", "asset_bar", executor_def=multiprocess_executor),
         ]
 
     mega_job = the_repo.get_all_jobs()[0]
