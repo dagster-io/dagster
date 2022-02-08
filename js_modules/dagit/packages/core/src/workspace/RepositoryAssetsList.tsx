@@ -6,7 +6,6 @@ import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../app/Util';
 import {RepositoryLink} from '../nav/RepositoryLink';
-import {PipelineReference} from '../pipelines/PipelineReference';
 
 import {__REPOSITORY_MEGA_JOB} from './asset-graph/Utils';
 import {repoAddressAsString} from './repoAddressAsString';

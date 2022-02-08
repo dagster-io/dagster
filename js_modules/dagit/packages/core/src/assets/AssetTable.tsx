@@ -6,15 +6,19 @@ import {
   IconWIP,
   markdownToPlaintext,
   MenuItemWIP,
+  MenuLink,
   MenuWIP,
   Popover,
   Table,
 } from '@dagster-io/ui';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
 
 import {useFeatureFlags} from '../app/Flags';
 import {usePermissions} from '../app/Permissions';
+import {tokenForAssetKey} from '../app/Util';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
+import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 
 import {AssetLink} from './AssetLink';
@@ -70,7 +74,7 @@ export const AssetTable = ({
       <Box flex={{alignItems: 'center', gap: 12}} padding={{vertical: 8, left: 24, right: 12}}>
         {actionBarComponents}
         <div style={{flex: 1}} />
-        <AssetActions
+        <AssetBulkActions
           selected={Array.from(checkedAssets)}
           clearSelection={() => onToggleAll(false)}
         />
@@ -78,23 +82,21 @@ export const AssetTable = ({
       <Table>
         <thead>
           <tr>
-            {canWipeAssets ? (
-              <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
-                <Checkbox
-                  indeterminate={checkedPaths.size > 0 && checkedPaths.size !== sorted.length}
-                  checked={checkedPaths.size === sorted.length}
-                  onChange={(e) => {
-                    if (e.target instanceof HTMLInputElement) {
-                      onToggleAll(checkedPaths.size !== sorted.length);
-                    }
-                  }}
-                />
-              </th>
-            ) : null}
+            <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
+              <Checkbox
+                indeterminate={checkedPaths.size > 0 && checkedPaths.size !== sorted.length}
+                checked={checkedPaths.size === sorted.length}
+                onChange={(e) => {
+                  if (e.target instanceof HTMLInputElement) {
+                    onToggleAll(checkedPaths.size !== sorted.length);
+                  }
+                }}
+              />
+            </th>
             <th>Asset Key</th>
             {flagAssetGraph ? <th>Description</th> : null}
             {flagAssetGraph ? <th style={{maxWidth: 250}}>Defined In</th> : null}
-            {canWipeAssets ? <th style={{width: 80}}>Actions</th> : null}
+            <th style={{width: 80}}>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -135,7 +137,7 @@ const AssetEntryRow: React.FC<{
   shouldShowAssetGraphColumns: boolean;
   assets: Asset[];
   onWipe: (assets: Asset[]) => void;
-  canWipe: boolean;
+  canWipe?: boolean;
 }> = React.memo(
   ({
     prefixPath,
@@ -148,7 +150,8 @@ const AssetEntryRow: React.FC<{
     canWipe,
   }) => {
     const fullPath = [...prefixPath, ...path];
-    const isAssetEntry = assets.length === 1 && fullPath.join('/') === assets[0].key.path.join('/');
+    const representsSingleAsset =
+      assets.length === 1 && fullPath.join('/') === assets[0].key.path.join('/');
     const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
     const first = assets[0];
 
@@ -162,13 +165,11 @@ const AssetEntryRow: React.FC<{
     };
     return (
       <tr>
-        {canWipe ? (
-          <td style={{paddingRight: '4px'}}>
-            <Checkbox checked={isSelected} onChange={onChange} />
-          </td>
-        ) : null}
+        <td style={{paddingRight: '4px'}}>
+          <Checkbox checked={isSelected} onChange={onChange} />
+        </td>
         <td>
-          <AssetLink path={path} url={linkUrl} trailingSlash={!isAssetEntry} />
+          <AssetLink path={path} url={linkUrl} trailingSlash={!representsSingleAsset} />
         </td>
         {shouldShowAssetGraphColumns ? (
           <td>
@@ -195,33 +196,47 @@ const AssetEntryRow: React.FC<{
             </Box>
           </td>
         ) : null}
-        {canWipe ? (
-          <td>
-            {isAssetEntry ? (
-              <Popover
-                content={
-                  <MenuWIP>
-                    <MenuItemWIP
-                      text="Wipe…"
-                      icon="delete"
-                      intent="danger"
-                      onClick={() => onWipe(assets)}
-                    />
-                  </MenuWIP>
-                }
-                position="bottom-right"
-              >
-                <ButtonWIP icon={<IconWIP name="expand_more" />} />
-              </Popover>
-            ) : null}
-          </td>
-        ) : null}
+        <td style={{display: 'flex', alignItems: 'center', gap: 8}}>
+          <Link
+            to={instanceAssetsExplorerPathToURL({
+              opsQuery: `++"${tokenForAssetKey({path})}"++`,
+              opNames: [tokenForAssetKey({path})],
+            })}
+          >
+            <ButtonWIP disabled={!representsSingleAsset || !first.definition?.opName}>
+              View in Asset Graph
+            </ButtonWIP>
+          </Link>
+          {representsSingleAsset ? (
+            <Popover
+              position="bottom-right"
+              content={
+                <MenuWIP>
+                  <MenuLink
+                    text="View details…"
+                    to={`/instance/assets/${path.join('/')}`}
+                    icon="view_list"
+                  />
+                  <MenuItemWIP
+                    text="Wipe Asset…"
+                    icon="delete"
+                    disabled={!canWipe}
+                    intent="danger"
+                    onClick={() => canWipe && onWipe(assets)}
+                  />
+                </MenuWIP>
+              }
+            >
+              <ButtonWIP icon={<IconWIP name="expand_more" />} />
+            </Popover>
+          ) : null}
+        </td>
       </tr>
     );
   },
 );
 
-const AssetActions: React.FC<{
+const AssetBulkActions: React.FC<{
   selected: Asset[];
   clearSelection: () => void;
   requery?: RefetchQueriesFunction;
