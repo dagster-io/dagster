@@ -16,7 +16,17 @@
 # W1201, W1202 disable log format warning. False positives (I think)
 # W0707 disable raise-missing-from which we cant use because py2 back compat
 
-disable=C,R,duplicate-code,fixme,logging-not-lazy,logging-format-interpolation,raise-missing-from,no-init,broad-except,bare-except,redefined-outer-name
+disable=C,
+        R,
+        bare-except,
+        broad-except,
+        duplicate-code,
+        fixme,
+        logging-not-lazy,
+        logging-format-interpolation,
+        no-init,
+        raise-missing-from,
+        redefined-outer-name
 
 # See: https://github.com/getsentry/responses/issues/74
 [TYPECHECK]
