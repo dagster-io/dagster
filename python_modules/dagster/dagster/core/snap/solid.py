@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, NamedTuple, Optional, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Set, Union
 
 from dagster import check
 from dagster.config.snap import ConfigFieldSnap, snap_from_field
@@ -13,6 +13,7 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.event_metadata import EventMetadataEntry
 from dagster.serdes import whitelist_for_serdes
+from dagster.serdes.serdes import DefaultNamedTupleSerializer
 
 from .dep_snapshot import (
     DependencyStructureSnapshot,
@@ -20,7 +21,13 @@ from .dep_snapshot import (
 )
 
 
-@whitelist_for_serdes
+class InputDefSnapSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def skip_when_empty(cls) -> Set[str]:
+        return {"metadata_entries"}  # Maintain stable snapshot ID for back-compat purposes
+
+
+@whitelist_for_serdes(serializer=InputDefSnapSerializer)
 class InputDefSnap(
     NamedTuple(
         "_InputDefSnap",
@@ -37,7 +44,7 @@ class InputDefSnap(
         name: str,
         dagster_type_key: str,
         description: Optional[str],
-        metadata_entries: List[EventMetadataEntry],
+        metadata_entries: Optional[List[EventMetadataEntry]] = None,
     ):
         return super(InputDefSnap, cls).__new__(
             cls,
@@ -50,7 +57,13 @@ class InputDefSnap(
         )
 
 
-@whitelist_for_serdes
+class OutputDefSnapSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def skip_when_empty(cls) -> Set[str]:
+        return {"metadata_entries"}  # Maintain stable snapshot ID for back-compat purposes
+
+
+@whitelist_for_serdes(serializer=OutputDefSnapSerializer)
 class OutputDefSnap(
     NamedTuple(
         "_OutputDefSnap",
@@ -70,7 +83,7 @@ class OutputDefSnap(
         dagster_type_key: str,
         description: Optional[str],
         is_required: bool,
-        metadata_entries: List[EventMetadataEntry],
+        metadata_entries: Optional[List[EventMetadataEntry]] = None,
         is_dynamic: bool = False,
     ):
         return super(OutputDefSnap, cls).__new__(
