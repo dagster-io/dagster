@@ -1,31 +1,11 @@
 [MESSAGES CONTROL]
-
-# Enable the message, report, category or checker with the given id(s). You can
-# either give multiple identifier separated by comma (,) or put this option
-# multiple time.
-#enable=
-
-# Disable the message, report, category or checker with the given id(s). You
-# can either give multiple identifier separated by comma (,) or put this option
-# multiple time (only on the command line, not in the configuration file where
-# it should appear only once).#
-#
-# R - refactoring related checks
-# C - convention related checks
-# W0511 disable TODO warning
-# W1201, W1202 disable log format warning. False positives (I think)
-# W0707 disable raise-missing-from which we cant use because py2 back compat
-
-disable=C,
-        R,
+disable=C,  # convention-related checks
+        R,  # refactoring-related checks
         bare-except,
         broad-except,
         duplicate-code,
         fixme,
-        logging-not-lazy,
-        logging-format-interpolation,
         no-init,
-        raise-missing-from,
         redefined-outer-name
 
 # See: https://github.com/getsentry/responses/issues/74
