@@ -109,7 +109,6 @@ def parse_metadata(
                 pass
         return metadata_entries
 
-
     return [
         parse_metadata_entry(k, v)
         for k, v in check.opt_dict_param(metadata, "metadata", key_type=str).items()
