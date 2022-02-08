@@ -1,0 +1,962 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 14.1
+-- Dumped by pg_dump version 14.1
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: alembic_version; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.alembic_version (
+    version_num character varying(32) NOT NULL
+);
+
+
+ALTER TABLE public.alembic_version OWNER TO test;
+
+--
+-- Name: asset_keys; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.asset_keys (
+    id integer NOT NULL,
+    asset_key character varying(512),
+    last_materialization text,
+    last_run_id character varying(255),
+    asset_details text,
+    wipe_timestamp timestamp without time zone,
+    last_materialization_timestamp timestamp without time zone,
+    tags text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.asset_keys OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.asset_keys_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.asset_keys_id_seq OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.asset_keys_id_seq OWNED BY public.asset_keys.id;
+
+
+--
+-- Name: bulk_actions; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.bulk_actions (
+    id integer NOT NULL,
+    key character varying(32) NOT NULL,
+    status character varying(255) NOT NULL,
+    "timestamp" timestamp without time zone NOT NULL,
+    body text
+);
+
+
+ALTER TABLE public.bulk_actions OWNER TO test;
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.bulk_actions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.bulk_actions_id_seq OWNER TO test;
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.bulk_actions_id_seq OWNED BY public.bulk_actions.id;
+
+
+--
+-- Name: daemon_heartbeats; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.daemon_heartbeats (
+    daemon_type character varying(255) NOT NULL,
+    daemon_id character varying(255),
+    "timestamp" timestamp without time zone NOT NULL,
+    body text
+);
+
+
+ALTER TABLE public.daemon_heartbeats OWNER TO test;
+
+--
+-- Name: event_logs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.event_logs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    event text NOT NULL,
+    dagster_event_type text,
+    "timestamp" timestamp without time zone,
+    step_key text,
+    asset_key text,
+    partition text
+);
+
+
+ALTER TABLE public.event_logs OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.event_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.event_logs_id_seq OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.event_logs_id_seq OWNED BY public.event_logs.id;
+
+
+--
+-- Name: instance_info; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.instance_info (
+    run_storage_id text
+);
+
+
+ALTER TABLE public.instance_info OWNER TO test;
+
+--
+-- Name: job_ticks; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.job_ticks (
+    id integer NOT NULL,
+    job_origin_id character varying(255),
+    status character varying(63),
+    type character varying(63),
+    "timestamp" timestamp without time zone,
+    tick_body text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.job_ticks OWNER TO test;
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.job_ticks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.job_ticks_id_seq OWNER TO test;
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.job_ticks_id_seq OWNED BY public.job_ticks.id;
+
+
+--
+-- Name: jobs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.jobs (
+    id integer NOT NULL,
+    job_origin_id character varying(255),
+    repository_origin_id character varying(255),
+    status character varying(63),
+    job_type character varying(63),
+    job_body text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.jobs OWNER TO test;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.jobs_id_seq OWNER TO test;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.jobs_id_seq OWNED BY public.jobs.id;
+
+
+--
+-- Name: run_tags; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.run_tags (
+    id integer NOT NULL,
+    run_id character varying(255),
+    key text,
+    value text
+);
+
+
+ALTER TABLE public.run_tags OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.run_tags_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.run_tags_id_seq OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.run_tags_id_seq OWNED BY public.run_tags.id;
+
+
+--
+-- Name: runs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.runs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    snapshot_id character varying(255),
+    pipeline_name text,
+    mode text,
+    status character varying(63),
+    run_body text,
+    partition text,
+    partition_set text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    start_time double precision,
+    end_time double precision
+);
+
+
+ALTER TABLE public.runs OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.runs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.runs_id_seq OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.runs_id_seq OWNED BY public.runs.id;
+
+
+--
+-- Name: secondary_indexes; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.secondary_indexes (
+    id integer NOT NULL,
+    name character varying(512),
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    migration_completed timestamp without time zone
+);
+
+
+ALTER TABLE public.secondary_indexes OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.secondary_indexes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.secondary_indexes_id_seq OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.secondary_indexes_id_seq OWNED BY public.secondary_indexes.id;
+
+
+--
+-- Name: snapshots; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.snapshots (
+    id integer NOT NULL,
+    snapshot_id character varying(255) NOT NULL,
+    snapshot_body bytea NOT NULL,
+    snapshot_type character varying(63) NOT NULL
+);
+
+
+ALTER TABLE public.snapshots OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.snapshots_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.snapshots_id_seq OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.snapshots_id_seq OWNED BY public.snapshots.id;
+
+
+--
+-- Name: asset_keys id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys ALTER COLUMN id SET DEFAULT nextval('public.asset_keys_id_seq'::regclass);
+
+
+--
+-- Name: bulk_actions id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions ALTER COLUMN id SET DEFAULT nextval('public.bulk_actions_id_seq'::regclass);
+
+
+--
+-- Name: event_logs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs ALTER COLUMN id SET DEFAULT nextval('public.event_logs_id_seq'::regclass);
+
+
+--
+-- Name: job_ticks id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.job_ticks ALTER COLUMN id SET DEFAULT nextval('public.job_ticks_id_seq'::regclass);
+
+
+--
+-- Name: jobs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs ALTER COLUMN id SET DEFAULT nextval('public.jobs_id_seq'::regclass);
+
+
+--
+-- Name: run_tags id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags ALTER COLUMN id SET DEFAULT nextval('public.run_tags_id_seq'::regclass);
+
+
+--
+-- Name: runs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs ALTER COLUMN id SET DEFAULT nextval('public.runs_id_seq'::regclass);
+
+
+--
+-- Name: secondary_indexes id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes ALTER COLUMN id SET DEFAULT nextval('public.secondary_indexes_id_seq'::regclass);
+
+
+--
+-- Name: snapshots id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots ALTER COLUMN id SET DEFAULT nextval('public.snapshots_id_seq'::regclass);
+
+
+--
+-- Data for Name: alembic_version; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.alembic_version (version_num) FROM stdin;
+9c5f00e80ef2
+\.
+
+
+--
+-- Data for Name: asset_keys; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.asset_keys (id, asset_key, last_materialization, last_run_id, asset_details, wipe_timestamp, last_materialization_timestamp, tags, create_timestamp) FROM stdin;
+1	["raw_users"]	{"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["raw_users"]}, "description": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "FloatMetadataEntryData", "value": 8600.0}, "label": "Data size (bytes)"}], "partition": "2021-12-16", "tags": {}}	726786a4-52a2-42d4-a0aa-db26cb01da81	\N	\N	2022-02-07 15:37:27.344908	\N	2022-02-07 15:37:27.363093
+2	["raw_video_views"]	{"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["raw_video_views"]}, "description": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "FloatMetadataEntryData", "value": 7000.0}, "label": "Data size (bytes)"}], "partition": "2021-12-16", "tags": {}}	726786a4-52a2-42d4-a0aa-db26cb01da81	\N	\N	2022-02-07 15:37:34.451087	\N	2022-02-07 15:37:34.461701
+3	["users"]	{"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["users"]}, "description": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "FloatMetadataEntryData", "value": 8600.0}, "label": "Data size (bytes)"}], "partition": "2021-12-16", "tags": {}}	726786a4-52a2-42d4-a0aa-db26cb01da81	\N	\N	2022-02-07 15:37:43.15197	\N	2022-02-07 15:37:43.16689
+4	["video_views"]	{"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["video_views"]}, "description": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "FloatMetadataEntryData", "value": 7000.0}, "label": "Data size (bytes)"}], "partition": "2021-12-16", "tags": {}}	726786a4-52a2-42d4-a0aa-db26cb01da81	\N	\N	2022-02-07 15:37:50.246691	\N	2022-02-07 15:37:50.258244
+\.
+
+
+--
+-- Data for Name: bulk_actions; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.bulk_actions (id, key, status, "timestamp", body) FROM stdin;
+\.
+
+
+--
+-- Data for Name: daemon_heartbeats; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.daemon_heartbeats (daemon_type, daemon_id, "timestamp", body) FROM stdin;
+\.
+
+
+--
+-- Data for Name: event_logs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.event_logs (id, run_id, event, dagster_event_type, "timestamp", step_key, asset_key, partition) FROM stdin;
+1	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_STARTING", "logging_tags": {}, "message": null, "pid": null, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": null, "timestamp": 1644277034.93815, "user_message": ""}	PIPELINE_STARTING	2022-02-07 23:37:14.93815	\N	\N	\N
+2	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "cli_api_subprocess_init", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "31188"}, "label": "pid"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Started process for run (pid: 31188).", "pid": null, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "Started process for run (pid: 31188).", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": null, "timestamp": 1644277036.2628632, "user_message": "Started process for run (pid: 31188)."}	ENGINE_EVENT	2022-02-07 23:37:16.262863	\N	\N	\N
+3	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_START", "logging_tags": {}, "message": "Started execution of run for \\"longitudinal_pipeline\\".", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - RUN_START - Started execution of run for \\"longitudinal_pipeline\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": null, "timestamp": 1644277038.624036, "user_message": "Started execution of run for \\"longitudinal_pipeline\\"."}	PIPELINE_START	2022-02-07 23:37:18.624036	\N	\N	\N
+4	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "31188"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['ingest_raw_users', 'ingest_raw_video_views', 'update_users_table', 'update_video_views_table', 'train_video_recommender_model']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Executing steps in process (pid: 31188)", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - ENGINE_EVENT - Executing steps in process (pid: 31188)", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": null, "timestamp": 1644277038.66474, "user_message": "Executing steps in process (pid: 31188)"}	ENGINE_EVENT	2022-02-07 23:37:18.66474	\N	\N	\N
+5	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "resources", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Starting initialization of resources [io_manager].", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - ENGINE_EVENT - Starting initialization of resources [io_manager].", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": null, "timestamp": 1644277038.67777, "user_message": "Starting initialization of resources [io_manager]."}	ENGINE_EVENT	2022-02-07 23:37:18.67777	\N	\N	\N
+6	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "resources", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Initialized in 0.07ms", "entry_data": {"__class__": "PythonArtifactMetadataEntryData", "module": "dagster.core.storage.fs_io_manager", "name": "PickledObjectFilesystemIOManager"}, "label": "io_manager"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished initialization of resources [io_manager].", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - ENGINE_EVENT - Finished initialization of resources [io_manager].", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": null, "timestamp": 1644277038.688434, "user_message": "Finished initialization of resources [io_manager]."}	ENGINE_EVENT	2022-02-07 23:37:18.688434	\N	\N	\N
+7	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "ingest_raw_users", "step_keys": ["ingest_raw_users"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "ingest_raw_users", "step_key": "ingest_raw_users"}, "message": "Started capturing logs for step: ingest_raw_users.", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_users", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "ingest_raw_users", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_users", "parent": null}}, "step_key": "ingest_raw_users", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - ingest_raw_users - LOGS_CAPTURED - Started capturing logs for step: ingest_raw_users.", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_users", "timestamp": 1644277038.721882, "user_message": "Started capturing logs for step: ingest_raw_users."}	LOGS_CAPTURED	2022-02-07 23:37:18.721882	ingest_raw_users	\N	\N
+8	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "ingest_raw_users", "step_key": "ingest_raw_users"}, "message": "Started execution of step \\"ingest_raw_users\\".", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_users", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "ingest_raw_users", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_users", "parent": null}}, "step_key": "ingest_raw_users", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - ingest_raw_users - STEP_START - Started execution of step \\"ingest_raw_users\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_users", "timestamp": 1644277038.730973, "user_message": "Started execution of step \\"ingest_raw_users\\"."}	STEP_START	2022-02-07 23:37:18.730973	ingest_raw_users	\N	\N
+9	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepMaterializationData", "asset_lineage": [], "materialization": {"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["raw_users"]}, "description": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "FloatMetadataEntryData", "value": 8600.0}, "label": "Data size (bytes)"}], "partition": "2021-12-16", "tags": {}}}, "event_type_value": "ASSET_MATERIALIZATION", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "ingest_raw_users", "step_key": "ingest_raw_users"}, "message": "Materialized value raw_users.", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_users", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "ingest_raw_users", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_users", "parent": null}}, "step_key": "ingest_raw_users", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - ingest_raw_users - ASSET_MATERIALIZATION - Materialized value raw_users.", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_users", "timestamp": 1644277047.344908, "user_message": "Materialized value raw_users."}	ASSET_MATERIALIZATION	2022-02-07 23:37:27.344908	ingest_raw_users	["raw_users"]	2021-12-16
+10	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 20, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - ingest_raw_users - Solid ingest_raw_users did not fire outputs {'result'}", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_users", "timestamp": 1644277047.366274, "user_message": "Solid ingest_raw_users did not fire outputs {'result'}"}	\N	2022-02-07 23:37:27.366274	ingest_raw_users	\N	\N
+11	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 20, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - ingest_raw_users - Emitting implicit Nothing for output \\"result\\" on solid \\"ingest_raw_users\\"", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_users", "timestamp": 1644277047.372258, "user_message": "Emitting implicit Nothing for output \\"result\\" on solid \\"ingest_raw_users\\""}	\N	2022-02-07 23:37:27.372258	ingest_raw_users	\N	\N
+12	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "ingest_raw_users"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "ingest_raw_users", "step_key": "ingest_raw_users"}, "message": "Yielded output \\"result\\" of type \\"Nothing\\". (Type check passed).", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_users", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "ingest_raw_users", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_users", "parent": null}}, "step_key": "ingest_raw_users", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - ingest_raw_users - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Nothing\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_users", "timestamp": 1644277047.3792782, "user_message": "Yielded output \\"result\\" of type \\"Nothing\\". (Type check passed)."}	STEP_OUTPUT	2022-02-07 23:37:27.379278	ingest_raw_users	\N	\N
+13	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - ingest_raw_users - Writing file at: /Users/prha/dagster/storage/726786a4-52a2-42d4-a0aa-db26cb01da81/ingest_raw_users/result", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_users", "timestamp": 1644277047.38577, "user_message": "Writing file at: /Users/prha/dagster/storage/726786a4-52a2-42d4-a0aa-db26cb01da81/ingest_raw_users/result"}	\N	2022-02-07 23:37:27.38577	ingest_raw_users	\N	\N
+19	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 20, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - ingest_raw_video_views - Solid ingest_raw_video_views did not fire outputs {'result'}", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_video_views", "timestamp": 1644277054.463941, "user_message": "Solid ingest_raw_video_views did not fire outputs {'result'}"}	\N	2022-02-07 23:37:34.463941	ingest_raw_video_views	\N	\N
+14	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "ingest_raw_users", "step_key": "ingest_raw_users"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_users", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "ingest_raw_users", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_users", "parent": null}}, "step_key": "ingest_raw_users", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - ingest_raw_users - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_users", "timestamp": 1644277047.392732, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2022-02-07 23:37:27.392732	ingest_raw_users	\N	\N
+15	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 8659.137476}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "ingest_raw_users", "step_key": "ingest_raw_users"}, "message": "Finished execution of step \\"ingest_raw_users\\" in 8.66s.", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_users", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "ingest_raw_users", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_users", "parent": null}}, "step_key": "ingest_raw_users", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - ingest_raw_users - STEP_SUCCESS - Finished execution of step \\"ingest_raw_users\\" in 8.66s.", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_users", "timestamp": 1644277047.399801, "user_message": "Finished execution of step \\"ingest_raw_users\\" in 8.66s."}	STEP_SUCCESS	2022-02-07 23:37:27.399801	ingest_raw_users	\N	\N
+16	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "ingest_raw_video_views", "step_keys": ["ingest_raw_video_views"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "ingest_raw_video_views", "step_key": "ingest_raw_video_views"}, "message": "Started capturing logs for step: ingest_raw_video_views.", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_video_views", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "ingest_raw_video_views", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_video_views", "parent": null}}, "step_key": "ingest_raw_video_views", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - ingest_raw_video_views - LOGS_CAPTURED - Started capturing logs for step: ingest_raw_video_views.", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_video_views", "timestamp": 1644277047.430423, "user_message": "Started capturing logs for step: ingest_raw_video_views."}	LOGS_CAPTURED	2022-02-07 23:37:27.430423	ingest_raw_video_views	\N	\N
+17	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "ingest_raw_video_views", "step_key": "ingest_raw_video_views"}, "message": "Started execution of step \\"ingest_raw_video_views\\".", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_video_views", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "ingest_raw_video_views", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_video_views", "parent": null}}, "step_key": "ingest_raw_video_views", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - ingest_raw_video_views - STEP_START - Started execution of step \\"ingest_raw_video_views\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_video_views", "timestamp": 1644277047.4385972, "user_message": "Started execution of step \\"ingest_raw_video_views\\"."}	STEP_START	2022-02-07 23:37:27.438597	ingest_raw_video_views	\N	\N
+18	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepMaterializationData", "asset_lineage": [], "materialization": {"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["raw_video_views"]}, "description": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "FloatMetadataEntryData", "value": 7000.0}, "label": "Data size (bytes)"}], "partition": "2021-12-16", "tags": {}}}, "event_type_value": "ASSET_MATERIALIZATION", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "ingest_raw_video_views", "step_key": "ingest_raw_video_views"}, "message": "Materialized value raw_video_views.", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_video_views", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "ingest_raw_video_views", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_video_views", "parent": null}}, "step_key": "ingest_raw_video_views", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - ingest_raw_video_views - ASSET_MATERIALIZATION - Materialized value raw_video_views.", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_video_views", "timestamp": 1644277054.451087, "user_message": "Materialized value raw_video_views."}	ASSET_MATERIALIZATION	2022-02-07 23:37:34.451087	ingest_raw_video_views	["raw_video_views"]	2021-12-16
+20	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 20, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - ingest_raw_video_views - Emitting implicit Nothing for output \\"result\\" on solid \\"ingest_raw_video_views\\"", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_video_views", "timestamp": 1644277054.469824, "user_message": "Emitting implicit Nothing for output \\"result\\" on solid \\"ingest_raw_video_views\\""}	\N	2022-02-07 23:37:34.469824	ingest_raw_video_views	\N	\N
+21	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "ingest_raw_video_views"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "ingest_raw_video_views", "step_key": "ingest_raw_video_views"}, "message": "Yielded output \\"result\\" of type \\"Nothing\\". (Type check passed).", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_video_views", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "ingest_raw_video_views", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_video_views", "parent": null}}, "step_key": "ingest_raw_video_views", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - ingest_raw_video_views - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Nothing\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_video_views", "timestamp": 1644277054.476375, "user_message": "Yielded output \\"result\\" of type \\"Nothing\\". (Type check passed)."}	STEP_OUTPUT	2022-02-07 23:37:34.476375	ingest_raw_video_views	\N	\N
+22	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - ingest_raw_video_views - Writing file at: /Users/prha/dagster/storage/726786a4-52a2-42d4-a0aa-db26cb01da81/ingest_raw_video_views/result", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_video_views", "timestamp": 1644277054.48318, "user_message": "Writing file at: /Users/prha/dagster/storage/726786a4-52a2-42d4-a0aa-db26cb01da81/ingest_raw_video_views/result"}	\N	2022-02-07 23:37:34.48318	ingest_raw_video_views	\N	\N
+23	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "ingest_raw_video_views", "step_key": "ingest_raw_video_views"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_video_views", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "ingest_raw_video_views", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_video_views", "parent": null}}, "step_key": "ingest_raw_video_views", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - ingest_raw_video_views - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_video_views", "timestamp": 1644277054.494045, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2022-02-07 23:37:34.494045	ingest_raw_video_views	\N	\N
+24	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 7055.375073999999}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "ingest_raw_video_views", "step_key": "ingest_raw_video_views"}, "message": "Finished execution of step \\"ingest_raw_video_views\\" in 7.06s.", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_video_views", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "ingest_raw_video_views", "solid_handle": {"__class__": "SolidHandle", "name": "ingest_raw_video_views", "parent": null}}, "step_key": "ingest_raw_video_views", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - ingest_raw_video_views - STEP_SUCCESS - Finished execution of step \\"ingest_raw_video_views\\" in 7.06s.", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "ingest_raw_video_views", "timestamp": 1644277054.501089, "user_message": "Finished execution of step \\"ingest_raw_video_views\\" in 7.06s."}	STEP_SUCCESS	2022-02-07 23:37:34.501089	ingest_raw_video_views	\N	\N
+25	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "update_users_table", "step_keys": ["update_users_table"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "update_users_table", "step_key": "update_users_table"}, "message": "Started capturing logs for step: update_users_table.", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "update_users_table", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "update_users_table", "solid_handle": {"__class__": "SolidHandle", "name": "update_users_table", "parent": null}}, "step_key": "update_users_table", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - update_users_table - LOGS_CAPTURED - Started capturing logs for step: update_users_table.", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_users_table", "timestamp": 1644277054.530955, "user_message": "Started capturing logs for step: update_users_table."}	LOGS_CAPTURED	2022-02-07 23:37:34.530955	update_users_table	\N	\N
+26	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "update_users_table", "step_key": "update_users_table"}, "message": "Started execution of step \\"update_users_table\\".", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "update_users_table", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "update_users_table", "solid_handle": {"__class__": "SolidHandle", "name": "update_users_table", "parent": null}}, "step_key": "update_users_table", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - update_users_table - STEP_START - Started execution of step \\"update_users_table\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_users_table", "timestamp": 1644277054.539268, "user_message": "Started execution of step \\"update_users_table\\"."}	STEP_START	2022-02-07 23:37:34.539268	update_users_table	\N	\N
+27	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepMaterializationData", "asset_lineage": [], "materialization": {"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["users"]}, "description": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "FloatMetadataEntryData", "value": 8600.0}, "label": "Data size (bytes)"}], "partition": "2021-12-16", "tags": {}}}, "event_type_value": "ASSET_MATERIALIZATION", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "update_users_table", "step_key": "update_users_table"}, "message": "Materialized value users.", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "update_users_table", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "update_users_table", "solid_handle": {"__class__": "SolidHandle", "name": "update_users_table", "parent": null}}, "step_key": "update_users_table", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - update_users_table - ASSET_MATERIALIZATION - Materialized value users.", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_users_table", "timestamp": 1644277063.1519701, "user_message": "Materialized value users."}	ASSET_MATERIALIZATION	2022-02-07 23:37:43.15197	update_users_table	["users"]	2021-12-16
+28	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 20, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - update_users_table - Solid update_users_table did not fire outputs {'result'}", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_users_table", "timestamp": 1644277063.1689432, "user_message": "Solid update_users_table did not fire outputs {'result'}"}	\N	2022-02-07 23:37:43.168943	update_users_table	\N	\N
+29	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 20, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - update_users_table - Emitting implicit Nothing for output \\"result\\" on solid \\"update_users_table\\"", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_users_table", "timestamp": 1644277063.174904, "user_message": "Emitting implicit Nothing for output \\"result\\" on solid \\"update_users_table\\""}	\N	2022-02-07 23:37:43.174904	update_users_table	\N	\N
+30	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "update_users_table"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "update_users_table", "step_key": "update_users_table"}, "message": "Yielded output \\"result\\" of type \\"Nothing\\". (Type check passed).", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "update_users_table", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "update_users_table", "solid_handle": {"__class__": "SolidHandle", "name": "update_users_table", "parent": null}}, "step_key": "update_users_table", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - update_users_table - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Nothing\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_users_table", "timestamp": 1644277063.181335, "user_message": "Yielded output \\"result\\" of type \\"Nothing\\". (Type check passed)."}	STEP_OUTPUT	2022-02-07 23:37:43.181335	update_users_table	\N	\N
+31	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - update_users_table - Writing file at: /Users/prha/dagster/storage/726786a4-52a2-42d4-a0aa-db26cb01da81/update_users_table/result", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_users_table", "timestamp": 1644277063.187598, "user_message": "Writing file at: /Users/prha/dagster/storage/726786a4-52a2-42d4-a0aa-db26cb01da81/update_users_table/result"}	\N	2022-02-07 23:37:43.187598	update_users_table	\N	\N
+32	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "update_users_table", "step_key": "update_users_table"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "update_users_table", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "update_users_table", "solid_handle": {"__class__": "SolidHandle", "name": "update_users_table", "parent": null}}, "step_key": "update_users_table", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - update_users_table - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_users_table", "timestamp": 1644277063.193951, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2022-02-07 23:37:43.193951	update_users_table	\N	\N
+33	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 8652.964735000001}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "update_users_table", "step_key": "update_users_table"}, "message": "Finished execution of step \\"update_users_table\\" in 8.65s.", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "update_users_table", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "update_users_table", "solid_handle": {"__class__": "SolidHandle", "name": "update_users_table", "parent": null}}, "step_key": "update_users_table", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - update_users_table - STEP_SUCCESS - Finished execution of step \\"update_users_table\\" in 8.65s.", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_users_table", "timestamp": 1644277063.200093, "user_message": "Finished execution of step \\"update_users_table\\" in 8.65s."}	STEP_SUCCESS	2022-02-07 23:37:43.200093	update_users_table	\N	\N
+34	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "update_video_views_table", "step_keys": ["update_video_views_table"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "update_video_views_table", "step_key": "update_video_views_table"}, "message": "Started capturing logs for step: update_video_views_table.", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "update_video_views_table", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "update_video_views_table", "solid_handle": {"__class__": "SolidHandle", "name": "update_video_views_table", "parent": null}}, "step_key": "update_video_views_table", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - update_video_views_table - LOGS_CAPTURED - Started capturing logs for step: update_video_views_table.", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_video_views_table", "timestamp": 1644277063.2272341, "user_message": "Started capturing logs for step: update_video_views_table."}	LOGS_CAPTURED	2022-02-07 23:37:43.227234	update_video_views_table	\N	\N
+35	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "update_video_views_table", "step_key": "update_video_views_table"}, "message": "Started execution of step \\"update_video_views_table\\".", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "update_video_views_table", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "update_video_views_table", "solid_handle": {"__class__": "SolidHandle", "name": "update_video_views_table", "parent": null}}, "step_key": "update_video_views_table", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - update_video_views_table - STEP_START - Started execution of step \\"update_video_views_table\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_video_views_table", "timestamp": 1644277063.235322, "user_message": "Started execution of step \\"update_video_views_table\\"."}	STEP_START	2022-02-07 23:37:43.235322	update_video_views_table	\N	\N
+36	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepMaterializationData", "asset_lineage": [], "materialization": {"__class__": "AssetMaterialization", "asset_key": {"__class__": "AssetKey", "path": ["video_views"]}, "description": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "FloatMetadataEntryData", "value": 7000.0}, "label": "Data size (bytes)"}], "partition": "2021-12-16", "tags": {}}}, "event_type_value": "ASSET_MATERIALIZATION", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "update_video_views_table", "step_key": "update_video_views_table"}, "message": "Materialized value video_views.", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "update_video_views_table", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "update_video_views_table", "solid_handle": {"__class__": "SolidHandle", "name": "update_video_views_table", "parent": null}}, "step_key": "update_video_views_table", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - update_video_views_table - ASSET_MATERIALIZATION - Materialized value video_views.", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_video_views_table", "timestamp": 1644277070.246691, "user_message": "Materialized value video_views."}	ASSET_MATERIALIZATION	2022-02-07 23:37:50.246691	update_video_views_table	["video_views"]	2021-12-16
+37	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 20, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - update_video_views_table - Solid update_video_views_table did not fire outputs {'result'}", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_video_views_table", "timestamp": 1644277070.260202, "user_message": "Solid update_video_views_table did not fire outputs {'result'}"}	\N	2022-02-07 23:37:50.260202	update_video_views_table	\N	\N
+38	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 20, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - update_video_views_table - Emitting implicit Nothing for output \\"result\\" on solid \\"update_video_views_table\\"", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_video_views_table", "timestamp": 1644277070.2675, "user_message": "Emitting implicit Nothing for output \\"result\\" on solid \\"update_video_views_table\\""}	\N	2022-02-07 23:37:50.2675	update_video_views_table	\N	\N
+39	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "update_video_views_table"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "update_video_views_table", "step_key": "update_video_views_table"}, "message": "Yielded output \\"result\\" of type \\"Nothing\\". (Type check passed).", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "update_video_views_table", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "update_video_views_table", "solid_handle": {"__class__": "SolidHandle", "name": "update_video_views_table", "parent": null}}, "step_key": "update_video_views_table", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - update_video_views_table - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Nothing\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_video_views_table", "timestamp": 1644277070.274314, "user_message": "Yielded output \\"result\\" of type \\"Nothing\\". (Type check passed)."}	STEP_OUTPUT	2022-02-07 23:37:50.274314	update_video_views_table	\N	\N
+40	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - update_video_views_table - Writing file at: /Users/prha/dagster/storage/726786a4-52a2-42d4-a0aa-db26cb01da81/update_video_views_table/result", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_video_views_table", "timestamp": 1644277070.281016, "user_message": "Writing file at: /Users/prha/dagster/storage/726786a4-52a2-42d4-a0aa-db26cb01da81/update_video_views_table/result"}	\N	2022-02-07 23:37:50.281016	update_video_views_table	\N	\N
+41	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "update_video_views_table", "step_key": "update_video_views_table"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "update_video_views_table", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "update_video_views_table", "solid_handle": {"__class__": "SolidHandle", "name": "update_video_views_table", "parent": null}}, "step_key": "update_video_views_table", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - update_video_views_table - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_video_views_table", "timestamp": 1644277070.287615, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2022-02-07 23:37:50.287615	update_video_views_table	\N	\N
+42	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 7051.586017000001}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "update_video_views_table", "step_key": "update_video_views_table"}, "message": "Finished execution of step \\"update_video_views_table\\" in 7.05s.", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "update_video_views_table", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "update_video_views_table", "solid_handle": {"__class__": "SolidHandle", "name": "update_video_views_table", "parent": null}}, "step_key": "update_video_views_table", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - update_video_views_table - STEP_SUCCESS - Finished execution of step \\"update_video_views_table\\" in 7.05s.", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "update_video_views_table", "timestamp": 1644277070.293737, "user_message": "Finished execution of step \\"update_video_views_table\\" in 7.05s."}	STEP_SUCCESS	2022-02-07 23:37:50.293737	update_video_views_table	\N	\N
+43	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "train_video_recommender_model", "step_keys": ["train_video_recommender_model"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "train_video_recommender_model", "step_key": "train_video_recommender_model"}, "message": "Started capturing logs for step: train_video_recommender_model.", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "train_video_recommender_model", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "train_video_recommender_model", "solid_handle": {"__class__": "SolidHandle", "name": "train_video_recommender_model", "parent": null}}, "step_key": "train_video_recommender_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - train_video_recommender_model - LOGS_CAPTURED - Started capturing logs for step: train_video_recommender_model.", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "train_video_recommender_model", "timestamp": 1644277070.3214662, "user_message": "Started capturing logs for step: train_video_recommender_model."}	LOGS_CAPTURED	2022-02-07 23:37:50.321466	train_video_recommender_model	\N	\N
+44	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "train_video_recommender_model", "step_key": "train_video_recommender_model"}, "message": "Started execution of step \\"train_video_recommender_model\\".", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "train_video_recommender_model", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "train_video_recommender_model", "solid_handle": {"__class__": "SolidHandle", "name": "train_video_recommender_model", "parent": null}}, "step_key": "train_video_recommender_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - train_video_recommender_model - STEP_START - Started execution of step \\"train_video_recommender_model\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "train_video_recommender_model", "timestamp": 1644277070.329458, "user_message": "Started execution of step \\"train_video_recommender_model\\"."}	STEP_START	2022-02-07 23:37:50.329458	train_video_recommender_model	\N	\N
+45	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 20, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - train_video_recommender_model - Solid train_video_recommender_model did not fire outputs {'result'}", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "train_video_recommender_model", "timestamp": 1644277130.543214, "user_message": "Solid train_video_recommender_model did not fire outputs {'result'}"}	\N	2022-02-07 23:38:50.543214	train_video_recommender_model	\N	\N
+46	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 20, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - train_video_recommender_model - Emitting implicit Nothing for output \\"result\\" on solid \\"train_video_recommender_model\\"", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "train_video_recommender_model", "timestamp": 1644277130.6141791, "user_message": "Emitting implicit Nothing for output \\"result\\" on solid \\"train_video_recommender_model\\""}	\N	2022-02-07 23:38:50.614179	train_video_recommender_model	\N	\N
+47	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "train_video_recommender_model"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "train_video_recommender_model", "step_key": "train_video_recommender_model"}, "message": "Yielded output \\"result\\" of type \\"Nothing\\". (Type check passed).", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "train_video_recommender_model", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "train_video_recommender_model", "solid_handle": {"__class__": "SolidHandle", "name": "train_video_recommender_model", "parent": null}}, "step_key": "train_video_recommender_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - train_video_recommender_model - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Nothing\\". (Type check passed).", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "train_video_recommender_model", "timestamp": 1644277130.621828, "user_message": "Yielded output \\"result\\" of type \\"Nothing\\". (Type check passed)."}	STEP_OUTPUT	2022-02-07 23:38:50.621828	train_video_recommender_model	\N	\N
+48	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - train_video_recommender_model - Writing file at: /Users/prha/dagster/storage/726786a4-52a2-42d4-a0aa-db26cb01da81/train_video_recommender_model/result", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "train_video_recommender_model", "timestamp": 1644277130.628741, "user_message": "Writing file at: /Users/prha/dagster/storage/726786a4-52a2-42d4-a0aa-db26cb01da81/train_video_recommender_model/result"}	\N	2022-02-07 23:38:50.628741	train_video_recommender_model	\N	\N
+49	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "train_video_recommender_model", "step_key": "train_video_recommender_model"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "train_video_recommender_model", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "train_video_recommender_model", "solid_handle": {"__class__": "SolidHandle", "name": "train_video_recommender_model", "parent": null}}, "step_key": "train_video_recommender_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - train_video_recommender_model - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "train_video_recommender_model", "timestamp": 1644277130.635724, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2022-02-07 23:38:50.635724	train_video_recommender_model	\N	\N
+50	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 60303.744328}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "longitudinal_pipeline", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}', 'dagster/partition': '2021-12-16', 'dagster/partition_set': 'ingest_and_train', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_name": "train_video_recommender_model", "step_key": "train_video_recommender_model"}, "message": "Finished execution of step \\"train_video_recommender_model\\" in 1m0s.", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": {"__class__": "SolidHandle", "name": "train_video_recommender_model", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "train_video_recommender_model", "solid_handle": {"__class__": "SolidHandle", "name": "train_video_recommender_model", "parent": null}}, "step_key": "train_video_recommender_model", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - train_video_recommender_model - STEP_SUCCESS - Finished execution of step \\"train_video_recommender_model\\" in 1m0s.", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": "train_video_recommender_model", "timestamp": 1644277130.6415958, "user_message": "Finished execution of step \\"train_video_recommender_model\\" in 1m0s."}	STEP_SUCCESS	2022-02-07 23:38:50.641596	train_video_recommender_model	\N	\N
+51	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "31188"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['ingest_raw_users', 'ingest_raw_video_views', 'update_users_table', 'update_video_views_table', 'train_video_recommender_model']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished steps in process (pid: 31188) in 1m31s", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - ENGINE_EVENT - Finished steps in process (pid: 31188) in 1m31s", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": null, "timestamp": 1644277130.653495, "user_message": "Finished steps in process (pid: 31188) in 1m31s"}	ENGINE_EVENT	2022-02-07 23:38:50.653495	\N	\N	\N
+52	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_SUCCESS", "logging_tags": {}, "message": "Finished execution of run for \\"longitudinal_pipeline\\".", "pid": 31188, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "longitudinal_pipeline - 726786a4-52a2-42d4-a0aa-db26cb01da81 - 31188 - RUN_SUCCESS - Finished execution of run for \\"longitudinal_pipeline\\".", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": null, "timestamp": 1644277130.6598132, "user_message": "Finished execution of run for \\"longitudinal_pipeline\\"."}	PIPELINE_SUCCESS	2022-02-07 23:38:50.659813	\N	\N	\N
+53	726786a4-52a2-42d4-a0aa-db26cb01da81	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Process for run exited (pid: 31188).", "pid": null, "pipeline_name": "longitudinal_pipeline", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "Process for run exited (pid: 31188).", "pipeline_name": "longitudinal_pipeline", "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "step_key": null, "timestamp": 1644277130.6883378, "user_message": "Process for run exited (pid: 31188)."}	ENGINE_EVENT	2022-02-07 23:38:50.688338	\N	\N	\N
+\.
+
+
+--
+-- Data for Name: instance_info; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.instance_info (run_storage_id) FROM stdin;
+74ba0a60-ea8a-49c0-89ec-3e55d0cd3c40
+\.
+
+
+--
+-- Data for Name: job_ticks; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.job_ticks (id, job_origin_id, status, type, "timestamp", tick_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: jobs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.jobs (id, job_origin_id, repository_origin_id, status, job_type, job_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: run_tags; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.run_tags (id, run_id, key, value) FROM stdin;
+1	726786a4-52a2-42d4-a0aa-db26cb01da81	dagster/partition	2021-12-16
+2	726786a4-52a2-42d4-a0aa-db26cb01da81	dagster/partition_set	ingest_and_train
+3	726786a4-52a2-42d4-a0aa-db26cb01da81	dagster/solid_selection	*
+4	726786a4-52a2-42d4-a0aa-db26cb01da81	.dagster/grpc_info	{"host": "localhost", "socket": "/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o"}
+\.
+
+
+--
+-- Data for Name: runs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.runs (id, run_id, snapshot_id, pipeline_name, mode, status, run_body, partition, partition_set, create_timestamp, update_timestamp, start_time, end_time) FROM stdin;
+1	726786a4-52a2-42d4-a0aa-db26cb01da81	d5d205c24d9f85404be1e8206ec9565175c4a9bb	longitudinal_pipeline	\N	SUCCESS	{"__class__": "PipelineRun", "execution_plan_snapshot_id": "7621944926d7c9090bbf3a16fab5921c26f039ea", "external_pipeline_origin": {"__class__": "ExternalPipelineOrigin", "external_repository_origin": {"__class__": "ExternalRepositoryOrigin", "repository_location_origin": {"__class__": "ManagedGrpcPythonEnvRepositoryLocationOrigin", "loadable_target_origin": {"__class__": "LoadableTargetOrigin", "attribute": null, "executable_path": "/Users/prha/.pyenv/versions/3.8.7/envs/dagster-3.8.7/bin/python3.8", "module_name": "dagster_test.toys.repo", "package_name": null, "python_file": null, "working_directory": null}, "location_name": "dagster_test.toys.repo"}, "repository_name": "toys_repository"}, "pipeline_name": "longitudinal_pipeline"}, "mode": "default", "parent_run_id": null, "pipeline_code_origin": {"__class__": "PipelinePythonOrigin", "pipeline_name": "longitudinal_pipeline", "repository_origin": {"__class__": "RepositoryPythonOrigin", "code_pointer": {"__class__": "ModuleCodePointer", "fn_name": "toys_repository", "module": "dagster_test.toys.repo", "working_directory": "/Users/prha/code/dagster"}, "container_image": null, "entry_point": ["/Users/prha/.pyenv/versions/3.8.7/envs/dagster-3.8.7/bin/python3.8", "-m", "dagster"], "executable_path": "/Users/prha/.pyenv/versions/3.8.7/envs/dagster-3.8.7/bin/python3.8"}}, "pipeline_name": "longitudinal_pipeline", "pipeline_snapshot_id": "d5d205c24d9f85404be1e8206ec9565175c4a9bb", "root_run_id": null, "run_config": {"solids": {"ingest_raw_users": {"config": {"partition": "2021-12-16"}}, "ingest_raw_video_views": {"config": {"partition": "2021-12-16"}}, "train_video_recommender_model": {"config": {"partition": "2021-12-16"}}, "update_users_table": {"config": {"partition": "2021-12-16"}}, "update_video_views_table": {"config": {"partition": "2021-12-16"}}}}, "run_id": "726786a4-52a2-42d4-a0aa-db26cb01da81", "solid_selection": null, "solids_to_execute": null, "status": {"__enum__": "PipelineRunStatus.SUCCESS"}, "step_keys_to_execute": null, "tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/ls/p35278613w573s8j1fn7_c4m0000gn/T/tmpyofyis1o\\"}", "dagster/partition": "2021-12-16", "dagster/partition_set": "ingest_and_train", "dagster/solid_selection": "*"}}	2021-12-16	ingest_and_train	2022-02-07 15:37:14.916332	2022-02-07 15:38:50.680979	1644277038.653375	1644277130.680979
+\.
+
+
+--
+-- Data for Name: secondary_indexes; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.secondary_indexes (id, name, create_timestamp, migration_completed) FROM stdin;
+1	run_partitions	2022-02-07 15:36:52.534847	2022-02-07 15:36:52.531163
+2	run_start_end_overwritten	2022-02-07 15:36:52.564618	2022-02-07 15:36:52.561167
+3	asset_key_table	2022-02-07 15:36:52.630359	2022-02-07 15:36:52.626579
+4	asset_key_index_columns	2022-02-07 15:36:52.643678	2022-02-07 15:36:52.640415
+\.
+
+
+--
+-- Data for Name: snapshots; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.snapshots (id, snapshot_id, snapshot_body, snapshot_type) FROM stdin;
+1	d5d205c24d9f85404be1e8206ec9565175c4a9bb	\\x789ced5deb739b3a16ff573cfedc66909010badf7afbd866b69bdc69723fecdc6418a187c3168317707ab39dfeef2b017e832313e338a93bd3a68090cee3778e8e8e0eca8f6110f098e579100c7f1b0cff8826328e127995b0497e9716c33783214f13158d829cdfc9310bf2d993df063f56df7d5fb6bb2a9b2dbfcfe23898f5616e07e143f04d3e941dbc4b1eda3aba7e989464982e84cc79164d8a284d7483641ac7faa64ca6e3e09ec553992f6eaa48c662e97a14ddcb2448d8589a9ecd70fa6635fafc2a4a444d44d9e51a0dffd48fcfde5dfc7bf853b7cd398b5916d4afd46314ba553061191b1bbe66839be6bfa769bc3b7fc36137eecad116eccd2f2df8bb7affeecbbbaf0d2c36bd7555b628dffbfdf2f24bf956bb0c3ec5296b45cbfe85500db790c2e2ba47317cfa72f9eefa11399c27079482196c2183d9558f1238bf788cffaaf19f8966eccc40f3ed958c252fd2ec2c945860e0872e95bec790cbb1825272a6b0eb73a03c4e080021a607f414f5bd5a7e7b207d27f1077f5e9c5f5eece270fe9a5bfbeea4ddae6ba73499058fc271984ba4eb3b44b88453e551ce3d4829e188618518209ec4dc3d0af574a5bd77fdccfdd0eeb46d2848dbf382454609a521254000c8b8240e83c2f71d97fbbefeebb90810e110888f423ddd28ef5d39b583dc9db20dd55c1559948c163c4a0711e8722a2835ba662104d0f1908b430821225c6933f5a1771cbead33f1bd2ba8a26c4547d6c4553a9abd064215028f30c9a8437c87318f504cf5ff1c4e40287cee61299c10f6a490bf1a3bfd641e2f7a556c1a17c1244bef23218d648a6c2a979e94bd072c0ffe93a749901799e9e9c7cf5692a23cc8e47fa7515676a6589c9bde66b182887216c6fad14cf63364dcb1893c13cca5cc95124b2f44a1235c8871a8a4a2d873804f1da68476600e35fa3c3ede64b217d66e1fb1a19dc1656b301fbf7c7c7f7dd9148f3dbaf698130531010ea00a300c355fd81500382e040833ee4aec22c7234a5f1e15e2678adc068b7a240b58d4185ba0e27e03119583b1d6b4b5500fa969243c5730ec32e48421828a7a8c094804c492fb8c7ad813c8a1a4af50a047df765367216e0ce937c34c6a75c9bcbeaa8dbcbcfaa9ff74f4155162c8e232cf9bdd0567983a9ea0cc7109813ab24652124191c304c61413a618d13008fbf5846b9218b3bf4d72854fb34c2685b9e9bc19f424a0b1a62ada2a22a594cb14577a6ed6f0d77c201d44a9d057045200980c1de92b89a4bd9d5943fa9076f6cc21f7117a54d34733245088dd50db857211747d201ce160bd14753de0bb8253ca43eae9750eec6c35bdf23589f8b758be46cecaced61933eb206bd3dcfbf26d1fa6f9ccb9a493699e4cb31fd32cf37bd6b6b9f7bce43e6cf399138927db3cd9663fb659e576ad8d73ef49e97d18e733272a4fc67932ce7e8c73d7cccede93de7bb14e0c15d34b6b3db60b04c5505f4a43975e6f4b2a20f209c1041d57d6fa649dcf669dd660b7c5d521c1aea0929e50827b0e031411e62b5f12aee74ac21c0043441c0f87fc174a589fc0fed2386b9c8a4cc199b5695a5bc1214cb3d4885e4f6af7c014904a6007bb0429a220563cf4801498860287d2c7e015dbe57a4a3c64b90c449435071d57e934e3d2b0fdb8da7793b0adceafbf9ebfbf0eae3ebffbe36377bd430418473e554aaf4e08f045e821844226898fa80a7d8f795022745c7ab7d94cb9199e5f7cbabc1976dc0f89d35110cb7b19b7859c3dee03dd0c051be585cc3a535ffeec182bef068b8382d50d190b81073c2f645c31a5dd24f601901e122ef600804a10d7e5e18b03eb8f9b05e0cc4ede0cbc66bbcf68a9ba374745d74dbe6a77b1794ab6d6b81d80ac5575500021a42023c0f5087688140284bea6481197eaf51f47ae9e7a5d8f821708a03e20613d63d941c25af88785846d287a4c90e8377067c5dd93260f6b911e54d198404281e048f804431efa08b9c8a1546838bb9c2b2ff404fea54aa5b4b08aa86cff146d5bcbf5b0da568e9eaf7ccfa5bef0a983a1a68a33e2a9902b0a940fa89ee720efc3ac0316477ae990975de7691c95fa1fa693bc64e730e1c4a2e0a9ae0cea5a64f9b7e4d3468cec5cc5739445a43aec1ac9aca5e4498652472e183b1c3a8e0a3172149440b90a02e008698a3e11c084f75d1516a5c198256c6462bfb2e86ba94cac7bc95726f3720ddb561207392684388c31b3d7ec312aa1081de241ce29219cb94832e1b3e3ccd1d476d7c8195302861a9a3e221ceb289543ad5b0fb814308998fe19ea6700095b0768eb6a0eea0029a1a12ba0925c22e5ca9042490d7cb90ee611f7b154924a86f92b9eee366a1c59f64d6641916ac2d2bc7581dcaf2dafd66b7636ddb204b4d5275bd7aadb21dc1a4b07453843dac6a8af0847d28548a0d0f3305304420114e482284a43071e57c9890d4a9cae35bc2bf5c28df57f276caf63db1a4587c5b6ed14f5d2c2d75e277dedbe655e0419fb1e4cf3d6a82e244caf4e31733142580b53a3c5c1d883d471800f75c04a19a51eef5eeb7f281ecd78a9fe577e7f959c1619d3ab988ac94cf2743c9689d0f3f738150d69f957c0f0742258212be8068571a5af98cb25f0ee87573b6f6feb570feaedad993c79fb3776a96beba4941d6cac157450d858afd05f5a00bc9ee1e818492ed2262d5528b61b127620b156c7614162fb65e30b04c9d62f217bd810b35e075b02c6563507058cf597f33d01c64a74d6441e5474d6f9e263b2b57e736eda9c7454d112dc591709d8d993b5f80f0a0aebefa68f0914960eb8cb17ea3df865eb1c8e1d8eac3576281c5589e9831d30b738906735336ecb6ec763e68c982efef1d84973ebc597cf76b6d23a213b49674fe724599f5472ab0dcf48a2aa200bcaee0d5bf98471b9e5dccf0fd50b86fa8b59f3f5f33f573ab53b0574a9dbad4a12513e89d9c3fa199fda5384d3282ea264e1aa2ccefd5c1a75e5e0cf386526af541f82fa945aed31d3fd477a49fdbff6fe76f92c638def0654dcb61f45da55c8b3d306b74879ebf1a3eb625ef207cd92decb098c7d897ec66a9bec5b8e40ed2afcf951825ba4bffdd8d3a788ff09272cf625ff39b36d0a683c7bb5abf8ebc302b7087fdb79ab4f117de7d313fb12fc79b255ec176971d718957415fdacc3ede25f6a65a5828bcbebcfb3a8a249073531ed42ac1b3450d92699b670adab6016f3fe16b93c12a23d05994f3939b22f702ed86dd44215ecc88959aa4c7931cdb6c6387262369612fe70356bbd1ce29449f1204aee53ce8ca2aa9e1a565657a6e1f9bcdd4cc7513299164149ccecc5db4a97e241b313f160cc269395354f35a45e7ccd31d0b4b359b5dabaf7a9b55eadba3636820e44ecda16652bc9eb5b99fb207cedc573d36249d72b2fcef71cef6450de19ae72cdd3d8a07589ede944634b6ad4a5d3c2f4d036ec65f9f8334b443c37fbfa95a5423cbdc8de944feb4ed9a6549e3ecaf2aee3cfdb9fbb6bfdd1eddad5611fdfdd3d61a0c9ac3be9a67967f9511c9cb4b0dd533d45178dfbdf96f6bfa297db9f9b899f0f729c0e26f5effb181477ac18e4d1781aebeef241d9ade6685076960f523528953ed0921994830dcac1caebd24c4d63563f9adb6aa9f44169ae6783eb3b391865e9f7e2ce74372f1a7f5b446359f6a39bb3b7c55d964e47775ae203a5d5987ecf99a66b344e23c1e2019f66f7f2cc3037cad8e46e4568719a8ca2622aa284c5c18c31d3d4fc64a395e97d16d269caca3edaf0f02fdde083545b63b1aa3c7c6b375fca264b1d5599caa0da5e376f6d861cbfe897839b4035b8a9f91b68cb4ef5e8837acb6050c9fe6cf8667337a134bbf919d7d5fba6ddaca47dabc2bed68d9e4d65cffbad5edbd80dbbe6a598b3342d66bfe3a75bddfb8ab65a2d79ee29b5bf3194e55b42f672eaf9b068ba1caf6bf73449f3483bce85ef5d09661b6eb774bf7778bc807a98d6a1eb697d4d98db961ff5e4ba4dd2d59cbcec859793c99b6bfe36a9d4f3ef9288b78aaa9ee72b7cd7ad82b9f398af232de29f134a3aa2646dc577c2ca092b6d0b8527297c733db1321d3dba0c3d01f304cce70066f372fc84c6131a9f118d8da988d785c9329db2b8fc3ff2b4820c	PIPELINE
+2	7621944926d7c9090bbf3a16fab5921c26f039ea	\\x789ced58514fdb3010fe2b28cfd304a865b0d78969d3c440627b9a2acb8dafd4c2b13ddb813194ffbebb246dd2d66929d0d2497d41c277f7f9bbf397cf491f13c652c5bd672cf978909cff81340fd2e82bc5f5b5e6d68f4d48de1d24dc0539e269f0cc82f3d20710981f5c0e1884b2ca38a67906042335b3cea4e03dd54a2d83e48add6a73af990f3c5092ce95c2a0951694d4c07cbd1b93849c88be383eeca7c73d71363aedf70e7b433882d3e3c31348cffa27fda30ffdb4c7cf8643da605a7a47dc8cc6fa235a0e60d92d3c78160cab38d2c6bf90d00df8c01cbf67b9c7928ae474ed4e0a30f817eecb486e0532ae3259e04305add5566e130b8ee304aa9083d4641968018e6546804a0635354f5c1e3be67f8d0934ff8a9acd43994da5d85035e2c51e6ea5a6d91126e83cab2009e91b06de7fbabcb8faf9e33c29303383c0913f6732403685367998ecb48cd76599366127f80d76e35878b0c06a72df4d1823410a4f24e1c0e7aa94122a03351424f89a6b6b9f06feaac9a211788639103067c495876a493c20ba4c67171dfccea56bcb13a5912bc1323c2f873a947f615241a3f04649c1c65c0b05114214fd52055bddc4a66fb9031d6a6517c5600ebbd675acb2146a27030c3604969cfea61a2141e3191324fdf31a8a9d7bc2f6ba7d03ddce9dc1daea9dab7f9186e7b136dada8bf4bc2cfbab5e5f5e618ca3a5baaaefdca5918e3f3b935da00aa555705de6f8292bd681f48c092ebfb6160639251c1b0c516e1e0a2a1e718dfc1a75ef007b926ce51d4b955bf5d0ec98716bf118eb53addf636a9c45db98bc85d06ae74b434488fb092e9960fb650ccdaa285fc87c70c0b3593e316d6eeb4c178e74f3a31814ad0b77e579eeefdd6dddbb6b3e5a5dd7ef4a98f56fe1d590dbe8f7ffbc933bec792aae57f6e7f887e80e98f2c24744f19686bcc866c615e353dc5be1b6acf0292aeef2bf78edfaa6d781b3b176f6f6f6f449467f51db2d936b7f5fee8ad5cd708a195e74ae7bdbdbb2ed3d41dd2bcc2f8af06c0b8ca36db8c1193b1c14ff009a177528	EXECUTION_PLAN
+\.
+
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.asset_keys_id_seq', 4, true);
+
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.bulk_actions_id_seq', 1, false);
+
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.event_logs_id_seq', 53, true);
+
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.job_ticks_id_seq', 1, false);
+
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.jobs_id_seq', 1, false);
+
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.run_tags_id_seq', 4, true);
+
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.runs_id_seq', 1, true);
+
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.secondary_indexes_id_seq', 4, true);
+
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.snapshots_id_seq', 2, true);
+
+
+--
+-- Name: alembic_version alembic_version_pkc; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.alembic_version
+    ADD CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num);
+
+
+--
+-- Name: asset_keys asset_keys_asset_key_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_asset_key_key UNIQUE (asset_key);
+
+
+--
+-- Name: asset_keys asset_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bulk_actions bulk_actions_key_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions
+    ADD CONSTRAINT bulk_actions_key_key UNIQUE (key);
+
+
+--
+-- Name: bulk_actions bulk_actions_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions
+    ADD CONSTRAINT bulk_actions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: daemon_heartbeats daemon_heartbeats_daemon_type_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.daemon_heartbeats
+    ADD CONSTRAINT daemon_heartbeats_daemon_type_key UNIQUE (daemon_type);
+
+
+--
+-- Name: event_logs event_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs
+    ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: job_ticks job_ticks_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.job_ticks
+    ADD CONSTRAINT job_ticks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: jobs jobs_job_origin_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_job_origin_id_key UNIQUE (job_origin_id);
+
+
+--
+-- Name: jobs jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: run_tags run_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_run_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_run_id_key UNIQUE (run_id);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_name_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_name_key UNIQUE (name);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_snapshot_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_snapshot_id_key UNIQUE (snapshot_id);
+
+
+--
+-- Name: idx_asset_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_asset_key ON public.event_logs USING btree (asset_key);
+
+
+--
+-- Name: idx_asset_partition; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_asset_partition ON public.event_logs USING btree (asset_key, partition);
+
+
+--
+-- Name: idx_bulk_actions; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_bulk_actions ON public.bulk_actions USING btree (key);
+
+
+--
+-- Name: idx_bulk_actions_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_bulk_actions_status ON public.bulk_actions USING btree (status);
+
+
+--
+-- Name: idx_event_type; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_event_type ON public.event_logs USING btree (dagster_event_type, id);
+
+
+--
+-- Name: idx_job_tick_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_job_tick_status ON public.job_ticks USING btree (job_origin_id, status);
+
+
+--
+-- Name: idx_job_tick_timestamp; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_job_tick_timestamp ON public.job_ticks USING btree (job_origin_id, "timestamp");
+
+
+--
+-- Name: idx_run_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_id ON public.event_logs USING btree (run_id);
+
+
+--
+-- Name: idx_run_partitions; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_partitions ON public.runs USING btree (partition_set, partition);
+
+
+--
+-- Name: idx_run_range; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_range ON public.runs USING btree (status, update_timestamp, create_timestamp);
+
+
+--
+-- Name: idx_run_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_status ON public.runs USING btree (status);
+
+
+--
+-- Name: idx_run_tags; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_tags ON public.run_tags USING btree (key, value);
+
+
+--
+-- Name: idx_step_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_step_key ON public.event_logs USING btree (step_key);
+
+
+--
+-- Name: ix_job_ticks_job_origin_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_job_ticks_job_origin_id ON public.job_ticks USING btree (job_origin_id);
+
+
+--
+-- Name: ix_jobs_job_type; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_jobs_job_type ON public.jobs USING btree (job_type);
+
+
+--
+-- Name: runs fk_runs_snapshot_id_snapshots_snapshot_id; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT fk_runs_snapshot_id_snapshots_snapshot_id FOREIGN KEY (snapshot_id) REFERENCES public.snapshots(snapshot_id);
+
+
+--
+-- Name: run_tags run_tags_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(run_id) ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+

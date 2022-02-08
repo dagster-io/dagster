@@ -402,3 +402,45 @@ def test_0_13_12_add_start_time_end_time(hostname, conn_string):
         # Verify that historical records also get updated via data migration
         earliest_run_record = instance.get_run_records()[-1]
         assert earliest_run_record.end_time > earliest_run_record.start_time
+
+
+def test_0_13_19_switch_start_end_timestamp(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(__file__, "snapshot_0_13_18_start_end_timestamp/postgres/pg_dump.txt"),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        instance = DagsterInstance.from_config(tempdir)
+
+        # Ensure that you don't get a migration required exception if not trying to use the
+        # migration-required column.
+        assert len(instance.get_runs()) == 1
+
+        # Ensure that you don't get a migration required exception when running a pipeline
+        # pre-migration.
+        result = execute_pipeline(reconstructable(get_the_job), instance=instance)
+        assert result.success
+        assert len(instance.get_runs()) == 2
+        run_record = instance.get_run_records()[0]
+        assert run_record.start_timestamp is None
+        assert run_record.end_timestamp is None
+
+        instance.upgrade()
+        instance.reindex()
+
+        result = execute_pipeline(reconstructable(get_the_job), instance=instance)
+        assert result.success
+        assert len(instance.get_runs()) == 3
+        latest_run_record = instance.get_run_records()[0]
+        assert latest_run_record.end_timestamp > latest_run_record.start_timestamp
+
+        # Verify that historical records also get updated via data migration
+        earliest_run_record = instance.get_run_records()[-1]
+        assert earliest_run_record.end_timestamp > earliest_run_record.start_timestamp

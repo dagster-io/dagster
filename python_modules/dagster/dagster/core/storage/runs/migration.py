@@ -1,6 +1,8 @@
 from contextlib import ExitStack
+import sqlalchemy as db
 
 from dagster import check
+from dagster.utils import utc_datetime_from_timestamp
 from tqdm import tqdm
 
 from ..pipeline_run import PipelineRunStatus
@@ -9,7 +11,8 @@ from ..runs.schema import RunsTable
 from ..tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 
 RUN_PARTITIONS = "run_partitions"
-RUN_START_END = "run_start_end_overwritten"  # was run_start_end, but renamed to overwrite bad timestamps written
+# was run_start_end, but renamed twice to overwrite bad timestamps written
+RUN_START_END = "run_start_end_overwritten_2"
 
 # for `dagster instance migrate`, paired with schema changes
 REQUIRED_DATA_MIGRATIONS = {
@@ -129,11 +132,22 @@ def add_run_stats(run_storage: RunStorage, run_id: str) -> None:
     run_stats = instance.get_run_stats(run_id)
 
     with run_storage.connect() as conn:
-        conn.execute(
-            RunsTable.update()  # pylint: disable=no-value-for-parameter
-            .where(RunsTable.c.run_id == run_id)
-            .values(
-                start_time=run_stats.start_time,
-                end_time=run_stats.end_time,
+        column_names = [x.get("name") for x in db.inspect(conn).get_columns(RunsTable.name)]
+        if "start_timestamp" in column_names and "end_timestamp" in column_names:
+            conn.execute(
+                RunsTable.update()  # pylint: disable=no-value-for-parameter
+                .where(RunsTable.c.run_id == run_id)
+                .values(
+                    start_timestamp=utc_datetime_from_timestamp(run_stats.start_time),
+                    end_timestamp=utc_datetime_from_timestamp(run_stats.end_time),
+                )
             )
-        )
+        elif "start_time" in column_names and "end_time" in column_names:
+            conn.execute(
+                RunsTable.update()  # pylint: disable=no-value-for-parameter
+                .where(RunsTable.c.run_id == run_id)
+                .values(
+                    start_time=run_stats.start_time,
+                    end_time=run_stats.end_time,
+                )
+            )

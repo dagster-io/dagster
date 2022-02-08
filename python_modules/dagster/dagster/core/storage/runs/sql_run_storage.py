@@ -402,7 +402,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 start_timestamp=check.opt_inst(row["start_timestamp"], datetime)
                 if "start_timestamp" in row
                 else None,
-                end_timestamp=check.opt_inst(row["end_timestamp"], float)
+                end_timestamp=check.opt_inst(row["end_timestamp"], datetime)
                 if "end_timestamp" in row
                 else None,
             )
