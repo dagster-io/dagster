@@ -9,6 +9,7 @@ from dagster import DagsterType, EventMetadataEntry, TypeCheck
 from dagster.core.definitions.event_metadata.table import (
     TableColumn,
     TableColumnConstraints,
+    TableRecord,
     TableSchema,
 )
 from dagster.core.utils import check_dagster_package_version
@@ -81,9 +82,11 @@ def pandera_schema_to_dagster_type(
                     description=str(e),
                     metadata_entries=[
                         EventMetadataEntry.int(len(e.failure_cases), "Num failures"),
-                        # TODO this will incorporate new Table event type
-                        EventMetadataEntry.md(
-                            e.failure_cases.head(10).to_markdown(), "Failure cases (first 10)"
+                        EventMetadataEntry.table(
+                            label="Failure cases (first 10)",
+                            records=[
+                                TableRecord(**row) for row in e.failure_cases.itertuples()[:10]
+                            ],
                         ),
                     ],
                 )
