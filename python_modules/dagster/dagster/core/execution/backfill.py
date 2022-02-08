@@ -265,6 +265,10 @@ def create_backfill_run(
         },
     )
 
+    assets_to_execute = (
+        external_execution_plan.step_keys_in_plan if external_pipeline.is_asset_job else None
+    )
+
     return instance.create_run(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
@@ -282,6 +286,7 @@ def create_backfill_run(
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
         solid_selection=solid_selection,
+        assets_to_execute=assets_to_execute,
     )
 
 

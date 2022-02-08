@@ -775,3 +775,11 @@ class GrapheneInProgressRunsByStep(graphene.ObjectType):
 
     class Meta:
         name = "InProgressRunsByStep"
+
+
+class GrapheneLatestRunByStep(graphene.ObjectType):
+    stepKey = graphene.NonNull(graphene.String)
+    latestRun = graphene.Field(GrapheneRun)
+
+    class Meta:
+        name = "LatestRunByStep"

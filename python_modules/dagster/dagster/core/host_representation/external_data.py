@@ -672,16 +672,6 @@ def external_asset_graph_from_defs(
 def external_pipeline_data_from_def(pipeline_def):
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
 
-    is_asset_job = False
-    for node in pipeline_def.all_node_defs:
-        is_asset_job = (
-            is_asset_job
-            or any([output_def.hardcoded_asset_key for output_def in node.output_defs])
-            or any([input_def.hardcoded_asset_key for input_def in node.output_defs])
-        )
-        if is_asset_job:
-            break
-
     return ExternalPipelineData(
         name=pipeline_def.name,
         pipeline_snapshot=pipeline_def.get_pipeline_snapshot(),
@@ -691,7 +681,7 @@ def external_pipeline_data_from_def(pipeline_def):
             key=lambda pd: pd.name,
         ),
         is_job=isinstance(pipeline_def, JobDefinition),
-        is_asset_job=is_asset_job,
+        is_asset_job=pipeline_def.is_asset_job,
     )
 
 

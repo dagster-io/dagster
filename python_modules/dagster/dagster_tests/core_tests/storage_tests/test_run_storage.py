@@ -3,7 +3,8 @@ from contextlib import contextmanager
 
 import pendulum
 import pytest
-from dagster import job, op
+from dagster import job, op, Output, AssetKey
+from dagster.core.asset_defs import asset, build_assets_job
 from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
 from dagster.core.run_coordinator import DefaultRunCoordinator
@@ -85,3 +86,52 @@ def test_run_record_timestamps():
             record = records[0]
             assert record.start_time == 1572670800.0
             assert record.end_time == 1572670800.0
+
+
+def test_latest_run_id_by_step_key():
+    with get_instance() as instance:
+
+        @asset
+        def asset_1():
+            yield Output(3)
+
+        @asset(non_argument_deps={AssetKey("asset_1")})
+        def asset_2():
+            raise Exception("foo")
+            yield Output(5)
+
+        @asset(non_argument_deps={AssetKey("asset_2")})
+        def asset_3():
+            yield Output(7)
+
+        many_assets_job = build_assets_job("many_assets_job", [asset_1, asset_2, asset_3])
+
+        # Test that no run ids are fetched when many_assets_job has not been run
+        latest_run_id_by_step_key = instance.get_latest_run_id_by_step_key(
+            ["asset_1", "asset_2", "asset_3"]
+        )
+        assert latest_run_id_by_step_key == {}
+
+        first_run_id = None
+        # Test that latest run ID for all 3 assets is run ID of failing run
+        result = many_assets_job.execute_in_process(instance=instance, raise_on_error=False)
+        first_run_id = result.run_id
+        latest_run_id_by_step_key = instance.get_latest_run_id_by_step_key(
+            ["asset_1", "asset_2", "asset_3"]
+        )
+
+        assert latest_run_id_by_step_key["asset_1"] == first_run_id
+        assert latest_run_id_by_step_key["asset_2"] == first_run_id
+        assert latest_run_id_by_step_key["asset_3"] == first_run_id
+
+        # Test succeeded run with only first step selected
+        second_result = many_assets_job.execute_in_process(
+            instance=instance, op_selection=["*asset_1"]
+        )
+        latest_run_id_by_step_key = instance.get_latest_run_id_by_step_key(
+            ["asset_1", "asset_2", "asset_3"]
+        )
+
+        assert latest_run_id_by_step_key["asset_1"] == second_result.run_id
+        assert latest_run_id_by_step_key["asset_2"] == first_run_id
+        assert latest_run_id_by_step_key["asset_3"] == first_run_id

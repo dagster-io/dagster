@@ -7,14 +7,22 @@ from dagster.core.host_representation import (
     RepositoryLocation,
 )
 from dagster.core.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
-from dagster_graphql.implementation.fetch_runs import get_in_progress_runs_by_step
+from dagster_graphql.implementation.fetch_runs import (
+    get_in_progress_runs_by_step,
+    get_latest_run_by_step_key,
+)
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 
 from .asset_graph import GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
 from .partition_sets import GraphenePartitionSet
-from .pipelines.pipeline import GrapheneInProgressRunsByStep, GrapheneJob, GraphenePipeline
+from .pipelines.pipeline import (
+    GrapheneInProgressRunsByStep,
+    GrapheneLatestRunByStep,
+    GrapheneJob,
+    GraphenePipeline,
+)
 from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin
 from .schedules import GrapheneSchedule
 from .sensors import GrapheneSensor
@@ -160,6 +168,7 @@ class GrapheneRepository(graphene.ObjectType):
     assetNodes = non_null_list(GrapheneAssetNode)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     inProgressRunsByStep = non_null_list(GrapheneInProgressRunsByStep)
+    latestRunByStep = non_null_list(GrapheneLatestRunByStep)
 
     class Meta:
         name = "Repository"
@@ -262,6 +271,12 @@ class GrapheneRepository(graphene.ObjectType):
         ]
 
         return get_in_progress_runs_by_step(graphene_info, job_names, asset_node_keys)
+
+    def resolve_latestRunByStep(self, graphene_info):
+        asset_node_keys = [
+            node.op_name for node in self._repository.get_external_asset_nodes() if node.op_name
+        ]
+        return get_latest_run_by_step_key(graphene_info, asset_node_keys)
 
 
 class GrapheneRepositoryConnection(graphene.ObjectType):

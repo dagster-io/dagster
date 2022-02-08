@@ -70,7 +70,7 @@ class InMemoryRunStorage(RunStorage):
     # separate method so it can be reused in wipe
     def _init_storage(self):
         self._runs: Dict[str, PipelineRun] = OrderedDict()
-        self._run_tags: Dict[str, dict] = defaultdict(dict)
+        self._run_tags: Dict[str, dict] = OrderedDict()
         self._pipeline_snapshots: Dict[str, PipelineSnapshot] = OrderedDict()
         self._ep_snapshots: Dict[str, ExecutionPlanSnapshot] = OrderedDict()
         self._bulk_actions: Dict[str, PartitionBackfill] = OrderedDict()
@@ -213,6 +213,20 @@ class InMemoryRunStorage(RunStorage):
                 all_tags[k].add(v)
 
         return sorted([(k, v) for k, v in all_tags.items()], key=lambda x: x[0])
+
+    def get_latest_run_id_by_step_key(self, step_keys=None):
+        latest_run_id_by_step_key = {}
+        for _run_id, tags in list(self._run_tags.items())[::-1]:
+            if "step_keys" in tags:
+                keys_to_execute = eval(tags["step_keys"])
+                latest_run_id_by_step_key.update(
+                    {
+                        step_key: _run_id
+                        for step_key in step_keys
+                        if step_key in keys_to_execute and step_key not in latest_run_id_by_step_key
+                    }
+                )
+        return latest_run_id_by_step_key
 
     def add_run_tags(self, run_id: str, new_tags: Dict[str, str]):
         check.str_param(run_id, "run_id")

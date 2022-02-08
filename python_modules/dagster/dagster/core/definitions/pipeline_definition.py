@@ -268,6 +268,22 @@ class PipelineDefinition:
     def is_job(self) -> bool:
         return False
 
+    @property
+    def is_asset_job(self) -> bool:
+        if not self.is_job:
+            return False
+
+        is_asset_job = False
+        for node in self.all_node_defs:
+            is_asset_job = (
+                is_asset_job
+                or any([output_def.hardcoded_asset_key for output_def in node.output_defs])
+                or any([input_def.hardcoded_asset_key for input_def in node.output_defs])
+            )
+            if is_asset_job:
+                break
+        return is_asset_job
+
     def describe_target(self):
         return f"{self.target_type} '{self.name}'"
 

@@ -465,6 +465,23 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                     [dict(run_id=run_id, key=tag, value=new_tags[tag]) for tag in added_tags],
                 )
 
+    def get_latest_run_id_by_step_key(self, step_keys) -> Dict[str, str]:
+        query = (
+            db.select([RunTagsTable.c.run_id, RunTagsTable.c.value])
+            .where(RunTagsTable.c.key == "step_keys")
+            .order_by(db.desc(RunTagsTable.c.id))
+        )
+        rows = self.fetchall(query)
+
+        latest_run_id_by_step_key: Dict[str, str] = {}
+        for row in rows:
+            run_id, step_keys = row[0], eval(row[1])
+            for step_key in step_keys:
+                if step_key not in latest_run_id_by_step_key:
+                    latest_run_id_by_step_key[step_key] = run_id
+
+        return latest_run_id_by_step_key
+
     def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[PipelineRun]]]:
         check.str_param(run_id, "run_id")
         pipeline_run = self.get_run_by_id(run_id)

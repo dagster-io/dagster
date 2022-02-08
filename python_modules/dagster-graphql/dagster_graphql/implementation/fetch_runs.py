@@ -4,7 +4,7 @@ from dagster.core.definitions import create_run_config_schema
 from dagster.core.errors import DagsterRunNotFoundError
 from dagster.core.execution.stats import StepEventStatus
 from dagster.core.host_representation import PipelineSelector
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRunsFilter, PipelineRun
 from dagster.core.storage.tags import TagType, get_tag_type
 from graphql.execution.base import ResolveInfo
 
@@ -162,6 +162,26 @@ def get_in_progress_runs_by_step(graphene_info, job_names, step_keys):
         )
 
     return step_runs
+
+
+def get_latest_run_by_step_key(graphene_info, step_keys):
+    from ..schema.pipelines.pipeline import GrapheneLatestRunByStep, GrapheneRun
+
+    instance = graphene_info.context.instance
+
+    latest_run_id_by_step_key = instance.get_latest_run_id_by_step_key(step_keys)
+
+    latest_run = []
+    for step_key in step_keys:
+        run_id = latest_run_id_by_step_key.get(step_key)
+        if run_id:
+            latest_run.append(
+                GrapheneLatestRunByStep(
+                    step_key, get_run_by_id(graphene_info, run_id) if run_id else None
+                )
+            )
+
+    return latest_run
 
 
 def get_runs_count(graphene_info, filters):

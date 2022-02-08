@@ -1310,3 +1310,24 @@ class TestRunStorage:
         assert runs_by_tag.get("1").run_id == one.run_id
         assert runs_by_tag.get("2").run_id == two.run_id
         assert runs_by_tag.get("3").run_id == three.run_id
+
+    def test_latest_run_id_by_step_key(self, storage):
+        def _add_run(job_name, tags=None):
+            return storage.add_run(
+                TestRunStorage.build_run(
+                    pipeline_name=job_name, run_id=make_new_run_id(), tags=tags
+                )
+            )
+
+        step_keys = ["asset_1", "asset_2", "asset_3"]
+        _one = _add_run("a", tags={"step_keys": repr(set(step_keys))})
+        latest_run_id_by_step_key = storage.get_latest_run_id_by_step_key(step_keys)
+
+        for key in step_keys:
+            assert latest_run_id_by_step_key[key] == _one.run_id
+
+        _two = _add_run("a", tags={"step_keys": repr(set(["asset_1", "asset_2"]))})
+        latest_run_id_by_step_key = storage.get_latest_run_id_by_step_key(step_keys)
+        assert latest_run_id_by_step_key["asset_1"] == _two.run_id
+        assert latest_run_id_by_step_key["asset_2"] == _two.run_id
+        assert latest_run_id_by_step_key["asset_3"] == _one.run_id

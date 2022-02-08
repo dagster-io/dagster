@@ -66,9 +66,9 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
     )
     tags = merge_dicts(external_pipeline.tags, execution_params.execution_metadata.tags)
 
-    if external_pipeline.is_asset_job:
-        # have to add reserved keyword to tags
-        tags = merge_dicts(tags, {"step_keys": str(set(step_keys_to_execute))})
+    assets_to_execute = (
+        external_execution_plan.step_keys_in_plan if external_pipeline.is_asset_job else None
+    )
 
     pipeline_run = graphene_info.context.instance.create_run(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
@@ -91,6 +91,7 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
         status=PipelineRunStatus.NOT_STARTED,
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
+        assets_to_execute=assets_to_execute,
     )
 
     return pipeline_run

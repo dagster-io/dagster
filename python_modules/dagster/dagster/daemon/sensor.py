@@ -479,6 +479,10 @@ def _create_sensor_run(
         },
     )
 
+    assets_to_execute = (
+        external_execution_plan.step_keys_in_plan if external_pipeline.is_asset_job else None
+    )
+
     return instance.create_run(
         pipeline_name=target_data.pipeline_name,
         run_id=None,
@@ -496,4 +500,5 @@ def _create_sensor_run(
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
         external_pipeline_origin=external_pipeline.get_external_origin(),
         pipeline_code_origin=external_pipeline.get_python_origin(),
+        assets_to_execute=assets_to_execute,
     )

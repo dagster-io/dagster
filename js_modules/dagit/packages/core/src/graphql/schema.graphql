@@ -87,6 +87,7 @@ type Repository {
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
   inProgressRunsByStep: [InProgressRunsByStep!]!
+  latestRunByStep: [LatestRunsByStep!]!
 }
 
 type RepositoryLocation {
@@ -1342,6 +1343,10 @@ type InProgressRunsByStep {
   stepKey: String!
   unstartedRuns: [Run!]!
   inProgressRuns: [Run!]!
+}
+
+type LatestRunsByStep {
+  stepKey: String!
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError

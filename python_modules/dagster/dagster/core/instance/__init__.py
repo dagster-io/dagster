@@ -59,6 +59,7 @@ from dagster.seven import get_current_datetime_in_utc
 from dagster.utils import traced
 from dagster.utils.backcompat import experimental_functionality_warning
 from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster.utils import merge_dicts
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME, is_dagster_home_set
 from .ref import InstanceRef
@@ -746,6 +747,13 @@ class DagsterInstance:
         return self._run_storage.get_run_tags()
 
     @traced
+    def get_latest_run_id_by_step_key(self, step_keys=None) -> Dict[str, Optional[str]]:
+        # When an assets job is run, we add a tag with key "step_keys" and value as a
+        # stringified set of the selected step keys. Then, we use these tags to determine
+        # the last time an asset was supposed to be executed to display failed runs in Dagit.
+        return self._run_storage.get_latest_run_id_by_step_key(step_keys)
+
+    @traced
     def get_run_group(self, run_id: str) -> Optional[Tuple[str, Iterable[PipelineRun]]]:
         return self._run_storage.get_run_group(run_id)
 
@@ -811,6 +819,10 @@ class DagsterInstance:
                 tags=tags,
             )
 
+        assets_to_execute = (
+            execution_plan.step_keys_to_execute if pipeline_def.is_asset_job else None
+        )
+
         return self.create_run(
             pipeline_name=pipeline_def.name,
             run_id=run_id,
@@ -831,6 +843,7 @@ class DagsterInstance:
             parent_pipeline_snapshot=pipeline_def.get_parent_pipeline_snapshot(),
             external_pipeline_origin=external_pipeline_origin,
             pipeline_code_origin=pipeline_code_origin,
+            assets_to_execute=assets_to_execute,
         )
 
     def _construct_run_with_snapshots(
@@ -983,7 +996,13 @@ class DagsterInstance:
         solid_selection=None,
         external_pipeline_origin=None,
         pipeline_code_origin=None,
+        assets_to_execute=None,
     ):
+        if assets_to_execute:
+            # We store a tag with key "step_keys" and value being a set of the assets to execute
+            # so we can search for failed materializations without deserializing the execution
+            # plan to fetch selected steps.
+            tags = merge_dicts(tags, {"step_keys": repr(set(assets_to_execute))})
 
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
