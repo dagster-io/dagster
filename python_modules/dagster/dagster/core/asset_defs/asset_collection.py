@@ -2,8 +2,6 @@ from typing import Dict, List, NamedTuple
 
 from ..definitions.job_definition import JobDefinition
 from ..definitions.resource_definition import ResourceDefinition
-from ..definitions.schedule_definition import ScheduleDefinition
-from ..definitions.sensor_definition import SensorDefinition
 from .asset import AssetsDefinition
 from .assets_job import build_assets_job, build_job_from_spec
 
@@ -46,21 +44,3 @@ class AssetCollection(
             executor_def=executor_def,
             name=name,
         )
-
-    def build_schedule(self, cron_str, name, subset="*", executor_def=None):
-        job_def = build_job_from_spec(
-            self.inner_job,
-            subselection=subset,
-            executor_def=executor_def,
-            name=name,
-        )
-        return ScheduleDefinition(name=name, job=job_def, cron_schedule=cron_str)
-
-    def build_sensor(self, evaluation_fn, name, subset="*", executor_def=None):
-        job_def = build_job_from_spec(
-            self.inner_job,
-            subselection=subset,
-            executor_def=executor_def,
-            name=name,
-        )
-        return SensorDefinition(name=name, evaluation_fn=evaluation_fn, job=job_def)

@@ -31,8 +31,6 @@ def test_asset_repository():
         return [
             collection,
             collection.build_job("test", "asset_bar"),
-            collection.build_schedule("0 0 * * *", "the_schedule"),
-            collection.build_sensor(lambda context: None, "the_sensor"),
         ]
 
     mega_job = the_repo.get_all_jobs()[0]
