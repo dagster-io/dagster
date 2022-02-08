@@ -282,6 +282,8 @@ class GrapheneAssetNode(graphene.ObjectType):
             pipeline_name = self._external_asset_node.job_names[0]
             pipeline = self._external_repository.get_full_external_pipeline(pipeline_name)
             return build_solid_definition(pipeline, self._external_asset_node.op_name)
+        else:
+            return None
 
 
 class GrapheneAssetNodeOrError(graphene.Union):
