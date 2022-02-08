@@ -106,7 +106,9 @@ def parse_metadata(
             try:
                 metadata_entries.append(parse_metadata_entry(k, v))
             except DagsterInvalidEventMetadata:
-                pass
+                metadata_entries.append(
+                    EventMetadataEntry.text(f"[{v.__class__.__name__}] (unserializable)", k)
+                )
         return metadata_entries
 
     return [
