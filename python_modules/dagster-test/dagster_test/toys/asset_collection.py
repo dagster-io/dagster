@@ -1,4 +1,4 @@
-from dagster import AssetKey
+from dagster import AssetKey, schedule, sensor
 from dagster.core.asset_defs import AssetCollection, AssetIn, asset
 
 
@@ -21,3 +21,15 @@ def last_asset(bar_in):
 
 asset_lst = [last_asset, asset_bar, asset_foo]
 collection = AssetCollection.from_list(assets=asset_lst)
+
+
+@sensor(
+    job=collection.build_job(),
+)
+def full_collection_sensor():
+    pass
+
+
+@schedule(cron_schedule="* * * * *", job=collection.build_job(name="partial", subset="asset_foo"))
+def subset_schedule():
+    pass

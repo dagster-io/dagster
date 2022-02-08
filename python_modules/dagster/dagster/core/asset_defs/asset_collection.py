@@ -37,7 +37,7 @@ class AssetCollection(
     def execute_in_process(self, instance=None):
         return self.inner_job.execute_in_process(instance=instance)
 
-    def build_job(self, name, subset, executor_def=None) -> JobDefinition:
+    def build_job(self, name=None, subset="*", executor_def=None) -> JobDefinition:
         return build_job_from_spec(
             self.inner_job,
             subselection=subset,
