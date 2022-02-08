@@ -715,4 +715,8 @@ def test_log_metadata_after_dynamic_output():
         yield DynamicOutput(1, mapping_key="one")
         context.add_output_metadata({"foo": "bar"}, mapping_key="one")
 
-    execute_op_in_graph(the_op)
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="In op 'the_op', attempted to log output metadata for output 'result' with mapping_key 'one' which has already been yielded. Metadata must be logged before the output is yielded.",
+    ):
+        execute_op_in_graph(the_op)

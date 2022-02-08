@@ -518,7 +518,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def has_seen_output(self, output_name: str, mapping_key: Optional[str] = None) -> bool:
         if mapping_key:
-            return output_name in self._seen_outputs and mapping_key in self._seen_outputs
+            return (
+                output_name in self._seen_outputs and mapping_key in self._seen_outputs[output_name]
+            )
         return output_name in self._seen_outputs
 
     def add_output_metadata(
