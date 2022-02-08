@@ -54,7 +54,7 @@ class GrapheneInputDefinition(graphene.ObjectType):
         )
 
     def resolve_metadata_entries(self, _graphene_info):
-        return list(iterate_metadata_entries(self._output_def_snap.metadata_entries))
+        return list(iterate_metadata_entries(self._input_def_snap.metadata_entries))
 
 
 class GrapheneOutputDefinition(graphene.ObjectType):
