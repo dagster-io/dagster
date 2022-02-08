@@ -3,6 +3,7 @@ import * as React from 'react';
 import {useParams} from 'react-router';
 import {useHistory} from 'react-router-dom';
 
+import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {
   instanceAssetsExplorerPathFromString,
   instanceAssetsExplorerPathToURL,
@@ -35,15 +36,11 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
           </Body>
         }
       />
-      <div
-        style={{
-          position: 'absolute',
-          background: ColorsWIP.White,
-          top: 64,
-          left: 24,
-          width: 200,
-          zIndex: 2,
-        }}
+      <Box
+        background={ColorsWIP.White}
+        padding={{horizontal: 24, vertical: 8}}
+        border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+        flex={{direction: 'row', gap: 12}}
       >
         <AssetViewModeSwitch
           view="graph"
@@ -54,7 +51,8 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
             }
           }}
         />
-      </div>
+        <RepoFilterButton />
+      </Box>
       <AssetGraphExplorer
         explorerPath={explorerPath}
         onChangeExplorerPath={(path, mode) => {

@@ -3,18 +3,18 @@ import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {Box, CursorPaginationControls, CursorPaginationProps} from '../../../ui/src';
+import {Box, CursorPaginationControls, CursorPaginationProps, TextInput} from '../../../ui/src';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {QueryCountdown} from '../app/QueryCountdown';
+import {tokenForAssetKey} from '../app/Util';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
 import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
 import {Loading} from '../ui/Loading';
-import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 
-import {AssetSearch} from './AssetSearch';
 import {AssetTable, ASSET_TABLE_FRAGMENT} from './AssetTable';
 import {AssetViewModeSwitch} from './AssetViewModeSwitch';
 import {AssetsEmptyState} from './AssetsEmptyState';
@@ -31,6 +31,7 @@ type Asset = AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes;
 export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPath = []}) => {
   const {visibleRepos, allRepos} = React.useContext(WorkspaceContext);
   const [cursor, setCursor] = useQueryPersistedState<string | undefined>({queryKey: 'cursor'});
+  const [search, setSearch] = useQueryPersistedState<string | undefined>({queryKey: 'q'});
   const [view, _setView] = useAssetView();
   const history = useHistory();
 
@@ -72,21 +73,20 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
               </Box>
             );
           }
+          const searchSeparatorAgnostic = (search || '')
+            .replace(/(( ?> ?)|\.|\/)/g, '>')
+            .toLowerCase()
+            .trim();
 
-          const visibleRepoHashes = visibleRepos.map((v) =>
-            buildRepoPath(v.repository.name, v.repositoryLocation.name),
-          );
-          const filtered = assets.filter(
+          const filtered = (visibleRepos.length === allRepos.length
+            ? assets
+            : filterAssetsToRepos(assets, visibleRepos)
+          ).filter(
             (a) =>
-              visibleRepos.length === allRepos.length ||
-              (a.definition &&
-                visibleRepoHashes.includes(
-                  buildRepoPath(
-                    a.definition.repository.name,
-                    a.definition.repository.location.name,
-                  ),
-                )),
+              !searchSeparatorAgnostic ||
+              tokenForAssetKey(a.key).toLowerCase().startsWith(searchSeparatorAgnostic),
           );
+
           const {displayPathForAsset, displayed, nextCursor, prevCursor} =
             view === 'flat'
               ? buildFlatProps(filtered, prefixPath, cursor)
@@ -110,7 +110,12 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
                   <>
                     <AssetViewModeSwitch view={view} setView={setView} />
                     <RepoFilterButton />
-                    <AssetSearch />
+                    <TextInput
+                      value={search}
+                      style={{width: '600px'}}
+                      placeholder="Search all asset_keys..."
+                      onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
+                    />
                     <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={assetsQuery} />
                   </>
                 }
@@ -215,5 +220,18 @@ function buildNamespaceProps(assets: Asset[], prefixPath: string[], cursor: stri
 const filterAssetsByNamespace = (assets: Asset[], paths: string[][]) => {
   return assets.filter((asset) =>
     paths.some((path) => path.every((part, i) => part === asset.key.path[i])),
+  );
+};
+
+const filterAssetsToRepos = (assets: Asset[], visibleRepos: DagsterRepoOption[]) => {
+  const visibleRepoHashes = visibleRepos.map((v) =>
+    buildRepoPath(v.repository.name, v.repositoryLocation.name),
+  );
+  return assets.filter(
+    (a) =>
+      a.definition &&
+      visibleRepoHashes.includes(
+        buildRepoPath(a.definition.repository.name, a.definition.repository.location.name),
+      ),
   );
 };

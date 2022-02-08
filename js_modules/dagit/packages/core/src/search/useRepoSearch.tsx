@@ -167,21 +167,6 @@ export const useRepoSearch = () => {
   return {loading, performSearch};
 };
 
-export const useAssetSearch = () => {
-  const {data, loading} = useQuery<SearchSecondaryQuery>(SEARCH_SECONDARY_QUERY, {
-    fetchPolicy: 'cache-and-network',
-  });
-
-  const fuse = React.useMemo(() => secondaryDataToSearchResults(data), [data]);
-
-  const performSearch = React.useCallback(
-    (queryString: string): Fuse.FuseResult<SearchResult>[] => fuse.search(queryString),
-    [fuse],
-  );
-
-  return {loading, performSearch};
-};
-
 const SEARCH_BOOTSTRAP_QUERY = gql`
   query SearchBootstrapQuery {
     workspaceOrError {
