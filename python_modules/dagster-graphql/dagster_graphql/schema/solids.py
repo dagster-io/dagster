@@ -25,6 +25,7 @@ class GrapheneInputDefinition(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     type = graphene.NonNull(GrapheneDagsterType)
+    metadata_entries = non_null_list(GrapheneEventMetadataEntry)
 
     class Meta:
         name = "InputDefinition"
@@ -51,6 +52,9 @@ class GrapheneInputDefinition(graphene.ObjectType):
         return build_solid_definition(
             self._represented_pipeline, self._solid_def_snap.name  # pylint: disable=no-member
         )
+
+    def resolve_metadata_entries(self, _graphene_info):
+        return list(iterate_metadata_entries(self._output_def_snap.metadata_entries))
 
 
 class GrapheneOutputDefinition(graphene.ObjectType):

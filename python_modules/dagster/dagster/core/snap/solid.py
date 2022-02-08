@@ -28,6 +28,7 @@ class InputDefSnap(
             ("name", str),
             ("dagster_type_key", str),
             ("description", Optional[str]),
+            ("metadata_entries", List[EventMetadataEntry]),
         ],
     )
 ):
@@ -36,12 +37,16 @@ class InputDefSnap(
         name: str,
         dagster_type_key: str,
         description: Optional[str],
+        metadata_entries: List[EventMetadataEntry],
     ):
         return super(InputDefSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
             dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
             description=check.opt_str_param(description, "description"),
+            metadata_entries=check.opt_list_param(
+                metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            ),
         )
 
 
@@ -148,6 +153,7 @@ def build_input_def_snap(input_def: InputDefinition) -> InputDefSnap:
         name=input_def.name,
         dagster_type_key=input_def.dagster_type.key,
         description=input_def.description,
+        metadata_entries=input_def.metadata_entries,
     )
 
 
