@@ -14,6 +14,7 @@ export interface GraphExplorerAssetNodeFragment_assetKey {
 
 export interface GraphExplorerAssetNodeFragment {
   __typename: "AssetNode";
+  id: string;
   opName: string | null;
   assetKey: GraphExplorerAssetNodeFragment_assetKey;
 }
