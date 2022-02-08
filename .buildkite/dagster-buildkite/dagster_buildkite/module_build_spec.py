@@ -1,7 +1,8 @@
 from collections import namedtuple
 
-from .defines import TOX_MAP, SupportedPython, SupportedPythons
+from .defines import TOX_MAP, SupportedPython
 from .step_builder import StepBuilder
+from .utils import get_python_versions_for_branch
 
 MYPY_EXCLUDES = [
     "python_modules/dagit",
@@ -79,7 +80,7 @@ class ModuleBuildSpec(
             cls,
             directory,
             env_vars or [],
-            supported_pythons or SupportedPythons,
+            supported_pythons or get_python_versions_for_branch(),
             extra_cmds_fn,
             depends_on_fn,
             tox_file,
