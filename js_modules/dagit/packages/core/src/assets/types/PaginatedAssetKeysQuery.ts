@@ -12,24 +12,17 @@ export interface PaginatedAssetKeysQuery_assetsOrError_AssetConnection_nodes_key
   path: string[];
 }
 
-export interface PaginatedAssetKeysQuery_assetsOrError_AssetConnection_nodes_definition_jobs_repository_location {
+export interface PaginatedAssetKeysQuery_assetsOrError_AssetConnection_nodes_definition_repository_location {
   __typename: "RepositoryLocation";
   id: string;
   name: string;
 }
 
-export interface PaginatedAssetKeysQuery_assetsOrError_AssetConnection_nodes_definition_jobs_repository {
+export interface PaginatedAssetKeysQuery_assetsOrError_AssetConnection_nodes_definition_repository {
   __typename: "Repository";
   id: string;
   name: string;
-  location: PaginatedAssetKeysQuery_assetsOrError_AssetConnection_nodes_definition_jobs_repository_location;
-}
-
-export interface PaginatedAssetKeysQuery_assetsOrError_AssetConnection_nodes_definition_jobs {
-  __typename: "Pipeline";
-  id: string;
-  name: string;
-  repository: PaginatedAssetKeysQuery_assetsOrError_AssetConnection_nodes_definition_jobs_repository;
+  location: PaginatedAssetKeysQuery_assetsOrError_AssetConnection_nodes_definition_repository_location;
 }
 
 export interface PaginatedAssetKeysQuery_assetsOrError_AssetConnection_nodes_definition {
@@ -37,7 +30,7 @@ export interface PaginatedAssetKeysQuery_assetsOrError_AssetConnection_nodes_def
   id: string;
   opName: string | null;
   description: string | null;
-  jobs: PaginatedAssetKeysQuery_assetsOrError_AssetConnection_nodes_definition_jobs[];
+  repository: PaginatedAssetKeysQuery_assetsOrError_AssetConnection_nodes_definition_repository;
 }
 
 export interface PaginatedAssetKeysQuery_assetsOrError_AssetConnection_nodes {

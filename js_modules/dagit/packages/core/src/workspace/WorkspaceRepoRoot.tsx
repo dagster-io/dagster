@@ -3,7 +3,6 @@ import * as React from 'react';
 import {Redirect, Route, Switch, useParams} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {OpsRoot} from '../ops/OpsRoot';
 import {SchedulesRoot} from '../schedules/SchedulesRoot';
 import {SensorsRoot} from '../sensors/SensorsRoot';
@@ -25,7 +24,6 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
   const {tab} = useParams<{tab?: string}>();
 
   const path = repoAddressAsString(repoAddress);
-  const {flagAssetGraph} = useFeatureFlags();
   const repo = useRepository(repoAddress);
 
   const anyPipelines = React.useMemo(() => {
@@ -45,16 +43,14 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
       },
       {text: 'Schedules', href: workspacePathFromAddress(repoAddress, '/schedules')},
       {text: 'Sensors', href: workspacePathFromAddress(repoAddress, '/sensors')},
-      flagAssetGraph
-        ? {
-            text: 'Assets',
-            href: workspacePathFromAddress(repoAddress, '/assets'),
-          }
-        : null,
+      {
+        text: 'Assets',
+        href: workspacePathFromAddress(repoAddress, '/assets'),
+      },
     ];
 
     return tabList.filter(Boolean) as {text: string; href: string}[];
-  }, [anyPipelines, flagAssetGraph, repoAddress]);
+  }, [anyPipelines, repoAddress]);
 
   const activeTab = () => {
     switch (tab) {

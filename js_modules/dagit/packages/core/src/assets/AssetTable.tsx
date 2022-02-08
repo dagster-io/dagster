@@ -3,6 +3,7 @@ import {
   Box,
   ButtonWIP,
   Checkbox,
+  ColorsWIP,
   IconWIP,
   markdownToPlaintext,
   MenuItemWIP,
@@ -13,13 +14,13 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
-import {useFeatureFlags} from '../app/Flags';
 import {usePermissions} from '../app/Permissions';
 import {tokenForAssetKey} from '../app/Util';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
+import {RepositoryLink} from '../nav/RepositoryLink';
 import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
-import {PipelineReference} from '../pipelines/PipelineReference';
 
 import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';
@@ -44,28 +45,24 @@ export const AssetTable = ({
 }) => {
   const [toWipe, setToWipe] = React.useState<AssetKey[] | undefined>();
   const {canWipeAssets} = usePermissions();
-  const {flagAssetGraph} = useFeatureFlags();
 
-  const pathMap: {[key: string]: Asset[]} = {};
+  const assetGroups: {[key: string]: Asset[]} = {};
+  const checkedAssets: Asset[] = [];
+
   assets.forEach((asset) => {
-    const path = displayPathForAsset(asset);
-    const pathKey = JSON.stringify(path);
-    pathMap[pathKey] = [...(pathMap[pathKey] || []), asset];
+    const displayPathKey = JSON.stringify(displayPathForAsset(asset));
+    assetGroups[displayPathKey] = [...(assetGroups[displayPathKey] || []), asset];
   });
-  const [{checkedIds: checkedPaths}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
-    Object.keys(pathMap),
-  );
-  const sorted = Object.keys(pathMap)
-    .sort()
-    .slice(0, maxDisplayCount)
-    .map((x) => JSON.parse(x));
 
-  const checkedAssets = new Set<Asset>();
-  sorted.forEach((path) => {
+  const [{checkedIds: checkedPaths}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
+    Object.keys(assetGroups),
+  );
+
+  const pageDisplayPathKeys = Object.keys(assetGroups).sort().slice(0, maxDisplayCount);
+  pageDisplayPathKeys.forEach((path) => {
     const key = JSON.stringify(path);
     if (checkedPaths.has(key)) {
-      const assets = pathMap[key] || [];
-      assets.forEach((asset) => checkedAssets.add(asset));
+      checkedAssets.push(...(assetGroups[key] || []));
     }
   });
 
@@ -84,31 +81,30 @@ export const AssetTable = ({
           <tr>
             <th style={{width: 42, paddingTop: 0, paddingBottom: 0}}>
               <Checkbox
-                indeterminate={checkedPaths.size > 0 && checkedPaths.size !== sorted.length}
-                checked={checkedPaths.size === sorted.length}
+                indeterminate={
+                  checkedPaths.size > 0 && checkedPaths.size !== pageDisplayPathKeys.length
+                }
+                checked={checkedPaths.size === pageDisplayPathKeys.length}
                 onChange={(e) => {
                   if (e.target instanceof HTMLInputElement) {
-                    onToggleAll(checkedPaths.size !== sorted.length);
+                    onToggleAll(checkedPaths.size !== pageDisplayPathKeys.length);
                   }
                 }}
               />
             </th>
             <th>Asset Key</th>
-            {flagAssetGraph ? <th>Description</th> : null}
-            {flagAssetGraph ? <th style={{maxWidth: 250}}>Defined In</th> : null}
+            <th style={{width: 340}}>Defined In</th>
             <th style={{width: 80}}>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {sorted.map((path, idx) => {
-            const pathStr = JSON.stringify(path);
+          {pageDisplayPathKeys.map((pathStr, idx) => {
             return (
               <AssetEntryRow
                 key={idx}
                 prefixPath={prefixPath}
-                path={path}
-                assets={pathMap[pathStr] || []}
-                shouldShowAssetGraphColumns={flagAssetGraph}
+                path={JSON.parse(pathStr)}
+                assets={assetGroups[pathStr] || []}
                 isSelected={checkedPaths.has(pathStr)}
                 onToggleChecked={onToggleFactory(pathStr)}
                 onWipe={(assets: Asset[]) => setToWipe(assets.map((asset) => asset.key))}
@@ -134,107 +130,98 @@ const AssetEntryRow: React.FC<{
   path: string[];
   isSelected: boolean;
   onToggleChecked: (values: {checked: boolean; shiftKey: boolean}) => void;
-  shouldShowAssetGraphColumns: boolean;
   assets: Asset[];
   onWipe: (assets: Asset[]) => void;
   canWipe?: boolean;
-}> = React.memo(
-  ({
-    prefixPath,
-    path,
-    shouldShowAssetGraphColumns,
-    assets,
-    isSelected,
-    onToggleChecked,
-    onWipe,
-    canWipe,
-  }) => {
-    const fullPath = [...prefixPath, ...path];
-    const representsSingleAsset =
-      assets.length === 1 && fullPath.join('/') === assets[0].key.path.join('/');
-    const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
-    const first = assets[0];
+}> = React.memo(({prefixPath, path, assets, isSelected, onToggleChecked, onWipe, canWipe}) => {
+  const fullPath = [...prefixPath, ...path];
+  const representsSingleAsset =
+    assets.length === 1 && fullPath.join('/') === assets[0].key.path.join('/');
+  const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
+  const first = assets[0];
 
-    const onChange = (e: React.FormEvent<HTMLInputElement>) => {
-      if (e.target instanceof HTMLInputElement) {
-        const {checked} = e.target;
-        const shiftKey =
-          e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
-        onToggleChecked({checked, shiftKey});
-      }
-    };
-    return (
-      <tr>
-        <td style={{paddingRight: '4px'}}>
-          <Checkbox checked={isSelected} onChange={onChange} />
-        </td>
-        <td>
-          <AssetLink path={path} url={linkUrl} trailingSlash={!representsSingleAsset} />
-        </td>
-        {shouldShowAssetGraphColumns ? (
-          <td>
-            {first.definition &&
-              first.definition.description &&
-              markdownToPlaintext(first.definition.description).split('\n')[0]}
-          </td>
-        ) : null}
-        {shouldShowAssetGraphColumns ? (
-          <td>
-            <Box flex={{direction: 'column', gap: 2}}>
-              {(first.definition?.jobs || []).map((job) => (
-                <PipelineReference
-                  key={job.id}
-                  isJob
-                  showIcon
-                  pipelineName={job.name}
-                  pipelineHrefContext={{
-                    name: job.repository.name,
-                    location: job.repository.location.name,
-                  }}
+  const onChange = (e: React.FormEvent<HTMLInputElement>) => {
+    if (e.target instanceof HTMLInputElement) {
+      const {checked} = e.target;
+      const shiftKey =
+        e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
+      onToggleChecked({checked, shiftKey});
+    }
+  };
+  return (
+    <tr>
+      <td style={{paddingRight: '4px'}}>
+        <Checkbox checked={isSelected} onChange={onChange} />
+      </td>
+      <td>
+        <AssetLink path={path} url={linkUrl} trailingSlash={!representsSingleAsset} />
+        <Description>
+          {first.definition &&
+            first.definition.description &&
+            markdownToPlaintext(first.definition.description).split('\n')[0]}
+        </Description>
+      </td>
+      <td>
+        {first.definition && (
+          <Box flex={{direction: 'column', gap: 2}}>
+            <RepositoryLink
+              showIcon
+              showRefresh={false}
+              repoAddress={{
+                name: first.definition.repository.name,
+                location: first.definition.repository.location.name,
+              }}
+            />
+          </Box>
+        )}
+      </td>
+      <td style={{display: 'flex', alignItems: 'center', gap: 8}}>
+        <Link
+          to={instanceAssetsExplorerPathToURL({
+            opsQuery: `++"${tokenForAssetKey({path})}"++`,
+            opNames: [tokenForAssetKey({path})],
+          })}
+        >
+          <ButtonWIP disabled={!representsSingleAsset || !first.definition?.opName}>
+            View in Asset Graph
+          </ButtonWIP>
+        </Link>
+        <Popover
+          position="bottom-right"
+          content={
+            <MenuWIP>
+              <MenuLink
+                text="View details…"
+                to={`/instance/assets/${path.join('/')}`}
+                icon="view_list"
+              />
+              {representsSingleAsset && (
+                <MenuItemWIP
+                  text="Wipe Asset…"
+                  icon="delete"
+                  disabled={!canWipe}
+                  intent="danger"
+                  onClick={() => canWipe && onWipe(assets)}
                 />
-              ))}
-            </Box>
-          </td>
-        ) : null}
-        <td style={{display: 'flex', alignItems: 'center', gap: 8}}>
-          <Link
-            to={instanceAssetsExplorerPathToURL({
-              opsQuery: `++"${tokenForAssetKey({path})}"++`,
-              opNames: [tokenForAssetKey({path})],
-            })}
-          >
-            <ButtonWIP disabled={!representsSingleAsset || !first.definition?.opName}>
-              View in Asset Graph
-            </ButtonWIP>
-          </Link>
-          {representsSingleAsset ? (
-            <Popover
-              position="bottom-right"
-              content={
-                <MenuWIP>
-                  <MenuLink
-                    text="View details…"
-                    to={`/instance/assets/${path.join('/')}`}
-                    icon="view_list"
-                  />
-                  <MenuItemWIP
-                    text="Wipe Asset…"
-                    icon="delete"
-                    disabled={!canWipe}
-                    intent="danger"
-                    onClick={() => canWipe && onWipe(assets)}
-                  />
-                </MenuWIP>
-              }
-            >
-              <ButtonWIP icon={<IconWIP name="expand_more" />} />
-            </Popover>
-          ) : null}
-        </td>
-      </tr>
-    );
-  },
-);
+              )}
+              {representsSingleAsset && (
+                <MenuItemWIP
+                  text="Wipe Asset…"
+                  icon="delete"
+                  disabled={!canWipe}
+                  intent="danger"
+                  onClick={() => canWipe && onWipe(assets)}
+                />
+              )}
+            </MenuWIP>
+          }
+        >
+          <ButtonWIP icon={<IconWIP name="expand_more" />} />
+        </Popover>
+      </td>
+    </tr>
+  );
+});
 
 const AssetBulkActions: React.FC<{
   selected: Asset[];
@@ -292,18 +279,19 @@ export const ASSET_TABLE_FRAGMENT = gql`
       id
       opName
       description
-      jobs {
+      repository {
         id
         name
-        repository {
+        location {
           id
           name
-          location {
-            id
-            name
-          }
         }
       }
     }
   }
+`;
+
+const Description = styled.div`
+  color: ${ColorsWIP.Gray800};
+  font-size: 14px;
 `;

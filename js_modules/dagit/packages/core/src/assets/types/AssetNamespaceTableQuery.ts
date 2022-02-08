@@ -12,24 +12,17 @@ export interface AssetNamespaceTableQuery_assetsOrError_AssetConnection_nodes_ke
   path: string[];
 }
 
-export interface AssetNamespaceTableQuery_assetsOrError_AssetConnection_nodes_definition_jobs_repository_location {
+export interface AssetNamespaceTableQuery_assetsOrError_AssetConnection_nodes_definition_repository_location {
   __typename: "RepositoryLocation";
   id: string;
   name: string;
 }
 
-export interface AssetNamespaceTableQuery_assetsOrError_AssetConnection_nodes_definition_jobs_repository {
+export interface AssetNamespaceTableQuery_assetsOrError_AssetConnection_nodes_definition_repository {
   __typename: "Repository";
   id: string;
   name: string;
-  location: AssetNamespaceTableQuery_assetsOrError_AssetConnection_nodes_definition_jobs_repository_location;
-}
-
-export interface AssetNamespaceTableQuery_assetsOrError_AssetConnection_nodes_definition_jobs {
-  __typename: "Pipeline";
-  id: string;
-  name: string;
-  repository: AssetNamespaceTableQuery_assetsOrError_AssetConnection_nodes_definition_jobs_repository;
+  location: AssetNamespaceTableQuery_assetsOrError_AssetConnection_nodes_definition_repository_location;
 }
 
 export interface AssetNamespaceTableQuery_assetsOrError_AssetConnection_nodes_definition {
@@ -37,7 +30,7 @@ export interface AssetNamespaceTableQuery_assetsOrError_AssetConnection_nodes_de
   id: string;
   opName: string | null;
   description: string | null;
-  jobs: AssetNamespaceTableQuery_assetsOrError_AssetConnection_nodes_definition_jobs[];
+  repository: AssetNamespaceTableQuery_assetsOrError_AssetConnection_nodes_definition_repository;
 }
 
 export interface AssetNamespaceTableQuery_assetsOrError_AssetConnection_nodes {

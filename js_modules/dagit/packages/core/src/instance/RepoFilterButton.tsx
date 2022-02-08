@@ -41,7 +41,9 @@ export const RepoFilterButton: React.FunctionComponent = () => {
         icon={<IconWIP name="folder" />}
         rightIcon={<IconWIP name="expand_more" />}
         onClick={() => setOpen(true)}
-      >{`${visibleRepos.length} of ${allRepos.length} repositories`}</ButtonWIP>
+      >
+        {`${visibleRepos.length} of ${allRepos.length} Repositories`}
+      </ButtonWIP>
     </>
   );
 };
