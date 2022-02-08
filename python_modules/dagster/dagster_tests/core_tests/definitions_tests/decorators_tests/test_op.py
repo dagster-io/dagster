@@ -631,3 +631,16 @@ def test_metadata_logging_multiple_entries():
         match="In op 'basic', attempted to log metadata for output 'result' more than once.",
     ):
         execute_op_in_graph(basic)
+
+
+def test_log_event_multi_output():
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op(context):
+        context.log_event(AssetMaterialization("foo"))
+        yield Output(value=1, output_name="out1")
+        context.log_event(AssetMaterialization("bar"))
+        yield Output(value=2, output_name="out2")
+        context.log_event(AssetMaterialization("baz"))
+
+    result = execute_op_in_graph(the_op)
+    assert len(result.asset_materializations_for_node("the_op")) == 3
