@@ -243,7 +243,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         )
 
     def get_events(self) -> List[UserEvent]:
-        """Retrieve the list of user-generated events that were either yielded or logged via the context.
+        """Retrieve the list of user-generated events that were logged via the context.
 
         **Examples:**
 
