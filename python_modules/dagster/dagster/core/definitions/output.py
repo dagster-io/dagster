@@ -4,7 +4,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    List,
     NamedTuple,
     Optional,
     Set,
