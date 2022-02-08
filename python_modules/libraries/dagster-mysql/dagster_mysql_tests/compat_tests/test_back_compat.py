@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 
 from dagster.core.instance import DagsterInstance
-from dagster.utils import file_relative_path
+from dagster.utils import datetime_as_float, file_relative_path
 
 
 def _reconstruct_from_file(hostname, path, username="root", password="test"):
@@ -40,5 +40,5 @@ def test_0_13_17_mysql_convert_float_cols(hostname, conn_string):
         instance.reindex()
 
         record = instance.get_run_records(limit=1)[0]
-        assert int(record.start_timestamp.timestamp()) == 1643817629
-        assert int(record.end_timestamp.timestamp()) == 1643817634
+        assert int(datetime_as_float(record.start_timestamp)) == 1643788829
+        assert int(datetime_as_float(record.end_timestamp)) == 1643788834
