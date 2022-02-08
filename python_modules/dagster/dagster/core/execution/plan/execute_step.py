@@ -65,8 +65,6 @@ def _step_output_error_checked_user_event_sequence(
     step = step_context.step
     op_label = step_context.describe_op()
     output_names = list([output_def.name for output_def in step.step_outputs])
-    seen_outputs: Set[str] = set()
-    seen_mapping_keys: Dict[str, Set[str]] = defaultdict(set)
 
     for user_event in user_event_sequence:
         if not isinstance(user_event, (Output, DynamicOutput)):
@@ -87,7 +85,7 @@ def _step_output_error_checked_user_event_sequence(
         )
 
         if isinstance(output, Output):
-            if output.output_name in seen_outputs:
+            if step_context.has_seen_output(output.output_name):
                 raise DagsterInvariantViolationError(
                     f'Compute for {op_label} returned an output "{output.output_name}" multiple '
                     "times"
@@ -98,6 +96,9 @@ def _step_output_error_checked_user_event_sequence(
                     f'Compute for {op_label} for output "{output.output_name}" defined as dynamic '
                     "must yield DynamicOutput, got Output."
                 )
+
+            step_context.observe_output(output.output_name)
+
             metadata = step_context.get_output_metadata(output.output_name)
             output = Output(
                 value=output.value,
@@ -111,12 +112,12 @@ def _step_output_error_checked_user_event_sequence(
                     f"Compute for {op_label} yielded a DynamicOutput, but did not use "
                     "DynamicOutputDefinition."
                 )
-            if output.mapping_key in seen_mapping_keys[output.output_name]:
+            if step_context.has_seen_output(output.output_name, output.mapping_key):
                 raise DagsterInvariantViolationError(
                     f"Compute for {op_label} yielded a DynamicOutput with mapping_key "
                     f'"{output.mapping_key}" multiple times.'
                 )
-            seen_mapping_keys[output.output_name].add(output.mapping_key)
+            step_context.observe_output(output.output_name, output.mapping_key)
             metadata = step_context.get_output_metadata(
                 output.output_name, mapping_key=output.mapping_key
             )
@@ -129,11 +130,10 @@ def _step_output_error_checked_user_event_sequence(
             )
 
         yield output
-        seen_outputs.add(output.output_name)
 
     for step_output in step.step_outputs:
         step_output_def = step_context.solid_def.output_def_named(step_output.name)
-        if not step_output_def.name in seen_outputs and not step_output_def.optional:
+        if not step_context.has_seen_output(step_output_def.name) and not step_output_def.optional:
             if step_output_def.dagster_type.kind == DagsterTypeKind.NOTHING:
                 step_context.log.info(
                     f'Emitting implicit Nothing for output "{step_output_def.name}" on {op_label}'

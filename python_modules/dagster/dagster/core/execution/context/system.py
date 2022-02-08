@@ -16,6 +16,7 @@ from typing import (
     NamedTuple,
     Optional,
     Set,
+    Union,
     cast,
 )
 
@@ -385,6 +386,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             self._step_output_capture = {}
 
         self._output_metadata: Dict[str, Any] = {}
+        self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
 
     @property
     def step(self) -> ExecutionStep:
@@ -506,6 +508,19 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         return False
 
+    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
+        if mapping_key:
+            if output_name not in self._seen_outputs:
+                self._seen_outputs[output_name] = set()
+            cast(Set[str], self._seen_outputs[output_name]).add(mapping_key)
+        else:
+            self._seen_outputs[output_name] = "seen"
+
+    def has_seen_output(self, output_name: str, mapping_key: Optional[str] = None) -> bool:
+        if mapping_key:
+            return output_name in self._seen_outputs and mapping_key in self._seen_outputs
+        return output_name in self._seen_outputs
+
     def add_output_metadata(
         self,
         metadata: Mapping[str, Any],
@@ -515,6 +530,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         if output_name is None and len(self.solid_def.output_defs) == 1:
             output_def = self.solid_def.output_defs[0]
+            output_name = output_def.name
         elif output_name is None:
             raise DagsterInvariantViolationError(
                 "Attempted to log metadata without providing output_name, but multiple outputs exist. Please provide an output_name to the invocation of `context.add_output_metadata`."
@@ -522,6 +538,15 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         else:
             output_def = self.solid_def.output_def_named(output_name)
 
+        if self.has_seen_output(output_name, mapping_key):
+            output_desc = (
+                f"output '{output_def.name}'"
+                if not mapping_key
+                else f"output '{output_def.name}' with mapping_key '{mapping_key}'"
+            )
+            raise DagsterInvariantViolationError(
+                f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log output metadata for {output_desc} which has already been yielded. Metadata must be logged before the output is yielded."
+            )
         if output_def.is_dynamic and not mapping_key:
             raise DagsterInvariantViolationError(
                 f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log metadata for dynamic output '{output_def.name}' without providing a mapping key. When logging metadata for a dynamic output, it is necessary to provide a mapping key."
@@ -529,9 +554,10 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         output_name = output_def.name
         if output_name in self._output_metadata:
-            raise DagsterInvariantViolationError(
-                f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log metadata for output '{output_name}' more than once."
-            )
+            if not mapping_key or mapping_key in self._output_metadata[output_name]:
+                raise DagsterInvariantViolationError(
+                    f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log metadata for output '{output_name}' more than once."
+                )
         if mapping_key:
             if not output_name in self._output_metadata:
                 self._output_metadata[output_name] = {}
