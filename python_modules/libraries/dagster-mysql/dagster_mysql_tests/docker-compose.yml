@@ -3,6 +3,7 @@ version: "3.7"
 services:
   test-mysql-db:
     image: mysql:8
+    command: mysqld --default-authentication-plugin=mysql_native_password
     container_name: test-mysql-db
     ports:
       - "3306:3306"
