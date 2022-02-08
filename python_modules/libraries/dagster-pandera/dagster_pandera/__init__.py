@@ -1,15 +1,11 @@
 import itertools
-from typing import TYPE_CHECKING, Any, Dict, Generator, Mapping, Optional, Tuple, Type, Union, cast
+from typing import TYPE_CHECKING, Generator, Optional, Tuple, Type, Union
 
 import dagster.check as check
 import dask
 import pandas as pd
 import pandera as pa
 from dagster import DagsterType, EventMetadataEntry, TypeCheck
-from dagster.core.definitions.event_metadata import (
-    TableMetadataEntryData,
-    TableSchemaMetadataEntryData,
-)
 from dagster.core.definitions.event_metadata.table import (
     TableColumn,
     TableColumnConstraints,
@@ -29,8 +25,6 @@ if TYPE_CHECKING:
     # import dask
     # import ray
     ValidatableDataFrame = Union[pd.DataFrame, ks.DataFrame, mpd.DataFrame]
-
-# TODO: Use TypedDict for description info (pending typing-extensions)
 
 check_dagster_package_version("dagster-pandera", __version__)
 
@@ -112,9 +106,6 @@ def pandera_schema_to_dagster_type(
             EventMetadataEntry.table_schema(tschema, label="schema"),
         ],
     )
-
-
-# TODO: implement TableConstraints
 
 
 def pandera_schema_to_table_schema(schema: pa.DataFrameSchema) -> TableSchema:
