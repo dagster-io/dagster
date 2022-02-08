@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import Any, Callable, Dict, List, Optional, Set, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Union, overload
 
 from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
@@ -105,6 +105,31 @@ class _Pipeline:
         )
         update_wrapper(pipeline_def, fn)
         return pipeline_def
+
+
+@overload
+def pipeline(
+    name: Callable[..., Any],
+) -> PipelineDefinition:
+    ...
+
+
+@overload
+def pipeline(
+    name: Optional[str] = ...,
+    description: Optional[str] = ...,
+    mode_defs: Optional[List[ModeDefinition]] = ...,
+    preset_defs: Optional[List[PresetDefinition]] = ...,
+    tags: Optional[Dict[str, Any]] = ...,
+    hook_defs: Optional[Set[HookDefinition]] = ...,
+    input_defs: Optional[List[InputDefinition]] = ...,
+    output_defs: Optional[List[OutputDefinition]] = ...,
+    config_schema: Optional[Dict[str, Any]] = ...,
+    config_fn: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = ...,
+    solid_retry_policy: Optional[RetryPolicy] = ...,
+    version_strategy: Optional[VersionStrategy] = ...,
+) -> _Pipeline:
+    pass
 
 
 def pipeline(

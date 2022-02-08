@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Set
+from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Set, Union, cast, overload
 
 from dagster import check
 from dagster.builtins import Nothing
@@ -18,9 +18,34 @@ from .asset_in import AssetIn
 from .partition_mapping import PartitionMapping
 
 
+@overload
+def asset(
+    name: Callable[..., Any],
+) -> AssetsDefinition:
+    ...
+
+
+@overload
+def asset(
+    name: Optional[str] = ...,
+    namespace: Optional[Sequence[str]] = ...,
+    ins: Optional[Mapping[str, AssetIn]] = ...,
+    non_argument_deps: Optional[Set[AssetKey]] = ...,
+    metadata: Optional[Mapping[str, Any]] = ...,
+    description: Optional[str] = ...,
+    required_resource_keys: Optional[Set[str]] = ...,
+    io_manager_key: Optional[str] = ...,
+    compute_kind: Optional[str] = ...,
+    dagster_type: Optional[DagsterType] = ...,
+    partitions_def: Optional[PartitionsDefinition] = ...,
+    partition_mappings: Optional[Mapping[str, PartitionMapping]] = ...,
+) -> Callable[[Callable[..., Any]], AssetsDefinition]:
+    ...
+
+
 @experimental_decorator
 def asset(
-    name: Optional[str] = None,
+    name: Union[Callable[..., Any], Optional[str]] = None,
     namespace: Optional[Sequence[str]] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Set[AssetKey]] = None,
@@ -32,7 +57,7 @@ def asset(
     dagster_type: Optional[DagsterType] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
-) -> Callable[[Callable[..., Any]], AssetsDefinition]:
+) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
     A software-defined asset is the combination of:
@@ -82,7 +107,7 @@ def asset(
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         return _Asset(
-            name=name,
+            name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             namespace=namespace,
             ins=ins,
             non_argument_deps=non_argument_deps,

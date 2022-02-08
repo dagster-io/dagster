@@ -1,5 +1,16 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Sequence, Set, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    overload,
+)
 
 from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
@@ -165,6 +176,28 @@ def _resolve_output_defs_from_outs(
         return output_defs
 
 
+@overload
+def op(name: Callable[..., Any]) -> SolidDefinition:
+    ...
+
+
+@overload
+def op(
+    name: Optional[str] = ...,
+    description: Optional[str] = ...,
+    ins: Optional[Dict[str, In]] = ...,
+    out: Optional[Union[Out, Dict[str, Out]]] = ...,
+    config_schema: Optional[Union[Any, Dict[str, Any]]] = ...,
+    required_resource_keys: Optional[Set[str]] = ...,
+    tags: Optional[Dict[str, Any]] = ...,
+    version: Optional[str] = ...,
+    retry_policy: Optional[RetryPolicy] = ...,
+    input_defs: Optional[List[InputDefinition]] = ...,
+    output_defs: Optional[List[OutputDefinition]] = ...,
+) -> _Op:
+    ...
+
+
 def op(
     name: Union[Callable[..., Any], Optional[str]] = None,
     description: Optional[str] = None,
@@ -177,7 +210,7 @@ def op(
     retry_policy: Optional[RetryPolicy] = None,
     input_defs: Optional[List[InputDefinition]] = None,
     output_defs: Optional[List[OutputDefinition]] = None,
-) -> Union[_Op, SolidDefinition]:
+) -> Union[SolidDefinition, _Op]:
     """
     Create an op with the specified parameters from the decorated function.
 
