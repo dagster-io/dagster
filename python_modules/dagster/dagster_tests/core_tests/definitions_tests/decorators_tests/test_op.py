@@ -643,4 +643,23 @@ def test_log_event_multi_output():
         context.log_event(AssetMaterialization("baz"))
 
     result = execute_op_in_graph(the_op)
+    assert result.success
     assert len(result.asset_materializations_for_node("the_op")) == 3
+
+
+def test_log_metadata_multi_output():
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op(context):
+        context.add_output_metadata({"foo": "bar"}, output_name="out1")
+        yield Output(value=1, output_name="out1")
+        context.add_output_metadata({"bar": "baz"}, output_name="out2")
+        yield Output(value=2, output_name="out2")
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+    events = result.events_for_node("the_op")
+    first_output_event = events[1]
+    second_output_event = events[3]
+
+    assert first_output_event.event_specific_data.metadata_entries[0].label == "foo"
+    assert second_output_event.event_specific_data.metadata_entries[0].label == "bar"

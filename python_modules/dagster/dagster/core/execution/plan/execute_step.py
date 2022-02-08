@@ -15,7 +15,11 @@ from dagster.core.definitions import (
     TypeCheck,
 )
 from dagster.core.definitions.decorators.solid import DecoratedSolidFunction
-from dagster.core.definitions.event_metadata import EventMetadataEntry, PartitionMetadataEntry
+from dagster.core.definitions.event_metadata import (
+    EventMetadataEntry,
+    PartitionMetadataEntry,
+    parse_metadata,
+)
 from dagster.core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster.core.errors import (
     DagsterExecutionHandleOutputError,
@@ -94,6 +98,13 @@ def _step_output_error_checked_user_event_sequence(
                     f'Compute for {op_label} for output "{output.output_name}" defined as dynamic '
                     "must yield DynamicOutput, got Output."
                 )
+            metadata = step_context.get_output_metadata(output.output_name)
+            output = Output(
+                value=output.value,
+                output_name=output.output_name,
+                metadata_entries=output.metadata_entries
+                + parse_metadata(cast(Dict[str, Any], metadata), []),
+            )
         else:
             if not output_def.is_dynamic:
                 raise DagsterInvariantViolationError(
@@ -106,6 +117,16 @@ def _step_output_error_checked_user_event_sequence(
                     f'"{output.mapping_key}" multiple times.'
                 )
             seen_mapping_keys[output.output_name].add(output.mapping_key)
+            metadata = step_context.get_output_metadata(
+                output.output_name, mapping_key=output.mapping_key
+            )
+            output = DynamicOutput(
+                value=output.value,
+                output_name=output.output_name,
+                metadata_entries=output.metadata_entries
+                + parse_metadata(cast(Dict[str, Any], metadata), []),
+                mapping_key=output.mapping_key,
+            )
 
         yield output
         seen_outputs.add(output.output_name)
