@@ -174,11 +174,17 @@ def add_precision_to_mysql_timestamps(_element, _compiler, **_kw):
 
 @compiles(db.types.Float, "mysql")
 def add_precision_to_mysql_floats(_element, _compiler, **_kw):
+    """Forces floats to have minimum precision of 32, which converts the underlying type to be a
+    double.  This is necessary because the default precision of floats is too low for some types,
+    including unix timestamps, resulting in truncated values in MySQL"""
     return f"FLOAT({MYSQL_FLOAT_PRECISION})"
 
 
 @compiles(db.types.FLOAT, "mysql")
 def add_precision_to_mysql_FLOAT(_element, _compiler, **_kw):
+    """Forces floats to have minimum precision of 32, which converts the underlying type to be a
+    double.  This is necessary because the default precision of floats is too low for some types,
+    including unix timestamps, resulting in truncated values in MySQL"""
     return f"FLOAT({MYSQL_FLOAT_PRECISION})"
 
 
