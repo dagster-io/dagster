@@ -26,16 +26,26 @@ def assert_permission(graphene_info: ResolveInfo, permission: str) -> None:
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
 
+class ErrorCapture:
+    @staticmethod
+    def default_on_exception(exc_info):
+        from dagster_graphql.schema.errors import GraphenePythonError
+
+        # Transform exception in to PythonError to present to user
+        return GraphenePythonError(serializable_error_info_from_exc_info(exc_info))
+
+    on_exception = default_on_exception
+
+
 def capture_error(fn):
     def _fn(*args, **kwargs):
-        from dagster_graphql.schema.errors import GraphenePythonError
 
         try:
             return fn(*args, **kwargs)
         except UserFacingGraphQLError as de_exception:
             return de_exception.error
         except Exception:
-            return GraphenePythonError(serializable_error_info_from_exc_info(sys.exc_info()))
+            return ErrorCapture.on_exception(sys.exc_info())
 
     return _fn
 
