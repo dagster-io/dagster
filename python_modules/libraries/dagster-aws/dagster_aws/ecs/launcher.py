@@ -15,6 +15,8 @@ Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 
 
 class EcsRunLauncher(RunLauncher, ConfigurableClass):
+    """RunLauncher that starts a task in ECS for each Dagster job run."""
+
     def __init__(
         self,
         inst_data=None,
