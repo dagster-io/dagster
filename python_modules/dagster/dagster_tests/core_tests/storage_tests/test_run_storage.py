@@ -3,7 +3,7 @@ from contextlib import contextmanager
 
 import pendulum
 import pytest
-from dagster import job, op, Output, AssetKey
+from dagster import AssetKey, Output, job, op
 from dagster.core.asset_defs import asset, build_assets_job
 from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher

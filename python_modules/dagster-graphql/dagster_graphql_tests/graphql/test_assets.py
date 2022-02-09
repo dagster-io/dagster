@@ -659,7 +659,7 @@ class TestAssetAwareEventLog(
         assert result.data["repositoryOrError"]
         latest_run_by_step = result.data["repositoryOrError"]["latestRunByStep"]
         for run in latest_run_by_step:
-            assert run['latestRun']['status'] == 'FAILURE'
+            assert run["latestRun"]["status"] == "FAILURE"
 
         _create_run(graphql_context, "failure_assets_job", step_keys=["asset_1", "asset_3"])
 
@@ -673,12 +673,12 @@ class TestAssetAwareEventLog(
         assert result.data["repositoryOrError"]
         assert result.data["repositoryOrError"]["latestRunByStep"]
         latest_run_by_step = result.data["repositoryOrError"]["latestRunByStep"]
-        assert latest_run_by_step[0]['stepKey'] == 'asset_1'
-        assert latest_run_by_step[0]['latestRun']['status'] == 'SUCCESS'
-        assert latest_run_by_step[1]['stepKey'] == 'asset_2'
-        assert latest_run_by_step[1]['latestRun']['status'] == 'FAILURE'
-        assert latest_run_by_step[2]['stepKey'] == 'asset_3'
-        assert latest_run_by_step[2]['latestRun']['status'] == 'SUCCESS'
+        assert latest_run_by_step[0]["stepKey"] == "asset_1"
+        assert latest_run_by_step[0]["latestRun"]["status"] == "SUCCESS"
+        assert latest_run_by_step[1]["stepKey"] == "asset_2"
+        assert latest_run_by_step[1]["latestRun"]["status"] == "FAILURE"
+        assert latest_run_by_step[2]["stepKey"] == "asset_3"
+        assert latest_run_by_step[2]["latestRun"]["status"] == "SUCCESS"
 
 
 class TestPersistentInstanceAssetInProgress(

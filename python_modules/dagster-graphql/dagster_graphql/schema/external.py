@@ -19,8 +19,8 @@ from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError
 from .partition_sets import GraphenePartitionSet
 from .pipelines.pipeline import (
     GrapheneInProgressRunsByStep,
-    GrapheneLatestRunByStep,
     GrapheneJob,
+    GrapheneLatestRunByStep,
     GraphenePipeline,
 )
 from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin

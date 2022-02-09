@@ -26,7 +26,7 @@ from dagster.core.storage.pipeline_run import (
 )
 from dagster.core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
 from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
-from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG, ASSETS_TO_EXECUTE_TAG
+from dagster.core.storage.tags import ASSETS_TO_EXECUTE_TAG, PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.utils import make_new_run_id
 from dagster.daemon.daemon import SensorDaemon

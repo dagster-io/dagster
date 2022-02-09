@@ -51,15 +51,14 @@ from dagster.core.storage.pipeline_run import (
     RunRecord,
     TagBucket,
 )
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG, ASSETS_TO_EXECUTE_TAG
+from dagster.core.storage.tags import ASSETS_TO_EXECUTE_TAG, MEMOIZED_RUN_TAG
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import str_format_list
 from dagster.serdes import ConfigurableClass
 from dagster.seven import get_current_datetime_in_utc
-from dagster.utils import traced
+from dagster.utils import merge_dicts, traced
 from dagster.utils.backcompat import experimental_functionality_warning
 from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils import merge_dicts
 
 from .config import DAGSTER_CONFIG_YAML_FILENAME, is_dagster_home_set
 from .ref import InstanceRef

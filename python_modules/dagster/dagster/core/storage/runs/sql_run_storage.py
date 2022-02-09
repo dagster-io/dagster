@@ -25,10 +25,10 @@ from dagster.core.snap import (
     create_pipeline_snapshot_id,
 )
 from dagster.core.storage.tags import (
+    ASSETS_TO_EXECUTE_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
     ROOT_RUN_ID_TAG,
-    ASSETS_TO_EXECUTE_TAG,
 )
 from dagster.daemon.types import DaemonHeartbeat
 from dagster.serdes import (
