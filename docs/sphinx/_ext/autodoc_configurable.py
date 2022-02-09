@@ -2,7 +2,7 @@ import json
 import textwrap
 from typing import Any, List
 
-from dagster import Field, BoolSource, IntSource, StringSource
+from dagster import BoolSource, Field, IntSource, StringSource
 from dagster.config.config_type import ConfigType, ConfigTypeKind
 from dagster.core.definitions.configurable import ConfigurableDefinition
 from dagster.serdes import ConfigurableClass
