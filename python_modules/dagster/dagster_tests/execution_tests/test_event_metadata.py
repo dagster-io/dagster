@@ -143,7 +143,7 @@ def test_parse_invalid_metadata():
     with pytest.raises(DagsterInvalidEventMetadata) as exc_info:
         parse_metadata(metadata, [])
 
-    entries = parse_metadata(metadata, [], drop_invalid=True)
+    entries = parse_metadata(metadata, [], allow_invalid=True)
     assert len(entries) == 1
     assert entries[0].label == "foo"
     assert entries[0].entry_data == TextMetadataEntryData("[object] (unserializable)")

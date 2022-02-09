@@ -83,7 +83,7 @@ def parse_metadata_entry(label: str, value: ParseableMetadataEntryData) -> "Even
 def parse_metadata(
     metadata: Dict[str, ParseableMetadataEntryData],
     metadata_entries: List[Union["EventMetadataEntry", "PartitionMetadataEntry"]],
-    drop_invalid: bool = False,
+    allow_invalid: bool = False,
 ) -> List[Union["EventMetadataEntry", "PartitionMetadataEntry"]]:
     if metadata and metadata_entries:
         raise DagsterInvalidEventMetadata(
@@ -98,9 +98,10 @@ def parse_metadata(
 
     # This is a stopgap measure to deal with unsupported metadata values, which occur when we try
     # to convert arbitrary metadata (on e.g. OutputDefinition) to EventMetadata, which is required
-    # for serialization. This will cause unsupported values to be silently dropped-- eventually we
-    # should probably standardize the metadata system across dagster.
-    elif drop_invalid:
+    # for serialization. This will cause unsupported values to be silently replaced with a
+    # string placeholder-- eventually we should probably standardize the metadata system across
+    # dagster.
+    elif allow_invalid:
         metadata_entries = []
         for k, v in metadata.items():
             try:
