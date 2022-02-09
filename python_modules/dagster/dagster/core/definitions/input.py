@@ -98,7 +98,7 @@ class InputDefinition:
 
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         self._metadata_entries = check.is_list(
-            parse_metadata(self._metadata, [], drop_invalid=True), EventMetadataEntry
+            parse_metadata(self._metadata, [], allow_invalid=True), EventMetadataEntry
         )
 
         if asset_key:
