@@ -121,9 +121,10 @@ class ModuleBuildSpec(
                         f"buildkite-agent artifact upload {coverage}",
                     ]
 
+                version_str = ".".join(version.split(".")[:2])
                 step = (
                     StepBuilder(
-                        f":pytest: {label} {version[:3]}",
+                        f":pytest: {label} {version_str}",
                         timeout_in_minutes=self.timeout_in_minutes,
                     )
                     .run(*cmds)
