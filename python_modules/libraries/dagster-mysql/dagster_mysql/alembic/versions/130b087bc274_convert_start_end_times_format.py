@@ -1,8 +1,8 @@
-"""add_columns_start_time_and_end_time
+"""convert start end times format
 
-Revision ID: f78059038d01
-Revises: 29a8e9d74220
-Create Date: 2022-01-25 09:26:35.820814
+Revision ID: 130b087bc274
+Revises: 17154c80d885
+Create Date: 2022-02-01 15:21:22.257972
 
 """
 from dagster.core.storage.migration.utils import (
@@ -11,17 +11,16 @@ from dagster.core.storage.migration.utils import (
 )
 
 # revision identifiers, used by Alembic.
-revision = "f78059038d01"
-down_revision = "29a8e9d74220"
+revision = "130b087bc274"
+down_revision = "17154c80d885"
 branch_labels = None
 depends_on = None
 
-# pylint: disable=no-member
-
 
 def upgrade():
+    drop_run_record_start_end_timestamps()
     add_run_record_start_end_timestamps()
 
 
 def downgrade():
-    drop_run_record_start_end_timestamps()
+    pass

@@ -222,3 +222,25 @@ def create_run_range_indices():
                 "create_timestamp": 8,
             },
         )
+
+
+def add_run_record_start_end_timestamps():
+    if not has_table("runs"):
+        return
+
+    if has_column("runs", "start_time"):
+        return
+
+    op.add_column("runs", db.Column("start_time", db.Float))
+    op.add_column("runs", db.Column("end_time", db.Float))
+
+
+def drop_run_record_start_end_timestamps():
+    if not has_table("runs"):
+        return
+
+    if not has_column("runs", "start_time"):
+        return
+
+    op.drop_column("runs", "start_time")
+    op.drop_column("runs", "end_time")
