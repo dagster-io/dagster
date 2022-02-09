@@ -302,9 +302,27 @@ class DagsterK8sJobConfig(
                     "``dagster.yaml`` file will be mounted from the instance ConfigMap specified here. "
                     "Defaults to /opt/dagster/dagster_home.",
                 ),
-                "load_incluster_config": Field(bool, is_required=False, default_value=True),
-                "kubeconfig_file": Field(Noneable(str), is_required=False, default_value=None),
-                "fail_pod_on_run_failure": Field(bool, is_required=False),
+                "load_incluster_config": Field(
+                    bool,
+                    is_required=False,
+                    default_value=True,
+                    description="""Set this value if you are running the launcher
+            within a k8s cluster. If ``True``, we assume the launcher is running within the target
+            cluster and load config using ``kubernetes.config.load_incluster_config``. Otherwise,
+            we will use the k8s config specified in ``kubeconfig_file`` (using
+            ``kubernetes.config.load_kube_config``) or fall back to the default kubeconfig.""",
+                ),
+                "kubeconfig_file": Field(
+                    Noneable(str),
+                    is_required=False,
+                    default_value=None,
+                    description="The kubeconfig file from which to load config. Defaults to using the default kubeconfig.",
+                ),
+                "fail_pod_on_run_failure": Field(
+                    bool,
+                    is_required=False,
+                    description="Whether the launched Kubernetes Jobs and Pods should fail if the Dagster run fails",
+                ),
             },
             DagsterK8sJobConfig.config_type_job(),
         )

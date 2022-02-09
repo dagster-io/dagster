@@ -237,20 +237,6 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
     """Default scheduler implementation that submits runs from the `dagster-daemon`
     long-lived process. Periodically checks each running schedule for execution times that don't
     have runs yet and launches them.
-
-    Args:
-        max_catchup_runs (int): For partitioned schedules, controls the maximum number of past
-            partitions for each schedule that will be considered when looking for missing
-            runs (defaults to 5). Generally this parameter will only come into play if the scheduler
-            falls behind or launches after experiencing downtime. This parameter will not be checked for
-            schedules without partition sets (for example, schedules created using the @schedule
-            decorator) - only the most recent execution time will be considered for those schedules.
-
-            Note that no matter what this value is, the scheduler will never launch a run from a time
-            before the schedule was turned on (even if the start_date on the schedule is earlier) - if
-            you want to launch runs for earlier partitions, launch a backfill.
-        max_tick_retries (int): For each schedule tick that raises an error, how many times to retry
-            that tick (defaults to 0).
     """
 
     def __init__(
@@ -269,8 +255,28 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
     @classmethod
     def config_type(cls):
         return {
-            "max_catchup_runs": Field(IntSource, is_required=False),
-            "max_tick_retries": Field(IntSource, is_required=False),
+            "max_catchup_runs": Field(
+                IntSource,
+                is_required=False,
+                default_value=DEFAULT_MAX_CATCHUP_RUNS,
+                description="""For partitioned schedules, controls the maximum number of past
+            partitions for each schedule that will be considered when looking for missing
+            runs . Generally this parameter will only come into play if the scheduler
+            falls behind or launches after experiencing downtime. This parameter will not be checked for
+            schedules without partition sets (for example, schedules created using the @schedule
+            decorator) - only the most recent execution time will be considered for those schedules.
+
+            Note that no matter what this value is, the scheduler will never launch a run from a time
+            before the schedule was turned on (even if the start_date on the schedule is earlier) - if
+            you want to launch runs for earlier partitions, launch a backfill.
+            """,
+            ),
+            "max_tick_retries": Field(
+                IntSource,
+                default_value=0,
+                is_required=False,
+                description="For each schedule tick that raises an error, how many times to retry that tick",
+            ),
         }
 
     @staticmethod
