@@ -25,6 +25,7 @@ setup(
         "dagster-postgres",
         "dagstermill",
         "dbt-core",
+        "dbt-snowflake",
         "mock",
         # DataFrames were not written to Snowflake, causing errors
         "pandas<1.4.0",

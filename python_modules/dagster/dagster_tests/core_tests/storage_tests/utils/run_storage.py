@@ -1,9 +1,12 @@
 import sys
+import tempfile
+from contextlib import contextmanager
 from datetime import datetime
 
 import pendulum
 import pytest
-from dagster import seven
+from dagster import AssetKey, Output, job, op, seven
+from dagster.core.asset_defs import asset, build_assets_job
 from dagster.core.definitions import PipelineDefinition
 from dagster.core.errors import (
     DagsterRunAlreadyExists,
@@ -16,7 +19,12 @@ from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
 )
+from dagster.core.instance import DagsterInstance, InstanceType
+from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
+from dagster.core.run_coordinator import DefaultRunCoordinator
 from dagster.core.snap import create_pipeline_snapshot_id
+from dagster.core.storage.event_log import InMemoryEventLogStorage
+from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.pipeline_run import (
     DagsterRun,
     JobBucket,
@@ -24,6 +32,7 @@ from dagster.core.storage.pipeline_run import (
     PipelineRunsFilter,
     TagBucket,
 )
+from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
 from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster.core.storage.tags import ASSETS_TO_EXECUTE_TAG, PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
@@ -32,8 +41,27 @@ from dagster.core.utils import make_new_run_id
 from dagster.daemon.daemon import SensorDaemon
 from dagster.daemon.types import DaemonHeartbeat
 from dagster.serdes import serialize_pp
+from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 win_py36 = seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
+
+
+@contextmanager
+def get_instance(storage):
+    with tempfile.TemporaryDirectory() as temp_dir:
+        if storage._instance:  # pylint: disable=protected-access
+            instance = storage._instance  # pylint: disable=protected-access
+        else:
+            instance = DagsterInstance(
+                instance_type=InstanceType.EPHEMERAL,
+                local_artifact_storage=LocalArtifactStorage(temp_dir),
+                run_storage=storage,
+                event_storage=InMemoryEventLogStorage(),
+                compute_log_manager=NoOpComputeLogManager(),
+                run_coordinator=DefaultRunCoordinator(),
+                run_launcher=SyncInMemoryRunLauncher(),
+            )
+        yield instance
 
 
 class TestRunStorage:
@@ -1312,22 +1340,77 @@ class TestRunStorage:
         assert runs_by_tag.get("3").run_id == three.run_id
 
     def test_latest_run_id_by_step_key(self, storage):
-        def _add_run(job_name, tags=None):
-            return storage.add_run(
-                TestRunStorage.build_run(
-                    pipeline_name=job_name, run_id=make_new_run_id(), tags=tags
-                )
+        @asset
+        def asset_1():
+            yield Output(3)
+
+        @asset(non_argument_deps={AssetKey("asset_1")})
+        def asset_2():
+            raise Exception("foo")
+            yield Output(5)
+
+        @asset(non_argument_deps={AssetKey("asset_2")})
+        def asset_3():
+            yield Output(7)
+
+        many_assets_job = build_assets_job("many_assets_job", [asset_1, asset_2, asset_3])
+
+        with get_instance(storage) as instance:
+            # Test that no run ids are fetched when many_assets_job has not been run
+            latest_run_id_by_step_key = instance.get_latest_run_id_by_step_key(
+                ["asset_1", "asset_2", "asset_3"]
+            )
+            assert latest_run_id_by_step_key == {}
+
+            first_run_id = None
+            # Test that latest run ID for all 3 assets is run ID of failing run
+            result = many_assets_job.execute_in_process(instance=instance, raise_on_error=False)
+            first_run_id = result.run_id
+            latest_run_id_by_step_key = instance.get_latest_run_id_by_step_key(
+                ["asset_1", "asset_2", "asset_3"]
             )
 
-        step_keys = ["asset_1", "asset_2", "asset_3"]
-        _one = _add_run("a", tags={ASSETS_TO_EXECUTE_TAG: repr(set(step_keys))})
-        latest_run_id_by_step_key = storage.get_latest_run_id_by_step_key(step_keys)
+            assert latest_run_id_by_step_key["asset_1"] == first_run_id
+            assert latest_run_id_by_step_key["asset_2"] == first_run_id
+            assert latest_run_id_by_step_key["asset_3"] == first_run_id
 
-        for key in step_keys:
-            assert latest_run_id_by_step_key[key] == _one.run_id
+            # Test succeeded run with only first step selected
+            second_result = many_assets_job.execute_in_process(
+                instance=instance, op_selection=["*asset_1"]
+            )
+            latest_run_id_by_step_key = instance.get_latest_run_id_by_step_key(
+                ["asset_1", "asset_2", "asset_3"]
+            )
 
-        _two = _add_run("a", tags={ASSETS_TO_EXECUTE_TAG: repr(set(["asset_1", "asset_2"]))})
-        latest_run_id_by_step_key = storage.get_latest_run_id_by_step_key(step_keys)
-        assert latest_run_id_by_step_key["asset_1"] == _two.run_id
-        assert latest_run_id_by_step_key["asset_2"] == _two.run_id
-        assert latest_run_id_by_step_key["asset_3"] == _one.run_id
+            assert latest_run_id_by_step_key["asset_1"] == second_result.run_id
+            assert latest_run_id_by_step_key["asset_2"] == first_run_id
+            assert latest_run_id_by_step_key["asset_3"] == first_run_id
+
+    def test_run_record_timestamps(self, storage):
+        assert storage
+
+        self._skip_in_memory(storage)
+
+        @op
+        def a():
+            pass
+
+        @job
+        def my_job():
+            a()
+
+        with get_instance(storage) as instance:
+
+            freeze_datetime = to_timezone(
+                create_pendulum_time(2019, 11, 2, 0, 0, 0, tz="US/Central"), "US/Pacific"
+            )
+
+            with pendulum.test(freeze_datetime):
+                result = my_job.execute_in_process(instance=instance)
+                records = instance.get_run_records(
+                    filters=PipelineRunsFilter(run_ids=[result.run_id])
+                )
+                assert len(records) == 1
+                record = records[0]
+                assert record.start_time == freeze_datetime.timestamp()
+                assert record.end_time == freeze_datetime.timestamp()

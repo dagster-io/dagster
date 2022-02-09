@@ -72,8 +72,9 @@ services:
             - "ecs:RegisterTaskDefinition"
             - "ecs:RunTask"
             - "ecs:TagResource"
+            - "secretsmanager:DescribeSecret"
             - "secretsmanager:ListSecrets"
-            - "secretsManager:GetSecretValue"
+            - "secretsmanager:GetSecretValue"
           Resource:
             - "*"
         - Effect: "Allow"
@@ -104,7 +105,6 @@ services:
       DAGSTER_POSTGRES_PASSWORD: "postgres_password"
       DAGSTER_POSTGRES_USER: "postgres_user"
       DAGSTER_CURRENT_IMAGE: "$REGISTRY_URL/deploy_ecs/user_code"
-
 
   # This service runs the postgres DB used by dagster for run storage, schedule
   # storage, and event log storage. In a real deployment, you might choose to

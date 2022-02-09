@@ -40,6 +40,12 @@ S3
   :annotation: IOManagerDefinition
 
 
+ECS
+---
+.. autoconfigurable:: dagster_aws.ecs.EcsRunLauncher
+  :annotation: RunLauncher
+
+
 Redshift
 --------
 .. autoconfigurable:: dagster_aws.redshift.redshift_resource

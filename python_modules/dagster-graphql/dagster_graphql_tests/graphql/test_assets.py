@@ -209,6 +209,44 @@ GET_LATEST_RUN_BY_ASSET = """
                             timestamp
                             runId
                             stepKey
+                        }
+                    }
+                }
+            }
+        }
+    }
+"""
+
+GET_ASSET_OP = """
+    query AssetQuery($assetKey: AssetKeyInput!) {
+        assetOrError(assetKey: $assetKey) {
+            ... on Asset {
+                definition {
+                    op {
+                        name
+                        description
+                        inputDefinitions {
+                            name
+                        }
+                        outputDefinitions {
+                            name
+                        }
+                    }
+                }
+            }
+        }
+    }
+"""
+
+GET_OP_ASSETS = """
+    query OpQuery($repositorySelector: RepositorySelector!, $opName: String!) {
+        repositoryOrError(repositorySelector: $repositorySelector) {
+            ... on Repository {
+                usedSolid(name: $opName) {
+                    definition {
+                        assetNodes {
+                            assetKey {
+                               path
                             }
                         }
                     }
@@ -679,6 +717,31 @@ class TestAssetAwareEventLog(
         assert latest_run_by_step[1]["latestRun"]["status"] == "FAILURE"
         assert latest_run_by_step[2]["stepKey"] == "asset_3"
         assert latest_run_by_step[2]["latestRun"]["status"] == "SUCCESS"
+
+    def test_asset_op(self, graphql_context, snapshot):
+        _create_run(graphql_context, "two_assets_job")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_ASSET_OP,
+            variables={"assetKey": {"path": ["asset_two"]}},
+        )
+
+        assert result.data
+        snapshot.assert_match(result.data)
+
+    def test_op_assets(self, graphql_context, snapshot):
+        _create_run(graphql_context, "two_assets_job")
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_OP_ASSETS,
+            variables={
+                "repositorySelector": infer_repository_selector(graphql_context),
+                "opName": "asset_two",
+            },
+        )
+
+        assert result.data
+        snapshot.assert_match(result.data)
 
 
 class TestPersistentInstanceAssetInProgress(

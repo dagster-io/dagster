@@ -1,5 +1,6 @@
 import csv
 import datetime
+import gc
 import logging
 import os
 import string
@@ -884,7 +885,24 @@ def tagged_pipeline():
     simple_solid()
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
+@resource
+def disable_gc(_context):
+    # Workaround for termination signals being raised during GC and getting swallowed during
+    # tests
+    try:
+        print("Disabling GC")  # pylint: disable=print-call
+        gc.disable()
+        yield
+    finally:
+        print("Re-enabling GC")  # pylint: disable=print-call
+        gc.enable()
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(resource_defs={"io_manager": fs_io_manager, "disable_gc": disable_gc})
+    ]
+)
 def retry_multi_input_early_terminate_pipeline():
     @lambda_solid(output_def=OutputDefinition(Int))
     def return_one():
@@ -894,6 +912,7 @@ def retry_multi_input_early_terminate_pipeline():
         config_schema={"wait_to_terminate": bool},
         input_defs=[InputDefinition("one", Int)],
         output_defs=[OutputDefinition(Int)],
+        required_resource_keys={"disable_gc"},
     )
     def get_input_one(context, one):
         if context.solid_config["wait_to_terminate"]:
@@ -905,6 +924,7 @@ def retry_multi_input_early_terminate_pipeline():
         config_schema={"wait_to_terminate": bool},
         input_defs=[InputDefinition("one", Int)],
         output_defs=[OutputDefinition(Int)],
+        required_resource_keys={"disable_gc"},
     )
     def get_input_two(context, one):
         if context.solid_config["wait_to_terminate"]:

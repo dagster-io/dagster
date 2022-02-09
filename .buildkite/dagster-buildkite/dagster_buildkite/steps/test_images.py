@@ -1,6 +1,7 @@
-from ..defines import TOX_MAP, SupportedPython, SupportedPythons
+from ..defines import TOX_MAP, SupportedPython
 from ..images.versions import TEST_IMAGE_BUILDER_VERSION, UNIT_IMAGE_VERSION
 from ..step_builder import StepBuilder
+from ..utils import get_python_versions_for_branch
 
 
 def publish_test_images():
@@ -8,7 +9,9 @@ def publish_test_images():
     the dagster-k8s tests
     """
     tests = []
-    for version in SupportedPythons:
+    for version in get_python_versions_for_branch(
+        pr_versions=[SupportedPython.V3_8, SupportedPython.V3_9]
+    ):
         key = _test_image_step(version)
         tests.append(
             StepBuilder(f":docker: test-image {version}", key=key)
