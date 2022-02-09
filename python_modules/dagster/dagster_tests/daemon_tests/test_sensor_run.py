@@ -955,7 +955,7 @@ def _get_unloadable_sensor_origin():
     recon_repo = ReconstructableRepository.for_file(__file__, "doesnt_exist", working_directory)
     return ExternalRepositoryOrigin(
         InProcessRepositoryLocationOrigin(recon_repo), "fake_repository"
-    ).get_job_origin("doesnt_exist")
+    ).get_instigator_origin("doesnt_exist")
 
 
 @pytest.mark.parametrize("external_repo_context", repos())

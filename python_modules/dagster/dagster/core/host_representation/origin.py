@@ -3,13 +3,31 @@ import sys
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Dict, NamedTuple, NoReturn, Optional, Set, cast
+from inspect import Parameter
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Mapping,
+    NamedTuple,
+    NoReturn,
+    Optional,
+    Set,
+    Type,
+    cast,
+)
 
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.serdes import DefaultNamedTupleSerializer, create_snapshot_id, whitelist_for_serdes
+from dagster.serdes import (
+    DefaultNamedTupleSerializer,
+    create_snapshot_id,
+    register_serdes_tuple_fallbacks,
+    whitelist_for_serdes,
+)
+from dagster.serdes.serdes import WhitelistMap, unpack_inner_value
 
 if TYPE_CHECKING:
     from dagster.core.host_representation.repository_location import (
@@ -314,8 +332,8 @@ class ExternalRepositoryOrigin(
     def get_pipeline_origin(self, pipeline_name):
         return ExternalPipelineOrigin(self, pipeline_name)
 
-    def get_job_origin(self, job_name):
-        return ExternalInstigatorOrigin(self, job_name)
+    def get_instigator_origin(self, instigator_name):
+        return ExternalInstigatorOrigin(self, instigator_name)
 
     def get_partition_set_origin(self, partition_set_name):
         return ExternalPartitionSetOrigin(self, partition_set_name)
@@ -346,15 +364,22 @@ class ExternalPipelineOrigin(
 
 class ExternalInstigatorOriginSerializer(DefaultNamedTupleSerializer):
     @classmethod
-    def value_from_unpacked(
+    def value_from_storage_dict(
         cls,
-        unpacked_dict: Dict[str, Any],
+        storage_dict: Dict[str, Any],
         klass: Type,
-    ):
-        instigator_name = unpacked_dict.get("job_name")
-        del unpacked_dict["job_name"]
-        unpacked_dict["instigator_name"] = instigator_name
-        return klass(**unpacked_dict)
+        args_for_class: Mapping[str, Parameter],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> NamedTuple:
+        raw_dict = {
+            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            for key, value in storage_dict.items()
+        }
+        return klass(
+            **{key: value for key, value in raw_dict.items() if key in args_for_class},
+            instigator_name=raw_dict.get("job_name"),
+        )
 
     @classmethod
     def value_to_storage_dict(
@@ -368,8 +393,9 @@ class ExternalInstigatorOriginSerializer(DefaultNamedTupleSerializer):
             whitelist_map,
             descent_path,
         )
-        instigator_name = storage.get("instigator_name")
-        del storage["instigator_name"]
+        instigator_name = storage.get("instigator_name") or storage.get("job_name")
+        if "instigator_name" in storage:
+            del storage["instigator_name"]
         # store the instigator name as job_name, to avoid changing the origin id (hash)
         storage["job_name"] = instigator_name
         # persist using legacy name

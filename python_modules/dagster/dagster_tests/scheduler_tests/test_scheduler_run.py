@@ -1047,7 +1047,7 @@ def _get_unloadable_schedule_origin():
     )
     return ExternalRepositoryOrigin(
         InProcessRepositoryLocationOrigin(recon_repo), "fake_repository"
-    ).get_job_origin("doesnt_exist")
+    ).get_instigator_origin("doesnt_exist")
 
 
 def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_repo):

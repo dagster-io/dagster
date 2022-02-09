@@ -211,7 +211,7 @@ def _get_unloadable_schedule_origin(name):
     recon_repo = ReconstructableRepository.for_file(__file__, "doesnt_exist", working_directory)
     return ExternalRepositoryOrigin(
         InProcessRepositoryLocationOrigin(recon_repo), "fake_repository"
-    ).get_job_origin(name)
+    ).get_instigator_origin(name)
 
 
 def test_get_schedule_definitions_for_repository(graphql_context):
