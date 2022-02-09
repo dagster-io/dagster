@@ -1,20 +1,31 @@
-# Pylint has many options that are divvied up by category. You can see the full list here:
+# Pylint has many options that are divvied up by category. Each [SECTION] below corresponds to a
+# section in this doc:
 #   https://pylint.pycqa.org/en/latest/technical_reference/features.html 
-# Each [SECTION] below corresponds to a section in the above-linked document.
 
+# NOTE: Running pylint in parallel (i.e. -j/--jobs option != 1) currently will not work (with
+# Dagster's configuration) on some platforms (specifically macOS, maybe others). This is because of
+# the `dagster.utils.linter` plugin, which contains extensions that can't be properly pickled. There
+# are open issues discussing this problem but it looks like the situation is likely to persist for
+# some time:
+#   https://pylint.pycqa.org/en/latest/user_guide/run.html#parallel-execution
+#   https://github.com/PyCQA/pylint/issues/4874
+
+# TODO: why master??
 [MASTER]
 ignore=snapshots
-load-plugins=dagster.utils.linter
+# load-plugins=dagster.utils.linter
 
 [MESSAGES CONTROL]
 disable=C,  # convention-related checks
         R,  # refactoring-related checks
+        bad-option-value,
         bare-except,
         broad-except,
         duplicate-code,
         fixme,
         no-init,
-        redefined-outer-name
+        redefined-outer-name,
+        unspecified-encoding
 
 [TYPECHECK]
 ignored-classes=responses
