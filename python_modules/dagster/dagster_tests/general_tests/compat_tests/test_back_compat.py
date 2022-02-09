@@ -27,6 +27,7 @@ from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster.serdes import DefaultNamedTupleSerializer, create_snapshot_id
 from dagster.serdes.serdes import (
     WhitelistMap,
     _deserialize_json,
@@ -607,3 +608,88 @@ def test_start_time_end_time():
 
         assert get_current_alembic_version(db_path) == "7f2b1a4ca7a5"
         assert True
+
+
+def test_external_job_origin_instigator_origin():
+    def build_legacy_whitelist_map():
+        legacy_env = WhitelistMap.create()
+
+        @_whitelist_for_serdes(legacy_env)
+        class ExternalJobOrigin(
+            namedtuple("_ExternalJobOrigin", "external_repository_origin job_name")
+        ):
+            def get_id(self):
+                return create_snapshot_id(self)
+
+        @_whitelist_for_serdes(legacy_env)
+        class ExternalRepositoryOrigin(
+            namedtuple("_ExternalRepositoryOrigin", "repository_location_origin repository_name")
+        ):
+            def get_id(self):
+                return create_snapshot_id(self)
+
+        class GrpcServerOriginSerializer(DefaultNamedTupleSerializer):
+            @classmethod
+            def skip_when_empty(cls):
+                return {"use_ssl"}
+
+        @_whitelist_for_serdes(whitelist_map=legacy_env, serializer=GrpcServerOriginSerializer)
+        class GrpcServerRepositoryLocationOrigin(
+            namedtuple(
+                "_GrpcServerRepositoryLocationOrigin",
+                "host port socket location_name use_ssl",
+            ),
+        ):
+            def __new__(cls, host, port=None, socket=None, location_name=None, use_ssl=None):
+                return super(GrpcServerRepositoryLocationOrigin, cls).__new__(
+                    cls, host, port, socket, location_name, use_ssl
+                )
+
+        return (
+            legacy_env,
+            ExternalJobOrigin,
+            ExternalRepositoryOrigin,
+            GrpcServerRepositoryLocationOrigin,
+        )
+
+    legacy_env, klass, repo_klass, location_klass = build_legacy_whitelist_map()
+
+    from dagster.core.host_representation.origin import (
+        ExternalInstigatorOrigin,
+        ExternalRepositoryOrigin,
+        GrpcServerRepositoryLocationOrigin,
+    )
+
+    # serialize from current code, compare against old code
+    instigator_origin = ExternalInstigatorOrigin(
+        external_repository_origin=ExternalRepositoryOrigin(
+            repository_location_origin=GrpcServerRepositoryLocationOrigin(
+                host="localhost", port=1234, location_name="test_location"
+            ),
+            repository_name="the_repo",
+        ),
+        instigator_name="simple_schedule",
+    )
+    instigator_origin_str = serialize_dagster_namedtuple(instigator_origin)
+    instigator_to_job = _deserialize_json(instigator_origin_str, legacy_env)
+    assert isinstance(instigator_to_job, klass)
+    # ensure that the origin id is stable
+    assert instigator_to_job.get_id() == instigator_origin.get_id()
+
+    # # serialize from old code, compare against current code
+    job_origin = klass(
+        external_repository_origin=repo_klass(
+            repository_location_origin=location_klass(
+                host="localhost", port=1234, location_name="test_location"
+            ),
+            repository_name="the_repo",
+        ),
+        job_name="simple_schedule",
+    )
+    job_origin_str = serialize_value(job_origin, legacy_env)
+    from dagster.serdes.serdes import _WHITELIST_MAP
+
+    job_to_instigator = deserialize_json_to_dagster_namedtuple(job_origin_str)
+    assert isinstance(job_to_instigator, ExternalInstigatorOrigin)
+    # ensure that the origin id is stable
+    assert job_to_instigator.get_id() == job_origin.get_id()
