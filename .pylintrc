@@ -2,7 +2,7 @@
 #   https://pylint.pycqa.org/en/latest/technical_reference/features.html 
 # Each [SECTION] below corresponds to a section in the above-linked document.
 
-[GENERAL]
+[MASTER]
 ignore=snapshots
 load-plugins=dagster.utils.linter
 
