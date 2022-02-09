@@ -22,18 +22,16 @@ const sortByEventTimestamp = (a: Event, b: Event) => Number(b?.timestamp) - Numb
  */
 export const groupByPartition = (
   events: Event[],
-  definedPartitionKeys: string[] | undefined,
+  definedPartitionKeys: string[],
 ): AssetEventGroup[] => {
   const grouped = groupBy(events, (m) => m.partition || NO_PARTITION_KEY);
-  const partitionKeys = definedPartitionKeys
-    ? [...definedPartitionKeys].reverse()
-    : Object.keys(grouped).sort().reverse();
+  const orderedPartitionKeys = [...definedPartitionKeys].reverse();
 
-  if (NO_PARTITION_KEY in grouped && definedPartitionKeys) {
-    partitionKeys.push(NO_PARTITION_KEY);
+  if (NO_PARTITION_KEY in grouped) {
+    orderedPartitionKeys.push(NO_PARTITION_KEY);
   }
 
-  return partitionKeys
+  return orderedPartitionKeys
     .filter((key) => key !== NO_PARTITION_KEY)
     .map((key) => {
       const sorted = [...(grouped[key] || [])].sort(sortByEventTimestamp);

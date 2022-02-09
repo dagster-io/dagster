@@ -2,10 +2,15 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 from dagster import check
 from dagster.core.definitions import NodeDefinition, NodeHandle
-from dagster.core.definitions.events import AssetMaterialization, Materialization
+from dagster.core.definitions.events import AssetMaterialization, AssetObservation, Materialization
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.events import DagsterEvent, DagsterEventType, StepMaterializationData
+from dagster.core.events import (
+    AssetObservationData,
+    DagsterEvent,
+    DagsterEventType,
+    StepMaterializationData,
+)
 from dagster.core.execution.plan.outputs import StepOutputHandle
 
 
@@ -70,6 +75,13 @@ class ExecuteInProcessResult:
             cast(StepMaterializationData, event.event_specific_data).materialization
             for event in self.events_for_node(node_name)
             if event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION.value
+        ]
+
+    def asset_observations_for_node(self, node_name) -> List[AssetObservation]:
+        return [
+            cast(AssetObservationData, event.event_specific_data).asset_observation
+            for event in self.events_for_node(node_name)
+            if event.event_type_value == DagsterEventType.ASSET_OBSERVATION.value
         ]
 
     def output_value(self, output_name: str = DEFAULT_OUTPUT) -> Any:

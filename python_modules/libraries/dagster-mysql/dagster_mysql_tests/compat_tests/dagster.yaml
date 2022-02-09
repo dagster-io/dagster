@@ -1,0 +1,17 @@
+run_storage:
+  module: dagster_mysql.run_storage
+  class: MySQLRunStorage
+  config:
+    mysql_url: "mysql+mysqlconnector://test:test@{hostname}:3306/test"
+
+event_log_storage:
+  module: dagster_mysql.event_log
+  class: MySQLEventLogStorage
+  config:
+    mysql_url: "mysql+mysqlconnector://test:test@{hostname}:3306/test"
+
+schedule_storage:
+  module: dagster_mysql.schedule_storage
+  class: MySQLScheduleStorage
+  config:
+    mysql_url: "mysql+mysqlconnector://test:test@{hostname}:3306/test"

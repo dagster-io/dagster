@@ -9,6 +9,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Operating System :: OS Independent",
     ],
     packages=find_packages(exclude=["test"]),
@@ -23,7 +24,8 @@ setup(
         "dagster-slack",
         "dagster-postgres",
         "dagstermill",
-        "dbt>=0.19.0",
+        "dbt-core",
+        "dbt-snowflake",
         "mock",
         # DataFrames were not written to Snowflake, causing errors
         "pandas<1.4.0",

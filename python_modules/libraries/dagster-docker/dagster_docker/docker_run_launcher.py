@@ -19,22 +19,7 @@ DOCKER_CONTAINER_ID_TAG = "docker/container_id"
 
 
 class DockerRunLauncher(RunLauncher, ConfigurableClass):
-    """Launches runs in a Docker container.
-
-    Args:
-        image (Optional[str]): The docker image to be used if the repository does not specify one.
-        registry (Optional[Dict[str, str]]): Information for using a non-local docker registry.
-            If set, should include ``url``, ``username``, and ``password`` keys.
-        env_vars (Optional[List[str]]): The list of environment variables names to forward to the
-            docker container.
-        network (Optional[str]): Name of the network this container to which to connect the
-            launched container at creation time. DEPRECATED, prefer networks
-        networks (Optional[List[str]]): List of networks to which to connect the
-            launched container at creation time.
-        container_kwargs(Optional[Dict[str, Any]]): Additional kwargs to pass into
-            containers.create. See https://docker-py.readthedocs.io/en/stable/containers.html
-            for the full list of available options.
-    """
+    """Launches runs in a Docker container."""
 
     def __init__(
         self,

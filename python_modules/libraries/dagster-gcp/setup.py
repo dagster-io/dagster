@@ -28,6 +28,7 @@ if __name__ == "__main__":
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: 3.9",
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
@@ -40,6 +41,7 @@ if __name__ == "__main__":
             "google-cloud-storage",
             "oauth2client",
         ],
-        extras_require={"pyarrow": ["pyarrow; python_version < '3.9'"]},
+        # we need `pyarrow` for testing read/write parquet files.
+        extras_require={"pyarrow": ["pyarrow"]},
         zip_safe=False,
     )
