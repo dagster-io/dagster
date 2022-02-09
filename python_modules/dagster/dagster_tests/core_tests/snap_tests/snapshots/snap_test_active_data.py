@@ -6,9 +6,7 @@ from snapshottest import Snapshot
 
 snapshots = Snapshot()
 
-snapshots[
-    'test_external_pipeline_data 1'
-] = '''{
+snapshots['test_external_pipeline_data 1'] = '''{
   "__class__": "ExternalPipelineData",
   "active_presets": [
     {
@@ -32,6 +30,7 @@ snapshots[
       "tags": {}
     }
   ],
+  "is_asset_job": false,
   "is_job": false,
   "name": "a_pipeline",
   "parent_pipeline_snapshot": null,
@@ -1123,9 +1122,7 @@ snapshots[
   }
 }'''
 
-snapshots[
-    'test_external_repository_data 1'
-] = '''{
+snapshots['test_external_repository_data 1'] = '''{
   "__class__": "ExternalRepositoryData",
   "external_asset_graph_data": [],
   "external_partition_set_datas": [
@@ -1162,6 +1159,7 @@ snapshots[
           "tags": {}
         }
       ],
+      "is_asset_job": false,
       "is_job": false,
       "name": "a_pipeline",
       "parent_pipeline_snapshot": null,

@@ -185,6 +185,14 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
+    def get_latest_run_id_by_step_key(self, step_keys: List[str]):
+        """Get the latest run ID of asset jobs given step keys of assets.
+
+        Args:
+            step_keys (List[str])
+        """
+
+    @abstractmethod
     def has_run(self, run_id: str) -> bool:
         """Check if the storage contains a run.
 

@@ -1499,7 +1499,6 @@ def asset_1():
 @asset(non_argument_deps={AssetKey("asset_1")})
 def asset_2():
     raise Exception("foo")
-    yield Output(5)
 
 
 @asset(non_argument_deps={AssetKey("asset_2")})
