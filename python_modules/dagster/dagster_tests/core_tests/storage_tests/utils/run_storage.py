@@ -26,7 +26,7 @@ from dagster.core.storage.pipeline_run import (
 )
 from dagster.core.storage.runs.migration import REQUIRED_DATA_MIGRATIONS
 from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
-from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
+from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG, ASSETS_TO_EXECUTE_TAG
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.utils import make_new_run_id
 from dagster.daemon.daemon import SensorDaemon
@@ -1320,13 +1320,13 @@ class TestRunStorage:
             )
 
         step_keys = ["asset_1", "asset_2", "asset_3"]
-        _one = _add_run("a", tags={"step_keys": repr(set(step_keys))})
+        _one = _add_run("a", tags={ASSETS_TO_EXECUTE_TAG: repr(set(step_keys))})
         latest_run_id_by_step_key = storage.get_latest_run_id_by_step_key(step_keys)
 
         for key in step_keys:
             assert latest_run_id_by_step_key[key] == _one.run_id
 
-        _two = _add_run("a", tags={"step_keys": repr(set(["asset_1", "asset_2"]))})
+        _two = _add_run("a", tags={ASSETS_TO_EXECUTE_TAG: repr(set(["asset_1", "asset_2"]))})
         latest_run_id_by_step_key = storage.get_latest_run_id_by_step_key(step_keys)
         assert latest_run_id_by_step_key["asset_1"] == _two.run_id
         assert latest_run_id_by_step_key["asset_2"] == _two.run_id

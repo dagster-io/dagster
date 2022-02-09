@@ -51,7 +51,7 @@ from dagster.core.storage.pipeline_run import (
     RunRecord,
     TagBucket,
 )
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
+from dagster.core.storage.tags import MEMOIZED_RUN_TAG, ASSETS_TO_EXECUTE_TAG
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import str_format_list
 from dagster.serdes import ConfigurableClass
@@ -748,7 +748,7 @@ class DagsterInstance:
 
     @traced
     def get_latest_run_id_by_step_key(self, step_keys=None) -> Dict[str, Optional[str]]:
-        # When an assets job is run, we add a tag with key "step_keys" and value as a
+        # When an assets job is run, we add a tag with key `ASSETS_TO_EXECUTE_TAG` and value as a
         # stringified set of the selected step keys. Then, we use these tags to determine
         # the last time an asset was supposed to be executed to display failed runs in Dagit.
         return self._run_storage.get_latest_run_id_by_step_key(step_keys)
@@ -999,10 +999,10 @@ class DagsterInstance:
         assets_to_execute=None,
     ):
         if assets_to_execute:
-            # We store a tag with key "step_keys" and value being a set of the assets to execute
+            # We store a tag with key `ASSETS_TO_EXECUTE_TAG` and value being a set of the assets to execute
             # so we can search for failed materializations without deserializing the execution
             # plan to fetch selected steps.
-            tags = merge_dicts(tags, {"step_keys": repr(set(assets_to_execute))})
+            tags = merge_dicts(tags, {ASSETS_TO_EXECUTE_TAG: repr(set(assets_to_execute))})
 
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,

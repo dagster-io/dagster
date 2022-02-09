@@ -39,6 +39,8 @@ PRIORITY_TAG = "{prefix}priority".format(prefix=SYSTEM_TAG_PREFIX)
 
 DOCKER_IMAGE_TAG = "{prefix}image".format(prefix=SYSTEM_TAG_PREFIX)
 
+ASSETS_TO_EXECUTE_TAG = "{prefix}asset_steps_to_execute".format(prefix=SYSTEM_TAG_PREFIX)
+
 USER_EDITABLE_SYSTEM_TAGS = [PRIORITY_TAG]
 
 

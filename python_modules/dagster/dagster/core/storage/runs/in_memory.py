@@ -17,6 +17,7 @@ from dagster.core.snap import (
 )
 from dagster.daemon.types import DaemonHeartbeat
 from dagster.utils import EPOCH, frozendict, merge_dicts
+from dagster.core.storage.tags import ASSETS_TO_EXECUTE_TAG
 
 from ..pipeline_run import JobBucket, PipelineRun, PipelineRunsFilter, RunRecord, TagBucket
 from .base import RunStorage
@@ -217,8 +218,8 @@ class InMemoryRunStorage(RunStorage):
     def get_latest_run_id_by_step_key(self, step_keys=None):
         latest_run_id_by_step_key = {}
         for _run_id, tags in list(self._run_tags.items())[::-1]:
-            if "step_keys" in tags:
-                keys_to_execute = eval(tags["step_keys"])
+            if ASSETS_TO_EXECUTE_TAG in tags:
+                keys_to_execute = eval(tags[ASSETS_TO_EXECUTE_TAG])
                 latest_run_id_by_step_key.update(
                     {
                         step_key: _run_id

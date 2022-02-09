@@ -24,7 +24,12 @@ from dagster.core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
 )
-from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, ROOT_RUN_ID_TAG
+from dagster.core.storage.tags import (
+    PARTITION_NAME_TAG,
+    PARTITION_SET_TAG,
+    ROOT_RUN_ID_TAG,
+    ASSETS_TO_EXECUTE_TAG,
+)
 from dagster.daemon.types import DaemonHeartbeat
 from dagster.serdes import (
     deserialize_as,
@@ -468,7 +473,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     def get_latest_run_id_by_step_key(self, step_keys) -> Dict[str, str]:
         query = (
             db.select([RunTagsTable.c.run_id, RunTagsTable.c.value])
-            .where(RunTagsTable.c.key == "step_keys")
+            .where(RunTagsTable.c.key == ASSETS_TO_EXECUTE_TAG)
             .order_by(db.desc(RunTagsTable.c.id))
         )
         rows = self.fetchall(query)
