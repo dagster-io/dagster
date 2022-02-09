@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dagster import PipelineDefinition, PipelineRunStatus, check
 from dagster.config.validate import validate_config
 from dagster.core.definitions import create_run_config_schema
@@ -102,11 +103,15 @@ def get_runs(graphene_info, filters, cursor=None, limit=None):
     ]
 
 
-IN_PROGRESS_STATUSES = [
+PENDING_STATUSES = [
     PipelineRunStatus.STARTING,
     PipelineRunStatus.MANAGED,
     PipelineRunStatus.NOT_STARTED,
     PipelineRunStatus.QUEUED,
+    PipelineRunStatus.STARTED,
+    PipelineRunStatus.CANCELING,
+]
+IN_PROGRESS_STATUSES = [
     PipelineRunStatus.STARTED,
     PipelineRunStatus.CANCELING,
 ]
@@ -121,47 +126,48 @@ def get_in_progress_runs_by_step(graphene_info, job_names, step_keys):
     for job_name in job_names:
         in_progress_records.extend(
             instance.get_run_records(
-                PipelineRunsFilter(pipeline_name=job_name, statuses=IN_PROGRESS_STATUSES)
+                PipelineRunsFilter(pipeline_name=job_name, statuses=PENDING_STATUSES)
             )
         )
 
-    in_progress_runs_by_step = {}
-    unstarted_runs_by_step = {}
+    in_progress_runs_by_step = defaultdict(list)
+    unstarted_runs_by_step = defaultdict(list)
 
     for record in in_progress_records:
         run = record.pipeline_run
-        step_stats = graphene_info.context.instance.get_run_step_stats(run.run_id, step_keys)
-        for step_stat in step_stats:
-            if step_stat.status == StepEventStatus.IN_PROGRESS:
-                if step_stat.step_key not in in_progress_runs_by_step:
-                    in_progress_runs_by_step[step_stat.step_key] = []
-                in_progress_runs_by_step[step_stat.step_key].append(GrapheneRun(record))
 
         asset_names = graphene_info.context.instance.get_execution_plan_snapshot(
             run.execution_plan_snapshot_id
         ).step_keys_to_execute
 
-        for step_key in asset_names:
-            # step_stats only contains stats for steps that are in progress or complete
-            is_unstarted = (
-                len([step_stat for step_stat in step_stats if step_stat.step_key == step_key]) == 0
-            )
-            if is_unstarted:
-                if step_key not in unstarted_runs_by_step:
-                    unstarted_runs_by_step[step_key] = []
+        if run.status in IN_PROGRESS_STATUSES:
+            step_stats = graphene_info.context.instance.get_run_step_stats(run.run_id, step_keys)
+            for step_stat in step_stats:
+                if step_stat.status == StepEventStatus.IN_PROGRESS:
+                    in_progress_runs_by_step[step_stat.step_key].append(GrapheneRun(record))
+
+            for step_key in asset_names:
+                # step_stats only contains stats for steps that are in progress or complete
+                is_unstarted = (
+                    len([step_stat for step_stat in step_stats if step_stat.step_key == step_key])
+                    == 0
+                )
+                if is_unstarted:
+                    unstarted_runs_by_step[step_key].append(GrapheneRun(record))
+        else:
+            # the run never began execution, all steps are unstarted
+            for step_key in asset_names:
                 unstarted_runs_by_step[step_key].append(GrapheneRun(record))
 
-    step_runs = []
-    for key in in_progress_runs_by_step.keys() | unstarted_runs_by_step.keys():
-        step_runs.append(
-            GrapheneInProgressRunsByStep(
-                key,
-                unstarted_runs_by_step.get(key, []),
-                in_progress_runs_by_step.get(key, []),
-            )
+    all_step_keys = in_progress_runs_by_step.keys() | unstarted_runs_by_step.keys()
+    return [
+        GrapheneInProgressRunsByStep(
+            key,
+            unstarted_runs_by_step.get(key, []),
+            in_progress_runs_by_step.get(key, []),
         )
-
-    return step_runs
+        for key in all_step_keys
+    ]
 
 
 def get_runs_count(graphene_info, filters):
