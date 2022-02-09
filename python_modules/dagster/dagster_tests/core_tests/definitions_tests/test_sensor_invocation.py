@@ -9,10 +9,15 @@ from dagster import (
     SensorEvaluationContext,
     SensorExecutionContext,
     build_sensor_context,
+    build_run_status_sensor_context,
     run_status_sensor,
+    run_failure_sensor,
     sensor,
+    op,
+    graph,
 )
 from dagster.core.errors import DagsterInvalidInvocationError
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
 
 
@@ -96,13 +101,25 @@ def test_instance_access_with_mock():
     assert build_sensor_context(instance=mock_instance).instance == mock_instance
 
 
-def test_run_status_sensor_invocation():
-    @run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
-    def the_sensor(_):
-        pass
+def test_build_run_status_sensor_context():
+    @run_failure_sensor
+    def failure_sensor(context):
+        assert context.dagster_event.event_type_value == "PIPELINE_FAILURE"
 
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match="Direct invocation of RunStatusSensors is not yet supported.",
-    ):
-        the_sensor(None)
+    ctx = build_run_status_sensor_context(
+        sensor_name="failure_sensor",
+        dagster_instance=DagsterInstance.ephemeral(),
+        pipeline_run_status=PipelineRunStatus.FAILURE,
+    )
+    failure_sensor(ctx)
+
+    @run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
+    def status_sensor(context):
+        assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
+
+    ctx = build_run_status_sensor_context(
+        sensor_name="status_sensor",
+        dagster_instance=DagsterInstance.ephemeral(),
+        pipeline_run_status=PipelineRunStatus.SUCCESS,
+    )
+    status_sensor(ctx)
