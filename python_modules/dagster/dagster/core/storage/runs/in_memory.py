@@ -1,3 +1,4 @@
+import json
 from collections import OrderedDict, defaultdict
 from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 
@@ -219,7 +220,7 @@ class InMemoryRunStorage(RunStorage):
         latest_run_id_by_step_key = {}
         for _run_id, tags in list(self._run_tags.items())[::-1]:
             if ASSETS_TO_EXECUTE_TAG in tags:
-                keys_to_execute = eval(tags[ASSETS_TO_EXECUTE_TAG])
+                keys_to_execute = set(json.loads((tags[ASSETS_TO_EXECUTE_TAG])))
                 latest_run_id_by_step_key.update(
                     {
                         step_key: _run_id

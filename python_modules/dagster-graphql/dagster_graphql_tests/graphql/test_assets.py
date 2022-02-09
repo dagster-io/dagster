@@ -202,13 +202,14 @@ GET_LATEST_RUN_BY_ASSET = """
                 latestRunByStep {
                     stepKey
                     latestRun {
-                    status
-                    pipelineName
-                    events {
-                        ...on ExecutionStepFailureEvent{
-                            timestamp
-                            runId
-                            stepKey
+                        status
+                        pipelineName
+                        events {
+                            ...on ExecutionStepFailureEvent{
+                                timestamp
+                                runId
+                                stepKey
+                            }
                         }
                     }
                 }

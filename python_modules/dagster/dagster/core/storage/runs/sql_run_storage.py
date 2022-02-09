@@ -1,3 +1,4 @@
+import json
 import logging
 import uuid
 import zlib
@@ -480,7 +481,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         latest_run_id_by_step_key: Dict[str, str] = {}
         for row in rows:
-            run_id, step_keys = row[0], eval(row[1])
+            run_id, step_keys = row[0], set(json.loads(row[1]))
             for step_key in step_keys:
                 if step_key not in latest_run_id_by_step_key:
                     latest_run_id_by_step_key[step_key] = run_id

@@ -1,4 +1,5 @@
 import inspect
+import json
 import logging
 import logging.config
 import os
@@ -1001,7 +1002,8 @@ class DagsterInstance:
             # We store a tag with key `ASSETS_TO_EXECUTE_TAG` and value being a set of the assets to execute
             # so we can search for failed materializations without deserializing the execution
             # plan to fetch selected steps.
-            tags = merge_dicts(tags, {ASSETS_TO_EXECUTE_TAG: repr(set(assets_to_execute))})
+            check.list_param(assets_to_execute, "assets_to_execute", str)
+            tags = merge_dicts(tags, {ASSETS_TO_EXECUTE_TAG: json.dumps(assets_to_execute)})
 
         pipeline_run = self._construct_run_with_snapshots(
             pipeline_name=pipeline_name,
