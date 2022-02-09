@@ -2,7 +2,7 @@ import logging
 import sys
 import time
 import uuid
-from abc import abstractclassmethod, abstractmethod
+from abc import abstractmethod
 from collections import deque
 from contextlib import AbstractContextManager
 
@@ -44,7 +44,8 @@ class DagsterDaemon(AbstractContextManager):
 
         self._first_error_logged = False
 
-    @abstractclassmethod
+    @classmethod
+    @abstractmethod
     def daemon_type(cls):
         """
         returns: str
