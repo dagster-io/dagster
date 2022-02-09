@@ -24,7 +24,7 @@ from dagster import (
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.run_request import RunRequest
 from dagster.core.host_representation import (
-    ExternalJobOrigin,
+    ExternalInstigatorOrigin,
     ExternalRepositoryOrigin,
     GrpcServerRepositoryLocation,
     GrpcServerRepositoryLocationOrigin,
@@ -1197,12 +1197,12 @@ def test_bad_load_repository(instance, workspace, external_repo):
         valid_schedule_origin = external_schedule.get_external_origin()
 
         # Swap out a new repository name
-        invalid_repo_origin = ExternalJobOrigin(
+        invalid_repo_origin = ExternalInstigatorOrigin(
             ExternalRepositoryOrigin(
                 valid_schedule_origin.external_repository_origin.repository_location_origin,
                 "invalid_repo_name",
             ),
-            valid_schedule_origin.job_name,
+            valid_schedule_origin.instigator_name,
         )
 
         schedule_state = InstigatorState(
@@ -1234,7 +1234,7 @@ def test_bad_load_schedule(instance, workspace, external_repo):
         valid_schedule_origin = external_schedule.get_external_origin()
 
         # Swap out a new schedule name
-        invalid_repo_origin = ExternalJobOrigin(
+        invalid_repo_origin = ExternalInstigatorOrigin(
             valid_schedule_origin.external_repository_origin,
             "invalid_schedule",
         )
@@ -1694,12 +1694,12 @@ def test_grpc_server_down(instance, workspace):
     location_origin = GrpcServerRepositoryLocationOrigin(
         host="localhost", port=port, location_name="test_location"
     )
-    schedule_origin = ExternalJobOrigin(
+    schedule_origin = ExternalInstigatorOrigin(
         external_repository_origin=ExternalRepositoryOrigin(
             repository_location_origin=location_origin,
             repository_name="the_repo",
         ),
-        job_name="simple_schedule",
+        instigator_name="simple_schedule",
     )
 
     initial_datetime = create_pendulum_time(year=2019, month=2, day=27, hour=0, minute=0, second=0)

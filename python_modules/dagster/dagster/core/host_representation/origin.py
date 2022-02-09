@@ -315,7 +315,7 @@ class ExternalRepositoryOrigin(
         return ExternalPipelineOrigin(self, pipeline_name)
 
     def get_job_origin(self, job_name):
-        return ExternalJobOrigin(self, job_name)
+        return ExternalInstigatorOrigin(self, job_name)
 
     def get_partition_set_origin(self, partition_set_name):
         return ExternalPartitionSetOrigin(self, partition_set_name)
@@ -344,25 +344,63 @@ class ExternalPipelineOrigin(
         return create_snapshot_id(self)
 
 
-@whitelist_for_serdes
-class ExternalJobOrigin(namedtuple("_ExternalJobOrigin", "external_repository_origin job_name")):
+class ExternalInstigatorOriginSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_from_unpacked(
+        cls,
+        unpacked_dict: Dict[str, Any],
+        klass: Type,
+    ):
+        instigator_name = unpacked_dict.get("job_name")
+        del unpacked_dict["job_name"]
+        unpacked_dict["instigator_name"] = instigator_name
+        return klass(**unpacked_dict)
+
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: NamedTuple,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        storage = super().value_to_storage_dict(
+            value,
+            whitelist_map,
+            descent_path,
+        )
+        instigator_name = storage.get("instigator_name")
+        del storage["instigator_name"]
+        # store the instigator name as job_name, to avoid changing the origin id (hash)
+        storage["job_name"] = instigator_name
+        # persist using legacy name
+        storage["__class__"] = "ExternalJobOrigin"
+        return storage
+
+
+@whitelist_for_serdes(serializer=ExternalInstigatorOriginSerializer)
+class ExternalInstigatorOrigin(
+    namedtuple("_ExternalInstigatorOrigin", "external_repository_origin instigator_name")
+):
     """Serializable representation of an ExternalJob that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, external_repository_origin, job_name):
-        return super(ExternalJobOrigin, cls).__new__(
+    def __new__(cls, external_repository_origin, instigator_name):
+        return super(ExternalInstigatorOrigin, cls).__new__(
             cls,
             check.inst_param(
                 external_repository_origin,
                 "external_repository_origin",
                 ExternalRepositoryOrigin,
             ),
-            check.str_param(job_name, "job_name"),
+            check.str_param(instigator_name, "instigator_name"),
         )
 
     def get_id(self):
         return create_snapshot_id(self)
+
+
+register_serdes_tuple_fallbacks({"ExternalJobOrigin": ExternalInstigatorOrigin})
 
 
 @whitelist_for_serdes
