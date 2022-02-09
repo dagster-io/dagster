@@ -1,3 +1,11 @@
+# Pylint has many options that are divvied up by category. You can see the full list here:
+#   https://pylint.pycqa.org/en/latest/technical_reference/features.html 
+# Each [SECTION] below corresponds to a section in the above-linked document.
+
+[GENERAL]
+ignore=snapshots
+load-plugins=dagster.utils.linter
+
 [MESSAGES CONTROL]
 disable=C,  # convention-related checks
         R,  # refactoring-related checks
@@ -8,14 +16,9 @@ disable=C,  # convention-related checks
         no-init,
         redefined-outer-name
 
-# See: https://github.com/getsentry/responses/issues/74
 [TYPECHECK]
 ignored-classes=responses
 signature-mutators=solid,composite_solid,lambda_solid,configured,op,graph
-
-[MASTER]
-ignore=snapshots
-load-plugins=dagster.utils.linter
 
 # See: https://stackoverflow.com/questions/40163106/cannot-find-col-function-in-pyspark
 generated-members=pyspark.*
