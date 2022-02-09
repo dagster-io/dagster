@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import cast
 
 import pendulum
 from dagster import (
@@ -16,7 +17,7 @@ DATE_FORMAT = "%Y-%m-%d"
 
 
 def time_window(start: str, end: str) -> TimeWindow:
-    return TimeWindow(pendulum.parse(start), pendulum.parse(end))
+    return TimeWindow(cast(datetime, pendulum.parse(start)), cast(datetime, pendulum.parse(end)))
 
 
 def test_daily_partitions():
