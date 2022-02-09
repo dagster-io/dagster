@@ -93,7 +93,6 @@ if __name__ == "__main__":
         extras_require={
             "docker": ["docker"],
             "test": [
-                "astroid>=2.3.3,<2.5",
                 "coverage==5.3",
                 "docker",
                 "freezegun>=0.3.15",
@@ -115,7 +114,7 @@ if __name__ == "__main__":
                 "tqdm==4.48.0",  # pylint crash 48.1+
                 "yamllint",
                 "flake8>=3.7.8",
-                "pylint==2.6.0",
+                "pylint==2.12.2",
             ],
             "black": [
                 "black[jupyter]==22.3.0",
