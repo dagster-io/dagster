@@ -376,9 +376,13 @@ class ExternalInstigatorOriginSerializer(DefaultNamedTupleSerializer):
             key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
             for key, value in storage_dict.items()
         }
+        # the stored key for the instigator name should always be `job_name`, for backcompat
+        # and origin id stability (hash of the serialized tuple).  Make sure we fetch it from the
+        # raw storage dict and pass it in as instigator_name to ExternalInstigatorOrigin
+        instigator_name = raw_dict.get("job_name")
         return klass(
             **{key: value for key, value in raw_dict.items() if key in args_for_class},
-            instigator_name=raw_dict.get("job_name"),
+            instigator_name=instigator_name,
         )
 
     @classmethod
@@ -396,7 +400,9 @@ class ExternalInstigatorOriginSerializer(DefaultNamedTupleSerializer):
         instigator_name = storage.get("instigator_name") or storage.get("job_name")
         if "instigator_name" in storage:
             del storage["instigator_name"]
-        # store the instigator name as job_name, to avoid changing the origin id (hash)
+        # the stored key for the instigator name should always be `job_name`, for backcompat
+        # and origin id stability (hash of the serialized tuple).  Make sure we fetch it from the
+        # raw storage dict and pass it in as instigator_name to ExternalInstigatorOrigin
         storage["job_name"] = instigator_name
         # persist using legacy name
         storage["__class__"] = "ExternalJobOrigin"
@@ -426,6 +432,11 @@ class ExternalInstigatorOrigin(
         return create_snapshot_id(self)
 
 
+# ExternalInstigatorOrigin used to be called ExternalJobOrigin, before the concept of "job" was
+# introduced in 0.12.0. For clarity, we changed the name of the namedtuple with `0.14.0`, but we
+# need to maintain the serialized format in order to avoid changing the origin id that is stored in
+# our schedule storage.  This registers the serialized ExternalJobOrigin named tuple class to be
+# deserialized as an ExternalInstigatorOrigin, using its corresponding serializer for serdes.
 register_serdes_tuple_fallbacks({"ExternalJobOrigin": ExternalInstigatorOrigin})
 
 
