@@ -25,7 +25,8 @@ from dagster_test.graph_job_op_toys.retries import retry_job
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
 from dagster_test.graph_job_op_toys.software_defined_assets import software_defined_assets_job
 from dagster_test.graph_job_op_toys.unreliable import unreliable_job
-
+from dagster_test.graph_job_op_toys.test_assets_job import lol, basic_schedule
+from dagster_test.graph_job_op_toys.partitioned_asset_job import partition_materialization_job
 from .schedules import get_toys_schedules
 from .sensors import get_toys_sensors
 
@@ -73,6 +74,9 @@ def toys_repository():
             software_defined_assets_job,
             big_honkin_assets_job,
             long_asset_keys_job,
+            lol,
+            basic_schedule,
+            partition_materialization_job,
         ]
         + get_toys_schedules()
         + get_toys_sensors()

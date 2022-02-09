@@ -195,18 +195,36 @@ GET_ASSET_MATERIALIZATION_AFTER_TIMESTAMP = """
     }
 """
 
+GET_LATEST_RUN_BY_ASSET = """
+    query AssetGraphQuery($repositorySelector: RepositorySelector!) {
+        repositoryOrError(repositorySelector: $repositorySelector) {
+            ... on Repository {
+                latestRunByStep {
+                    stepKey
+                    latestRun {
+                    status
+                    pipelineName
+                    events {
+                        ...on ExecutionStepFailureEvent{
+                            timestamp
+                            runId
+                            stepKey
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+"""
 
-def _create_run(graphql_context, pipeline_name, mode="default"):
+
+def _create_run(graphql_context, pipeline_name, mode="default", step_keys=None):
     selector = infer_pipeline_selector(graphql_context, pipeline_name)
     result = execute_dagster_graphql(
         graphql_context,
         LAUNCH_PIPELINE_EXECUTION_MUTATION,
-        variables={
-            "executionParams": {
-                "selector": selector,
-                "mode": mode,
-            }
-        },
+        variables={"executionParams": {"selector": selector, "mode": mode, "stepKeys": step_keys}},
     )
     assert result.data["launchPipelineExecution"]["__typename"] == "LaunchRunSuccess"
     graphql_context.instance.run_launcher.join()
@@ -616,6 +634,51 @@ class TestAssetAwareEventLog(
         assert metadata[0]["text"] == "FOO"
 
         assert observations[0]["label"] == "asset_yields_observation"
+
+    def test_get_latest_run_by_asset(self, graphql_context):
+        selector = infer_repository_selector(graphql_context)
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_LATEST_RUN_BY_ASSET,
+            variables={"repositorySelector": selector},
+        )
+
+        assert result.data
+        assert result.data["repositoryOrError"]
+        assert result.data["repositoryOrError"]["latestRunByStep"] == []
+
+        _create_run(graphql_context, "failure_assets_job")
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_LATEST_RUN_BY_ASSET,
+            variables={"repositorySelector": selector},
+        )
+
+        assert result.data
+        assert result.data["repositoryOrError"]
+        latest_run_by_step = result.data["repositoryOrError"]["latestRunByStep"]
+        for run in latest_run_by_step:
+            assert run['latestRun']['status'] == 'FAILURE'
+
+        _create_run(graphql_context, "failure_assets_job", step_keys=["asset_1", "asset_3"])
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_LATEST_RUN_BY_ASSET,
+            variables={"repositorySelector": selector},
+        )
+
+        assert result.data
+        assert result.data["repositoryOrError"]
+        assert result.data["repositoryOrError"]["latestRunByStep"]
+        latest_run_by_step = result.data["repositoryOrError"]["latestRunByStep"]
+        assert latest_run_by_step[0]['stepKey'] == 'asset_1'
+        assert latest_run_by_step[0]['latestRun']['status'] == 'SUCCESS'
+        assert latest_run_by_step[1]['stepKey'] == 'asset_2'
+        assert latest_run_by_step[1]['latestRun']['status'] == 'FAILURE'
+        assert latest_run_by_step[2]['stepKey'] == 'asset_3'
+        assert latest_run_by_step[2]['latestRun']['status'] == 'SUCCESS'
 
 
 class TestPersistentInstanceAssetInProgress(
