@@ -1783,34 +1783,28 @@ records = instance.get_event_records(
         return self._schedule_storage.delete_job_state(job_origin_id)
 
     @traced
-    def get_job_tick(self, job_origin_id, timestamp):
-        matches = self._schedule_storage.get_job_ticks(
-            job_origin_id, before=timestamp + 1, after=timestamp - 1, limit=1
+    def get_tick(self, origin_id, timestamp):
+        matches = self._schedule_storage.get_ticks(
+            origin_id, before=timestamp + 1, after=timestamp - 1, limit=1
         )
         return matches[0] if len(matches) else None
 
     @traced
-    def get_job_ticks(self, job_origin_id, before=None, after=None, limit=None):
-        return self._schedule_storage.get_job_ticks(
-            job_origin_id, before=before, after=after, limit=limit
-        )
+    def get_ticks(self, origin_id, before=None, after=None, limit=None):
+        return self._schedule_storage.get_ticks(origin_id, before=before, after=after, limit=limit)
+
+    def create_tick(self, tick_data):
+        return self._schedule_storage.create_tick(tick_data)
+
+    def update_tick(self, tick):
+        return self._schedule_storage.update_tick(tick)
 
     @traced
-    def get_latest_job_tick(self, job_origin_id):
-        return self._schedule_storage.get_latest_job_tick(job_origin_id)
+    def get_tick_stats(self, origin_id):
+        return self._schedule_storage.get_tick_stats(origin_id)
 
-    def create_job_tick(self, job_tick_data):
-        return self._schedule_storage.create_job_tick(job_tick_data)
-
-    def update_job_tick(self, tick):
-        return self._schedule_storage.update_job_tick(tick)
-
-    @traced
-    def get_job_tick_stats(self, job_origin_id):
-        return self._schedule_storage.get_job_tick_stats(job_origin_id)
-
-    def purge_job_ticks(self, job_origin_id, tick_status, before):
-        self._schedule_storage.purge_job_ticks(job_origin_id, tick_status, before)
+    def purge_ticks(self, origin_id, tick_status, before):
+        self._schedule_storage.purge_ticks(origin_id, tick_status, before)
 
     def wipe_all_schedules(self):
         if self._scheduler:

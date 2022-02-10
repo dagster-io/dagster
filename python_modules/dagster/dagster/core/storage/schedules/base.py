@@ -57,55 +57,47 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def get_job_ticks(
-        self, job_origin_id: str, before: float = None, after: float = None, limit: int = None
+    def get_ticks(
+        self, origin_id: str, before: float = None, after: float = None, limit: int = None
     ) -> Iterable[InstigatorTick]:
-        """Get the ticks for a given job.
+        """Get the ticks for a given instigator.
 
         Args:
-            job_origin_id (str): The id of the ExternalJob target
+            origin_id (str): The id of the instigator target
         """
 
     @abc.abstractmethod
-    def get_latest_job_tick(self, job_origin_id: str) -> InstigatorTick:
-        """Get the most recent tick for a given job.
+    def create_tick(self, tick_data: TickData):
+        """Add a tick to storage.
 
         Args:
-            job_origin_id (str): The id of the ExternalJob target
+            tick_data (TickData): The tick to add
         """
 
     @abc.abstractmethod
-    def create_job_tick(self, job_tick_data: TickData):
-        """Add a job tick to storage.
+    def update_tick(self, tick: InstigatorTick):
+        """Update a tick already in storage.
 
         Args:
-            job_tick_data (TickData): The job tick to add
+            tick (InstigatorTick): The tick to update
         """
 
     @abc.abstractmethod
-    def update_job_tick(self, tick: InstigatorTick):
-        """Update a job tick already in storage.
+    def purge_ticks(self, origin_id: str, tick_status: TickStatus, before: float):
+        """Wipe ticks for an instigator for a certain status and timestamp.
 
         Args:
-            tick (InstigatorTick): The job tick to update
-        """
-
-    @abc.abstractmethod
-    def purge_job_ticks(self, job_origin_id: str, tick_status: TickStatus, before: float):
-        """Wipe ticks for a job for a certain status and timestamp.
-
-        Args:
-            job_origin_id (str): The id of the ExternalJob target to delete
+            origin_id (str): The id of the instigator target to delete
             tick_status (TickStatus): The tick status to wipe
             before (datetime): All ticks before this datetime will get purged
         """
 
     @abc.abstractmethod
-    def get_job_tick_stats(self, job_origin_id: str):
-        """Get tick stats for a given job.
+    def get_tick_stats(self, origin_id: str):
+        """Get tick stats for a given instigator.
 
         Args:
-            job_origin_id (str): The id of the ExternalJob target
+            origin_id (str): The id of the instigator target
         """
 
     @abc.abstractmethod

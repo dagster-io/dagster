@@ -36,7 +36,7 @@ class _ScheduleLaunchContext:
 
     @property
     def failure_count(self) -> int:
-        return self._tick.job_tick_data.failure_count
+        return self._tick.tick_data.failure_count
 
     def update_state(self, status, error=None, **kwargs):
         skip_reason = kwargs.get("skip_reason")
@@ -52,7 +52,7 @@ class _ScheduleLaunchContext:
         self._tick = self._tick.with_run(run_id, run_key)
 
     def _write(self):
-        self._instance.update_job_tick(self._tick)
+        self._instance.update_tick(self._tick)
 
     def __enter__(self):
         return self
@@ -252,7 +252,8 @@ def launch_scheduled_runs_for_schedule(
     check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
 
     job_origin_id = external_schedule.get_external_origin_id()
-    latest_tick = instance.get_latest_job_tick(job_origin_id)
+    ticks = instance.get_ticks(job_origin_id, limit=1)
+    latest_tick = ticks[0] if ticks else None
 
     start_timestamp_utc = (
         schedule_state.job_specific_data.start_timestamp if schedule_state else None
@@ -327,7 +328,7 @@ def launch_scheduled_runs_for_schedule(
                     f"Resuming previously interrupted schedule execution at {schedule_time_str}"
                 )
         else:
-            tick = instance.create_job_tick(
+            tick = instance.create_tick(
                 TickData(
                     job_origin_id=external_schedule.get_external_origin_id(),
                     job_name=schedule_name,

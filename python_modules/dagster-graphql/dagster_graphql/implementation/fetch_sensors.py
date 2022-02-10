@@ -177,9 +177,10 @@ def get_sensor_next_tick(graphene_info, sensor_state):
     if not sensor_state.is_running:
         return None
 
-    latest_tick = graphene_info.context.instance.get_latest_job_tick(sensor_state.job_origin_id)
-    if not latest_tick:
+    ticks = graphene_info.context.instance.get_ticks(sensor_state.job_origin_id, limit=1)
+    if not ticks:
         return None
+    latest_tick = ticks[0]
 
     next_timestamp = latest_tick.timestamp + external_sensor.min_interval_seconds
     if next_timestamp < get_timestamp_from_utc_datetime(get_current_datetime_in_utc()):

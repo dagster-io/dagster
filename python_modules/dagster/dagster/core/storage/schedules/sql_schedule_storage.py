@@ -117,24 +117,6 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
             )
 
-    def get_latest_job_tick(self, job_origin_id):
-        check.str_param(job_origin_id, "job_origin_id")
-
-        query = (
-            db.select([JobTickTable.c.id, JobTickTable.c.tick_body])
-            .select_from(JobTickTable)
-            .where(JobTickTable.c.job_origin_id == job_origin_id)
-            .order_by(JobTickTable.c.timestamp.desc())
-            .limit(1)
-        )
-
-        rows = self.execute(query)
-
-        if len(rows) == 0:
-            return None
-
-        return InstigatorTick(rows[0][0], deserialize_json_to_dagster_namedtuple(rows[0][1]))
-
     def _add_filter_limit(self, query, before=None, after=None, limit=None):
         check.opt_float_param(before, "before")
         check.opt_float_param(after, "after")
@@ -148,7 +130,7 @@ class SqlScheduleStorage(ScheduleStorage):
             query = query.limit(limit)
         return query
 
-    def get_job_ticks(self, job_origin_id, before=None, after=None, limit=None):
+    def get_ticks(self, job_origin_id, before=None, after=None, limit=None):
         check.str_param(job_origin_id, "job_origin_id")
         check.opt_float_param(before, "before")
         check.opt_float_param(after, "after")
@@ -168,29 +150,29 @@ class SqlScheduleStorage(ScheduleStorage):
             map(lambda r: InstigatorTick(r[0], deserialize_json_to_dagster_namedtuple(r[1])), rows)
         )
 
-    def create_job_tick(self, job_tick_data):
-        check.inst_param(job_tick_data, "job_tick_data", TickData)
+    def create_tick(self, tick_data):
+        check.inst_param(tick_data, "tick_data", TickData)
 
         with self.connect() as conn:
             try:
                 tick_insert = (
                     JobTickTable.insert().values(  # pylint: disable=no-value-for-parameter
-                        job_origin_id=job_tick_data.job_origin_id,
-                        status=job_tick_data.status.value,
-                        type=job_tick_data.job_type.value,
-                        timestamp=utc_datetime_from_timestamp(job_tick_data.timestamp),
-                        tick_body=serialize_dagster_namedtuple(job_tick_data),
+                        job_origin_id=tick_data.job_origin_id,
+                        status=tick_data.status.value,
+                        type=tick_data.job_type.value,
+                        timestamp=utc_datetime_from_timestamp(tick_data.timestamp),
+                        tick_body=serialize_dagster_namedtuple(tick_data),
                     )
                 )
                 result = conn.execute(tick_insert)
                 tick_id = result.inserted_primary_key[0]
-                return InstigatorTick(tick_id, job_tick_data)
+                return InstigatorTick(tick_id, tick_data)
             except db.exc.IntegrityError as exc:
                 raise DagsterInvariantViolationError(
-                    f"Unable to insert InstigatorTick for job {job_tick_data.job_name} in storage"
+                    f"Unable to insert InstigatorTick for job {tick_data.job_name} in storage"
                 ) from exc
 
-    def update_job_tick(self, tick):
+    def update_tick(self, tick):
         check.inst_param(tick, "tick", InstigatorTick)
 
         with self.connect() as conn:
@@ -201,14 +183,14 @@ class SqlScheduleStorage(ScheduleStorage):
                     status=tick.status.value,
                     type=tick.job_type.value,
                     timestamp=utc_datetime_from_timestamp(tick.timestamp),
-                    tick_body=serialize_dagster_namedtuple(tick.job_tick_data),
+                    tick_body=serialize_dagster_namedtuple(tick.tick_data),
                 )
             )
 
         return tick
 
-    def purge_job_ticks(self, job_origin_id, tick_status, before):
-        check.str_param(job_origin_id, "job_origin_id")
+    def purge_ticks(self, origin_id, tick_status, before):
+        check.str_param(origin_id, "origin_id")
         check.inst_param(tick_status, "tick_status", TickStatus)
         check.float_param(before, "before")
 
@@ -219,16 +201,16 @@ class SqlScheduleStorage(ScheduleStorage):
                 JobTickTable.delete()  # pylint: disable=no-value-for-parameter
                 .where(JobTickTable.c.status == tick_status.value)
                 .where(JobTickTable.c.timestamp < utc_before)
-                .where(JobTickTable.c.job_origin_id == job_origin_id)
+                .where(JobTickTable.c.job_origin_id == origin_id)
             )
 
-    def get_job_tick_stats(self, job_origin_id):
-        check.str_param(job_origin_id, "job_origin_id")
+    def get_tick_stats(self, origin_id):
+        check.str_param(origin_id, "origin_id")
 
         query = (
             db.select([JobTickTable.c.status, db.func.count()])
             .select_from(JobTickTable)
-            .where(JobTickTable.c.job_origin_id == job_origin_id)
+            .where(JobTickTable.c.job_origin_id == origin_id)
             .group_by(JobTickTable.c.status)
         )
 

@@ -89,7 +89,7 @@ class SensorLaunchContext:
         self._tick = self._tick.with_run(run_id, run_key)
 
     def _write(self):
-        self._instance.update_job_tick(self._tick)
+        self._instance.update_tick(self._tick)
         if self._tick.status in FULFILLED_TICK_STATES:
             last_run_key = (
                 self._job_state.job_specific_data.last_run_key
@@ -120,7 +120,7 @@ class SensorLaunchContext:
 
         self._write()
 
-        self._instance.purge_job_ticks(
+        self._instance.purge_ticks(
             self._job_state.job_origin_id,
             tick_status=TickStatus.SKIPPED,
             before=pendulum.now("UTC").subtract(days=7).timestamp(),  #  keep the last 7 days
@@ -274,7 +274,7 @@ def execute_sensor_iteration(
             elif _is_under_min_interval(sensor_state, external_sensor, now):
                 continue
 
-            tick = instance.create_job_tick(
+            tick = instance.create_tick(
                 TickData(
                     job_origin_id=sensor_state.job_origin_id,
                     job_name=sensor_state.job_name,
