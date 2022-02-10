@@ -9,7 +9,7 @@ The `dagster-pandera` integration library provides an API for generating [Dagste
 
 ## Usage
 
-`dagster-pandera` currently exposes only a single public function: `pandera_schema_to_dagster_type`. This function generates Dagster types from Pandera schemas.
+`dagster-pandera` exposes only a single public function: `pandera_schema_to_dagster_type`. This function generates Dagster types from Pandera schemas. The provided schema can be either a Pandera `DataFrameSchema` or `SchemaModel`.
 
 ```python
 import pandera as pa
