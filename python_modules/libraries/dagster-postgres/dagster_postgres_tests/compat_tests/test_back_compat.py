@@ -175,7 +175,7 @@ def test_0_10_0_schedule_wipe(hostname, conn_string):
             instance.upgrade()
 
         with DagsterInstance.from_config(tempdir) as upgraded_instance:
-            assert len(upgraded_instance.all_stored_job_state()) == 0
+            assert len(upgraded_instance.all_instigator_state()) == 0
 
 
 def test_0_10_6_add_bulk_actions_table(hostname, conn_string):

@@ -36,8 +36,8 @@ class SqlScheduleStorage(ScheduleStorage):
     def _deserialize_rows(self, rows):
         return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
-    def all_stored_job_state(self, repository_origin_id=None, job_type=None):
-        check.opt_inst_param(job_type, "job_type", InstigatorType)
+    def all_instigator_state(self, repository_origin_id=None, instigator_type=None):
+        check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
         base_query = db.select([JobTable.c.job_body, JobTable.c.job_origin_id]).select_from(
             JobTable
         )
@@ -47,73 +47,73 @@ class SqlScheduleStorage(ScheduleStorage):
         else:
             query = base_query
 
-        if job_type:
-            query = query.where(JobTable.c.job_type == job_type.value)
+        if instigator_type:
+            query = query.where(JobTable.c.job_type == instigator_type.value)
 
         rows = self.execute(query)
         return self._deserialize_rows(rows)
 
-    def get_job_state(self, job_origin_id):
-        check.str_param(job_origin_id, "job_origin_id")
+    def get_instigator_state(self, origin_id):
+        check.str_param(origin_id, "origin_id")
 
         query = (
             db.select([JobTable.c.job_body])
             .select_from(JobTable)
-            .where(JobTable.c.job_origin_id == job_origin_id)
+            .where(JobTable.c.job_origin_id == origin_id)
         )
 
         rows = self.execute(query)
         return self._deserialize_rows(rows[:1])[0] if len(rows) else None
 
-    def add_job_state(self, job):
-        check.inst_param(job, "job", InstigatorState)
+    def add_instigator_state(self, state):
+        check.inst_param(state, "state", InstigatorState)
         with self.connect() as conn:
             try:
                 conn.execute(
                     JobTable.insert().values(  # pylint: disable=no-value-for-parameter
-                        job_origin_id=job.job_origin_id,
-                        repository_origin_id=job.repository_origin_id,
-                        status=job.status.value,
-                        job_type=job.job_type.value,
-                        job_body=serialize_dagster_namedtuple(job),
+                        job_origin_id=state.job_origin_id,
+                        repository_origin_id=state.repository_origin_id,
+                        status=state.status.value,
+                        job_type=state.job_type.value,
+                        job_body=serialize_dagster_namedtuple(state),
                     )
                 )
             except db.exc.IntegrityError as exc:
                 raise DagsterInvariantViolationError(
-                    f"InstigatorState {job.job_origin_id} is already present in storage"
+                    f"InstigatorState {state.job_origin_id} is already present in storage"
                 ) from exc
 
-        return job
+        return state
 
-    def update_job_state(self, job):
-        check.inst_param(job, "job", InstigatorState)
-        if not self.get_job_state(job.job_origin_id):
+    def update_instigator_state(self, state):
+        check.inst_param(state, "state", InstigatorState)
+        if not self.get_instigator_state(state.job_origin_id):
             raise DagsterInvariantViolationError(
-                "InstigatorState {id} is not present in storage".format(id=job.job_origin_id)
+                "InstigatorState {id} is not present in storage".format(id=state.job_origin_id)
             )
 
         with self.connect() as conn:
             conn.execute(
                 JobTable.update()  # pylint: disable=no-value-for-parameter
-                .where(JobTable.c.job_origin_id == job.job_origin_id)
+                .where(JobTable.c.job_origin_id == state.job_origin_id)
                 .values(
-                    status=job.status.value,
-                    job_body=serialize_dagster_namedtuple(job),
+                    status=state.status.value,
+                    job_body=serialize_dagster_namedtuple(state),
                 )
             )
 
-    def delete_job_state(self, job_origin_id):
-        check.str_param(job_origin_id, "job_origin_id")
+    def delete_instigator_state(self, origin_id):
+        check.str_param(origin_id, "origin_id")
 
-        if not self.get_job_state(job_origin_id):
+        if not self.get_instigator_state(origin_id):
             raise DagsterInvariantViolationError(
-                "InstigatorState {id} is not present in storage".format(id=job_origin_id)
+                "InstigatorState {id} is not present in storage".format(id=origin_id)
             )
 
         with self.connect() as conn:
             conn.execute(
                 JobTable.delete().where(  # pylint: disable=no-value-for-parameter
-                    JobTable.c.job_origin_id == job_origin_id
+                    JobTable.c.job_origin_id == origin_id
                 )
             )
 

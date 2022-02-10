@@ -442,7 +442,7 @@ def test_simple_sensor(capfd):
     ):
         with pendulum.test(freeze_datetime):
             external_sensor = external_repo.get_external_sensor("simple_sensor")
-            instance.add_job_state(
+            instance.add_instigator_state(
                 InstigatorState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
@@ -527,7 +527,7 @@ def test_bad_load_sensor_repository(capfd):
                 valid_origin.instigator_name,
             )
 
-            instance.add_job_state(
+            instance.add_instigator_state(
                 InstigatorState(
                     invalid_repo_origin, InstigatorType.SENSOR, InstigatorStatus.RUNNING
                 )
@@ -571,7 +571,7 @@ def test_bad_load_sensor(capfd):
                 "invalid_sensor",
             )
 
-            instance.add_job_state(
+            instance.add_instigator_state(
                 InstigatorState(
                     invalid_repo_origin, InstigatorType.SENSOR, InstigatorStatus.RUNNING
                 )
@@ -603,7 +603,7 @@ def test_error_sensor(capfd):
     ):
         with pendulum.test(freeze_datetime):
             external_sensor = external_repo.get_external_sensor("error_sensor")
-            instance.add_job_state(
+            instance.add_instigator_state(
                 InstigatorState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
@@ -653,7 +653,7 @@ def test_wrong_config_sensor(capfd):
     ):
         with pendulum.test(freeze_datetime):
             external_sensor = external_repo.get_external_sensor("wrong_config_sensor")
-            instance.add_job_state(
+            instance.add_instigator_state(
                 InstigatorState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
@@ -717,7 +717,7 @@ def test_launch_failure(capfd):
         with pendulum.test(freeze_datetime):
 
             external_sensor = external_repo.get_external_sensor("always_on_sensor")
-            instance.add_job_state(
+            instance.add_instigator_state(
                 InstigatorState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
@@ -771,7 +771,7 @@ def test_launch_once(capfd):
         with pendulum.test(freeze_datetime):
 
             external_sensor = external_repo.get_external_sensor("run_key_sensor")
-            instance.add_job_state(
+            instance.add_instigator_state(
                 InstigatorState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
@@ -852,7 +852,7 @@ def test_custom_interval_sensor():
     ):
         with pendulum.test(freeze_datetime):
             external_sensor = external_repo.get_external_sensor("custom_interval_sensor")
-            instance.add_job_state(
+            instance.add_instigator_state(
                 InstigatorState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
@@ -909,7 +909,7 @@ def test_custom_interval_sensor_with_offset(monkeypatch):
             # 60 second custom interval
             external_sensor = external_repo.get_external_sensor("custom_interval_sensor")
 
-            instance.add_job_state(
+            instance.add_instigator_state(
                 InstigatorState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
@@ -1828,14 +1828,14 @@ def test_status_in_code_sensor():
                 assert len(instance.get_ticks(always_running_origin.get_id())) == 0
                 assert len(instance.get_ticks(never_running_origin.get_id())) == 0
 
-                assert len(instance.all_stored_job_state()) == 0
+                assert len(instance.all_instigator_state()) == 0
 
                 evaluate_sensors(instance, workspace)
 
                 assert instance.get_runs_count() == 0
 
-                assert len(instance.all_stored_job_state()) == 1
-                instigator_state = instance.get_job_state(always_running_origin.get_id())
+                assert len(instance.all_instigator_state()) == 1
+                instigator_state = instance.get_instigator_state(always_running_origin.get_id())
                 assert instigator_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
 
                 ticks = instance.get_ticks(running_sensor.get_external_origin_id())

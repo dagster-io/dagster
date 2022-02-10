@@ -63,7 +63,7 @@ def test_failure_before_run_created(crash_location, crash_signal, capfd):
     ):
         with pendulum.test(frozen_datetime):
             external_sensor = external_repo.get_external_sensor("simple_sensor")
-            instance.add_job_state(
+            instance.add_instigator_state(
                 InstigatorState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
@@ -145,7 +145,7 @@ def test_failure_after_run_created_before_run_launched(crash_location, crash_sig
     ):
         with pendulum.test(frozen_datetime):
             external_sensor = external_repo.get_external_sensor("run_key_sensor")
-            instance.add_job_state(
+            instance.add_instigator_state(
                 InstigatorState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
@@ -228,7 +228,7 @@ def test_failure_after_run_launched(crash_location, crash_signal, capfd):
     ):
         with pendulum.test(frozen_datetime):
             external_sensor = external_repo.get_external_sensor("run_key_sensor")
-            instance.add_job_state(
+            instance.add_instigator_state(
                 InstigatorState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,

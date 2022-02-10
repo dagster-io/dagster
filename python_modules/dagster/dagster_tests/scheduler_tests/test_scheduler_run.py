@@ -1112,7 +1112,7 @@ def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_re
             InstigatorStatus.RUNNING,
             ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
         )
-        instance.add_job_state(unloadable_schedule_state)
+        instance.add_instigator_state(unloadable_schedule_state)
 
         list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
@@ -1248,7 +1248,7 @@ def test_bad_load_repository(instance, workspace, external_repo, caplog):
             InstigatorStatus.RUNNING,
             ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
         )
-        instance.add_job_state(schedule_state)
+        instance.add_instigator_state(schedule_state)
 
     initial_datetime = freeze_datetime.add(seconds=1)
     with pendulum.test(initial_datetime):
@@ -1287,7 +1287,7 @@ def test_bad_load_schedule(instance, workspace, external_repo, caplog):
             InstigatorStatus.RUNNING,
             ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
         )
-        instance.add_job_state(schedule_state)
+        instance.add_instigator_state(schedule_state)
 
     initial_datetime = freeze_datetime.add(seconds=1)
     with pendulum.test(initial_datetime):
@@ -1367,7 +1367,7 @@ def test_load_repository_location_not_in_workspace(instance, workspace, external
             InstigatorStatus.RUNNING,
             ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
         )
-        instance.add_job_state(schedule_state)
+        instance.add_instigator_state(schedule_state)
 
     initial_datetime = freeze_datetime.add(seconds=1)
     with pendulum.test(initial_datetime):

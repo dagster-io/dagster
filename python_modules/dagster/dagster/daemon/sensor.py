@@ -98,7 +98,7 @@ class SensorLaunchContext:
             )
             if self._tick.run_keys:
                 last_run_key = self._tick.run_keys[-1]
-            self._instance.update_job_state(
+            self._instance.update_instigator_state(
                 self._job_state.with_data(
                     SensorInstigatorData(
                         last_tick_timestamp=self._tick.timestamp,
@@ -189,7 +189,7 @@ def execute_sensor_iteration(
 
     all_sensor_states = {
         sensor_state.origin.get_id(): sensor_state
-        for sensor_state in instance.all_stored_job_state(job_type=InstigatorType.SENSOR)
+        for sensor_state in instance.all_instigator_state(job_type=InstigatorType.SENSOR)
     }
 
     sensors = {}
@@ -270,7 +270,7 @@ def execute_sensor_iteration(
                     InstigatorStatus.AUTOMATICALLY_RUNNING,
                     SensorInstigatorData(min_interval=external_sensor.min_interval_seconds),
                 )
-                instance.add_job_state(sensor_state)
+                instance.add_instigator_state(sensor_state)
             elif _is_under_min_interval(sensor_state, external_sensor, now):
                 continue
 

@@ -24,7 +24,7 @@ class DagsterSchedulerError(DagsterError):
 
 
 class DagsterScheduleDoesNotExist(DagsterSchedulerError):
-    """Errors raised when ending a job for a schedule."""
+    """Errors raised when fetching a schedule."""
 
 
 class SchedulerDebugInfo(
@@ -60,7 +60,7 @@ class Scheduler(abc.ABC):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
-        schedule_state = instance.get_job_state(external_schedule.get_external_origin_id())
+        schedule_state = instance.get_instigator_state(external_schedule.get_external_origin_id())
         if external_schedule.get_current_instigator_state(schedule_state).is_running:
             raise DagsterSchedulerError(
                 "You have attempted to start schedule {name}, but it is already running".format(
@@ -80,12 +80,12 @@ class Scheduler(abc.ABC):
                 InstigatorStatus.RUNNING,
                 new_instigator_data,
             )
-            instance.add_job_state(started_schedule)
+            instance.add_instigator_state(started_schedule)
         else:
             started_schedule = schedule_state.with_status(InstigatorStatus.RUNNING).with_data(
                 new_instigator_data
             )
-            instance.update_job_state(started_schedule)
+            instance.update_instigator_state(started_schedule)
         return started_schedule
 
     def stop_schedule(self, instance, schedule_origin_id, external_schedule):
@@ -101,7 +101,7 @@ class Scheduler(abc.ABC):
         check.str_param(schedule_origin_id, "schedule_origin_id")
         check.opt_inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
-        schedule_state = instance.get_job_state(schedule_origin_id)
+        schedule_state = instance.get_instigator_state(schedule_origin_id)
         if (
             external_schedule
             and not external_schedule.get_current_instigator_state(schedule_state).is_running
@@ -121,14 +121,14 @@ class Scheduler(abc.ABC):
                     external_schedule.cron_schedule,
                 ),
             )
-            instance.add_job_state(stopped_schedule)
+            instance.add_instigator_state(stopped_schedule)
         else:
             stopped_schedule = schedule_state.with_status(InstigatorStatus.STOPPED).with_data(
                 ScheduleInstigatorData(
                     cron_schedule=schedule_state.job_specific_data.cron_schedule,
                 )
             )
-            instance.update_job_state(stopped_schedule)
+            instance.update_instigator_state(stopped_schedule)
 
         return stopped_schedule
 

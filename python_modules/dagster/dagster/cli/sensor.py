@@ -31,7 +31,7 @@ def sensor_cli():
 
 
 def print_changes(external_repository, instance, print_fn=print, preview=False):
-    sensor_states = instance.all_stored_job_state(
+    sensor_states = instance.all_instigator_state(
         external_repository.get_origin_id(), InstigatorType.SENSOR
     )
     external_sensors = external_repository.get_external_sensors()
@@ -145,8 +145,8 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
             repo_sensors = external_repo.get_external_sensors()
             stored_sensors_by_origin_id = {
                 stored_sensor_state.job_origin_id: stored_sensor_state
-                for stored_sensor_state in instance.all_stored_job_state(
-                    external_repo.get_external_origin_id(), job_type=InstigatorType.SENSOR
+                for stored_sensor_state in instance.all_instigator_state(
+                    external_repo.get_external_origin_id(), instigator_type=InstigatorType.SENSOR
                 )
             }
 
@@ -358,9 +358,9 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
             )
             check_repo_and_scheduler(external_repo, instance)
             external_sensor = external_repo.get_external_sensor(sensor_name)
-            job_state = instance.get_job_state(external_sensor.get_external_origin_id())
+            job_state = instance.get_instigator_state(external_sensor.get_external_origin_id())
             if not job_state:
-                instance.add_job_state(
+                instance.add_instigator_state(
                     InstigatorState(
                         external_sensor.get_external_origin(),
                         InstigatorType.SENSOR,
@@ -371,7 +371,7 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
                     )
                 )
             else:
-                instance.update_job_state(
+                instance.update_instigator_state(
                     job_state.with_data(
                         SensorInstigatorData(
                             last_tick_timestamp=job_state.job_specific_data.last_tick_timestamp,

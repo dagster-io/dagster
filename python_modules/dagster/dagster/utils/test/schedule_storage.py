@@ -84,8 +84,8 @@ class TestScheduleStorage:
         assert storage
 
         schedule = self.build_schedule("my_schedule", "* * * * *")
-        storage.add_job_state(schedule)
-        schedules = storage.all_stored_job_state(
+        storage.add_instigator_state(schedule)
+        schedules = storage.all_instigator_state(
             self.fake_repo_target().get_id(),
             InstigatorType.SCHEDULE,
         )
@@ -103,11 +103,11 @@ class TestScheduleStorage:
         schedule_2 = self.build_schedule("my_schedule_2", "* * * * *")
         schedule_3 = self.build_schedule("my_schedule_3", "* * * * *")
 
-        storage.add_job_state(schedule)
-        storage.add_job_state(schedule_2)
-        storage.add_job_state(schedule_3)
+        storage.add_instigator_state(schedule)
+        storage.add_instigator_state(schedule_2)
+        storage.add_instigator_state(schedule_3)
 
-        schedules = storage.all_stored_job_state(
+        schedules = storage.all_instigator_state(
             self.fake_repo_target().get_id(), InstigatorType.SCHEDULE
         )
         assert len(schedules) == 3
@@ -120,8 +120,8 @@ class TestScheduleStorage:
         assert storage
 
         state = self.build_schedule("my_schedule", "* * * * *")
-        storage.add_job_state(state)
-        schedule = storage.get_job_state(state.job_origin_id)
+        storage.add_instigator_state(state)
+        schedule = storage.get_instigator_state(state.job_origin_id)
 
         assert schedule.job_name == "my_schedule"
         assert schedule.job_specific_data.start_timestamp == None
@@ -129,8 +129,8 @@ class TestScheduleStorage:
     def test_get_schedule_state_not_found(self, storage):
         assert storage
 
-        storage.add_job_state(self.build_schedule("my_schedule", "* * * * *"))
-        schedule = storage.get_job_state("fake_id")
+        storage.add_instigator_state(self.build_schedule("my_schedule", "* * * * *"))
+        schedule = storage.get_instigator_state("fake_id")
 
         assert schedule is None
 
@@ -138,7 +138,7 @@ class TestScheduleStorage:
         assert storage
 
         schedule = self.build_schedule("my_schedule", "* * * * *")
-        storage.add_job_state(schedule)
+        storage.add_instigator_state(schedule)
 
         now_time = get_current_datetime_in_utc().timestamp()
 
@@ -148,9 +148,9 @@ class TestScheduleStorage:
                 start_timestamp=now_time,
             )
         )
-        storage.update_job_state(new_schedule)
+        storage.update_instigator_state(new_schedule)
 
-        schedules = storage.all_stored_job_state(
+        schedules = storage.all_instigator_state(
             self.fake_repo_target().get_id(), InstigatorType.SCHEDULE
         )
         assert len(schedules) == 1
@@ -163,9 +163,9 @@ class TestScheduleStorage:
         stopped_schedule = schedule.with_status(InstigatorStatus.STOPPED).with_data(
             ScheduleInstigatorData(schedule.job_specific_data.cron_schedule)
         )
-        storage.update_job_state(stopped_schedule)
+        storage.update_instigator_state(stopped_schedule)
 
-        schedules = storage.all_stored_job_state(
+        schedules = storage.all_instigator_state(
             self.fake_repo_target().get_id(), InstigatorType.SCHEDULE
         )
         assert len(schedules) == 1
@@ -181,7 +181,7 @@ class TestScheduleStorage:
         schedule = self.build_schedule("my_schedule", "* * * * *")
 
         with pytest.raises(Exception):
-            storage.update_job_state(schedule)
+            storage.update_instigator_state(schedule)
 
     def test_delete_schedule_state(self, storage):
         assert storage
@@ -190,10 +190,10 @@ class TestScheduleStorage:
             pytest.skip("Storage cannot delete")
 
         schedule = self.build_schedule("my_schedule", "* * * * *")
-        storage.add_job_state(schedule)
-        storage.delete_job_state(schedule.job_origin_id)
+        storage.add_instigator_state(schedule)
+        storage.delete_instigator_state(schedule.job_origin_id)
 
-        schedules = storage.all_stored_job_state(
+        schedules = storage.all_instigator_state(
             self.fake_repo_target().get_id(), InstigatorType.SCHEDULE
         )
         assert len(schedules) == 0
@@ -207,16 +207,16 @@ class TestScheduleStorage:
         schedule = self.build_schedule("my_schedule", "* * * * *")
 
         with pytest.raises(Exception):
-            storage.delete_job_state(schedule.job_origin_id)
+            storage.delete_instigator_state(schedule.job_origin_id)
 
     def test_add_schedule_with_same_name(self, storage):
         assert storage
 
         schedule = self.build_schedule("my_schedule", "* * * * *")
-        storage.add_job_state(schedule)
+        storage.add_instigator_state(schedule)
 
         with pytest.raises(Exception):
-            storage.add_job_state(schedule)
+            storage.add_instigator_state(schedule)
 
     def build_schedule_tick(self, current_time, status=TickStatus.STARTED, run_id=None, error=None):
         return TickData(
@@ -343,8 +343,8 @@ class TestScheduleStorage:
     def test_basic_job_storage(self, storage):
         assert storage
         job = self.build_sensor("my_sensor")
-        storage.add_job_state(job)
-        jobs = storage.all_stored_job_state(self.fake_repo_target().get_id())
+        storage.add_instigator_state(job)
+        jobs = storage.all_instigator_state(self.fake_repo_target().get_id())
         assert len(jobs) == 1
 
         job = jobs[0]
@@ -357,43 +357,43 @@ class TestScheduleStorage:
         job_2 = self.build_sensor("my_sensor_2")
         job_3 = self.build_sensor("my_sensor_3")
 
-        storage.add_job_state(job)
-        storage.add_job_state(job_2)
-        storage.add_job_state(job_3)
+        storage.add_instigator_state(job)
+        storage.add_instigator_state(job_2)
+        storage.add_instigator_state(job_3)
 
-        jobs = storage.all_stored_job_state(self.fake_repo_target().get_id())
+        jobs = storage.all_instigator_state(self.fake_repo_target().get_id())
         assert len(jobs) == 3
 
         assert any(s.job_name == "my_sensor" for s in jobs)
         assert any(s.job_name == "my_sensor_2" for s in jobs)
         assert any(s.job_name == "my_sensor_3" for s in jobs)
 
-    def test_get_job_state(self, storage):
+    def test_get_instigator_state(self, storage):
         assert storage
 
         state = self.build_sensor("my_sensor")
-        storage.add_job_state(state)
-        job = storage.get_job_state(state.job_origin_id)
+        storage.add_instigator_state(state)
+        job = storage.get_instigator_state(state.job_origin_id)
 
         assert job.job_name == "my_sensor"
 
-    def test_get_job_state_not_found(self, storage):
+    def test_get_instigator_state_not_found(self, storage):
         assert storage
 
-        storage.add_job_state(self.build_sensor("my_sensor"))
-        job_state = storage.get_job_state("fake_id")
+        storage.add_instigator_state(self.build_sensor("my_sensor"))
+        job_state = storage.get_instigator_state("fake_id")
         assert job_state is None
 
     def test_update_job(self, storage):
         assert storage
 
         job = self.build_sensor("my_sensor")
-        storage.add_job_state(job)
+        storage.add_instigator_state(job)
 
         new_job = job.with_status(InstigatorStatus.RUNNING)
-        storage.update_job_state(new_job)
+        storage.update_instigator_state(new_job)
 
-        jobs = storage.all_stored_job_state(self.fake_repo_target().get_id())
+        jobs = storage.all_instigator_state(self.fake_repo_target().get_id())
         assert len(jobs) == 1
 
         job = jobs[0]
@@ -401,9 +401,9 @@ class TestScheduleStorage:
         assert job.status == InstigatorStatus.RUNNING
 
         stopped_job = job.with_status(InstigatorStatus.STOPPED)
-        storage.update_job_state(stopped_job)
+        storage.update_instigator_state(stopped_job)
 
-        jobs = storage.all_stored_job_state(self.fake_repo_target().get_id())
+        jobs = storage.all_instigator_state(self.fake_repo_target().get_id())
         assert len(jobs) == 1
 
         job = jobs[0]
@@ -416,19 +416,19 @@ class TestScheduleStorage:
         job = self.build_sensor("my_sensor")
 
         with pytest.raises(Exception):
-            storage.update_job_state(job)
+            storage.update_instigator_state(job)
 
-    def test_delete_job_state(self, storage):
+    def test_delete_instigator_state(self, storage):
         assert storage
 
         if not self.can_delete():
             pytest.skip("Storage cannot delete")
 
         job = self.build_sensor("my_sensor")
-        storage.add_job_state(job)
-        storage.delete_job_state(job.job_origin_id)
+        storage.add_instigator_state(job)
+        storage.delete_instigator_state(job.job_origin_id)
 
-        jobs = storage.all_stored_job_state(self.fake_repo_target().get_id())
+        jobs = storage.all_instigator_state(self.fake_repo_target().get_id())
         assert len(jobs) == 0
 
     def test_delete_job_not_found(self, storage):
@@ -440,16 +440,16 @@ class TestScheduleStorage:
         job = self.build_sensor("my_sensor")
 
         with pytest.raises(Exception):
-            storage.delete_job_state(job.job_origin_id)
+            storage.delete_instigator_state(job.job_origin_id)
 
     def test_add_job_with_same_name(self, storage):
         assert storage
 
         job = self.build_sensor("my_sensor")
-        storage.add_job_state(job)
+        storage.add_instigator_state(job)
 
         with pytest.raises(Exception):
-            storage.add_job_state(job)
+            storage.add_instigator_state(job)
 
     def build_sensor_tick(self, current_time, status=TickStatus.STARTED, run_id=None, error=None):
         return TickData(

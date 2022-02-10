@@ -273,7 +273,7 @@ def test_sensor_next_ticks(graphql_context):
     assert not next_tick
 
     # test default sensor with no tick
-    graphql_context.instance.add_job_state(
+    graphql_context.instance.add_instigator_state(
         InstigatorState(
             external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
         )
@@ -329,7 +329,7 @@ def test_sensor_tick_range(graphql_context):
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 0
 
     # turn the sensor on
-    graphql_context.instance.add_job_state(
+    graphql_context.instance.add_instigator_state(
         InstigatorState(
             external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
         )
@@ -403,6 +403,6 @@ def test_repository_batching(graphql_context):
     # batch call to fetch instigator state, instead of separate calls for each sensor (~5 distinct
     # sensors in the repo)
     # 1) `get_run_records` is fetched to instantiate GrapheneRun
-    # 2) `all_stored_job_state` is fetched to instantiate GrapheneSensor
+    # 2) `all_instigator_state` is fetched to instantiate GrapheneSensor
     assert counts.get("DagsterInstance.get_run_records") == 1
-    assert counts.get("DagsterInstance.all_stored_job_state") == 1
+    assert counts.get("DagsterInstance.all_instigator_state") == 1

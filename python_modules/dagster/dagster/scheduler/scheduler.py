@@ -116,7 +116,7 @@ def launch_scheduled_runs(
 
     all_schedule_states = {
         schedule_state.origin.get_id(): schedule_state
-        for schedule_state in instance.all_stored_job_state(job_type=InstigatorType.SCHEDULE)
+        for schedule_state in instance.all_instigator_state(job_type=InstigatorType.SCHEDULE)
     }
 
     schedules = {}
@@ -145,7 +145,7 @@ def launch_scheduled_runs(
         and schedule_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
     }
     for origin_id in schedule_state_ids_to_delete:
-        instance.schedule_storage.delete_job_state(origin_id)
+        instance.schedule_storage.delete_instigator_state(origin_id)
 
     if log_verbose_checks:
         unloadable_schedule_states = {
@@ -213,7 +213,7 @@ def launch_scheduled_runs(
                         end_datetime_utc.timestamp(),
                     ),
                 )
-                instance.add_job_state(schedule_state)
+                instance.add_instigator_state(schedule_state)
 
             yield from launch_scheduled_runs_for_schedule(
                 instance,
