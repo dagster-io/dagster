@@ -3,7 +3,7 @@ from enum import Enum
 
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.host_representation.origin import ExternalJobOrigin
+from dagster.core.host_representation.origin import ExternalInstigatorOrigin
 from dagster.serdes.serdes import (
     register_serdes_enum_fallbacks,
     register_serdes_tuple_fallbacks,
@@ -85,7 +85,7 @@ class InstigatorState(namedtuple("_InstigationState", "origin job_type status jo
     def __new__(cls, origin, job_type, status, job_specific_data=None):
         return super(InstigatorState, cls).__new__(
             cls,
-            check.inst_param(origin, "origin", ExternalJobOrigin),
+            check.inst_param(origin, "origin", ExternalInstigatorOrigin),
             check.inst_param(job_type, "job_type", InstigatorType),
             check.inst_param(status, "status", InstigatorStatus),
             check_job_data(job_type, job_specific_data),
@@ -93,11 +93,11 @@ class InstigatorState(namedtuple("_InstigationState", "origin job_type status jo
 
     @property
     def name(self):
-        return self.origin.job_name
+        return self.origin.instigator_name
 
     @property
     def job_name(self):
-        return self.origin.job_name
+        return self.origin.instigator_name
 
     @property
     def repository_origin_id(self):

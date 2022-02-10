@@ -32,7 +32,7 @@ from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.api import execute_pipeline
 from dagster.core.host_representation import (
-    ExternalJobOrigin,
+    ExternalInstigatorOrigin,
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
@@ -514,12 +514,12 @@ def test_bad_load_sensor_repository(external_repo_context, capfd):
             valid_origin = external_sensor.get_external_origin()
 
             # Swap out a new repository name
-            invalid_repo_origin = ExternalJobOrigin(
+            invalid_repo_origin = ExternalInstigatorOrigin(
                 ExternalRepositoryOrigin(
                     valid_origin.external_repository_origin.repository_location_origin,
                     "invalid_repo_name",
                 ),
-                valid_origin.job_name,
+                valid_origin.instigator_name,
             )
 
             instance.add_job_state(
@@ -563,7 +563,7 @@ def test_bad_load_sensor(external_repo_context, capfd):
             valid_origin = external_sensor.get_external_origin()
 
             # Swap out a new repository name
-            invalid_repo_origin = ExternalJobOrigin(
+            invalid_repo_origin = ExternalInstigatorOrigin(
                 valid_origin.external_repository_origin,
                 "invalid_sensor",
             )
@@ -955,7 +955,7 @@ def _get_unloadable_sensor_origin():
     recon_repo = ReconstructableRepository.for_file(__file__, "doesnt_exist", working_directory)
     return ExternalRepositoryOrigin(
         InProcessRepositoryLocationOrigin(recon_repo), "fake_repository"
-    ).get_job_origin("doesnt_exist")
+    ).get_instigator_origin("doesnt_exist")
 
 
 @pytest.mark.parametrize("external_repo_context", repos())

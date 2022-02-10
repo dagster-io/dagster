@@ -69,7 +69,7 @@ class TestScheduleStorage:
         status=InstigatorStatus.STOPPED,
     ):
         return InstigatorState(
-            cls.fake_repo_target().get_job_origin(schedule_name),
+            cls.fake_repo_target().get_instigator_origin(schedule_name),
             InstigatorType.SCHEDULE,
             status,
             ScheduleInstigatorData(cron_schedule, start_timestamp=None),
@@ -77,7 +77,7 @@ class TestScheduleStorage:
 
     @classmethod
     def build_sensor(cls, sensor_name, status=InstigatorStatus.STOPPED):
-        external_job_origin = cls.fake_repo_target().get_job_origin(sensor_name)
+        external_job_origin = cls.fake_repo_target().get_instigator_origin(sensor_name)
         return InstigatorState(external_job_origin, InstigatorType.SENSOR, status)
 
     def test_basic_schedule_storage(self, storage):
