@@ -459,7 +459,7 @@ type RunStepStats implements PipelineRunStepStats {
   status: StepEventStatus
   startTime: Float
   endTime: Float
-  materializations: [Materialization!]!
+  materializations: [MaterializationEvent!]!
   expectationResults: [ExpectationResult!]!
   attempts: [RunMarker!]!
   markers: [RunMarker!]!
@@ -471,7 +471,7 @@ interface PipelineRunStepStats {
   status: StepEventStatus
   startTime: Float
   endTime: Float
-  materializations: [Materialization!]!
+  materializations: [MaterializationEvent!]!
   expectationResults: [ExpectationResult!]!
 }
 
@@ -480,12 +480,6 @@ enum StepEventStatus {
   SUCCESS
   FAILURE
   IN_PROGRESS
-}
-
-type Materialization implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
 }
 
 type ExpectationResult implements DisplayableEvent {
