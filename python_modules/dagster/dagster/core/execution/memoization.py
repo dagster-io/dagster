@@ -14,6 +14,10 @@ def validate_reexecution_memoization(
     if parent_run_id is None:
         return
 
+    if plan_context.instance.is_ephemeral:
+        # This can happen within step launcher processes that use ephemeral instances
+        return
+
     if not plan_context.instance.has_run(parent_run_id):
         raise DagsterRunNotFoundError(
             "Run id {} set as parent run id was not found in instance".format(parent_run_id),
