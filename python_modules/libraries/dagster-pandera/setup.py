@@ -1,12 +1,12 @@
 from typing import Dict
 
-from setuptools import find_packages, setup  # type: ignore
+from setuptools import find_packages, setup
 
 
 def get_version() -> str:
     version: Dict[str, str] = {}
     with open("dagster_pandera/version.py") as fp:
-        exec(fp.read(), version)  # pylint: disable=W0122
+        exec(fp.read(), version)  # pylint: disable=exec-used
 
     return version["__version__"]
 
@@ -32,14 +32,10 @@ if __name__ == "__main__":
         ],
         packages=find_packages(exclude=["dagster_pandera_tests"]),
         include_package_data=True,
-        install_requires=[f"dagster{pin}", "pandas", "pandera"],
+        install_requires=[f"dagster{pin}", "pandas", "pandera>=0.9.0"],
         extras_require={
             "test": [
-                "modin",
-                "ray",
-                "dask",
-                "koalas",
-                "pyspark",
+                "pytest",
             ],
         },
     )

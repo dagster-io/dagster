@@ -1,79 +1,102 @@
-# pylint: disable=redefined-outer-name
+import re
 
-import pytest
-
-import pandera as pa
 import pandas as pd
+import pandera as pa
+import pytest
+from dagster import DagsterType, TypeCheck, check_dagster_type
 from dagster.core.definitions.event_metadata import TableSchemaMetadataEntryData
-from dagster.core.definitions.event_metadata.table import TableColumnConstraints, TableSchema, TableColumn
-
+from dagster.core.definitions.event_metadata.table import (
+    TableColumn,
+    TableColumnConstraints,
+    TableSchema,
+)
 from dagster_pandera import pandera_schema_to_dagster_type
-from dagster import check_dagster_type, DagsterType, TypeCheck
-
-# from modin.pandas import DataFrame as ModinDataFrame
-# from databricks.koalas import DataFrame as KoalasDataFrame
 
 # ########################
 # ##### FIXTURES
 # ########################
 
+# ----- DATAFRAME
+
+DATA_OK = {
+    "a": [1, 4, 0, 10, 9],
+    "b": [-1.3, -1.4, -2.9, -10.1, -20.4],
+    "c": ["value_1", "value_2", "value_3", "value_2", "value_1"],
+}
+
+# TODO: pending alternative dataframe support
 # @pytest.fixture(params=[pd.DataFrame, ModinDataFrame, KoalasDataFrame], ids=["pandas", "modin", "koalas"])
 # def dataframe(request):
 #     df_cls = request.param
+#     return df_cls(DATA_OK)
+
+
 @pytest.fixture
 def dataframe():
-    df_cls = pd.DataFrame
-    return df_cls(
+    return pd.DataFrame(DATA_OK)
+
+
+# ----- SCHEMA
+
+
+def sample_dataframe_schema(**kwargs):
+    return pa.DataFrameSchema(
         {
-            "a": [1, 4, 0, 10, 9],
-            "b": [-1.3, -1.4, -2.9, -10.1, -20.4],
-            "c": ["value_1", "value_2", "value_3", "value_2", "value_1"],
-        }
+            "a": pa.Column(int, checks=pa.Check.le(10), description="a desc"),
+            "b": pa.Column(float, checks=pa.Check.lt(-1.2), description="b desc"),
+            "c": pa.Column(
+                str,
+                description="c desc",
+                checks=[
+                    pa.Check.str_startswith("value_"),
+                    pa.Check(
+                        lambda s: s.str.split("_", expand=True).shape[1] == 2,
+                        description="Two words separated by underscore",
+                    ),
+                ],
+            ),
+        },
+        **kwargs,
     )
 
 
-class SampleSchemaModel(pa.SchemaModel):
+def sample_schema_model():
+    class SampleSchemaModel(pa.SchemaModel):
 
-    a: pa.typing.Series[int] = pa.Field(le=10, description="a desc")
-    b: pa.typing.Series[float] = pa.Field(lt=-1.2, description="b desc")
-    c: pa.typing.Series[str] = pa.Field(str_startswith="value_", description="c desc")
+        a: pa.typing.Series[int] = pa.Field(le=10, description="a desc")
+        b: pa.typing.Series[float] = pa.Field(lt=-1.2, description="b desc")
+        c: pa.typing.Series[str] = pa.Field(str_startswith="value_", description="c desc")
 
-    @pa.check("c")
-    def c_check(cls, series: pa.typing.Series[str]) -> pa.typing.Series[bool]:
-        """Two words separated by underscore"""
-        return series.str.split("_", expand=True).shape[1] == 2
+        @pa.check("c")
+        def c_check(  # pylint: disable=no-self-argument
+            cls, series: pa.typing.Series[str]
+        ) -> pa.typing.Series[bool]:
+            """Two words separated by underscore"""
+            return series.str.split("_", expand=True).shape[1] == 2
 
-SampleDataframeSchema = pa.DataFrameSchema(
-    {
-        "a": pa.Column(int, checks=pa.Check.le(10), description='a desc'),
-        "b": pa.Column(float, checks=pa.Check.lt(-1.2), description='b desc'),
-        "c": pa.Column(
-            str,
-            description='c desc',
-            checks=[
-                pa.Check.str_startswith("value_"),
-                # define custom checks as functions that take a series as input and
-                # outputs a boolean or boolean Series
-                pa.Check(lambda s: s.str.split("_", expand=True).shape[1] == 2, description="Two words separated by underscore"),
-            ],
-        ),
-    }
-)
-
-# @pytest.fixture(params=[SampleDataframeSchema, SampleSchemaModel], ids=["regular_schema", "schema_model"])
-# def schema(request):
-#     return request.param
-
-@pytest.fixture
-def schema(request):
-    # return SampleDataframeSchema
     return SampleSchemaModel
 
 
+@pytest.fixture(
+    params=[sample_dataframe_schema, sample_schema_model], ids=["regular_schema", "schema_model"]
+)
+def schema(request):
+    return request.param()
+
+
+# ----- DAGSTER TYPE
+
 
 @pytest.fixture
-def dagster_type(schema):
-    return pandera_schema_to_dagster_type(schema)
+def dagster_type():
+    return pandera_schema_to_dagster_type(sample_schema_model())
+
+
+# ########################
+# ##### TESTS
+# ########################
+
+# ----- TYPE CONSTRUCTION
 
 
 def test_pandera_schema_to_dagster_type(schema):
@@ -88,7 +111,9 @@ def test_pandera_schema_to_dagster_type(schema):
                 name="a",
                 type="int64",
                 description="a desc",
-                constraints=TableColumnConstraints(nullable=False, other=["less_than_or_equal_to(10)"]),
+                constraints=TableColumnConstraints(
+                    nullable=False, other=["less_than_or_equal_to(10)"]
+                ),
             ),
             TableColumn(
                 name="b",
@@ -96,36 +121,62 @@ def test_pandera_schema_to_dagster_type(schema):
                 description="b desc",
                 constraints=TableColumnConstraints(nullable=False, other=["less_than(-1.2)"]),
             ),
-            # TableColumn(
-            #     name="c",
-            #     type="str",
-            #     description="c desc",
-            #     constraints=TableColumnConstraints(
-            #         nullable=False,
-            #         other=[
-            #             "str_startswith(value_)",
-            #             "two words separated by underscore",
-            #         ],
-            #     ),
-            # ),
+            TableColumn(
+                name="c",
+                type="str",
+                description="c desc",
+                constraints=TableColumnConstraints(
+                    nullable=False,
+                    other=[
+                        "str_startswith(value_)",
+                        "Two words separated by underscore",
+                    ],
+                ),
+            ),
         ]
     )
 
 
-# def test_validate_valid_dataframe(dagster_type, dataframe):
-#     result = check_dagster_type(dagster_type, dataframe)
-#     assert isinstance(result, TypeCheck)
-#     assert result.success
+def test_name_extraction():
+    schema = sample_schema_model()
+    assert pandera_schema_to_dagster_type(schema).key == schema.__name__
 
-# def test_pandera_schema_to_table_schema(schema):
-#     tschema = pandera_schema_to_table_schema(schema)
-#     assert isinstance(tschema, TableSchema)
-#
-#     assert tschema == TableSchema(
-#         columns=[
-#             TableColumn(
-#                 name="a",
-#                 # constraints=TableColumnConstraints(
-#                 #
-#                 # )
-#             ),
+    schema = sample_schema_model()
+    schema.Config.name = "foo"
+    assert pandera_schema_to_dagster_type(schema).key == "foo"
+
+    schema = sample_schema_model()
+    schema.Config.title = "foo"
+    schema.Config.name = "bar"
+    assert pandera_schema_to_dagster_type(schema).key == "foo"
+
+    schema = sample_dataframe_schema()
+    print("NAME IS: ", pandera_schema_to_dagster_type(schema).key)
+    assert re.match(r"DagsterPanderaDataframe\d+", pandera_schema_to_dagster_type(schema).key)
+
+    schema = sample_dataframe_schema(title="foo", name="bar")
+    assert pandera_schema_to_dagster_type(schema).key == "foo"
+
+    schema = sample_dataframe_schema(name="foo")
+    assert pandera_schema_to_dagster_type(schema).key == "foo"
+
+
+# ----- VALIDATION
+
+
+def test_validate_ok(dagster_type, dataframe):
+    result = check_dagster_type(dagster_type, dataframe)
+    assert isinstance(result, TypeCheck)
+    assert result.success
+
+
+def test_validate_inv_bad_value(dagster_type, dataframe):
+    dataframe.loc[0, "a"] = 11
+    result = check_dagster_type(dagster_type, dataframe)
+    assert not result.success
+
+
+def test_validate_inv_missing_column(dagster_type, dataframe):
+    dataframe.drop("a", axis=1, inplace=True)
+    result = check_dagster_type(dagster_type, dataframe)
+    assert not result.success
