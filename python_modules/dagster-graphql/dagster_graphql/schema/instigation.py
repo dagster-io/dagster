@@ -140,18 +140,18 @@ class GrapheneFutureInstigationTick(graphene.ObjectType):
     class Meta:
         name = "FutureInstigationTick"
 
-    def __init__(self, job_state, timestamp):
-        self._job_state = check.inst_param(job_state, "job_state", InstigatorState)
+    def __init__(self, state, timestamp):
+        self._state = check.inst_param(state, "state", InstigatorState)
         self._timestamp = timestamp
         super().__init__(
             timestamp=check.float_param(timestamp, "timestamp"),
         )
 
     def resolve_evaluationResult(self, graphene_info):
-        if not self._job_state.is_running or self._job_state.job_type != InstigatorType.SCHEDULE:
+        if not self._state.is_running or self._state.job_type != InstigatorType.SCHEDULE:
             return None
 
-        repository_origin = self._job_state.origin.external_repository_origin
+        repository_origin = self._state.origin.external_repository_origin
         if not graphene_info.context.has_repository_location(
             repository_origin.repository_location_origin.location_name
         ):
@@ -165,10 +165,10 @@ class GrapheneFutureInstigationTick(graphene.ObjectType):
 
         repository = repository_location.get_repository(repository_origin.repository_name)
 
-        if not repository.has_external_schedule(self._job_state.name):
+        if not repository.has_external_schedule(self._state.name):
             return None
 
-        external_schedule = repository.get_external_schedule(self._job_state.name)
+        external_schedule = repository.get_external_schedule(self._state.name)
         timezone_str = external_schedule.execution_timezone
         if not timezone_str:
             timezone_str = "UTC"
