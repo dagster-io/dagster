@@ -23,6 +23,9 @@ def _materialization_for_stream(
                     ]
                 )
             ),
+            "columns": ",".join(
+                name for name in stream_info["stream"]["jsonSchema"]["properties"].keys()
+            ),
             **{k: v for k, v in stream_stats.items() if v is not None},
         },
     )
@@ -37,7 +40,6 @@ def generate_materializations(output: AirbyteOutput, asset_key_prefix: List[str]
     }
 
     stream_stats = output.job_details["attempts"][-1]["attempt"]["streamStats"]
-    print(stream_info)
     for stats in stream_stats:
         name = stats["streamName"]
         yield _materialization_for_stream(
