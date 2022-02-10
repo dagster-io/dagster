@@ -85,14 +85,14 @@ def stop_sensor(graphene_info, job_origin_id):
     instance = graphene_info.context.instance
 
     external_sensors = {
-        job.get_external_origin_id(): job
+        sensor.get_external_origin_id(): sensor
         for repository_location in graphene_info.context.repository_locations
         for repository in repository_location.get_repositories().values()
-        for job in repository.get_external_sensors()
+        for sensor in repository.get_external_sensors()
     }
     instance.stop_sensor(job_origin_id, external_sensors.get(job_origin_id))
-    job_state = graphene_info.context.instance.get_instigator_state(job_origin_id)
-    return GrapheneStopSensorMutationResult(job_state)
+    state = graphene_info.context.instance.get_instigator_state(job_origin_id)
+    return GrapheneStopSensorMutationResult(state)
 
 
 @capture_error
