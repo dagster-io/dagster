@@ -64,6 +64,8 @@ Sensors
 
 .. autoclass:: RunFailureSensorContext
 
+.. autofunction:: build_run_status_sensor_context
+
 .. autodecorator:: run_status_sensor
 
 .. autodecorator:: run_failure_sensor

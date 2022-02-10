@@ -116,6 +116,7 @@ def test_build_run_status_sensor_context():
         sensor_name="failure_sensor",
         dagster_instance=DagsterInstance.ephemeral(),
         pipeline_run_status=PipelineRunStatus.FAILURE,
+        error_info=SerializableErrorInfo(message="fail", stack=["fail1", "fail2"], cls_name="unit_test")
     )
     failure_sensor(ctx)
 
