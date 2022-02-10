@@ -270,6 +270,11 @@
     "permanent": true
   },
   {
+    "source": "/deploying/guides/ecs",
+    "destination": "/deployment/guides/aws",
+    "permanent": true
+  },
+  {
     "source": "/deploying/gcp",
     "destination": "/deployment/guides/gcp",
     "permanent": true
