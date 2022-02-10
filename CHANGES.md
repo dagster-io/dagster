@@ -1,5 +1,16 @@
 # Changelog
 
+# 0.13.19
+
+### New
+
+- [dagit] Various performance improvements for asset graph views.
+- [dagster-aws] The `EcsRunLauncher` can now override the `secrets_tag` parameter to None, which will cause it to not look for any secrets to be included in the tasks for the run. This can be useful in situations where the run launcher does not have permissions to query AWS Secretsmanager.
+
+### Bugfixes
+
+- [dagster-mysql] For instances using MySQL for their run storage, runs created using dagster versions `0.13.17` / `0.13.18` might display an incorrect timestamp for its start time on the Runs page. Running the `dagster instance migrate` CLI command should resolve the issue.
+
 # 0.13.18
 
 ### New
