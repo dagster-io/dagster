@@ -92,8 +92,8 @@ class TestScheduleStorage:
 
         schedule = schedules[0]
         assert schedule.instigator_name == "my_schedule"
-        assert schedule.job_specific_data.cron_schedule == "* * * * *"
-        assert schedule.job_specific_data.start_timestamp == None
+        assert schedule.instigator_data.cron_schedule == "* * * * *"
+        assert schedule.instigator_data.start_timestamp == None
 
     def test_add_multiple_schedules(self, storage):
         assert storage
@@ -123,7 +123,7 @@ class TestScheduleStorage:
         schedule = storage.get_instigator_state(state.instigator_origin_id)
 
         assert schedule.instigator_name == "my_schedule"
-        assert schedule.job_specific_data.start_timestamp == None
+        assert schedule.instigator_data.start_timestamp == None
 
     def test_get_schedule_state_not_found(self, storage):
         assert storage
@@ -143,7 +143,7 @@ class TestScheduleStorage:
 
         new_schedule = schedule.with_status(InstigatorStatus.RUNNING).with_data(
             ScheduleInstigatorData(
-                cron_schedule=schedule.job_specific_data.cron_schedule,
+                cron_schedule=schedule.instigator_data.cron_schedule,
                 start_timestamp=now_time,
             )
         )
@@ -157,10 +157,10 @@ class TestScheduleStorage:
         schedule = schedules[0]
         assert schedule.instigator_name == "my_schedule"
         assert schedule.status == InstigatorStatus.RUNNING
-        assert schedule.job_specific_data.start_timestamp == now_time
+        assert schedule.instigator_data.start_timestamp == now_time
 
         stopped_schedule = schedule.with_status(InstigatorStatus.STOPPED).with_data(
-            ScheduleInstigatorData(schedule.job_specific_data.cron_schedule)
+            ScheduleInstigatorData(schedule.instigator_data.cron_schedule)
         )
         storage.update_instigator_state(stopped_schedule)
 
@@ -172,7 +172,7 @@ class TestScheduleStorage:
         schedule = schedules[0]
         assert schedule.instigator_name == "my_schedule"
         assert schedule.status == InstigatorStatus.STOPPED
-        assert schedule.job_specific_data.start_timestamp == None
+        assert schedule.instigator_data.start_timestamp == None
 
     def test_update_schedule_not_found(self, storage):
         assert storage

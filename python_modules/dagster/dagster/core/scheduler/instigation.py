@@ -69,20 +69,17 @@ register_serdes_tuple_fallbacks({"ScheduleJobData": ScheduleInstigatorData})
 ScheduleJobData = ScheduleInstigatorData
 
 
-def check_job_data(job_type, job_specific_data):
-    check.inst_param(job_type, "job_type", InstigatorType)
-    if job_type == InstigatorType.SCHEDULE:
-        check.inst_param(job_specific_data, "job_specific_data", ScheduleInstigatorData)
-    elif job_type == InstigatorType.SENSOR:
-        check.opt_inst_param(job_specific_data, "job_specific_data", SensorInstigatorData)
+def check_instigator_data(instigator_type, instigator_data):
+    if instigator_type == InstigatorType.SCHEDULE:
+        check.inst_param(instigator_data, "instigator_data", ScheduleInstigatorData)
+    elif instigator_type == InstigatorType.SENSOR:
+        check.opt_inst_param(instigator_data, "instigator_data", SensorInstigatorData)
     else:
         check.failed(
-            "Unexpected job type {}, expected one of InstigatorType.SENSOR, InstigatorType.SCHEDULE".format(
-                job_type
-            )
+            f"Unexpected instigator type {instigator_type}, expected one of InstigatorType.SENSOR, InstigatorType.SCHEDULE"
         )
 
-    return job_specific_data
+    return instigator_data
 
 
 @whitelist_for_serdes
@@ -93,7 +90,7 @@ class InstigatorState(namedtuple("_InstigationState", "origin job_type status jo
             check.inst_param(origin, "origin", ExternalInstigatorOrigin),
             check.inst_param(job_type, "job_type", InstigatorType),
             check.inst_param(status, "status", InstigatorStatus),
-            check_job_data(job_type, job_specific_data),
+            check_instigator_data(job_type, job_specific_data),
         )
 
     @property
@@ -116,22 +113,26 @@ class InstigatorState(namedtuple("_InstigationState", "origin job_type status jo
     def instigator_origin_id(self):
         return self.origin.get_id()
 
+    @property
+    def instigator_data(self):
+        return self.job_specific_data
+
     def with_status(self, status):
         check.inst_param(status, "status", InstigatorStatus)
         return InstigatorState(
             self.origin,
             job_type=self.job_type,
             status=status,
-            job_specific_data=self.job_specific_data,
+            job_specific_data=self.instigator_data,
         )
 
-    def with_data(self, job_specific_data):
-        check_job_data(self.job_type, job_specific_data)
+    def with_data(self, instigator_data):
+        check_instigator_data(self.job_type, instigator_data)
         return InstigatorState(
             self.origin,
             job_type=self.job_type,
             status=self.status,
-            job_specific_data=job_specific_data,
+            job_specific_data=instigator_data,
         )
 
 

@@ -374,8 +374,8 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
                 instance.update_instigator_state(
                     job_state.with_data(
                         SensorInstigatorData(
-                            last_tick_timestamp=job_state.job_specific_data.last_tick_timestamp,
-                            last_run_key=job_state.job_specific_data.last_run_key,
+                            last_tick_timestamp=job_state.instigator_data.last_tick_timestamp,
+                            last_run_key=job_state.instigator_data.last_run_key,
                             min_interval=external_sensor.min_interval_seconds,
                             cursor=cursor_value,
                         ),

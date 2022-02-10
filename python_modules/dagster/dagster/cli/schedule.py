@@ -43,7 +43,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     for schedule_origin_id in external_schedule_origin_ids & schedule_state_ids:
         schedule_state = schedule_states_dict[schedule_origin_id]
         external_schedule = external_schedules_dict[schedule_origin_id]
-        if schedule_state.job_specific_data.cron_schedule != external_schedule.cron_schedule:
+        if schedule_state.instigator_data.cron_schedule != external_schedule.cron_schedule:
             changed_schedules.append(schedule_origin_id)
 
     if not errors and not added_schedules and not changed_schedules and not removed_schedules:
@@ -94,7 +94,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
         )
         print_fn(
             click.style("\t cron_schedule: ", fg="yellow")
-            + click.style(schedule_state.job_specific_data.cron_schedule, fg="red")
+            + click.style(schedule_state.instigator_data.cron_schedule, fg="red")
             + " => "
             + click.style(external_schedule.cron_schedule, fg="green")
         )

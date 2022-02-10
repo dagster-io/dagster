@@ -1873,8 +1873,7 @@ def test_status_in_code_schedule(instance):
 
             assert instigator_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
             assert (
-                instigator_state.job_specific_data.start_timestamp
-                == pendulum.now("UTC").timestamp()
+                instigator_state.instigator_data.start_timestamp == pendulum.now("UTC").timestamp()
             )
 
             ticks = instance.get_ticks(always_running_origin.get_id())

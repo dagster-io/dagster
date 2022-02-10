@@ -259,9 +259,7 @@ def launch_scheduled_runs_for_schedule(
     ticks = instance.get_ticks(instigator_origin_id, limit=1)
     latest_tick = ticks[0] if ticks else None
 
-    start_timestamp_utc = (
-        schedule_state.job_specific_data.start_timestamp if schedule_state else None
-    )
+    start_timestamp_utc = schedule_state.instigator_data.start_timestamp if schedule_state else None
 
     if latest_tick:
         if latest_tick.status == TickStatus.STARTED or (
@@ -281,7 +279,7 @@ def launch_scheduled_runs_for_schedule(
                 else latest_tick.timestamp + 1
             )
     else:
-        start_timestamp_utc = schedule_state.job_specific_data.start_timestamp
+        start_timestamp_utc = schedule_state.instigator_data.start_timestamp
 
     schedule_name = external_schedule.name
 

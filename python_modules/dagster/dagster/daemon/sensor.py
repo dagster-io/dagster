@@ -92,9 +92,7 @@ class SensorLaunchContext:
         self._instance.update_tick(self._tick)
         if self._tick.status in FULFILLED_TICK_STATES:
             last_run_key = (
-                self._state.job_specific_data.last_run_key
-                if self._state.job_specific_data
-                else None
+                self._state.instigator_data.last_run_key if self._state.instigator_data else None
             )
             if self._tick.run_keys:
                 last_run_key = self._tick.run_keys[-1]
@@ -329,9 +327,9 @@ def _evaluate_sensor(
         instance,
         repository_handle,
         external_sensor.name,
-        state.job_specific_data.last_tick_timestamp if state.job_specific_data else None,
-        state.job_specific_data.last_run_key if state.job_specific_data else None,
-        state.job_specific_data.cursor if state.job_specific_data else None,
+        state.instigator_data.last_tick_timestamp if state.instigator_data else None,
+        state.instigator_data.last_run_key if state.instigator_data else None,
+        state.instigator_data.cursor if state.instigator_data else None,
     )
 
     yield
@@ -453,16 +451,16 @@ def _evaluate_sensor(
 
 
 def _is_under_min_interval(state, external_sensor, now):
-    if not state.job_specific_data:
+    if not state.instigator_data:
         return False
 
-    if not state.job_specific_data.last_tick_timestamp:
+    if not state.instigator_data.last_tick_timestamp:
         return False
 
     if not external_sensor.min_interval_seconds:
         return False
 
-    elapsed = now.timestamp() - state.job_specific_data.last_tick_timestamp
+    elapsed = now.timestamp() - state.instigator_data.last_tick_timestamp
     return elapsed < external_sensor.min_interval_seconds
 
 

@@ -60,11 +60,11 @@ class GrapheneSensorData(graphene.ObjectType):
     class Meta:
         name = "SensorData"
 
-    def __init__(self, job_specific_data):
-        check.inst_param(job_specific_data, "job_specific_data", SensorInstigatorData)
+    def __init__(self, instigator_data):
+        check.inst_param(instigator_data, "instigator_data", SensorInstigatorData)
         super().__init__(
-            lastTickTimestamp=job_specific_data.last_tick_timestamp,
-            lastRunKey=job_specific_data.last_run_key,
+            lastTickTimestamp=instigator_data.last_tick_timestamp,
+            lastRunKey=instigator_data.last_run_key,
         )
 
 
@@ -75,11 +75,11 @@ class GrapheneScheduleData(graphene.ObjectType):
     class Meta:
         name = "ScheduleData"
 
-    def __init__(self, job_specific_data):
-        check.inst_param(job_specific_data, "job_specific_data", ScheduleInstigatorData)
+    def __init__(self, instigator_data):
+        check.inst_param(instigator_data, "instigator_data", ScheduleInstigatorData)
         super().__init__(
-            cronSchedule=job_specific_data.cron_schedule,
-            startTimestamp=job_specific_data.start_timestamp,
+            cronSchedule=instigator_data.cron_schedule,
+            startTimestamp=instigator_data.start_timestamp,
         )
 
 
@@ -304,14 +304,14 @@ class GrapheneInstigationState(graphene.ObjectType):
         return GrapheneRepositoryOrigin(origin)
 
     def resolve_typeSpecificData(self, _graphene_info):
-        if not self._instigator_state.job_specific_data:
+        if not self._instigator_state.instigator_data:
             return None
 
         if self._instigator_state.job_type == InstigatorType.SENSOR:
-            return GrapheneSensorData(self._instigator_state.job_specific_data)
+            return GrapheneSensorData(self._instigator_state.instigator_data)
 
         if self._instigator_state.job_type == InstigatorType.SCHEDULE:
-            return GrapheneScheduleData(self._instigator_state.job_specific_data)
+            return GrapheneScheduleData(self._instigator_state.instigator_data)
 
         return None
 
