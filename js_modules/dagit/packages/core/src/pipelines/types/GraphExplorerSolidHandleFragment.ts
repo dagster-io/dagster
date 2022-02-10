@@ -80,6 +80,17 @@ export interface GraphExplorerSolidHandleFragment_solid_definition_SolidDefiniti
   value: string;
 }
 
+export interface GraphExplorerSolidHandleFragment_solid_definition_SolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface GraphExplorerSolidHandleFragment_solid_definition_SolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: GraphExplorerSolidHandleFragment_solid_definition_SolidDefinition_assetNodes_assetKey;
+}
+
 export interface GraphExplorerSolidHandleFragment_solid_definition_SolidDefinition_inputDefinitions_type {
   __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
@@ -119,6 +130,7 @@ export interface GraphExplorerSolidHandleFragment_solid_definition_SolidDefiniti
   name: string;
   description: string | null;
   metadata: GraphExplorerSolidHandleFragment_solid_definition_SolidDefinition_metadata[];
+  assetNodes: GraphExplorerSolidHandleFragment_solid_definition_SolidDefinition_assetNodes[];
   inputDefinitions: GraphExplorerSolidHandleFragment_solid_definition_SolidDefinition_inputDefinitions[];
   outputDefinitions: GraphExplorerSolidHandleFragment_solid_definition_SolidDefinition_outputDefinitions[];
   configField: GraphExplorerSolidHandleFragment_solid_definition_SolidDefinition_configField | null;
@@ -128,6 +140,17 @@ export interface GraphExplorerSolidHandleFragment_solid_definition_CompositeSoli
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
+}
+
+export interface GraphExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface GraphExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: GraphExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_assetNodes_assetKey;
 }
 
 export interface GraphExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_inputDefinitions_type {
@@ -212,6 +235,7 @@ export interface GraphExplorerSolidHandleFragment_solid_definition_CompositeSoli
   name: string;
   description: string | null;
   metadata: GraphExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_metadata[];
+  assetNodes: GraphExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_assetNodes[];
   inputDefinitions: GraphExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: GraphExplorerSolidHandleFragment_solid_definition_CompositeSolidDefinition_outputDefinitions[];
   id: string;

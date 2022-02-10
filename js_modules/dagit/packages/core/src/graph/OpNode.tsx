@@ -3,6 +3,8 @@ import {ColorsWIP, IconWIP, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {displayNameForAssetKey} from '../app/Util';
+
 import {OpIOBox, metadataForIO} from './OpIOBox';
 import {OpTags, IOpTag} from './OpTags';
 import {IFullOpLayout, ILayout} from './getFullOpLayout';
@@ -162,8 +164,17 @@ export class OpNode extends React.Component<IOpNodeProps> {
             {!minified && <IconWIP name="op" size={16} />}
             <div className="label">{invocation ? invocation.name : definition.name}</div>
           </div>
-          {!minified && (
+          {!minified && (definition.description || definition.assetNodes.length === 0) && (
             <div className="description">{(definition.description || '').split('\n')[0]}</div>
+          )}
+          {!minified && definition.assetNodes.length > 0 && (
+            <div className="assets">
+              <IconWIP name="asset" size={16} />
+              {displayNameForAssetKey(definition.assetNodes[0].assetKey)}
+              {definition.assetNodes.length > 1
+                ? ` + ${definition.assetNodes.length - 1} more`
+                : ''}
+            </div>
           )}
         </div>
 
@@ -231,6 +242,12 @@ export const OP_NODE_DEFINITION_FRAGMENT = gql`
     metadata {
       key
       value
+    }
+    assetNodes {
+      id
+      assetKey {
+        path
+      }
     }
     inputDefinitions {
       name
@@ -349,6 +366,19 @@ const NodeContainer = styled.div<{
       overflow: hidden;
       text-overflow: ellipsis;
     }
+  }
+  .assets {
+    padding: 0 4px;
+    white-space: nowrap;
+    line-height: 22px;
+    height: 22px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: #f5f3ef;
+    font-size: 12px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
   }
   .description {
     padding: 0 8px;

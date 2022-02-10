@@ -116,6 +116,17 @@ export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDe
   value: string;
 }
 
+export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_assetNodes_assetKey;
+}
+
 export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_requiredResources {
   __typename: "ResourceRequirement";
   resourceKey: string;
@@ -587,6 +598,7 @@ export interface SidebarOpContainerFragment_solidHandle_solid_definition_SolidDe
   name: string;
   description: string | null;
   metadata: SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_metadata[];
+  assetNodes: SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_assetNodes[];
   requiredResources: SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_requiredResources[];
   configField: SidebarOpContainerFragment_solidHandle_solid_definition_SolidDefinition_configField | null;
 }
@@ -624,6 +636,17 @@ export interface SidebarOpContainerFragment_solidHandle_solid_definition_Composi
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
+}
+
+export interface SidebarOpContainerFragment_solidHandle_solid_definition_CompositeSolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface SidebarOpContainerFragment_solidHandle_solid_definition_CompositeSolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: SidebarOpContainerFragment_solidHandle_solid_definition_CompositeSolidDefinition_assetNodes_assetKey;
 }
 
 export interface SidebarOpContainerFragment_solidHandle_solid_definition_CompositeSolidDefinition_inputMappings_definition {
@@ -687,6 +710,7 @@ export interface SidebarOpContainerFragment_solidHandle_solid_definition_Composi
   name: string;
   description: string | null;
   metadata: SidebarOpContainerFragment_solidHandle_solid_definition_CompositeSolidDefinition_metadata[];
+  assetNodes: SidebarOpContainerFragment_solidHandle_solid_definition_CompositeSolidDefinition_assetNodes[];
   id: string;
   inputMappings: SidebarOpContainerFragment_solidHandle_solid_definition_CompositeSolidDefinition_inputMappings[];
   outputMappings: SidebarOpContainerFragment_solidHandle_solid_definition_CompositeSolidDefinition_outputMappings[];

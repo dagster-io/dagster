@@ -122,6 +122,17 @@ export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_def
   value: string;
 }
 
+export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_assetNodes_assetKey;
+}
+
 export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_requiredResources {
   __typename: "ResourceRequirement";
   resourceKey: string;
@@ -593,6 +604,7 @@ export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_def
   name: string;
   description: string | null;
   metadata: SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_metadata[];
+  assetNodes: SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_assetNodes[];
   requiredResources: SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_requiredResources[];
   configField: SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_SolidDefinition_configField | null;
 }
@@ -630,6 +642,17 @@ export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_def
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
+}
+
+export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_assetNodes_assetKey;
 }
 
 export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_inputMappings_definition {
@@ -693,6 +716,7 @@ export interface SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_def
   name: string;
   description: string | null;
   metadata: SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_metadata[];
+  assetNodes: SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_assetNodes[];
   id: string;
   inputMappings: SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_inputMappings[];
   outputMappings: SidebarGraphSolidQuery_graphOrError_Graph_solidHandle_solid_definition_CompositeSolidDefinition_outputMappings[];

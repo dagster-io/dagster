@@ -17,7 +17,6 @@ const NoOp = () => {};
 
 interface IPipelineGraphProps {
   pipelineName: string;
-  backgroundColor: string;
   layout: IFullPipelineLayout;
   ops: PipelineGraphOpFragment[];
   focusOps: PipelineGraphOpFragment[];
@@ -315,14 +314,7 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
   }
 
   render() {
-    const {
-      layout,
-      interactor,
-      pipelineName,
-      backgroundColor,
-      onClickBackground,
-      onDoubleClickOp,
-    } = this.props;
+    const {layout, interactor, pipelineName, onClickBackground, onDoubleClickOp} = this.props;
 
     return (
       <SVGViewport
@@ -330,7 +322,6 @@ export class PipelineGraph extends React.Component<IPipelineGraphProps> {
         key={pipelineName}
         maxZoom={1.2}
         interactor={interactor || SVGViewport.Interactors.PanAndZoom}
-        backgroundColor={backgroundColor}
         graphWidth={layout.width}
         graphHeight={layout.height}
         onKeyDown={this.onKeyDown}

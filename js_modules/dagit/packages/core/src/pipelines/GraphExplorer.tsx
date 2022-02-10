@@ -15,7 +15,6 @@ import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {RepoAddress} from '../workspace/types';
 
 import {EmptyDAGNotice, LargeDAGNotice} from './GraphNotices';
-import {NodeJumpBar} from './NodeJumpBar';
 import {ExplorerPath} from './PipelinePathUtils';
 import {
   SidebarTabbedContainer,
@@ -26,6 +25,7 @@ import {GraphExplorerSolidHandleFragment} from './types/GraphExplorerSolidHandle
 
 export interface GraphExplorerOptions {
   explodeComposites: boolean;
+  preferAssetRendering: boolean;
 }
 
 interface GraphExplorerProps {
@@ -142,6 +142,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
 
   const solids = React.useMemo(() => handles.map((h) => h.solid), [handles]);
   const solidsQueryEnabled = !parentHandle && !explorerPath.snapshotId;
+  const showAssetRenderingOption = solids.some((s) => s.definition.assetNodes.length > 0);
   const explodeCompositesEnabled =
     !parentHandle &&
     (options.explodeComposites ||
@@ -160,34 +161,40 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
     [nameMatch, queryResultOps.all],
   );
 
-  const backgroundColor = parentHandle ? ColorsWIP.White : ColorsWIP.White;
-  const backgroundTranslucent = Color(backgroundColor).fade(0.6).toString();
-
   return (
     <SplitPanelContainer
       identifier="explorer"
       firstInitialPercent={70}
       first={
         <>
-          <PathOverlay style={{background: backgroundTranslucent}}>
-            <Breadcrumbs
-              items={explorerPath.opNames.map((name, idx) => ({
-                text: name,
-                onClick: () =>
-                  onChangeExplorerPath(
-                    {...explorerPath, opNames: explorerPath.opNames.slice(0, idx + 1)},
-                    'push',
-                  ),
-              }))}
-              currentBreadcrumbRenderer={() => (
-                <NodeJumpBar
-                  nodes={queryResultOps.all}
-                  nodeType="op"
-                  selectedNode={selectedHandle && selectedHandle.solid}
-                  onChange={handleClickOp}
-                />
-              )}
-            />
+          <PathOverlay>
+            {explorerPath.opNames.length > 1 && (
+              <Breadcrumbs
+                currentBreadcrumbRenderer={() => <span />}
+                items={explorerPath.opNames.map((name, idx) => ({
+                  text: name,
+                  onClick: () =>
+                    onChangeExplorerPath(
+                      {...explorerPath, opNames: explorerPath.opNames.slice(0, idx + 1)},
+                      'push',
+                    ),
+                }))}
+              />
+            )}
+            {showAssetRenderingOption && (
+              <Checkbox
+                format="switch"
+                label="View as Asset Graph"
+                checked={options.preferAssetRendering}
+                onChange={() => {
+                  onChangeExplorerPath({...explorerPath, opNames: []}, 'replace');
+                  setOptions({
+                    ...options,
+                    preferAssetRendering: !options.preferAssetRendering,
+                  });
+                }}
+              />
+            )}
           </PathOverlay>
 
           {solidsQueryEnabled && (
@@ -201,7 +208,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
             </PipelineGraphQueryInputContainer>
           )}
 
-          <SearchOverlay style={{background: backgroundTranslucent}}>
+          <SearchOverlay>
             <TextInput
               name="highlighted"
               icon="search"
@@ -232,7 +239,6 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
           ) : undefined}
           <PipelineGraphContainer
             pipelineName={pipelineOrGraph.name}
-            backgroundColor={backgroundColor}
             ops={queryResultOps.all}
             focusOps={queryResultOps.focus}
             highlightedOps={highlightedOps}
@@ -280,6 +286,16 @@ export const GRAPH_EXPLORER_FRAGMENT = gql`
   ${SIDEBAR_TABBED_CONTAINER_PIPELINE_FRAGMENT}
 `;
 
+export const GRAPH_EXPLORER_ASSET_NODE_FRAGMENT = gql`
+  fragment GraphExplorerAssetNodeFragment on AssetNode {
+    id
+    opName
+    assetKey {
+      path
+    }
+  }
+`;
+
 export const GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT = gql`
   fragment GraphExplorerSolidHandleFragment on SolidHandle {
     handleID
@@ -312,7 +328,7 @@ export const RightInfoPanelContent = styled.div`
 
 const OptionsOverlay = styled.div`
   z-index: 2;
-  padding: 5px 15px;
+  padding: 15px 15px;
   display: inline-flex;
   align-items: stretch;
   position: absolute;
@@ -321,6 +337,7 @@ const OptionsOverlay = styled.div`
 `;
 
 export const SearchOverlay = styled.div`
+  background-color: ${Color(ColorsWIP.White).fade(0.6).toString()};
   z-index: 2;
   padding: 12px 12px 0 0;
   display: inline-flex;
@@ -330,9 +347,11 @@ export const SearchOverlay = styled.div`
   right: 0;
 `;
 
-const PathOverlay = styled.div`
+export const PathOverlay = styled.div`
+  background-color: ${Color(ColorsWIP.White).fade(0.6).toString()};
   z-index: 2;
   padding: 12px 0 0 20px;
+  height: 42px;
   max-width: calc(100% - 250px);
   display: inline-flex;
   align-items: center;
