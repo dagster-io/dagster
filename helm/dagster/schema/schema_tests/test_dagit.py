@@ -72,6 +72,21 @@ def test_startup_probe_enabled(deployment_template: HelmTemplate, enabled: bool)
     assert (container.startup_probe is not None) == enabled
 
 
+def test_readiness_probe(deployment_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(dagit=Dagit.construct())
+
+    dagit = deployment_template.render(helm_values)
+    assert len(dagit) == 1
+    dagit = dagit[0]
+
+    assert len(dagit.spec.template.spec.containers) == 1
+    container = dagit.spec.template.spec.containers[0]
+
+    assert container.startup_probe is None
+    assert container.liveness_probe is None
+    assert container.readiness_probe is not None
+
+
 def test_dagit_read_only_disabled(deployment_template: HelmTemplate):
     helm_values = DagsterHelmValues.construct()
 

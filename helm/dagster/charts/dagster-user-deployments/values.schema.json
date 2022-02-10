@@ -146,6 +146,12 @@
             "properties": {},
             "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
+        "ReadinessProbe": {
+            "title": "ReadinessProbe",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
+        },
         "StartupProbe": {
             "title": "StartupProbe",
             "type": "object",
@@ -236,6 +242,9 @@
                 },
                 "livenessProbe": {
                     "$ref": "#/definitions/LivenessProbe"
+                },
+                "readinessProbe": {
+                    "$ref": "#/definitions/ReadinessProbe"
                 },
                 "startupProbe": {
                     "$ref": "#/definitions/StartupProbe"

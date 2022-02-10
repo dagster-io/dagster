@@ -255,6 +255,12 @@
             "type": "object",
             "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
+        "ReadinessProbe": {
+            "title": "ReadinessProbe",
+            "type": "object",
+            "properties": {},
+            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
+        },
         "LivenessProbe": {
             "title": "LivenessProbe",
             "type": "object",
@@ -343,6 +349,9 @@
                 "resources": {
                     "$ref": "#/definitions/Resources"
                 },
+                "readinessProbe": {
+                    "$ref": "#/definitions/ReadinessProbe"
+                },
                 "livenessProbe": {
                     "$ref": "#/definitions/LivenessProbe"
                 },
@@ -384,6 +393,7 @@
                 "podSecurityContext",
                 "securityContext",
                 "resources",
+                "readinessProbe",
                 "livenessProbe",
                 "startupProbe",
                 "annotations",
@@ -468,6 +478,9 @@
                 },
                 "livenessProbe": {
                     "$ref": "#/definitions/LivenessProbe"
+                },
+                "readinessProbe": {
+                    "$ref": "#/definitions/ReadinessProbe"
                 },
                 "startupProbe": {
                     "$ref": "#/definitions/StartupProbe"
@@ -2206,6 +2219,9 @@
                 "livenessProbe": {
                     "$ref": "#/definitions/LivenessProbe"
                 },
+                "readinessProbe": {
+                    "$ref": "#/definitions/ReadinessProbe"
+                },
                 "startupProbe": {
                     "$ref": "#/definitions/StartupProbe"
                 },
@@ -2234,6 +2250,7 @@
                 "securityContext",
                 "resources",
                 "livenessProbe",
+                "readinessProbe",
                 "startupProbe",
                 "annotations",
                 "runMonitoring"

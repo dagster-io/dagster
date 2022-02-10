@@ -108,6 +108,10 @@ spec:
           livenessProbe:
             {{- toYaml .Values.dagsterDaemon.livenessProbe | nindent 12 }}
           {{- end }}
+          {{- if .Values.dagsterDaemon.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.dagsterDaemon.readinessProbe | nindent 12 }}
+          {{- end }}
           {{- if .Values.dagsterDaemon.startupProbe.enabled}}
           {{- $startupProbe := omit .Values.dagsterDaemon.startupProbe "enabled" }}
           startupProbe:
