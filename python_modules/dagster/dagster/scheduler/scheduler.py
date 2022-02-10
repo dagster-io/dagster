@@ -251,8 +251,8 @@ def launch_scheduled_runs_for_schedule(
     check.opt_inst_param(schedule_state, "schedule_state", InstigatorState)
     check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
 
-    job_origin_id = external_schedule.get_external_origin_id()
-    ticks = instance.get_ticks(job_origin_id, limit=1)
+    instigator_origin_id = external_schedule.get_external_origin_id()
+    ticks = instance.get_ticks(instigator_origin_id, limit=1)
     latest_tick = ticks[0] if ticks else None
 
     start_timestamp_utc = (
@@ -330,7 +330,7 @@ def launch_scheduled_runs_for_schedule(
         else:
             tick = instance.create_tick(
                 TickData(
-                    job_origin_id=job_origin_id,
+                    job_origin_id=instigator_origin_id,
                     job_name=schedule_name,
                     job_type=InstigatorType.SCHEDULE,
                     status=TickStatus.STARTED,

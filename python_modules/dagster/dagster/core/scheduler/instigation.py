@@ -113,7 +113,7 @@ class InstigatorState(namedtuple("_InstigationState", "origin job_type status jo
         return self.origin.external_repository_origin.get_id()
 
     @property
-    def job_origin_id(self):
+    def instigator_origin_id(self):
         return self.origin.get_id()
 
     def with_status(self, status):
@@ -184,8 +184,8 @@ class InstigatorTick(namedtuple("_InstigatorTick", "tick_id job_tick_data")):
         return self.job_tick_data
 
     @property
-    def job_origin_id(self):
-        return self.job_tick_data.job_origin_id
+    def instigator_origin_id(self):
+        return self.job_tick_data.instigator_origin_id
 
     @property
     def job_name(self):
@@ -298,6 +298,10 @@ class TickData(
             failure_count=check.opt_int_param(failure_count, "failure_count", 0),
         )
 
+    @property
+    def instigator_origin_id(self):
+        return self.job_origin_id
+
     def with_status(self, status, error=None, timestamp=None, failure_count=None):
         return TickData(
             **merge_dicts(
@@ -326,7 +330,7 @@ class TickData(
         )
 
     def with_failure_count(self, failure_count):
-        return JobTickData(
+        return TickData(
             **merge_dicts(
                 self._asdict(),
                 {

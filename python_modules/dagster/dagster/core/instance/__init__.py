@@ -1700,7 +1700,7 @@ records = instance.get_event_records(
                 schedule_state.job_name: {
                     "status": schedule_state.status.value,
                     "cron_schedule": schedule_state.job_specific_data.cron_schedule,
-                    "schedule_origin_id": schedule_state.job_origin_id,
+                    "schedule_origin_id": schedule_state.instigator_origin_id,
                     "repository_origin_id": schedule_state.repository_origin_id,
                 }
             }
@@ -1743,7 +1743,7 @@ records = instance.get_event_records(
         else:
             return self.update_instigator_state(state.with_status(InstigatorStatus.RUNNING))
 
-    def stop_sensor(self, job_origin_id, external_sensor):
+    def stop_sensor(self, instigator_origin_id, external_sensor):
         from dagster.core.scheduler.instigation import (
             InstigatorState,
             InstigatorStatus,
@@ -1751,7 +1751,7 @@ records = instance.get_event_records(
         )
         from dagster.core.definitions.run_request import InstigatorType
 
-        state = self.get_instigator_state(job_origin_id)
+        state = self.get_instigator_state(instigator_origin_id)
 
         if not state:
             return self.add_instigator_state(

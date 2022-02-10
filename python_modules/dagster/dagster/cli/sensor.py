@@ -36,7 +36,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     )
     external_sensors = external_repository.get_external_sensors()
     external_sensors_dict = {s.get_external_origin_id(): s for s in external_sensors}
-    sensor_states_dict = {s.job_origin_id: s for s in sensor_states}
+    sensor_states_dict = {s.instigator_origin_id: s for s in sensor_states}
 
     external_sensor_origin_ids = set(external_sensors_dict.keys())
     sensor_state_ids = set(sensor_states_dict.keys())
@@ -144,7 +144,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
 
             repo_sensors = external_repo.get_external_sensors()
             stored_sensors_by_origin_id = {
-                stored_sensor_state.job_origin_id: stored_sensor_state
+                stored_sensor_state.instigator_origin_id: stored_sensor_state
                 for stored_sensor_state in instance.all_instigator_state(
                     external_repo.get_external_origin_id(), instigator_type=InstigatorType.SENSOR
                 )

@@ -121,7 +121,7 @@ class SensorLaunchContext:
         self._write()
 
         self._instance.purge_ticks(
-            self._job_state.job_origin_id,
+            self._job_state.instigator_origin_id,
             tick_status=TickStatus.SKIPPED,
             before=pendulum.now("UTC").subtract(days=7).timestamp(),  #  keep the last 7 days
         )
@@ -276,7 +276,7 @@ def execute_sensor_iteration(
 
             tick = instance.create_tick(
                 TickData(
-                    job_origin_id=sensor_state.job_origin_id,
+                    job_origin_id=sensor_state.instigator_origin_id,
                     job_name=sensor_state.job_name,
                     job_type=InstigatorType.SENSOR,
                     status=TickStatus.STARTED,

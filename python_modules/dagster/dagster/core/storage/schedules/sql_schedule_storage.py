@@ -71,7 +71,7 @@ class SqlScheduleStorage(ScheduleStorage):
             try:
                 conn.execute(
                     JobTable.insert().values(  # pylint: disable=no-value-for-parameter
-                        job_origin_id=state.job_origin_id,
+                        job_origin_id=state.instigator_origin_id,
                         repository_origin_id=state.repository_origin_id,
                         status=state.status.value,
                         job_type=state.job_type.value,
@@ -80,22 +80,24 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
             except db.exc.IntegrityError as exc:
                 raise DagsterInvariantViolationError(
-                    f"InstigatorState {state.job_origin_id} is already present in storage"
+                    f"InstigatorState {state.instigator_origin_id} is already present in storage"
                 ) from exc
 
         return state
 
     def update_instigator_state(self, state):
         check.inst_param(state, "state", InstigatorState)
-        if not self.get_instigator_state(state.job_origin_id):
+        if not self.get_instigator_state(state.instigator_origin_id):
             raise DagsterInvariantViolationError(
-                "InstigatorState {id} is not present in storage".format(id=state.job_origin_id)
+                "InstigatorState {id} is not present in storage".format(
+                    id=state.instigator_origin_id
+                )
             )
 
         with self.connect() as conn:
             conn.execute(
                 JobTable.update()  # pylint: disable=no-value-for-parameter
-                .where(JobTable.c.job_origin_id == state.job_origin_id)
+                .where(JobTable.c.job_origin_id == state.instigator_origin_id)
                 .values(
                     status=state.status.value,
                     job_body=serialize_dagster_namedtuple(state),
@@ -157,7 +159,7 @@ class SqlScheduleStorage(ScheduleStorage):
             try:
                 tick_insert = (
                     JobTickTable.insert().values(  # pylint: disable=no-value-for-parameter
-                        job_origin_id=tick_data.job_origin_id,
+                        job_origin_id=tick_data.instigator_origin_id,
                         status=tick_data.status.value,
                         type=tick_data.job_type.value,
                         timestamp=utc_datetime_from_timestamp(tick_data.timestamp),

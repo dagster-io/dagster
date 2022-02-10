@@ -31,7 +31,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
         external_repository.get_external_origin_id(), InstigatorType.SCHEDULE
     )
     external_schedules_dict = {s.get_external_origin_id(): s for s in external_schedules}
-    schedule_states_dict = {s.job_origin_id: s for s in schedule_states}
+    schedule_states_dict = {s.instigator_origin_id: s for s in schedule_states}
 
     external_schedule_origin_ids = set(external_schedules_dict.keys())
     schedule_state_ids = set(schedule_states_dict.keys())
@@ -182,7 +182,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
 
             repo_schedules = external_repo.get_external_schedules()
             stored_schedules_by_origin_id = {
-                stored_schedule_state.job_origin_id: stored_schedule_state
+                stored_schedule_state.instigator_origin_id: stored_schedule_state
                 for stored_schedule_state in instance.all_instigator_state(
                     external_repo.get_external_origin_id(), instigator_type=InstigatorType.SCHEDULE
                 )
@@ -398,7 +398,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                                 schedule_state.job_name
                             )
                             instance.stop_schedule(
-                                schedule_state.job_origin_id,
+                                schedule_state.instigator_origin_id,
                                 external_schedule,
                             )
                             instance.start_schedule(external_schedule)
@@ -423,7 +423,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                     )
 
                 try:
-                    instance.stop_schedule(schedule_state.job_origin_id, external_schedule)
+                    instance.stop_schedule(schedule_state.instigator_origin_id, external_schedule)
                     instance.start_schedule(external_schedule)
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)

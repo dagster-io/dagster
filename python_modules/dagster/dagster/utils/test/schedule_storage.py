@@ -121,7 +121,7 @@ class TestScheduleStorage:
 
         state = self.build_schedule("my_schedule", "* * * * *")
         storage.add_instigator_state(state)
-        schedule = storage.get_instigator_state(state.job_origin_id)
+        schedule = storage.get_instigator_state(state.instigator_origin_id)
 
         assert schedule.job_name == "my_schedule"
         assert schedule.job_specific_data.start_timestamp == None
@@ -191,7 +191,7 @@ class TestScheduleStorage:
 
         schedule = self.build_schedule("my_schedule", "* * * * *")
         storage.add_instigator_state(schedule)
-        storage.delete_instigator_state(schedule.job_origin_id)
+        storage.delete_instigator_state(schedule.instigator_origin_id)
 
         schedules = storage.all_instigator_state(
             self.fake_repo_target().get_id(), InstigatorType.SCHEDULE
@@ -207,7 +207,7 @@ class TestScheduleStorage:
         schedule = self.build_schedule("my_schedule", "* * * * *")
 
         with pytest.raises(Exception):
-            storage.delete_instigator_state(schedule.job_origin_id)
+            storage.delete_instigator_state(schedule.instigator_origin_id)
 
     def test_add_schedule_with_same_name(self, storage):
         assert storage
@@ -373,7 +373,7 @@ class TestScheduleStorage:
 
         state = self.build_sensor("my_sensor")
         storage.add_instigator_state(state)
-        job = storage.get_instigator_state(state.job_origin_id)
+        job = storage.get_instigator_state(state.instigator_origin_id)
 
         assert job.job_name == "my_sensor"
 
@@ -426,7 +426,7 @@ class TestScheduleStorage:
 
         job = self.build_sensor("my_sensor")
         storage.add_instigator_state(job)
-        storage.delete_instigator_state(job.job_origin_id)
+        storage.delete_instigator_state(job.instigator_origin_id)
 
         jobs = storage.all_instigator_state(self.fake_repo_target().get_id())
         assert len(jobs) == 0
@@ -440,7 +440,7 @@ class TestScheduleStorage:
         job = self.build_sensor("my_sensor")
 
         with pytest.raises(Exception):
-            storage.delete_instigator_state(job.job_origin_id)
+            storage.delete_instigator_state(job.instigator_origin_id)
 
     def test_add_job_with_same_name(self, storage):
         assert storage
