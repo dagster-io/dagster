@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.workspace.workspace import IWorkspace
+from dagster.core.workspace.context import IWorkspace, WorkspaceRequestContext
 
 
 class SubmitRunContext(NamedTuple):
@@ -13,6 +13,18 @@ class SubmitRunContext(NamedTuple):
 
     pipeline_run: PipelineRun
     workspace: IWorkspace
+
+    def get_request_header(self, key: str) -> Optional[str]:
+        # if there is a source
+        if isinstance(self.workspace, WorkspaceRequestContext) and self.workspace.source:
+            headers = getattr(self.workspace.source, "headers", None)
+            # and it has a headers property
+            if headers:
+                # do a get against it
+                return headers.get(key)
+
+        # otherwise return None
+        return None
 
 
 class RunCoordinator(ABC, MayHaveInstanceWeakref):

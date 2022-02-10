@@ -467,7 +467,9 @@ def test_sanitize_labels():
         "job456",
         labels={
             "dagster/op": "-get_f\o.o[bar-0]-",  # pylint: disable=anomalous-backslash-in-string
+            "my_label": "_WhatsUP",
         },
     ).to_dict()
 
     assert job["metadata"]["labels"]["dagster/op"] == "get_f-o.o-bar-0"
+    assert job["metadata"]["labels"]["my_label"] == "WhatsUP"

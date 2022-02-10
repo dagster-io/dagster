@@ -10,6 +10,7 @@ import {SCHEDULE_FUTURE_TICKS_FRAGMENT} from '../instance/NextTick';
 import {RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {InstigationStatus, RunStatus} from '../types/globalTypes';
+import {LoadingSpinner} from '../ui/Loading';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -46,6 +47,8 @@ export type TimelineJob = {
   runs: TimelineRun[];
 };
 
+export type HourWindow = '1' | '6' | '12' | '24';
+
 export const makeJobKey = (repoAddress: RepoAddress, jobName: string) => {
   return `${jobName}-${repoAddressAsString(repoAddress)}`;
 };
@@ -53,33 +56,44 @@ export const makeJobKey = (repoAddress: RepoAddress, jobName: string) => {
 export const RunTimelineContainer = ({
   range,
   jobs,
+  hourWindow,
 }: {
   range: [number, number];
   jobs: TimelineJob[];
+  hourWindow: HourWindow;
 }) => {
   const [start, end] = range;
-  const {data} = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(RUN_TIMELINE_QUERY, {
-    fetchPolicy: 'network-only',
-    notifyOnNetworkStatusChange: true,
-    variables: {
-      inProgressFilter: {
-        statuses: [RunStatus.CANCELING, RunStatus.STARTED],
-        createdBefore: end / 1000.0,
-      },
-      terminatedFilter: {
-        statuses: Array.from(doneStatuses),
-        createdBefore: end / 1000.0,
-        updatedAfter: start / 1000.0,
+  const [jobsWithRuns, setJobsWithRuns] = React.useState<TimelineJob[]>([]);
+  const [loadedWindow, setLoadedWindow] = React.useState<HourWindow>();
+
+  const {data, loading} = useQuery<RunTimelineQuery, RunTimelineQueryVariables>(
+    RUN_TIMELINE_QUERY,
+    {
+      fetchPolicy: 'network-only',
+      notifyOnNetworkStatusChange: true,
+      variables: {
+        inProgressFilter: {
+          statuses: [RunStatus.CANCELING, RunStatus.STARTED],
+          createdBefore: end / 1000.0,
+        },
+        terminatedFilter: {
+          statuses: Array.from(doneStatuses),
+          createdBefore: end / 1000.0,
+          updatedAfter: start / 1000.0,
+        },
       },
     },
-  });
+  );
   const jobsByKey = React.useMemo(() => {
     return jobs.reduce((accum, job: TimelineJob) => {
       return {...accum, [job.key]: job};
     }, {} as {[key: string]: TimelineJob});
   }, [jobs]);
 
-  const jobsWithRuns = React.useMemo(() => {
+  React.useEffect(() => {
+    if (loading) {
+      return;
+    }
     const {unterminated, terminated, workspaceOrError} = data || {};
 
     const runsByJob: {[jobName: string]: TimelineRun[]} = {};
@@ -179,9 +193,13 @@ export const RunTimelineContainer = ({
       return {...accum, [job.key]: Math.min(...startTimes)};
     }, {} as {[jobKey: string]: number});
 
-    return jobs.sort((a, b) => earliest[a.key] - earliest[b.key]);
-  }, [data, start, end, jobsByKey]);
+    setJobsWithRuns(jobs.sort((a, b) => earliest[a.key] - earliest[b.key]));
+    setLoadedWindow(hourWindow);
+  }, [data, start, end, loading, jobsByKey, hourWindow]);
 
+  if (loading && hourWindow !== loadedWindow) {
+    return <LoadingSpinner purpose="section" />;
+  }
   return <RunTimeline range={[start, end]} jobs={jobsWithRuns} />;
 };
 

@@ -10,7 +10,7 @@ export const LeftNav = () => {
   const {nav} = React.useContext(LayoutContext);
 
   return (
-    <LeftNavContainer $open={nav.isOpen}>
+    <LeftNavContainer $open={nav.isOpen} $collapsible={nav.isCollapsible}>
       <LeftNavRepositorySection />
     </LeftNavContainer>
   );
@@ -18,7 +18,7 @@ export const LeftNav = () => {
 
 export const LEFT_NAV_WIDTH = 332;
 
-const LeftNavContainer = styled.div<{$open: boolean}>`
+const LeftNavContainer = styled.div<{$open: boolean; $collapsible: boolean}>`
   position: fixed;
   z-index: 2;
   top: 64px;
@@ -33,8 +33,11 @@ const LeftNavContainer = styled.div<{$open: boolean}>`
   background: ${ColorsWIP.Gray100};
   box-shadow: 1px 0px 0px ${ColorsWIP.KeylineGray};
 
-  @media (max-width: 1440px) {
-    transform: translateX(${({$open}) => ($open ? '0' : `-${LEFT_NAV_WIDTH}px`)});
-    transition: transform 150ms ease-in-out;
-  }
+  ${(p) =>
+    p.$collapsible
+      ? `
+        transform: translateX(${p.$open ? '0' : `-${LEFT_NAV_WIDTH}px`});
+        transition: transform 150ms ease-in-out;
+      `
+      : ``}
 `;

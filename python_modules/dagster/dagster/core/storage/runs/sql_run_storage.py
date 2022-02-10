@@ -1,4 +1,5 @@
 import logging
+import uuid
 import zlib
 from abc import abstractmethod
 from collections import defaultdict
@@ -31,7 +32,7 @@ from dagster.serdes import (
     serialize_dagster_namedtuple,
 )
 from dagster.seven import JSONDecodeError
-from dagster.utils import datetime_as_float, merge_dicts, utc_datetime_from_timestamp
+from dagster.utils import merge_dicts, utc_datetime_from_timestamp
 
 from ..pipeline_run import JobBucket, PipelineRun, PipelineRunsFilter, RunRecord, TagBucket
 from .base import RunStorage
@@ -39,6 +40,7 @@ from .migration import OPTIONAL_DATA_MIGRATIONS, REQUIRED_DATA_MIGRATIONS, RUN_P
 from .schema import (
     BulkActionsTable,
     DaemonHeartbeatsTable,
+    InstanceInfo,
     RunTagsTable,
     RunsTable,
     SecondaryIndexMigrationTable,
@@ -139,15 +141,20 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         run_stats_cols_in_index = self.has_run_stats_index_cols()
 
         kwargs = {}
+
+        # consider changing the `handle_run_event` signature to get timestamp off of the
+        # EventLogEntry instead of the DagsterEvent, for consistency
+        now = pendulum.now("UTC")
+
         if run_stats_cols_in_index and event.event_type == DagsterEventType.PIPELINE_START:
-            kwargs["start_time"] = datetime_as_float(datetime.now())
+            kwargs["start_time"] = now.timestamp()
 
         if run_stats_cols_in_index and event.event_type in {
             DagsterEventType.PIPELINE_CANCELED,
             DagsterEventType.PIPELINE_FAILURE,
             DagsterEventType.PIPELINE_SUCCESS,
         }:
-            kwargs["end_time"] = datetime_as_float(datetime.now())
+            kwargs["end_time"] = now.timestamp()
 
         with self.connect() as conn:
 
@@ -157,7 +164,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 .values(
                     status=new_pipeline_status.value,
                     run_body=serialize_dagster_namedtuple(run.with_status(new_pipeline_status)),
-                    update_timestamp=pendulum.now("UTC"),
+                    update_timestamp=now,
                     **kwargs,
                 )
             )
@@ -718,6 +725,17 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             )
             conn.execute(snapshot_insert)
             return snapshot_id
+
+    def get_run_storage_id(self) -> str:
+        query = db.select([InstanceInfo.c.run_storage_id])
+        row = self.fetchone(query)
+        if not row:
+            run_storage_id = str(uuid.uuid4())
+            with self.connect() as conn:
+                conn.execute(InstanceInfo.insert().values(run_storage_id=run_storage_id))
+            return run_storage_id
+        else:
+            return row[0]
 
     def _has_snapshot_id(self, snapshot_id: str) -> bool:
         query = db.select([SnapshotsTable.c.snapshot_id]).where(

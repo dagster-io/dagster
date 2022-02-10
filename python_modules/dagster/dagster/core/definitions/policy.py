@@ -4,7 +4,6 @@ from typing import NamedTuple, Optional
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.utils.backcompat import experimental_class_warning
 
 
 class Backoff(Enum):
@@ -65,8 +64,6 @@ class RetryPolicy(
         backoff: Optional[Backoff] = None,
         jitter: Optional[Jitter] = None,
     ):
-        experimental_class_warning("RetryPolicy")
-
         if backoff is not None and delay is None:
             raise DagsterInvalidDefinitionError(
                 "Can not set jitter on RetryPolicy without also setting delay"

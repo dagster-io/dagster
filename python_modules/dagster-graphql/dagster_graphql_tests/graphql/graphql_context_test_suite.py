@@ -789,7 +789,7 @@ def make_graphql_context_test_suite(context_variants):
     """
         Arguments:
 
-        runs (List[GraphQLContextVariant]): List of runs to run per test in this class.
+        context_variants (List[GraphQLContextVariant]): List of runs to run per test in this class.
 
         This is the base class factory for test suites in the dagster-graphql test.
 
@@ -800,7 +800,7 @@ def make_graphql_context_test_suite(context_variants):
         GraphQLContextVariant has a number of static methods to provide common run configurations
         as well as common groups of run configuration
 
-        One can also make bespoke GraphQLContextVariants which specific implementations
+        One can also make bespoke GraphQLContextVariants with specific implementations
         of DagsterInstance, RepositoryLocation, and so forth. See that class
         for more details.
 

@@ -150,21 +150,37 @@ def test_asset_key_and_inferred():
     assert result.output_for_node("asset_baz") == 7
 
 
-def test_asset_key_for_asset_with_namespace():
-    @asset(namespace="hello")
+def test_asset_key_for_asset_with_namespace_list():
+    @asset(namespace=["hell", "o"])
     def asset_foo():
         return "foo"
 
     @asset(
         ins={"foo": AssetIn(asset_key=AssetKey("asset_foo"))}
     )  # Should fail because asset_foo is defined with namespace, so has asset key ["hello", "asset_foo"]
-    def failing_asset(foo):
+    def failing_asset(foo):  # pylint: disable=unused-argument
         pass
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
     ):
         build_assets_job("lol", [asset_foo, failing_asset])
+
+    @asset(ins={"foo": AssetIn(asset_key=AssetKey(["hell", "o", "asset_foo"]))})
+    def success_asset(foo):
+        return foo
+
+    job = build_assets_job("lol", [asset_foo, success_asset])
+
+    result = job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("success_asset") == "foo"
+
+
+def test_asset_key_for_asset_with_namespace_str():
+    @asset(namespace="hello")
+    def asset_foo():
+        return "foo"
 
     @asset(ins={"foo": AssetIn(asset_key=AssetKey(["hello", "asset_foo"]))})
     def success_asset(foo):
@@ -257,7 +273,7 @@ def test_multiple_non_argument_deps():
     def foo():
         pass
 
-    @asset
+    @asset(namespace="namespace")
     def bar():
         pass
 
@@ -265,7 +281,7 @@ def test_multiple_non_argument_deps():
     def baz():
         return 1
 
-    @asset(non_argument_deps={AssetKey("foo"), AssetKey("bar")})
+    @asset(non_argument_deps={AssetKey("foo"), AssetKey(["namespace", "bar"])})
     def qux(baz):
         return baz
 
@@ -281,7 +297,7 @@ def test_multiple_non_argument_deps():
     assert index.get_upstream_outputs("qux", "foo") == [
         OutputHandleSnap("foo", "result"),
     ]
-    assert index.get_upstream_outputs("qux", "bar") == [OutputHandleSnap("bar", "result")]
+    assert index.get_upstream_outputs("qux", "namespace_bar") == [OutputHandleSnap("bar", "result")]
     assert index.get_upstream_outputs("qux", "baz") == [OutputHandleSnap("baz", "result")]
 
     result = job.execute_in_process()

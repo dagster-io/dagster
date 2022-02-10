@@ -115,6 +115,7 @@ export const LatestMaterializationMetadata: React.FC<{
             <td>
               <MetadataEntry entry={entry} expandSmallValues={true} />
             </td>
+            <td>{entry.description}</td>
           </tr>
         ))}
       </tbody>
@@ -153,10 +154,6 @@ export const LATEST_MATERIALIZATION_METADATA_FRAGMENT = gql`
     runId
     timestamp
     stepKey
-    stepStats {
-      endTime
-      startTime
-    }
     metadataEntries {
       ...MetadataEntryFragment
     }

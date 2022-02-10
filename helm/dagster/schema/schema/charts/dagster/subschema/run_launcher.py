@@ -45,6 +45,7 @@ class CeleryK8sRunLauncherConfig(BaseModel):
     volumeMounts: List[kubernetes.VolumeMount]
     volumes: List[kubernetes.Volume]
     labels: Optional[Dict[str, str]]
+    failPodOnRunFailure: Optional[bool]
 
     class Config:
         extra = Extra.forbid
@@ -62,6 +63,7 @@ class K8sRunLauncherConfig(BaseModel):
     volumeMounts: List[kubernetes.VolumeMount]
     volumes: List[kubernetes.Volume]
     labels: Optional[Dict[str, str]]
+    failPodOnRunFailure: Optional[bool]
 
     class Config:
         extra = Extra.forbid

@@ -142,6 +142,62 @@ class Shape(_ConfigHasFields):
         )
 
 
+class Map(ConfigType):
+    """Defines a config dict with arbitrary scalar keys and typed values.
+
+    A map can contrain arbitrary keys of the specified scalar type, each of which has
+    type checked values. Unlike :py:class:`Shape` and :py:class:`Permissive`, scalar
+    keys other than strings can be used, and unlike :py:class:`Permissive`, all
+    values are type checked.
+    Args:
+        key_type (type):
+            The type of keys this map can contain. Must be a scalar type.
+        inner_type (type):
+            The type of the values that this map type can contain.
+        key_label_name (string):
+            Optional name which describes the role of keys in the map.
+
+    **Examples:**
+
+    .. code-block:: python
+
+        @op(config_schema=Field(Map({str: int})))
+        def partially_specified_config(context) -> List:
+            return sorted(list(context.op_config.items()))
+    """
+
+    def __init__(self, key_type, inner_type, key_label_name=None):
+        from .field import resolve_to_config_type
+
+        self.key_type = resolve_to_config_type(key_type)
+        self.inner_type = resolve_to_config_type(inner_type)
+        self.given_name = key_label_name
+
+        check.inst_param(self.key_type, "key_type", ConfigType)
+        check.inst_param(self.inner_type, "inner_type", ConfigType)
+        check.param_invariant(
+            self.key_type.kind == ConfigTypeKind.SCALAR, "key_type", "Key type must be a scalar"
+        )
+        check.opt_str_param(self.given_name, "name")
+
+        super(Map, self).__init__(
+            key="Map.{key_type}.{inner_type}{name_key}".format(
+                key_type=self.key_type.key,
+                inner_type=self.inner_type.key,
+                name_key=f":name: {key_label_name}" if key_label_name else "",
+            ),
+            # We use the given name field to store the key label name
+            # this is used elsewhere to give custom types names
+            given_name=key_label_name,
+            type_params=[self.key_type, self.inner_type],
+            kind=ConfigTypeKind.MAP,
+        )
+
+    @property
+    def key_label_name(self):
+        return self.given_name
+
+
 def _define_permissive_dict_key(fields, description):
     return (
         "Permissive." + _compute_fields_hash(fields, description=description)
@@ -306,6 +362,37 @@ def expand_list(original_root: object, the_list: List[object], stack: List[str])
     return Array(inner_type)
 
 
+def expand_map(original_root: object, the_dict: Dict[object, object], stack: List[str]) -> Map:
+
+    if len(the_dict) != 1:
+        raise DagsterInvalidConfigDefinitionError(
+            original_root, the_dict, stack, "Map dict must be of length 1"
+        )
+
+    key = list(the_dict.keys())[0]
+    key_type = _convert_potential_type(original_root, key, stack)
+    if not key_type or not key_type.kind == ConfigTypeKind.SCALAR:
+        raise DagsterInvalidConfigDefinitionError(
+            original_root,
+            the_dict,
+            stack,
+            "Map dict must have a scalar type as its only key. Got key {}".format(repr(key)),
+        )
+
+    inner_type = _convert_potential_type(original_root, the_dict[key], stack)
+    if not inner_type:
+        raise DagsterInvalidConfigDefinitionError(
+            original_root,
+            the_dict,
+            stack,
+            "Map must have a single value and contain a valid type i.e. {{str: int}}. Got item {}".format(
+                repr(the_dict[key])
+            ),
+        )
+
+    return Map(key_type, inner_type)
+
+
 def convert_potential_field(potential_field: object) -> "Field":
     return _convert_potential_field(potential_field, potential_field, [])
 
@@ -314,6 +401,13 @@ def _convert_potential_type(original_root: object, potential_type, stack: List[s
     from .field import resolve_to_config_type
 
     if isinstance(potential_type, dict):
+        # A dictionary, containing a single key which is a type (int, str, etc) and not a string is interpreted as a Map
+        if len(potential_type) == 1:
+            key = list(potential_type.keys())[0]
+            if not isinstance(key, str) and _convert_potential_type(original_root, key, stack):
+                return expand_map(original_root, potential_type, stack)
+
+        # Otherwise, the dictionary is interpreted as a Shape
         return Shape(_expand_fields_dict(original_root, potential_type, stack))
 
     if isinstance(potential_type, list):

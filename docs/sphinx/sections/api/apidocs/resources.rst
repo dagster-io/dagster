@@ -15,4 +15,6 @@ Resources
 
 .. autofunction:: build_init_resource_context
 
+.. autofunction:: build_resources
+
 .. currentmodule:: dagster

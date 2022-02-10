@@ -816,3 +816,6 @@ class HookExecutionResult(
             hook_name=check.str_param(hook_name, "hook_name"),
             is_skipped=cast(bool, check.opt_bool_param(is_skipped, "is_skipped", default=False)),
         )
+
+
+UserEvent = Union[Materialization, AssetMaterialization, AssetObservation, ExpectationResult]

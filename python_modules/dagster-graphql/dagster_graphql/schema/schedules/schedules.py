@@ -3,6 +3,7 @@ from dagster import check
 from dagster.core.host_representation import ExternalSchedule
 from dagster.core.scheduler.instigation import InstigatorState
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
+from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 
 from ..errors import (
     GraphenePythonError,
@@ -41,13 +42,20 @@ class GrapheneSchedule(graphene.ObjectType):
     class Meta:
         name = "Schedule"
 
-    def __init__(self, external_schedule, schedule_state):
+    def __init__(self, external_schedule, schedule_state, batch_loader=None):
         self._external_schedule = check.inst_param(
             external_schedule, "external_schedule", ExternalSchedule
         )
         self._schedule_state = check.opt_inst_param(
             schedule_state, "schedule_state", InstigatorState
         )
+
+        # optional run loader, provided by a parent graphene object (e.g. GrapheneRepository)
+        # that instantiates multiple schedules
+        self._batch_loader = check.opt_inst_param(
+            batch_loader, "batch_loader", RepositoryScopedBatchLoader
+        )
+
         if not self._schedule_state:
             self._schedule_state = external_schedule.get_default_instigation_state()
 
@@ -57,7 +65,6 @@ class GrapheneSchedule(graphene.ObjectType):
             pipeline_name=external_schedule.pipeline_name,
             solid_selection=external_schedule.solid_selection,
             mode=external_schedule.mode,
-            scheduleState=GrapheneInstigationState(self._schedule_state),
             execution_timezone=(
                 self._external_schedule.execution_timezone
                 if self._external_schedule.execution_timezone
@@ -68,6 +75,10 @@ class GrapheneSchedule(graphene.ObjectType):
 
     def resolve_id(self, _):
         return self._external_schedule.get_external_origin_id()
+
+    def resolve_scheduleState(self, _graphene_info):
+        # forward the batch run loader to the instigation state, which provides the schedule runs
+        return GrapheneInstigationState(self._schedule_state, self._batch_loader)
 
     def resolve_partition_set(self, graphene_info):
         from ..partition_sets import GraphenePartitionSet

@@ -56,6 +56,29 @@ fragment metadataEntryFragment on EventMetadataEntry {
       path
     }
   }
+  ... on EventTableMetadataEntry  {
+    table {
+      records
+      schema {
+        constraints { other }
+        columns {
+          name
+          type
+          constraints { nullable unique other }
+        }
+      }
+    }
+  }
+  ... on EventTableSchemaMetadataEntry  {
+    schema {
+      constraints { other }
+      columns {
+        name
+        type
+        constraints { nullable unique other }
+      }
+    }
+  }
 }
 
 fragment stepEventFragment on StepEvent {

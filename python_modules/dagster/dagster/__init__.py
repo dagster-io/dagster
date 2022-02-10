@@ -1,5 +1,5 @@
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
-from dagster.config import Enum, EnumValue, Field, Permissive, Selector, Shape
+from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
 from dagster.config.config_schema import ConfigSchema
 from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.definitions import (
@@ -73,6 +73,13 @@ from dagster.core.definitions import (
     SolidDefinition,
     SolidInvocation,
     StaticPartitionsDefinition,
+    TableColumn,
+    TableColumnConstraints,
+    TableConstraints,
+    TableMetadataEntryData,
+    TableRecord,
+    TableSchema,
+    TableSchemaMetadataEntryData,
     TextMetadataEntryData,
     TypeCheck,
     UrlMetadataEntryData,
@@ -155,6 +162,7 @@ from dagster.core.execution.api import (
     reexecute_pipeline,
     reexecute_pipeline_iterator,
 )
+from dagster.core.execution.build_resources import build_resources
 from dagster.core.execution.context.compute import OpExecutionContext, SolidExecutionContext
 from dagster.core.execution.context.hook import HookContext, build_hook_context
 from dagster.core.execution.context.init import InitResourceContext, build_init_resource_context
@@ -234,6 +242,12 @@ __all__ = [
     "AssetMaterialization",
     "AssetObservation",
     "AssetSensorDefinition",
+    "TableColumn",
+    "TableColumnConstraints",
+    "TableConstraints",
+    "TableRecord",
+    "TableSchemaMetadataEntryData",
+    "TableSchema",
     "CompositeSolidDefinition",
     "ConfigMapping",
     "DependencyDefinition",
@@ -244,6 +258,7 @@ __all__ = [
     "ExpectationResult",
     "Failure",
     "Field",
+    "Map",
     "GraphDefinition",
     "GraphIn",
     "GraphOut",
@@ -276,6 +291,7 @@ __all__ = [
     "SolidDefinition",
     "NodeInvocation",
     "SolidInvocation",
+    "TableMetadataEntryData",
     "TextMetadataEntryData",
     "UrlMetadataEntryData",
     "make_values_resource",
@@ -323,6 +339,7 @@ __all__ = [
     "OpExecutionContext",
     "PipelineExecutionResult",
     "RetryRequested",
+    "build_resources",
     "SolidExecutionResult",
     "SolidExecutionContext",
     "build_solid_context",

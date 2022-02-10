@@ -9,7 +9,7 @@ const TELEMETRY_WHITELIST = new Set([
   'ScheduleRootQuery',
   'SensorRootQuery',
   'PaginatedAssetKeysQuery',
-  'AssetMaterializationsQuery',
+  'AssetEventsQuery',
 ]);
 
 export const telemetryLink = (pathPrefix: string) => {

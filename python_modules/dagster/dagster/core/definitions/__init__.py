@@ -39,6 +39,13 @@ from .event_metadata import (
     MarkdownMetadataEntryData,
     PathMetadataEntryData,
     PythonArtifactMetadataEntryData,
+    TableColumn,
+    TableColumnConstraints,
+    TableConstraints,
+    TableMetadataEntryData,
+    TableRecord,
+    TableSchema,
+    TableSchemaMetadataEntryData,
     TextMetadataEntryData,
     UrlMetadataEntryData,
 )

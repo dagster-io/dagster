@@ -1,5 +1,6 @@
 import csv
 import datetime
+import gc
 import logging
 import os
 import string
@@ -28,6 +29,7 @@ from dagster import (
     IOManagerDefinition,
     InputDefinition,
     Int,
+    Map,
     Materialization,
     ModeDefinition,
     Noneable,
@@ -43,6 +45,11 @@ from dagster import (
     SolidExecutionContext,
     StaticPartitionsDefinition,
     String,
+    TableColumn,
+    TableColumnConstraints,
+    TableConstraints,
+    TableRecord,
+    TableSchema,
     check,
     composite_solid,
     dagster_type_loader,
@@ -318,6 +325,26 @@ def more_complicated_config():
 
     noop_solid()
     a_solid_with_three_field_config()
+
+
+@pipeline
+def config_with_map():
+    @solid(
+        config_schema={
+            "field_one": Field(Map(str, int, key_label_name="username")),
+            "field_two": Field({bool: int}, is_required=False),
+            "field_three": Field(
+                {str: {"nested": [Noneable(int)]}},
+                is_required=False,
+                default_value={"test": {"nested": [None, 1, 2]}},
+            ),
+        }
+    )
+    def a_solid_with_map_config(_context):
+        return None
+
+    noop_solid()
+    a_solid_with_map_config()
 
 
 @pipeline
@@ -664,6 +691,29 @@ def materialization_pipeline():
                 EventMetadataEntry.int(LONG_INT, "long int"),
                 EventMetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
                 EventMetadataEntry.asset(AssetKey("my_asset"), "my asset"),
+                EventMetadataEntry.table(
+                    label="table",
+                    records=[
+                        TableRecord(foo=1, bar=2),
+                        TableRecord(foo=3, bar=4),
+                    ],
+                ),
+                EventMetadataEntry.table_schema(
+                    label="table_schema",
+                    schema=TableSchema(
+                        columns=[
+                            TableColumn(
+                                name="foo",
+                                type="integer",
+                                constraints=TableColumnConstraints(unique=True),
+                            ),
+                            TableColumn(name="bar", type="string"),
+                        ],
+                        constraints=TableConstraints(
+                            other=["some constraint"],
+                        ),
+                    ),
+                ),
             ],
         )
         yield Output(None)
@@ -835,7 +885,24 @@ def tagged_pipeline():
     simple_solid()
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
+@resource
+def disable_gc(_context):
+    # Workaround for termination signals being raised during GC and getting swallowed during
+    # tests
+    try:
+        print("Disabling GC")  # pylint: disable=print-call
+        gc.disable()
+        yield
+    finally:
+        print("Re-enabling GC")  # pylint: disable=print-call
+        gc.enable()
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(resource_defs={"io_manager": fs_io_manager, "disable_gc": disable_gc})
+    ]
+)
 def retry_multi_input_early_terminate_pipeline():
     @lambda_solid(output_def=OutputDefinition(Int))
     def return_one():
@@ -845,6 +912,7 @@ def retry_multi_input_early_terminate_pipeline():
         config_schema={"wait_to_terminate": bool},
         input_defs=[InputDefinition("one", Int)],
         output_defs=[OutputDefinition(Int)],
+        required_resource_keys={"disable_gc"},
     )
     def get_input_one(context, one):
         if context.solid_config["wait_to_terminate"]:
@@ -856,6 +924,7 @@ def retry_multi_input_early_terminate_pipeline():
         config_schema={"wait_to_terminate": bool},
         input_defs=[InputDefinition("one", Int)],
         output_defs=[OutputDefinition(Int)],
+        required_resource_keys={"disable_gc"},
     )
     def get_input_two(context, one):
         if context.solid_config["wait_to_terminate"]:
@@ -1442,6 +1511,7 @@ def define_pipelines():
         materialization_pipeline,
         more_complicated_config,
         more_complicated_nested_config,
+        config_with_map,
         multi_asset_pipeline,
         multi_mode_with_loggers,
         multi_mode_with_resources,

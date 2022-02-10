@@ -2,20 +2,22 @@ from collections import namedtuple
 
 import boto3
 from botocore.exceptions import ClientError
-from dagster import Array, Field, StringSource, check
+from dagster import Array, Field, Noneable, StringSource, check
 from dagster.core.events import EngineEventData, EventMetadataEntry
 from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass
-from dagster.utils.backcompat import experimental
+from dagster.utils import merge_dicts
 
+from ..secretsmanager import get_secrets_from_arns, get_tagged_secrets
 from .tasks import default_ecs_task_definition, default_ecs_task_metadata
 
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 
 
-@experimental
 class EcsRunLauncher(RunLauncher, ConfigurableClass):
+    """RunLauncher that starts a task in ECS for each Dagster job run."""
+
     def __init__(
         self,
         inst_data=None,
@@ -80,7 +82,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 ),
             ),
             "secrets_tag": Field(
-                StringSource,
+                Noneable(StringSource),
                 is_required=False,
                 default_value="dagster",
                 description=(
@@ -233,49 +235,15 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             metadata,
             image,
             self.container_name,
-            secrets={**self._tagged_secrets(), **self._configured_secrets()},
+            secrets=merge_dicts(
+                (
+                    get_tagged_secrets(self.secrets_manager, self.secrets_tag)
+                    if self.secrets_tag
+                    else {}
+                ),
+                get_secrets_from_arns(self.secrets_manager, self.secrets),
+            ),
         )
 
     def _task_metadata(self):
         return default_ecs_task_metadata(self.ec2, self.ecs)
-
-    def _tagged_secrets(self):
-        """
-        Return a dictionary of AWS Secrets Manager names to arns
-        for any secret tagged with `self.secrets_tag`.
-
-        These will be passed to the task definition and loaded into
-        each container's environment at startup.
-        """
-
-        secrets = {}
-        paginator = self.secrets_manager.get_paginator("list_secrets")
-        for page in paginator.paginate(
-            Filters=[
-                {
-                    "Key": "tag-key",
-                    "Values": [self.secrets_tag],
-                },
-            ],
-        ):
-
-            for secret in page["SecretList"]:
-                secrets[secret["Name"]] = secret["ARN"]
-
-        return secrets
-
-    def _configured_secrets(self):
-        """
-        Return a dictionary of AWS Secrets Manager names to arns
-        for any secret configured with `self.secrets`.
-
-        These will be passed to the task definition and loaded into
-        each container's environment at startup.
-        """
-
-        secrets = {}
-        for arn in self.secrets:
-            name = self.secrets_manager.describe_secret(SecretId=arn)["Name"]
-            secrets[name] = arn
-
-        return secrets

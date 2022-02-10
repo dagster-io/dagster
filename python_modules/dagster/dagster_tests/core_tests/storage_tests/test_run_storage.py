@@ -33,3 +33,6 @@ class TestInMemoryImplementation(TestRunStorage):
     def run_storage(self, request):
         with request.param() as s:
             yield s
+
+    def test_storage_telemetry(self, storage):
+        pass

@@ -21,6 +21,7 @@ from dagster.core.selector.subset_selector import (
     OpSelectionData,
     parse_op_selection,
 )
+from dagster.core.storage.tags import PARTITION_NAME_TAG
 from dagster.core.utils import str_format_set
 
 from .executor_definition import ExecutorDefinition
@@ -175,7 +176,7 @@ class JobDefinition(PipelineDefinition):
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
-            run_tags={"partition": partition_key} if partition_key else None,
+            run_tags={PARTITION_NAME_TAG: partition_key} if partition_key else None,
         )
 
     @property

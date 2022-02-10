@@ -51,7 +51,11 @@ type DagitQuery {
   instance: Instance!
   assetsOrError(prefix: [String!], cursor: String, limit: Int): AssetsOrError!
   assetOrError(assetKey: AssetKeyInput!): AssetOrError!
-  assetNodes: [AssetNode!]!
+  assetNodes(
+    pipeline: PipelineSelector
+    assetKeys: [AssetKeyInput!]
+    loadMaterializations: Boolean = false
+  ): [AssetNode!]!
   assetNodeOrError(assetKey: AssetKeyInput!): AssetNodeOrError!
   partitionBackfillOrError(backfillId: String!): PartitionBackfillOrError!
   partitionBackfillsOrError(
@@ -115,7 +119,6 @@ type Pipeline implements SolidContainer & IPipelineSnapshot {
   isJob: Boolean!
   isAssetJob: Boolean!
   repository: Repository!
-  assetNodes(assetKeys: [AssetKeyInput!], loadMaterializations: Boolean = false): [AssetNode!]!
 }
 
 interface SolidContainer {
@@ -142,6 +145,7 @@ interface ISolidDefinition {
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
+  assetNodes: [AssetNode!]!
 }
 
 type MetadataItemDefinition {
@@ -162,6 +166,7 @@ type SolidDefinition implements ISolidDefinition {
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
+  assetNodes: [AssetNode!]!
   configField: ConfigTypeField
   requiredResources: [ResourceRequirement!]!
 }
@@ -186,6 +191,7 @@ interface DagsterType {
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
   innerTypes: [DagsterType!]!
+  metadataEntries: [EventMetadataEntry!]!
 }
 
 interface ConfigType {
@@ -196,71 +202,41 @@ interface ConfigType {
   isSelector: Boolean!
 }
 
-type ConfigTypeField {
-  name: String!
+interface EventMetadataEntry {
+  label: String!
   description: String
-  configType: ConfigType!
-  configTypeKey: String!
-  isRequired: Boolean!
 }
 
-type ResourceRequirement {
-  resourceKey: String!
+type AssetNode {
+  id: ID!
+  assetKey: AssetKey!
+  description: String
+  opName: String
+  op: SolidDefinition
+  jobs: [Pipeline!]!
+  repository: Repository!
+  dependencies: [AssetDependency!]!
+  dependedBy: [AssetDependency!]!
+  dependencyKeys: [AssetKey!]!
+  dependedByKeys: [AssetKey!]!
+  assetMaterializations(
+    partitions: [String]
+    beforeTimestampMillis: String
+    limit: Int
+  ): [MaterializationEvent!]!
+  partitionKeys: [String!]!
+  partitionDefinition: String
+  latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
+  materializationCountByPartition: [MaterializationCountByPartition!]!
 }
 
-type Input {
-  solid: Solid!
-  definition: InputDefinition!
-  dependsOn: [Output!]!
-  isDynamicCollect: Boolean!
+type AssetKey {
+  path: [String!]!
 }
 
-type Output {
-  solid: Solid!
-  definition: OutputDefinition!
-  dependedBy: [Input!]!
-}
-
-type SolidHandle {
-  handleID: String!
-  solid: Solid!
-  parent: SolidHandle
-  stepStats(limit: Int): SolidStepStatsOrError
-}
-
-union SolidStepStatsOrError = SolidStepStatsConnection | SolidStepStatusUnavailableError
-
-type SolidStepStatsConnection {
-  nodes: [RunStepStats!]!
-}
-
-type RunStepStats implements PipelineRunStepStats {
-  runId: String!
-  stepKey: String!
-  status: StepEventStatus
-  startTime: Float
-  endTime: Float
-  materializations: [MaterializationEvent!]!
-  expectationResults: [ExpectationResult!]!
-  attempts: [RunMarker!]!
-  markers: [RunMarker!]!
-}
-
-interface PipelineRunStepStats {
-  runId: String!
-  stepKey: String!
-  status: StepEventStatus
-  startTime: Float
-  endTime: Float
-  materializations: [MaterializationEvent!]!
-  expectationResults: [ExpectationResult!]!
-}
-
-enum StepEventStatus {
-  SKIPPED
-  SUCCESS
-  FAILURE
-  IN_PROGRESS
+type AssetDependency {
+  inputName: String!
+  asset: AssetNode!
 }
 
 type MaterializationEvent implements MessageEvent & StepEvent & DisplayableEvent {
@@ -349,15 +325,6 @@ interface DisplayableEvent {
   label: String!
   description: String
   metadataEntries: [EventMetadataEntry!]!
-}
-
-interface EventMetadataEntry {
-  label: String!
-  description: String
-}
-
-type AssetKey {
-  path: [String!]!
 }
 
 union RunOrError = Run | RunNotFoundError | PythonError
@@ -486,6 +453,47 @@ interface Error {
   message: String!
 }
 
+type RunStepStats implements PipelineRunStepStats {
+  runId: String!
+  stepKey: String!
+  status: StepEventStatus
+  startTime: Float
+  endTime: Float
+  materializations: [MaterializationEvent!]!
+  expectationResults: [ExpectationResult!]!
+  attempts: [RunMarker!]!
+  markers: [RunMarker!]!
+}
+
+interface PipelineRunStepStats {
+  runId: String!
+  stepKey: String!
+  status: StepEventStatus
+  startTime: Float
+  endTime: Float
+  materializations: [MaterializationEvent!]!
+  expectationResults: [ExpectationResult!]!
+}
+
+enum StepEventStatus {
+  SKIPPED
+  SUCCESS
+  FAILURE
+  IN_PROGRESS
+}
+
+type ExpectationResult implements DisplayableEvent {
+  label: String!
+  description: String
+  metadataEntries: [EventMetadataEntry!]!
+  success: Boolean!
+}
+
+type RunMarker {
+  startTime: Float
+  endTime: Float
+}
+
 type ComputeLogs {
   runId: String!
   stepKey: String!
@@ -544,46 +552,17 @@ type Asset {
     partitions: [String]
     partitionInLast: Int
     beforeTimestampMillis: String
+    afterTimestampMillis: String
     limit: Int
   ): [MaterializationEvent!]!
-  definition: AssetNode
-}
-
-type AssetNode {
-  id: ID!
-  assetKey: AssetKey!
-  description: String
-  opName: String
-  jobs: [Pipeline!]!
-  repository: Repository!
-  dependencies: [AssetDependency!]!
-  dependedBy: [AssetDependency!]!
-  dependencyKeys: [AssetKey!]!
-  dependedByKeys: [AssetKey!]!
-  assetMaterializations(
-    partitions: [String]
-    beforeTimestampMillis: String
-    limit: Int
-  ): [MaterializationEvent!]!
-  partitionKeys: [String!]!
-  partitionDefinition: String
-  latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
-  materializationCountByPartition: [MaterializationCountByPartition!]!
   assetObservations(
     partitions: [String]
+    partitionInLast: Int
     beforeTimestampMillis: String
+    afterTimestampMillis: String
     limit: Int
   ): [ObservationEvent!]!
-}
-
-type AssetDependency {
-  inputName: String!
-  asset: AssetNode!
-}
-
-type MaterializationCountByPartition {
-  partition: String!
-  materializationCount: Int!
+  definition: AssetNode
 }
 
 type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
@@ -928,13 +907,6 @@ type StepExpectationResultEvent implements MessageEvent & StepEvent {
   expectationResult: ExpectationResult!
 }
 
-type ExpectationResult implements DisplayableEvent {
-  label: String!
-  description: String
-  metadataEntries: [EventMetadataEntry!]!
-  success: Boolean!
-}
-
 type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
   runId: String!
   message: String!
@@ -1021,9 +993,47 @@ type AssetLineageInfo {
   partitions: [String!]!
 }
 
-type RunMarker {
-  startTime: Float
-  endTime: Float
+type MaterializationCountByPartition {
+  partition: String!
+  materializationCount: Int!
+}
+
+type ConfigTypeField {
+  name: String!
+  description: String
+  configType: ConfigType!
+  configTypeKey: String!
+  isRequired: Boolean!
+}
+
+type ResourceRequirement {
+  resourceKey: String!
+}
+
+type Input {
+  solid: Solid!
+  definition: InputDefinition!
+  dependsOn: [Output!]!
+  isDynamicCollect: Boolean!
+}
+
+type Output {
+  solid: Solid!
+  definition: OutputDefinition!
+  dependedBy: [Input!]!
+}
+
+type SolidHandle {
+  handleID: String!
+  solid: Solid!
+  parent: SolidHandle
+  stepStats(limit: Int): SolidStepStatsOrError
+}
+
+union SolidStepStatsOrError = SolidStepStatsConnection | SolidStepStatusUnavailableError
+
+type SolidStepStatsConnection {
+  nodes: [RunStepStats!]!
 }
 
 type SolidStepStatusUnavailableError implements Error {
@@ -1086,6 +1096,7 @@ type RegularDagsterType implements DagsterType {
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
   innerTypes: [DagsterType!]!
+  metadataEntries: [EventMetadataEntry!]!
 }
 
 type PipelineNotFoundError implements Error {
@@ -1291,10 +1302,6 @@ type PipelinePreset {
   tags: [PipelineTag!]!
 }
 
-input AssetKeyInput {
-  path: [String!]!
-}
-
 type Job implements SolidContainer & IPipelineSnapshot {
   id: ID!
   name: String!
@@ -1316,7 +1323,6 @@ type Job implements SolidContainer & IPipelineSnapshot {
   isJob: Boolean!
   isAssetJob: Boolean!
   repository: Repository!
-  assetNodes(assetKeys: [AssetKeyInput!], loadMaterializations: Boolean = false): [AssetNode!]!
 }
 
 type UsedSolid {
@@ -1588,7 +1594,11 @@ type EvaluationStack {
   entries: [EvaluationStackEntry!]!
 }
 
-union EvaluationStackEntry = EvaluationStackListItemEntry | EvaluationStackPathEntry
+union EvaluationStackEntry =
+    EvaluationStackListItemEntry
+  | EvaluationStackPathEntry
+  | EvaluationStackMapKeyEntry
+  | EvaluationStackMapValueEntry
 
 type EvaluationStackListItemEntry {
   listIndex: Int!
@@ -1596,6 +1606,16 @@ type EvaluationStackListItemEntry {
 
 type EvaluationStackPathEntry {
   fieldName: String!
+}
+
+type EvaluationStackMapKeyEntry {
+  mapKey: GenericScalar!
+}
+
+scalar GenericScalar
+
+type EvaluationStackMapValueEntry {
+  mapKey: GenericScalar!
 }
 
 enum EvaluationErrorReason {
@@ -1671,6 +1691,10 @@ union AssetOrError = Asset | AssetNotFoundError
 
 type AssetNotFoundError implements Error {
   message: String!
+}
+
+input AssetKeyInput {
+  path: [String!]!
 }
 
 union AssetNodeOrError = AssetNode | AssetNotFoundError
@@ -2022,6 +2046,45 @@ type EventAssetMetadataEntry implements EventMetadataEntry {
   assetKey: AssetKey!
 }
 
+type EventTableSchemaMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  schema: TableSchema!
+}
+
+type TableSchema {
+  constraints: TableConstraints
+  columns: [TableColumn!]!
+}
+
+type TableConstraints {
+  other: [String!]!
+}
+
+type TableColumn {
+  name: String!
+  type: String!
+  description: String
+  constraints: TableColumnConstraints!
+}
+
+type TableColumnConstraints {
+  nullable: Boolean!
+  unique: Boolean!
+  other: [String!]!
+}
+
+type EventTableMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  table: Table!
+}
+
+type Table {
+  schema: TableSchema!
+  records: [String!]!
+}
+
 type EventFloatMetadataEntry implements EventMetadataEntry {
   label: String!
   description: String
@@ -2280,6 +2343,17 @@ type ScalarUnionConfigType implements ConfigType {
   nonScalarTypeKey: String!
 }
 
+type MapConfigType implements ConfigType {
+  key: String!
+  description: String
+  recursiveConfigTypes: [ConfigType!]!
+  typeParamKeys: [String!]!
+  isSelector: Boolean!
+  keyType: ConfigType!
+  valueType: ConfigType!
+  keyLabelName: String
+}
+
 type ListDagsterType implements DagsterType & WrappingDagsterType {
   key: String!
   name: String
@@ -2292,6 +2366,7 @@ type ListDagsterType implements DagsterType & WrappingDagsterType {
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
   innerTypes: [DagsterType!]!
+  metadataEntries: [EventMetadataEntry!]!
   ofType: DagsterType!
 }
 
@@ -2311,6 +2386,7 @@ type NullableDagsterType implements DagsterType & WrappingDagsterType {
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
   innerTypes: [DagsterType!]!
+  metadataEntries: [EventMetadataEntry!]!
   ofType: DagsterType!
 }
 
@@ -2349,6 +2425,7 @@ type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {
   metadata: [MetadataItemDefinition!]!
   inputDefinitions: [InputDefinition!]!
   outputDefinitions: [OutputDefinition!]!
+  assetNodes: [AssetNode!]!
   id: ID!
   solids: [Solid!]!
   solidHandle(handleID: String!): SolidHandle

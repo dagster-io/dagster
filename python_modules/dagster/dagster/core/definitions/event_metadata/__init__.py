@@ -4,40 +4,35 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optiona
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidEventMetadata
 from dagster.serdes import whitelist_for_serdes
-from dagster.utils.backcompat import experimental_class_warning
+from dagster.utils.backcompat import experimental, experimental_class_warning
+
+from .table import TableColumn, TableColumnConstraints, TableConstraints, TableRecord, TableSchema
 
 if TYPE_CHECKING:
     from dagster.core.definitions.events import AssetKey
 
-ParseableMetadataEntryData = Union[
-    "TextMetadataEntryData",
-    "UrlMetadataEntryData",
-    "PathMetadataEntryData",
-    "JsonMetadataEntryData",
-    "MarkdownMetadataEntryData",
-    "FloatMetadataEntryData",
-    "IntMetadataEntryData",
-    "PythonArtifactMetadataEntryData",
+EventMetadataEntryData = Union[
+    "TableSchemaMetadataEntryData",
     "DagsterAssetMetadataEntryData",
     "DagsterPipelineRunMetadataEntryData",
-    str,
+    "FloatMetadataEntryData",
+    "IntMetadataEntryData",
+    "JsonMetadataEntryData",
+    "MarkdownMetadataEntryData",
+    "PathMetadataEntryData",
+    "PythonArtifactMetadataEntryData",
+    "TableMetadataEntryData",
+    "TextMetadataEntryData",
+    "UrlMetadataEntryData",
+]
+
+ParseableMetadataEntryData = Union[
+    EventMetadataEntryData,
+    dict,
     float,
     int,
     list,
-    dict,
-]
-
-EventMetadataEntryData = Union[
-    "TextMetadataEntryData",
-    "UrlMetadataEntryData",
-    "PathMetadataEntryData",
-    "JsonMetadataEntryData",
-    "MarkdownMetadataEntryData",
-    "FloatMetadataEntryData",
-    "IntMetadataEntryData",
-    "PythonArtifactMetadataEntryData",
-    "DagsterAssetMetadataEntryData",
-    "DagsterPipelineRunMetadataEntryData",
+    str,
 ]
 
 
@@ -55,21 +50,7 @@ def parse_metadata_entry(label: str, value: ParseableMetadataEntryData) -> "Even
             "parameter to pass in a List[EventMetadataEntry|PartitionMetadataEntry]."
         )
 
-    if isinstance(
-        value,
-        (
-            TextMetadataEntryData,
-            UrlMetadataEntryData,
-            PathMetadataEntryData,
-            JsonMetadataEntryData,
-            MarkdownMetadataEntryData,
-            FloatMetadataEntryData,
-            IntMetadataEntryData,
-            PythonArtifactMetadataEntryData,
-            DagsterAssetMetadataEntryData,
-            DagsterPipelineRunMetadataEntryData,
-        ),
-    ):
+    if isinstance(value, EntryDataUnion):
         return EventMetadataEntry(label, None, value)
 
     if isinstance(value, str):
@@ -330,6 +311,60 @@ class DagsterAssetMetadataEntryData(
         )
 
 
+@experimental
+@whitelist_for_serdes
+class TableMetadataEntryData(
+    NamedTuple(
+        "_TableMetadataEntryData",
+        [
+            ("records", List[TableRecord]),
+            ("schema", TableSchema),
+        ],
+    )
+):
+    """Container class for table metadata entry data.
+
+    Args:
+        records (TableRecord): The data as a list of records (i.e. rows).
+        schema (Optional[TableSchema]): A schema for the table.
+    """
+
+    @staticmethod
+    def infer_column_type(value):
+        if isinstance(value, bool):
+            return "bool"
+        elif isinstance(value, int):
+            return "int"
+        elif isinstance(value, float):
+            return "float"
+        else:
+            return "string"
+
+    def __new__(cls, records: List[TableRecord], schema: TableSchema):
+        return super(TableMetadataEntryData, cls).__new__(
+            cls,
+            check.list_param(records, "records", of_type=TableRecord),
+            check.inst_param(schema, "schema", TableSchema),
+        )
+
+
+@experimental
+@whitelist_for_serdes
+class TableSchemaMetadataEntryData(
+    NamedTuple("_TableSchemaMetadataEntryData", [("schema", TableSchema)])
+):
+    """Representation of a schema for arbitrary tabular data.
+
+    Args:
+        schema (TableSchema): The dictionary containing the schema representation.
+    """
+
+    def __new__(cls, schema: TableSchema):
+        return super(TableSchemaMetadataEntryData, cls).__new__(
+            cls, check.inst_param(schema, "schema", TableSchema)
+        )
+
+
 ## for runtime checks
 
 EntryDataUnion = (
@@ -343,6 +378,8 @@ EntryDataUnion = (
     PythonArtifactMetadataEntryData,
     DagsterAssetMetadataEntryData,
     DagsterPipelineRunMetadataEntryData,
+    TableMetadataEntryData,
+    TableSchemaMetadataEntryData,
 )
 
 
@@ -581,7 +618,76 @@ class EventMetadata:
         check.inst_param(asset_key, "asset_key", AssetKey)
         return DagsterAssetMetadataEntryData(asset_key)
 
+    @staticmethod
+    @experimental
+    def table(records: List[TableRecord], schema: TableSchema) -> "TableMetadataEntryData":
+        """Static constructor for a metadata value wrapping arbitrary tabular data as
+        :py:class:`TableMetadataEntryData`. Can be used as the value type for the `metadata`
+        parameter for supported events. For example:
 
+        .. code-block:: python
+
+            @op
+            def emit_metadata(context):
+                yield ExpectationResult(
+                    success=not has_errors,
+                    label="is_valid",
+                    metadata={
+                        "errors": EventMetadata.table(
+                            records=[
+                                TableRecord(code="invalid-data-type", row=2, col="name"}]
+                            ],
+                            schema=TableSchema(
+                                columns=[
+                                    TableColumn(name="code", type="string"),
+                                    TableColumn(name="row", type="int"),
+                                    TableColumn(name="col", type="string"),
+                                ]
+                            )
+                        ),
+                    },
+                )
+
+        Args:
+            records (List[TableRecord]): The data as a list of records (i.e. rows).
+            schema (TableSchema): A schema for the table.
+        """
+        return TableMetadataEntryData(records, schema)
+
+    @staticmethod
+    @experimental
+    def table_schema(
+        schema: TableSchema,
+    ) -> "TableSchemaMetadataEntryData":
+        """Static constructor for a metadata value wrapping a table schema as
+        :py:class:`TableSchemaMetadataEntryData`. Can be used as the value type
+        for the `metadata` parameter for supported events. For example:
+
+        .. code-block:: python
+
+            schema = TableSchema(
+                columns = [
+                    TableColumn(name="id", type="int"),
+                    TableColumn(name="status", type="bool"),
+                ]
+            )
+
+            DagsterType(
+                type_check_fn=some_validation_fn,
+                name='MyTable',
+                metadata={
+                    'my_table_schema': EventMetadata.table_schema(schema),
+                }
+            )
+
+        Args:
+            schema (TableSchema): The table schema for a metadata entry.
+        """
+        return TableSchemaMetadataEntryData(schema)
+
+
+# NOTE: This would better be implemented as a generic with `EventMetadataEntryData` set as a
+# typvar, but as of 2022-01-25 mypy does not support generics on NamedTuple.
 @whitelist_for_serdes
 class EventMetadataEntry(
     NamedTuple(
@@ -589,9 +695,9 @@ class EventMetadataEntry(
         [
             ("label", str),
             ("description", Optional[str]),
-            ("entry_data", "EventMetadataEntryData"),
+            ("entry_data", EventMetadataEntryData),
         ],
-    )
+    ),
 ):
     """The standard structure for describing metadata for Dagster events.
 
@@ -868,6 +974,106 @@ class EventMetadataEntry(
 
         check.inst_param(asset_key, "asset_key", AssetKey)
         return EventMetadataEntry(label, description, DagsterAssetMetadataEntryData(asset_key))
+
+    @staticmethod
+    @experimental
+    def table(
+        records: List[TableRecord],
+        label: str,
+        description: Optional[str] = None,
+        schema: Optional[TableSchema] = None,
+    ) -> "EventMetadataEntry":
+        """Static constructor for a metadata entry containing tabluar data as
+        :py:class:`TableMetadataEntryData`. For example:
+
+        .. code-block:: python
+
+            @op
+            def emit_metadata(context):
+                yield ExpectationResult(
+                    success=not has_errors,
+                    label="is_valid",
+                    metadata_entries=[
+                        EventMetadataEntry.table(
+                            label="errors",
+                            records=[
+                                TableRecord(code="invalid-data-type", row=2, col="name"}]
+                            ],
+                            schema=TableSchema(
+                                columns=[
+                                    TableColumn(name="code", type="string"),
+                                    TableColumn(name="row", type="int"),
+                                    TableColumn(name="col", type="string"),
+                                ]
+                            )
+                        ),
+                    ],
+                )
+
+        Args:
+            records (List[TableRecord]): The data as a list of records (i.e. rows).
+            label (str): Short display label for this metadata entry.
+            description (Optional[str]): A human-readable description of this metadata entry.
+            schema (Optional[TableSchema]): A schema for the table. If none is provided, one will be
+                automatically generated by examining the first record. The schema will include as columns all
+                field names present in the first record, with a type of `"string"`, `"int"`,
+                `"bool"` or `"float"` inferred from the first record's values. If a value does
+                not directly match one of the above types, it will be treated as a string.
+        """
+        if len(records) == 0:
+            schema = check.not_none(schema, "schema must be provided if records is empty")
+        else:
+            columns = set(records[0].data.keys())
+            for record in records[1:]:
+                check.invariant(
+                    set(record.data.keys()) == columns, "All records must have the same fields"
+                )
+            schema = schema or TableSchema(
+                columns=[
+                    TableColumn(name=k, type=TableMetadataEntryData.infer_column_type(v))
+                    for k, v in records[0].data.items()
+                ]
+            )
+        return EventMetadataEntry(label, description, TableMetadataEntryData(records, schema))
+
+    @staticmethod
+    @experimental
+    def table_schema(
+        schema: TableSchema, label: str, description: Optional[str] = None
+    ) -> "EventMetadataEntry":
+        """Static constructor for a metadata entry containing a table schema as
+        :py:class:`TableSchemaMetadataEntryData`. For example:
+
+        .. code-block:: python
+
+            schema = TableSchema(
+                columns = [
+                    TableColumn(name="id", type="int"),
+                    TableColumn(name="status", type="bool"),
+                ]
+            )
+
+            DagsterType(
+                type_check_fn=some_validation_fn,
+                name='MyTable',
+                metadata_entries=[
+                    EventMetadataEntry.table_schema(
+                        schema,
+                        label='schema',
+                    )
+                ]
+            )
+
+        Args:
+            schema (TableSchema): The table schema for a metadata entry.
+            label (str): Short display label for this metadata entry.
+            description (Optional[str]): A human-readable description of this metadata entry.
+        """
+        return EventMetadataEntry(
+            label,
+            description,
+            TableSchemaMetadataEntryData(schema),
+        )
 
 
 class PartitionMetadataEntry(

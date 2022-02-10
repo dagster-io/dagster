@@ -1,16 +1,27 @@
 import copy
 
 import yaml
-from dagster import execute_pipeline, lambda_solid, pipeline, repository
+from dagster import (
+    AssetMaterialization,
+    Output,
+    execute_pipeline,
+    job,
+    lambda_solid,
+    op,
+    pipeline,
+    repository,
+)
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.execution.api import execute_run
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.test_utils import instance_for_test
+from dagster.utils import Counter, traced_counter
 from dagster_graphql.test.utils import (
     define_out_of_process_context,
     execute_dagster_graphql,
     infer_pipeline_selector,
+    infer_repository_selector,
 )
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -172,6 +183,43 @@ ALL_RUN_GROUPS_QUERY = """
       }
     }
   }
+}
+"""
+
+REPOSITORY_RUNS_QUERY = """
+query RepositoryRunsQuery($repositorySelector: RepositorySelector!) {
+    repositoryOrError(repositorySelector: $repositorySelector) {
+        ... on Repository {
+            id
+            name
+            pipelines {
+                id
+                name
+                runs(limit: 10) {
+                    id
+                    runId
+                }
+            }
+        }
+    }
+}
+"""
+
+ASSET_RUNS_QUERY = """
+query AssetRunsQuery($assetKey: AssetKeyInput!) {
+    assetOrError(assetKey: $assetKey) {
+        ... on Asset {
+            assetMaterializations {
+                label
+                runOrError {
+                    ... on PipelineRun {
+                        id
+                        runId
+                    }
+                }
+            }
+        }
+    }
 }
 """
 
@@ -359,6 +407,23 @@ def get_repo_at_time_2():
         return [evolving_pipeline, bar_pipeline]
 
     return evolving_repo
+
+
+def get_asset_repo():
+    @op
+    def foo():
+        yield AssetMaterialization(asset_key="foo", description="foo")
+        yield Output(None)
+
+    @job
+    def foo_job():
+        foo()
+
+    @repository
+    def asset_repo():
+        return [foo_job]
+
+    return asset_repo
 
 
 def test_runs_over_time():
@@ -787,3 +852,62 @@ def test_run_groups():
             for run_group in result.data["runGroupsOrError"]["results"]:
                 assert run_group["rootRunId"] in root_run_ids
                 assert len(run_group["runs"]) == 6
+
+
+def test_repository_batching():
+    with instance_for_test() as instance:
+        repo = get_repo_at_time_1()
+        foo_pipeline = repo.get_pipeline("foo_pipeline")
+        evolving_pipeline = repo.get_pipeline("evolving_pipeline")
+        foo_run_ids = [execute_pipeline(foo_pipeline, instance=instance).run_id for i in range(3)]
+        evolving_run_ids = [
+            execute_pipeline(evolving_pipeline, instance=instance).run_id for i in range(2)
+        ]
+        with define_out_of_process_context(__file__, "get_repo_at_time_1", instance) as context:
+            traced_counter.set(Counter())
+            result = execute_dagster_graphql(
+                context,
+                REPOSITORY_RUNS_QUERY,
+                variables={"repositorySelector": infer_repository_selector(context)},
+            )
+            assert result.data
+            assert "repositoryOrError" in result.data
+            assert "pipelines" in result.data["repositoryOrError"]
+            pipelines = result.data["repositoryOrError"]["pipelines"]
+            assert len(pipelines) == 2
+            pipeline_runs = {pipeline["name"]: pipeline["runs"] for pipeline in pipelines}
+            assert len(pipeline_runs["foo_pipeline"]) == 3
+            assert len(pipeline_runs["evolving_pipeline"]) == 2
+            assert set(foo_run_ids) == set(run["runId"] for run in pipeline_runs["foo_pipeline"])
+            assert set(evolving_run_ids) == set(
+                run["runId"] for run in pipeline_runs["evolving_pipeline"]
+            )
+            counter = traced_counter.get()
+            counts = counter.counts()
+            assert counts
+            assert len(counts) == 1
+            # We should have a single batch call to fetch run records, instead of 3 separate calls
+            # to fetch run records (which is fetched to instantiate GrapheneRun)
+            assert counts.get("DagsterInstance.get_run_records") == 1
+
+
+def test_asset_batching():
+    with instance_for_test() as instance:
+        repo = get_asset_repo()
+        foo_job = repo.get_job("foo_job")
+        for _ in range(3):
+            foo_job.execute_in_process(instance=instance)
+        with define_out_of_process_context(__file__, "asset_repo", instance) as context:
+            traced_counter.set(Counter())
+            result = execute_dagster_graphql(
+                context, ASSET_RUNS_QUERY, variables={"assetKey": {"path": ["foo"]}}
+            )
+            assert result.data
+            assert "assetOrError" in result.data
+            assert "assetMaterializations" in result.data["assetOrError"]
+            materializations = result.data["assetOrError"]["assetMaterializations"]
+            assert len(materializations) == 3
+            counter = traced_counter.get()
+            counts = counter.counts()
+            assert counts
+            assert counts.get("DagsterInstance.get_run_records") == 1

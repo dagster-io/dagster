@@ -211,6 +211,10 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     });
   };
 
+  const onFlattenGraphsChange = (flattenGraphs: boolean) => {
+    onSaveSession({flattenGraphs});
+  };
+
   const onModeChange = (mode: string) => {
     onSaveSession({mode});
   };
@@ -561,6 +565,8 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
                 value={currentSession.solidSelection || null}
                 query={currentSession.solidSelectionQuery || null}
                 onChange={onOpSelectionChange}
+                flattenGraphs={currentSession.flattenGraphs}
+                onFlattenGraphsChange={onFlattenGraphsChange}
                 repoAddress={repoAddress}
               />
               {isJob ? (

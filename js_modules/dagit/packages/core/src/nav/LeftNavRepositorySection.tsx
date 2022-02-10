@@ -139,11 +139,10 @@ const LoadedRepositorySection: React.FC<{allRepos: DagsterRepoOption[]}> = ({all
             tab={tab}
           />
         ) : allRepos.length > 0 ? (
-          <EmptyState>Select a repository to see a list of jobs and pipelines.</EmptyState>
+          <EmptyState>Select a repository to see a list of jobs.</EmptyState>
         ) : (
           <EmptyState>
-            There are no repositories in this workspace. Add a repository to see a list of jobs and
-            pipelines.
+            There are no repositories in this workspace. Add a repository to see a list of jobs.
           </EmptyState>
         )}
       </ListContainer>

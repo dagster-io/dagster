@@ -17,6 +17,7 @@ from dagster_test.graph_job_op_toys.log_asset import log_asset_job
 from dagster_test.graph_job_op_toys.log_file import log_file_job
 from dagster_test.graph_job_op_toys.log_s3 import log_s3_job
 from dagster_test.graph_job_op_toys.log_spew import log_spew
+from dagster_test.graph_job_op_toys.long_asset_keys import long_asset_keys_job
 from dagster_test.graph_job_op_toys.longitudinal import longitudinal_job
 from dagster_test.graph_job_op_toys.many_events import many_events, many_events_subset_job
 from dagster_test.graph_job_op_toys.notebooks import hello_world_notebook_pipeline
@@ -71,6 +72,7 @@ def toys_repository():
             hello_world_notebook_pipeline,
             software_defined_assets_job,
             big_honkin_assets_job,
+            long_asset_keys_job,
         ]
         + get_toys_schedules()
         + get_toys_sensors()

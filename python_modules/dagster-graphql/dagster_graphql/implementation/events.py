@@ -11,12 +11,15 @@ from dagster.core.definitions.event_metadata import (
     MarkdownMetadataEntryData,
     PathMetadataEntryData,
     PythonArtifactMetadataEntryData,
+    TableMetadataEntryData,
+    TableSchemaMetadataEntryData,
     TextMetadataEntryData,
     UrlMetadataEntryData,
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.plan.objects import StepFailureData
+from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
 
 MAX_INT = 2147483647
 MIN_INT = -2147483648
@@ -34,6 +37,8 @@ def iterate_metadata_entries(metadata_entries):
         GrapheneEventUrlMetadataEntry,
         GrapheneEventPipelineRunMetadataEntry,
         GrapheneEventAssetMetadataEntry,
+        GrapheneEventTableMetadataEntry,
+        GrapheneEventTableSchemaMetadataEntry,
     )
 
     check.list_param(metadata_entries, "metadata_entries", of_type=EventMetadataEntry)
@@ -111,6 +116,27 @@ def iterate_metadata_entries(metadata_entries):
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 assetKey=metadata_entry.entry_data.asset_key,
+            )
+        elif isinstance(metadata_entry.entry_data, TableMetadataEntryData):
+            yield GrapheneEventTableMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                table=GrapheneTable(
+                    schema=metadata_entry.entry_data.schema,
+                    records=[
+                        seven.json.dumps(record.data)
+                        for record in metadata_entry.entry_data.records
+                    ],
+                ),
+            )
+        elif isinstance(metadata_entry.entry_data, TableSchemaMetadataEntryData):
+            yield GrapheneEventTableSchemaMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                schema=GrapheneTableSchema(
+                    constraints=metadata_entry.entry_data.schema.constraints,
+                    columns=metadata_entry.entry_data.schema.columns,
+                ),
             )
         else:
             # skip rest for now

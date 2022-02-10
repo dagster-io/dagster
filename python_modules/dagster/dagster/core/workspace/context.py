@@ -269,11 +269,13 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
         workspace_snapshot: Dict[str, WorkspaceLocationEntry],
         process_context: "WorkspaceProcessContext",
         version: Optional[str],
+        source: Optional[object],
     ):
         self._instance = instance
         self._workspace_snapshot = workspace_snapshot
         self._process_context = process_context
         self._version = version
+        self._source = source
 
     @property
     def instance(self) -> DagsterInstance:
@@ -307,6 +309,15 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
             permission in permissions, f"Permission {permission} not listed in permissions map"
         )
         return permissions[permission]
+
+    @property
+    def source(self) -> Optional[object]:
+        """
+        The source of the request this WorkspaceRequestContext originated from.
+        For example in Dagit this object represents the web request.
+        """
+
+        return self._source
 
 
 class IWorkspaceProcessContext(ABC):
@@ -627,6 +638,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             workspace_snapshot=self.create_snapshot(),
             process_context=self,
             version=self.version,
+            source=source,
         )
 
     @property

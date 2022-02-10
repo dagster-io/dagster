@@ -7,6 +7,7 @@ from dagster import (
     PartitionSetDefinition,
     ScheduleDefinition,
     lambda_solid,
+    op,
     pipeline,
     repository,
     solid,
@@ -30,6 +31,16 @@ def do_input(x):
 @pipeline(name="foo", mode_defs=[default_mode_def_for_test])
 def foo_pipeline():
     do_input(do_something())
+
+
+@op
+def do_fail():
+    raise Exception("I have failed")
+
+
+@pipeline
+def fail_pipeline():
+    do_fail()
 
 
 @pipeline(name="baz", description="Not much tbh")
@@ -161,6 +172,7 @@ def bar_repo():
             "foo": define_foo_pipeline,
             "bar": lambda: bar_pipeline,
             "baz": lambda: baz_pipeline,
+            "fail": fail_pipeline,
         },
         "schedules": define_bar_schedules(),
         "partition_sets": define_baz_partitions(),

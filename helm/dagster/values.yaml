@@ -470,6 +470,9 @@ runLauncher:
       #   my_label_key: my_label_value
       labels: {}
 
+      # Whether the launched Kubernetes Jobs and Pods should fail if the Dagster run fails.
+      failPodOnRunFailure: false
+
     # This configuration will only be used if the CeleryK8sRunLauncher is selected
     celeryK8sRunLauncher:
       # Change with caution! If you're using a fixed tag for pipeline run images, changing the
@@ -606,6 +609,9 @@ runLauncher:
       # labels:
       #   my_label_key: my_label_value
       labels: {}
+
+      # Whether the launched Kubernetes Jobs and Pods should fail if the Dagster run fails.
+      failPodOnRunFailure: false
 
     ## Uncomment this configuration will only be used if the CustomRunLauncher is selected.
     ## Using this setting requires a custom Dagit image that defines the user specified
@@ -939,10 +945,11 @@ dagsterDaemon:
     enabled: false
     # Timeout for runs to start (avoids runs hanging in STARTED)
     startTimeoutSeconds: 180
-    # Max number of times to attempt to resume a run with a new run worker
-    maxResumeRunAttempts: 3
     # How often to check on in progress runs
     pollIntervalSeconds: 120
+    # Max number of times to attempt to resume a run with a new run worker. Defaults to 3 if the the
+    # run launcher supports resuming runs, otherwise defaults to 0.
+    maxResumeRunAttempts: ~
 
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:

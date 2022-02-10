@@ -33,10 +33,10 @@ export interface AssetMaterializationFragment_runOrError_Run {
 
 export type AssetMaterializationFragment_runOrError = AssetMaterializationFragment_runOrError_RunNotFoundError | AssetMaterializationFragment_runOrError_Run;
 
-export interface AssetMaterializationFragment_stepStats {
-  __typename: "RunStepStats";
-  endTime: number | null;
-  startTime: number | null;
+export interface AssetMaterializationFragment_metadataEntries_EventTableSchemaMetadataEntry {
+  __typename: "EventTableSchemaMetadataEntry" | "EventTableMetadataEntry";
+  label: string;
+  description: string | null;
 }
 
 export interface AssetMaterializationFragment_metadataEntries_EventPathMetadataEntry {
@@ -116,7 +116,7 @@ export interface AssetMaterializationFragment_metadataEntries_EventAssetMetadata
   assetKey: AssetMaterializationFragment_metadataEntries_EventAssetMetadataEntry_assetKey;
 }
 
-export type AssetMaterializationFragment_metadataEntries = AssetMaterializationFragment_metadataEntries_EventPathMetadataEntry | AssetMaterializationFragment_metadataEntries_EventJsonMetadataEntry | AssetMaterializationFragment_metadataEntries_EventUrlMetadataEntry | AssetMaterializationFragment_metadataEntries_EventTextMetadataEntry | AssetMaterializationFragment_metadataEntries_EventMarkdownMetadataEntry | AssetMaterializationFragment_metadataEntries_EventPythonArtifactMetadataEntry | AssetMaterializationFragment_metadataEntries_EventFloatMetadataEntry | AssetMaterializationFragment_metadataEntries_EventIntMetadataEntry | AssetMaterializationFragment_metadataEntries_EventPipelineRunMetadataEntry | AssetMaterializationFragment_metadataEntries_EventAssetMetadataEntry;
+export type AssetMaterializationFragment_metadataEntries = AssetMaterializationFragment_metadataEntries_EventTableSchemaMetadataEntry | AssetMaterializationFragment_metadataEntries_EventPathMetadataEntry | AssetMaterializationFragment_metadataEntries_EventJsonMetadataEntry | AssetMaterializationFragment_metadataEntries_EventUrlMetadataEntry | AssetMaterializationFragment_metadataEntries_EventTextMetadataEntry | AssetMaterializationFragment_metadataEntries_EventMarkdownMetadataEntry | AssetMaterializationFragment_metadataEntries_EventPythonArtifactMetadataEntry | AssetMaterializationFragment_metadataEntries_EventFloatMetadataEntry | AssetMaterializationFragment_metadataEntries_EventIntMetadataEntry | AssetMaterializationFragment_metadataEntries_EventPipelineRunMetadataEntry | AssetMaterializationFragment_metadataEntries_EventAssetMetadataEntry;
 
 export interface AssetMaterializationFragment_assetLineage_assetKey {
   __typename: "AssetKey";
@@ -136,7 +136,6 @@ export interface AssetMaterializationFragment {
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: AssetMaterializationFragment_stepStats;
   label: string;
   description: string | null;
   metadataEntries: AssetMaterializationFragment_metadataEntries[];

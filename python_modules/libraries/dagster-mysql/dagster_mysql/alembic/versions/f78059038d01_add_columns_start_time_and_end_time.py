@@ -5,9 +5,10 @@ Revises: 29a8e9d74220
 Create Date: 2022-01-25 09:26:35.820814
 
 """
-import sqlalchemy as sa
-from alembic import op
-from sqlalchemy.engine import reflection
+from dagster.core.storage.migration.utils import (
+    add_run_record_start_end_timestamps,
+    drop_run_record_start_end_timestamps,
+)
 
 # revision identifiers, used by Alembic.
 revision = "f78059038d01"
@@ -19,28 +20,8 @@ depends_on = None
 
 
 def upgrade():
-    bind = op.get_context().bind
-    inspector = reflection.Inspector.from_engine(bind)
-    has_tables = inspector.get_table_names()
-
-    if "runs" in has_tables:
-        columns = [x.get("name") for x in inspector.get_columns("runs")]
-        with op.batch_alter_table("runs") as batch_op:
-            if "start_time" not in columns:
-                batch_op.add_column(sa.Column("start_time", sa.Float))
-            if "end_time" not in columns:
-                batch_op.add_column(sa.Column("end_time", sa.Float))
+    add_run_record_start_end_timestamps()
 
 
 def downgrade():
-    bind = op.get_context().bind
-    inspector = reflection.Inspector.from_engine(bind)
-    has_tables = inspector.get_table_names()
-    if "runs" in has_tables:
-        columns = [x.get("name") for x in inspector.get_columns("runs")]
-
-        with op.batch_alter_table("runs") as batch_op:
-            if "start_time" in columns:
-                batch_op.drop_column("start_time")
-            if "end_time" in columns:
-                batch_op.drop_column("end_time")
+    drop_run_record_start_end_timestamps()

@@ -495,6 +495,10 @@ class DagsterEvent(
         return self.event_type == DagsterEventType.ASSET_MATERIALIZATION
 
     @property
+    def is_expectation_result(self) -> bool:
+        return self.event_type == DagsterEventType.STEP_EXPECTATION_RESULT
+
+    @property
     def is_asset_observation(self) -> bool:
         return self.event_type == DagsterEventType.ASSET_OBSERVATION
 

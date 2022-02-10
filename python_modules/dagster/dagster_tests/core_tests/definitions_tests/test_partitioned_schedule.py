@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import cast
 
 import pendulum
 from dagster import build_schedule_context, graph, repository, solid
@@ -15,7 +16,7 @@ DATE_FORMAT = "%Y-%m-%d"
 
 
 def time_window(start: str, end: str) -> TimeWindow:
-    return TimeWindow(pendulum.parse(start), pendulum.parse(end))
+    return TimeWindow(cast(datetime, pendulum.parse(start)), cast(datetime, pendulum.parse(end)))
 
 
 def schedule_for_partitioned_config(

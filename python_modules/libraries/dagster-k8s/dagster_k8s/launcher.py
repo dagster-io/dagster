@@ -27,76 +27,20 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
 
     Encapsulates each run in a separate, isolated invocation of ``dagster-graphql``.
 
-    You may configure a Dagster instance to use this RunLauncher by adding a section to your
+    You can configure a Dagster instance to use this RunLauncher by adding a section to your
     ``dagster.yaml`` like the following:
 
     .. code-block:: yaml
 
         run_launcher:
-            module: dagster_k8s.launcher
-            class: K8sRunLauncher
-            config:
-                service_account_name: your_service_account
-                job_image: my_project/dagster_image:latest
-                instance_config_map: dagster-instance
-                postgres_password_secret: dagster-postgresql-secret
+          module: dagster_k8s.launcher
+          class: K8sRunLauncher
+          config:
+            service_account_name: your_service_account
+            job_image: my_project/dagster_image:latest
+            instance_config_map: dagster-instance
+            postgres_password_secret: dagster-postgresql-secret
 
-    As always when using a :py:class:`~dagster.serdes.ConfigurableClass`, the values
-    under the ``config`` key of this YAML block will be passed to the constructor. The full list
-    of acceptable values is given below by the constructor args.
-
-    Args:
-        service_account_name (str): The name of the Kubernetes service account under which to run
-            the Job. Defaults to "default"
-        job_image (Optional[str]): The ``name`` of the image to use for the Job's Dagster container.
-            This image will be run with the command
-            ``dagster api execute_run``.
-            When using user code deployments, the image should not be specified.
-        instance_config_map (str): The ``name`` of an existing Volume to mount into the pod in
-            order to provide a ConfigMap for the Dagster instance. This Volume should contain a
-            ``dagster.yaml`` with appropriate values for run storage, event log storage, etc.
-        postgres_password_secret (Optional[str]): The name of the Kubernetes Secret where the postgres
-            password can be retrieved. Will be mounted and supplied as an environment variable to
-            the Job Pod.
-        dagster_home (str): The location of DAGSTER_HOME in the Job container; this is where the
-            ``dagster.yaml`` file will be mounted from the instance ConfigMap specified above.
-        load_incluster_config (Optional[bool]):  Set this value if you are running the launcher
-            within a k8s cluster. If ``True``, we assume the launcher is running within the target
-            cluster and load config using ``kubernetes.config.load_incluster_config``. Otherwise,
-            we will use the k8s config specified in ``kubeconfig_file`` (using
-            ``kubernetes.config.load_kube_config``) or fall back to the default kubeconfig. Default:
-            ``True``.
-        kubeconfig_file (Optional[str]): The kubeconfig file from which to load config. Defaults to
-            None (using the default kubeconfig).
-        image_pull_secrets (Optional[List[Dict[str, str]]]): Optionally, a list of dicts, each of
-            which corresponds to a Kubernetes ``LocalObjectReference`` (e.g.,
-            ``{'name': 'myRegistryName'}``). This allows you to specify the ```imagePullSecrets`` on
-            a pod basis. Typically, these will be provided through the service account, when needed,
-            and you will not need to pass this argument.
-            See:
-            https://kubernetes.io/docs/concepts/containers/images/#specifying-imagepullsecrets-on-a-pod
-            and https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.17/#podspec-v1-core.
-        image_pull_policy (Optional[str]): Allows the image pull policy to be overridden, e.g. to
-            facilitate local testing with `kind <https://kind.sigs.k8s.io/>`_. Default:
-            ``"IfNotPresent"``. See: https://kubernetes.io/docs/concepts/containers/images/#updating-images.
-        job_namespace (Optional[str]): The namespace into which to launch new jobs. Note that any
-            other Kubernetes resources the Job requires (such as the service account) must be
-            present in this namespace. Default: ``"default"``
-        env_config_maps (Optional[List[str]]): A list of custom ConfigMapEnvSource names from which to
-            draw environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:
-            https://kubernetes.io/docs/tasks/inject-data-application/define-environment-variable-container/#define-an-environment-variable-for-a-container
-        env_secrets (Optional[List[str]]): A list of custom Secret names from which to
-            draw environment variables (using ``envFrom``) for the Job. Default: ``[]``. See:
-            https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
-        env_vars (Optional[List[str]]): A list of environment variables to inject into the Job.
-            Default: ``[]``. See: https://kubernetes.io/docs/tasks/inject-data-application/distribute-credentials-secure/#configure-all-key-value-pairs-in-a-secret-as-container-environment-variables
-        volume_mounts (Optional[List[Permissive]]): A list of volume mounts to include in the job's
-            container. Default: ``[]``. See:
-            https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volumemount-v1-core
-        volumes (Optional[List[Permissive]]): A list of volumes to include in the Job's Pod. Default: ``[]``. See:
-            https://v1-18.docs.kubernetes.io/docs/reference/generated/kubernetes-api/v1.18/#volume-v1-core
-        labels (Optional[Dict[str, str]]): Additional labels that should be included in the Job's Pod. See:
-            https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
     """
 
     def __init__(
@@ -119,6 +63,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         volume_mounts=None,
         volumes=None,
         labels=None,
+        fail_pod_on_run_failure=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
         self.job_namespace = check.str_param(job_namespace, "job_namespace")
@@ -159,6 +104,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._volume_mounts = check.opt_list_param(volume_mounts, "volume_mounts")
         self._volumes = check.opt_list_param(volumes, "volumes")
         self._labels = check.opt_dict_param(labels, "labels", key_type=str, value_type=str)
+        self._fail_pod_on_run_failure = check.opt_bool_param(
+            fail_pod_on_run_failure, "fail_pod_on_run_failure"
+        )
 
         super().__init__()
 
@@ -193,6 +141,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     @property
     def labels(self):
         return self._labels
+
+    @property
+    def fail_pod_on_run_failure(self):
+        return self._fail_pod_on_run_failure
 
     @property
     def _batch_api(self):
@@ -339,9 +291,14 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             pipeline_origin=pipeline_origin,
             pipeline_run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
+            set_exit_code_on_failure=self._fail_pod_on_run_failure,
         ).get_command_args()
 
         self._launch_k8s_job_with_args(job_name, args, run, pipeline_origin)
+
+    @property
+    def supports_resume_run(self):
+        return True
 
     def resume_run(self, context: ResumeRunContext) -> None:
         run = context.pipeline_run
@@ -354,6 +311,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             pipeline_origin=pipeline_origin,
             pipeline_run_id=run.run_id,
             instance_ref=self._instance.get_ref(),
+            set_exit_code_on_failure=self._fail_pod_on_run_failure,
         ).get_command_args()
 
         self._launch_k8s_job_with_args(job_name, args, run, pipeline_origin)

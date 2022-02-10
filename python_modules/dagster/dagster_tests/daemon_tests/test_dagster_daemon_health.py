@@ -370,7 +370,7 @@ def test_warn_multiple_daemons(capsys):
                     instance, heartbeat_interval_seconds=heartbeat_interval_seconds
                 ):
                     captured = capsys.readouterr()
-                    assert "Taking over from another SENSOR daemon process" not in captured.out
+                    assert "Another SENSOR daemon is still sending heartbeats" not in captured.out
                     break
 
                 if (now - init_time).total_seconds() > 10:
@@ -406,7 +406,7 @@ def test_warn_multiple_daemons(capsys):
 
                 if status.last_heartbeat and status.last_heartbeat.timestamp != last_heartbeat_time:
                     captured = capsys.readouterr()
-                    assert "Taking over from another SENSOR daemon process" not in captured.out
+                    assert "Another SENSOR daemon is still sending heartbeats" not in captured.out
                     break
 
                 if (now - init_time).total_seconds() > 10:
@@ -434,7 +434,7 @@ def test_warn_multiple_daemons(capsys):
                     now = pendulum.now("UTC")
 
                     captured = capsys.readouterr()
-                    if "Taking over from another SENSOR daemon process" in captured.out:
+                    if "Another SENSOR daemon is still sending heartbeats" in captured.out:
                         break
 
                     if (now - init_time).total_seconds() > 60:

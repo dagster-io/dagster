@@ -108,6 +108,13 @@ class RunLauncher(ABC, MayHaveInstanceWeakref):
             "This run launcher does not support run monitoring. Please disable it on your instance."
         )
 
+    @property
+    def supports_resume_run(self):
+        """
+        Whether the run launcher supports resume_run.
+        """
+        return False
+
     def resume_run(self, context: ResumeRunContext) -> None:
         raise NotImplementedError(
             "This run launcher does not support resuming runs. If using "

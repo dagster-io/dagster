@@ -164,7 +164,7 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
             workspace_loaded_time = pendulum.now("UTC").timestamp()
             workspace_iteration = 0
 
-        yield from execute_sensor_iteration(instance, logger, workspace, workspace_iteration)
+        yield from execute_sensor_iteration(instance, logger, workspace)
         loop_duration = pendulum.now("UTC").timestamp() - start_time
         sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
         time.sleep(sleep_time)
@@ -172,9 +172,7 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
         workspace_iteration += 1
 
 
-def execute_sensor_iteration(
-    instance, logger, workspace, workspace_iteration=None, debug_crash_flags=None
-):
+def execute_sensor_iteration(instance, logger, workspace, debug_crash_flags=None):
     check.inst_param(workspace, "workspace", IWorkspace)
     check.inst_param(instance, "instance", DagsterInstance)
     sensor_jobs = [
@@ -183,8 +181,7 @@ def execute_sensor_iteration(
         if s.status == InstigatorStatus.RUNNING
     ]
     if not sensor_jobs:
-        if not workspace_iteration:
-            logger.info("Not checking for any runs since no sensors have been started.")
+        logger.debug("Not checking for any runs since no sensors have been started.")
         yield
         return
 
@@ -474,11 +471,11 @@ def _create_sensor_run(
     log_action(
         instance,
         SENSOR_RUN_CREATED,
-        pipeline_name_hash=hash_name(external_pipeline.name),
-        repo_hash=hash_name(repo_location.name),
         metadata={
             "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
             "SENSOR_NAME_HASH": hash_name(external_sensor.name),
+            "pipeline_name_hash": hash_name(external_pipeline.name),
+            "repo_hash": hash_name(repo_location.name),
         },
     )
 

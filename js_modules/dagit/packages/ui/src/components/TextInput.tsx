@@ -9,11 +9,12 @@ interface Props extends Omit<React.ComponentPropsWithRef<'input'>, 'type' | 'onC
   icon?: IconName;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   strokeColor?: string;
+  rightElement?: JSX.Element;
 }
 
 export const TextInput = React.forwardRef(
   (props: Props, ref: React.ForwardedRef<HTMLInputElement>) => {
-    const {icon, disabled, strokeColor = ColorsWIP.Gray300, ...rest} = props;
+    const {icon, disabled, strokeColor = ColorsWIP.Gray300, rightElement, ...rest} = props;
 
     return (
       <Container $disabled={!!disabled}>
@@ -26,6 +27,7 @@ export const TextInput = React.forwardRef(
           $hasIcon={!!icon}
           type="text"
         />
+        {rightElement ? rightElement : null}
       </Container>
     );
   },

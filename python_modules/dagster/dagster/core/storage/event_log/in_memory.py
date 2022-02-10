@@ -247,6 +247,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
                 record
                 for record in records
                 if record.is_dagster_event
+                and record.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
                 and record.dagster_event.asset_key
                 and record.dagster_event.asset_key in asset_keys
             ]
