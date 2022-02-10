@@ -170,7 +170,8 @@ def build_run_status_sensor_context(
     dagster_instance: Optional[DagsterInstance] = None,
     error_info: Optional[SerializableErrorInfo] = None,
 ) -> RunStatusSensorContext:
-    """Builds run status sensor context from provided parameters.
+    """
+    Builds run status sensor context from provided parameters.
 
     This function can be used to provide the context argument when directly invoking a function
     decorated with `@run_status_sensor` or `@run_failure_sensor`, such as when writing unit tests.
@@ -188,14 +189,13 @@ def build_run_status_sensor_context(
             context.
 
     Examples:
-    .. code-block:: python
+        .. code-block:: python
 
-        context = build_run_status_sensor_context(
-            sensor_name="my_sensor",
-            pipeline_run_status=PipelineRunStatus.FAILURE
-        )
-        sensor_to_invoke(context)
-
+            context = build_run_status_sensor_context(
+                sensor_name="my_sensor",
+                pipeline_run_status=PipelineRunStatus.FAILURE
+            )
+            sensor_to_invoke(context)
     """
     dagster_event_type = PIPELINE_RUN_STATUS_TO_EVENT_TYPE[pipeline_run_status]
 

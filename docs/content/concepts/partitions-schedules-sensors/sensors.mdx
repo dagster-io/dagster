@@ -453,7 +453,7 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
     )
 ```
 You could provide the `context` argument like this:
-```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_run_status_sensor_testing_with_context endbefore=end_run_status_sensor_testing_with_context
+```python file=concepts/partitions_schedules_sensors/sensors/sensors_alert.py startafter=start_run_status_sensor_testing_with_context endbefore=end_run_status_sensor_testing_with_context
 from dagster import build_run_status_sensor_context
 
 
@@ -483,7 +483,7 @@ def my_slack_on_run_failure(context: RunFailureSensorContext):
     )
 ```
 You could provide the `context` argument like this
-```python file=concepts/partitions_schedules_sensors/sensors/sensors.py startafter=start_alert_sensor_testing_with_context endbefore=end_alert_sensor_testing_with_context
+```python file=concepts/partitions_schedules_sensors/sensors/sensors_alert.py startafter=start_alert_sensor_testing_with_context endbefore=end_alert_sensor_testing_with_context
 from dagster import build_run_status_sensor_context
 
 

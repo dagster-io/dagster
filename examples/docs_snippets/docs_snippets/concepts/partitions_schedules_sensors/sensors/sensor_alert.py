@@ -19,6 +19,19 @@ def my_slack_on_run_failure(context: RunFailureSensorContext):
 
 # end_alert_sensor_marker
 
+# start_alert_sensor_testing_with_context
+from dagster import build_run_status_sensor_context
+
+
+def test_my_slack_on_run_failure():
+    context = build_run_status_sensor_context(
+        sensor_name="my_slack_on_run_failure",
+        pipeline_run_status=PipelineRunStatus.FAILURE,
+    )
+    my_slack_on_run_failure(context)
+
+# end_alert_sensor_testing_with_context
+
 
 # start_slack_marker
 from dagster_slack import make_slack_on_run_failure_sensor
@@ -56,6 +69,20 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
 
 
 # end_success_sensor_marker
+
+# start_run_status_sensor_testing_with_context
+from dagster import build_run_status_sensor_context
+
+
+def test_my_slack_on_run_success():
+    context = build_run_status_sensor_context(
+        sensor_name="my_slack_on_run_success",
+        pipeline_run_status=PipelineRunStatus.SUCCESS
+    )
+    my_slack_on_run_success(context)
+
+
+# end_run_status_sensor_testing_with_context
 
 my_jobs = []
 
