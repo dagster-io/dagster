@@ -1,5 +1,5 @@
 import itertools
-from typing import TYPE_CHECKING, Callable, Generator, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Callable, Generator, Type, Union
 
 import dagster.check as check
 import dask
@@ -115,8 +115,8 @@ def pandera_schema_to_dagster_type(
         if isinstance(schema, type) and issubclass(schema, pa.SchemaModel)
         else schema
     )
-    type_check_fn = _pandera_schema_to_type_check_fn(norm_schema)
     tschema = _pandera_schema_to_table_schema(norm_schema)
+    type_check_fn = _pandera_schema_to_type_check_fn(norm_schema, tschema)
 
     return DagsterType(
         type_check_fn=type_check_fn,
@@ -147,6 +147,7 @@ def _extract_name_from_pandera_schema(
 
 def _pandera_schema_to_type_check_fn(
     schema: pa.DataFrameSchema,
+    table_schema: TableSchema,
 ) -> Callable[[TypeCheckContext, object], TypeCheck]:
     def type_check_fn(_context, value: object) -> TypeCheck:
         if isinstance(value, VALID_DATAFRAME_CLASSES):
@@ -154,7 +155,7 @@ def _pandera_schema_to_type_check_fn(
                 # `lazy` instructs pandera to capture every (not just the first) validation error
                 schema.validate(value, lazy=True)
             except pa.errors.SchemaErrors as e:
-                return _pandera_errors_to_type_check(e)
+                return _pandera_errors_to_type_check(e, table_schema)
         else:
             return TypeCheck(
                 success=False,
@@ -165,8 +166,7 @@ def _pandera_schema_to_type_check_fn(
 
     return type_check_fn
 
-
-def _pandera_errors_to_type_check(error: pa.errors.SchemaErrors) -> TypeCheck:
+def _pandera_errors_to_type_check(error: pa.errors.SchemaErrors, table_schema: TableSchema) -> TypeCheck:
     return TypeCheck(
         success=False,
         description=str(error),
@@ -179,6 +179,7 @@ def _pandera_errors_to_type_check(error: pa.errors.SchemaErrors) -> TypeCheck:
                     for row in itertools.islice(error.failure_cases.itertuples(), 10)
                 ],
             ),
+            EventMetadataEntry.table_schema(table_schema, label="schema"),
         ],
     )
 
