@@ -1,4 +1,4 @@
-from dagster.core.asset_defs import AssetIn, asset
+from dagster import AssetIn, asset
 from pandas import DataFrame, Series
 
 

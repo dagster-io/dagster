@@ -1,4 +1,4 @@
-.. currentmodule:: dagster.core.asset_defs
+.. currentmodule:: dagster
 
 Software-Defined Assets (Experimental)
 ======================================

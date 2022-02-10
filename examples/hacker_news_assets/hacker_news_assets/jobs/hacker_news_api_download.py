@@ -1,5 +1,4 @@
-from dagster import in_process_executor
-from dagster.core.asset_defs import build_assets_job
+from dagster import build_assets_job, in_process_executor
 from hacker_news_assets.assets.id_range_for_time import id_range_for_time
 from hacker_news_assets.assets.items import comments, items, stories
 from hacker_news_assets.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING

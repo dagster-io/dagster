@@ -27,8 +27,7 @@ Here are our asset (aka table) definitions.
 
 ```python file=../../software_defined_assets/software_defined_assets/assets.py startafter=start_marker endbefore=end_marker
 import pandas as pd
-from dagster import AssetKey
-from dagster.core.asset_defs import ForeignAsset, asset
+from dagster import AssetKey, ForeignAsset, asset
 from pandas import DataFrame
 
 sfo_q2_weather_sample = ForeignAsset(
@@ -101,7 +100,7 @@ class LocalFileSystemIOManager(IOManager):
 Not all the assets in a job need to have the same Python type. Here's an asset whose computation is defined using Spark DataFrames, that depends on the `daily_temperature_highs` asset we defined above using Pandas.
 
 ```python file=../../software_defined_assets/software_defined_assets/spark_asset.py
-from dagster.core.asset_defs import asset
+from dagster import asset
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import Window
 from pyspark.sql import functions as f

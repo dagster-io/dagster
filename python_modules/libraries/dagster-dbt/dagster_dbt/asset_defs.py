@@ -4,8 +4,7 @@ import subprocess
 import textwrap
 from typing import Any, Callable, List, Mapping, Optional
 
-from dagster import AssetKey, OpDefinition, Output, SolidExecutionContext, check
-from dagster.core.asset_defs import asset
+from dagster import AssetKey, OpDefinition, Output, SolidExecutionContext, asset, check
 
 
 def _load_manifest_for_project(
