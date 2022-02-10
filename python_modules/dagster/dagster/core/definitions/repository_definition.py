@@ -559,7 +559,7 @@ class CachingRepositoryData(RepositoryData):
                 Use this constructor when you have no need to lazy load pipelines/jobs or other
                 definitions.
         """
-        from dagster.core.asset_defs import ForeignAsset
+        from dagster.core.asset_defs import ForeignAsset, AssetCollection, build_assets_job
 
         pipelines_or_jobs = {}
         partition_sets = {}
@@ -633,6 +633,15 @@ class CachingRepositoryData(RepositoryData):
                         f"Duplicate foreign asset found for {definition.key}"
                     )
                 foreign_assets[definition.key] = definition
+
+            elif isinstance(definition, AssetCollection):
+                pipelines_or_jobs["__ASSET_COLLECTION"] = build_assets_job(
+                    "__ASSET_COLLECTION",
+                    assets=definition.assets,
+                    source_assets=definition.source_assets,
+                    resource_defs=definition.resource_defs,
+                    executor_def=definition.executor_def,
+                )
 
             else:
                 check.failed(f"Unexpected repository entry {definition}")
