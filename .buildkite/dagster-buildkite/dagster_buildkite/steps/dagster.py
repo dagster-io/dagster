@@ -1,21 +1,23 @@
 import os
 
-from ..defines import (
-    GCP_CREDS_LOCAL_FILE,
-    TOX_MAP,
-    ExamplePythons,
-    SupportedPython,
-    SupportedPythons,
-)
+from ..defines import GCP_CREDS_LOCAL_FILE, TOX_MAP, ExamplePythons, SupportedPython
 from ..images.versions import COVERAGE_IMAGE_VERSION
 from ..module_build_spec import ModuleBuildSpec
 from ..step_builder import StepBuilder
-from ..utils import check_for_release, connect_sibling_docker_container, network_buildkite_container
+from ..utils import (
+    check_for_release,
+    connect_sibling_docker_container,
+    get_python_versions_for_branch,
+    is_release_branch,
+    network_buildkite_container,
+)
 from .docs import docs_steps
 from .helm import helm_steps
 from .test_images import core_test_image_depends_fn, publish_test_images, test_image_depends_fn
 
 GIT_REPO_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "..", "..")
+
+branch_name = os.getenv("BUILDKITE_BRANCH")
 
 
 def airflow_extra_cmds_fn(version):
@@ -354,6 +356,16 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ),
     ModuleBuildSpec(
         "python_modules/libraries/dagster-airflow",
+        # omit python 3.9 until we add support
+        supported_pythons=(
+            [
+                SupportedPython.V3_6,
+                SupportedPython.V3_7,
+                SupportedPython.V3_8,
+            ]
+            if (branch_name == "master" or is_release_branch(branch_name))
+            else [SupportedPython.V3_8]
+        ),
         env_vars=[
             "AIRFLOW_HOME",
             "AWS_ACCOUNT_ID",
@@ -500,7 +512,7 @@ def pipenv_smoke_tests():
         .run(*smoke_test_steps)
         .on_unit_image(version)
         .build()
-        for version in SupportedPythons
+        for version in get_python_versions_for_branch()
     ]
 
 

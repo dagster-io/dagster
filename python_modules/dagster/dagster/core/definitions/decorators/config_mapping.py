@@ -1,4 +1,4 @@
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, overload
 
 from dagster import check
 
@@ -26,11 +26,27 @@ class _ConfigMapping:
         )
 
 
+@overload
 def config_mapping(
-    config_fn: Callable[..., Any] = None,
+    config_fn: Callable[..., Any],
+) -> ConfigMapping:
+    ...
+
+
+@overload
+def config_mapping(
+    config_fn: None = ...,
+    config_schema: Any = ...,
+    receive_processed_config_values: Optional[bool] = ...,
+) -> Union[_ConfigMapping, ConfigMapping]:
+    ...
+
+
+def config_mapping(
+    config_fn: Optional[Callable[..., Any]] = None,
     config_schema: Any = None,
     receive_processed_config_values: Optional[bool] = None,
-) -> Union[_ConfigMapping, ConfigMapping]:
+) -> Union[ConfigMapping, _ConfigMapping]:
     """Create a config mapping with the specified parameters from the decorated function.
 
     The config schema will be inferred from the type signature of the decorated function if not explicitly provided.

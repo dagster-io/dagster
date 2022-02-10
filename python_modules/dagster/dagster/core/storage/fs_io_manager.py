@@ -6,6 +6,7 @@ from dagster.config import Field
 from dagster.config.source import StringSource
 from dagster.core.definitions.event_metadata import EventMetadataEntry
 from dagster.core.definitions.events import AssetKey, AssetMaterialization
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.input import InputContext
 from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.io_manager import IOManager, io_manager
@@ -119,7 +120,28 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         mkdir_p(os.path.dirname(filepath))
 
         with open(filepath, self.write_mode) as write_obj:
-            pickle.dump(obj, write_obj, PICKLE_PROTOCOL)
+            try:
+                pickle.dump(obj, write_obj, PICKLE_PROTOCOL)
+            except (AttributeError, RecursionError, ImportError, pickle.PicklingError) as e:
+                executor = context.step_context.pipeline_def.mode_definitions[0].executor_defs[0]
+
+                if isinstance(e, RecursionError):
+                    # if obj can't be pickled because of RecursionError then __str__() will also
+                    # throw a RecursionError
+                    obj_repr = f"{obj.__class__} exceeds recursion limit and"
+                else:
+                    obj_repr = obj.__str__()
+
+                raise DagsterInvariantViolationError(
+                    f"Object {obj_repr} is not picklable. You are currently using the "
+                    f"fs_io_manager and the {executor.name}. You will need to use a different "
+                    "io manager to continue using this output. For example, you can use the "
+                    "mem_io_manager with the in_process_executor.\n"
+                    "For more information on io managers, visit "
+                    "https://docs.dagster.io/concepts/io-management/io-managers \n"
+                    "For more information on executors, vist "
+                    "https://docs.dagster.io/deployment/executors#overview"
+                )
 
     def load_input(self, context):
         """Unpickle the file and Load it to a data object."""

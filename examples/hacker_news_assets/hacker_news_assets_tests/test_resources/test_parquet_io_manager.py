@@ -3,7 +3,7 @@ import os
 import tempfile
 
 import pandas
-from dagster.core.asset_defs import asset, build_assets_job
+from dagster import asset, build_assets_job
 from dagster_pyspark import pyspark_resource
 from hacker_news_assets.partitions import hourly_partitions
 from hacker_news_assets.resources.parquet_io_manager import local_partitioned_parquet_io_manager

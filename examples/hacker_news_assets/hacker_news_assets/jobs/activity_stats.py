@@ -2,8 +2,7 @@ import json
 import os
 
 import pandas as pd
-from dagster import EventMetadata
-from dagster.core.asset_defs import build_assets_job
+from dagster import EventMetadata, build_assets_job
 from dagster.utils import file_relative_path
 from dagster_dbt import dbt_cli_resource
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest

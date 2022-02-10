@@ -7,7 +7,6 @@ const DAGIT_FLAGS_KEY = 'DAGIT_FLAGS';
 
 export enum FeatureFlag {
   flagDebugConsoleLogging = 'flagDebugConsoleLogging',
-  flagAssetGraph = 'flagAssetGraph',
   flagInstanceOverview = 'flagInstanceOverview',
   flagCollapseInstancePagesSidebar = 'flagCollapseInstancePagesSidebar',
 }

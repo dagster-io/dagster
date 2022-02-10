@@ -38,7 +38,7 @@ from .handle import PipelineHandle, RepositoryHandle
 from .historical import HistoricalPipeline
 from .origin import (
     IN_PROCESS_NAME,
-    ExternalJobOrigin,
+    ExternalInstigatorOrigin,
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
     GrpcServerRepositoryLocationOrigin,

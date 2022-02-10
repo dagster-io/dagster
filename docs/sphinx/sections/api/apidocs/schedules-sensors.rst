@@ -18,7 +18,8 @@ Schedules
 
 .. currentmodule:: dagster.core.scheduler
 
-.. autoclass:: DagsterDaemonScheduler
+.. autoconfigurable:: DagsterDaemonScheduler
+  :annotation: Scheduler
 
 Partitioned Schedules
 =====================

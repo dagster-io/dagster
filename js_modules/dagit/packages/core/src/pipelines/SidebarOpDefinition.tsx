@@ -1,8 +1,10 @@
 import {gql} from '@apollo/client';
-import {Box, ColorsWIP, IconWIP} from '@dagster-io/ui';
+import {Box, ColorsWIP, FontFamily, IconWIP} from '@dagster-io/ui';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
+import styled from 'styled-components/macro';
 
-import {breakOnUnderscores} from '../app/Util';
+import {breakOnUnderscores, displayNameForAssetKey} from '../app/Util';
 import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignature';
 import {pluginForMetadata} from '../plugins';
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
@@ -146,6 +148,18 @@ export const SidebarOpDefinition: React.FC<SidebarOpDefinitionProps> = (props) =
           ))}
         </Box>
       </SidebarSection>
+      {definition.assetNodes.length > 0 && (
+        <SidebarSection title="Yielded Assets">
+          {definition.assetNodes.map((node) => (
+            <AssetNodeListItem
+              key={node.id}
+              to={`/instance/assets/${node.assetKey.path.join('/')}`}
+            >
+              <IconWIP name="asset" /> {displayNameForAssetKey(node.assetKey)}
+            </AssetNodeListItem>
+          ))}
+        </SidebarSection>
+      )}
       {getInvocations && (
         <SidebarSection title="All Invocations">
           <InvocationList
@@ -167,6 +181,12 @@ export const SIDEBAR_SOLID_DEFINITION_FRAGMENT = gql`
     metadata {
       key
       value
+    }
+    assetNodes {
+      id
+      assetKey {
+        path
+      }
     }
     outputDefinitions {
       name
@@ -256,3 +276,22 @@ const InvocationList: React.FC<{
     </>
   );
 };
+
+const AssetNodeListItem = styled(Link)`
+  user-select: none;
+  padding: 12px 24px;
+  cursor: pointer;
+  border-bottom: 1px solid ${ColorsWIP.KeylineGray};
+  display: flex;
+  gap: 6px;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: ${ColorsWIP.Gray50};
+  }
+
+  font-family: ${FontFamily.monospace};
+`;

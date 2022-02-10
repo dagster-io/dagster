@@ -82,6 +82,17 @@ export interface OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_def
   value: string;
 }
 
+export interface OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_assetNodes_assetKey;
+}
+
 export interface OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_inputDefinitions_type {
   __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
@@ -121,6 +132,7 @@ export interface OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_def
   name: string;
   description: string | null;
   metadata: OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_metadata[];
+  assetNodes: OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_assetNodes[];
   inputDefinitions: OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_inputDefinitions[];
   outputDefinitions: OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_outputDefinitions[];
   configField: OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_SolidDefinition_configField | null;
@@ -130,6 +142,17 @@ export interface OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_def
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
+}
+
+export interface OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_assetNodes_assetKey;
 }
 
 export interface OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions_type {
@@ -214,6 +237,7 @@ export interface OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_def
   name: string;
   description: string | null;
   metadata: OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_metadata[];
+  assetNodes: OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_assetNodes[];
   inputDefinitions: OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: OpSelectorQuery_pipelineOrError_Pipeline_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions[];
   id: string;

@@ -3,6 +3,8 @@ import subprocess
 
 import yaml
 
+from .defines import SupportedPython, SupportedPythons
+
 DAGIT_PATH = "js_modules/dagit"
 
 
@@ -94,3 +96,15 @@ def connect_sibling_docker_container(network_name, container_name, env_variable)
 
 def is_release_branch(branch_name: str):
     return branch_name.startswith("release-")
+
+
+def get_python_versions_for_branch(pr_versions=None):
+    pr_versions = pr_versions if pr_versions != None else [SupportedPython.V3_9]
+
+    # Run one representative version on PRs, the full set of python versions on master after
+    # landing and on release branches before shipping
+    branch_name = os.getenv("BUILDKITE_BRANCH")
+    if branch_name == "master" or is_release_branch(branch_name):
+        return SupportedPythons
+    else:
+        return pr_versions

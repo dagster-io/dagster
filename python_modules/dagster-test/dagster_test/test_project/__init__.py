@@ -21,7 +21,7 @@ from dagster.core.host_representation import (
     RepositoryLocation,
 )
 from dagster.core.host_representation.origin import (
-    ExternalJobOrigin,
+    ExternalInstigatorOrigin,
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
 )
@@ -238,7 +238,7 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
         work, we need to inject this one.
         """
 
-        return ExternalJobOrigin(
+        return ExternalInstigatorOrigin(
             external_repository_origin=ExternalRepositoryOrigin(
                 repository_location_origin=InProcessRepositoryLocationOrigin(
                     recon_repo=ReconstructableRepository(
@@ -253,7 +253,7 @@ class ReOriginatedExternalScheduleForTest(ExternalSchedule):
                 ),
                 repository_name="demo_execution_repo",
             ),
-            job_name=self.name,
+            instigator_name=self.name,
         )
 
 

@@ -10,6 +10,7 @@ import {
   Tooltip,
   FontFamily,
   MenuLink,
+  Box,
 } from '@dagster-io/ui';
 import {isEqual} from 'lodash';
 import qs from 'qs';
@@ -50,6 +51,8 @@ export const AssetNode: React.FC<{
     definition.repository.location.name,
   );
 
+  const displayName = displayNameForAssetKey(definition.assetKey);
+
   return (
     <ContextMenu
       content={
@@ -63,9 +66,7 @@ export const AssetNode: React.FC<{
             text={
               <span>
                 {event ? 'Rematerialize ' : 'Materialize '}
-                <span style={{fontFamily: 'monospace', fontWeight: 600}}>
-                  {displayNameForAssetKey(definition.assetKey)}
-                </span>
+                <span style={{fontFamily: 'monospace', fontWeight: 600}}>{displayName}</span>
               </span>
             }
           />
@@ -87,7 +88,7 @@ export const AssetNode: React.FC<{
               <IconWIP name="asset" />
             </span>
             <div style={{overflow: 'hidden', textOverflow: 'ellipsis', marginTop: -1}}>
-              {displayNameForAssetKey(definition.assetKey)}
+              {displayName}
             </div>
             <div style={{flex: 1}} />
             {liveData && liveData.inProgressRunIds.length > 0 ? (
@@ -111,70 +112,80 @@ export const AssetNode: React.FC<{
           {definition.description && !inAssetCatalog && (
             <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
           )}
-          {event ? (
-            <Stats>
-              {runOrError?.__typename === 'Run' && (
-                <StatsRow>
-                  <Link
-                    data-tooltip={runOrError.pipelineName}
-                    data-tooltip-style={RunLinkTooltipStyle}
-                    style={{overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 8}}
-                    target={inAssetCatalog ? '_blank' : undefined}
-                    onClick={(e) => e.stopPropagation()}
-                    to={
-                      repoAddress.name
-                        ? workspacePath(
-                            repoAddress.name,
-                            repoAddress.location,
-                            `jobs/${runOrError.pipelineName}`,
-                          )
-                        : workspacePipelinePathGuessRepo(runOrError.pipelineName, true, '')
-                    }
-                  >
-                    {runOrError.pipelineName}
-                  </Link>
-                  <Link
-                    style={{fontFamily: FontFamily.monospace, fontSize: 14}}
-                    to={`/instance/runs/${runOrError.runId}?${qs.stringify({
-                      timestamp: event.stepStats.endTime,
-                      selection: event.stepStats.stepKey,
-                      logs: `step:${event.stepStats.stepKey}`,
-                    })}`}
-                    onClick={(e) => e.stopPropagation()}
-                    target="_blank"
-                  >
-                    {titleForRun({runId: runOrError.runId})}
-                  </Link>
-                </StatsRow>
-              )}
-
-              <StatsRow>
-                {event.stepStats.endTime ? (
-                  <TimestampDisplay
-                    timestamp={event.stepStats.endTime}
-                    timeFormat={{showSeconds: false, showTimezone: false}}
-                  />
-                ) : (
-                  'Never'
+          <Stats>
+            {event ? (
+              <>
+                {runOrError?.__typename === 'Run' && (
+                  <StatsRow>
+                    <Link
+                      data-tooltip={runOrError.pipelineName}
+                      data-tooltip-style={RunLinkTooltipStyle}
+                      style={{overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 8}}
+                      target={inAssetCatalog ? '_blank' : undefined}
+                      onClick={(e) => e.stopPropagation()}
+                      to={
+                        repoAddress.name
+                          ? workspacePath(
+                              repoAddress.name,
+                              repoAddress.location,
+                              `jobs/${runOrError.pipelineName}`,
+                            )
+                          : workspacePipelinePathGuessRepo(runOrError.pipelineName, true, '')
+                      }
+                    >
+                      {runOrError.pipelineName}
+                    </Link>
+                    <Link
+                      style={{fontFamily: FontFamily.monospace, fontSize: 14}}
+                      to={`/instance/runs/${runOrError.runId}?${qs.stringify({
+                        timestamp: event.stepStats.endTime,
+                        selection: event.stepStats.stepKey,
+                        logs: `step:${event.stepStats.stepKey}`,
+                      })}`}
+                      onClick={(e) => e.stopPropagation()}
+                      target="_blank"
+                    >
+                      {titleForRun({runId: runOrError.runId})}
+                    </Link>
+                  </StatsRow>
                 )}
-                <TimeElapsed
-                  startUnix={event.stepStats.startTime}
-                  endUnix={event.stepStats.endTime}
-                />
+
+                <StatsRow>
+                  {event.stepStats.endTime ? (
+                    <TimestampDisplay
+                      timestamp={event.stepStats.endTime}
+                      timeFormat={{showSeconds: false, showTimezone: false}}
+                    />
+                  ) : (
+                    'Never'
+                  )}
+                  <TimeElapsed
+                    startUnix={event.stepStats.startTime}
+                    endUnix={event.stepStats.endTime}
+                  />
+                </StatsRow>
+              </>
+            ) : (
+              <>
+                <StatsRow style={{opacity: 0.5}}>
+                  <span>No materializations</span>
+                  <span>—</span>
+                </StatsRow>
+                <StatsRow style={{opacity: 0.5}}>
+                  <span>—</span>
+                  <span>—</span>
+                </StatsRow>
+              </>
+            )}
+            {definition.opName && displayName !== definition.opName && (
+              <StatsRow>
+                <Box flex={{gap: 4, alignItems: 'flex-end'}} style={{marginLeft: -2}}>
+                  <IconWIP name="op" size={16} />
+                  {definition.opName}
+                </Box>
               </StatsRow>
-            </Stats>
-          ) : (
-            <Stats>
-              <StatsRow style={{opacity: 0.5}}>
-                <span>No materializations</span>
-                <span>—</span>
-              </StatsRow>
-              <StatsRow style={{opacity: 0.5}}>
-                <span>—</span>
-                <span>—</span>
-              </StatsRow>
-            </Stats>
-          )}
+            )}
+          </Stats>
           {kind && (
             <OpTags
               minified={false}
@@ -250,13 +261,18 @@ export const ASSET_NODE_FRAGMENT = gql`
 
 export const getNodeDimensions = (def: {
   assetKey: {path: string[]};
+  opName: string | null;
   description?: string | null;
 }) => {
   let height = 95;
   if (def.description) {
     height += 25;
   }
-  return {width: Math.max(250, displayNameForAssetKey(def.assetKey).length * 9.5) + 25, height};
+  const displayName = displayNameForAssetKey(def.assetKey);
+  if (def.opName && displayName !== def.opName) {
+    height += 25;
+  }
+  return {width: Math.max(250, displayName.length * 9.5) + 25, height};
 };
 
 const BoxColors = {

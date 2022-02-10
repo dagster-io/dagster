@@ -2,12 +2,12 @@ from collections import namedtuple
 
 import boto3
 from botocore.exceptions import ClientError
-from dagster import Array, Field, StringSource, check
+from dagster import Array, Field, Noneable, StringSource, check
 from dagster.core.events import EngineEventData, EventMetadataEntry
 from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass
-from dagster.utils.backcompat import experimental
+from dagster.utils import merge_dicts
 
 from ..secretsmanager import get_secrets_from_arns, get_tagged_secrets
 from .tasks import default_ecs_task_definition, default_ecs_task_metadata
@@ -15,8 +15,9 @@ from .tasks import default_ecs_task_definition, default_ecs_task_metadata
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 
 
-@experimental
 class EcsRunLauncher(RunLauncher, ConfigurableClass):
+    """RunLauncher that starts a task in ECS for each Dagster job run."""
+
     def __init__(
         self,
         inst_data=None,
@@ -81,7 +82,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 ),
             ),
             "secrets_tag": Field(
-                StringSource,
+                Noneable(StringSource),
                 is_required=False,
                 default_value="dagster",
                 description=(
@@ -234,10 +235,14 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             metadata,
             image,
             self.container_name,
-            secrets={
-                **get_tagged_secrets(self.secrets_manager, self.secrets_tag),
-                **get_secrets_from_arns(self.secrets_manager, self.secrets),
-            },
+            secrets=merge_dicts(
+                (
+                    get_tagged_secrets(self.secrets_manager, self.secrets_tag)
+                    if self.secrets_tag
+                    else {}
+                ),
+                get_secrets_from_arns(self.secrets_manager, self.secrets),
+            ),
         )
 
     def _task_metadata(self):

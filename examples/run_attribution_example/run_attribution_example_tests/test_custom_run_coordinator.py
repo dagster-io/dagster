@@ -1,3 +1,5 @@
+from collections import namedtuple
+
 import pytest
 from dagster.core.run_coordinator import SubmitRunContext
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -19,12 +21,7 @@ class TestCustomRunCoordinator(TestQueuedRunCoordinator):
         self, instance, coordinator, workspace, external_pipeline
     ):
         run_id = "foo-1"
-        with patch(
-            "run_attribution_example.custom_run_coordinator.has_request_context"
-        ) as mock_has_request_context, patch(
-            "run_attribution_example.custom_run_coordinator.warnings"
-        ) as mock_warnings:
-            mock_has_request_context.return_value = False
+        with patch("run_attribution_example.custom_run_coordinator.warnings") as mock_warnings:
 
             run = self.create_run(
                 instance,
@@ -49,29 +46,26 @@ class TestCustomRunCoordinator(TestQueuedRunCoordinator):
             "foo.eyJlbWFpbCI6ICJoZWxsb0BlbGVtZW50bC5jb20ifQ==.bar",
             "hello@elementl.com",
         )
-        with patch(
-            "run_attribution_example.custom_run_coordinator.has_request_context"
-        ) as mock_has_request_context, patch(
-            "run_attribution_example.custom_run_coordinator.request",
+        MockRequest = namedtuple("MockRequest", ["headers"])
+        workspace._source = MockRequest(
             headers={
                 "X-Amzn-Trace-Id": "some_info",
                 "X-Amzn-Oidc-Data": jwt_header,
-            },
-        ):
-            mock_has_request_context.return_value = True
+            }
+        )
 
-            run = self.create_run(
-                instance,
-                external_pipeline,
-                run_id=run_id,
-                status=PipelineRunStatus.NOT_STARTED,
-            )
-            returned_run = coordinator.submit_run(SubmitRunContext(run, workspace))
+        run = self.create_run(
+            instance,
+            external_pipeline,
+            run_id=run_id,
+            status=PipelineRunStatus.NOT_STARTED,
+        )
+        returned_run = coordinator.submit_run(SubmitRunContext(run, workspace))
 
-            assert returned_run.run_id == run_id
-            assert returned_run.status == PipelineRunStatus.QUEUED
-            tags = instance.get_run_tags()
-            assert len(tags) == 1
-            (tag_name, set_of_tag_values) = tags[0]
-            assert tag_name == "user"
-            assert set_of_tag_values == {expected_email}
+        assert returned_run.run_id == run_id
+        assert returned_run.status == PipelineRunStatus.QUEUED
+        tags = instance.get_run_tags()
+        assert len(tags) == 1
+        (tag_name, set_of_tag_values) = tags[0]
+        assert tag_name == "user"
+        assert set_of_tag_values == {expected_email}

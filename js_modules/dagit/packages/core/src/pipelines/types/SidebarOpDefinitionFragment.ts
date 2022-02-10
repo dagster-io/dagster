@@ -42,6 +42,17 @@ export interface SidebarOpDefinitionFragment_SolidDefinition_metadata {
   value: string;
 }
 
+export interface SidebarOpDefinitionFragment_SolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface SidebarOpDefinitionFragment_SolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: SidebarOpDefinitionFragment_SolidDefinition_assetNodes_assetKey;
+}
+
 export interface SidebarOpDefinitionFragment_SolidDefinition_requiredResources {
   __typename: "ResourceRequirement";
   resourceKey: string;
@@ -513,6 +524,7 @@ export interface SidebarOpDefinitionFragment_SolidDefinition {
   name: string;
   description: string | null;
   metadata: SidebarOpDefinitionFragment_SolidDefinition_metadata[];
+  assetNodes: SidebarOpDefinitionFragment_SolidDefinition_assetNodes[];
   requiredResources: SidebarOpDefinitionFragment_SolidDefinition_requiredResources[];
   configField: SidebarOpDefinitionFragment_SolidDefinition_configField | null;
 }
@@ -550,6 +562,17 @@ export interface SidebarOpDefinitionFragment_CompositeSolidDefinition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
+}
+
+export interface SidebarOpDefinitionFragment_CompositeSolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface SidebarOpDefinitionFragment_CompositeSolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: SidebarOpDefinitionFragment_CompositeSolidDefinition_assetNodes_assetKey;
 }
 
 export interface SidebarOpDefinitionFragment_CompositeSolidDefinition_inputMappings_definition {
@@ -613,6 +636,7 @@ export interface SidebarOpDefinitionFragment_CompositeSolidDefinition {
   name: string;
   description: string | null;
   metadata: SidebarOpDefinitionFragment_CompositeSolidDefinition_metadata[];
+  assetNodes: SidebarOpDefinitionFragment_CompositeSolidDefinition_assetNodes[];
   id: string;
   inputMappings: SidebarOpDefinitionFragment_CompositeSolidDefinition_inputMappings[];
   outputMappings: SidebarOpDefinitionFragment_CompositeSolidDefinition_outputMappings[];

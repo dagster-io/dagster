@@ -83,7 +83,7 @@ class JobHandle(namedtuple("_JobHandle", "job_name repository_handle")):
         return self.repository_handle.location_name
 
     def get_external_origin(self):
-        return self.repository_handle.get_external_origin().get_job_origin(self.job_name)
+        return self.repository_handle.get_external_origin().get_instigator_origin(self.job_name)
 
 
 class PartitionSetHandle(namedtuple("_PartitionSetHandle", "partition_set_name repository_handle")):
