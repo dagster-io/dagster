@@ -916,7 +916,7 @@ dagsterDaemon:
   heartbeatTolerance: 300
 
   runCoordinator:
-    enabled: false
+    enabled: true
 
     # Type can be one of [
     #   QueuedRunCoordinator,
@@ -924,10 +924,12 @@ dagsterDaemon:
     #  ]
     type: QueuedRunCoordinator
     config:
+      # https://docs.dagster.io/deployment/run-coordinator#limiting-run-concurrency
       queuedRunCoordinator:
-        maxConcurrentRuns: ~
+        maxConcurrentRuns: 10
         tagConcurrencyLimits: []
-        dequeueIntervalSeconds: ~
+        # How often to check for runs to launch
+        dequeueIntervalSeconds: 5
 
     ##  Uncomment this configuration if the CustomRunCoordinator is selected.
     ##  Using this setting requires a custom Daemon image that defines the user specified
