@@ -459,7 +459,7 @@ def validate_tick(
 ):
     tick_data = tick.tick_data
     assert tick_data.instigator_origin_id == external_schedule.get_external_origin_id()
-    assert tick_data.job_name == external_schedule.name
+    assert tick_data.instigator_name == external_schedule.name
     assert tick_data.timestamp == expected_datetime.timestamp()
     assert tick_data.status == expected_status
     assert set(tick_data.run_ids) == set(expected_run_ids)

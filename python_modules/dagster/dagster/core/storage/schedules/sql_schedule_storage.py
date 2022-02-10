@@ -171,7 +171,7 @@ class SqlScheduleStorage(ScheduleStorage):
                 return InstigatorTick(tick_id, tick_data)
             except db.exc.IntegrityError as exc:
                 raise DagsterInvariantViolationError(
-                    f"Unable to insert InstigatorTick for job {tick_data.job_name} in storage"
+                    f"Unable to insert InstigatorTick for job {tick_data.instigator_name} in storage"
                 ) from exc
 
     def update_tick(self, tick):

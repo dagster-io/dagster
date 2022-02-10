@@ -224,7 +224,11 @@ def launch_scheduled_runs(
                 end_datetime_utc,
                 max_catchup_runs,
                 max_tick_retries,
-                (debug_crash_flags.get(schedule_state.job_name) if debug_crash_flags else None),
+                (
+                    debug_crash_flags.get(schedule_state.instigator_name)
+                    if debug_crash_flags
+                    else None
+                ),
                 log_verbose_checks=log_verbose_checks,
             )
         except Exception:

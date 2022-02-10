@@ -103,7 +103,8 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
         print_fn(
             click.style(
                 "  - {name} (delete) [{id}]".format(
-                    name=schedule_states_dict[schedule_origin_id].job_name, id=schedule_origin_id
+                    name=schedule_states_dict[schedule_origin_id].instigator_name,
+                    id=schedule_origin_id,
                 ),
                 fg="red",
             )
@@ -395,7 +396,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                     if schedule_state.status == InstigatorStatus.RUNNING:
                         try:
                             external_schedule = external_repo.get_external_schedule(
-                                schedule_state.job_name
+                                schedule_state.instigator_name
                             )
                             instance.stop_schedule(
                                 schedule_state.instigator_origin_id,
@@ -418,7 +419,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                 if schedule_state != None and schedule_state.status != InstigatorStatus.RUNNING:
                     click.UsageError(
                         "Cannot restart a schedule {name} because is not currently running".format(
-                            name=schedule_state.job_name
+                            name=schedule_state.instigator_name
                         )
                     )
 
