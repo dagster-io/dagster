@@ -2,6 +2,7 @@ import re
 
 import pandas as pd
 import pandera as pa
+from pandera.typing.config import BaseConfig
 import pytest
 from dagster import DagsterType, TypeCheck, check_dagster_type
 from dagster.core.definitions.event_metadata import TableSchemaMetadataEntryData
@@ -60,7 +61,16 @@ def sample_dataframe_schema(**kwargs):
     )
 
 
-def sample_schema_model():
+def make_schema_model_config(**config_attrs):
+    class Config(BaseConfig):
+        pass
+
+    for k, v in config_attrs.items():
+        setattr(Config, k, v)
+    return Config
+
+
+def sample_schema_model(**config_attrs):
     class SampleSchemaModel(pa.SchemaModel):
 
         a: pa.typing.Series[int] = pa.Field(le=10, description="a desc")
@@ -73,6 +83,8 @@ def sample_schema_model():
         ) -> pa.typing.Series[bool]:
             """Two words separated by underscore"""
             return series.str.split("_", expand=True).shape[1] == 2
+
+        Config = make_schema_model_config(**config_attrs)
 
     return SampleSchemaModel
 
@@ -141,17 +153,13 @@ def test_name_extraction():
     schema = sample_schema_model()
     assert pandera_schema_to_dagster_type(schema).key == schema.__name__
 
-    schema = sample_schema_model()
-    schema.Config.name = "foo"
+    schema = sample_schema_model(name="foo")
     assert pandera_schema_to_dagster_type(schema).key == "foo"
 
-    schema = sample_schema_model()
-    schema.Config.title = "foo"
-    schema.Config.name = "bar"
+    schema = sample_schema_model(title="foo", name="bar")
     assert pandera_schema_to_dagster_type(schema).key == "foo"
 
     schema = sample_dataframe_schema()
-    print("NAME IS: ", pandera_schema_to_dagster_type(schema).key)
     assert re.match(r"DagsterPanderaDataframe\d+", pandera_schema_to_dagster_type(schema).key)
 
     schema = sample_dataframe_schema(title="foo", name="bar")

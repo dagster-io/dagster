@@ -128,21 +128,17 @@ def pandera_schema_to_dagster_type(
     )
 
 
-def _anonymous_type_name_func() -> Generator[str, None, None]:
-    for i in itertools.count(start=1):
-        yield f"DagsterPanderaDataframe{i}"
-
-
-_anonymous_type_name = _anonymous_type_name_func()
+# call next() on this to generate next unique Dagster Type name for anonymous schemas
+_anonymous_schema_name_generator = (f"DagsterPanderaDataframe{i}" for i in itertools.count(start=1))
 
 
 def _extract_name_from_pandera_schema(
     schema: Union[pa.DataFrameSchema, Type[pa.SchemaModel]],
 ) -> str:
     if isinstance(schema, type) and issubclass(schema, pa.SchemaModel):
-        return schema.Config.title or schema.Config.name or schema.__name__
+        return getattr(schema.Config, 'title', None) or getattr(schema.Config, 'name', None) or schema.__name__
     elif isinstance(schema, pa.DataFrameSchema):
-        return schema.title or schema.name or next(_anonymous_type_name)
+        return schema.title or schema.name or next(_anonymous_schema_name_generator)
 
 
 def _pandera_schema_to_type_check_fn(
@@ -159,14 +155,17 @@ def _pandera_schema_to_type_check_fn(
         else:
             return TypeCheck(
                 success=False,
-                description=f"Must be one of {VALID_DATAFRAME_CLASSES} not {type(value).__name__}.",
+                description=f"Must be one of {VALID_DATAFRAME_CLASSES}, not {type(value).__name__}.",
             )
 
         return TypeCheck(success=True)
 
     return type_check_fn
 
-def _pandera_errors_to_type_check(error: pa.errors.SchemaErrors, table_schema: TableSchema) -> TypeCheck:
+
+def _pandera_errors_to_type_check(
+    error: pa.errors.SchemaErrors, table_schema: TableSchema
+) -> TypeCheck:
     return TypeCheck(
         success=False,
         description=str(error),
