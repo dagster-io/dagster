@@ -106,6 +106,10 @@ class InstigatorState(namedtuple("_InstigationState", "origin job_type status jo
         return self.origin.instigator_name
 
     @property
+    def instigator_type(self):
+        return self.job_type
+
+    @property
     def repository_origin_id(self):
         return self.origin.external_repository_origin.get_id()
 
@@ -193,8 +197,8 @@ class InstigatorTick(namedtuple("_InstigatorTick", "tick_id job_tick_data")):
         return self.job_tick_data.instigator_name
 
     @property
-    def job_type(self):
-        return self.job_tick_data.job_type
+    def instigator_type(self):
+        return self.job_tick_data.instigator_type
 
     @property
     def timestamp(self):
@@ -306,6 +310,10 @@ class TickData(
     @property
     def instigator_name(self):
         return self.job_name
+
+    @property
+    def instigator_type(self):
+        return self.job_type
 
     def with_status(self, status, error=None, timestamp=None, failure_count=None):
         return TickData(

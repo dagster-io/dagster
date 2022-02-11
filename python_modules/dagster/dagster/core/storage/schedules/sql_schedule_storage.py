@@ -74,7 +74,7 @@ class SqlScheduleStorage(ScheduleStorage):
                         job_origin_id=state.instigator_origin_id,
                         repository_origin_id=state.repository_origin_id,
                         status=state.status.value,
-                        job_type=state.job_type.value,
+                        job_type=state.instigator_type.value,
                         job_body=serialize_dagster_namedtuple(state),
                     )
                 )
@@ -161,7 +161,7 @@ class SqlScheduleStorage(ScheduleStorage):
                     JobTickTable.insert().values(  # pylint: disable=no-value-for-parameter
                         job_origin_id=tick_data.instigator_origin_id,
                         status=tick_data.status.value,
-                        type=tick_data.job_type.value,
+                        type=tick_data.instigator_type.value,
                         timestamp=utc_datetime_from_timestamp(tick_data.timestamp),
                         tick_body=serialize_dagster_namedtuple(tick_data),
                     )
@@ -183,7 +183,7 @@ class SqlScheduleStorage(ScheduleStorage):
                 .where(JobTickTable.c.id == tick.tick_id)
                 .values(
                     status=tick.status.value,
-                    type=tick.job_type.value,
+                    type=tick.instigator_type.value,
                     timestamp=utc_datetime_from_timestamp(tick.timestamp),
                     tick_body=serialize_dagster_namedtuple(tick.tick_data),
                 )
