@@ -105,6 +105,14 @@ def test_asset_collection_missing_resources():
     ):
         AssetCollection.from_list([asset_foo])
 
+    foreign_asset_io_req = ForeignAsset(key=AssetKey("foo"), io_manager_key="foo")
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"SourceAsset with key AssetKey\(\['foo'\]\) requires io manager with key 'foo', but was not provided on AssetCollection. Provided keys: \['root_manager'\]",
+    ):
+        AssetCollection.from_list([], source_assets=[foreign_asset_io_req])
+
 
 def test_asset_collection_with_executor():
     @asset
