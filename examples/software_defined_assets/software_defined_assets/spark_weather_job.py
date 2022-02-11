@@ -12,8 +12,7 @@ import os
 from typing import Union
 
 import pandas as pd
-from dagster import AssetKey, IOManager, IOManagerDefinition, check
-from dagster.core.asset_defs import build_assets_job
+from dagster import AssetKey, IOManager, IOManagerDefinition, build_assets_job, check
 from pandas import DataFrame as PandasDF
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import SparkSession

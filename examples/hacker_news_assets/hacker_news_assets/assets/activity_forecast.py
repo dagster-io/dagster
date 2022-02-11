@@ -1,4 +1,4 @@
-from dagster.core.asset_defs import asset
+from dagster import asset
 from pandas import DataFrame
 
 

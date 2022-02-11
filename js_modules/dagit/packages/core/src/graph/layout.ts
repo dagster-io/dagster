@@ -50,32 +50,40 @@ interface IParentOpLayout extends Omit<IFullOpLayout, 'op'> {
 
 export interface ILayoutOp {
   name: string;
-  inputs: Array<{
+  inputs: {
     definition: {
       name: string;
     };
-    dependsOn: Array<{
+    dependsOn: {
       definition: {
         name: string;
       };
       solid: {
         name: string;
       };
-    }>;
-  }>;
-  outputs: Array<{
+    }[];
+  }[];
+  definition: {
+    description: string | null;
+    assetNodes: {
+      assetKey: {
+        path: string[];
+      };
+    }[];
+  };
+  outputs: {
     definition: {
       name: string;
     };
-    dependedBy: Array<{
+    dependedBy: {
       definition: {
         name: string;
       };
       solid: {
         name: string;
       };
-    }>;
-  }>;
+    }[];
+  }[];
 }
 
 export interface ILayout {
@@ -458,6 +466,11 @@ export function layoutOp(op: ILayoutOp, root: IPoint): IFullOpLayout {
   };
 
   accY += OP_BASE_HEIGHT;
+
+  if (op.definition.assetNodes.length && op.definition.description) {
+    opLayout.height += IO_HEIGHT;
+    accY += IO_HEIGHT;
+  }
 
   const outputLayouts: {
     [outputName: string]: {

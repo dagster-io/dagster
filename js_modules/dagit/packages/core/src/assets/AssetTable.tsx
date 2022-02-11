@@ -12,7 +12,6 @@ import {
 } from '@dagster-io/ui';
 import * as React from 'react';
 
-import {useFeatureFlags} from '../app/Flags';
 import {usePermissions} from '../app/Permissions';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -40,7 +39,6 @@ export const AssetTable = ({
 }) => {
   const [toWipe, setToWipe] = React.useState<AssetKey[] | undefined>();
   const {canWipeAssets} = usePermissions();
-  const {flagAssetGraph} = useFeatureFlags();
 
   const pathMap: {[key: string]: Asset[]} = {};
   assets.forEach((asset) => {
@@ -92,8 +90,8 @@ export const AssetTable = ({
               </th>
             ) : null}
             <th>Asset Key</th>
-            {flagAssetGraph ? <th>Description</th> : null}
-            {flagAssetGraph ? <th style={{maxWidth: 250}}>Defined In</th> : null}
+            <th>Description</th>
+            <th style={{maxWidth: 250}}>Defined In</th>
             {canWipeAssets ? <th style={{width: 80}}>Actions</th> : null}
           </tr>
         </thead>
@@ -106,7 +104,6 @@ export const AssetTable = ({
                 prefixPath={prefixPath}
                 path={path}
                 assets={pathMap[pathStr] || []}
-                shouldShowAssetGraphColumns={flagAssetGraph}
                 isSelected={checkedPaths.has(pathStr)}
                 onToggleChecked={onToggleFactory(pathStr)}
                 onWipe={(assets: Asset[]) => setToWipe(assets.map((asset) => asset.key))}
@@ -132,94 +129,78 @@ const AssetEntryRow: React.FC<{
   path: string[];
   isSelected: boolean;
   onToggleChecked: (values: {checked: boolean; shiftKey: boolean}) => void;
-  shouldShowAssetGraphColumns: boolean;
   assets: Asset[];
   onWipe: (assets: Asset[]) => void;
   canWipe: boolean;
-}> = React.memo(
-  ({
-    prefixPath,
-    path,
-    shouldShowAssetGraphColumns,
-    assets,
-    isSelected,
-    onToggleChecked,
-    onWipe,
-    canWipe,
-  }) => {
-    const fullPath = [...prefixPath, ...path];
-    const isAssetEntry = assets.length === 1 && fullPath.join('/') === assets[0].key.path.join('/');
-    const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
-    const first = assets[0];
+}> = React.memo(({prefixPath, path, assets, isSelected, onToggleChecked, onWipe, canWipe}) => {
+  const fullPath = [...prefixPath, ...path];
+  const isAssetEntry = assets.length === 1 && fullPath.join('/') === assets[0].key.path.join('/');
+  const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
+  const first = assets[0];
 
-    const onChange = (e: React.FormEvent<HTMLInputElement>) => {
-      if (e.target instanceof HTMLInputElement) {
-        const {checked} = e.target;
-        const shiftKey =
-          e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
-        onToggleChecked({checked, shiftKey});
-      }
-    };
-    return (
-      <tr>
-        {canWipe ? (
-          <td style={{paddingRight: '4px'}}>
-            <Checkbox checked={isSelected} onChange={onChange} />
-          </td>
-        ) : null}
-        <td>
-          <AssetLink path={path} url={linkUrl} trailingSlash={!isAssetEntry} />
+  const onChange = (e: React.FormEvent<HTMLInputElement>) => {
+    if (e.target instanceof HTMLInputElement) {
+      const {checked} = e.target;
+      const shiftKey =
+        e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
+      onToggleChecked({checked, shiftKey});
+    }
+  };
+  return (
+    <tr>
+      {canWipe ? (
+        <td style={{paddingRight: '4px'}}>
+          <Checkbox checked={isSelected} onChange={onChange} />
         </td>
-        {shouldShowAssetGraphColumns ? (
-          <td>
-            {first.definition &&
-              first.definition.description &&
-              markdownToPlaintext(first.definition.description).split('\n')[0]}
-          </td>
-        ) : null}
-        {shouldShowAssetGraphColumns ? (
-          <td>
-            <Box flex={{direction: 'column', gap: 2}}>
-              {(first.definition?.jobs || []).map((job) => (
-                <PipelineReference
-                  key={job.id}
-                  isJob
-                  showIcon
-                  pipelineName={job.name}
-                  pipelineHrefContext={{
-                    name: job.repository.name,
-                    location: job.repository.location.name,
-                  }}
-                />
-              ))}
-            </Box>
-          </td>
-        ) : null}
-        {canWipe ? (
-          <td>
-            {isAssetEntry ? (
-              <Popover
-                content={
-                  <MenuWIP>
-                    <MenuItemWIP
-                      text="Wipe…"
-                      icon="delete"
-                      intent="danger"
-                      onClick={() => onWipe(assets)}
-                    />
-                  </MenuWIP>
-                }
-                position="bottom-right"
-              >
-                <ButtonWIP icon={<IconWIP name="expand_more" />} />
-              </Popover>
-            ) : null}
-          </td>
-        ) : null}
-      </tr>
-    );
-  },
-);
+      ) : null}
+      <td>
+        <AssetLink path={path} url={linkUrl} trailingSlash={!isAssetEntry} />
+      </td>
+      <td>
+        {first.definition &&
+          first.definition.description &&
+          markdownToPlaintext(first.definition.description).split('\n')[0]}
+      </td>
+      <td>
+        <Box flex={{direction: 'column', gap: 2}}>
+          {(first.definition?.jobs || []).map((job) => (
+            <PipelineReference
+              key={job.id}
+              isJob
+              showIcon
+              pipelineName={job.name}
+              pipelineHrefContext={{
+                name: job.repository.name,
+                location: job.repository.location.name,
+              }}
+            />
+          ))}
+        </Box>
+      </td>
+      {canWipe ? (
+        <td>
+          {isAssetEntry ? (
+            <Popover
+              content={
+                <MenuWIP>
+                  <MenuItemWIP
+                    text="Wipe…"
+                    icon="delete"
+                    intent="danger"
+                    onClick={() => onWipe(assets)}
+                  />
+                </MenuWIP>
+              }
+              position="bottom-right"
+            >
+              <ButtonWIP icon={<IconWIP name="expand_more" />} />
+            </Popover>
+          ) : null}
+        </td>
+      ) : null}
+    </tr>
+  );
+});
 
 const AssetActions: React.FC<{
   selected: Asset[];

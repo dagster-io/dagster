@@ -1,4 +1,3 @@
-import {ColorsWIP} from '@dagster-io/ui';
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
@@ -57,6 +56,7 @@ function buildGraphSolidFragment(sname: string, ins: string[], outs: string[], e
         isDynamic: false,
       })),
       configField: null,
+      assetNodes: [],
     },
     inputs: ins.map((iname) => ({
       __typename: 'Input',
@@ -104,7 +104,6 @@ export const Basic = () => {
 
   return (
     <PipelineGraph
-      backgroundColor={ColorsWIP.White}
       pipelineName="Test Pipeline"
       ops={ops}
       layout={getDagrePipelineLayout(ops)}
@@ -133,7 +132,6 @@ export const FanOut = () => {
 
   return (
     <PipelineGraph
-      backgroundColor={ColorsWIP.White}
       pipelineName="Test Pipeline"
       ops={ops}
       layout={getDagrePipelineLayout(ops)}
@@ -159,7 +157,6 @@ export const Tagged = () => {
 
   return (
     <PipelineGraph
-      backgroundColor={ColorsWIP.White}
       pipelineName="Test Pipeline"
       ops={ops}
       layout={getDagrePipelineLayout(ops)}
@@ -216,7 +213,6 @@ export const Composite = () => {
 
   return (
     <PipelineGraph
-      backgroundColor={ColorsWIP.White}
       pipelineName="Test Pipeline"
       ops={parentOp ? childOps : ops}
       parentOp={parentOp}

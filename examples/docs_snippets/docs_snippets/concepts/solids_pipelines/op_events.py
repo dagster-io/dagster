@@ -156,8 +156,8 @@ def my_failure_metadata_op():
 def my_retry_op():
     try:
         result = flaky_operation()
-    except:
-        raise RetryRequested(max_retries=3)
+    except Exception as e:
+        raise RetryRequested(max_retries=3) from e
     return result
 
 

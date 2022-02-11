@@ -1,8 +1,7 @@
 # pylint: disable=redefined-outer-name
 import random
 
-from dagster import EventMetadata, Output
-from dagster.core.asset_defs import AssetIn, asset
+from dagster import AssetIn, EventMetadata, Output, asset
 from hacker_news_assets.assets.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame, Series
 from sklearn.decomposition import TruncatedSVD

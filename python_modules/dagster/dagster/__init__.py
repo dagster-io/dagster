@@ -2,6 +2,14 @@ from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
 from dagster.config.config_schema import ConfigSchema
 from dagster.config.config_type import Array, Noneable, ScalarUnion
+from dagster.core.asset_defs import (
+    AssetIn,
+    AssetsDefinition,
+    ForeignAsset,
+    asset,
+    build_assets_job,
+    multi_asset,
+)
 from dagster.core.definitions import (
     AssetKey,
     AssetMaterialization,
@@ -239,9 +247,11 @@ from dagster.config.source import BoolSource, StringSource, IntSource  # isort:s
 __all__ = [
     # Definition
     "AssetKey",
+    "AssetIn",
     "AssetMaterialization",
     "AssetObservation",
     "AssetSensorDefinition",
+    "AssetsDefinition",
     "TableColumn",
     "TableColumnConstraints",
     "TableConstraints",
@@ -258,6 +268,7 @@ __all__ = [
     "ExpectationResult",
     "Failure",
     "Field",
+    "ForeignAsset",
     "Map",
     "GraphDefinition",
     "GraphIn",
@@ -303,6 +314,7 @@ __all__ = [
     "DynamicOut",
     "DynamicOutputDefinition",
     # Decorators
+    "asset",
     "asset_sensor",
     "composite_solid",
     "config_mapping",
@@ -311,6 +323,7 @@ __all__ = [
     "job",
     "lambda_solid",
     "logger",
+    "multi_asset",
     "op",
     "pipeline",
     "repository",
@@ -397,6 +410,7 @@ __all__ = [
     "config_from_pkg_resources",
     "config_from_yaml_strings",
     "configured",
+    "build_assets_job",
     # types
     "Any",
     "Bool",
