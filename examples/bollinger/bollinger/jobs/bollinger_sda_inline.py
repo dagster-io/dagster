@@ -4,8 +4,7 @@ import pandas as pd
 import pandera as pa
 from bollinger.lib import SP500_CSV_URL, download_file, normalize_path, compute_bollinger_bands
 from bollinger.resources.csv_io_manager import local_csv_io_manager
-from dagster import MEMOIZED_RUN_TAG
-from dagster.core.asset_defs import asset, build_assets_job
+from dagster import MEMOIZED_RUN_TAG, asset, build_assets_job
 from dagster_pandera import pandera_schema_to_dagster_type
 from pandera.typing import Series
 
@@ -28,7 +27,6 @@ class Sp500Prices(pa.SchemaModel):
 @asset(
     dagster_type=pandera_schema_to_dagster_type(Sp500Prices),
     metadata={"owner": "alice@example.com"},
-    version="1",
 )
 def sp500_prices():
     """Historical stock prices for the S and P 500."""
@@ -51,13 +49,12 @@ class Sp500BollingerBands(pa.SchemaModel):
 @asset(
     dagster_type=pandera_schema_to_dagster_type(Sp500BollingerBands),
     metadata={"owner": "alice@example.com"},
-    version="2",
+    # version="2",
 )
 def sp500_bollinger_bands(sp500_prices):
     """Bollinger bands for the S and P 500 stock prices."""
     odf = sp500_prices.groupby("name").apply(lambda idf: compute_bollinger_bands(idf, dropna=False))
-    return odf
-    # return odf.dropna().reset_index()
+    return odf.dropna().reset_index()
 
 
 class Sp500AnomalousEvents(pa.SchemaModel):
@@ -69,7 +66,6 @@ class Sp500AnomalousEvents(pa.SchemaModel):
 @asset(
     dagster_type=pandera_schema_to_dagster_type(Sp500AnomalousEvents),
     metadata={"owner": "alice@example.com"},
-    version="1",
 )
 def sp500_anomalous_events(sp500_prices, sp500_bollinger_bands):
     """
@@ -89,5 +85,4 @@ bollinger_sda_inline = build_assets_job(
     "bollinger_sda",
     assets=[sp500_anomalous_events, sp500_bollinger_bands, sp500_prices],
     resource_defs={"io_manager": local_csv_io_manager},
-    tags={MEMOIZED_RUN_TAG: True},
 )
