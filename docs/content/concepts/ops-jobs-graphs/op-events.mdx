@@ -237,7 +237,7 @@ You can configure the number of retries to be attempted with the `max_retries` p
 def my_retry_op():
     try:
         result = flaky_operation()
-    except:
-        raise RetryRequested(max_retries=3)
+    except Exception as e:
+        raise RetryRequested(max_retries=3) from e
     return result
 ```
