@@ -1,3 +1,5 @@
+import multiprocessing
+
 import pendulum
 import pytest
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
@@ -10,10 +12,12 @@ from dagster.core.test_utils import (
 )
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.backfill import execute_backfill_iteration
-from dagster.seven import IS_WINDOWS, multiprocessing
+from dagster.seven import IS_WINDOWS
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 from .test_backfill import instance_for_context, repos
+
+spawn_ctx = multiprocessing.get_context("spawn")
 
 
 def _test_backfill_in_subprocess(instance_ref, debug_crash_flags):
@@ -63,7 +67,7 @@ def test_simple(external_repo_context, capfd):
                 backfill_timestamp=pendulum.now().timestamp(),
             )
         )
-        launch_process = multiprocessing.Process(
+        launch_process = spawn_ctx.Process(
             target=_test_backfill_in_subprocess,
             args=[instance.get_ref(), None],
         )
@@ -102,7 +106,7 @@ def test_before_submit(external_repo_context, crash_signal, capfd):
                 backfill_timestamp=pendulum.now().timestamp(),
             )
         )
-        launch_process = multiprocessing.Process(
+        launch_process = spawn_ctx.Process(
             target=_test_backfill_in_subprocess,
             args=[instance.get_ref(), {"BEFORE_SUBMIT": crash_signal}],
         )
@@ -119,7 +123,7 @@ def test_before_submit(external_repo_context, crash_signal, capfd):
         assert instance.get_runs_count() == 0
 
         # resume backfill
-        launch_process = multiprocessing.Process(
+        launch_process = spawn_ctx.Process(
             target=_test_backfill_in_subprocess,
             args=[instance.get_ref(), None],
         )
@@ -160,7 +164,7 @@ def test_crash_after_submit(external_repo_context, crash_signal, capfd):
                 backfill_timestamp=pendulum.now().timestamp(),
             )
         )
-        launch_process = multiprocessing.Process(
+        launch_process = spawn_ctx.Process(
             target=_test_backfill_in_subprocess,
             args=[instance.get_ref(), {"AFTER_SUBMIT": crash_signal}],
         )
@@ -177,7 +181,7 @@ def test_crash_after_submit(external_repo_context, crash_signal, capfd):
         assert instance.get_runs_count() == 3
 
         # resume backfill
-        launch_process = multiprocessing.Process(
+        launch_process = spawn_ctx.Process(
             target=_test_backfill_in_subprocess,
             args=[instance.get_ref(), None],
         )
