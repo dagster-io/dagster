@@ -2,7 +2,7 @@ import json
 import os
 import subprocess
 import textwrap
-from typing import Any, Callable, Mapping, Optional, Sequence
+from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Set
 
 from dagster import AssetKey, Out, Output, SolidExecutionContext, check
 from dagster.core.asset_defs import AssetsDefinition, multi_asset
@@ -43,10 +43,10 @@ def _dbt_nodes_to_assets(
     ] = None,
     io_manager_key: Optional[str] = None,
 ) -> AssetsDefinition:
-    outs = {}
-    sources = set()
-    out_name_to_node_info = {}
-    internal_asset_deps = {}
+    outs: Dict[str, Out] = {}
+    sources: Set[AssetKey] = set()
+    out_name_to_node_info: Dict[str, Dict[str, Any]] = {}
+    internal_asset_deps: Dict[str, Set[AssetKey]] = {}
     for node_info in node_infos:
         node_name = node_info["name"]
         asset_deps = set()
