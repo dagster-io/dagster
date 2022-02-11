@@ -3,8 +3,8 @@ from typing import Dict, List, NamedTuple
 from dagster import check
 
 from ..definitions.executor_definition import ExecutorDefinition
-from ..definitions.job_definition import JobDefinition
 from ..definitions.resource_definition import ResourceDefinition
+from ..errors import DagsterInvalidDefinitionError
 from .asset import AssetsDefinition
 from .foreign_asset import ForeignAsset
 
@@ -41,9 +41,51 @@ class AssetCollection(
         )
         executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
 
+        _validate_resource_reqs_for_asset_collection(
+            asset_list=assets, source_assets=source_assets, resource_defs=resource_defs
+        )
+
         return AssetCollection(
             assets=assets,
             source_assets=source_assets,
             resource_defs=resource_defs,
             executor_def=executor_def,
         )
+
+
+def _validate_resource_reqs_for_asset_collection(
+    asset_list: List[AssetsDefinition],
+    source_assets: List[ForeignAsset],
+    resource_defs: Dict[str, ResourceDefinition],
+):
+    present_resource_keys = set(resource_defs.keys())
+    for asset_def in asset_list:
+        resource_keys = set(asset_def.op.required_resource_keys or {})
+        missing_resource_keys = list(set(resource_keys) - present_resource_keys)
+        if missing_resource_keys:
+            raise DagsterInvalidDefinitionError(
+                f"AssetCollection is missing required resource keys for asset '{asset_def.op.name}'. Missing resource keys: {missing_resource_keys}"
+            )
+
+        for asset_key, input_def in asset_def.input_defs_by_asset_key.items():
+            if (
+                input_def.root_manager_key
+                and input_def.root_manager_key not in present_resource_keys
+            ):
+                raise DagsterInvalidDefinitionError(
+                    f"The input associated with AssetKey '{asset_key}' requires root input manager '{input_def.root_manager_key}' but was not provided on asset collection. Provided resources: {present_resource_keys}"
+                )
+
+    for resource_key, resource_def in resource_defs.items():
+        resource_keys = set(resource_def.required_resource_keys)
+        missing_resource_keys = list(set(resource_keys) - present_resource_keys)
+        if missing_resource_keys:
+            raise DagsterInvalidDefinitionError(
+                f"AssetCollection is missing required resource keys for resource '{resource_key}'. Missing resource keys: {missing_resource_keys}"
+            )
+
+    for source_asset in source_assets:
+        if source_asset.io_manager_key and source_asset.io_manager_key not in present_resource_keys:
+            raise DagsterInvalidDefinitionError(
+                f"SourceAsset with key {source_asset.key} requires io manager with key '{source_asset.io_manager_key}', but was not provided on AssetCollection. Provided keys: {present_resource_keys}"
+            )

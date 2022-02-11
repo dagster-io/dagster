@@ -1,9 +1,10 @@
+import pytest
 from dagster import (
     AssetKey,
+    DagsterInvalidDefinitionError,
     IOManager,
     in_process_executor,
     io_manager,
-    multiprocess_executor,
     repository,
     resource,
 )
@@ -19,9 +20,7 @@ def test_asset_collection_from_list():
     def asset_bar():
         return "bar"
 
-    @asset(
-        ins={"asset_bar": AssetIn(asset_key=AssetKey("asset_foo"))}
-    )  # should still use output from asset_foo
+    @asset(ins={"asset_bar": AssetIn(asset_key=AssetKey("asset_foo"))})
     def last_asset(asset_bar):
         return asset_bar
 
@@ -75,56 +74,49 @@ def test_asset_collection_foreign_asset():
 
 
 def test_asset_collection_with_resources():
-    pass
+    @asset(required_resource_keys={"foo"})
+    def asset_foo(context):
+        return context.resources.foo
+
+    @resource
+    def the_resource():
+        return "foo"
+
+    @repository
+    def the_repo():
+        return [AssetCollection.from_list([asset_foo], resource_defs={"foo": the_resource})]
+
+    asset_collection_underlying_job = the_repo.get_all_jobs()[0]
+    assert asset_collection_underlying_job.name == "__ASSET_COLLECTION"
+
+    result = asset_collection_underlying_job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("asset_foo") == "foo"
 
 
 def test_asset_collection_missing_resources():
-    pass
+    @asset(required_resource_keys={"foo"})
+    def asset_foo(context):
+        return context.resources.foo
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"AssetCollection is missing required resource keys for asset 'asset_foo'. Missing resource keys: \['foo'\]",
+    ):
+        AssetCollection.from_list([asset_foo])
 
 
 def test_asset_collection_with_executor():
-    pass
+    @asset
+    def the_asset():
+        pass
 
+    @repository
+    def the_repo():
+        return [AssetCollection.from_list([the_asset], executor_def=in_process_executor)]
 
-# def test_asset_repository():
-#     @asset(required_resource_keys={"the_resource"})
-#     def asset_foo():
-#         return "foo"
-
-#     @asset
-#     def asset_bar():
-#         return "bar"
-
-#     @asset(
-#         ins={"asset_bar": AssetIn(asset_key=AssetKey("asset_foo"))}
-#     )  # should still use output from asset_foo
-#     def last_asset(asset_bar):
-#         return asset_bar
-
-#     @resource
-#     def the_resource():
-#         pass
-
-#     collection = AssetCollection.from_list(
-#         assets=[asset_foo, asset_bar, last_asset],
-#         resource_defs={"the_resource": the_resource},
-#         executor_def=in_process_executor,
-#     )
-
-#     @repository
-#     def the_repo():
-#         return [
-#             collection,
-#             collection.build_job("test", "asset_bar", executor_def=multiprocess_executor),
-#         ]
-
-#     mega_job = the_repo.get_all_jobs()[0]
-#     assert mega_job.name == "__REPOSITORY_MEGA_JOB"
-
-#     subset_job = the_repo.get_all_jobs()[1]
-#     assert subset_job.name == "test"
-#     assert len(subset_job.graph.solids) == 1
-#     assert subset_job.graph.solids[0].name == "asset_bar"
-
-#     result = collection.execute_in_process()
-#     assert result.success
+    asset_collection_underlying_job = the_repo.get_all_jobs()[0]
+    assert (
+        asset_collection_underlying_job.executor_def  # pylint: disable=comparison-with-callable
+        == in_process_executor
+    )
