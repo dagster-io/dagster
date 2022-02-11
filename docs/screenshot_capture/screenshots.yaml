@@ -224,3 +224,10 @@
 
 - path: guides/dagster_pandas/tutorial2.png
   vetted: false
+
+- path: guides/dagster_pandera/columns.png
+  defs_file: examples/docs_snippets/docs_snippets/integrations/pandera/example.py
+  url: http://localhost:3000/workspace/__repository__stocks_job@example.py/jobs/stocks_job/?tab=types&typeName=StockPrices
+  vetted: false
+  steps:
+    - run the job

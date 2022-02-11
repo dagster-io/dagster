@@ -2,7 +2,7 @@ import random
 import pandera as pa
 from pandera.typing import Series
 import pandas as pd
-from dagster import asset, build_assets_job
+from dagster import op, job, Out
 from dagster_pandera import pandera_schema_to_dagster_type
 
 
@@ -23,10 +23,7 @@ class StockPrices(pa.SchemaModel):
     close: Series[float] = pa.Field(ge=0, description="Price at market close")
 
 
-StockPricesDgType = pandera_schema_to_dagster_type(StockPrices)
-
-
-@asset(dagster_type=StockPricesDgType)
+@op(out=Out(dagster_type=pandera_schema_to_dagster_type(StockPrices)))
 def apple_stock_prices_dirty():
     prices = pd.DataFrame(APPLE_STOCK_PRICES)
     i = random.choice(prices.index)
@@ -35,4 +32,6 @@ def apple_stock_prices_dirty():
     return prices
 
 
-stocks_job = build_assets_job("stock_prices", assets=[apple_stock_prices_dirty])
+@job
+def stocks_job():
+    apple_stock_prices_dirty()

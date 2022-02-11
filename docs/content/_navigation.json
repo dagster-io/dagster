@@ -361,6 +361,10 @@
             "path": "/integrations/pandas"
           },
           {
+            "title": "Dagster with Pandera",
+            "path": "/integrations/pandera"
+          },
+          {
             "title": "Dagster with Jupyter/Papermill",
             "path": "/integrations/dagstermill"
           }
