@@ -274,9 +274,9 @@ def execute_sensor_iteration(
 
             tick = instance.create_tick(
                 TickData(
-                    job_origin_id=sensor_state.instigator_origin_id,
-                    job_name=sensor_state.instigator_name,
-                    job_type=InstigatorType.SENSOR,
+                    instigator_origin_id=sensor_state.instigator_origin_id,
+                    instigator_name=sensor_state.instigator_name,
+                    instigator_type=InstigatorType.SENSOR,
                     status=TickStatus.STARTED,
                     timestamp=now.timestamp(),
                 )

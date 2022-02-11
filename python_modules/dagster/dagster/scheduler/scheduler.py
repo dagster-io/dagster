@@ -332,9 +332,9 @@ def launch_scheduled_runs_for_schedule(
         else:
             tick = instance.create_tick(
                 TickData(
-                    job_origin_id=instigator_origin_id,
-                    job_name=schedule_name,
-                    job_type=InstigatorType.SCHEDULE,
+                    instigator_origin_id=instigator_origin_id,
+                    instigator_name=schedule_name,
+                    instigator_type=InstigatorType.SCHEDULE,
                     status=TickStatus.STARTED,
                     timestamp=schedule_timestamp,
                 )

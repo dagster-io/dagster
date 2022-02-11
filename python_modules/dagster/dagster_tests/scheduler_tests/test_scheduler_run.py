@@ -647,9 +647,9 @@ def test_old_tick_schedule(instance, workspace, external_repo):
         # Create an old tick from several days ago
         instance.create_tick(
             TickData(
-                job_origin_id=external_schedule.get_external_origin_id(),
-                job_name="simple_schedule",
-                job_type=InstigatorType.SCHEDULE,
+                instigator_origin_id=external_schedule.get_external_origin_id(),
+                instigator_name="simple_schedule",
+                instigator_type=InstigatorType.SCHEDULE,
                 status=TickStatus.STARTED,
                 timestamp=pendulum.now("UTC").subtract(days=3).timestamp(),
             )

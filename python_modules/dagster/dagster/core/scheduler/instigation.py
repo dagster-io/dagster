@@ -1,12 +1,18 @@
 from collections import namedtuple
 from enum import Enum
+from inspect import Parameter
+from typing import Any, Dict, Mapping, NamedTuple, Type
 
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation.origin import ExternalInstigatorOrigin
 from dagster.serdes.serdes import (
+    DefaultNamedTupleSerializer,
+    WhitelistMap,
     register_serdes_enum_fallbacks,
     register_serdes_tuple_fallbacks,
+    replace_storage_keys,
+    unpack_inner_value,
     whitelist_for_serdes,
 )
 from dagster.utils import merge_dicts
@@ -82,15 +88,64 @@ def check_instigator_data(instigator_type, instigator_data):
     return instigator_data
 
 
-@whitelist_for_serdes
-class InstigatorState(namedtuple("_InstigationState", "origin job_type status job_specific_data")):
-    def __new__(cls, origin, job_type, status, job_specific_data=None):
+class InstigatorStateSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_from_storage_dict(
+        cls,
+        storage_dict: Dict[str, Any],
+        klass: Type,
+        args_for_class: Mapping[str, Parameter],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> NamedTuple:
+        raw_dict = {
+            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            for key, value in storage_dict.items()
+        }
+        # For backcompat, we store:
+        # instigator_type as job_type
+        # instigator_data as job_specific_data
+        return klass(
+            **{key: value for key, value in raw_dict.items() if key in args_for_class},
+            instigator_type=raw_dict.get("job_type"),
+            instigator_data=raw_dict.get("job_specific_data"),
+        )
+
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: NamedTuple,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        storage = super().value_to_storage_dict(
+            value,
+            whitelist_map,
+            descent_path,
+        )
+        # For backcompat, we store:
+        # instigator_type as job_type
+        # instigator_data as job_specific_data
+        return replace_storage_keys(
+            storage,
+            {
+                "instigator_type": "job_type",
+                "instigator_data": "job_specific_data",
+            },
+        )
+
+
+@whitelist_for_serdes(serializer=InstigatorStateSerializer)
+class InstigatorState(
+    namedtuple("_InstigationState", "origin instigator_type status instigator_data")
+):
+    def __new__(cls, origin, instigator_type, status, instigator_data=None):
         return super(InstigatorState, cls).__new__(
             cls,
             check.inst_param(origin, "origin", ExternalInstigatorOrigin),
-            check.inst_param(job_type, "job_type", InstigatorType),
+            check.inst_param(instigator_type, "instigator_type", InstigatorType),
             check.inst_param(status, "status", InstigatorStatus),
-            check_instigator_data(job_type, job_specific_data),
+            check_instigator_data(instigator_type, instigator_data),
         )
 
     @property
@@ -106,10 +161,6 @@ class InstigatorState(namedtuple("_InstigationState", "origin job_type status jo
         return self.origin.instigator_name
 
     @property
-    def instigator_type(self):
-        return self.job_type
-
-    @property
     def repository_origin_id(self):
         return self.origin.external_repository_origin.get_id()
 
@@ -117,26 +168,22 @@ class InstigatorState(namedtuple("_InstigationState", "origin job_type status jo
     def instigator_origin_id(self):
         return self.origin.get_id()
 
-    @property
-    def instigator_data(self):
-        return self.job_specific_data
-
     def with_status(self, status):
         check.inst_param(status, "status", InstigatorStatus)
         return InstigatorState(
             self.origin,
-            job_type=self.job_type,
+            instigator_type=self.instigator_type,
             status=status,
-            job_specific_data=self.instigator_data,
+            instigator_data=self.instigator_data,
         )
 
     def with_data(self, instigator_data):
-        check_instigator_data(self.job_type, instigator_data)
+        check_instigator_data(self.instigator_type, instigator_data)
         return InstigatorState(
             self.origin,
-            job_type=self.job_type,
+            instigator_type=self.instigator_type,
             status=self.status,
-            job_specific_data=instigator_data,
+            instigator_data=instigator_data,
         )
 
 
@@ -158,83 +205,122 @@ register_serdes_enum_fallbacks({"JobTickStatus": TickStatus})
 JobTickStatus = TickStatus
 
 
-@whitelist_for_serdes
-class InstigatorTick(namedtuple("_InstigatorTick", "tick_id job_tick_data")):
-    def __new__(cls, tick_id, job_tick_data):
+class TickSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_from_storage_dict(
+        cls,
+        storage_dict: Dict[str, Any],
+        klass: Type,
+        args_for_class: Mapping[str, Parameter],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> NamedTuple:
+        raw_dict = {
+            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            for key, value in storage_dict.items()
+        }
+        # For backcompat, we store:
+        # tick_data as job_tick_data
+        return klass(
+            **{key: value for key, value in raw_dict.items() if key in args_for_class},
+            tick_data=raw_dict.get("job_tick_data"),
+        )
+
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: NamedTuple,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        storage = super().value_to_storage_dict(
+            value,
+            whitelist_map,
+            descent_path,
+        )
+        # For backcompat, we store:
+        # tick_data as job_tick_data
+        return replace_storage_keys(
+            storage,
+            {
+                "tick_data": "job_tick_data",
+            },
+        )
+
+
+@whitelist_for_serdes(serializer=TickSerializer)
+class InstigatorTick(namedtuple("_InstigatorTick", "tick_id tick_data")):
+    def __new__(cls, tick_id, tick_data):
         return super(InstigatorTick, cls).__new__(
             cls,
             check.int_param(tick_id, "tick_id"),
-            check.inst_param(job_tick_data, "job_tick_data", TickData),
+            check.inst_param(tick_data, "tick_data", TickData),
         )
 
     def with_status(self, status, **kwargs):
         check.inst_param(status, "status", TickStatus)
-        return self._replace(job_tick_data=self.job_tick_data.with_status(status, **kwargs))
+        return self._replace(tick_data=self.tick_data.with_status(status, **kwargs))
 
     def with_reason(self, skip_reason):
         check.opt_str_param(skip_reason, "skip_reason")
-        return self._replace(job_tick_data=self.job_tick_data.with_reason(skip_reason))
+        return self._replace(tick_data=self.tick_data.with_reason(skip_reason))
 
     def with_run(self, run_id, run_key=None):
-        return self._replace(job_tick_data=self.job_tick_data.with_run(run_id, run_key))
+        return self._replace(tick_data=self.tick_data.with_run(run_id, run_key))
 
     def with_cursor(self, cursor):
-        return self._replace(job_tick_data=self.job_tick_data.with_cursor(cursor))
+        return self._replace(tick_data=self.tick_data.with_cursor(cursor))
 
     def with_origin_run(self, origin_run_id):
-        return self._replace(job_tick_data=self.job_tick_data.with_origin_run(origin_run_id))
-
-    @property
-    def tick_data(self):
-        return self.job_tick_data
+        return self._replace(tick_data=self.tick_data.with_origin_run(origin_run_id))
 
     @property
     def instigator_origin_id(self):
-        return self.job_tick_data.instigator_origin_id
+        return self.tick_data.instigator_origin_id
 
     @property
     def instigator_name(self):
-        return self.job_tick_data.instigator_name
+        return self.tick_data.instigator_name
 
     @property
     def instigator_type(self):
-        return self.job_tick_data.instigator_type
+        return self.tick_data.instigator_type
 
     @property
     def timestamp(self):
-        return self.job_tick_data.timestamp
+        return self.tick_data.timestamp
 
     @property
     def status(self):
-        return self.job_tick_data.status
+        return self.tick_data.status
 
     @property
     def run_ids(self):
-        return self.job_tick_data.run_ids
+        return self.tick_data.run_ids
 
     @property
     def run_keys(self):
-        return self.job_tick_data.run_keys
+        return self.tick_data.run_keys
 
     @property
     def error(self):
-        return self.job_tick_data.error
+        return self.tick_data.error
 
     @property
     def skip_reason(self):
-        return self.job_tick_data.skip_reason
+        return self.tick_data.skip_reason
 
     @property
     def cursor(self):
-        return self.job_tick_data.cursor
+        return self.tick_data.cursor
 
     @property
     def origin_run_ids(self):
-        return self.job_tick_data.origin_run_ids
+        return self.tick_data.origin_run_ids
 
     @property
     def failure_count(self) -> int:
-        return self.job_tick_data.failure_count
+        return self.tick_data.failure_count
 
 
 register_serdes_tuple_fallbacks({"JobTick": InstigatorTick})
@@ -242,18 +328,68 @@ register_serdes_tuple_fallbacks({"JobTick": InstigatorTick})
 JobTick = InstigatorTick
 
 
-@whitelist_for_serdes
+class TickDataSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_from_storage_dict(
+        cls,
+        storage_dict: Dict[str, Any],
+        klass: Type,
+        args_for_class: Mapping[str, Parameter],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> NamedTuple:
+        raw_dict = {
+            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            for key, value in storage_dict.items()
+        }
+        # For backcompat, we store:
+        # instigator_origin_id as job_origin_id
+        # instigator_name as job_name
+        # instigator_type as job_type
+        return klass(
+            **{key: value for key, value in raw_dict.items() if key in args_for_class},
+            instigator_origin_id=raw_dict.get("job_origin_id"),
+            instigator_name=raw_dict.get("job_name"),
+            instigator_type=raw_dict.get("job_type"),
+        )
+
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: NamedTuple,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        storage = super().value_to_storage_dict(
+            value,
+            whitelist_map,
+            descent_path,
+        )
+        return replace_storage_keys(
+            storage,
+            {
+                "instigator_origin_id": "job_origin_id",
+                "instigator_name": "job_name",
+                "instigator_type": "job_type",
+            },
+        )
+
+
+@whitelist_for_serdes(serializer=TickDataSerializer)
 class TickData(
     namedtuple(
         "_TickData",
-        "job_origin_id job_name job_type status timestamp run_ids run_keys error skip_reason cursor origin_run_ids failure_count",
+        (
+            "instigator_origin_id instigator_name instigator_type status timestamp run_ids "
+            "run_keys error skip_reason cursor origin_run_ids failure_count"
+        ),
     )
 ):
     def __new__(
         cls,
-        job_origin_id,
-        job_name,
-        job_type,
+        instigator_origin_id,
+        instigator_name,
+        instigator_type,
         status,
         timestamp,
         run_ids=None,
@@ -265,33 +401,32 @@ class TickData(
         failure_count=None,
     ):
         """
-        This class defines the data that is serialized and stored in ``JobStorage``. We depend
-        on the job storage implementation to provide job tick ids, and therefore
-        separate all other data into this serializable class that can be stored independently of the
-        id
+        This class defines the data that is serialized and stored for each schedule/sensor tick. We
+        depend on the storage implementation to provide tick ids, and therefore separate all other
+        data into this serializable class that can be stored independently of the id.
 
         Arguments:
-            job_origin_id (str): The id of the job target for this tick
-            job_name (str): The name of the job for this tick
-            job_type (InstigatorType): The type of this job for this tick
+            instigator_origin_id (str): The id of the instigator target for this tick
+            instigator_name (str): The name of the instigator for this tick
+            instigator_type (InstigatorType): The type of this instigator for this tick
             status (TickStatus): The status of the tick, which can be updated
-            timestamp (float): The timestamp at which this job evaluation started
+            timestamp (float): The timestamp at which this instigator evaluation started
 
         Keyword Arguments:
             run_id (str): The run created by the tick.
-            error (SerializableErrorInfo): The error caught during job execution. This is set
-                only when the status is ``TickStatus.Failure``
+            error (SerializableErrorInfo): The error caught during execution. This is set only when
+                the status is ``TickStatus.Failure``
             skip_reason (str): message for why the tick was skipped
-            origin_run_ids (List[str]): The runs originating the job.
+            origin_run_ids (List[str]): The runs originated from the schedule/sensor.
             failure_count (int): The number of times this tick has failed. If the status is not
                 FAILED, this is the number of previous failures before it reached the current state.
         """
-        _validate_tick_args(job_type, status, run_ids, error, skip_reason)
+        _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         return super(TickData, cls).__new__(
             cls,
-            check.str_param(job_origin_id, "job_origin_id"),
-            check.str_param(job_name, "job_name"),
-            check.inst_param(job_type, "job_type", InstigatorType),
+            check.str_param(instigator_origin_id, "instigator_origin_id"),
+            check.str_param(instigator_name, "instigator_name"),
+            check.inst_param(instigator_type, "instigator_type", InstigatorType),
             check.inst_param(status, "status", TickStatus),
             check.float_param(timestamp, "timestamp"),
             check.opt_list_param(run_ids, "run_ids", of_type=str),
@@ -302,18 +437,6 @@ class TickData(
             origin_run_ids=check.opt_list_param(origin_run_ids, "origin_run_ids", of_type=str),
             failure_count=check.opt_int_param(failure_count, "failure_count", 0),
         )
-
-    @property
-    def instigator_origin_id(self):
-        return self.job_origin_id
-
-    @property
-    def instigator_name(self):
-        return self.job_name
-
-    @property
-    def instigator_type(self):
-        return self.job_type
 
     def with_status(self, status, error=None, timestamp=None, failure_count=None):
         return TickData(
@@ -379,22 +502,22 @@ register_serdes_tuple_fallbacks({"JobTickData": TickData})
 JobTickData = TickData
 
 
-def _validate_tick_args(job_type, status, run_ids=None, error=None, skip_reason=None):
-    check.inst_param(job_type, "job_type", InstigatorType)
+def _validate_tick_args(instigator_type, status, run_ids=None, error=None, skip_reason=None):
+    check.inst_param(instigator_type, "instigator_type", InstigatorType)
     check.inst_param(status, "status", TickStatus)
 
     if status == TickStatus.SUCCESS:
         check.list_param(run_ids, "run_ids", of_type=str)
-        check.invariant(error is None, desc="Job tick status is SUCCESS, but error was provided")
+        check.invariant(error is None, desc="Tick status is SUCCESS, but error was provided")
     elif status == TickStatus.FAILURE:
         check.inst_param(error, "error", SerializableErrorInfo)
     else:
-        check.invariant(error is None, "Job tick status was not FAILURE but error was provided")
+        check.invariant(error is None, "Tick status was not FAILURE but error was provided")
 
     if skip_reason:
         check.invariant(
             status == TickStatus.SKIPPED,
-            "Job tick status was not SKIPPED but skip_reason was provided",
+            "Tick status was not SKIPPED but skip_reason was provided",
         )
 
 
