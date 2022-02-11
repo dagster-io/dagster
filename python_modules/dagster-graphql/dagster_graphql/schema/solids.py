@@ -398,7 +398,7 @@ class ISolidDefinitionMixin:
             for node in ext_repo.get_external_asset_nodes()
             if node.op_name == self.solid_def_name
         ]
-        return [GrapheneAssetNode(ext_repo, node) for node in nodes]
+        return [GrapheneAssetNode(location, ext_repo, node) for node in nodes]
 
 
 class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
