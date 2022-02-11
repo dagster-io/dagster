@@ -1,0 +1,204 @@
+---
+title: Software-Defined Assets | Dagster
+description: A software-defined asset is a description of how to compute the contents of a particular data asset.
+---
+
+# Software-Defined Assets
+
+A software-defined asset is a description of how to compute the contents of a particular data asset.
+
+## Relevant APIs
+
+| Name                                  | Description                        |
+| ------------------------------------- | ---------------------------------- |
+| <PyObject object="asset" decorator /> | A decorator used to define assets. |
+
+## Overview
+
+In Dagster-speak, an "asset" is an object in persistent storage, e.g. a table, a file, or a persisted machine learning model. A software-defined asset tightly couples an asset to the function that's responsible for producing its contents. Software-defined assets enable a declarative approach to data management, in which your code is the source of truth on what data assets should exist and how those assets are computed.
+
+A software-defined asset includes three main components:
+
+- An <PyObject object="AssetKey" />, which is a handle for referring to the asset.
+- A set of upstream asset keys, which refer to assets that the contents of the software-defined asset are derived from.
+- An [op](/concepts/ops-jobs-graphs/ops), which is a function responsible for computing the contents of the asset from its upstream dependencies.
+
+A crucial distinction between software-defined assets and [ops](/concepts/ops-jobs-graphs/ops) is that software-defined assets know about their dependencies, while ops do not. Ops aren't hooked up to dependencies until they're placed inside a [graph](/concepts/ops-jobs-graphs/jobs-graphs).
+
+Assets refer to "logical" datasets. In different repositories, the same software-defined asset might refer to different physical objects. E.g. the staging version of a table vs. the production version of that same table.
+
+## Defining assets
+
+### A basic software-defined asset
+
+The easiest way to create a software-defined asset is with the <PyObject object="asset" decorator /> decorator.
+
+```python file=/concepts/assets/basic_asset_definition.py
+from dagster import asset
+
+
+@asset
+def my_asset():
+    return [1, 2, 3]
+```
+
+By default, the name of the decorated function, `my_asset`, is used as the asset key. The decorated function forms the asset's op: it's responsible for producing the asset's contents. This asset doesn't depend on any other assets.
+
+
+### Assets with dependencies
+
+Software-defined assets can depend on other software-defined assets. The easiest way to define an asset dependency is to include an upstream asset name as an argument to the decorated function. In the following example, `downstream_asset` depends on `upstream_asset`. That means that the contents of `upstream_asset` are provided to the function that computes the contents of `downstream_asset`.
+
+```python file=/concepts/assets/asset_dependency.py startafter=start_marker endbefore=end_marker
+@asset
+def upstream_asset():
+    return [1, 2, 3]
+
+
+@asset
+def downstream_asset(upstream_asset):
+    return upstream_asset + [4]
+```
+
+The [explicit dependencies](#explicit-dependencies) example covers an alternative way to specify asset dependencies without needing to match argument names to upstream asset names.
+
+## Viewing and materializing assets
+
+"Materializing" an asset is the act of running its op and saving the results to persistent storage. You can initiate materializations from [Dagit](/concepts/dagit/dagit), Dagster's web UI, or by invoking Python APIs.
+
+By default, materializing an asset will pickle it to a local file named "my_asset" in the directory specified by local_artifact_storage in your dagster.yaml file (which will be a temporary directory if not explicitly set). [IO managers](/concepts/io-management/io-managers) enable overriding this behavior and storing asset contents in any way you wish - e.g. writing them to tables in a database or objects in a cloud object store. You can skip ahead to [this section](/broken/link) to learn more.
+
+### Viewing and materializing assets in Dagit
+
+#### Loading assets into Dagit
+
+To view and materialize assets in Dagit, you first need to point Dagit at the code that defines them. If all your assets are defined in a single module, you can load them into Dagit by pointing to that module:
+
+```
+dagit -m module_with_assets
+```
+
+If your assets are defined across multiple modules, you'll need to construct an <PyObject object="AssetCollection" /> that houses them. E.g.
+
+```python
+from dagster import AssetCollection
+from othermodule1 import asset1
+from othermodule2 import asset2
+
+asset_collection = AssetCollection([asset1, asset2])
+```
+
+Another way to construct an <PyObject object="AssetCollection" /> with assets from multiple modules is with the <PyObject object="collect_assets_in_package" /> function. It constructs an <PyObject object="AssetCollection" /> that contains all the assets inside all the modules in a particular package.
+
+```python
+import assets as assets_package_module
+
+asset_collection = AssetCollection.from_package(package_module=assets_package_module)
+```
+
+Then you can point Dagit at the module with the <PyObject object="AssetCollection" />:
+
+```
+dagit -m module_with_asset_collection
+```
+
+If you want Dagit to contain both an asset collection and a set of [jobs](brokenlink), you can place the <PyObject object="AssetCollection" /> inside a [repository](brokenlink) with the jobs:
+
+```python
+hello
+```
+
+#### Viewing assets in Dagit
+
+When you point Dagit at an <PyObject object="AssetCollection" />, it will default to the Asset Catalog, which shows a list of all the assets.
+
+TODO: screenshot
+
+Clicking on the name of one of these assets will take you to the Asset Details Page for that asset
+
+TODO: screenshot
+
+You can view a graph of all the assets with their dependencies by clicking the graph icon to the upper-left of the Asset Catalog, or by clicking "View in Graph" on any of the assets.
+
+TODO: screenshot
+
+#### Materializing assets in Dagit
+
+There are a couple ways in Dagit to launch a run that materializes assets:
+* Navigate to the Asset Details Page for the asset and click the "Materialize" button in the upper right corner.
+* In the graph view of the Asset Catalog page, click the "Materialize" button in the upper right corner. You can click on assets to collect a subset to materialize.
+
+### Materializing assets in Python
+
+You can use in-process Python APIs to execute runs that materialize assets. First, place the assets inside an <PyObject object="AssetCollection" />, either by passing a list of assets to its constructor, or by loading them from a package using <PyObject object="AssetCollection" method="from_package" />.
+
+```python
+asset_collection = AssetCollection([upstream_asset, downstream_asset])
+```
+
+Then, invoke <PyObject object="AssetCollection" method="rematerialize_all" />:
+
+```python
+result = AssetCollection.rematerialize_all()
+assert result.success
+```
+
+## Source assets
+
+It's common for software-defined assets to depend on assets that are generated somewhere else. For example, your data warehouse might contain a set of tables that another team is responsible for ingesting. When you're building assets that are derived from those tables, you can define source assets that model those tables.
+
+Defining source assets, instead of just reading from those tables directly, has a couple advantages:
+* Allows Dagit to show asset lineage that includes the source assets.
+* Allows you to "late bind" the code that loads those external assets, via IO managers.
+* Allows you to structure your code in the same way, independent of whether it's reading from a source asset or derived asset. This makes it easy to swap out a source asset for a derived asset and vice versa.
+
+## Assets, IO managers, and resources
+
+[IO managers](/conceontsp/) allow you to customize how assets are stored. The default IO manager [pickles](/linktopickledocs) assets to files on the local filesystem. Dagster also provides built-in IO managers that pickle assets to AWS S3, Azure Blob Storage, and GCS.
+
+To apply an IO manager to a set of assets, you can include it with them in an <PyObject object="AssetCollection" />.
+
+```python
+asset_collection = AssetCollection([], resource_defs={"io_manager": s3_pickle_asset_io_manager})
+```
+
+The same assets can be bound to different resources and IO managers in different environments. For example, for local development, you might want to store assets on your local filesystem while, in production, you might want to store the assets in S3.
+
+```python
+assets = ...
+prod_asset_collection = AssetCollection(assets, resource_defs={"io_manager": fs_asset_io_manager})
+staging_asset_collection = AssetCollection(assets, resource_defs={"io_manager": s3_pickle_asset_io_manager})
+```
+
+## Asset jobs
+
+You can define a job that materializes a fixed selection of assets each time it runs.
+
+## Asset metadata
+
+## Examples
+
+### Multi-component asset keys
+
+Assets are often objects in systems with hierarchical namespaces, like filesystems. Because of this, it often makes sense for an asset key to be a list of strings, instead of just a single string.
+
+
+### Explicit dependencies
+
+If defining dependencies by matching argument names to upstream asset names feels too magical for your tastes, you can also define dependencies in a more explicit way:
+
+```python file=/concepts/assets/explicit_asset_dependency.py
+from dagster import AssetIn, asset
+
+
+@asset
+def upstream_asset():
+    return [1, 2, 3]
+
+
+@asset(ins={"upstream": AssetIn("upstream_asset")})
+def downstream_asset(upstream):
+    return upstream + [4]
+```
+
+In this case, `ins={"upstream": AssetIn("upstream_asset")}` declares that the contents of the asset with the key `upstream_asset` will be provided to the function argument named `upstream`.

@@ -74,6 +74,10 @@
   width: 1536
   height: 1152
 
+- path: concepts/assets/software-defined-assets/catalog.png
+  defs_file: examples/docs_snippets/docs_snippets/concepts/assets/asset_dependency.py
+  url: http://127.0.0.1:3000/instance/assets
+
 - path: concepts/config-dagit.png
   vetted: false
 

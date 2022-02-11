@@ -241,6 +241,10 @@
           {
             "title": "Asset Materializations",
             "path": "/concepts/assets/asset-materializations"
+          },
+          {
+            "title": "Software-Defined Assets",
+            "path": "/concepts/assets/software-defined-assets"
           }
         ]
       }
