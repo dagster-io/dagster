@@ -1,9 +1,16 @@
+<<<<<<< HEAD
 from typing import Mapping, NamedTuple, Optional, Sequence
+=======
+import re
+from typing import Dict, List, NamedTuple, Optional, Union
+>>>>>>> Add AssetCollection.build_job API with selection over asset keys
 
 from dagster import check
 from dagster.utils import merge_dicts
 
 from ..definitions.executor_definition import ExecutorDefinition
+from ..definitions.graph_definition import GraphDefinition
+from ..definitions.job_definition import JobDefinition
 from ..definitions.resource_definition import ResourceDefinition
 from ..errors import DagsterInvalidDefinitionError
 from .asset import AssetsDefinition
@@ -67,6 +74,40 @@ class AssetCollection(
     def all_assets_job_name(self) -> str:
         """The name of the mega-job that the provided list of assets is coerced into."""
         return "__ASSET_COLLECTION"
+
+    def build_job(
+        self,
+        name: str,
+        asset_key_selection: Optional[Union[str, List[str]]] = None,
+        executor_def: Optional[ExecutorDefinition] = None,
+    ) -> JobDefinition:
+        op_selection = self._parse_asset_selection(asset_key_selection)
+
+    def _parse_asset_selection(self, asset_key_selection):
+        """Convert selection over asset key to selection over ops"""
+        from dagster.core.selector.subset_selector import parse_clause
+
+        asset_keys = set()
+        for asset in self.assets:
+            asset_keys_for_asset = [
+                ".".join([piece for piece in asset_key.path]) for asset_key in asset.asset_keys
+            ]
+            asset_keys = asset_keys.union(set(asset_keys_for_asset))
+
+        if isinstance(asset_key_selection, str):
+            asset_key_selection = [asset_key_selection]
+
+        if len(asset_key_selection) == 1 and asset_key_selection[0] == "*":
+            return [asset_key_selection]
+
+        for clause in asset_key_selection:
+            parts = parse_clause(clause)
+            if parts is None:
+                raise DagsterInvalidDefinitionError("Subset failed")
+            up_depth, item_name, down_depth = parts
+            if item_name not in asset_keys:
+                raise DagsterInvalidDefinitionError("Subset failed")
+            up_depth
 
 
 def _validate_resource_reqs_for_asset_collection(
