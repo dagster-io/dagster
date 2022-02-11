@@ -1,4 +1,4 @@
-from typing import Dict, List, NamedTuple
+from typing import Dict, List, NamedTuple, Optional
 
 from dagster import check
 from dagster.utils import merge_dicts
@@ -18,11 +18,17 @@ class AssetCollection(
             ("assets", List[AssetsDefinition]),
             ("source_assets", List[ForeignAsset]),
             ("resource_defs", Dict[str, ResourceDefinition]),
-            ("executor_def", ExecutorDefinition),
+            ("executor_def", Optional[ExecutorDefinition]),
         ],
     )
 ):
-    def __new__(cls, assets, source_assets, resource_defs, executor_def):
+    def __new__(
+        cls,
+        assets: List[AssetsDefinition],
+        source_assets: List[ForeignAsset],
+        resource_defs: Dict[str, ResourceDefinition],
+        executor_def: Optional[ExecutorDefinition],
+    ):
         source_assets_by_key = build_source_assets_by_key(source_assets)
         root_manager = build_root_manager(source_assets_by_key)
 
@@ -42,7 +48,10 @@ class AssetCollection(
 
     @staticmethod
     def from_list(
-        assets, source_assets=None, resource_defs=None, executor_def=None
+        assets: List[AssetsDefinition],
+        source_assets: Optional[List[ForeignAsset]] = None,
+        resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
+        executor_def: Optional[ExecutorDefinition] = None,
     ) -> "AssetCollection":
 
         check.list_param(assets, "assets", of_type=AssetsDefinition)
