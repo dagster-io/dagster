@@ -36,7 +36,7 @@ def get_bar_repo_repository_location():
 
     origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
 
-    with origin.create_test_location() as location:
+    with origin.create_single_location() as location:
         yield location
 
 

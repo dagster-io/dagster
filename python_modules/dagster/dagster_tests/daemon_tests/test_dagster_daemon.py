@@ -1,6 +1,7 @@
 import pytest
 from click.testing import CliRunner
 from dagster.core.test_utils import instance_for_test
+from dagster.core.workspace.load_target import EmptyWorkspaceTarget
 from dagster.daemon.cli import run_command
 from dagster.daemon.controller import daemon_controller_from_instance
 from dagster.daemon.daemon import SchedulerDaemon
@@ -16,7 +17,10 @@ def test_scheduler_instance():
             },
         }
     ) as instance:
-        with daemon_controller_from_instance(instance) as controller:
+        with daemon_controller_from_instance(
+            instance,
+            workspace_load_target=EmptyWorkspaceTarget(),
+        ) as controller:
             daemons = controller.daemons
 
             assert len(daemons) == 3
@@ -33,7 +37,10 @@ def test_run_coordinator_instance():
             },
         }
     ) as instance:
-        with daemon_controller_from_instance(instance) as controller:
+        with daemon_controller_from_instance(
+            instance,
+            workspace_load_target=EmptyWorkspaceTarget(),
+        ) as controller:
             daemons = controller.daemons
 
             assert len(daemons) == 4

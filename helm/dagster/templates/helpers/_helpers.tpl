@@ -46,6 +46,12 @@ dagit -h 0.0.0.0 -p {{ .Values.dagit.service.port }}
 {{- if .dagitReadOnly }} --read-only {{- end -}}
 {{- end -}}
 
+{{- define "dagster.dagsterDaemon.daemonCommand" -}}
+{{- $userDeployments := index .Values "dagster-user-deployments" -}}
+dagster-daemon run
+{{- if $userDeployments.enabled }} -w /dagster-workspace/workspace.yaml {{- end -}}
+{{- end -}}
+
 {{- define "dagster.dagit.fullname" -}}
 {{- $name := default "dagit" .Values.dagit.nameOverride -}}
 {{- printf "%s-%s" .Release.Name $name | trunc 63 | trimSuffix "-" -}}
