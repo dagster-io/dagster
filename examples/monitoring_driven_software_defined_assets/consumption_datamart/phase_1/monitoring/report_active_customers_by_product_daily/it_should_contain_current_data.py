@@ -10,6 +10,7 @@ from dagster import op, Failure, AssetObservation, Output
 )
 def it_should_contain_current_data(context):
     """The consumption_datamart.report_active_customers_by_product_daily dataset should contain data for the current partition"""
+
     validation_sql = sqlalchemy.text("""
         SELECT COUNT(*) AS row_count
         FROM consumption_datamart.report_active_customers_by_product_daily

@@ -1,10 +1,11 @@
+from pandas import DataFrame
 from sqlalchemy import Column, DateTime, String
 
 from consumption_datamart.common.daily_partitions import daily_partitions
 from consumption_datamart.common.typed_dataframe.dataframe_schema import DataFrameSchema
 from consumption_datamart.common.typed_dataframe.typed_dataframe import make_typed_dataframe_dagster_type
 from dagster import Output
-from dagster.core.asset_defs import asset
+from dagster.core.asset_defs import asset, AssetIn
 
 
 class ActiveCustomerByProductDataFrameSchema(DataFrameSchema):
@@ -34,12 +35,8 @@ ActiveCustomerByProductDataFrameType = make_typed_dataframe_dagster_type(
     namespace=['phase_2', 'consumption_datamart'],
     compute_kind='mart_view',
     io_manager_key="datawarehouse_io_manager",
-    metadata={
-        "load_sql": """
-            SELECT *
-            FROM consumption_datamart.report_active_customers_by_product_daily
-        """,
-        "dagster_type": ActiveCustomerByProductDataFrameType
+    ins={
+        'csv_active_customers_by_product': AssetIn(namespace=['phase_2', 'acme_lake']),
     },
     partitions_def=daily_partitions,
     description=f"""Active Customers By Product Report
@@ -49,11 +46,11 @@ A customer is considered active if they have any product usage during the preced
 {ActiveCustomerByProductDataFrameType.schema_as_markdown()}
 """
 )
-def report_active_customers_by_product_daily(context) -> ActiveCustomerByProductDataFrameType:
+def report_active_customers_by_product_daily(context, csv_active_customers_by_product: DataFrame) \
+        -> ActiveCustomerByProductDataFrameType:
 
-    asset_out = context.solid_def.outs['result']
-    dagster_type = asset_out.metadata['dagster_type']
+    df = csv_active_customers_by_product.query('dim_day_ts == @context.partition_key')
 
-    typed_df = context.resources.datawarehouse_io_manager.load_input(context)
+    typed_df = ActiveCustomerByProductDataFrameType.convert_dtypes(df)
 
-    yield Output(typed_df, metadata=dagster_type.extract_event_metadata(typed_df))
+    yield Output(typed_df, metadata=ActiveCustomerByProductDataFrameType.extract_event_metadata(typed_df))

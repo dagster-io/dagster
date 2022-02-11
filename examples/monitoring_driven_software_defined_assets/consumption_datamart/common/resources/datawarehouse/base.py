@@ -89,7 +89,7 @@ class _BaseDatawarehouseResource(ABC):
 
     def update_snapshot_partition(self, df: DataFrame, schema: str, table: str, at_date: datetime):
         df_n = df.copy()
-        df_n['dim__day_ts'] = at_date
+        df_n['dim_day_ts'] = at_date
         df_n['meta__partition_type'] = meta_partition_type = 'day'
         df_n['meta__partition'] = meta_partition = unix_timestamp(date_trunc(meta_partition_type, at_date))
 

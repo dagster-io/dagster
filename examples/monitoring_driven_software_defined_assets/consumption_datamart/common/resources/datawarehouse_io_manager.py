@@ -8,9 +8,11 @@ class DataWarehouseIOManager(IOManager):
         super().__init__()
         self.datawarehouse_resource = datawarehouse_resource
 
-    def handle_output(self, context, obj: DataFrame):
-        context.log.warn("TODO: Implement logic to save output to datawarehouse")
-        pass
+    def handle_output(self, context, df: DataFrame):
+        schema = context.asset_key.path[-2]
+        table = context.asset_key.path[-1]
+        at_date = context.partition_key
+        self.datawarehouse_resource.update_snapshot_partition(df, schema, table, at_date)
 
     def load_input(self, context):
         if hasattr(context, 'upstream_output'):  # We're dealing with a foreign asset

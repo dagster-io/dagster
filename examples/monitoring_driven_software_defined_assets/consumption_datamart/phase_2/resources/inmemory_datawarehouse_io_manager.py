@@ -19,7 +19,7 @@ def inmemory_datawarehouse_io_manager(init_context):
         schemas=[
             SQLiteSchema(
                 'consumption_datamart', f'file:consumption_datamart?mode=memory',
-                init_sql_file=str((base_dir / "consumption_datamart_tests/phase_1/phase_1/consumption_datamart.sqlite3.sql").resolve())
+                init_sql_file=str((base_dir / "schema/phase_2/consumption_datamart.sqlite3.sql").resolve())
             ),
         ]
     )

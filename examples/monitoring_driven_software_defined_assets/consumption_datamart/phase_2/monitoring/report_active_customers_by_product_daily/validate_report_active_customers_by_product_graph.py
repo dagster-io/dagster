@@ -1,8 +1,6 @@
 from dagster import graph
 
 from consumption_datamart.phase_2.monitoring.report_active_customers_by_product_daily.it_should_conform_to_the_schema import it_should_conform_to_the_schema
-from consumption_datamart.phase_2.monitoring.report_active_customers_by_product_daily.it_should_contain_a_row_per_customer_product_combo import \
-    it_should_contain_a_row_per_customer_product_combo
 from consumption_datamart.phase_2.monitoring.report_active_customers_by_product_daily.it_should_contain_current_data import it_should_contain_current_data
 
 
@@ -19,4 +17,3 @@ def validate_report_active_customers_by_product():
 
     it_should_conform_to_the_schema()
     it_should_contain_current_data()
-    it_should_contain_a_row_per_customer_product_combo()

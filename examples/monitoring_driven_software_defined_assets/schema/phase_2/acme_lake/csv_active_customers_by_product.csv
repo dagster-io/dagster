@@ -1,0 +1,11 @@
+dim_day_ts,customer_id,customer_name,product_id,product_name
+2021-12-05,cust-001,Customer 001,prod-001,Product 001
+2021-12-05,cust-002,Customer 002,prod-001,Product 001
+2021-12-05,cust-003,Customer 003,prod-001,Product 001
+2021-12-05,cust-004,Customer 004,prod-001,Product 001
+2021-12-06,cust-001,Customer 001,prod-001,Product 001
+2021-12-06,cust-002,Customer 002,prod-001,Product 001
+2021-12-06,cust-003,Customer 003,prod-001,Product 001
+2021-12-06,cust-004,Customer 004,prod-001,Product 001
+2021-12-06,cust-005,Customer 005,prod-001,Product 001
+2021-12-06,cust-001,Customer 001,prod-002,Product 002

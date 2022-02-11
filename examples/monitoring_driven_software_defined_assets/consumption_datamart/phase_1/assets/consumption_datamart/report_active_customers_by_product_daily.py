@@ -1,4 +1,5 @@
-from sqlalchemy import Column, DateTime, String
+import sqlalchemy
+from sqlalchemy import Column, DateTime, String, bindparam
 
 from consumption_datamart.common.daily_partitions import daily_partitions
 from consumption_datamart.common.typed_dataframe.dataframe_schema import DataFrameSchema
@@ -33,6 +34,7 @@ ActiveCustomerByProductDataFrameType = make_typed_dataframe_dagster_type(
 @asset(
     namespace=['phase_1', 'consumption_datamart'],
     compute_kind='mart_view',
+    required_resource_keys={"datawarehouse"},
     partitions_def=daily_partitions,
     description=f"""Active Customers By Product Report
 -
@@ -43,6 +45,14 @@ A customer is considered active if they have any product usage during the preced
 )
 def report_active_customers_by_product_daily(context) -> ActiveCustomerByProductDataFrameType:
 
-    typed_df = ActiveCustomerByProductDataFrameType.empty()
+    sql = sqlalchemy.text("""
+        SELECT *
+        FROM consumption_datamart.report_active_customers_by_product_daily
+        WHERE dim_day_ts = :partition_key
+    """).bindparams(bindparam('partition_key', value=context.partition_key))
+
+    df = context.resources.datawarehouse.read_sql_query(sql)
+
+    typed_df = ActiveCustomerByProductDataFrameType.convert_dtypes(df)
 
     yield Output(typed_df, metadata=ActiveCustomerByProductDataFrameType.extract_event_metadata(typed_df))

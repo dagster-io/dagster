@@ -124,7 +124,7 @@ def make_typed_dataframe_dagster_type(name, schema, dataframe_constraints=None, 
         return pandas.DataFrame({
             "Column": [column.name for column in columns],
             "Type": [column.type for column in columns],
-            "Description": [column.description for column in columns]
+            "Comment": [column.comment for column in columns]
         }).to_markdown(index=False)
 
     def _convert_dtypes(df_orig):
