@@ -773,7 +773,7 @@ def get_config_from_args(kwargs: Dict[str, str]) -> Dict[str, object]:
         try:
             return json.loads(config_json)
 
-        except JSONDecodeError:
+        except JSONDecodeError as e:
             raise click.UsageError(
                 "Invalid JSON-string given for `--config-json`: {}\n\n{}".format(
                     config_json,
@@ -789,13 +789,13 @@ def get_tags_from_args(kwargs):
         return {}
     try:
         return json.loads(kwargs.get("tags"))
-    except JSONDecodeError:
+    except JSONDecodeError as e:
         raise click.UsageError(
             "Invalid JSON-string given for `--tags`: {}\n\n{}".format(
                 kwargs.get("tags"),
                 serializable_error_info_from_exc_info(sys.exc_info()).to_string(),
             )
-        )
+        ) from e
 
 
 def get_solid_selection_from_args(kwargs):
@@ -949,14 +949,14 @@ def _execute_backfill_command_at_location(
             repo_handle,
             partition_set_name,
         )
-    except Exception:
+    except Exception as e:
         error_info = serializable_error_info_from_exc_info(sys.exc_info())
         raise DagsterBackfillFailedError(
             "Failure fetching partition names: {error_message}".format(
                 error_message=error_info.message
             ),
             serialized_error_info=error_info,
-        )
+        ) from e
 
     partition_names = gen_partition_names_from_args(
         partition_names_or_error.partition_names, cli_args

@@ -91,11 +91,11 @@ def _telemetry_wrapper(f, metadata=None):
     var_names = f.__code__.co_varnames
     try:
         instance_index = var_names.index("instance")
-    except ValueError:
+    except ValueError as e:
         raise DagsterInvariantViolationError(
             "Attempted to log telemetry for function {name} that does not take a DagsterInstance "
             "in a parameter called 'instance'"
-        )
+        ) from e
 
     @wraps(f)
     def wrap(*args, **kwargs):

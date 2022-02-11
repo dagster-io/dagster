@@ -45,7 +45,7 @@ class JsonFileHandler(logging.Handler):
                 ff.write(text_line + "\n")
         # Need to catch Exception here, so disabling lint
         except Exception as e:  # pylint: disable=W0703
-            logging.critical("[{}] Error during logging!".format(self.__class__.__name__))
+            logging.critical("[%s] Error during logging!", self.__class__.__name__)
             logging.exception(str(e))
 
 
@@ -94,7 +94,7 @@ class JsonEventLoggerHandler(logging.Handler):
 
         # Need to catch Exception here, so disabling lint
         except Exception as e:  # pylint: disable=W0703
-            logging.critical("[{}] Error during logging!".format(self.__class__.__name__))
+            logging.critical("[%s] Error during logging!", self.__class__.__name__)
             logging.exception(str(e))
 
 
@@ -116,7 +116,7 @@ class StructuredLoggerHandler(logging.Handler):
             )
         # Need to catch Exception here, so disabling lint
         except Exception as e:  # pylint: disable=W0703
-            logging.critical("[{}] Error during logging!".format(self.__class__.__name__))
+            logging.critical("[%s] Error during logging!", self.__class__.__name__)
             logging.exception(str(e))
 
 

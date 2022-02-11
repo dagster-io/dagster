@@ -701,9 +701,7 @@ class SqlEventLogStorage(EventLogStorage):
                 event_record = deserialize_json_to_dagster_namedtuple(json_str)
                 if not isinstance(event_record, EventLogEntry):
                     logging.warning(
-                        "Could not resolve event record as EventLogEntry for id `{}`.".format(
-                            row_id
-                        )
+                        "Could not resolve event record as EventLogEntry for id `%s`.", row_id
                     )
                     continue
                 else:
@@ -711,7 +709,7 @@ class SqlEventLogStorage(EventLogStorage):
                         EventLogRecord(storage_id=row_id, event_log_entry=event_record)
                     )
             except seven.JSONDecodeError:
-                logging.warning("Could not parse event record id `{}`.".format(row_id))
+                logging.warning("Could not parse event record id `%s`.", row_id)
 
         return event_records
 

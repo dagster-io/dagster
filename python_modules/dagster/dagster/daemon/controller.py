@@ -145,9 +145,8 @@ class DagsterDaemonController:
 
         self._logger = logging.getLogger("dagster.daemon")
         self._logger.info(
-            "instance is configured with the following daemons: {}".format(
-                _sorted_quoted(type(daemon).__name__ for daemon in self.daemons)
-            )
+            "instance is configured with the following daemons: %s",
+            _sorted_quoted(type(daemon).__name__ for daemon in self.daemons),
         )
 
         self._last_healthy_heartbeat_times = {}
@@ -271,11 +270,7 @@ class DagsterDaemonController:
                 thread.join(timeout=30)
 
                 if thread.is_alive():
-                    self._logger.error(
-                        "Thread for {daemon_type} did not shut down gracefully".format(
-                            daemon_type=daemon_type
-                        )
-                    )
+                    self._logger.error("Thread for %s did not shut down gracefully", daemon_type)
 
     def _add_daemon(self, daemon):
         self._daemons[daemon.daemon_type()] = daemon

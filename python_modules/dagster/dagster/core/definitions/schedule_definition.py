@@ -321,13 +321,11 @@ class ScheduleDefinition:
         if self._execution_timezone:
             try:
                 # Verify that the timezone can be loaded
-                pendulum.timezone(self._execution_timezone)  # type: ignore
-            except Exception:
+                pendulum.timezone(self._execution_timezone)
+            except Exception as e:
                 raise DagsterInvalidDefinitionError(
-                    "Invalid execution timezone {timezone} for {schedule_name}".format(
-                        schedule_name=name, timezone=self._execution_timezone
-                    )
-                )
+                    f"Invalid execution timezone {self._execution_timezone} for {name}"
+                ) from e
 
         self._default_status = check.inst_param(
             default_status, "default_status", DefaultScheduleStatus

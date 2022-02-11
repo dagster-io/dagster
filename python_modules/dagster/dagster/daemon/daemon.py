@@ -91,7 +91,7 @@ class DagsterDaemon(AbstractContextManager):
                             except Exception:
                                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
                                 self._logger.error(
-                                    "Caught error, daemon loop will restart:\n{}".format(error_info)
+                                    "Caught error, daemon loop will restart:\n%s", error_info
                                 )
                                 self._errors.appendleft((error_info, pendulum.now("UTC")))
                                 daemon_generator.close()
@@ -106,9 +106,8 @@ class DagsterDaemon(AbstractContextManager):
                                     )
                                 except Exception:
                                     self._logger.error(
-                                        "Failed to add heartbeat: \n{}".format(
-                                            serializable_error_info_from_exc_info(sys.exc_info())
-                                        )
+                                        "Failed to add heartbeat: \n%s",
+                                        serializable_error_info_from_exc_info(sys.exc_info()),
                                     )
                     finally:
                         # cleanup the generator if it was stopped part-way through
@@ -142,14 +141,13 @@ class DagsterDaemon(AbstractContextManager):
             and last_stored_heartbeat.daemon_id != daemon_uuid
         ):
             self._logger.error(
-                "Another {} daemon is still sending heartbeats. You likely have multiple "
+                "Another %s daemon is still sending heartbeats. You likely have multiple "
                 "daemon processes running at once, which is not supported. "
-                "Last heartbeat daemon id: {}, "
-                "Current daemon_id: {}".format(
-                    daemon_type,
-                    last_stored_heartbeat.daemon_id,
-                    daemon_uuid,
-                )
+                "Last heartbeat daemon id: %s, "
+                "Current daemon_id: %s",
+                daemon_type,
+                last_stored_heartbeat.daemon_id,
+                daemon_uuid,
             )
 
         self._last_heartbeat_time = curr_time
@@ -197,7 +195,7 @@ class IntervalDaemon(DagsterDaemon):
                 yield from self.run_iteration(instance, workspace)
             except Exception:
                 error_info = serializable_error_info_from_exc_info(sys.exc_info())
-                self._logger.error("Caught error:\n{}".format(error_info))
+                self._logger.error("Caught error:\n%s", error_info)
                 yield error_info
             while time.time() - start_time < self.interval_seconds:
                 yield
