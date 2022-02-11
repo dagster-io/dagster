@@ -4,7 +4,6 @@ from unittest.mock import MagicMock
 from dagster import AssetKey, EventMetadataEntry, ResourceDefinition
 from dagster.core.asset_defs import build_assets_job
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
-
 from dagster.utils import file_relative_path
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
 from dagster_dbt.types import DbtOutput
