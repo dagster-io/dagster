@@ -12,8 +12,8 @@ import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
 
-import {SidebarSection} from '../pipelines/SidebarComponents';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {SidebarSection} from '../pipelines/SidebarComponents';
 import {CurrentRunsBanner} from '../workspace/asset-graph/CurrentRunsBanner';
 import {LiveDataForNode} from '../workspace/asset-graph/Utils';
 

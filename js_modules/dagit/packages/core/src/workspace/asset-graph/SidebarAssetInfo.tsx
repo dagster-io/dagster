@@ -3,7 +3,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {displayNameForAssetKey, gqlTypePredicate} from '../../app/Util';
+import {displayNameForAssetKey} from '../../app/Util';
 import {AssetEvents} from '../../assets/AssetEvents';
 import {PartitionHealthSummary, usePartitionHealthData} from '../../assets/PartitionHealthSummary';
 import {DagsterTypeSummary} from '../../dagstertype/DagsterType';
@@ -15,12 +15,10 @@ import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';
 import {GraphExplorerSolidHandleFragment_solid_definition} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {pluginForMetadata} from '../../plugins';
 import {buildRepoAddress} from '../buildRepoAddress';
-
-import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
 import {RepoAddress} from '../types';
 
-
 import {LiveDataForNode} from './Utils';
+import {AssetGraphQuery_assetNodes} from './types/AssetGraphQuery';
 
 export const SidebarAssetInfo: React.FC<{
   definition: GraphExplorerSolidHandleFragment_solid_definition;

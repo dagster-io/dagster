@@ -1,13 +1,12 @@
-import {gql, useQuery} from '@apollo/client';
+import {gql} from '@apollo/client';
 import {Box, ColorsWIP, IconWIP, Caption, Subheading, Mono, MetadataTable} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {displayNameForAssetKey, tokenForAssetKey} from '../app/Util';
-import { DagsterTypeSummary } from '../dagstertype/DagsterType';
+import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {MetadataEntry} from '../metadata/MetadataEntry';
-import {TableSchema} from '../metadata/TableSchema';
-import { MetadataEntryFragment } from '../metadata/types/MetadataEntryFragment';
+import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
 import {Description} from '../pipelines/Description';
 import {explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
