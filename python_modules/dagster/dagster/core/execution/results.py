@@ -530,7 +530,7 @@ class SolidExecutionResult:
                         if result is None:
                             result = {mapping_key: value}
                         else:
-                            result[mapping_key] = value
+                            result[mapping_key] = value   # pylint:disable=unsupported-assignment-operation
                     else:
                         result = value
 

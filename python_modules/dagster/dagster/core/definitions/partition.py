@@ -233,7 +233,7 @@ class ScheduleTimeBasedPartitionsDefinition(
 ):
     """Computes the partitions backwards from the scheduled execution times"""
 
-    def __new__(
+    def __new__(  # pylint: disable=arguments-differ
         cls,
         schedule_type: ScheduleType,
         start: datetime,
@@ -243,7 +243,7 @@ class ScheduleTimeBasedPartitionsDefinition(
         fmt: Optional[str] = None,
         timezone: Optional[str] = None,
         offset: Optional[int] = None,
-    ):
+    ):  
         if end is not None:
             check.invariant(
                 start <= end,
@@ -348,7 +348,7 @@ class DynamicPartitionsDefinition(
         [("partition_fn", Callable[[Optional[datetime]], Union[List[Partition], List[str]]])],
     ),
 ):
-    def __new__(
+    def __new__(  # pylint: disable=arguments-differ
         cls, partition_fn: Callable[[Optional[datetime]], Union[List[Partition], List[str]]]
     ):
         return super(DynamicPartitionsDefinition, cls).__new__(
