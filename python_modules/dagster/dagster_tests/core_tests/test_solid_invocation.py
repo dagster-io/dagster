@@ -429,7 +429,6 @@ def test_async_gen_invocation():
     async def aio_gen(_):
         await asyncio.sleep(0.01)
         yield Output("done")
-        yield AssetMaterialization("first")
 
     context = build_solid_context()
 
@@ -442,7 +441,6 @@ def test_async_gen_invocation():
     loop = asyncio.get_event_loop()
     output = loop.run_until_complete(get_results())[0]
     assert output.value == "done"
-    assert len(context.get_events()) == 1
 
 
 def test_multiple_outputs_iterator():
@@ -954,5 +952,4 @@ def test_logged_user_events():
         Materialization,
         ExpectationResult,
         AssetObservation,
-        AssetMaterialization,
     ]

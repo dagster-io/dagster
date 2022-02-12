@@ -187,7 +187,6 @@ def _type_check_output_wrapper(
 
             async for event in async_gen:
                 if isinstance(event, (AssetMaterialization, Materialization, ExpectationResult)):
-                    context.log_event(event)
                     yield event
                 else:
                     if not isinstance(event, (Output, DynamicOutput)):
@@ -229,7 +228,6 @@ def _type_check_output_wrapper(
             outputs_seen = set()
             for event in gen:
                 if isinstance(event, (AssetMaterialization, Materialization, ExpectationResult)):
-                    context.log_event(event)
                     yield event
                 else:
                     if not isinstance(event, (Output, DynamicOutput)):
