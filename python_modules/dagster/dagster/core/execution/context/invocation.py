@@ -1,5 +1,5 @@
 # pylint: disable=super-init-not-called
-from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Union, cast
+from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Set, Union, cast
 
 from dagster import check
 from dagster.config import Shape
@@ -90,6 +90,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         self._cm_scope_entered = False
         self._partition_key = partition_key
         self._user_events: List[UserEvent] = []
+        self._output_metadata: Dict[str, Any] = {}
 
     def __enter__(self):
         self._cm_scope_entered = True
@@ -240,6 +241,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
             if isinstance(solid_def_or_invocation, PendingNodeInvocation)
             else None,
             user_events=self._user_events,
+            output_metadata=self._output_metadata,
         )
 
     def get_events(self) -> List[UserEvent]:
@@ -265,6 +267,25 @@ class UnboundSolidExecutionContext(OpExecutionContext):
         """
 
         return self._user_events
+
+    def get_output_metadata(
+        self, output_name: str, mapping_key: Optional[str] = None
+    ) -> Optional[Mapping[str, Any]]:
+        """Retrieve metadata that was logged for an output and mapping_key, if it exists.
+
+        If metadata cannot be found for the particular output_name/mapping_key combination, None will be returned.
+
+        Args:
+            output_name (str): The name of the output to retrieve logged metadata for.
+            mapping_key (Optional[str]): The mapping key to retrieve metadata for (only applies when using dynamic outputs).
+
+        Returns:
+            Optional[Mapping[str, Any]]: The metadata values present for the output_name/mapping_key combination, if present.
+        """
+        metadata = self._output_metadata.get(output_name)
+        if mapping_key and metadata:
+            return metadata.get(mapping_key)
+        return metadata
 
 
 def _validate_resource_requirements(resources: "Resources", solid_def: SolidDefinition) -> None:
@@ -329,6 +350,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
         hook_defs: Optional[AbstractSet[HookDefinition]],
         alias: Optional[str],
         user_events: List[UserEvent],
+        output_metadata: Dict[str, Any],
     ):
         self._solid_def = solid_def
         self._solid_config = solid_config
@@ -341,6 +363,8 @@ class BoundSolidExecutionContext(OpExecutionContext):
         self._alias = alias if alias else self._solid_def.name
         self._resources_config = resources_config
         self._user_events: List[UserEvent] = user_events
+        self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
+        self._output_metadata: Dict[str, Any] = output_metadata
 
     @property
     def solid_config(self) -> Any:
@@ -458,6 +482,97 @@ class BoundSolidExecutionContext(OpExecutionContext):
             (AssetMaterialization, AssetObservation, ExpectationResult, Materialization),
         )
         self._user_events.append(event)
+
+    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
+        if mapping_key:
+            if output_name not in self._seen_outputs:
+                self._seen_outputs[output_name] = set()
+            cast(Set[str], self._seen_outputs[output_name]).add(mapping_key)
+        else:
+            self._seen_outputs[output_name] = "seen"
+
+    def has_seen_output(self, output_name: str, mapping_key: Optional[str] = None) -> bool:
+        if mapping_key:
+            return (
+                output_name in self._seen_outputs and mapping_key in self._seen_outputs[output_name]
+            )
+        return output_name in self._seen_outputs
+
+    def add_output_metadata(
+        self,
+        metadata: Mapping[str, Any],
+        output_name: Optional[str] = None,
+        mapping_key: Optional[str] = None,
+    ) -> None:
+        """Add metadata to one of the outputs of an op.
+
+        This can only be used once per output in the body of an op. Using this method with the same output_name more than once within an op will result in an error.
+
+        Args:
+            metadata (Mapping[str, Any]): The metadata to attach to the output
+            output_name (Optional[str]): The name of the output to attach metadata to. If there is only one output on the op, then this argument does not need to be provided. The metadata will automatically be attached to the only output.
+
+        **Examples:**
+
+        .. code-block:: python
+
+            from dagster import Out, op
+            from typing import Tuple
+
+            @op
+            def add_metadata(context):
+                context.add_output_metadata({"foo", "bar"})
+                return 5 # Since the default output is called "result", metadata will be attached to the output "result".
+
+            @op(out={"a": Out(), "b": Out()})
+            def add_metadata_two_outputs(context) -> Tuple[str, int]:
+                context.add_output_metadata({"foo": "bar"}, output_name="b")
+                context.add_output_metadata({"baz": "bat"}, output_name="a")
+
+                return ("dog", 5)
+
+        """
+        metadata = check.dict_param(metadata, "metadata", key_type=str)
+        output_name = check.opt_str_param(output_name, "output_name")
+        mapping_key = check.opt_str_param(mapping_key, "mapping_key")
+
+        if output_name is None and len(self.solid_def.output_defs) == 1:
+            output_def = self.solid_def.output_defs[0]
+            output_name = output_def.name
+        elif output_name is None:
+            raise DagsterInvariantViolationError(
+                "Attempted to log metadata without providing output_name, but multiple outputs exist. Please provide an output_name to the invocation of `context.add_output_metadata`."
+            )
+        else:
+            output_def = self.solid_def.output_def_named(output_name)
+
+        if self.has_seen_output(output_name, mapping_key):
+            output_desc = (
+                f"output '{output_def.name}'"
+                if not mapping_key
+                else f"output '{output_def.name}' with mapping_key '{mapping_key}'"
+            )
+            raise DagsterInvariantViolationError(
+                f"In {self.solid_def.node_type_str} '{self.solid_def.name}', attempted to log output metadata for {output_desc} which has already been yielded. Metadata must be logged before the output is yielded."
+            )
+        if output_def.is_dynamic and not mapping_key:
+            raise DagsterInvariantViolationError(
+                f"In {self.solid_def.node_type_str} '{self.solid_def.name}', attempted to log metadata for dynamic output '{output_def.name}' without providing a mapping key. When logging metadata for a dynamic output, it is necessary to provide a mapping key."
+            )
+
+        output_name = output_def.name
+        if output_name in self._output_metadata:
+            if not mapping_key or mapping_key in self._output_metadata[output_name]:
+                raise DagsterInvariantViolationError(
+                    f"In {self.solid_def.node_type_str} '{self.solid_def.name}', attempted to log metadata for output '{output_name}' more than once."
+                )
+        if mapping_key:
+            if not output_name in self._output_metadata:
+                self._output_metadata[output_name] = {}
+            self._output_metadata[output_name][mapping_key] = metadata
+
+        else:
+            self._output_metadata[output_name] = metadata
 
 
 def build_op_context(

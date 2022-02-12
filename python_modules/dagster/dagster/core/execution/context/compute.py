@@ -15,7 +15,7 @@ from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.definitions.time_window_partitions import TimeWindow
-from dagster.core.errors import DagsterInvalidPropertyError, DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvalidPropertyError
 from dagster.core.events import DagsterEvent
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
@@ -306,7 +306,10 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
             check.failed("Unexpected event {event}".format(event=event))
 
     def add_output_metadata(
-        self, metadata: Mapping[str, Any], output_name: Optional[str] = None
+        self,
+        metadata: Mapping[str, Any],
+        output_name: Optional[str] = None,
+        mapping_key: Optional[str] = None,
     ) -> None:
         """Add metadata to one of the outputs of an op.
 
@@ -338,21 +341,18 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """
         metadata = check.dict_param(metadata, "metadata", key_type=str)
         output_name = check.opt_str_param(output_name, "output_name")
+        mapping_key = check.opt_str_param(mapping_key, "mapping_key")
 
-        if output_name is None and len(self.solid_def.output_defs) == 1:
-            output_name = self.solid_def.output_defs[0].name
-        elif output_name is None:
-            raise DagsterInvariantViolationError(
-                "Attempted to log metadata without providing output_name, but multiple outputs exist. Please provide an output_name to the invocation of `context.add_output_metadata`."
-            )
-        if output_name in self._output_metadata:
-            raise DagsterInvariantViolationError(
-                f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log metadata for output '{output_name}' more than once."
-            )
-        self._output_metadata[output_name] = metadata
+        self._step_execution_context.add_output_metadata(
+            metadata=metadata, output_name=output_name, mapping_key=mapping_key
+        )
 
-    def get_output_metadata(self, output_name: str) -> Optional[Mapping[str, Any]]:
-        return self._output_metadata.get(output_name)
+    def get_output_metadata(
+        self, output_name: str, mapping_key: Optional[str] = None
+    ) -> Optional[Mapping[str, Any]]:
+        return self._step_execution_context.get_output_metadata(
+            output_name=output_name, mapping_key=mapping_key
+        )
 
     def get_step_execution_context(self) -> StepExecutionContext:
         """Allows advanced users (e.g. framework authors) to punch through to the underlying

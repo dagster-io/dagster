@@ -9,6 +9,8 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterType,
     DagsterTypeCheckDidNotPass,
+    DynamicOut,
+    DynamicOutput,
     ExpectationResult,
     In,
     Materialization,
@@ -643,4 +645,78 @@ def test_log_event_multi_output():
         context.log_event(AssetMaterialization("baz"))
 
     result = execute_op_in_graph(the_op)
+    assert result.success
     assert len(result.asset_materializations_for_node("the_op")) == 3
+
+
+def test_log_metadata_multi_output():
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op(context):
+        context.add_output_metadata({"foo": "bar"}, output_name="out1")
+        yield Output(value=1, output_name="out1")
+        context.add_output_metadata({"bar": "baz"}, output_name="out2")
+        yield Output(value=2, output_name="out2")
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+    events = result.events_for_node("the_op")
+    first_output_event = events[1]
+    second_output_event = events[3]
+
+    assert first_output_event.event_specific_data.metadata_entries[0].label == "foo"
+    assert second_output_event.event_specific_data.metadata_entries[0].label == "bar"
+
+
+def test_log_metadata_after_output():
+    @op
+    def the_op(context):
+        yield Output(1)
+        context.add_output_metadata({"foo": "bar"})
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="In op 'the_op', attempted to log output metadata for output 'result' which has already been yielded. Metadata must be logged before the output is yielded.",
+    ):
+        execute_op_in_graph(the_op)
+
+
+def test_log_metadata_multiple_dynamic_outputs():
+    @op(out={"out1": DynamicOut(), "out2": DynamicOut()})
+    def the_op(context):
+        context.add_output_metadata({"one": "one"}, output_name="out1", mapping_key="one")
+        yield DynamicOutput(value=1, output_name="out1", mapping_key="one")
+        context.add_output_metadata({"two": "two"}, output_name="out1", mapping_key="two")
+        context.add_output_metadata({"three": "three"}, output_name="out2", mapping_key="three")
+        yield DynamicOutput(value=2, output_name="out1", mapping_key="two")
+        yield DynamicOutput(value=3, output_name="out2", mapping_key="three")
+        context.add_output_metadata({"four": "four"}, output_name="out2", mapping_key="four")
+        yield DynamicOutput(value=4, output_name="out2", mapping_key="four")
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+    events = result.all_node_events
+    output_event_one = events[1]
+    assert output_event_one.event_specific_data.mapping_key == "one"
+    assert output_event_one.event_specific_data.metadata_entries[0].label == "one"
+    output_event_two = events[3]
+    assert output_event_two.event_specific_data.mapping_key == "two"
+    assert output_event_two.event_specific_data.metadata_entries[0].label == "two"
+    output_event_three = events[5]
+    assert output_event_three.event_specific_data.mapping_key == "three"
+    assert output_event_three.event_specific_data.metadata_entries[0].label == "three"
+    output_event_four = events[7]
+    assert output_event_four.event_specific_data.mapping_key == "four"
+    assert output_event_four.event_specific_data.metadata_entries[0].label == "four"
+
+
+def test_log_metadata_after_dynamic_output():
+    @op(out=DynamicOut())
+    def the_op(context):
+        yield DynamicOutput(1, mapping_key="one")
+        context.add_output_metadata({"foo": "bar"}, mapping_key="one")
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="In op 'the_op', attempted to log output metadata for output 'result' with mapping_key 'one' which has already been yielded. Metadata must be logged before the output is yielded.",
+    ):
+        execute_op_in_graph(the_op)
