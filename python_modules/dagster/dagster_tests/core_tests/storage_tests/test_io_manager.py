@@ -9,6 +9,7 @@ from dagster import (
     AssetMaterialization,
     DagsterInstance,
     DagsterInvalidDefinitionError,
+    DagsterInvariantViolationError,
     EventMetadataEntry,
     Field,
     IOManagerDefinition,
@@ -780,10 +781,6 @@ def test_context_logging_user_events():
             keys = tuple(context.upstream_output.get_output_identifier())
             return self.values[keys]
 
-        def has_asset(self, context):
-            keys = tuple(context.get_output_identifier())
-            return keys in self.values
-
     @op
     def the_op():
         return 5
@@ -826,39 +823,59 @@ def test_context_logging_user_events():
 
 
 def test_context_logging_metadata():
-    class DummyIOManager(IOManager):
-        def __init__(self):
-            self.values = {}
+    def build_for_materialization(materialization):
+        class DummyIOManager(IOManager):
+            def __init__(self):
+                self.values = {}
 
-        def handle_output(self, context, obj):
-            keys = tuple(context.get_output_identifier())
-            self.values[keys] = obj
+            def handle_output(self, context, obj):
+                keys = tuple(context.get_output_identifier())
+                self.values[keys] = obj
 
-            context.add_output_metadata({"foo": "bar"})
-            yield EventMetadataEntry.text(label="baz", text="baz")
-            context.add_output_metadata({"bar": "bar"})
+                context.add_output_metadata({"foo": "bar"})
+                yield EventMetadataEntry.text(label="baz", text="baz")
+                context.add_output_metadata({"bar": "bar"})
+                yield materialization
 
-        def load_input(self, context):
-            keys = tuple(context.upstream_output.get_output_identifier())
-            return self.values[keys]
+            def load_input(self, context):
+                keys = tuple(context.upstream_output.get_output_identifier())
+                return self.values[keys]
 
-        def has_asset(self, context):
-            keys = tuple(context.get_output_identifier())
-            return keys in self.values
+        @op(out=Out(asset_key=AssetKey("key_on_out")))
+        def the_op():
+            return 5
 
-    @op
-    def the_op():
-        return 5
+        @graph
+        def the_graph():
+            the_op()
 
-    @graph
-    def the_graph():
-        the_op()
+        return the_graph.execute_in_process(resources={"io_manager": DummyIOManager()})
 
-    result = the_graph.execute_in_process(resources={"io_manager": DummyIOManager()})
-
+    result = build_for_materialization(AssetMaterialization("no_metadata"))
     assert result.success
 
-    output_event = result.all_node_events[2]
+    output_event = result.all_node_events[4]
     entry_labels = [entry.label for entry in output_event.event_specific_data.metadata_entries]
     # Ensure that ordering is preserved among yields and calls to log
     assert entry_labels == ["foo", "baz", "bar"]
+
+    materialization_event = result.all_node_events[2]
+    metadata_entries = materialization_event.event_specific_data.materialization.metadata_entries
+
+    assert len(metadata_entries) == 3
+    entry_labels = [entry.label for entry in metadata_entries]
+    assert entry_labels == ["foo", "baz", "bar"]
+
+    implicit_materialization_event = result.all_node_events[3]
+    metadata_entries = (
+        implicit_materialization_event.event_specific_data.materialization.metadata_entries
+    )
+    assert len(metadata_entries) == 3
+    entry_labels = [entry.label for entry in metadata_entries]
+    assert entry_labels == ["foo", "baz", "bar"]
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="When handling output 'result' of op 'the_op', received a materialization with metadata, while context.add_output_metadata was used within the same call to handle_output. Due to potential conflicts, this is not allowed. Please specify metadata in one place within the `handle_output` function.",
+    ):
+        build_for_materialization(AssetMaterialization("has_metadata", metadata={"bar": "baz"}))

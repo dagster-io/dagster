@@ -333,7 +333,7 @@ class AssetMaterialization(
         [
             ("asset_key", AssetKey),
             ("description", Optional[str]),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[Union[EventMetadataEntry, PartitionMetadataEntry]]),
             ("partition", Optional[str]),
             ("tags", Dict[str, str]),
         ],
@@ -354,7 +354,7 @@ class AssetMaterialization(
         asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across job
             runs
         description (Optional[str]): A longer human-readable description of the materialized value.
-        metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
+        metadata_entries (Optional[List[Union[EventMetadataEntry, PartitionMetadataEntry]]]): Arbitrary metadata about the
             materialized value.
         partition (Optional[str]): The name of the partition that was materialized.
         tags (Optional[Dict[str, str]]): (Experimental) Tag metadata for a given asset
@@ -370,7 +370,7 @@ class AssetMaterialization(
         cls,
         asset_key: Union[List[str], AssetKey, str],
         description: Optional[str] = None,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata_entries: Optional[List[Union[EventMetadataEntry, PartitionMetadataEntry]]] = None,
         partition: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
         metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
@@ -398,9 +398,7 @@ class AssetMaterialization(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
-            metadata_entries=cast(
-                List[EventMetadataEntry], parse_metadata(metadata, metadata_entries)
-            ),
+            metadata_entries=parse_metadata(metadata, metadata_entries),
             partition=check.opt_str_param(partition, "partition"),
             tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
         )
