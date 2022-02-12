@@ -1234,7 +1234,6 @@ class TestRunStorage:
         assert run_record.end_time is not None
         assert run_record.end_time >= run_record.start_time
 
-    @pytest.mark.skipif(win_py36, reason="Sqlite rank queries not working on windows py36")
     def test_by_job(self, storage):
         def _add_run(job_name, tags=None):
             return storage.add_run(
@@ -1278,7 +1277,6 @@ class TestRunStorage:
         assert runs_by_job.get("b_pipeline").run_id == b_two.run_id
         assert runs_by_job.get("c_pipeline").run_id == c_one.run_id
 
-    @pytest.mark.skipif(win_py36, reason="Sqlite rank queries not working on windows py36")
     def test_by_tag(self, storage):
         def _add_run(job_name, tags=None):
             return storage.add_run(

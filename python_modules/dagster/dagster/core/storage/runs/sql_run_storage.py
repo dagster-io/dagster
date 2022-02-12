@@ -175,6 +175,19 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     def _rows_to_runs(self, rows: Iterable[Tuple]) -> List[PipelineRun]:
         return list(map(self._row_to_run, rows))
 
+    def _row_to_run_record(self, row: Tuple) -> RunRecord:
+        return RunRecord(
+            storage_id=check.int_param(row["id"], "id"),
+            pipeline_run=deserialize_as(check.str_param(row["run_body"], "run_body"), PipelineRun),
+            create_timestamp=check.inst(row["create_timestamp"], datetime),
+            update_timestamp=check.inst(row["update_timestamp"], datetime),
+            start_time=check.opt_inst(row["start_time"], float) if "start_time" in row else None,
+            end_time=check.opt_inst(row["end_time"], float) if "end_time" in row else None,
+        )
+
+    def _rows_to_run_records(self, rows: Iterable[Tuple]) -> List[RunRecord]:
+        return list(map(self._row_to_run_record, rows))
+
     def _add_cursor_limit_to_query(
         self,
         query,
@@ -330,9 +343,70 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         limit: int = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[PipelineRun]:
-        query = self._runs_query(filters, cursor, limit, bucket_by=bucket_by)
-        rows = self.fetchall(query)
-        return self._rows_to_runs(rows)
+        return [
+            self._row_to_run(row)
+            for row in self._get_rows(
+                filters=filters, limit=limit, cursor=cursor, bucket_by=bucket_by
+            )
+        ]
+
+    def _get_rows(
+        self,
+        filters=None,
+        limit=None,
+        columns=None,
+        order_by=None,
+        ascending=False,
+        cursor=None,
+        bucket_by=None,
+    ):
+        if not bucket_by or self.supports_bucket_queries:
+            query = self._runs_query(
+                filters=filters,
+                limit=limit,
+                columns=columns,
+                order_by=order_by,
+                ascending=ascending,
+                cursor=cursor,
+                bucket_by=bucket_by,
+            )
+            return list(self.fetchall(query))
+        elif isinstance(bucket_by, JobBucket):
+            rows = []
+            for job_name in bucket_by.job_names:
+                job_filters = (
+                    filters.with_job_name(job_name)
+                    if filters
+                    else PipelineRunsFilter(pipeline_name=job_name)
+                )
+                query = self._runs_query(
+                    filters=job_filters,
+                    limit=bucket_by.bucket_limit,
+                    columns=columns,
+                    order_by=order_by,
+                    ascending=ascending,
+                    cursor=cursor,
+                )
+                rows.extend(list(self.fetchall(query)))
+            return rows
+        else:
+            check.invariant(isinstance(bucket_by, TagBucket))
+            for tag_value in bucket_by.tag_values:
+                tag_filters = (
+                    filters.with_tags({bucket_by.tag_key, tag_value})
+                    if filters
+                    else PipelineRunsFilter(tags={bucket_by.tag_key: tag_value})
+                )
+                query = self._runs_query(
+                    filters=tag_filters,
+                    limit=bucket_by.bucket_limit,
+                    columns=columns,
+                    order_by=order_by,
+                    ascending=ascending,
+                    cursor=cursor,
+                )
+                rows.extend(list(self.fetchall(query)))
+            return rows
 
     def get_runs_count(self, filters: PipelineRunsFilter = None) -> int:
         subquery = self._runs_query(filters=filters).alias("subquery")
@@ -379,33 +453,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         if self.has_run_stats_index_cols():
             columns += ["start_time", "end_time"]
-        # only fetch columns we use to build RunRecord
-        query = self._runs_query(
-            filters=filters,
-            limit=limit,
-            columns=columns,
-            order_by=order_by,
-            ascending=ascending,
-            cursor=cursor,
-            bucket_by=bucket_by,
-        )
 
-        rows = self.fetchall(query)
-        return [
-            RunRecord(
-                storage_id=check.int_param(row["id"], "id"),
-                pipeline_run=deserialize_as(
-                    check.str_param(row["run_body"], "run_body"), PipelineRun
-                ),
-                create_timestamp=check.inst(row["create_timestamp"], datetime),
-                update_timestamp=check.inst(row["update_timestamp"], datetime),
-                start_time=check.opt_inst(row["start_time"], float)
-                if "start_time" in row
-                else None,
-                end_time=check.opt_inst(row["end_time"], float) if "end_time" in row else None,
-            )
-            for row in rows
-        ]
+        rows = self._get_rows(filters, limit, columns, order_by, ascending, cursor, bucket_by)
+        return [self._row_to_run_record(row) for row in rows]
 
     def get_run_tags(self) -> List[Tuple[str, Set[str]]]:
         result = defaultdict(set)

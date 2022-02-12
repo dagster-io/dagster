@@ -15,6 +15,7 @@ from dagster.serdes import (
     whitelist_for_serdes,
 )
 from dagster.serdes.serdes import EnumSerializer, WhitelistMap, register_serdes_enum_fallbacks
+from dagster.utils import merge_dicts
 
 from .tags import (
     BACKFILL_ID_TAG,
@@ -476,6 +477,16 @@ class PipelineRunsFilter(
     @staticmethod
     def for_backfill(backfill_id):
         return PipelineRunsFilter(tags=PipelineRun.tags_for_backfill_id(backfill_id))
+
+    def with_job_name(self, job_name):
+        return PipelineRunsFilter(**self._asdict(), pipeline_name=job_name)
+
+    def with_tags(self, tags):
+        kwargs = self._asdict()
+        if "tags" in kwargs:
+            tags = merge_dicts(kwargs.get("tags"), tags)
+            del kwargs["tags"]
+        return PipelineRunsFilter(**kwargs, tags=tags)
 
 
 class JobBucket(NamedTuple):
