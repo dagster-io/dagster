@@ -14,7 +14,11 @@ from dagster import (
     solid,
 )
 from dagster.check import CheckError
-from dagster.core.definitions.event_metadata import DagsterInvalidEventMetadata, EventMetadataEntry
+from dagster.core.definitions.event_metadata import (
+    DagsterInvalidEventMetadata,
+    EventMetadataEntry,
+    parse_metadata,
+)
 from dagster.core.definitions.event_metadata.table import (
     TableColumn,
     TableColumnConstraints,
@@ -130,6 +134,19 @@ def test_unknown_metadata_value():
         "Its type was <class 'dagster.core.instance.DagsterInstance'>. "
         "Consider wrapping the value with the appropriate EventMetadata type."
     )
+
+
+def test_parse_invalid_metadata():
+
+    metadata = {"foo": object()}
+
+    with pytest.raises(DagsterInvalidEventMetadata) as exc_info:
+        parse_metadata(metadata, [])
+
+    entries = parse_metadata(metadata, [], allow_invalid=True)
+    assert len(entries) == 1
+    assert entries[0].label == "foo"
+    assert entries[0].entry_data == TextMetadataEntryData("[object] (unserializable)")
 
 
 def test_bad_json_metadata_value():

@@ -430,6 +430,18 @@ def solid_def(_):
 
 
 @pipeline
+def pipeline_with_input_output_metadata():
+    @solid(
+        input_defs=[InputDefinition("foo", Int, metadata={"a": "b"})],
+        output_defs=[OutputDefinition(Int, "bar", metadata={"c": "d"})],
+    )
+    def solid_with_input_output_metadata(foo):
+        return foo + 1
+
+    solid_with_input_output_metadata()
+
+
+@pipeline
 def pipeline_with_list():
     solid_def()
 
@@ -1523,6 +1535,7 @@ def define_pipelines():
         partitioned_asset_pipeline,
         pipeline_with_enum_config,
         pipeline_with_expectations,
+        pipeline_with_input_output_metadata,
         pipeline_with_invalid_definition_error,
         pipeline_with_list,
         required_resource_pipeline,
