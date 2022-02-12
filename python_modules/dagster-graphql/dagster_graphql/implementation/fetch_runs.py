@@ -1,15 +1,16 @@
-from datetime import datetime
-from typing import Dict
 from collections import defaultdict
-from dagster.utils import utc_datetime_from_timestamp
+from datetime import datetime
+from typing import Dict, List
+
 from dagster import PipelineDefinition, PipelineRunStatus, check
 from dagster.config.validate import validate_config
 from dagster.core.definitions import create_run_config_schema
 from dagster.core.errors import DagsterRunNotFoundError
 from dagster.core.execution.stats import StepEventStatus
 from dagster.core.host_representation import PipelineSelector
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRunsFilter, PipelineRun
 from dagster.core.storage.tags import TagType, get_tag_type
+from dagster.utils import utc_datetime_from_timestamp
 from graphql.execution.base import ResolveInfo
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
@@ -204,7 +205,6 @@ def get_latest_asset_run_by_step_key(graphene_info, asset_nodes):
     # is GrapheneLatestRun if record found or no runs occurred
     instance = graphene_info.context.instance
 
-    step_keys = [asset_node.op_name for asset_node in asset_nodes]
     latest_run_by_step: Dict[str, PipelineRun] = {}
 
     for asset_node in asset_nodes:
@@ -256,8 +256,6 @@ def get_asset_runs_count_by_step(graphene_info, asset_nodes):
         event = materializations.get(asset_node.asset_key)
         step_key = asset_node.op_name
         job_names = step_key_to_job_names[step_key]
-        timestamp = datetime.utcfromtimestamp(event.timestamp) if event else None
-        timestamp = None
         runs_count = sum(
             [
                 instance.get_runs_count(

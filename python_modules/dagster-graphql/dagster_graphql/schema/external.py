@@ -8,8 +8,8 @@ from dagster.core.host_representation import (
 )
 from dagster.core.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 from dagster_graphql.implementation.fetch_runs import (
-    get_in_progress_runs_by_step,
     get_asset_run_stats_by_step,
+    get_in_progress_runs_by_step,
 )
 from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
