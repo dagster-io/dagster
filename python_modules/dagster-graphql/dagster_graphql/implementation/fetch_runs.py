@@ -1,5 +1,7 @@
+from datetime import datetime
+from typing import Dict
 from collections import defaultdict
-
+from dagster.utils import utc_datetime_from_timestamp
 from dagster import PipelineDefinition, PipelineRunStatus, check
 from dagster.config.validate import validate_config
 from dagster.core.definitions import create_run_config_schema
@@ -169,6 +171,110 @@ def get_in_progress_runs_by_step(graphene_info, job_names, step_keys):
         )
         for key in all_step_keys
     ]
+
+
+def get_asset_run_stats_by_step(graphene_info, asset_nodes):
+    latest_run_by_step = get_latest_asset_run_by_step_key(graphene_info, asset_nodes)
+    assets_to_fetch_run_count = [
+        asset_node
+        for asset_node in asset_nodes
+        if latest_run_by_step.get(asset_node.op_name) == None
+    ]
+    jobs_runs_count = get_asset_runs_count_by_step(graphene_info, assets_to_fetch_run_count)
+
+    return [
+        latest_run_by_step.get(asset_node.op_name, jobs_runs_count.get(asset_node.op_name))
+        for asset_node in asset_nodes
+    ]
+
+
+def get_latest_asset_run_by_step_key(graphene_info, asset_nodes):
+    from ..schema.pipelines.pipeline import (
+        GrapheneLatestRun,
+        GrapheneRun,
+    )
+
+    # This method returns the latest run that has occurred for a given step.
+    # Because it is expensive to deserialize PipelineRun objects, we limit this
+    # query to retrieving the last 5 runs per job. If none of the latest runs
+    # contain the step key, we return None (so it is possible that previous runs
+    # occurred that executed the step, or that the step was never run).
+
+    # Value is None if no record is found
+    # is GrapheneLatestRun if record found or no runs occurred
+    instance = graphene_info.context.instance
+
+    step_keys = [asset_node.op_name for asset_node in asset_nodes]
+    latest_run_by_step: Dict[str, PipelineRun] = {}
+
+    for asset_node in asset_nodes:
+        job_names = asset_node.job_names
+        step_key = asset_node.op_name
+
+        run_records = []
+        for job_name in job_names:
+            run_records.extend(
+                instance.get_run_records(PipelineRunsFilter(pipeline_name=job_name), limit=5)
+            )
+
+        if len(run_records) == 0:
+            latest_run_by_step[step_key] = GrapheneLatestRun(step_key, None)
+
+        latest_run = None
+        for record in run_records:
+            run = record.pipeline_run
+
+            asset_names = graphene_info.context.instance.get_execution_plan_snapshot(
+                run.execution_plan_snapshot_id
+            ).step_keys_to_execute
+
+            if step_key in asset_names:
+                if latest_run == None or record.create_timestamp > latest_run.create_timestamp:
+                    latest_run = record
+        if latest_run:
+            latest_run_by_step[step_key] = GrapheneLatestRun(step_key, GrapheneRun(latest_run))
+
+    return latest_run_by_step
+
+
+def get_asset_runs_count_by_step(graphene_info, asset_nodes):
+    from ..schema.pipelines.pipeline import GrapheneJobRunsCount
+
+    instance = graphene_info.context.instance
+
+    jobs_runs_count: Dict[str, GrapheneJobRunsCount] = {}
+
+    if len(asset_nodes) == 0:
+        return jobs_runs_count
+
+    step_key_to_job_names: Dict[str, List[str]] = {
+        asset_node.op_name: asset_node.job_names for asset_node in asset_nodes
+    }
+    asset_keys = [asset_node.asset_key for asset_node in asset_nodes]
+    materializations = instance.get_latest_materialization_events(asset_keys)
+    for asset_node in asset_nodes:
+        event = materializations.get(asset_node.asset_key)
+        step_key = asset_node.op_name
+        job_names = step_key_to_job_names[step_key]
+        timestamp = datetime.utcfromtimestamp(event.timestamp) if event else None
+        timestamp = None
+        runs_count = sum(
+            [
+                instance.get_runs_count(
+                    PipelineRunsFilter(
+                        pipeline_name=job_name,
+                        updated_after=utc_datetime_from_timestamp(event.timestamp)
+                        if event
+                        else None,
+                    )
+                )
+                for job_name in job_names
+            ]
+        )
+        jobs_runs_count[step_key] = GrapheneJobRunsCount(
+            step_key, job_names, runs_count, True if event else False
+        )
+    return jobs_runs_count
 
 
 def get_runs_count(graphene_info, filters):

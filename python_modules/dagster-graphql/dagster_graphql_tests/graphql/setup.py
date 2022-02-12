@@ -1491,6 +1491,26 @@ def nested_job():
     plus_one(subgraph())
 
 
+@asset
+def asset_1():
+    yield Output(3)
+
+
+@asset(non_argument_deps={AssetKey("asset_1")})
+def asset_2():
+    raise Exception("foo")
+
+
+@asset(non_argument_deps={AssetKey("asset_2")})
+def asset_3():
+    yield Output(7)
+
+
+failure_assets_job = build_assets_job(
+    "failure_assets_job", [asset_1, asset_2, asset_3], executor_def=in_process_executor
+)
+
+
 @repository
 def empty_repo():
     return []
@@ -1549,6 +1569,7 @@ def define_pipelines():
         time_partitioned_assets_job,
         partition_materialization_job,
         observation_job,
+        failure_assets_job,
     ]
 
 
