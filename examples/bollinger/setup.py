@@ -7,12 +7,10 @@ setup(
     install_requires=[
         "dagster",
         "dagster-pandera",
-        "matplotlib",
-        "pandas",
-        "seaborn",
         "jupyterlab",
+        "matplotlib",
+        "seaborn",
+        "pandera",
+        "pandas",
     ],
-    extras_require={
-        "notebook": ["jupyterlab"],
-    },
 )

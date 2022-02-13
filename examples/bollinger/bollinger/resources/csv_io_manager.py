@@ -3,6 +3,7 @@ import textwrap
 
 import pandas as pd
 from dagster import AssetKey, EventMetadataEntry, MemoizableIOManager, io_manager
+from dagster.core.definitions.event_metadata import TableSchemaMetadataEntryData
 
 
 class LocalCsvIOManager(MemoizableIOManager):
@@ -28,9 +29,14 @@ class LocalCsvIOManager(MemoizableIOManager):
         yield EventMetadataEntry.md(obj.head(5).to_markdown(), "Sample")
         yield EventMetadataEntry.text(context.version, "Resolved version")
         yield EventMetadataEntry.table_schema(
-            context.dagster_type.metadata["schema"].schema,
+            self.get_schema(context.dagster_type),
             "Schema",
         )
+
+    def get_schema(self, dagster_type):
+        schema_entry = next((x for x in dagster_type.metadata_entries if isinstance(x.entry_data, TableSchemaMetadataEntryData)), None)
+        assert schema_entry
+        return schema_entry.entry_data.schema
 
 
     def load_input(self, context):
@@ -38,7 +44,7 @@ class LocalCsvIOManager(MemoizableIOManager):
         fpath = self._get_fs_path(context.asset_key)
         date_col_names = [
             table_col.name
-            for table_col in context.upstream_output.dagster_type.metadata["schema"].schema.columns
+            for table_col in self.get_schema(context.upstream_output.dagster_type).columns
             if table_col.type == "datetime64[ns]"
         ]
         return pd.read_csv(fpath, parse_dates=date_col_names)
