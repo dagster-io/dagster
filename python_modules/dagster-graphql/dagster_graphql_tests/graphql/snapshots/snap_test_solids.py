@@ -1348,6 +1348,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'solid_with_input_output_metadata'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'pipeline_with_input_output_metadata'
+                        },
+                        'solidHandle': {
+                            'handleID': 'solid_with_input_output_metadata'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'solid_with_list'
                 },
                 'invocations': [

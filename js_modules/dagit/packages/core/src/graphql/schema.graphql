@@ -159,6 +159,7 @@ type InputDefinition {
   name: String!
   description: String
   type: DagsterType!
+  metadataEntries: [EventMetadataEntry!]!
 }
 
 type SolidDefinition implements ISolidDefinition {
@@ -178,6 +179,7 @@ type OutputDefinition {
   description: String
   isDynamic: Boolean
   type: DagsterType!
+  metadataEntries: [EventMetadataEntry!]!
 }
 
 interface DagsterType {

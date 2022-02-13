@@ -1,3 +1,4 @@
+import multiprocessing
 import os
 import time
 
@@ -53,7 +54,7 @@ def test_basic_child_process_command():
     events = list(
         filter(
             lambda x: x and not isinstance(x, ChildProcessEvent),
-            execute_child_process_command(DoubleAStringChildProcessCommand("aa")),
+            execute_child_process_command(multiprocessing, DoubleAStringChildProcessCommand("aa")),
         )
     )
     assert events == ["aaaa"]
@@ -61,7 +62,10 @@ def test_basic_child_process_command():
 
 def test_basic_child_process_command_with_process_events():
     events = list(
-        filter(lambda x: x, execute_child_process_command(DoubleAStringChildProcessCommand("aa")))
+        filter(
+            lambda x: x,
+            execute_child_process_command(multiprocessing, DoubleAStringChildProcessCommand("aa")),
+        )
     )
     assert len(events) == 3
 
@@ -77,7 +81,7 @@ def test_child_process_uncaught_exception():
     results = list(
         filter(
             lambda x: x and isinstance(x, ChildProcessSystemErrorEvent),
-            execute_child_process_command(ThrowAnErrorCommand()),
+            execute_child_process_command(multiprocessing, ThrowAnErrorCommand()),
         )
     )
     assert len(results) == 1
@@ -87,17 +91,17 @@ def test_child_process_uncaught_exception():
 
 def test_child_process_crashy_process():
     with pytest.raises(ChildProcessCrashException) as exc:
-        list(execute_child_process_command(CrashyCommand()))
+        list(execute_child_process_command(multiprocessing, CrashyCommand()))
     assert exc.value.exit_code == 1
 
 
 @pytest.mark.skipif(os.name == "nt", reason="Segfault not being caught on Windows: See issue #2791")
 def test_child_process_segfault():
     with pytest.raises(ChildProcessCrashException) as exc:
-        list(execute_child_process_command(SegfaultCommand()))
+        list(execute_child_process_command(multiprocessing, SegfaultCommand()))
     assert exc.value.exit_code == -11
 
 
 @pytest.mark.skip("too long")
 def test_long_running_command():
-    list(execute_child_process_command(LongRunningCommand()))
+    list(execute_child_process_command(multiprocessing, LongRunningCommand()))

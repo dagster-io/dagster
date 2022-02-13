@@ -14,7 +14,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
                 {
                     '__typename': 'FieldNotDefinedConfigError',
                     'fieldName': 'nope',
-                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
+                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } start_method?: { forkserver?: { preload_modules?: [String] } spawn?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
                     'reason': 'FIELD_NOT_DEFINED',
                     'stack': {
                         'entries': [
@@ -47,7 +47,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
                 {
                     '__typename': 'FieldNotDefinedConfigError',
                     'fieldName': 'nope',
-                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
+                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } start_method?: { forkserver?: { preload_modules?: [String] } spawn?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
                     'reason': 'FIELD_NOT_DEFINED',
                     'stack': {
                         'entries': [
@@ -80,7 +80,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
                 {
                     '__typename': 'FieldNotDefinedConfigError',
                     'fieldName': 'nope',
-                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
+                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } start_method?: { forkserver?: { preload_modules?: [String] } spawn?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
                     'reason': 'FIELD_NOT_DEFINED',
                     'stack': {
                         'entries': [
@@ -113,7 +113,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
                 {
                     '__typename': 'FieldNotDefinedConfigError',
                     'fieldName': 'nope',
-                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
+                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } start_method?: { forkserver?: { preload_modules?: [String] } spawn?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
                     'reason': 'FIELD_NOT_DEFINED',
                     'stack': {
                         'entries': [
@@ -146,7 +146,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
                 {
                     '__typename': 'FieldNotDefinedConfigError',
                     'fieldName': 'nope',
-                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
+                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } start_method?: { forkserver?: { preload_modules?: [String] } spawn?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
                     'reason': 'FIELD_NOT_DEFINED',
                     'stack': {
                         'entries': [
@@ -179,7 +179,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
                 {
                     '__typename': 'FieldNotDefinedConfigError',
                     'fieldName': 'nope',
-                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
+                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } start_method?: { forkserver?: { preload_modules?: [String] } spawn?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
                     'reason': 'FIELD_NOT_DEFINED',
                     'stack': {
                         'entries': [
@@ -212,7 +212,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
                 {
                     '__typename': 'FieldNotDefinedConfigError',
                     'fieldName': 'nope',
-                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
+                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } start_method?: { forkserver?: { preload_modules?: [String] } spawn?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
                     'reason': 'FIELD_NOT_DEFINED',
                     'stack': {
                         'entries': [
@@ -245,7 +245,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
                 {
                     '__typename': 'FieldNotDefinedConfigError',
                     'fieldName': 'nope',
-                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
+                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } start_method?: { forkserver?: { preload_modules?: [String] } spawn?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
                     'reason': 'FIELD_NOT_DEFINED',
                     'stack': {
                         'entries': [
@@ -278,7 +278,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
                 {
                     '__typename': 'FieldNotDefinedConfigError',
                     'fieldName': 'nope',
-                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
+                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } start_method?: { forkserver?: { preload_modules?: [String] } spawn?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
                     'reason': 'FIELD_NOT_DEFINED',
                     'stack': {
                         'entries': [
@@ -311,7 +311,7 @@ snapshots['TestEnvironmentSchema.test_basic_invalid_config_on_run_config_schema[
                 {
                     '__typename': 'FieldNotDefinedConfigError',
                     'fieldName': 'nope',
-                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
+                    'message': 'Received unexpected config entry "nope" at the root. Expected: "{ execution?: { in_process?: { config?: { marker_to_close?: String retries?: { disabled?: { } enabled?: { } } } } multiprocess?: { config?: { max_concurrent?: Int retries?: { disabled?: { } enabled?: { } } start_method?: { forkserver?: { preload_modules?: [String] } spawn?: { } } } } } loggers?: { console?: { config?: { log_level?: String name?: String } } } resources?: { io_manager?: { config?: { base_dir?: (String | { env: String }) } } } solids: { sum_solid: { config?: Any inputs: { num: String } outputs?: [{ result?: String }] } sum_sq_solid?: { config?: Any outputs?: [{ result?: String }] } } }".',
                     'reason': 'FIELD_NOT_DEFINED',
                     'stack': {
                         'entries': [
