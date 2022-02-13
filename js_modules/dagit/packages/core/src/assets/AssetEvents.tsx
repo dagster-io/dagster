@@ -207,7 +207,7 @@ export const AssetEvents: React.FC<Props> = ({
             padding={{vertical: 16, horizontal: 24}}
             style={{marginBottom: -1}}
           >
-            <Subheading>Asset Activity</Subheading>
+            <Subheading>Asset Events</Subheading>
           </Box>
           <Box padding={{vertical: 20}}>
             <Spinner purpose="section" />
@@ -229,7 +229,7 @@ export const AssetEvents: React.FC<Props> = ({
           padding={{vertical: 16, horizontal: 24}}
           style={{marginBottom: -1}}
         >
-          <Subheading>Asset Activity</Subheading>
+          <Subheading>Asset Events</Subheading>
           {assetHasDefinedPartitions ? (
             <div style={{margin: '-6px 0 '}}>
               <ButtonGroup

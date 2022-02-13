@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Alert, Box, ButtonLink, ColorsWIP, Spinner} from '@dagster-io/ui';
+import {Alert, Box, ButtonLink, ColorsWIP, Spinner, Tab, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {QueryCountdown} from '../app/QueryCountdown';
@@ -32,6 +32,7 @@ interface Props {
 }
 
 export interface AssetViewParams {
+  view?: 'activity' | 'definition';
   partition?: string;
   time?: string;
   asOf?: string;
@@ -104,6 +105,21 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       <AssetPageHeader
         assetKey={assetKey}
         repoAddress={repoAddress}
+        tabs={
+          <Tabs size="large" selectedTabId={params.view || 'activity'}>
+            <Tab
+              id="activity"
+              title="Activity"
+              onClick={() => setParams({...params, view: 'activity'})}
+            />
+            <Tab
+              id="definition"
+              title="Definition"
+              onClick={() => setParams({...params, view: 'definition'})}
+              disabled={!definition}
+            />
+          </Tabs>
+        }
         right={
           <Box style={{margin: '-4px 0'}} flex={{gap: 8, alignItems: 'baseline'}}>
             <Box margin={{top: 4}}>
@@ -140,21 +156,26 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               hasDefinition={!!definition}
             />
           </Box>
-        ) : definition ? (
-          <AssetNodeDefinition assetNode={definition} liveDataByNode={liveDataByNode} />
         ) : undefined}
       </div>
-      {isDefinitionLoaded && (
-        <AssetEvents
-          assetKey={assetKey}
-          assetLastMaterializedAt={lastMaterializedAt}
-          assetHasDefinedPartitions={!!definition?.partitionDefinition}
-          params={params}
-          paramsTimeWindowOnly={!!params.asOf}
-          setParams={setParams}
-          liveData={definition ? liveDataByNode[definition.id] : undefined}
-        />
-      )}
+      {isDefinitionLoaded &&
+        (params.view === 'definition' ? (
+          definition ? (
+            <AssetNodeDefinition assetNode={definition} liveDataByNode={liveDataByNode} />
+          ) : (
+            <span>No definition</span>
+          )
+        ) : (
+          <AssetEvents
+            assetKey={assetKey}
+            assetLastMaterializedAt={lastMaterializedAt}
+            assetHasDefinedPartitions={!!definition?.partitionDefinition}
+            params={params}
+            paramsTimeWindowOnly={!!params.asOf}
+            setParams={setParams}
+            liveData={definition ? liveDataByNode[definition.id] : undefined}
+          />
+        ))}
     </div>
   );
 };

@@ -30,43 +30,21 @@ export const AssetNodeDefinition: React.FC<{
   return (
     <>
       <AssetDefinedInMultipleReposNotice assetId={assetNode.id} loadedFromRepo={repoAddress} />
-      <Box
-        flex={{direction: 'row'}}
-        border={{side: 'bottom', width: 4, color: ColorsWIP.KeylineGray}}
-      >
-        <Box style={{flex: 1}} flex={{direction: 'column'}}>
+      <Box flex={{direction: 'row'}}>
+        <Box
+          style={{flex: 1}}
+          flex={{direction: 'column'}}
+          border={{side: 'right', width: 1, color: ColorsWIP.KeylineGray}}
+        >
           <Box
             padding={{vertical: 16, horizontal: 24}}
             border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>Definition in Repository</Subheading>
-            <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}}>
-              {assetNode.jobNames
-                .filter((jobNames) => jobNames !== __REPOSITORY_MEGA_JOB)
-                .map((jobName) => (
-                  <Mono key={jobName}>
-                    <PipelineReference
-                      isJob
-                      showIcon
-                      pipelineName={jobName}
-                      pipelineHrefContext={repoAddress}
-                    />
-                  </Mono>
-                ))}
-              {displayNameForAssetKey(assetNode.assetKey) !== assetNode.opName && (
-                <Box flex={{gap: 6, alignItems: 'center'}}>
-                  <IconWIP name="op" size={16} />
-                  <Mono>{assetNode.opName}</Mono>
-                </Box>
-              )}
-
-              {assetNode.jobNames.length === 0 && !assetNode.opName && (
-                <Caption style={{marginTop: 2}}>Foreign Asset</Caption>
-              )}
-            </Box>
+            <DefinitionLocation assetNode={assetNode} repoAddress={repoAddress} />
           </Box>
-          <Box padding={{top: 16, horizontal: 24, bottom: 4}} style={{flex: 1}}>
+          <Box padding={{vertical: 16, horizontal: 24}} style={{flex: 1}}>
             <Description
               description={assetNode.description || 'No description provided.'}
               maxHeight={260}
@@ -90,31 +68,28 @@ export const AssetNodeDefinition: React.FC<{
               </Box>
             </>
           )}
-        </Box>
-        <Box
-          border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}
-          style={{width: '40%', height: 330}}
-          flex={{direction: 'column'}}
-        >
+
           <Box
-            padding={{vertical: 16, left: 24, right: 12}}
-            flex={{justifyContent: 'space-between'}}
-            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+            padding={{vertical: 16, horizontal: 24}}
+            border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+            flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>Upstream Assets ({assetNode.dependencies.length})</Subheading>
             <JobGraphLink repoAddress={repoAddress} assetNode={assetNode} direction="upstream" />
           </Box>
           <AssetNodeList items={assetNode.dependencies} liveDataByNode={liveDataByNode} />
+
           <Box
-            padding={{vertical: 16, left: 24, right: 12}}
-            flex={{justifyContent: 'space-between'}}
+            padding={{vertical: 16, horizontal: 24}}
             border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+            flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>Downstream Assets ({assetNode.dependedBy.length})</Subheading>
             <JobGraphLink repoAddress={repoAddress} assetNode={assetNode} direction="downstream" />
           </Box>
           <AssetNodeList items={assetNode.dependedBy} liveDataByNode={liveDataByNode} />
         </Box>
+        <Box style={{flex: 0.5}} flex={{direction: 'column'}}></Box>
       </Box>
     </>
   );
@@ -150,6 +125,36 @@ const JobGraphLink: React.FC<{
     </Link>
   );
 };
+
+const DefinitionLocation: React.FC<{
+  assetNode: AssetNodeDefinitionFragment;
+  repoAddress: RepoAddress;
+}> = ({assetNode, repoAddress}) => (
+  <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}}>
+    {assetNode.jobNames
+      .filter((jobNames) => jobNames !== __REPOSITORY_MEGA_JOB)
+      .map((jobName) => (
+        <Mono key={jobName}>
+          <PipelineReference
+            isJob
+            showIcon
+            pipelineName={jobName}
+            pipelineHrefContext={repoAddress}
+          />
+        </Mono>
+      ))}
+    {displayNameForAssetKey(assetNode.assetKey) !== assetNode.opName && (
+      <Box flex={{gap: 6, alignItems: 'center'}}>
+        <IconWIP name="op" size={16} />
+        <Mono>{assetNode.opName}</Mono>
+      </Box>
+    )}
+
+    {assetNode.jobNames.length === 0 && !assetNode.opName && (
+      <Caption style={{marginTop: 2}}>Foreign Asset</Caption>
+    )}
+  </Box>
+);
 
 export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
