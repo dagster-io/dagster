@@ -23,7 +23,9 @@ spec:
         {{- include "dagster.selectorLabels" . | nindent 8 }}
         component: {{ include "dagster.dagit.componentName" . }}
       annotations:
+        {{- if $userDeployments.enabled }}
         checksum/dagster-workspace: {{ include (print $.Template.BasePath "/configmap-workspace.yaml") . | sha256sum }}
+        {{- end }}
         checksum/dagster-instance: {{ include (print $.Template.BasePath "/configmap-instance.yaml") . | sha256sum }}
         {{- range $key, $value := .Values.dagit.annotations }}
         {{ $key }}: {{ $value | squote }}

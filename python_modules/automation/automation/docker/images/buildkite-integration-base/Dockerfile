@@ -72,6 +72,7 @@ RUN echo "--- \033[32m:debian: Install Debian packages\033[0m" \
     gcc \
     git \
     make \
+    mariadb-client \
     nodejs \
     openjdk-11-jdk-headless \
     openjdk-11-jre-headless \
@@ -102,15 +103,17 @@ RUN echo "--- \033[32m:linux: Misc installs and cleanup\033[0m" \
     && curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
     && chmod +x /usr/local/bin/docker-compose \
     && curl -fsSL "https://download.docker.com/linux/ubuntu/gpg" | apt-key add - \
-    # Add SBT debian pkg
-    && curl -LO "https://repo.scala-sbt.org/scalasbt/debian/sbt-$SBT_VERSION.deb" \
-    && dpkg -i sbt-$SBT_VERSION.deb \
+    # Install SBT pkg from github
+    && curl -L0 "https://github.com/sbt/sbt/releases/download/v$SBT_VERSION/sbt-$SBT_VERSION.tgz" | tar zxf - -C /usr/share \
+    && cd /usr/share/sbt/bin \
+    && rm sbt.bat sbtn-x86_64-apple-darwin sbtn-x86_64-pc-linux sbtn-x86_64-pc-win32.exe \
+    && ln -s /usr/share/sbt/bin/sbt /usr/local/bin/sbt \
     && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
     && apt-get -yqq update \
     && apt-get -yqq install \
     docker-ce \
     google-cloud-sdk \
-    sbt \
+    # sbt \
     # Clean up after install process
     && apt-get remove -yqq \
     # Validate that SBT works
@@ -133,9 +136,10 @@ RUN echo "--- \033[32m:linux: Misc installs and cleanup\033[0m" \
 # https://github.com/docker/compose-cli/blob/main/INSTALL.md
 RUN curl -L https://raw.githubusercontent.com/docker/compose-cli/main/scripts/install/install_linux.sh | sh
 
-# Install Python deps
+# Install Python deps, awscli, pipenv, pyspark
 ADD trigger_maven.py .
-RUN pip install -U pip setuptools wheel \
+RUN echo "--- \033[32m:python: Install Python deps\033[0m" \
+    && pip install -U pip setuptools wheel \
     && pip install \
         awscli \
         pipenv \

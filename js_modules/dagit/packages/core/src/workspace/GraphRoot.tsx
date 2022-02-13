@@ -64,6 +64,7 @@ const GraphExplorerRoot: React.FC<Props> = (props) => {
   const history = useHistory();
   const [options, setOptions] = React.useState<GraphExplorerOptions>({
     explodeComposites: false,
+    preferAssetRendering: true,
   });
 
   useDocumentTitle(`Graph: ${explorerPath.pipelineName}`);

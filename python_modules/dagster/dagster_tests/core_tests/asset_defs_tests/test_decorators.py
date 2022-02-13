@@ -1,6 +1,7 @@
 import pytest
 from dagster import AssetKey, DagsterInvalidDefinitionError, Out, Output, String, check
 from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, multi_asset
+from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 
 
 def test_asset_no_decorator_args():
@@ -61,6 +62,49 @@ def test_multi_asset_infer_from_empty_asset_key():
         yield Output(2, "my_other_out_name")
 
     assert my_asset.asset_keys == {AssetKey("my_out_name"), AssetKey("my_other_out_name")}
+
+
+def test_multi_asset_internal_asset_deps_metadata():
+    @multi_asset(
+        outs={
+            "my_out_name": Out(metadata={"foo": "bar"}),
+            "my_other_out_name": Out(metadata={"bar": "foo"}),
+        },
+        internal_asset_deps={
+            "my_out_name": {AssetKey("my_other_out_name"), AssetKey("my_in_name")}
+        },
+    )
+    def my_asset(my_in_name):  # pylint: disable=unused-argument
+        yield Output(1, "my_out_name")
+        yield Output(2, "my_other_out_name")
+
+    assert my_asset.asset_keys == {AssetKey("my_out_name"), AssetKey("my_other_out_name")}
+    assert my_asset.op.output_def_named("my_out_name").metadata == {
+        "foo": "bar",
+        ASSET_DEPENDENCY_METADATA_KEY: {AssetKey("my_other_out_name"), AssetKey("my_in_name")},
+    }
+    assert my_asset.op.output_def_named("my_other_out_name").metadata == {"bar": "foo"}
+
+
+def test_multi_asset_internal_asset_deps_invalid():
+
+    with pytest.raises(check.CheckError, match="Invalid out key"):
+
+        @multi_asset(
+            outs={"my_out_name": Out()},
+            internal_asset_deps={"something_weird": {AssetKey("my_out_name")}},
+        )
+        def _my_asset():
+            pass
+
+    with pytest.raises(check.CheckError, match="Invalid asset dependencies"):
+
+        @multi_asset(
+            outs={"my_out_name": Out()},
+            internal_asset_deps={"my_out_name": {AssetKey("something_weird")}},
+        )
+        def _my_asset():
+            pass
 
 
 def test_asset_with_dagster_type():

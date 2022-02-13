@@ -29,8 +29,12 @@ from dagster.serdes import (
     whitelist_for_serdes,
 )
 from dagster.serdes.ipc import IPCErrorMessage, ipc_write_stream, open_ipc_subprocess
-from dagster.seven import multiprocessing
-from dagster.utils import find_free_port, frozenlist, safe_tempfile_path_unmanaged
+from dagster.utils import (
+    find_free_port,
+    frozenlist,
+    get_dagster_multiproc_ctx,
+    safe_tempfile_path_unmanaged,
+)
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
@@ -184,6 +188,8 @@ class DagsterApiServer(DagsterApiServicer):
         self._loadable_target_origin = check.opt_inst_param(
             loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
         )
+
+        self._mp_ctx = get_dagster_multiproc_ctx()
 
         # Each server is initialized with a unique UUID. This UUID is used by clients to track when
         # servers are replaced and is used for cache invalidation and reloading.
@@ -667,9 +673,9 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
-        event_queue = multiprocessing.Queue()
-        termination_event = multiprocessing.Event()
-        execution_process = multiprocessing.Process(
+        event_queue = self._mp_ctx.Queue()
+        termination_event = self._mp_ctx.Event()
+        execution_process = self._mp_ctx.Process(
             target=start_run_in_subprocess,
             args=[
                 request.serialized_execute_run_args,

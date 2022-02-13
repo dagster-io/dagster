@@ -262,7 +262,7 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
 
     assert run_launcher_config["config"]["image_pull_policy"] == "Always"
 
-    assert run_launcher_config["config"]["service_account_name"] == "RELEASE-NAME-dagster"
+    assert run_launcher_config["config"]["service_account_name"] == "release-name-dagster"
 
     assert not "fail_pod_on_run_failure" in run_launcher_config["config"]
 

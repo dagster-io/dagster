@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, overload
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -98,9 +98,19 @@ class _Repository:
         return repository_def
 
 
+@overload
+def repository(name: Callable[..., Any]) -> RepositoryDefinition:
+    ...
+
+
+@overload
+def repository(name: Optional[str] = ..., description: Optional[str] = ...) -> _Repository:
+    ...
+
+
 def repository(
     name: Union[Optional[str], Callable[..., Any]] = None, description: Optional[str] = None
-) -> Union[_Repository, RepositoryDefinition]:
+) -> Union[RepositoryDefinition, _Repository]:
     """Create a repository from the decorated function.
 
     The decorated function should take no arguments and its return value should one of:

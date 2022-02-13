@@ -54,6 +54,7 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
         <RepoFilterButton />
       </Box>
       <AssetGraphExplorer
+        options={{preferAssetRendering: true, explodeComposites: true}}
         explorerPath={explorerPath}
         onChangeExplorerPath={(path, mode) => {
           history[mode](instanceAssetsExplorerPathToURL(path));

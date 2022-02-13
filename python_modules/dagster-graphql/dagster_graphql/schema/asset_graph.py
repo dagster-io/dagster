@@ -6,6 +6,7 @@ from dagster.core.host_representation.external_data import (
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
 )
+from dagster_graphql.schema.solids import GrapheneSolidDefinition, build_solid_definition
 
 from ..implementation.loader import BatchMaterializationLoader
 from . import external
@@ -46,6 +47,7 @@ class GrapheneAssetNode(graphene.ObjectType):
     assetKey = graphene.NonNull(GrapheneAssetKey)
     description = graphene.String()
     opName = graphene.String()
+    op = graphene.Field(GrapheneSolidDefinition)
     jobs = non_null_list(GraphenePipeline)
     jobNames = non_null_list(graphene.String)
     repository = graphene.NonNull(lambda: external.GrapheneRepository)
@@ -278,6 +280,14 @@ class GrapheneAssetNode(graphene.ObjectType):
             GrapheneMaterializationCount(partition_key, count_by_partition.get(partition_key, 0))
             for partition_key in partition_keys
         ]
+
+    def resolve_op(self, _graphene_info):
+        if len(self._external_asset_node.job_names) >= 1:
+            pipeline_name = self._external_asset_node.job_names[0]
+            pipeline = self._external_repository.get_full_external_pipeline(pipeline_name)
+            return build_solid_definition(pipeline, self._external_asset_node.op_name)
+        else:
+            return None
 
 
 class GrapheneAssetNodeOrError(graphene.Union):

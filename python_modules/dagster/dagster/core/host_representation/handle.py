@@ -66,9 +66,9 @@ class PipelineHandle(namedtuple("_PipelineHandle", "pipeline_name repository_han
         return PipelineSelector(self.location_name, self.repository_name, self.pipeline_name, None)
 
 
-class JobHandle(namedtuple("_JobHandle", "job_name repository_handle")):
+class InstigatorHandle(namedtuple("_InstigatorHandle", "instigator_name repository_handle")):
     def __new__(cls, job_name, repository_handle):
-        return super(JobHandle, cls).__new__(
+        return super(InstigatorHandle, cls).__new__(
             cls,
             check.str_param(job_name, "job_name"),
             check.inst_param(repository_handle, "repository_handle", RepositoryHandle),
@@ -83,7 +83,9 @@ class JobHandle(namedtuple("_JobHandle", "job_name repository_handle")):
         return self.repository_handle.location_name
 
     def get_external_origin(self):
-        return self.repository_handle.get_external_origin().get_job_origin(self.job_name)
+        return self.repository_handle.get_external_origin().get_instigator_origin(
+            self.instigator_name
+        )
 
 
 class PartitionSetHandle(namedtuple("_PartitionSetHandle", "partition_set_name repository_handle")):

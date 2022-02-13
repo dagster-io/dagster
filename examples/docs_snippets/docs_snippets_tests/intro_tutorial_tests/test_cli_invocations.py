@@ -1,4 +1,3 @@
-import json
 import os
 import runpy
 
@@ -10,6 +9,7 @@ from dagster.cli.workspace import get_workspace_process_context_from_kwargs
 from dagster.core.instance import DagsterInstance
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import check_script, pushd, script_relative_path
+from starlette.testclient import TestClient
 
 PIPELINES_OR_ERROR_QUERY = """
 {
@@ -123,14 +123,12 @@ def load_dagit_for_workspace_cli_args(n_pipelines=1, **kwargs):
     with get_workspace_process_context_from_kwargs(
         instance, version="", read_only=False, kwargs=kwargs
     ) as workspace_process_context:
-        app = create_app_from_workspace_process_context(workspace_process_context)
-
-        client = app.test_client()
+        client = TestClient(create_app_from_workspace_process_context(workspace_process_context))
 
         res = client.get(
             "/graphql?query={query_string}".format(query_string=PIPELINES_OR_ERROR_QUERY)
         )
-        json_res = json.loads(res.data.decode("utf-8"))
+        json_res = res.json()
         assert "data" in json_res
         assert "repositoriesOrError" in json_res["data"]
         assert "nodes" in json_res["data"]["repositoriesOrError"]

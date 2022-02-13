@@ -1,5 +1,12 @@
 import {gql, QueryResult, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, IconWIP, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
+import {
+  Box,
+  Checkbox,
+  ColorsWIP,
+  IconWIP,
+  NonIdealState,
+  SplitPanelContainer,
+} from '@dagster-io/ui';
 import _, {flatMap, uniq, uniqBy, without} from 'lodash';
 import React from 'react';
 import {useHistory} from 'react-router-dom';
@@ -10,7 +17,12 @@ import {QueryCountdown} from '../../app/QueryCountdown';
 import {tokenForAssetKey} from '../../app/Util';
 import {SVGViewport} from '../../graph/SVGViewport';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
-import {RightInfoPanel, RightInfoPanelContent} from '../../pipelines/GraphExplorer';
+import {
+  GraphExplorerOptions,
+  PathOverlay,
+  RightInfoPanel,
+  RightInfoPanelContent,
+} from '../../pipelines/GraphExplorer';
 import {EmptyDAGNotice, LargeDAGNotice} from '../../pipelines/GraphNotices';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';
@@ -46,6 +58,9 @@ import {useFindAssetInWorkspace} from './useFindAssetInWorkspace';
 type AssetNode = AssetGraphQuery_assetNodes;
 
 interface Props {
+  options: GraphExplorerOptions;
+  setOptions?: (options: GraphExplorerOptions) => void;
+
   pipelineSelector?: PipelineSelector;
   handles?: GraphExplorerSolidHandleFragment[];
 
@@ -186,6 +201,8 @@ const AssetGraphExplorerWithData: React.FC<
 > = (props) => {
   const {
     handles = [],
+    options,
+    setOptions,
     explorerPath,
     onChangeExplorerPath,
     liveDataQueryResult,
@@ -347,7 +364,38 @@ const AssetGraphExplorerWithData: React.FC<
             <LargeDAGNotice nodeType="asset" />
           ) : undefined}
 
-          <div style={{position: 'absolute', right: 12, top: 12}}>
+          {setOptions && (
+            <PathOverlay>
+              <Checkbox
+                format="switch"
+                label="View as Asset Graph"
+                checked={options.preferAssetRendering}
+                onChange={() => {
+                  onChangeExplorerPath(
+                    {
+                      ...explorerPath,
+                      opNames:
+                        selectedGraphNodes.length && selectedGraphNodes[0].definition.opName
+                          ? [selectedGraphNodes[0].definition.opName]
+                          : [],
+                    },
+                    'replace',
+                  );
+                  setOptions({
+                    ...options,
+                    preferAssetRendering: !options.preferAssetRendering,
+                  });
+                }}
+              />
+            </PathOverlay>
+          )}
+
+          <Box
+            flex={{alignItems: 'center', gap: 8}}
+            style={{position: 'absolute', right: 12, top: 12}}
+          >
+            <QueryCountdown pollInterval={5 * 1000} queryResult={liveDataQueryResult} />
+
             <LaunchAssetExecutionButton
               title={titleForLaunch(selectedGraphNodes, liveDataByNode)}
               preferredJobName={explorerPath.pipelineName}
@@ -360,10 +408,7 @@ const AssetGraphExplorerWithData: React.FC<
                   !launchGraphNodes.some((n) => JSON.stringify(n.assetKey) === JSON.stringify(key)),
               )}
             />
-          </div>
-          <div style={{position: 'absolute', left: 24, top: 16}}>
-            <QueryCountdown pollInterval={5 * 1000} queryResult={liveDataQueryResult} />
-          </div>
+          </Box>
           <AssetQueryInputContainer>
             <GraphQueryInput
               items={graphQueryItems}

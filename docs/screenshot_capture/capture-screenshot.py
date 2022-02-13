@@ -21,7 +21,7 @@ from selenium import webdriver
 
 def load_screenshot_specs():
     with open("./docs/screenshot_capture/screenshots.yaml", "r") as f:
-        return yaml.load(f)
+        return yaml.safe_load(f)
 
 
 def capture_screenshots(screenshot_specs: Sequence[Mapping[str, str]]):

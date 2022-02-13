@@ -310,7 +310,7 @@ class ScheduleDefinition:
         if self._execution_timezone:
             try:
                 # Verify that the timezone can be loaded
-                pendulum.timezone(self._execution_timezone)
+                pendulum.timezone(self._execution_timezone)  # type: ignore
             except Exception:
                 raise DagsterInvalidDefinitionError(
                     "Invalid execution timezone {timezone} for {schedule_name}".format(

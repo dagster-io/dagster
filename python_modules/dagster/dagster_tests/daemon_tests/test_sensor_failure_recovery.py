@@ -1,3 +1,5 @@
+import multiprocessing
+
 import pendulum
 import pytest
 from dagster.core.definitions.run_request import InstigatorType
@@ -13,16 +15,24 @@ from dagster.core.test_utils import (
 )
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.sensor import execute_sensor_iteration
-from dagster.seven import IS_WINDOWS, multiprocessing
+from dagster.seven import IS_WINDOWS
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
-from .test_sensor_run import instance_with_sensors, repos, wait_for_all_runs_to_start
+from .test_sensor_run import (
+    instance_with_sensors,
+    wait_for_all_runs_to_start,
+    workspace_load_target,
+)
+
+spawn_ctx = multiprocessing.get_context("spawn")
 
 
 def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with pendulum.test(execution_datetime), create_test_daemon_workspace() as workspace:
+            with pendulum.test(execution_datetime), create_test_daemon_workspace(
+                workspace_load_target=workspace_load_target()
+            ) as workspace:
                 list(
                     execute_sensor_iteration(
                         instance,
@@ -38,15 +48,15 @@ def _test_launch_sensor_runs_in_subprocess(instance_ref, execution_datetime, deb
 @pytest.mark.skipif(
     IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
 )
-@pytest.mark.parametrize("external_repo_context", repos())
 @pytest.mark.parametrize("crash_location", ["TICK_CREATED", "TICK_HELD"])
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
-def test_failure_before_run_created(external_repo_context, crash_location, crash_signal, capfd):
+def test_failure_before_run_created(crash_location, crash_signal, capfd):
     frozen_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=28, hour=0, minute=0, second=1, tz="UTC"),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+
+    with instance_with_sensors() as (
         instance,
         _grpc_server_registry,
         external_repo,
@@ -62,7 +72,7 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
             )
 
             # create a tick
-            launch_process = multiprocessing.Process(
+            launch_process = spawn_ctx.Process(
                 target=_test_launch_sensor_runs_in_subprocess,
                 args=[instance.get_ref(), frozen_datetime, None],
             )
@@ -75,7 +85,7 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
 
             # create a starting tick, but crash
             debug_crash_flags = {external_sensor.name: {crash_location: crash_signal}}
-            launch_process = multiprocessing.Process(
+            launch_process = spawn_ctx.Process(
                 target=_test_launch_sensor_runs_in_subprocess,
                 args=[instance.get_ref(), frozen_datetime.add(seconds=31), debug_crash_flags],
             )
@@ -94,7 +104,7 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
 
             # create another tick, but ensure that the last evaluation time used is from the first,
             # successful tick rather than the failed tick
-            launch_process = multiprocessing.Process(
+            launch_process = spawn_ctx.Process(
                 target=_test_launch_sensor_runs_in_subprocess,
                 args=[instance.get_ref(), frozen_datetime.add(seconds=62), None],
             )
@@ -121,17 +131,14 @@ def test_failure_before_run_created(external_repo_context, crash_location, crash
 @pytest.mark.skipif(
     IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
 )
-@pytest.mark.parametrize("external_repo_context", repos())
 @pytest.mark.parametrize("crash_location", ["RUN_CREATED"])
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
-def test_failure_after_run_created_before_run_launched(
-    external_repo_context, crash_location, crash_signal, capfd
-):
+def test_failure_after_run_created_before_run_launched(crash_location, crash_signal, capfd):
     frozen_datetime = to_timezone(
         create_pendulum_time(year=2019, month=2, day=28, hour=0, minute=0, second=0, tz="UTC"),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         _grpc_server_registry,
         external_repo,
@@ -148,7 +155,7 @@ def test_failure_after_run_created_before_run_launched(
 
             # create a starting tick, but crash
             debug_crash_flags = {external_sensor.name: {crash_location: crash_signal}}
-            launch_process = multiprocessing.Process(
+            launch_process = spawn_ctx.Process(
                 target=_test_launch_sensor_runs_in_subprocess,
                 args=[instance.get_ref(), frozen_datetime, debug_crash_flags],
             )
@@ -172,7 +179,7 @@ def test_failure_after_run_created_before_run_launched(
             # clear output
             capfd.readouterr()
 
-            launch_process = multiprocessing.Process(
+            launch_process = spawn_ctx.Process(
                 target=_test_launch_sensor_runs_in_subprocess,
                 args=[instance.get_ref(), frozen_datetime.add(seconds=1), None],
             )
@@ -199,10 +206,9 @@ def test_failure_after_run_created_before_run_launched(
 @pytest.mark.skipif(
     IS_WINDOWS, reason="Windows keeps resources open after termination in a flaky way"
 )
-@pytest.mark.parametrize("external_repo_context", repos())
 @pytest.mark.parametrize("crash_location", ["RUN_LAUNCHED"])
 @pytest.mark.parametrize("crash_signal", get_crash_signals())
-def test_failure_after_run_launched(external_repo_context, crash_location, crash_signal, capfd):
+def test_failure_after_run_launched(crash_location, crash_signal, capfd):
     frozen_datetime = to_timezone(
         create_pendulum_time(
             year=2019,
@@ -215,7 +221,7 @@ def test_failure_after_run_launched(external_repo_context, crash_location, crash
         ),
         "US/Central",
     )
-    with instance_with_sensors(external_repo_context) as (
+    with instance_with_sensors() as (
         instance,
         _grpc_server_registry,
         external_repo,
@@ -232,7 +238,7 @@ def test_failure_after_run_launched(external_repo_context, crash_location, crash
 
             # create a run, launch but crash
             debug_crash_flags = {external_sensor.name: {crash_location: crash_signal}}
-            launch_process = multiprocessing.Process(
+            launch_process = spawn_ctx.Process(
                 target=_test_launch_sensor_runs_in_subprocess,
                 args=[instance.get_ref(), frozen_datetime, debug_crash_flags],
             )
@@ -253,7 +259,7 @@ def test_failure_after_run_launched(external_repo_context, crash_location, crash
             assert run.tags.get(RUN_KEY_TAG) == "only_once"
             capfd.readouterr()
 
-            launch_process = multiprocessing.Process(
+            launch_process = spawn_ctx.Process(
                 target=_test_launch_sensor_runs_in_subprocess,
                 args=[instance.get_ref(), frozen_datetime.add(seconds=1), None],
             )

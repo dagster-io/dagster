@@ -1,5 +1,6 @@
 import csv
 import datetime
+import gc
 import logging
 import os
 import string
@@ -426,6 +427,18 @@ def hello_world_with_tags():
 @solid(name="solid_with_list", input_defs=[], output_defs=[], config_schema=[int])
 def solid_def(_):
     return None
+
+
+@pipeline
+def pipeline_with_input_output_metadata():
+    @solid(
+        input_defs=[InputDefinition("foo", Int, metadata={"a": "b"})],
+        output_defs=[OutputDefinition(Int, "bar", metadata={"c": "d"})],
+    )
+    def solid_with_input_output_metadata(foo):
+        return foo + 1
+
+    solid_with_input_output_metadata()
 
 
 @pipeline
@@ -884,7 +897,24 @@ def tagged_pipeline():
     simple_solid()
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
+@resource
+def disable_gc(_context):
+    # Workaround for termination signals being raised during GC and getting swallowed during
+    # tests
+    try:
+        print("Disabling GC")  # pylint: disable=print-call
+        gc.disable()
+        yield
+    finally:
+        print("Re-enabling GC")  # pylint: disable=print-call
+        gc.enable()
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(resource_defs={"io_manager": fs_io_manager, "disable_gc": disable_gc})
+    ]
+)
 def retry_multi_input_early_terminate_pipeline():
     @lambda_solid(output_def=OutputDefinition(Int))
     def return_one():
@@ -894,6 +924,7 @@ def retry_multi_input_early_terminate_pipeline():
         config_schema={"wait_to_terminate": bool},
         input_defs=[InputDefinition("one", Int)],
         output_defs=[OutputDefinition(Int)],
+        required_resource_keys={"disable_gc"},
     )
     def get_input_one(context, one):
         if context.solid_config["wait_to_terminate"]:
@@ -905,6 +936,7 @@ def retry_multi_input_early_terminate_pipeline():
         config_schema={"wait_to_terminate": bool},
         input_defs=[InputDefinition("one", Int)],
         output_defs=[OutputDefinition(Int)],
+        required_resource_keys={"disable_gc"},
     )
     def get_input_two(context, one):
         if context.solid_config["wait_to_terminate"]:
@@ -1503,6 +1535,7 @@ def define_pipelines():
         partitioned_asset_pipeline,
         pipeline_with_enum_config,
         pipeline_with_expectations,
+        pipeline_with_input_output_metadata,
         pipeline_with_invalid_definition_error,
         pipeline_with_list,
         required_resource_pipeline,

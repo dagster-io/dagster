@@ -27,6 +27,14 @@ snapshots['test_basic_solids_config 1'] = {
                     },
                     'enabled': {
                     }
+                },
+                'start_method': {
+                    'forkserver': {
+                        'preload_modules': [
+                        ]
+                    },
+                    'spawn': {
+                    }
                 }
             }
         }
@@ -77,6 +85,14 @@ snapshots['test_two_modes 2'] = {
                     },
                     'enabled': {
                     }
+                },
+                'start_method': {
+                    'forkserver': {
+                        'preload_modules': [
+                        ]
+                    },
+                    'spawn': {
+                    }
                 }
             }
         }
@@ -126,6 +142,14 @@ snapshots['test_two_modes 4'] = {
                     'disabled': {
                     },
                     'enabled': {
+                    }
+                },
+                'start_method': {
+                    'forkserver': {
+                        'preload_modules': [
+                        ]
+                    },
+                    'spawn': {
                     }
                 }
             }

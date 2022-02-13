@@ -1,7 +1,6 @@
 """Internal py2/3 compatibility library. A little more than six."""
 import datetime
 import inspect
-import multiprocessing
 import os
 import shlex
 import signal
@@ -22,8 +21,6 @@ from .temp_dir import get_system_temp_directory
 IS_WINDOWS = os.name == "nt"
 
 funcsigs = inspect
-
-multiprocessing = multiprocessing.get_context("spawn")  # type: ignore[assignment]
 
 IS_WINDOWS = os.name == "nt"
 
@@ -100,6 +97,8 @@ def wait_for_process(process, timeout=30):
 
 
 def kill_process(process):
+    import multiprocessing
+
     if not isinstance(process, multiprocessing.Process):
         raise Exception("invalid process argument passed to kill_process")
 

@@ -15,7 +15,11 @@ from dagster.core.definitions import (
     TypeCheck,
 )
 from dagster.core.definitions.decorators.solid import DecoratedSolidFunction
-from dagster.core.definitions.event_metadata import EventMetadataEntry, PartitionMetadataEntry
+from dagster.core.definitions.event_metadata import (
+    EventMetadataEntry,
+    PartitionMetadataEntry,
+    parse_metadata,
+)
 from dagster.core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster.core.errors import (
     DagsterExecutionHandleOutputError,
@@ -61,8 +65,6 @@ def _step_output_error_checked_user_event_sequence(
     step = step_context.step
     op_label = step_context.describe_op()
     output_names = list([output_def.name for output_def in step.step_outputs])
-    seen_outputs: Set[str] = set()
-    seen_mapping_keys: Dict[str, Set[str]] = defaultdict(set)
 
     for user_event in user_event_sequence:
         if not isinstance(user_event, (Output, DynamicOutput)):
@@ -83,7 +85,7 @@ def _step_output_error_checked_user_event_sequence(
         )
 
         if isinstance(output, Output):
-            if output.output_name in seen_outputs:
+            if step_context.has_seen_output(output.output_name):
                 raise DagsterInvariantViolationError(
                     f'Compute for {op_label} returned an output "{output.output_name}" multiple '
                     "times"
@@ -94,25 +96,44 @@ def _step_output_error_checked_user_event_sequence(
                     f'Compute for {op_label} for output "{output.output_name}" defined as dynamic '
                     "must yield DynamicOutput, got Output."
                 )
+
+            step_context.observe_output(output.output_name)
+
+            metadata = step_context.get_output_metadata(output.output_name)
+            output = Output(
+                value=output.value,
+                output_name=output.output_name,
+                metadata_entries=output.metadata_entries
+                + parse_metadata(cast(Dict[str, Any], metadata), []),
+            )
         else:
             if not output_def.is_dynamic:
                 raise DagsterInvariantViolationError(
                     f"Compute for {op_label} yielded a DynamicOutput, but did not use "
                     "DynamicOutputDefinition."
                 )
-            if output.mapping_key in seen_mapping_keys[output.output_name]:
+            if step_context.has_seen_output(output.output_name, output.mapping_key):
                 raise DagsterInvariantViolationError(
                     f"Compute for {op_label} yielded a DynamicOutput with mapping_key "
                     f'"{output.mapping_key}" multiple times.'
                 )
-            seen_mapping_keys[output.output_name].add(output.mapping_key)
+            step_context.observe_output(output.output_name, output.mapping_key)
+            metadata = step_context.get_output_metadata(
+                output.output_name, mapping_key=output.mapping_key
+            )
+            output = DynamicOutput(
+                value=output.value,
+                output_name=output.output_name,
+                metadata_entries=output.metadata_entries
+                + parse_metadata(cast(Dict[str, Any], metadata), []),
+                mapping_key=output.mapping_key,
+            )
 
         yield output
-        seen_outputs.add(output.output_name)
 
     for step_output in step.step_outputs:
         step_output_def = step_context.solid_def.output_def_named(step_output.name)
-        if not step_output_def.name in seen_outputs and not step_output_def.optional:
+        if not step_context.has_seen_output(step_output_def.name) and not step_output_def.optional:
             if step_output_def.dagster_type.kind == DagsterTypeKind.NOTHING:
                 step_context.log.info(
                     f'Emitting implicit Nothing for output "{step_output_def.name}" on {op_label}'
@@ -503,6 +524,8 @@ def _store_output(
 
         def _gen_fn():
             gen_output = output_manager.handle_output(output_context, output.value)
+            for event in output_context.consume_events():
+                yield event
             if gen_output:
                 yield gen_output
 
@@ -523,7 +546,11 @@ def _store_output(
         ),
         handle_output_gen,
     ):
-        if isinstance(elt, AssetMaterialization):
+        for event in output_context.consume_events():
+            yield event
+        if isinstance(elt, DagsterEvent):
+            yield elt
+        elif isinstance(elt, AssetMaterialization):
             manager_materializations.append(elt)
         elif isinstance(elt, (EventMetadataEntry, PartitionMetadataEntry)):
             experimental_functionality_warning(
@@ -537,6 +564,8 @@ def _store_output(
                 "one of AssetMaterialization, EventMetadataEntry, PartitionMetadataEntry."
             )
 
+    for event in output_context.consume_events():
+        yield event
     # do not alter explicitly created AssetMaterializations
     for materialization in manager_materializations:
         yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)

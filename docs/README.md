@@ -153,9 +153,8 @@ pip install selenium
 ```
 
 Install Selenium's chrome driver:
-- Download chromedriver from [here](https://chromedriver.chromium.org/downloads).
-- Add it to /usr/local/bin
-- Run `xattr -d com.apple.quarantine /usr/local/bin/chromedriver` (gross)
+- `brew install chromedriver` OR download chromedriver from [here](https://chromedriver.chromium.org/downloads)) and manually add to /usr/local/bin
+- You may need to run `xattr -d com.apple.quarantine /usr/local/bin/chromedriver` (gross)
 
 #### Capturing a screenshot
 

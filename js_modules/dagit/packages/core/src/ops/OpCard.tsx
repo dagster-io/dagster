@@ -25,6 +25,10 @@ export const OpCard: React.FC<OpCardProps> = (props) => {
         definition: d,
         dependedBy: [],
       })),
+      definition: {
+        description: null,
+        assetNodes: [],
+      },
     },
     {x: 0, y: 0},
   );

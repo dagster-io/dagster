@@ -20,7 +20,7 @@ from .external_data import (
     ExternalScheduleData,
     ExternalSensorData,
 )
-from .handle import JobHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
+from .handle import InstigatorHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
 
@@ -427,7 +427,7 @@ class ExternalSchedule:
         self._external_schedule_data = check.inst_param(
             external_schedule_data, "external_schedule_data", ExternalScheduleData
         )
-        self._handle = JobHandle(
+        self._handle = InstigatorHandle(
             self._external_schedule_data.name, check.inst_param(handle, "handle", RepositoryHandle)
         )
 
@@ -505,7 +505,7 @@ class ExternalSensor:
         self._external_sensor_data = check.inst_param(
             external_sensor_data, "external_sensor_data", ExternalSensorData
         )
-        self._handle = JobHandle(
+        self._handle = InstigatorHandle(
             self._external_sensor_data.name, check.inst_param(handle, "handle", RepositoryHandle)
         )
 

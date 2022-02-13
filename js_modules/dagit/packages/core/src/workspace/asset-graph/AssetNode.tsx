@@ -10,6 +10,7 @@ import {
   Tooltip,
   FontFamily,
   MenuLink,
+  Box,
 } from '@dagster-io/ui';
 import {isEqual} from 'lodash';
 import qs from 'qs';
@@ -50,6 +51,8 @@ export const AssetNode: React.FC<{
     definition.repository.location.name,
   );
 
+  const displayName = displayNameForAssetKey(definition.assetKey);
+
   return (
     <ContextMenu
       content={
@@ -63,9 +66,7 @@ export const AssetNode: React.FC<{
             text={
               <span>
                 {event ? 'Rematerialize ' : 'Materialize '}
-                <span style={{fontFamily: 'monospace', fontWeight: 600}}>
-                  {displayNameForAssetKey(definition.assetKey)}
-                </span>
+                <span style={{fontFamily: 'monospace', fontWeight: 600}}>{displayName}</span>
               </span>
             }
           />
@@ -87,7 +88,7 @@ export const AssetNode: React.FC<{
               <IconWIP name="asset" />
             </span>
             <div style={{overflow: 'hidden', textOverflow: 'ellipsis', marginTop: -1}}>
-              {displayNameForAssetKey(definition.assetKey)}
+              {displayName}
             </div>
             <div style={{flex: 1}} />
             {liveData && liveData.inProgressRunIds.length > 0 ? (
@@ -111,9 +112,9 @@ export const AssetNode: React.FC<{
           {definition.description && !inAssetCatalog && (
             <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
           )}
-          {event ? (
-            <Stats>
-              {runOrError?.__typename === 'Run' && (
+          <Stats>
+            {runOrError?.__typename === 'Run' && event ? (
+              <>
                 <StatsRow>
                   {runOrError.pipelineName !== __REPOSITORY_MEGA_JOB ? (
                     <Link
@@ -150,35 +151,42 @@ export const AssetNode: React.FC<{
                     {titleForRun({runId: runOrError.runId})}
                   </Link>
                 </StatsRow>
-              )}
-
-              <StatsRow>
-                {event.stepStats.endTime ? (
-                  <TimestampDisplay
-                    timestamp={event.stepStats.endTime}
-                    timeFormat={{showSeconds: false, showTimezone: false}}
+                <StatsRow>
+                  {event.stepStats.endTime ? (
+                    <TimestampDisplay
+                      timestamp={event.stepStats.endTime}
+                      timeFormat={{showSeconds: false, showTimezone: false}}
+                    />
+                  ) : (
+                    'Never'
+                  )}
+                  <TimeElapsed
+                    startUnix={event.stepStats.startTime}
+                    endUnix={event.stepStats.endTime}
                   />
-                ) : (
-                  'Never'
-                )}
-                <TimeElapsed
-                  startUnix={event.stepStats.startTime}
-                  endUnix={event.stepStats.endTime}
-                />
+                </StatsRow>
+              </>
+            ) : (
+              <>
+                <StatsRow style={{opacity: 0.5}}>
+                  <span>No materializations</span>
+                  <span>—</span>
+                </StatsRow>
+                <StatsRow style={{opacity: 0.5}}>
+                  <span>—</span>
+                  <span>—</span>
+                </StatsRow>
+              </>
+            )}
+            {definition.opName && displayName !== definition.opName && (
+              <StatsRow>
+                <Box flex={{gap: 4, alignItems: 'flex-end'}} style={{marginLeft: -2}}>
+                  <IconWIP name="op" size={16} />
+                  {definition.opName}
+                </Box>
               </StatsRow>
-            </Stats>
-          ) : (
-            <Stats>
-              <StatsRow style={{opacity: 0.5}}>
-                <span>No materializations</span>
-                <span>—</span>
-              </StatsRow>
-              <StatsRow style={{opacity: 0.5}}>
-                <span>—</span>
-                <span>—</span>
-              </StatsRow>
-            </Stats>
-          )}
+            )}
+          </Stats>
           {kind && (
             <OpTags
               minified={false}
@@ -254,13 +262,18 @@ export const ASSET_NODE_FRAGMENT = gql`
 
 export const getNodeDimensions = (def: {
   assetKey: {path: string[]};
+  opName: string | null;
   description?: string | null;
 }) => {
   let height = 95;
   if (def.description) {
     height += 25;
   }
-  return {width: Math.max(250, displayNameForAssetKey(def.assetKey).length * 9.5) + 25, height};
+  const displayName = displayNameForAssetKey(def.assetKey);
+  if (def.opName && displayName !== def.opName) {
+    height += 25;
+  }
+  return {width: Math.max(250, displayName.length * 9.5) + 25, height};
 };
 
 const BoxColors = {

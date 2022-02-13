@@ -1,4 +1,4 @@
-import {Box, Spinner} from '@dagster-io/ui';
+import {Box, ColorsWIP, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -14,7 +14,6 @@ const ASYNC_LAYOUT_SOLID_COUNT = 50;
 
 interface Props {
   pipelineName: string;
-  backgroundColor: string;
   ops: PipelineGraphOpFragment[];
   focusOps: PipelineGraphOpFragment[];
   highlightedOps: PipelineGraphOpFragment[];
@@ -60,7 +59,6 @@ const initialState: State = {
 export const PipelineGraphContainer: React.FC<Props> = (props) => {
   const {
     pipelineName,
-    backgroundColor,
     ops,
     focusOps,
     highlightedOps,
@@ -97,18 +95,12 @@ export const PipelineGraphContainer: React.FC<Props> = (props) => {
 
   const {loading, layout, layoutOpKey} = state;
   if (loading || !layout || solidKey !== layoutOpKey) {
-    return (
-      <PipelineGraphLoading
-        backgroundColor={backgroundColor}
-        manyOps={ops.length > ASYNC_LAYOUT_SOLID_COUNT}
-      />
-    );
+    return <PipelineGraphLoading manyOps={ops.length > ASYNC_LAYOUT_SOLID_COUNT} />;
   }
 
   return (
     <PipelineGraph
       pipelineName={pipelineName}
-      backgroundColor={backgroundColor}
       ops={ops}
       focusOps={focusOps}
       highlightedOps={highlightedOps}
@@ -125,10 +117,10 @@ export const PipelineGraphContainer: React.FC<Props> = (props) => {
   );
 };
 
-const PipelineGraphLoading: React.FC<{backgroundColor: string; manyOps: boolean}> = (props) => {
-  const {backgroundColor, manyOps} = props;
+const PipelineGraphLoading: React.FC<{manyOps: boolean}> = (props) => {
+  const {manyOps} = props;
   return (
-    <LoadingContainer $backgroundColor={backgroundColor}>
+    <LoadingContainer>
       {manyOps ? (
         <Box margin={{bottom: 24}}>Rendering a large number of ops, please wait…</Box>
       ) : null}
@@ -137,8 +129,8 @@ const PipelineGraphLoading: React.FC<{backgroundColor: string; manyOps: boolean}
   );
 };
 
-const LoadingContainer = styled.div<{$backgroundColor: string}>`
-  background-color: ${({$backgroundColor}) => $backgroundColor};
+const LoadingContainer = styled.div`
+  background-color: ${ColorsWIP.White};
   position: absolute;
   top: 0;
   bottom: 0;

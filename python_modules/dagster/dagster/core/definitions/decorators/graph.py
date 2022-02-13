@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union, overload
 
 from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
@@ -89,6 +89,25 @@ class _Graph:
         return graph_def
 
 
+@overload
+def graph(name: Callable[..., Any]) -> GraphDefinition:
+    ...
+
+
+@overload
+def graph(
+    name: Optional[str] = ...,
+    description: Optional[str] = ...,
+    input_defs: Optional[List[InputDefinition]] = ...,
+    output_defs: Optional[List[OutputDefinition]] = ...,
+    ins: Optional[Dict[str, GraphIn]] = ...,
+    out: Optional[Union[GraphOut, Dict[str, GraphOut]]] = ...,
+    tags: Optional[Dict[str, Any]] = ...,
+    config: Optional[Union[ConfigMapping, Dict[str, Any]]] = ...,
+) -> _Graph:
+    ...
+
+
 def graph(
     name: Union[Callable[..., Any], Optional[str]] = None,
     description: Optional[str] = None,
@@ -98,7 +117,7 @@ def graph(
     out: Optional[Union[GraphOut, Dict[str, GraphOut]]] = None,
     tags: Optional[Dict[str, Any]] = None,
     config: Optional[Union[ConfigMapping, Dict[str, Any]]] = None,
-) -> Union[_Graph, GraphDefinition]:
+) -> Union[GraphDefinition, _Graph]:
     """Create a graph with the specified parameters from the decorated composition function.
 
     Using this decorator allows you to build up a dependency graph by writing a

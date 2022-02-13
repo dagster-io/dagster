@@ -3,13 +3,31 @@ import sys
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from contextlib import contextmanager
-from typing import TYPE_CHECKING, Dict, NamedTuple, NoReturn, Optional, Set, cast
+from inspect import Parameter
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Mapping,
+    NamedTuple,
+    NoReturn,
+    Optional,
+    Set,
+    Type,
+    cast,
+)
 
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.serdes import DefaultNamedTupleSerializer, create_snapshot_id, whitelist_for_serdes
+from dagster.serdes import (
+    DefaultNamedTupleSerializer,
+    create_snapshot_id,
+    register_serdes_tuple_fallbacks,
+    whitelist_for_serdes,
+)
+from dagster.serdes.serdes import WhitelistMap, unpack_inner_value
 
 if TYPE_CHECKING:
     from dagster.core.host_representation.repository_location import (
@@ -196,8 +214,8 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
         )
 
     @contextmanager
-    def create_test_location(self):
-        from dagster.core.workspace.dynamic_workspace import DynamicWorkspace
+    def create_single_location(self):
+        from .repository_location import GrpcServerRepositoryLocation
         from .grpc_server_registry import ProcessGrpcServerRegistry
         from dagster.core.workspace.context import (
             DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
@@ -209,9 +227,18 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
             heartbeat_ttl=DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
             startup_timeout=DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
         ) as grpc_server_registry:
-            with DynamicWorkspace(grpc_server_registry) as workspace:
-                with workspace.get_location(self) as location:
-                    yield location
+            endpoint = grpc_server_registry.get_grpc_endpoint(self)
+            with GrpcServerRepositoryLocation(
+                origin=self,
+                server_id=endpoint.server_id,
+                port=endpoint.port,
+                socket=endpoint.socket,
+                host=endpoint.host,
+                heartbeat=True,
+                watch_server=False,
+                grpc_server_registry=grpc_server_registry,
+            ) as location:
+                yield location
 
 
 class GrpcServerOriginSerializer(DefaultNamedTupleSerializer):
@@ -314,8 +341,8 @@ class ExternalRepositoryOrigin(
     def get_pipeline_origin(self, pipeline_name):
         return ExternalPipelineOrigin(self, pipeline_name)
 
-    def get_job_origin(self, job_name):
-        return ExternalJobOrigin(self, job_name)
+    def get_instigator_origin(self, instigator_name):
+        return ExternalInstigatorOrigin(self, instigator_name)
 
     def get_partition_set_origin(self, partition_set_name):
         return ExternalPartitionSetOrigin(self, partition_set_name)
@@ -344,25 +371,82 @@ class ExternalPipelineOrigin(
         return create_snapshot_id(self)
 
 
-@whitelist_for_serdes
-class ExternalJobOrigin(namedtuple("_ExternalJobOrigin", "external_repository_origin job_name")):
+class ExternalInstigatorOriginSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_from_storage_dict(
+        cls,
+        storage_dict: Dict[str, Any],
+        klass: Type,
+        args_for_class: Mapping[str, Parameter],
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> NamedTuple:
+        raw_dict = {
+            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            for key, value in storage_dict.items()
+        }
+        # the stored key for the instigator name should always be `job_name`, for backcompat
+        # and origin id stability (hash of the serialized tuple).  Make sure we fetch it from the
+        # raw storage dict and pass it in as instigator_name to ExternalInstigatorOrigin
+        instigator_name = raw_dict.get("job_name")
+        return klass(
+            **{key: value for key, value in raw_dict.items() if key in args_for_class},
+            instigator_name=instigator_name,
+        )
+
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: NamedTuple,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        storage = super().value_to_storage_dict(
+            value,
+            whitelist_map,
+            descent_path,
+        )
+        instigator_name = storage.get("instigator_name") or storage.get("job_name")
+        if "instigator_name" in storage:
+            del storage["instigator_name"]
+        # the stored key for the instigator name should always be `job_name`, for backcompat
+        # and origin id stability (hash of the serialized tuple).  Make sure we fetch it from the
+        # raw storage dict and pass it in as instigator_name to ExternalInstigatorOrigin
+        storage["job_name"] = instigator_name
+        # persist using legacy name
+        storage["__class__"] = "ExternalJobOrigin"
+        return storage
+
+
+@whitelist_for_serdes(serializer=ExternalInstigatorOriginSerializer)
+class ExternalInstigatorOrigin(
+    namedtuple("_ExternalInstigatorOrigin", "external_repository_origin instigator_name")
+):
     """Serializable representation of an ExternalJob that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, external_repository_origin, job_name):
-        return super(ExternalJobOrigin, cls).__new__(
+    def __new__(cls, external_repository_origin, instigator_name):
+        return super(ExternalInstigatorOrigin, cls).__new__(
             cls,
             check.inst_param(
                 external_repository_origin,
                 "external_repository_origin",
                 ExternalRepositoryOrigin,
             ),
-            check.str_param(job_name, "job_name"),
+            check.str_param(instigator_name, "instigator_name"),
         )
 
     def get_id(self):
         return create_snapshot_id(self)
+
+
+# ExternalInstigatorOrigin used to be called ExternalJobOrigin, before the concept of "job" was
+# introduced in 0.12.0. For clarity, we changed the name of the namedtuple with `0.14.0`, but we
+# need to maintain the serialized format in order to avoid changing the origin id that is stored in
+# our schedule storage.  This registers the serialized ExternalJobOrigin named tuple class to be
+# deserialized as an ExternalInstigatorOrigin, using its corresponding serializer for serdes.
+register_serdes_tuple_fallbacks({"ExternalJobOrigin": ExternalInstigatorOrigin})
 
 
 @whitelist_for_serdes

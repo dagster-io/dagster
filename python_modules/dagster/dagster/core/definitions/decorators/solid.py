@@ -1,5 +1,17 @@
 from functools import lru_cache, update_wrapper
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Sequence, Set, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    cast,
+    overload,
+)
 
 from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
@@ -120,6 +132,26 @@ class _Solid:
         )
         update_wrapper(solid_def, compute_fn.decorated_fn)
         return solid_def
+
+
+@overload
+def solid(name: Callable[..., Any]) -> SolidDefinition:
+    ...
+
+
+@overload
+def solid(
+    name: Optional[str] = ...,
+    description: Optional[str] = ...,
+    input_defs: Optional[Sequence[InputDefinition]] = ...,
+    output_defs: Optional[Sequence[OutputDefinition]] = ...,
+    config_schema: Optional[Union[Any, Dict[str, Any]]] = ...,
+    required_resource_keys: Optional[Set[str]] = ...,
+    tags: Optional[Dict[str, Any]] = ...,
+    version: Optional[str] = ...,
+    retry_policy: Optional[RetryPolicy] = ...,
+) -> Union[_Solid, SolidDefinition]:
+    ...
 
 
 def solid(
