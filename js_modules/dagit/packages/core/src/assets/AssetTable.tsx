@@ -59,10 +59,9 @@ export const AssetTable = ({
   );
 
   const pageDisplayPathKeys = Object.keys(assetGroups).sort().slice(0, maxDisplayCount);
-  pageDisplayPathKeys.forEach((path) => {
-    const key = JSON.stringify(path);
-    if (checkedPaths.has(key)) {
-      checkedAssets.push(...(assetGroups[key] || []));
+  pageDisplayPathKeys.forEach((pathKey) => {
+    if (checkedPaths.has(pathKey)) {
+      checkedAssets.push(...(assetGroups[pathKey] || []));
     }
   });
 
@@ -135,10 +134,10 @@ const AssetEntryRow: React.FC<{
   canWipe?: boolean;
 }> = React.memo(({prefixPath, path, assets, isSelected, onToggleChecked, onWipe, canWipe}) => {
   const fullPath = [...prefixPath, ...path];
+  const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
   const representsSingleAsset =
     assets.length === 1 && fullPath.join('/') === assets[0].key.path.join('/');
-  const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
-  const first = assets[0];
+  const asset = representsSingleAsset ? assets[0] : null;
 
   const onChange = (e: React.FormEvent<HTMLInputElement>) => {
     if (e.target instanceof HTMLInputElement) {
@@ -156,68 +155,61 @@ const AssetEntryRow: React.FC<{
       <td>
         <AssetLink path={path} url={linkUrl} trailingSlash={!representsSingleAsset} />
         <Description>
-          {first.definition &&
-            first.definition.description &&
-            markdownToPlaintext(first.definition.description).split('\n')[0]}
+          {asset?.definition &&
+            asset.definition.description &&
+            markdownToPlaintext(asset.definition.description).split('\n')[0]}
         </Description>
       </td>
       <td>
-        {first.definition && (
+        {asset?.definition && (
           <Box flex={{direction: 'column', gap: 2}}>
             <RepositoryLink
               showIcon
               showRefresh={false}
               repoAddress={{
-                name: first.definition.repository.name,
-                location: first.definition.repository.location.name,
+                name: asset.definition.repository.name,
+                location: asset.definition.repository.location.name,
               }}
             />
           </Box>
         )}
       </td>
-      <td style={{display: 'flex', alignItems: 'center', gap: 8}}>
-        <Link
-          to={instanceAssetsExplorerPathToURL({
-            opsQuery: `++"${tokenForAssetKey({path})}"++`,
-            opNames: [tokenForAssetKey({path})],
-          })}
-        >
-          <ButtonWIP disabled={!representsSingleAsset || !first.definition?.opName}>
-            View in Asset Graph
-          </ButtonWIP>
-        </Link>
-        <Popover
-          position="bottom-right"
-          content={
-            <MenuWIP>
-              <MenuLink
-                text="View details…"
-                to={`/instance/assets/${path.join('/')}`}
-                icon="view_list"
-              />
-              {representsSingleAsset && (
-                <MenuItemWIP
-                  text="Wipe Asset…"
-                  icon="delete"
-                  disabled={!canWipe}
-                  intent="danger"
-                  onClick={() => canWipe && onWipe(assets)}
-                />
-              )}
-              {representsSingleAsset && (
-                <MenuItemWIP
-                  text="Wipe Asset…"
-                  icon="delete"
-                  disabled={!canWipe}
-                  intent="danger"
-                  onClick={() => canWipe && onWipe(assets)}
-                />
-              )}
-            </MenuWIP>
-          }
-        >
-          <ButtonWIP icon={<IconWIP name="expand_more" />} />
-        </Popover>
+      <td>
+        {asset ? (
+          <Box flex={{gap: 8, alignItems: 'center'}}>
+            <Link
+              to={instanceAssetsExplorerPathToURL({
+                opsQuery: `++"${tokenForAssetKey({path})}"++`,
+                opNames: [tokenForAssetKey({path})],
+              })}
+            >
+              <ButtonWIP disabled={!asset.definition?.opName}>View in Asset Graph</ButtonWIP>
+            </Link>
+            <Popover
+              position="bottom-right"
+              content={
+                <MenuWIP>
+                  <MenuLink
+                    text="View details…"
+                    to={`/instance/assets/${path.join('/')}`}
+                    icon="view_list"
+                  />
+                  <MenuItemWIP
+                    text="Wipe Asset…"
+                    icon="delete"
+                    disabled={!canWipe}
+                    intent="danger"
+                    onClick={() => canWipe && onWipe(assets)}
+                  />
+                </MenuWIP>
+              }
+            >
+              <ButtonWIP icon={<IconWIP name="expand_more" />} />
+            </Popover>
+          </Box>
+        ) : (
+          <span />
+        )}
       </td>
     </tr>
   );
