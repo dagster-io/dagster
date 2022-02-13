@@ -39,6 +39,9 @@ S3
 .. autoconfigurable:: dagster_aws.s3.s3_pickle_io_manager
   :annotation: IOManagerDefinition
 
+.. autoconfigurable:: dagster_aws.s3.s3_pickle_asset_io_manager
+  :annotation: IOManagerDefinition
+
 
 ECS
 ---
