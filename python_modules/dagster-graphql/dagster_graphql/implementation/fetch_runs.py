@@ -1,5 +1,4 @@
 from collections import defaultdict
-from datetime import datetime
 from typing import Dict, List
 
 from dagster import PipelineDefinition, PipelineRunStatus, check
@@ -8,7 +7,7 @@ from dagster.core.definitions import create_run_config_schema
 from dagster.core.errors import DagsterRunNotFoundError
 from dagster.core.execution.stats import StepEventStatus
 from dagster.core.host_representation import PipelineSelector
-from dagster.core.storage.pipeline_run import PipelineRunsFilter, PipelineRun
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 from dagster.utils import utc_datetime_from_timestamp
 from graphql.execution.base import ResolveInfo
@@ -175,6 +174,13 @@ def get_in_progress_runs_by_step(graphene_info, job_names, step_keys):
 
 
 def get_asset_run_stats_by_step(graphene_info, asset_nodes):
+    # This is a utility method that gets the latest run that selected an asset,
+    # by searching within the last 5 runs of each job the asset belongs in.
+    # If none of the most recent runs selected the asset, we return back a GrapheneJobRunsCount
+    # object that contains the total number of job runs that have occurred since the latest
+    # asset materialization (or the total number of job runs if the asset has never been
+    # materialized).
+
     latest_run_by_step = get_latest_asset_run_by_step_key(graphene_info, asset_nodes)
     assets_to_fetch_run_count = [
         asset_node
@@ -197,12 +203,10 @@ def get_latest_asset_run_by_step_key(graphene_info, asset_nodes):
 
     # This method returns the latest run that has occurred for a given step.
     # Because it is expensive to deserialize PipelineRun objects, we limit this
-    # query to retrieving the last 5 runs per job. If none of the latest runs
-    # contain the step key, we return None (so it is possible that previous runs
-    # occurred that executed the step, or that the step was never run).
+    # query to retrieving the last 5 runs per job. If no runs have occurred, we return
+    # a GrapheneLatestRun object with no run. If none of the latest runs contain the
+    # step key, we return None.
 
-    # Value is None if no record is found
-    # is GrapheneLatestRun if record found or no runs occurred
     instance = graphene_info.context.instance
 
     latest_run_by_step: Dict[str, PipelineRun] = {}
@@ -250,8 +254,9 @@ def get_asset_runs_count_by_step(graphene_info, asset_nodes):
     step_key_to_job_names: Dict[str, List[str]] = {
         asset_node.op_name: asset_node.job_names for asset_node in asset_nodes
     }
-    asset_keys = [asset_node.asset_key for asset_node in asset_nodes]
-    materializations = instance.get_latest_materialization_events(asset_keys)
+    materializations = instance.get_latest_materialization_events(
+        [asset_node.asset_key for asset_node in asset_nodes]
+    )
     for asset_node in asset_nodes:
         event = materializations.get(asset_node.asset_key)
         step_key = asset_node.op_name
