@@ -199,18 +199,18 @@ const LinkGridItem = ({ title, href, children, tags = [] }) => {
 };
 
 const ADMONITION_STYLES = {
-  note: { color: 'blue', icon: Icons.InfoCircle },
-  warning: { color: 'yellow', icon: Icons.Warning },
+  note: { colors: { bg: 'primary-100', borderIcon: 'primary-500', text: 'primary-500'}, icon: Icons.InfoCircle },
+  warning: { colors: { bg: 'yellow-50', borderIcon: 'yellow-400', text: 'yellow-700'}, icon: Icons.Warning },
 }
 
 const Admonition = ({ style, children }) => {
-  const { color, icon } = ADMONITION_STYLES[style];
+  const { colors, icon } = ADMONITION_STYLES[style];
   return (
-    <div className={`bg-${color}-50 border-l-4 border-${color}-400 px-4 my-4`}>
+    <div className={`bg-${colors.bg} border-l-4 border-${colors.borderIcon} px-4 my-4`}>
       <div className="flex items-center">
         <div className="flex-shrink-0">
           <svg
-            className={`h-5 w-5 text-${color}-400`}
+            className={`h-5 w-5 text-${colors.borderIcon}`}
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 25 25"
             fill="currentColor"
@@ -220,7 +220,7 @@ const Admonition = ({ style, children }) => {
           </svg>
         </div>
         <div className="ml-3">
-          <p className={`text-sm text-${color}-700`}>{children}</p>
+          <p className={`text-sm text-${colors.text}`}>{children}</p>
         </div>
       </div>
     </div>
