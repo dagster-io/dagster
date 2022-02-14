@@ -5,6 +5,7 @@ from dagster import (
     IOManager,
     in_process_executor,
     io_manager,
+    mem_io_manager,
     repository,
     resource,
 )
@@ -132,7 +133,7 @@ def test_asset_collection_with_executor():
 
 def test_asset_collection_requires_root_manager():
     @asset(io_manager_key="blah")
-    def asset_foo(x):
+    def asset_foo():
         pass
 
     with pytest.raises(
@@ -140,3 +141,24 @@ def test_asset_collection_requires_root_manager():
         match=r"Output 'result' with AssetKey 'AssetKey\(\['asset_foo'\]\)' requires io manager 'blah' but was not provided on asset collection. Provided resources: \['io_manager', 'root_manager'\]",
     ):
         AssetCollection([asset_foo])
+
+
+def test_resource_override():
+    @resource
+    def the_resource():
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Resource dictionary included resource with key 'root_manager', which is a reserved resource keyword in Dagster. Please change this key, and then change all places that require this key to a new value.",
+    ):
+        AssetCollection([], resource_defs={"root_manager": the_resource})
+
+    @repository
+    def the_repo():
+        return [AssetCollection([], resource_defs={"io_manager": mem_io_manager})]
+
+    asset_collection_underlying_job = the_repo.get_all_jobs()[0]
+    assert (  # pylint: disable=comparison-with-callable
+        asset_collection_underlying_job.resource_defs["io_manager"] == mem_io_manager
+    )

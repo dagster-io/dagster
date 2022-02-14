@@ -41,6 +41,10 @@ class AssetCollection(
         source_assets_by_key = build_source_assets_by_key(source_assets)
         root_manager = build_root_manager(source_assets_by_key)
 
+        if "root_manager" in resource_defs:
+            raise DagsterInvalidDefinitionError(
+                "Resource dictionary included resource with key 'root_manager', which is a reserved resource keyword in Dagster. Please change this key, and then change all places that require this key to a new value."
+            )
         # In the case of collisions, merge_dicts takes values from the dictionary latest in the list, so we place the user provided resource defs after the defaults.
         resource_defs = merge_dicts(
             {"root_manager": root_manager, "io_manager": default_job_io_manager},
