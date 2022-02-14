@@ -104,7 +104,7 @@ class MultiprocessExecutor(Executor):
         valid_starts = multiprocessing.get_all_start_methods()
 
         if start_method is None:
-            start_method = "spawn"
+            start_method = "forkserver" if "forkserver" in valid_starts else "spawn"
 
         if start_method not in valid_starts:
             raise DagsterUnmetExecutorRequirementsError(
@@ -132,7 +132,12 @@ class MultiprocessExecutor(Executor):
 
             # or if the reconstructable pipeline has a module target, we will use that
             elif pipeline.get_module():
-                preload = [pipeline.get_module()]
+                preload = [
+                    # we import this module first to avoid user code like
+                    #  pyspark.serializers._hijack_namedtuple from breaking us
+                    "dagster.core.executor.multiprocess",
+                    pipeline.get_module(),
+                ]
 
             # base case is to preload the dagster library
             else:
