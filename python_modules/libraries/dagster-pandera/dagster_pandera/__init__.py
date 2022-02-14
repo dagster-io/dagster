@@ -157,6 +157,34 @@ def _pandera_schema_to_type_check_fn(
     return type_check_fn
 
 
+PANDERA_FAILURE_CASES_SCHEMA = TableSchema(
+    columns=[
+        TableColumn(
+            name="schema_context",
+            type="string",
+            description="`Column` for column-wise checks, or `DataFrameSchema`",
+        ),
+        TableColumn(
+            name="column",
+            type="string",
+            description="Column of value that failed the check, or `None` for wide checks.",
+        ),
+        TableColumn(
+            name="check", type="string", description="Description of the failed Pandera check."
+        ),
+        TableColumn(name="check_number", description="Index of the failed check."),
+        TableColumn(
+            name="failure_case", type="number | string", description="Value that failed a check."
+        ),
+        TableColumn(
+            name="index",
+            type="number | string",
+            description="Index (row) of value that failed a check.",
+        ),
+    ]
+)
+
+
 def _pandera_errors_to_type_check(
     error: pa.errors.SchemaErrors, table_schema: TableSchema
 ) -> TypeCheck:
@@ -164,16 +192,30 @@ def _pandera_errors_to_type_check(
         success=False,
         description=str(error),
         metadata_entries=[
-            EventMetadataEntry.int(len(error.failure_cases), "Num failures"),
+            EventMetadataEntry.int(len(error.failure_cases), "Total number failures"),
             EventMetadataEntry.table(
                 label="Failure cases (first 10)",
                 records=[
-                    TableRecord(**row._asdict())
+                    _pandera_failure_case_to_table_record(row)
                     for row in itertools.islice(error.failure_cases.itertuples(), 10)
                 ],
+                schema=PANDERA_FAILURE_CASES_SCHEMA,
             ),
             EventMetadataEntry.table_schema(table_schema, label="schema"),
         ],
+    )
+
+
+def _pandera_failure_case_to_table_record(case):
+    return TableRecord(
+        schema_context=case.schema_context.__class__.__name__,
+        column=case.column,
+        check=case.check,
+        check_number=case.check_number,
+        failure_case=case.failure_case
+        if isinstance(case.failure_case, (int, float))
+        else str(case.failure_case),
+        index=case.index,
     )
 
 
@@ -211,13 +253,10 @@ def _pandera_column_to_table_column(pa_column: pa.Column) -> TableColumn:
 CHECK_OPERATORS = {
     "equal_to": "==",
     "not_equal_to": "!=",
-    "greater_than_or_equal_to": "!=",
     "less_than": "<",
     "less_than_or_equal_to": "<=",
     "greater_than": ">",
     "greater_than_or_equal_to": ">=",
-    "in": "in",
-    "not_in": "not in",
 }
 
 

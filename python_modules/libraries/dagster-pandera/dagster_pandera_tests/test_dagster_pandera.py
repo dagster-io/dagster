@@ -26,6 +26,7 @@ DATA_OK = {
     "c": ["value_1", "value_2", "value_3", "value_2", "value_1"],
 }
 
+
 @pytest.fixture
 def dataframe():
     return pd.DataFrame(DATA_OK)
@@ -126,9 +127,7 @@ def test_pandera_schema_to_dagster_type(schema):
                 name="a",
                 type="int64",
                 description="a desc",
-                constraints=TableColumnConstraints(
-                    nullable=False, other=["<= 10"]
-                ),
+                constraints=TableColumnConstraints(nullable=False, other=["<= 10"]),
             ),
             TableColumn(
                 name="b",
