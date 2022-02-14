@@ -4,6 +4,7 @@ from collections import Counter
 from contextlib import ExitStack
 
 import mock
+import pendulum
 import pytest
 from dagster import (
     AssetKey,
