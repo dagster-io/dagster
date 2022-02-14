@@ -1,5 +1,5 @@
 import {Box, ColorsWIP, TagWIP, Tooltip} from '@dagster-io/ui';
-import { Spacing } from '@dagster-io/ui/src/components/types';
+import {Spacing} from '@dagster-io/ui/src/components/types';
 import {gql} from 'graphql.macro';
 import * as React from 'react';
 import styled from 'styled-components/macro';
