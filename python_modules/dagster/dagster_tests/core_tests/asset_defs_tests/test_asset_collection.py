@@ -24,7 +24,7 @@ def test_asset_collection_from_list():
     def last_asset(asset_bar):
         return asset_bar
 
-    collection = AssetCollection.from_list(assets=[asset_foo, asset_bar, last_asset])
+    collection = AssetCollection(assets=[asset_foo, asset_bar, last_asset])
 
     @repository
     def the_repo():
@@ -59,7 +59,7 @@ def test_asset_collection_foreign_asset():
     @repository
     def the_repo():
         return [
-            AssetCollection.from_list(
+            AssetCollection(
                 assets=[asset_depends_on_source],
                 source_assets=[foo_fa],
                 resource_defs={"the_manager": the_manager},
@@ -84,7 +84,7 @@ def test_asset_collection_with_resources():
 
     @repository
     def the_repo():
-        return [AssetCollection.from_list([asset_foo], resource_defs={"foo": the_resource})]
+        return [AssetCollection([asset_foo], resource_defs={"foo": the_resource})]
 
     asset_collection_underlying_job = the_repo.get_all_jobs()[0]
     assert asset_collection_underlying_job.name == "__ASSET_COLLECTION"
@@ -103,7 +103,7 @@ def test_asset_collection_missing_resources():
         DagsterInvalidDefinitionError,
         match=r"AssetCollection is missing required resource keys for asset 'asset_foo'. Missing resource keys: \['foo'\]",
     ):
-        AssetCollection.from_list([asset_foo])
+        AssetCollection([asset_foo])
 
     foreign_asset_io_req = ForeignAsset(key=AssetKey("foo"), io_manager_key="foo")
 
@@ -111,7 +111,7 @@ def test_asset_collection_missing_resources():
         DagsterInvalidDefinitionError,
         match=r"SourceAsset with key AssetKey\(\['foo'\]\) requires io manager with key 'foo', but was not provided on AssetCollection. Provided keys: \['root_manager'\]",
     ):
-        AssetCollection.from_list([], source_assets=[foreign_asset_io_req])
+        AssetCollection([], source_assets=[foreign_asset_io_req])
 
 
 def test_asset_collection_with_executor():
@@ -121,7 +121,7 @@ def test_asset_collection_with_executor():
 
     @repository
     def the_repo():
-        return [AssetCollection.from_list([the_asset], executor_def=in_process_executor)]
+        return [AssetCollection([the_asset], executor_def=in_process_executor)]
 
     asset_collection_underlying_job = the_repo.get_all_jobs()[0]
     assert (

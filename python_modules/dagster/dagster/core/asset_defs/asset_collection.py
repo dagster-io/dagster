@@ -1,4 +1,4 @@
-from typing import Dict, List, NamedTuple, Optional
+from typing import Mapping, NamedTuple, Optional, Sequence
 
 from dagster import check
 from dagster.utils import merge_dicts
@@ -15,20 +15,27 @@ class AssetCollection(
     NamedTuple(
         "_AssetCollection",
         [
-            ("assets", List[AssetsDefinition]),
-            ("source_assets", List[ForeignAsset]),
-            ("resource_defs", Dict[str, ResourceDefinition]),
+            ("assets", Sequence[AssetsDefinition]),
+            ("source_assets", Sequence[ForeignAsset]),
+            ("resource_defs", Mapping[str, ResourceDefinition]),
             ("executor_def", Optional[ExecutorDefinition]),
         ],
     )
 ):
     def __new__(
         cls,
-        assets: List[AssetsDefinition],
-        source_assets: List[ForeignAsset],
-        resource_defs: Dict[str, ResourceDefinition],
-        executor_def: Optional[ExecutorDefinition],
+        assets: Sequence[AssetsDefinition],
+        source_assets: Optional[Sequence[ForeignAsset]] = None,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        executor_def: Optional[ExecutorDefinition] = None,
     ):
+        check.list_param(assets, "assets", of_type=AssetsDefinition)
+        source_assets = check.opt_list_param(source_assets, "source_assets", of_type=ForeignAsset)
+        resource_defs = check.opt_dict_param(
+            resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
+        )
+        executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
+
         source_assets_by_key = build_source_assets_by_key(source_assets)
         root_manager = build_root_manager(source_assets_by_key)
 
@@ -46,33 +53,11 @@ class AssetCollection(
             executor_def=executor_def,
         )
 
-    @staticmethod
-    def from_list(
-        assets: List[AssetsDefinition],
-        source_assets: Optional[List[ForeignAsset]] = None,
-        resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
-        executor_def: Optional[ExecutorDefinition] = None,
-    ) -> "AssetCollection":
-
-        check.list_param(assets, "assets", of_type=AssetsDefinition)
-        source_assets = check.opt_list_param(source_assets, "source_assets", of_type=ForeignAsset)
-        resource_defs = check.opt_dict_param(
-            resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
-        )
-        executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
-
-        return AssetCollection(
-            assets=assets,
-            source_assets=source_assets,
-            resource_defs=resource_defs,
-            executor_def=executor_def,
-        )
-
 
 def _validate_resource_reqs_for_asset_collection(
-    asset_list: List[AssetsDefinition],
-    source_assets: List[ForeignAsset],
-    resource_defs: Dict[str, ResourceDefinition],
+    asset_list: Sequence[AssetsDefinition],
+    source_assets: Sequence[ForeignAsset],
+    resource_defs: Mapping[str, ResourceDefinition],
 ):
     present_resource_keys = set(resource_defs.keys())
     for asset_def in asset_list:
