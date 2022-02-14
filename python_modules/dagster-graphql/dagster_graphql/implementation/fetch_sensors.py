@@ -1,7 +1,7 @@
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, SensorSelector
-from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus
+from dagster.core.scheduler.instigation import InstigatorState
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from graphql.execution.base import ResolveInfo
 
@@ -83,14 +83,16 @@ def stop_sensor(graphene_info, job_origin_id):
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.str_param(job_origin_id, "job_origin_id")
     instance = graphene_info.context.instance
-    job_state = instance.get_job_state(job_origin_id)
-    if not job_state:
-        return GrapheneStopSensorMutationResult(job_state=None)
 
-    instance.stop_sensor(job_origin_id)
-    return GrapheneStopSensorMutationResult(
-        job_state=job_state.with_status(InstigatorStatus.STOPPED)
-    )
+    external_sensors = {
+        job.get_external_origin_id(): job
+        for repository_location in graphene_info.context.repository_locations
+        for repository in repository_location.get_repositories().values()
+        for job in repository.get_external_sensors()
+    }
+    instance.stop_sensor(job_origin_id, external_sensors.get(job_origin_id))
+    job_state = graphene_info.context.instance.get_job_state(job_origin_id)
+    return GrapheneStopSensorMutationResult(job_state)
 
 
 @capture_error
@@ -166,9 +168,13 @@ def get_sensor_next_tick(graphene_info, sensor_state):
         return None
 
     repository = repository_location.get_repository(repository_origin.repository_name)
+
+    if not repository.has_external_sensor(sensor_state.name):
+        return None
+
     external_sensor = repository.get_external_sensor(sensor_state.name)
 
-    if sensor_state.status != InstigatorStatus.RUNNING:
+    if not sensor_state.is_running:
         return None
 
     latest_tick = graphene_info.context.instance.get_latest_job_tick(sensor_state.job_origin_id)

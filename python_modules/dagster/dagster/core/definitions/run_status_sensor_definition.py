@@ -6,6 +6,7 @@ import pendulum
 from dagster import check
 from dagster.core.definitions import GraphDefinition, PipelineDefinition
 from dagster.core.definitions.sensor_definition import (
+    DefaultSensorStatus,
     PipelineRunReaction,
     SensorDefinition,
     SensorEvaluationContext,
@@ -159,6 +160,7 @@ def pipeline_failure_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     pipeline_selection: Optional[List[str]] = None,
+    default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[
     [Callable[[PipelineFailureSensorContext], Union[SkipReason, PipelineRunReaction]]],
     SensorDefinition,
@@ -178,6 +180,8 @@ def pipeline_failure_sensor(
         pipeline_selection (Optional[List[str]]): Names of the pipelines that will be monitored by
             this failure sensor. Defaults to None, which means the alert will be sent when any
             pipeline in the repository fails.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     def inner(
@@ -195,6 +199,7 @@ def pipeline_failure_sensor(
             name=sensor_name,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
+            default_status=default_status,
         )
         def _pipeline_failure_sensor(context: RunStatusSensorContext):
             fn(context.for_pipeline_failure())
@@ -214,6 +219,7 @@ def run_failure_sensor(
     description: Optional[str] = None,
     job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
     pipeline_selection: Optional[List[str]] = None,
+    default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[
     [Callable[[RunFailureSensorContext], Union[SkipReason, PipelineRunReaction]]],
     SensorDefinition,
@@ -236,6 +242,8 @@ def run_failure_sensor(
         pipeline_selection (Optional[List[str]]): (legacy) Names of the pipelines that will be monitored by
             this sensor. Defaults to None, which means the alert will be sent when any pipeline in
             the repository fails.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     def inner(
@@ -254,6 +262,7 @@ def run_failure_sensor(
             description=description,
             job_selection=job_selection,
             pipeline_selection=pipeline_selection,
+            default_status=default_status,
         )
         def _run_failure_sensor(context: RunStatusSensorContext):
             fn(context.for_run_failure())
@@ -287,6 +296,8 @@ class RunStatusSensorDefinition(SensorDefinition):
         job_selection (Optional[List[Union[JobDefinition, GraphDefinition]]]): The jobs that
             will be monitored by this sensor. Defaults to None, which means the alert will be sent
             when any job in the repository fails.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     def __init__(
@@ -300,6 +311,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         minimum_interval_seconds: Optional[int] = None,
         description: Optional[str] = None,
         job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
+        default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
 
         from dagster.core.storage.event_log.base import RunShardedEventsCursor, EventRecordsFilter
@@ -311,6 +323,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         check.opt_int_param(minimum_interval_seconds, "minimum_interval_seconds")
         check.opt_str_param(description, "description")
         check.opt_list_param(job_selection, "job_selection", (PipelineDefinition, GraphDefinition))
+        check.inst_param(default_status, "default_status", DefaultSensorStatus)
 
         def _wrapped_fn(context: SensorEvaluationContext):
             # initiate the cursor to (most recent event id, current timestamp) when:
@@ -447,6 +460,7 @@ class RunStatusSensorDefinition(SensorDefinition):
             evaluation_fn=_wrapped_fn,
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
+            default_status=default_status,
         )
 
     def __call__(self, *args, **kwargs):
@@ -462,6 +476,7 @@ def run_status_sensor(
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,
+    default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[
     [Callable[[RunStatusSensorContext], Union[SkipReason, PipelineRunReaction]]],
     RunStatusSensorDefinition,
@@ -485,6 +500,8 @@ def run_status_sensor(
         job_selection (Optional[List[Union[PipelineDefinition, GraphDefinition]]]): Jobs that will
             be monitored by this sensor. Defaults to None, which means the alert will be sent when
             any job in the repository fails.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     def inner(
@@ -505,6 +522,7 @@ def run_status_sensor(
             minimum_interval_seconds=minimum_interval_seconds,
             description=description,
             job_selection=job_selection,
+            default_status=default_status,
         )
 
     return inner

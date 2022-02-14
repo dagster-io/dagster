@@ -1714,7 +1714,7 @@ records = instance.get_event_records(
             errors=errors,
         )
 
-    # Schedule Storage
+    # Schedule / Sensor Storage
 
     def start_sensor(self, external_sensor):
         from dagster.core.scheduler.instigation import (
@@ -1724,10 +1724,15 @@ records = instance.get_event_records(
         )
         from dagster.core.definitions.run_request import InstigatorType
 
+        check.invariant(
+            not external_sensor.default_status,
+            "Can only manually start a sensor that does not have its status set in code",
+        )
+
         job_state = self.get_job_state(external_sensor.get_external_origin_id())
 
         if not job_state:
-            self.add_job_state(
+            return self.add_job_state(
                 InstigatorState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
@@ -1735,15 +1740,30 @@ records = instance.get_event_records(
                     SensorInstigatorData(min_interval=external_sensor.min_interval_seconds),
                 )
             )
-        elif job_state.status != InstigatorStatus.RUNNING:
-            self.update_job_state(job_state.with_status(InstigatorStatus.RUNNING))
+        else:
+            return self.update_job_state(job_state.with_status(InstigatorStatus.RUNNING))
 
-    def stop_sensor(self, job_origin_id):
-        from dagster.core.scheduler.instigation import InstigatorStatus
+    def stop_sensor(self, job_origin_id, external_sensor):
+        from dagster.core.scheduler.instigation import (
+            InstigatorState,
+            InstigatorStatus,
+            SensorInstigatorData,
+        )
+        from dagster.core.definitions.run_request import InstigatorType
 
         job_state = self.get_job_state(job_origin_id)
-        if job_state:
-            self.update_job_state(job_state.with_status(InstigatorStatus.STOPPED))
+
+        if not job_state:
+            return self.add_job_state(
+                InstigatorState(
+                    external_sensor.get_external_origin(),
+                    InstigatorType.SENSOR,
+                    InstigatorStatus.STOPPED,
+                    SensorInstigatorData(min_interval=external_sensor.min_interval_seconds),
+                )
+            )
+        else:
+            return self.update_job_state(job_state.with_status(InstigatorStatus.STOPPED))
 
     @traced
     def all_stored_job_state(self, repository_origin_id=None, job_type=None):

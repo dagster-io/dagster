@@ -127,6 +127,7 @@ from .schedule_definition import (
 )
 from .sensor_definition import (
     AssetSensorDefinition,
+    DefaultSensorStatus,
     SensorDefinition,
     SensorEvaluationContext,
     SensorExecutionContext,

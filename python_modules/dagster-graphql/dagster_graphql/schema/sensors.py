@@ -61,16 +61,13 @@ class GrapheneSensor(graphene.ObjectType):
 
     def __init__(self, external_sensor, sensor_state, batch_loader=None):
         self._external_sensor = check.inst_param(external_sensor, "external_sensor", ExternalSensor)
-        self._sensor_state = check.opt_inst_param(sensor_state, "sensor_state", InstigatorState)
 
         # optional run loader, provided by a parent GrapheneRepository object that instantiates
         # multiple sensors
         self._batch_loader = check.opt_inst_param(
             batch_loader, "batch_loader", RepositoryScopedBatchLoader
         )
-
-        if not self._sensor_state:
-            self._sensor_state = self._external_sensor.get_default_instigation_state()
+        self._sensor_state = self._external_sensor.get_current_instigator_state(sensor_state)
 
         super().__init__(
             name=external_sensor.name,

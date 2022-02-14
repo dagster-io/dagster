@@ -153,25 +153,21 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
             first = True
 
             for external_sensor in repo_sensors:
-                stored_sensor_state = stored_sensors_by_origin_id.get(
-                    external_sensor.get_external_origin_id()
+                sensor_state = external_sensor.get_current_instigator_state(
+                    stored_sensors_by_origin_id.get(external_sensor.get_external_origin_id())
                 )
-                if running_filter and (
-                    not stored_sensor_state
-                    or stored_sensor_state.status == InstigatorStatus.STOPPED
-                ):
+
+                if running_filter and not sensor_state.is_running:
                     continue
-                if stopped_filter and stored_sensor_state and InstigatorStatus.RUNNING:
+                if stopped_filter and sensor_state.is_running:
                     continue
 
                 if name_filter:
                     print_fn(external_sensor.name)
                     continue
 
-                status = (
-                    stored_sensor_state.status if stored_sensor_state else InstigatorStatus.STOPPED
-                )
-                sensor_title = f"Sensor: {external_sensor.name} [{status.value}]"
+                status = "RUNNING" if sensor_state.is_running else "STOPPED"
+                sensor_title = f"Sensor: {external_sensor.name} [{status}]"
                 if not first:
                     print_fn("*" * len(sensor_title))
 
@@ -235,7 +231,7 @@ def execute_stop_command(sensor_name, cli_args, print_fn):
             check_repo_and_scheduler(external_repo, instance)
             try:
                 external_sensor = external_repo.get_external_sensor(sensor_name)
-                instance.stop_sensor(external_sensor.get_external_origin_id())
+                instance.stop_sensor(external_sensor.get_external_origin_id(), external_sensor)
             except DagsterInvariantViolationError as ex:
                 raise click.UsageError(ex)
 
