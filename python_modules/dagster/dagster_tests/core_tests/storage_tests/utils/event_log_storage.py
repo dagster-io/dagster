@@ -54,6 +54,7 @@ from dagster.core.test_utils import instance_for_test
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.utils import datetime_as_float
 
 DEFAULT_RUN_ID = "foo"
 
@@ -1304,13 +1305,32 @@ class TestEventLogStorage:
             for event in events:
                 storage.store_event(event)
 
-            # of_type
-            parsed = pendulum.from_timestamp(run_records[-1].update_timestamp)
+            update_timestamp = run_records[-1].update_timestamp
+            tzaware_dt = pendulum.from_timestamp(datetime_as_float(update_timestamp), tz="UTC")
+
+            # use tz-aware cursor
             filtered_records = storage.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.PIPELINE_SUCCESS,
                     after_cursor=RunShardedEventsCursor(
-                        id=0, run_updated_after=parsed
+                        id=0, run_updated_after=tzaware_dt
+                    ),  # events after first run
+                ),
+                ascending=True,
+            )
+            assert len(filtered_records) == 2
+            assert _event_types([r.event_log_entry for r in filtered_records]) == [
+                DagsterEventType.PIPELINE_SUCCESS,
+                DagsterEventType.PIPELINE_SUCCESS,
+            ]
+            assert [r.event_log_entry.run_id for r in filtered_records] == ["2", "3"]
+
+            # use tz-naive cursor
+            filtered_records = storage.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.PIPELINE_SUCCESS,
+                    after_cursor=RunShardedEventsCursor(
+                        id=0, run_updated_after=tzaware_dt.naive()
                     ),  # events after first run
                 ),
                 ascending=True,
