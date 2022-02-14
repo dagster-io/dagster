@@ -109,7 +109,7 @@ def test_asset_collection_missing_resources():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"SourceAsset with key AssetKey\(\['foo'\]\) requires io manager with key 'foo', but was not provided on AssetCollection. Provided keys: \['root_manager'\]",
+        match=r"SourceAsset with key AssetKey\(\['foo'\]\) requires io manager with key 'foo', which was not provided on AssetCollection. Provided keys: \['io_manager', 'root_manager'\]",
     ):
         AssetCollection([], source_assets=[foreign_asset_io_req])
 
@@ -128,3 +128,15 @@ def test_asset_collection_with_executor():
         asset_collection_underlying_job.executor_def  # pylint: disable=comparison-with-callable
         == in_process_executor
     )
+
+
+def test_asset_collection_requires_root_manager():
+    @asset(io_manager_key="blah")
+    def asset_foo(x):
+        pass
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"Output 'result' with AssetKey 'AssetKey\(\['asset_foo'\]\)' requires io manager 'blah' but was not provided on asset collection. Provided resources: \['io_manager', 'root_manager'\]",
+    ):
+        AssetCollection([asset_foo])
