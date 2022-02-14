@@ -5,7 +5,8 @@ from dagster import AssetKey, EventMetadataEntry, ResourceDefinition
 from dagster.core.asset_defs import build_assets_job
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 from dagster.utils import file_relative_path
-from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
+from dagster_dbt import dbt_cli_resource
+from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
 from dagster_dbt.types import DbtOutput
 
 
@@ -93,3 +94,55 @@ def assert_assets_match_project(dbt_assets):
     root_out_def = assets_op.output_dict.get("sort_by_calories")
     assert root_out_def.hardcoded_asset_key == AssetKey(["sort_by_calories"])
     assert not root_out_def.metadata[ASSET_DEPENDENCY_METADATA_KEY]
+
+
+def test_basic(
+    dbt_seed, conn_string, test_project_dir, dbt_config_dir
+):  # pylint: disable=unused-argument
+
+    dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
+
+    result = build_assets_job(
+        "test_job",
+        dbt_assets,
+        resource_defs={
+            "dbt": dbt_cli_resource.configured(
+                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            )
+        },
+    ).execute_in_process()
+
+    assert result.success
+    materializations = [
+        event.event_specific_data.materialization
+        for event in result.events_for_node(dbt_assets[0].op.name)
+        if event.event_type_value == "ASSET_MATERIALIZATION"
+    ]
+    assert len(materializations) == 4
+
+
+def test_select(
+    dbt_seed, conn_string, test_project_dir, dbt_config_dir
+):  # pylint: disable=unused-argument
+
+    dbt_assets = load_assets_from_dbt_project(
+        test_project_dir, dbt_config_dir, select="sort_by_calories"
+    )
+
+    result = build_assets_job(
+        "test_job",
+        dbt_assets,
+        resource_defs={
+            "dbt": dbt_cli_resource.configured(
+                {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+            )
+        },
+    ).execute_in_process()
+
+    assert result.success
+    materializations = [
+        event.event_specific_data.materialization
+        for event in result.events_for_node(dbt_assets[0].op.name)
+        if event.event_type_value == "ASSET_MATERIALIZATION"
+    ]
+    assert len(materializations) == 1
