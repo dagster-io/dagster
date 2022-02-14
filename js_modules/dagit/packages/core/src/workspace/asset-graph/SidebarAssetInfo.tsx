@@ -26,7 +26,6 @@ export const SidebarAssetInfo: React.FC<{
   liveData: LiveDataForNode;
 }> = ({node, definition, liveData}) => {
   const partitionHealthData = usePartitionHealthData([node.assetKey]);
-  const Plugin = pluginForMetadata(definition?.metadata || []);
   const {lastMaterialization} = liveData || {};
   const displayName = displayNameForAssetKey(node.assetKey);
   const repoAddress = buildRepoAddress(node.repository.name, node.repository.location.name);
