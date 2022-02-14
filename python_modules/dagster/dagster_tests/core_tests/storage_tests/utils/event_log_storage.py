@@ -1220,11 +1220,7 @@ class TestEventLogStorage:
             DagsterEventType.PIPELINE_SUCCESS
         ]
 
-    def test_get_event_records_sqlite(self, storage):
-        # test for sqlite only because sqlite requires special logic to handle cross-run queries
-        if not isinstance(storage, SqliteEventLogStorage):
-            pytest.skip()
-
+    def test_get_event_records_run_sharded(self, storage):
         asset_key = AssetKey(["path", "to", "asset_one"])
 
         events = []
