@@ -4,6 +4,7 @@ import graphene
 from dagster import check
 from dagster.core.definitions import NodeHandle
 from dagster.core.host_representation import RepresentedPipeline
+from dagster.core.host_representation.historical import HistoricalPipeline
 from dagster.core.snap import CompositeSolidDefSnap, DependencyStructureIndex, SolidDefSnap
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster_graphql.implementation.events import iterate_metadata_entries
@@ -398,16 +399,20 @@ class ISolidDefinitionMixin:
         # access the asset nodes.
         from .asset_graph import GrapheneAssetNode
 
-        repo_handle = self._represented_pipeline.repository_handle
-        origin = repo_handle.repository_location_origin
-        location = graphene_info.context.get_location(origin)
-        ext_repo = location.get_repository(repo_handle.repository_name)
-        nodes = [
-            node
-            for node in ext_repo.get_external_asset_nodes()
-            if node.op_name == self.solid_def_name
-        ]
-        return [GrapheneAssetNode(location, ext_repo, node) for node in nodes]
+        # This is a workaround for the fact that asset info is not persisted in pipeline snapshots.
+        if isinstance(self._represented_pipeline, HistoricalPipeline):
+            return []
+        else:
+            repo_handle = self._represented_pipeline.repository_handle
+            origin = repo_handle.repository_location_origin
+            location = graphene_info.context.get_location(origin)
+            ext_repo = location.get_repository(repo_handle.repository_name)
+            nodes = [
+                node
+                for node in ext_repo.get_external_asset_nodes()
+                if node.op_name == self.solid_def_name
+            ]
+            return [GrapheneAssetNode(location, ext_repo, node) for node in nodes]
 
 
 class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):
