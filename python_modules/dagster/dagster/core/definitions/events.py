@@ -8,7 +8,7 @@ from dagster.core.errors import DagsterInvalidAssetKey
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster.utils.backcompat import experimental_class_param_warning
 
-from .event_metadata import (
+from .metadata import (
     EventMetadataEntry,
     ParseableMetadataEntryData,
     PartitionMetadataEntry,

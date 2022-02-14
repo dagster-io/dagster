@@ -17,7 +17,7 @@ from dagster import (
     check,
     seven,
 )
-from dagster.core.definitions.event_metadata import EventMetadataEntry
+from dagster.core.definitions.metadata import EventMetadataEntry
 from dagster.core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.utils import validate_tags

@@ -1,7 +1,7 @@
 from typing import Dict, List, NamedTuple, Optional, Set
 
 from dagster import check
-from dagster.core.definitions.event_metadata import EventMetadataEntry
+from dagster.core.definitions.metadata import EventMetadataEntry
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes

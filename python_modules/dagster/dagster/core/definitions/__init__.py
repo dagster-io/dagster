@@ -30,7 +30,7 @@ from .dependency import (
     SolidInvocation,
     SolidOutputHandle,
 )
-from .event_metadata import (
+from .metadata import (
     EventMetadata,
     EventMetadataEntry,
     FloatMetadataEntryData,

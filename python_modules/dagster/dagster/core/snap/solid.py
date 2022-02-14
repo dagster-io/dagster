@@ -11,7 +11,7 @@ from dagster.core.definitions import (
     PipelineDefinition,
     SolidDefinition,
 )
-from dagster.core.definitions.event_metadata import EventMetadataEntry
+from dagster.core.definitions.metadata import EventMetadataEntry
 from dagster.serdes import whitelist_for_serdes
 from dagster.serdes.serdes import DefaultNamedTupleSerializer
 

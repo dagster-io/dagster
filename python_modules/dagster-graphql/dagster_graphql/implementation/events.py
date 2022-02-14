@@ -1,7 +1,7 @@
 from math import isnan
 
 from dagster import check, seven
-from dagster.core.definitions.event_metadata import (
+from dagster.core.definitions.metadata import (
     DagsterAssetMetadataEntryData,
     DagsterPipelineRunMetadataEntryData,
     EventMetadataEntry,

@@ -13,7 +13,7 @@ from dagster import (
 )
 from dagster.check import CheckError
 from dagster.config.field_utils import Selector
-from dagster.core.definitions.event_metadata import parse_metadata
+from dagster.core.definitions.metadata import parse_metadata
 from dagster.core.errors import DagsterInvalidEventMetadata
 from dagster.utils import dict_without_keys
 from dagster.utils.backcompat import experimental

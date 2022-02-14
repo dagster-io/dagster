@@ -2,7 +2,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, List, NamedTuple, Optional
 
 from dagster import check
-from dagster.core.definitions.event_metadata import EventMetadataEntry
+from dagster.core.definitions.metadata import EventMetadataEntry
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.types import ExcInfo

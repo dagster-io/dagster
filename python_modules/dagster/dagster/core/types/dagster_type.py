@@ -8,7 +8,7 @@ from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster.config.config_type import Array, ConfigType
 from dagster.config.config_type import Noneable as ConfigNoneable
-from dagster.core.definitions.event_metadata import (
+from dagster.core.definitions.metadata import (
     EventMetadataEntry,
     ParseableMetadataEntryData,
     parse_metadata,

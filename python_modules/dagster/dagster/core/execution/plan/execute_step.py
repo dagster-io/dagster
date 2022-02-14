@@ -15,7 +15,7 @@ from dagster.core.definitions import (
     TypeCheck,
 )
 from dagster.core.definitions.decorators.solid import DecoratedSolidFunction
-from dagster.core.definitions.event_metadata import (
+from dagster.core.definitions.metadata import (
     EventMetadataEntry,
     PartitionMetadataEntry,
     parse_metadata,
