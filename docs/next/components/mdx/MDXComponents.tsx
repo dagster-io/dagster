@@ -11,6 +11,8 @@ import Icons from "../Icons";
 import Link from "../Link";
 import { useVersion } from "../../util/useVersion";
 import Image from "next/image";
+import Zoom from 'react-medium-image-zoom'
+import 'react-medium-image-zoom/dist/styles.css'
 export const SearchIndexContext = React.createContext(null);
 import path from "path";
 
@@ -318,9 +320,11 @@ export default {
     const { src } = props;
     if (version === "master" || !src.startsWith("/images/")) {
       return (
+      <Zoom>
         <div className="mx-auto">
           <Image {...(props as any)} />
         </div>
+      </Zoom>
       );
     }
 
@@ -330,14 +334,16 @@ export default {
     ).href;
 
     return (
-      <div className="mx-auto">
-        <Image
-          src={resolvedPath}
-          width={props.width}
-          height={props.height}
-          alt={props.alt}
-        />
-      </div>
+      <Zoom>
+        <div className="mx-auto">
+          <Image
+            src={resolvedPath}
+            width={props.width}
+            height={props.height}
+            alt={props.alt}
+          />
+        </div>
+      </Zoom>
     );
   },
   PyObject,
