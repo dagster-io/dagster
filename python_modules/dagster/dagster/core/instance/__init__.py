@@ -1695,7 +1695,7 @@ records = instance.get_event_records(
         errors = []
 
         schedules = []
-        for schedule_state in self.all_instigator_state(job_type=InstigatorType.SCHEDULE):
+        for schedule_state in self.all_instigator_state(instigator_type=InstigatorType.SCHEDULE):
             schedule_info = {
                 schedule_state.job_name: {
                     "status": schedule_state.status.value,
