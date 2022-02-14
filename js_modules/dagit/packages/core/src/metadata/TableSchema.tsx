@@ -1,4 +1,5 @@
 import {Box, ColorsWIP, TagWIP, Tooltip} from '@dagster-io/ui';
+import { Spacing } from '@dagster-io/ui/src/components/types';
 import {gql} from 'graphql.macro';
 import * as React from 'react';
 import styled from 'styled-components/macro';
@@ -17,12 +18,27 @@ const MAX_CONSTRAINT_TAG_CHARS = 30;
 
 interface ITableSchemaProps {
   schema: ITableSchema;
-  itemHorizontalPadding?: number;
+  itemHorizontalPadding?: Spacing;
 }
 
 export const TableSchema: React.FC<ITableSchemaProps> = ({schema, itemHorizontalPadding}) => {
+  const multiColumnConstraints = schema.constraints?.other || [];
   return (
     <div>
+      {multiColumnConstraints.length > 0 && (
+        <Box
+          flex={{
+            wrap: 'wrap',
+            gap: 4,
+            alignItems: 'center',
+          }}
+          padding={{horizontal: itemHorizontalPadding, vertical: 8}}
+        >
+          {multiColumnConstraints.map((constraint, i) => (
+            <ArbitraryConstraintTag key={i} constraint={constraint} />
+          ))}
+        </Box>
+      )}
       {schema.columns.map((column) => {
         return (
           <ColumnItem
