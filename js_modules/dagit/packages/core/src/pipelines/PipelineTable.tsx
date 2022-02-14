@@ -48,6 +48,7 @@ export const PipelineTable: React.FC<Props> = (props) => {
                   isJob={pipelineOrJob.isJob}
                   pipelineName={pipelineOrJob.name}
                   pipelineHrefContext={repoAddress}
+                  truncationThreshold={80}
                 />
                 {showRepo ? <Caption>{repoAddressAsString(repoAddress)}</Caption> : null}
                 <Description>{pipelineOrJob.description}</Description>
