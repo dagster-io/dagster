@@ -291,13 +291,15 @@ def test_multiple_non_argument_deps():
     index = DependencyStructureIndex(dep_structure_snapshot)
 
     assert index.get_invocation("foo")
-    assert index.get_invocation("bar")
+    assert index.get_invocation("namespace__bar")
     assert index.get_invocation("baz")
 
     assert index.get_upstream_outputs("qux", "foo") == [
         OutputHandleSnap("foo", "result"),
     ]
-    assert index.get_upstream_outputs("qux", "namespace_bar") == [OutputHandleSnap("bar", "result")]
+    assert index.get_upstream_outputs("qux", "namespace_bar") == [
+        OutputHandleSnap("namespace__bar", "result")
+    ]
     assert index.get_upstream_outputs("qux", "baz") == [OutputHandleSnap("baz", "result")]
 
     result = job.execute_in_process()
