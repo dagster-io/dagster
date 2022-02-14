@@ -32,19 +32,21 @@ def _materialization_for_stream(
 
 
 def generate_materializations(output: AirbyteOutput, asset_key_prefix: List[str]):
-    prefix = output.connection_details["prefix"]
+    prefix = output.connection_details.get("prefix", "")
     stream_info = {
         prefix + stream["stream"]["name"]: stream
-        for stream in output.connection_details["syncCatalog"]["streams"]
-        if stream["config"]["selected"]
+        for stream in output.connection_details.get("syncCatalog", {}).get("streams", [])
+        if stream.get("config", {}).get("selected")
     }
 
-    stream_stats = output.job_details["attempts"][-1]["attempt"]["streamStats"]
+    stream_stats = (
+        output.job_details.get("attempts", [{}])[-1].get("attempt", {}).get("streamStats", [])
+    )
     for stats in stream_stats:
         name = stats["streamName"]
         yield _materialization_for_stream(
             name,
             stream_info[name],
-            stats["stats"],
+            stats.get("stats", {}),
             asset_key_prefix=asset_key_prefix,
         )

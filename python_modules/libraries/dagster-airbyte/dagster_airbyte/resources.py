@@ -130,7 +130,7 @@ class AirbyteResource:
             time.sleep(poll_interval)
             job_details = self.get_job_status(job_id)
             cur_attempt = len(job_details.get("attempts", []))
-            # spit out the Airbyte log info
+            # spit out the available Airbyte log info
             if cur_attempt:
                 log_lines = (
                     job_details["attempts"][logged_attempts].get("logs", {}).get("logLines", [])
@@ -138,7 +138,9 @@ class AirbyteResource:
 
                 for line in log_lines[logged_lines:]:
                     sys.stdout.write(line + "\n")
+                    sys.stdout.flush()
                 logged_lines = len(log_lines)
+
                 # if there's a next attempt, this one will have no more log messages
                 if logged_attempts < cur_attempt - 1:
                     logged_lines = 0

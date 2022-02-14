@@ -1,7 +1,8 @@
 import pytest
 import responses
-from dagster import Failure, build_init_resource_context
+from dagster import Failure, build_init_resource_context, EventMetadataEntry
 from dagster_airbyte import AirbyteOutput, AirbyteState, airbyte_resource
+from dagster_airbyte.utils import generate_materializations
 
 
 @responses.activate
@@ -16,6 +17,12 @@ def test_trigger_connection():
     )
     responses.add(
         method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/get",
+        json={},
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
         url=ab_resource.api_base_url + "/connections/sync",
         json={"job": {"id": 1}},
         status=200,
@@ -27,7 +34,7 @@ def test_trigger_connection():
 def test_trigger_connection_fail():
     ab_resource = airbyte_resource(
         build_init_resource_context(
-            config={"host": "some_host", "port": "8000", "request_max_retries": 1}
+            config={"host": "some_host", "port": "8000", "request_max_retries": 2}
         )
     )
     responses.add(
@@ -42,7 +49,7 @@ def test_trigger_connection_fail():
     "state",
     [AirbyteState.SUCCEEDED, AirbyteState.CANCELLED, AirbyteState.ERROR, "unrecognized"],
 )
-def test_sync_and_pool(state):
+def test_sync_and_poll(state):
     ab_resource = airbyte_resource(
         build_init_resource_context(
             config={
@@ -50,6 +57,12 @@ def test_sync_and_pool(state):
                 "port": "8000",
             }
         )
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/get",
+        json={"name": "some_connection"},
+        status=200,
     )
     responses.add(
         method=responses.POST,
@@ -78,7 +91,184 @@ def test_sync_and_pool(state):
 
     else:
         r = ab_resource.sync_and_poll("some_connection", 0)
-        assert r == AirbyteOutput({"id": 1, "status": state})
+        assert r == AirbyteOutput({"job": {"id": 1, "status": state}}, {"name": "some_connection"})
+
+
+@responses.activate
+def test_logging_multi_attempts(capsys):
+    def _get_attempt(ls):
+        return {"logs": {"logLines": ls}}
+
+    ab_resource = airbyte_resource(
+        build_init_resource_context(
+            config={
+                "host": "some_host",
+                "port": "8000",
+            }
+        )
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/get",
+        json={},
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/sync",
+        json={"job": {"id": 1}},
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/jobs/get",
+        json={"job": {"id": 1, "status": "pending"}},
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/jobs/get",
+        json={
+            "job": {"id": 1, "status": "running"},
+            "attempts": [_get_attempt(ls) for ls in [["log1a"]]],
+        },
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/jobs/get",
+        json={
+            "job": {"id": 1, "status": "running"},
+            "attempts": [_get_attempt(ls) for ls in [["log1a", "log1b"]]],
+        },
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/jobs/get",
+        json={
+            "job": {"id": 1, "status": "running"},
+            "attempts": [
+                _get_attempt(ls) for ls in [["log1a", "log1b", "log1c"], ["log2a", "log2b"]]
+            ],
+        },
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/jobs/get",
+        json={
+            "job": {"id": 1, "status": AirbyteState.SUCCEEDED},
+            "attempts": [
+                _get_attempt(ls) for ls in [["log1a", "log1b", "log1c"], ["log2a", "log2b"]]
+            ],
+        },
+        status=200,
+    )
+    ab_resource.sync_and_poll("some_connection", 0, None)
+    captured = capsys.readouterr()
+    assert captured.out == "\n".join(["log1a", "log1b", "log1c", "log2a", "log2b"]) + "\n"
+
+
+@responses.activate
+def test_assets():
+
+    ab_resource = airbyte_resource(
+        build_init_resource_context(
+            config={
+                "host": "some_host",
+                "port": "8000",
+            }
+        )
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/get",
+        json={
+            "name": "xyz",
+            "syncCatalog": {
+                "streams": [
+                    {
+                        "stream": {
+                            "name": "foo",
+                            "jsonSchema": {
+                                "properties": {"a": {"type": "str"}, "b": {"type": "int"}}
+                            },
+                        },
+                        "config": {"selected": True},
+                    },
+                    {
+                        "stream": {
+                            "name": "bar",
+                            "jsonSchema": {
+                                "properties": {
+                                    "c": {"type": "str"},
+                                }
+                            },
+                        },
+                        "config": {"selected": True},
+                    },
+                    {
+                        "stream": {
+                            "name": "baz",
+                            "jsonSchema": {
+                                "properties": {
+                                    "d": {"type": "str"},
+                                }
+                            },
+                        },
+                        "config": {"selected": False},
+                    },
+                ]
+            },
+        },
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/sync",
+        json={"job": {"id": 1}},
+        status=200,
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/jobs/get",
+        json={
+            "job": {"id": 1, "status": AirbyteState.SUCCEEDED},
+            "attempts": [
+                {
+                    "attempt": {
+                        "streamStats": [
+                            {
+                                "streamName": "foo",
+                                "stats": {
+                                    "bytesEmitted": 1234,
+                                    "recordsCommitted": 4321,
+                                },
+                            },
+                            {
+                                "streamName": "bar",
+                                "stats": {
+                                    "bytesEmitted": 1234,
+                                    "recordsCommitted": 4321,
+                                },
+                            },
+                        ]
+                    }
+                }
+            ],
+        },
+        status=200,
+    )
+
+    airbyte_output = ab_resource.sync_and_poll("some_connection", 0, None)
+
+    materializations = list(generate_materializations(airbyte_output, []))
+    assert len(materializations) == 2
+
+    assert EventMetadataEntry.text("a,b", "columns") in materializations[0].metadata_entries
+    assert EventMetadataEntry.int(1234, "bytesEmitted") in materializations[0].metadata_entries
+    assert EventMetadataEntry.int(4321, "recordsCommitted") in materializations[0].metadata_entries
 
 
 @responses.activate
@@ -90,6 +280,12 @@ def test_sync_and_poll_timeout():
                 "port": "8000",
             }
         )
+    )
+    responses.add(
+        method=responses.POST,
+        url=ab_resource.api_base_url + "/connections/get",
+        json={},
+        status=200,
     )
     responses.add(
         method=responses.POST,
