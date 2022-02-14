@@ -8,7 +8,7 @@ import {
   SplitPanelContainer,
 } from '@dagster-io/ui';
 import _, {flatMap, uniq, uniqBy, without} from 'lodash';
-import React from 'react';
+import React, {useRef} from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
@@ -214,6 +214,7 @@ const AssetGraphExplorerWithData: React.FC<
   } = props;
 
   const history = useHistory();
+  const splitpanelRef = useRef<SplitPanelContainer>(null);
   const findAssetInWorkspace = useFindAssetInWorkspace();
 
   const selectedAssetValues = explorerPath.opNames[explorerPath.opNames.length - 1].split(',');
@@ -295,7 +296,8 @@ const AssetGraphExplorerWithData: React.FC<
   return (
     <SplitPanelContainer
       identifier="explorer"
-      firstInitialPercent={70}
+      ref={splitpanelRef}
+      firstInitialPercent={100}
       firstMinSize={600}
       first={
         <>
@@ -420,17 +422,9 @@ const AssetGraphExplorerWithData: React.FC<
         </>
       }
       second={
-        <RightInfoPanel>
-          <RightInfoPanelContent>
-            {selectedGraphNodes.length > 1 ? (
-              <Box
-                style={{height: '70%', color: ColorsWIP.Gray400}}
-                flex={{justifyContent: 'center', alignItems: 'center', gap: 4, direction: 'column'}}
-              >
-                <IconWIP size={48} name="asset" color={ColorsWIP.Gray400} />
-                {`${selectedGraphNodes.length} Assets Selected`}
-              </Box>
-            ) : selectedGraphNodes.length === 1 && selectedGraphNodes[0] ? (
+        selectedGraphNodes.length === 1 && selectedGraphNodes[0] ? (
+          <RightInfoPanel>
+            <RightInfoPanelContent>
               <SidebarAssetInfo
                 node={selectedGraphNodes[0].definition}
                 liveData={liveDataByNode[selectedGraphNodes[0].id]}
@@ -440,11 +434,15 @@ const AssetGraphExplorerWithData: React.FC<
                   )?.solid.definition
                 }
               />
-            ) : pipelineSelector ? (
+            </RightInfoPanelContent>
+          </RightInfoPanel>
+        ) : pipelineSelector ? (
+          <RightInfoPanel>
+            <RightInfoPanelContent>
               <SidebarPipelineOrJobOverview pipelineSelector={pipelineSelector} />
-            ) : undefined}
-          </RightInfoPanelContent>
-        </RightInfoPanel>
+            </RightInfoPanelContent>
+          </RightInfoPanel>
+        ) : null
       }
     />
   );

@@ -212,14 +212,32 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     minScale: 0,
   };
 
+  resizeObserver: any | undefined;
+
   componentDidMount() {
     this.autocenter();
+
     // The wheel event cannot be prevented via the `onWheel` handler.
     document.addEventListener('wheel', this.onWheel, {passive: false});
+
+    if (
+      this.element.current &&
+      this.element.current instanceof HTMLElement &&
+      'ResizeObserver' in window
+    ) {
+      const RO = window['ResizeObserver'] as any;
+      this.resizeObserver = new RO(() => {
+        window.requestAnimationFrame(() => {
+          this.forceUpdate();
+        });
+      });
+      this.resizeObserver.observe(this.element.current);
+    }
   }
 
   componentWillUnmount() {
     document.removeEventListener('wheel', this.onWheel);
+    this.resizeObserver?.disconnect();
   }
 
   onWheel = (e: WheelEvent) => {
