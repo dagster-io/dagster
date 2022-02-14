@@ -17,7 +17,6 @@ from dagster import (
     Output,
     OutputDefinition,
     RetryRequested,
-    job,
     op,
     pipeline,
     resource,
@@ -1213,6 +1212,88 @@ class TestEventLogStorage:
             )
         ] == [max_record_num, max_record_num - 1]
 
+        # make sure we can accept a run-sharded cursor, where the update_time is some random time
+        # (tzaware)
+        run_cursor_datetime = pendulum.now()
+        assert not list(
+            filter(
+                lambda r: r.storage_id <= 2,
+                storage.get_event_records(
+                    EventRecordsFilter(
+                        after_cursor=RunShardedEventsCursor(
+                            id=2, run_updated_after=run_cursor_datetime
+                        )
+                    )
+                ),
+            )
+        )
+        assert [
+            i.storage_id
+            for i in storage.get_event_records(
+                EventRecordsFilter(
+                    after_cursor=RunShardedEventsCursor(
+                        id=min_record_num + 2, run_updated_after=run_cursor_datetime
+                    ),
+                ),
+                ascending=True,
+                limit=2,
+            )
+        ] == [min_record_num + 3, min_record_num + 4]
+        assert [
+            i.storage_id
+            for i in storage.get_event_records(
+                EventRecordsFilter(
+                    after_cursor=RunShardedEventsCursor(
+                        id=min_record_num + 2,
+                        run_updated_after=run_cursor_datetime,
+                    )
+                ),
+                ascending=False,
+                limit=2,
+            )
+        ] == [max_record_num, max_record_num - 1]
+
+        # make sure we can accept a run-sharded cursor, where the update_time is some random time
+        # (tznaive)
+        run_cursor_naive = pendulum.now().naive()
+        assert not list(
+            filter(
+                lambda r: r.storage_id <= 2,
+                storage.get_event_records(
+                    EventRecordsFilter(
+                        after_cursor=RunShardedEventsCursor(
+                            id=2, run_updated_after=run_cursor_naive
+                        )
+                    )
+                ),
+            )
+        )
+        assert [
+            i.storage_id
+            for i in storage.get_event_records(
+                EventRecordsFilter(
+                    after_cursor=RunShardedEventsCursor(
+                        id=min_record_num + 2, run_updated_after=run_cursor_naive
+                    ),
+                ),
+                ascending=True,
+                limit=2,
+            )
+        ] == [min_record_num + 3, min_record_num + 4]
+        assert [
+            i.storage_id
+            for i in storage.get_event_records(
+                EventRecordsFilter(
+                    after_cursor=RunShardedEventsCursor(
+                        id=min_record_num + 2,
+                        run_updated_after=run_cursor_naive,
+                    )
+                ),
+                ascending=False,
+                limit=2,
+            )
+        ] == [max_record_num, max_record_num - 1]
+
         filtered_records = storage.get_event_records(
             EventRecordsFilter(event_type=DagsterEventType.PIPELINE_SUCCESS)
         )
@@ -1220,7 +1301,11 @@ class TestEventLogStorage:
             DagsterEventType.PIPELINE_SUCCESS
         ]
 
-    def test_get_event_records_run_sharded(self, storage):
+    def test_get_event_records_sqlite(self, storage):
+        if not isinstance(storage, SqliteEventLogStorage):
+            # test sqlite in test_get_event_records_sqlite
+            pytest.skip()
+
         asset_key = AssetKey(["path", "to", "asset_one"])
 
         events = []
