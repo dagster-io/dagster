@@ -1,10 +1,11 @@
 import warnings
 from collections import OrderedDict
-from typing import Optional, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.run_request import InstigatorType
+from dagster.core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster.core.definitions.sensor_definition import DEFAULT_SENSOR_DAEMON_INTERVAL
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.origin import PipelinePythonOrigin
@@ -23,6 +24,9 @@ from .external_data import (
 from .handle import InstigatorHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
+
+if TYPE_CHECKING:
+    from dagster.core.scheduler.instigation import InstigatorState
 
 
 class ExternalRepository:
@@ -477,22 +481,45 @@ class ExternalSchedule:
     def get_external_origin_id(self):
         return self.get_external_origin().get_id()
 
-    # ScheduleState that represents the state of the schedule
-    # when there is no row in the schedule DB (for example, when
-    # the schedule is first created in code)
-    def get_default_instigation_state(self):
+    @property
+    def default_status(self) -> DefaultScheduleStatus:
+        return (
+            self._external_schedule_data.default_status
+            if self._external_schedule_data.default_status
+            else DefaultScheduleStatus.STOPPED
+        )
+
+    def get_current_instigator_state(self, stored_state: Optional["InstigatorState"]):
         from dagster.core.scheduler.instigation import (
             InstigatorState,
             InstigatorStatus,
             ScheduleInstigatorData,
         )
 
-        return InstigatorState(
-            self.get_external_origin(),
-            InstigatorType.SCHEDULE,
-            InstigatorStatus.STOPPED,
-            ScheduleInstigatorData(self.cron_schedule, start_timestamp=None),
-        )
+        if self.default_status == DefaultScheduleStatus.RUNNING:
+            if stored_state:
+                return stored_state
+
+            return InstigatorState(
+                self.get_external_origin(),
+                InstigatorType.SCHEDULE,
+                InstigatorStatus.AUTOMATICALLY_RUNNING,
+                ScheduleInstigatorData(self.cron_schedule, start_timestamp=None),
+            )
+        else:
+            # Ignore AUTOMATICALLY_RUNNING states in the DB if the default status
+            # isn't DefaultScheduleStatus.RUNNING - this would indicate that the schedule's
+            # default has been changed in code but there's still a lingering AUTOMATICALLY_RUNNING
+            # row in the database that can be ignored
+            if stored_state and stored_state.status != InstigatorStatus.AUTOMATICALLY_RUNNING:
+                return stored_state
+
+            return InstigatorState(
+                self.get_external_origin(),
+                InstigatorType.SCHEDULE,
+                InstigatorStatus.STOPPED,
+                ScheduleInstigatorData(self.cron_schedule, start_timestamp=None),
+            )
 
     def execution_time_iterator(self, start_timestamp):
         return schedule_execution_time_iterator(

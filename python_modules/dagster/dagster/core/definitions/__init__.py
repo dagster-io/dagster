@@ -120,6 +120,7 @@ from .run_status_sensor_definition import (
     run_status_sensor,
 )
 from .schedule_definition import (
+    DefaultScheduleStatus,
     ScheduleDefinition,
     ScheduleEvaluationContext,
     ScheduleExecutionContext,

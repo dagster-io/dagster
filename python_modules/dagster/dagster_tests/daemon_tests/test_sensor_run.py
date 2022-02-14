@@ -338,7 +338,7 @@ def workspace_load_target():
     return PythonFileTarget(
         python_file=__file__,
         attribute=None,
-        working_directory=os.getcwd(),
+        working_directory=os.path.dirname(__file__),
         location_name="test_location",
     )
 

@@ -8,7 +8,6 @@ from dagster.core.definitions.schedule_definition import ScheduleExecutionData
 from dagster.core.definitions.sensor_definition import RunRequest
 from dagster.core.scheduler.instigation import (
     InstigatorState,
-    InstigatorStatus,
     InstigatorTick,
     InstigatorType,
     ScheduleInstigatorData,
@@ -149,10 +148,7 @@ class GrapheneFutureInstigationTick(graphene.ObjectType):
         )
 
     def resolve_evaluationResult(self, graphene_info):
-        if self._job_state.status != InstigatorStatus.RUNNING:
-            return None
-
-        if self._job_state.job_type != InstigatorType.SCHEDULE:
+        if not self._job_state.is_running or self._job_state.job_type != InstigatorType.SCHEDULE:
             return None
 
         repository_origin = self._job_state.origin.external_repository_origin
@@ -168,6 +164,10 @@ class GrapheneFutureInstigationTick(graphene.ObjectType):
             return None
 
         repository = repository_location.get_repository(repository_origin.repository_name)
+
+        if not repository.has_external_schedule(self._job_state.name):
+            return None
+
         external_schedule = repository.get_external_schedule(self._job_state.name)
         timezone_str = external_schedule.execution_timezone
         if not timezone_str:
@@ -290,7 +290,11 @@ class GrapheneInstigationState(graphene.ObjectType):
             id=job_state.job_origin_id,
             name=job_state.name,
             instigationType=job_state.job_type,
-            status=job_state.status,
+            status=(
+                GrapheneInstigationStatus.RUNNING
+                if job_state.is_running
+                else GrapheneInstigationStatus.STOPPED
+            ),
         )
 
     def resolve_repositoryOrigin(self, _graphene_info):
@@ -368,7 +372,7 @@ class GrapheneInstigationState(graphene.ObjectType):
             return get_schedule_next_tick(graphene_info, self._job_state)
 
     def resolve_runningCount(self, _graphene_info):
-        return 1 if self._job_state.status == InstigatorStatus.RUNNING else 0
+        return 1 if self._job_state.is_running else 0
 
 
 class GrapheneInstigationStates(graphene.ObjectType):

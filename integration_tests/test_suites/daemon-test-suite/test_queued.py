@@ -28,7 +28,7 @@ def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_exa
     external_sensor = foo_example_repo.get_external_sensor("always_on_sensor")
     external_pipeline = foo_example_repo.get_full_external_pipeline("foo_pipeline")
 
-    instance.start_schedule_and_update_storage_state(external_schedule)
+    instance.start_schedule(external_schedule)
     instance.start_sensor(external_sensor)
 
     with start_daemon(timeout=180, workspace_file=file_relative_path(__file__, "repo.py")):
