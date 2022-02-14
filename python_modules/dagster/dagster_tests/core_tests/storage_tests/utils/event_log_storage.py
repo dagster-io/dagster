@@ -1304,11 +1304,12 @@ class TestEventLogStorage:
                 storage.store_event(event)
 
             # of_type
+            parsed = pendulum.from_timestamp(run_records[-1].update_timestamp)
             filtered_records = storage.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.PIPELINE_SUCCESS,
                     after_cursor=RunShardedEventsCursor(
-                        id=0, run_updated_after=run_records[-1].update_timestamp
+                        id=0, run_updated_after=parsed
                     ),  # events after first run
                 ),
                 ascending=True,
