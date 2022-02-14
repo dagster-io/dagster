@@ -4,7 +4,7 @@ import re
 from collections import namedtuple
 
 from airflow import DAG
-from airflow.operators import BaseOperator
+from airflow.models.baseoperator import BaseOperator
 from dagster import check, seven
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.execution.api import create_execution_plan
