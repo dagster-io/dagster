@@ -225,9 +225,15 @@
 - path: guides/dagster_pandas/tutorial2.png
   vetted: false
 
-- path: guides/dagster_pandera/columns.png
+- path: guides/dagster_pandera/schema.png
   defs_file: examples/docs_snippets/docs_snippets/integrations/pandera/example.py
   url: http://localhost:3000/workspace/__repository__stocks_job@example.py/jobs/stocks_job/?tab=types&typeName=StockPrices
   vetted: false
+
+- path: guides/dagster_pandera/error-report.png
+  defs_file: examples/docs_snippets/docs_snippets/integrations/pandera/example.py
+  url: http://localhost:3000/workspace/__repository__stocks_job@example.py/jobs/stocks_job/playground
+  vetted: false
   steps:
-    - run the job
+    - launch run
+    - click on failed "Step Output"
