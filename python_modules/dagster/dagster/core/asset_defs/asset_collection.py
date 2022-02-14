@@ -63,6 +63,10 @@ class AssetCollection(
             executor_def=executor_def,
         )
 
+    @property
+    def name(self) -> str:
+        return "__ASSET_COLLECTION"
+
 
 def _validate_resource_reqs_for_asset_collection(
     asset_list: Sequence[AssetsDefinition],

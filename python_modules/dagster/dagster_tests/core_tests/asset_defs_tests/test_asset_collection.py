@@ -33,7 +33,7 @@ def test_asset_collection_from_list():
 
     assert len(the_repo.get_all_jobs()) == 1
     asset_collection_underlying_job = the_repo.get_all_jobs()[0]
-    assert asset_collection_underlying_job.name == "__ASSET_COLLECTION"
+    assert asset_collection_underlying_job.name == collection.name
 
     result = asset_collection_underlying_job.execute_in_process()
     assert result.success
@@ -57,18 +57,18 @@ def test_asset_collection_foreign_asset():
     def the_manager():
         return MyIOManager()
 
+    collection = AssetCollection(
+        assets=[asset_depends_on_source],
+        source_assets=[foo_fa],
+        resource_defs={"the_manager": the_manager},
+    )
+
     @repository
     def the_repo():
-        return [
-            AssetCollection(
-                assets=[asset_depends_on_source],
-                source_assets=[foo_fa],
-                resource_defs={"the_manager": the_manager},
-            )
-        ]
+        return [collection]
 
     asset_collection_underlying_job = the_repo.get_all_jobs()[0]
-    assert asset_collection_underlying_job.name == "__ASSET_COLLECTION"
+    assert asset_collection_underlying_job.name == collection.name
 
     result = asset_collection_underlying_job.execute_in_process()
     assert result.success
@@ -83,12 +83,14 @@ def test_asset_collection_with_resources():
     def the_resource():
         return "foo"
 
+    collection = AssetCollection([asset_foo], resource_defs={"foo": the_resource})
+
     @repository
     def the_repo():
-        return [AssetCollection([asset_foo], resource_defs={"foo": the_resource})]
+        return [collection]
 
     asset_collection_underlying_job = the_repo.get_all_jobs()[0]
-    assert asset_collection_underlying_job.name == "__ASSET_COLLECTION"
+    assert asset_collection_underlying_job.name == collection.name
 
     result = asset_collection_underlying_job.execute_in_process()
     assert result.success
