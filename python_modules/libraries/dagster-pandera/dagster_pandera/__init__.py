@@ -1,4 +1,5 @@
 import itertools
+import re
 from typing import TYPE_CHECKING, Callable, List, Type, Union
 
 import dagster.check as check
@@ -207,8 +208,31 @@ def _pandera_column_to_table_column(pa_column: pa.Column) -> TableColumn:
     )
 
 
+CHECK_OPERATORS = {
+    "equal_to": "==",
+    "not_equal_to": "!=",
+    "greater_than_or_equal_to": "!=",
+    "less_than": "<",
+    "less_than_or_equal_to": "<=",
+    "greater_than": ">",
+    "greater_than_or_equal_to": ">=",
+    "in": "in",
+    "not_in": "not in",
+}
+
+
+def _extract_operand(error_str: str) -> str:
+    match = re.search(r"(?<=\().+(?=\))", error_str)
+    return match.group(0) if match else ""
+
+
 def _pandera_check_to_column_constraint(pa_check: pa.Check) -> str:
-    return pa_check.description or pa_check.error
+    if pa_check.description:
+        return pa_check.description
+    elif pa_check.name in CHECK_OPERATORS:
+        return f"{CHECK_OPERATORS[pa_check.name]} {_extract_operand(pa_check.error)}"
+    else:
+        return pa_check.error
 
 
 __all__ = [

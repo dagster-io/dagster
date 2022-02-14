@@ -127,14 +127,14 @@ def test_pandera_schema_to_dagster_type(schema):
                 type="int64",
                 description="a desc",
                 constraints=TableColumnConstraints(
-                    nullable=False, other=["less_than_or_equal_to(10)"]
+                    nullable=False, other=["<= 10"]
                 ),
             ),
             TableColumn(
                 name="b",
                 type="float64",
                 description="b desc",
-                constraints=TableColumnConstraints(nullable=False, other=["less_than(-1.2)"]),
+                constraints=TableColumnConstraints(nullable=False, other=["< -1.2"]),
             ),
             TableColumn(
                 name="c",
