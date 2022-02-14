@@ -163,7 +163,7 @@ export const MetadataEntry: React.FC<{
         </MetadataEntryLink>
       );
     case 'EventTableMetadataEntry':
-      return <>TableMetadata</>;
+      return null;
     case 'EventTableSchemaMetadataEntry':
       return <TableSchema schema={entry.schema} />;
     default:
