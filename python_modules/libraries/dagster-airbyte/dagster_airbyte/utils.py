@@ -1,7 +1,7 @@
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
-from dagster import EventMetadata, AssetMaterialization
-from dagster.core.definitions.event_metadata.table import TableSchema, TableColumn
+from dagster import AssetMaterialization, EventMetadata
+from dagster.core.definitions.event_metadata.table import TableColumn, TableSchema
 from dagster_airbyte.types import AirbyteOutput
 
 
