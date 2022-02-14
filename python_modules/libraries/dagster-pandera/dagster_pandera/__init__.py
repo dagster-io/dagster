@@ -1,18 +1,20 @@
 import itertools
-from typing import TYPE_CHECKING, Callable, Generator, Type, Union
+from typing import TYPE_CHECKING, Callable, List, Type, Union
 
 import dagster.check as check
-import dask
 import pandas as pd
 import pandera as pa
-from dagster import DagsterType, EventMetadataEntry, TypeCheck
-from dagster.core.definitions.event_metadata.table import (
+from dagster import (
+    DagsterType,
+    EventMetadataEntry,
+    TypeCheck,
     TableColumn,
     TableColumnConstraints,
+    TableConstraints,
     TableRecord,
     TableSchema,
+    TypeCheckContext,
 )
-from dagster.core.execution.context.system import TypeCheckContext
 from dagster.core.utils import check_dagster_package_version
 
 from .version import __version__
@@ -30,17 +32,7 @@ from .version import __version__
 # alternatives in the future. These sections are marked with "TODO: pending
 # alternative dataframe support".
 
-# TODO: pending alternative dataframe support
-# from pkg_resources import Requirement
-# from pkg_resources import working_set as pkg_resources_available
-
-
 if TYPE_CHECKING:
-    # TODO: pending alternative dataframe support
-    # import modin.pandas as mpd
-    # import databricks.koalas as ks
-    # import dask
-    # import ray
     ValidatableDataFrame = pd.DataFrame
 
 check_dagster_package_version("dagster-pandera", __version__)
@@ -49,17 +41,9 @@ check_dagster_package_version("dagster-pandera", __version__)
 # ##### VALID DATAFRAME CLASSES
 # ########################
 
-classes = [pd.DataFrame]
-
-# TODO: pending alternative dataframe support
-# if pkg_resources_available.find(Requirement.parse("modin")) is not None:
-#     from modin.pandas import DataFrame as ModinDataFrame
-#     classes.append(ModinDataFrame)
-# elif pkg_resources_available.find(Requirement.parse("koalas")) is not None:
-#     from databricks.koalas import DataFrame as KoalasDataFrame
-#     classes.append(KoalasDataFrame)
-
-VALID_DATAFRAME_CLASSES = tuple(classes)
+# This layer of indirection is used because we may support alternative dataframe classes in the
+# future.
+VALID_DATAFRAME_CLASSES = (pd.DataFrame,)
 
 
 # ########################
@@ -136,7 +120,11 @@ def _extract_name_from_pandera_schema(
     schema: Union[pa.DataFrameSchema, Type[pa.SchemaModel]],
 ) -> str:
     if isinstance(schema, type) and issubclass(schema, pa.SchemaModel):
-        return getattr(schema.Config, 'title', None) or getattr(schema.Config, 'name', None) or schema.__name__
+        return (
+            getattr(schema.Config, "title", None)
+            or getattr(schema.Config, "name", None)
+            or schema.__name__
+        )
     elif isinstance(schema, pa.DataFrameSchema):
         return schema.title or schema.name or next(_anonymous_schema_name_generator)
 
@@ -152,6 +140,11 @@ def _pandera_schema_to_type_check_fn(
                 schema.validate(value, lazy=True)
             except pa.errors.SchemaErrors as e:
                 return _pandera_errors_to_type_check(e, table_schema)
+            except Exception as e:
+                return TypeCheck(
+                    success=False,
+                    description=f"Unexpected error during validation: {e}",
+                )
         else:
             return TypeCheck(
                 success=False,
@@ -184,8 +177,19 @@ def _pandera_errors_to_type_check(
 
 
 def _pandera_schema_to_table_schema(schema: pa.DataFrameSchema) -> TableSchema:
+    df_constraints = _pandera_schema_wide_checks_to_table_constraints(schema.checks)
     columns = [_pandera_column_to_table_column(col) for k, col in schema.columns.items()]
-    return TableSchema(columns=columns)
+    return TableSchema(columns=columns, constraints=df_constraints)
+
+
+def _pandera_schema_wide_checks_to_table_constraints(
+    checks: List[Union[pa.Check, pa.Hypothesis]]
+) -> TableConstraints:
+    return TableConstraints(other=[_pandera_check_to_table_constraint(check) for check in checks])
+
+
+def _pandera_check_to_table_constraint(pa_check: Union[pa.Check, pa.Hypothesis]) -> str:
+    return pa_check.description or pa_check.error
 
 
 def _pandera_column_to_table_column(pa_column: pa.Column) -> TableColumn:
