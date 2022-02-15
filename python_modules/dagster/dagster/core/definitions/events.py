@@ -352,7 +352,7 @@ class AssetMaterialization(
         tags (Optional[Dict[str, str]]): (Experimental) Tag metadata for a given asset
             materialization.  Used for search and organization of the asset entry in the asset
             catalog in Dagit.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, MetadataValue]]]):
+        metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
@@ -553,7 +553,7 @@ class ExpectationResult(
         description (Optional[str]): A longer human-readable description of the expectation.
         metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the
             expectation.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, MetadataValue]]]):
+        metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
@@ -608,7 +608,7 @@ class TypeCheck(
         description (Optional[str]): A human-readable description of the type check.
         metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the
             type check.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, MetadataValue]]]):
+        metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
@@ -648,7 +648,7 @@ class Failure(Exception):
         description (Optional[str]): A human-readable description of the failure.
         metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the
             failure.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, MetadataValue]]]):
+        metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
             list, and one of the data classes returned by a MetadataValue static method.
