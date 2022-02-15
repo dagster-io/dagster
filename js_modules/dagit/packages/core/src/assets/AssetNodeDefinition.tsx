@@ -57,20 +57,6 @@ export const AssetNodeDefinition: React.FC<{
               maxHeight={260}
             />
           </Box>
-          {assetMetadata.length > 0 && (
-            <>
-              <Box
-                padding={{vertical: 16, horizontal: 24}}
-                border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
-                flex={{justifyContent: 'space-between', gap: 8}}
-              >
-                <Subheading>Metadata</Subheading>
-              </Box>
-              <Box padding={{top: 16, bottom: 4}} style={{flex: 1}}>
-                <AssetMetadataTable assetMetadata={assetMetadata} />
-              </Box>
-            </>
-          )}
           {assetNode.partitionDefinition && (
             <>
               <Box
@@ -119,6 +105,20 @@ export const AssetNodeDefinition: React.FC<{
           </Box>
           {assetType ? <DagsterTypeSummary type={assetType} /> : 'No type data provided.'}
         </Box>
+        {assetMetadata.length > 0 && (
+          <>
+            <Box
+              padding={{vertical: 16, horizontal: 24}}
+              border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+              flex={{justifyContent: 'space-between', gap: 8}}
+            >
+              <Subheading>Metadata</Subheading>
+            </Box>
+            <Box padding={{top: 16, bottom: 4}} style={{flex: 1}}>
+              <AssetMetadataTable assetMetadata={assetMetadata} />
+            </Box>
+          </>
+        )}
       </Box>
     </>
   );
