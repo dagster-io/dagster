@@ -1320,7 +1320,7 @@ def test_error_load_repository_location(instance):
                 InstigatorStatus.RUNNING,
                 ScheduleInstigatorData("0 0 * * *", pendulum.now("UTC").timestamp()),
             )
-            instance.add_job_state(schedule_state)
+            instance.add_instigator_state(schedule_state)
 
         initial_datetime = initial_datetime.add(seconds=1)
         with pendulum.test(initial_datetime):
@@ -1860,16 +1860,16 @@ def test_status_in_code_schedule(instance):
             assert len(instance.get_ticks(always_running_origin.get_id())) == 0
             assert len(instance.get_ticks(never_running_origin.get_id())) == 0
 
-            assert len(instance.all_stored_job_state()) == 0
+            assert len(instance.all_instigator_state()) == 0
 
             list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
 
             # No runs, but the job state is updated to set a checkpoing
             assert instance.get_runs_count() == 0
 
-            assert len(instance.all_stored_job_state()) == 1
+            assert len(instance.all_instigator_state()) == 1
 
-            instigator_state = instance.get_job_state(always_running_origin.get_id())
+            instigator_state = instance.get_instigator_state(always_running_origin.get_id())
 
             assert instigator_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
             assert (
@@ -1968,7 +1968,7 @@ def test_status_in_code_schedule(instance):
             )
             ticks = instance.get_ticks(always_running_origin.get_id())
             assert len(ticks) == 3
-            assert len(instance.all_stored_job_state()) == 0
+            assert len(instance.all_instigator_state()) == 0
 
 
 def test_change_default_status(instance):
@@ -1998,7 +1998,7 @@ def test_change_default_status(instance):
                 freeze_datetime.timestamp(),
             ),
         )
-        instance.add_job_state(schedule_state)
+        instance.add_instigator_state(schedule_state)
 
         freeze_datetime = freeze_datetime.add(days=2)
         with pendulum.test(freeze_datetime):
@@ -2016,7 +2016,7 @@ def test_change_default_status(instance):
             assert len(ticks) == 0
 
             # AUTOMATICALLY_RUNNING row has been removed from the database
-            instigator_state = instance.get_job_state(never_running_origin.get_id())
+            instigator_state = instance.get_instigator_state(never_running_origin.get_id())
             assert not instigator_state
 
             # schedule can still be manually started
@@ -2030,7 +2030,7 @@ def test_change_default_status(instance):
                     freeze_datetime.timestamp(),
                 ),
             )
-            instance.add_job_state(schedule_state)
+            instance.add_instigator_state(schedule_state)
 
             list(
                 launch_scheduled_runs(
