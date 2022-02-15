@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Alert, Box, ButtonLink, ColorsWIP, Spinner, Tab, Tabs} from '@dagster-io/ui';
+import {Alert, Box, ButtonLink, ColorsWIP, NonIdealState, Spinner, Tab, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {QueryCountdown} from '../app/QueryCountdown';
@@ -163,7 +163,13 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
           definition ? (
             <AssetNodeDefinition assetNode={definition} liveDataByNode={liveDataByNode} />
           ) : (
-            <span>No definition</span>
+            <Box padding={{vertical: 32}}>
+              <NonIdealState
+                title="No definition"
+                description="This asset doesn't have a software definition in any of your loaded repositories."
+                icon="materialization"
+              />
+            </Box>
           )
         ) : (
           <AssetEvents

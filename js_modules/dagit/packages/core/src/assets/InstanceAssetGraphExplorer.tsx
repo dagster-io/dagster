@@ -27,15 +27,7 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
       flex={{direction: 'column', justifyContent: 'stretch'}}
       style={{height: '100%', position: 'relative'}}
     >
-      <PageHeader
-        title={<Heading>Assets</Heading>}
-        right={
-          <Body color={ColorsWIP.Gray400} style={{marginTop: 4, marginRight: 12}}>
-            Note: Graph view only displays software defined assets currently loaded in your
-            workspace
-          </Body>
-        }
-      />
+      <PageHeader title={<Heading>Assets</Heading>} />
       <Box
         background={ColorsWIP.White}
         padding={{horizontal: 24, vertical: 8}}

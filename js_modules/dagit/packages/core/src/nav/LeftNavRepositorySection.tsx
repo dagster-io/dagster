@@ -3,6 +3,7 @@ import * as React from 'react';
 import {useLocation} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
+import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
@@ -17,10 +18,15 @@ const LoadedRepositorySection: React.FC<{
 }> = ({allRepos, visibleRepos, toggleVisible}) => {
   const location = useLocation();
   const workspacePath = location.pathname.split('/workspace/').pop();
-  const [, repoPath, , selector, tab] =
+  const [, repoPath, type, item, tab] =
     workspacePath?.match(
       /([^\/]+)\/(pipelines|jobs|solids|ops|sensors|schedules)\/([^\/]+)\/?([^\/]+)?/,
     ) || [];
+
+  const selector =
+    item && (type === 'pipelines' || type === 'jobs')
+      ? explorerPathFromString(item).pipelineName
+      : item;
 
   return (
     <Container>

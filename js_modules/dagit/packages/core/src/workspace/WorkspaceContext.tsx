@@ -227,7 +227,6 @@ export const useVisibleRepos = (
     }
   }, [allRepos, hiddenKeys]);
 
-  console.log(hiddenKeys, visibleOptions);
   return [visibleOptions, toggleVisible];
 };
 

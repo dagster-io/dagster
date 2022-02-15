@@ -48,7 +48,7 @@ export const AssetNodeDefinition: React.FC<{
             border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
             flex={{justifyContent: 'space-between', gap: 8}}
           >
-            <Subheading>Definition in Repository</Subheading>
+            <Subheading>Description</Subheading>
             <DefinitionLocation assetNode={assetNode} repoAddress={repoAddress} />
           </Box>
           <Box padding={{vertical: 16, horizontal: 24}} style={{flex: 1, minHeight: 120}}>

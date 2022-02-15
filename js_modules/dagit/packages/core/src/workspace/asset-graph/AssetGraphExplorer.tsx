@@ -12,11 +12,16 @@ import {SVGViewport} from '../../graph/SVGViewport';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {
   GraphExplorerOptions,
-  PathOverlay,
+  OptionsOverlay,
+  QueryOverlay,
   RightInfoPanel,
   RightInfoPanelContent,
 } from '../../pipelines/GraphExplorer';
-import {EmptyDAGNotice, LargeDAGNotice} from '../../pipelines/GraphNotices';
+import {
+  EmptyDAGNotice,
+  EntirelyFilteredDAGNotice,
+  LargeDAGNotice,
+} from '../../pipelines/GraphNotices';
 import {ExplorerPath} from '../../pipelines/PipelinePathUtils';
 import {SidebarPipelineOrJobOverview} from '../../pipelines/SidebarPipelineOrJobOverview';
 import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
@@ -59,29 +64,6 @@ interface Props {
 
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
-}
-
-function buildGraphQueryItems(nodes: AssetNode[]) {
-  const items: {
-    [name: string]: GraphQueryItem & {
-      node: AssetNode;
-    };
-  } = {};
-
-  for (const node of nodes) {
-    const name = tokenForAssetKey(node.assetKey);
-    items[name] = {
-      node: node,
-      name: name,
-      inputs: node.dependencyKeys.map((key) => ({
-        dependsOn: [{solid: {name: tokenForAssetKey(key)}}],
-      })),
-      outputs: node.dependedByKeys.map((key) => ({
-        dependedBy: [{solid: {name: tokenForAssetKey(key)}}],
-      })),
-    };
-  }
-  return Object.values(items);
 }
 
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
@@ -294,6 +276,13 @@ const AssetGraphExplorerWithData: React.FC<
       firstMinSize={600}
       first={
         <>
+          {graphQueryItems.length === 0 ? (
+            <EmptyDAGNotice nodeType="asset" isGraph />
+          ) : Object.keys(assetGraphData.nodes).length === 0 ? (
+            <EntirelyFilteredDAGNotice nodeType="asset" />
+          ) : applyingEmptyDefault ? (
+            <LargeDAGNotice nodeType="asset" />
+          ) : undefined}
           <SVGViewport
             ref={(r) => (viewportEl.current = r || undefined)}
             interactor={SVGViewport.Interactors.PanAndZoom}
@@ -355,14 +344,8 @@ const AssetGraphExplorerWithData: React.FC<
             )}
           </SVGViewport>
 
-          {Object.keys(assetGraphData.nodes).length === 0 ? (
-            <EmptyDAGNotice nodeType="asset" isGraph />
-          ) : applyingEmptyDefault ? (
-            <LargeDAGNotice nodeType="asset" />
-          ) : undefined}
-
           {setOptions && (
-            <PathOverlay>
+            <OptionsOverlay>
               <Checkbox
                 format="switch"
                 label="View as Asset Graph"
@@ -384,11 +367,11 @@ const AssetGraphExplorerWithData: React.FC<
                   });
                 }}
               />
-            </PathOverlay>
+            </OptionsOverlay>
           )}
 
           <Box
-            flex={{alignItems: 'center', gap: 8}}
+            flex={{alignItems: 'center', gap: 12}}
             style={{position: 'absolute', right: 12, top: 12}}
           >
             <QueryCountdown pollInterval={5 * 1000} queryResult={liveDataQueryResult} />
@@ -406,14 +389,15 @@ const AssetGraphExplorerWithData: React.FC<
               )}
             />
           </Box>
-          <AssetQueryInputContainer>
+          <QueryOverlay>
             <GraphQueryInput
               items={graphQueryItems}
               value={explorerPath.opsQuery}
               placeholder="Type an asset subset…"
               onChange={(opsQuery) => onChangeExplorerPath({...explorerPath, opsQuery}, 'replace')}
+              popoverPosition="bottom-left"
             />
-          </AssetQueryInputContainer>
+          </QueryOverlay>
         </>
       }
       second={
@@ -484,15 +468,7 @@ const SVGContainer = styled.svg`
   border-radius: 0;
 `;
 
-const AssetQueryInputContainer = styled.div`
-  z-index: 2;
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
-  display: flex;
-`;
+// Helpers
 
 const isNodeOffscreen = (
   layoutNode: {x: number; y: number; width: number; height: number},
@@ -553,6 +529,29 @@ const opsInRange = (
     }
   }
   return uniq(ledToTarget);
+};
+
+const buildGraphQueryItems = (nodes: AssetNode[]) => {
+  const items: {
+    [name: string]: GraphQueryItem & {
+      node: AssetNode;
+    };
+  } = {};
+
+  for (const node of nodes) {
+    const name = tokenForAssetKey(node.assetKey);
+    items[name] = {
+      node: node,
+      name: name,
+      inputs: node.dependencyKeys.map((key) => ({
+        dependsOn: [{solid: {name: tokenForAssetKey(key)}}],
+      })),
+      outputs: node.dependedByKeys.map((key) => ({
+        dependedBy: [{solid: {name: tokenForAssetKey(key)}}],
+      })),
+    };
+  }
+  return Object.values(items);
 };
 
 const titleForLaunch = (nodes: Node[], liveDataByNode: LiveData) => {
