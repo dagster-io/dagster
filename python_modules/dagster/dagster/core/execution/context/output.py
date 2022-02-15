@@ -6,7 +6,9 @@ from dagster.core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
+    EventMetadataEntry,
     Materialization,
+    PartitionMetadataEntry,
 )
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
@@ -104,6 +106,9 @@ class OutputContext:
 
         self._events: List["DagsterEvent"] = []
         self._user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]] = []
+        self._metadata_entries: Optional[
+            List[Union[EventMetadataEntry, PartitionMetadataEntry]]
+        ] = None
 
     def __enter__(self):
         if self._resources_cm:
@@ -458,6 +463,45 @@ class OutputContext:
         """
 
         return self._user_events
+
+    def add_output_metadata(self, metadata: Dict[str, Any]) -> None:
+        """Add a dictionary of metadata to the handled output.
+
+        Metadata entries added will show up in the HANDLED_OUTPUT and ASSET_MATERIALIZATION events for the run.
+
+        Args:
+            metadata (Dict[str, Any]): A metadata dictionary to log
+
+        Examples:
+
+        .. code-block:: python
+
+            from dagster import IOManager
+
+            class MyIOManager(IOManager):
+                def handle_output(self, context, obj):
+                    context.add_output_metadata({"foo": "bar"})
+        """
+        from dagster.core.definitions.event_metadata import parse_metadata
+
+        self._metadata_entries = parse_metadata(metadata, [])
+
+    def get_logged_metadata_entries(
+        self,
+    ) -> List[Union[EventMetadataEntry, PartitionMetadataEntry]]:
+        """Get the list of metadata entries that have been logged for use with this output."""
+        return self._metadata_entries or []
+
+    def consume_logged_metadata_entries(
+        self,
+    ) -> List[Union[EventMetadataEntry, PartitionMetadataEntry]]:
+        """Pops and yields all user-generated metadata entries that have been recorded from this context.
+
+        If consume_logged_metadata_entries has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_logged_metadata_entries has been called, it will yield all events since the last time consume_logged_metadata_entries was called. Designed for internal use. Users should never need to invoke this method.
+        """
+        result = self._metadata_entries
+        self._metadata_entries = []
+        return result or []
 
 
 def get_output_context(

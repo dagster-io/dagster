@@ -58,7 +58,7 @@ class TestNextTickRepository(
         selector = infer_instigation_selector(graphql_context, schedule_name)
 
         # need to be running in order to generate a future tick
-        graphql_context.instance.start_schedule_and_update_storage_state(external_schedule)
+        graphql_context.instance.start_schedule(external_schedule)
         result = execute_dagster_graphql(
             graphql_context, INSTIGATION_QUERY, variables={"instigationSelector": selector}
         )

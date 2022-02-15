@@ -1,6 +1,6 @@
 import graphene
 from dagster import AssetKey, check
-from dagster.core.host_representation import ExternalRepository
+from dagster.core.host_representation import ExternalRepository, RepositoryLocation
 from dagster.core.host_representation.external_data import (
     ExternalAssetNode,
     ExternalStaticPartitionsDefinitionData,
@@ -24,7 +24,17 @@ class GrapheneAssetDependency(graphene.ObjectType):
     inputName = graphene.NonNull(graphene.String)
     asset = graphene.NonNull("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
 
-    def __init__(self, external_repository, input_name, asset_key, materialization_loader=None):
+    def __init__(
+        self,
+        repository_location,
+        external_repository,
+        input_name,
+        asset_key,
+        materialization_loader=None,
+    ):
+        self._repository_location = check.inst_param(
+            repository_location, "repository_location", RepositoryLocation
+        )
         self._external_repository = check.inst_param(
             external_repository, "external_repository", ExternalRepository
         )
@@ -36,6 +46,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
 
     def resolve_asset(self, _graphene_info):
         return GrapheneAssetNode(
+            self._repository_location,
             self._external_repository,
             self._external_repository.get_external_asset_node(self._asset_key),
             self._latest_materialization_loader,
@@ -74,10 +85,16 @@ class GrapheneAssetNode(graphene.ObjectType):
 
     def __init__(
         self,
+        repository_location,
         external_repository,
         external_asset_node,
         materialization_loader=None,
     ):
+        self._repository_location = check.inst_param(
+            repository_location,
+            "repository_location",
+            RepositoryLocation,
+        )
         self._external_repository = check.inst_param(
             external_repository, "external_repository", ExternalRepository
         )
@@ -95,19 +112,20 @@ class GrapheneAssetNode(graphene.ObjectType):
             description=external_asset_node.op_description,
         )
 
+    @property
+    def repository_location(self):
+        return self._repository_location
+
+    @property
+    def external_repository(self):
+        return self._external_repository
+
     def get_external_asset_node(self):
         return self._external_asset_node
 
-    def get_external_repository(self):
-        return self._external_repository
-
     def resolve_repository(self, graphene_info):
-        loc = None
-        for location in graphene_info.context.repository_locations:
-            if self._external_repository in location.get_repositories().values():
-                loc = location
         return external.GrapheneRepository(
-            graphene_info.context.instance, self._external_repository, loc
+            graphene_info.context.instance, self._external_repository, self._repository_location
         )
 
     def resolve_dependencies(self, graphene_info):
@@ -120,6 +138,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         return [
             GrapheneAssetDependency(
+                repository_location=self._repository_location,
                 external_repository=self._external_repository,
                 input_name=dep.input_name,
                 asset_key=dep.upstream_asset_key,
@@ -139,6 +158,7 @@ class GrapheneAssetNode(graphene.ObjectType):
 
         return [
             GrapheneAssetDependency(
+                repository_location=self._repository_location,
                 external_repository=self._external_repository,
                 input_name=dep.input_name,
                 asset_key=dep.downstream_asset_key,

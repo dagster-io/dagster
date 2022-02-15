@@ -40,6 +40,7 @@
     "react": "17.0.1",
     "react-dom": "17.0.1",
     "react-intersection-observer": "^8.31.0",
+    "react-medium-image-zoom": "^4.3.5",
     "react-use": "^17.1.0",
     "rehype-add-classes": "^1.0.0",
     "rehype-autolink-headings": "^5.0.1",

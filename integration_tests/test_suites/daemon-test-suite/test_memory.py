@@ -56,7 +56,7 @@ def workspace_load_target():
     return PythonFileTarget(
         python_file=__file__,
         attribute=None,
-        working_directory=os.getcwd(),
+        working_directory=os.path.dirname(__file__),
         location_name=None,
     )
 
@@ -87,7 +87,7 @@ def test_no_memory_leaks():
         external_schedule = repo.get_external_schedule("always_run_schedule")
         external_sensor = repo.get_external_sensor("always_on_sensor")
 
-        instance.start_schedule_and_update_storage_state(external_schedule)
+        instance.start_schedule(external_schedule)
         instance.start_sensor(external_sensor)
 
         with daemon_controller_from_instance(

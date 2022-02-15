@@ -1,6 +1,5 @@
 import os
 import sys
-from contextlib import contextmanager
 
 import pytest
 from dagster.core.test_utils import create_test_daemon_workspace, instance_for_test
@@ -25,11 +24,11 @@ def instance_fixture(instance_session_scoped):
     yield instance_session_scoped
 
 
-def workspace_load_target():
+def workspace_load_target(attribute="the_repo"):
     return ModuleTarget(
         module_name="dagster_tests.scheduler_tests.test_scheduler_run",
-        attribute=None,
-        working_directory=os.getcwd(),
+        attribute=attribute,
+        working_directory=os.path.dirname(__file__),
         location_name="test_location",
     )
 
@@ -40,18 +39,11 @@ def workspace_fixture(instance_session_scoped):  # pylint: disable=unused-argume
         yield workspace
 
 
-@contextmanager
-def default_repo():
-    load_target = workspace_load_target()
-    origin = load_target.create_origins()[0]
-    with origin.create_single_location() as location:
-        yield location.get_repository("the_repo")
-
-
 @pytest.fixture(name="external_repo", scope="session")
 def external_repo_fixture(workspace):  # pylint: disable=unused-argument
-    with default_repo() as repo:
-        yield repo
+    return next(
+        iter(workspace.get_workspace_snapshot().values())
+    ).repository_location.get_repository("the_repo")
 
 
 def loadable_target_origin():
@@ -59,4 +51,5 @@ def loadable_target_origin():
         executable_path=sys.executable,
         module_name="dagster_tests.scheduler_tests.test_scheduler_run",
         working_directory=os.getcwd(),
+        attribute="the_repo",
     )

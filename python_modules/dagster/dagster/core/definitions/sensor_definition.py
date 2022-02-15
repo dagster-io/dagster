@@ -1,5 +1,6 @@
 import inspect
 from contextlib import ExitStack
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -36,6 +37,13 @@ from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster.core.events.log import EventLogEntry
+
+
+@whitelist_for_serdes
+class DefaultSensorStatus(Enum):
+    RUNNING = "RUNNING"
+    STOPPED = "STOPPED"
+
 
 DEFAULT_SENSOR_DAEMON_INTERVAL = 30
 
@@ -159,6 +167,8 @@ class SensorDefinition:
         description (Optional[str]): A human-readable description of the sensor.
         job (Optional[GraphDefinition, JobDefinition]): The job to execute when this sensor fires.
         jobs (Optional[Sequence[GraphDefinition, JobDefinition]]): (experimental) A list of jobs to execute when this sensor fires.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     def __init__(
@@ -175,6 +185,7 @@ class SensorDefinition:
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, JobDefinition]] = None,
         jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+        default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
 
         if job and jobs:
@@ -228,6 +239,9 @@ class SensorDefinition:
         )
         self._description = check.opt_str_param(description, "description")
         self._targets = check.opt_list_param(targets, "targets", (DirectTarget, RepoRelativeTarget))
+        self._default_status = check.inst_param(
+            default_status, "default_status", DefaultSensorStatus
+        )
 
     def __call__(self, *args, **kwargs):
         context_provided = is_context_provided(get_function_params(self._raw_fn))
@@ -409,6 +423,10 @@ class SensorDefinition:
     def mode(self) -> Optional[str]:
         return self._target.mode if self._target else None
 
+    @property
+    def default_status(self) -> DefaultSensorStatus:
+        return self._default_status
+
 
 @whitelist_for_serdes
 class SensorExecutionData(
@@ -538,7 +556,8 @@ class AssetSensorDefinition(SensorDefinition):
         description (Optional[str]): A human-readable description of the sensor.
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job object to target with this sensor.
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental) A list of jobs to be executed when the sensor fires.
-
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     def __init__(
@@ -556,6 +575,7 @@ class AssetSensorDefinition(SensorDefinition):
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, JobDefinition]] = None,
         jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+        default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
         self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
 
@@ -602,6 +622,7 @@ class AssetSensorDefinition(SensorDefinition):
             description=description,
             job=job,
             jobs=jobs,
+            default_status=default_status,
         )
 
     @property

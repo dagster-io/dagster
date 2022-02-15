@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, Group, IconWIP, NonIdealState, Table, Mono} from '@dagster-io/ui';
+import {Box, ColorsWIP, Group, IconWIP, Mono, NonIdealState, Table} from '@dagster-io/ui';
 import {gql} from 'graphql.macro';
 import qs from 'qs';
 import * as React from 'react';
@@ -6,8 +6,8 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Timestamp} from '../app/time/Timestamp';
+import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {__REPOSITORY_MEGA_JOB} from '../workspace/asset-graph/Utils';

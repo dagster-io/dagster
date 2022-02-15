@@ -466,7 +466,7 @@ def _get_output_asset_materializations(
     all_metadata = output.metadata_entries + io_manager_metadata_entries
 
     if asset_partitions:
-        metadata_mapping: Dict[str, List["EventMetadataEntry"]] = {
+        metadata_mapping: Dict[str, List[Union[EventMetadataEntry, PartitionMetadataEntry]]] = {
             partition: [] for partition in asset_partitions
         }
         for entry in all_metadata:
@@ -496,9 +496,7 @@ def _get_output_asset_materializations(
                     f"Output {output_def.name} got a PartitionMetadataEntry ({entry}), but "
                     "is not associated with any specific partitions."
                 )
-        yield AssetMaterialization(
-            asset_key=asset_key, metadata_entries=cast(List["EventMetadataEntry"], all_metadata)
-        )
+        yield AssetMaterialization(asset_key=asset_key, metadata_entries=all_metadata)
 
 
 def _store_output(
@@ -513,7 +511,7 @@ def _store_output(
     output_context = step_context.get_output_context(step_output_handle)
 
     manager_materializations = []
-    manager_metadata_entries = []
+    manager_metadata_entries: List[Union[PartitionMetadataEntry, EventMetadataEntry]] = []
 
     # output_manager.handle_output is either a generator function, or a normal function with or
     # without a return value. In the case that handle_output is a normal function, we need to
@@ -548,6 +546,8 @@ def _store_output(
     ):
         for event in output_context.consume_events():
             yield event
+
+        manager_metadata_entries.extend(output_context.consume_logged_metadata_entries())
         if isinstance(elt, DagsterEvent):
             yield elt
         elif isinstance(elt, AssetMaterialization):
@@ -566,8 +566,23 @@ def _store_output(
 
     for event in output_context.consume_events():
         yield event
+
+    manager_metadata_entries.extend(output_context.consume_logged_metadata_entries())
     # do not alter explicitly created AssetMaterializations
     for materialization in manager_materializations:
+        if materialization.metadata_entries and manager_metadata_entries:
+            raise DagsterInvariantViolationError(
+                f"When handling output '{output_context.name}' of {output_context.solid_def.node_type_str} '{output_context.solid_def.name}', received a materialization with metadata, while context.add_output_metadata was used within the same call to handle_output. Due to potential conflicts, this is not allowed. Please specify metadata in one place within the `handle_output` function."
+            )
+        if manager_metadata_entries:
+            materialization = AssetMaterialization(
+                asset_key=materialization.asset_key,
+                description=materialization.description,
+                metadata_entries=manager_metadata_entries,
+                partition=materialization.partition,
+                tags=materialization.tags,
+                metadata=None,
+            )
         yield DagsterEvent.asset_materialization(step_context, materialization, input_lineage)
 
     asset_key, partitions = _asset_key_and_partitions_for_output(

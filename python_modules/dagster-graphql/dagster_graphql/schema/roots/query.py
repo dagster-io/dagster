@@ -434,7 +434,10 @@ class GrapheneDagitQuery(graphene.ObjectType):
             repo = repo_loc.get_repository(repo_sel.repository_name)
             external_asset_nodes = repo.get_external_asset_nodes(pipeline_name)
             results = (
-                [GrapheneAssetNode(repo, asset_node) for asset_node in external_asset_nodes]
+                [
+                    GrapheneAssetNode(repo_loc, repo, asset_node)
+                    for asset_node in external_asset_nodes
+                ]
                 if external_asset_nodes
                 else []
             )
@@ -452,7 +455,8 @@ class GrapheneDagitQuery(graphene.ObjectType):
         )
         return [
             GrapheneAssetNode(
-                node.get_external_repository(),
+                node.repository_location,
+                node.external_repository,
                 node.get_external_asset_node(),
                 materialization_loader=materialization_loader,
             )

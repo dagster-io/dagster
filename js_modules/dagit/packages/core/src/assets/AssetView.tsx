@@ -73,7 +73,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       },
     },
     notifyOnNetworkStatusChange: true,
-    pollInterval: 5 * 1000,
+    pollInterval: 15 * 1000,
   });
 
   let liveDataByNode: LiveData = {};

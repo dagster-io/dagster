@@ -3,8 +3,8 @@ import {ButtonWIP, IconWIP, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {MetadataEntries} from '../runs/MetadataEntry';
-import {MetadataEntryFragment} from '../runs/types/MetadataEntryFragment';
+import {MetadataEntries} from '../metadata/MetadataEntry';
+import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
 import {ErrorSource} from '../types/globalTypes';
 
 import {PythonErrorFragment} from './types/PythonErrorFragment';

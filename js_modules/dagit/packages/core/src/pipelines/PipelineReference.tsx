@@ -13,10 +13,11 @@ export interface Props {
   isJob: boolean;
   snapshotId?: string | null;
   showIcon?: boolean;
+  truncationThreshold?: number;
   size?: 'small' | 'normal';
 }
 
-const TRUNCATION_THRESHOLD = 40;
+const DEFAULT_TRUNCATION_THRESHOLD = 40;
 const TRUNCATION_BUFFER = 5;
 
 export const PipelineReference: React.FC<Props> = ({
@@ -25,11 +26,12 @@ export const PipelineReference: React.FC<Props> = ({
   isJob,
   snapshotId,
   showIcon,
+  truncationThreshold = DEFAULT_TRUNCATION_THRESHOLD,
   size = 'normal',
 }) => {
   const truncatedName =
-    pipelineName.length > TRUNCATION_THRESHOLD
-      ? `${pipelineName.slice(0, TRUNCATION_THRESHOLD - TRUNCATION_BUFFER)}…`
+    truncationThreshold > 0 && pipelineName.length > truncationThreshold
+      ? `${pipelineName.slice(0, truncationThreshold - TRUNCATION_BUFFER)}…`
       : pipelineName;
 
   const pipeline =
