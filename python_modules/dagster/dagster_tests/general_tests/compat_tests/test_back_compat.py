@@ -24,6 +24,7 @@ from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.events import DagsterEvent
 from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance, InstanceRef
+from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus
@@ -37,7 +38,6 @@ from dagster.serdes.serdes import (
     serialize_value,
 )
 from dagster.utils.test import copy_directory
-from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick
 
 
 def _migration_regex(warning, current_revision, expected_revision=None):
