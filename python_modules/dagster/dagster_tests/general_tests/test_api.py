@@ -8,5 +8,9 @@ def test_all():
     for each in dagster.__all__:
         assert each in dagster_dir
     for exported in dagster_dir:
-        if not exported.startswith("_") and not inspect.ismodule(getattr(dagster, exported)):
+        if (
+            not exported.startswith("_")
+            and not inspect.ismodule(getattr(dagster, exported))
+            and not exported in dagster._DEPRECATED
+        ):
             assert exported in dagster.__all__
