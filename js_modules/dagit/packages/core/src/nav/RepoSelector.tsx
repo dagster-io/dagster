@@ -16,18 +16,28 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
-import {DagsterRepoOption} from '../workspace/WorkspaceContext';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
 
+export interface RepoSelectorOption {
+  repositoryLocation: {name: string};
+  repository: {
+    name: string;
+    displayMetadata: {
+      key: string;
+      value: string;
+    }[];
+  };
+}
+
 interface Props {
   onBrowse: () => void;
   onToggle: (repoAddress: RepoAddress) => void;
-  options: DagsterRepoOption[];
-  selected: DagsterRepoOption[];
+  options: RepoSelectorOption[];
+  selected: RepoSelectorOption[];
 }
 
 export const RepoSelector: React.FC<Props> = (props) => {

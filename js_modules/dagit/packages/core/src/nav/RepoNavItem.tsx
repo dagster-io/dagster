@@ -17,18 +17,17 @@ import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {DagsterRepoOption} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
-import {RepoSelector} from './RepoSelector';
+import {RepoSelector, RepoSelectorOption} from './RepoSelector';
 
 interface Props {
-  allRepos: DagsterRepoOption[];
-  selected: DagsterRepoOption[];
+  allRepos: RepoSelectorOption[];
+  selected: RepoSelectorOption[];
   onToggle: (repoAddress: RepoAddress) => void;
 }
 
@@ -98,7 +97,7 @@ export const RepoNavItem: React.FC<Props> = (props) => {
   );
 };
 
-const SingleRepoSummary: React.FC<{repo: DagsterRepoOption}> = ({repo}) => {
+const SingleRepoSummary: React.FC<{repo: RepoSelectorOption}> = ({repo}) => {
   const repoAddress = buildRepoAddress(repo.repository.name, repo.repositoryLocation.name);
   const {canReloadRepositoryLocation} = usePermissions();
   return (
