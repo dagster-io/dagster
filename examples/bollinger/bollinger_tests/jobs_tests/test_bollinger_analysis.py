@@ -10,5 +10,4 @@ def test_bollinger_analysis():
         resource_defs={"io_manager": local_csv_io_manager},
     )
     result = bollinger_sda.execute_in_process()
-    result.asset_materializations_for_node
-    assert True
+    assert result.asset_materializations_for_node

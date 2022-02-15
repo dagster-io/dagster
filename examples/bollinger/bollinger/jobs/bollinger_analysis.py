@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 from dagster import asset, build_assets_job
 
 from ..lib import (
