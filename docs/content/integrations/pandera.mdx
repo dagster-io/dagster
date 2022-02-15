@@ -9,7 +9,7 @@ The `dagster-pandera` integration library provides an API for generating [Dagste
 
 <Note>
   Though Pandera currently supports validation on DataFrames from a variety of
-  Pandas alternatives (e.g. Dask, Modin, Koalas), at this time `dagster-pandera`
+  Pandas alternatives (e.g. Dask, Modin, Koalas), at this time <code>dagster-pandera</code>
   only supports Pandas dataframes.
 </Note>
 
@@ -64,8 +64,8 @@ Let's look at this job in `dagit`:
 <Image
 alt="PLACEHOLDER"
 src="/images/guides/dagster_pandera/schema.png"
-width={3574}
-height={2020}
+width={2662}
+height={1748}
 />
 
 Notice that information from the `StockPrices` Pandera schema is rendered in the asset detail area of the right sidebar. This is possible because `pandera_schema_to_dagster_type` extracts this information from the Pandera schema and attaches it to the returned Dagster type.
@@ -75,8 +75,8 @@ If we try to run `stocks_job` our run will fail. This is expected-- our (dirty) 
 <Image
 alt="PLACEHOLDER"
 src="/images/guides/dagster_pandera/error-report.png"
-width={3574}
-height={2020}
+width={2662}
+height={1748}
 />
 
 And that's it! In summary, `dagster-pandera`'s dead simple API provides:
