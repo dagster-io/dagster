@@ -3,6 +3,7 @@ from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Sh
 from dagster.config.config_schema import ConfigSchema
 from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.asset_defs import (
+    AssetCollection,
     AssetIn,
     AssetsDefinition,
     ForeignAsset,
@@ -248,6 +249,7 @@ from dagster.config.source import BoolSource, StringSource, IntSource  # isort:s
 
 __all__ = [
     # Definition
+    "AssetCollection",
     "AssetKey",
     "AssetIn",
     "AssetMaterialization",
