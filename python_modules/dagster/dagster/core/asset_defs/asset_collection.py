@@ -1,12 +1,12 @@
 import re
-from typing import List, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 from dagster import check
 from dagster.utils import merge_dicts
 
 from ..definitions.executor_definition import ExecutorDefinition
-from ..definitions.job_definition import JobDefinition, get_subselected_graph_definition
-from ..definitions.mode import ModeDefinition
+from ..definitions.job_definition import JobDefinition
+from ..definitions.op_definition import OpDefinition
 from ..definitions.resource_definition import ResourceDefinition
 from ..errors import DagsterInvalidDefinitionError
 from .asset import AssetsDefinition
@@ -76,9 +76,10 @@ class AssetCollection(
         name: str,
         selection: Optional[Union[str, List[str]]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
+        tags: Optional[Dict[str, Any]] = None,
         description: Optional[str] = None,
     ) -> JobDefinition:
-        from dagster.core.selector.subset_selector import parse_op_selection, OpSelectionData
+        from dagster.core.selector.subset_selector import parse_op_selection
 
         check.str_param(name, "name")
 
@@ -95,48 +96,39 @@ class AssetCollection(
             executor_def=self.executor_def,
         )
 
-        orig_mode_def = mega_job_def.get_mode_definition()
-        mode_def = ModeDefinition(
-            resource_defs=orig_mode_def.resource_defs,
-            logger_defs=orig_mode_def.loggers,
-            executor_defs=[executor_def or orig_mode_def.executor_defs[0]],
-        )
-
         if selection:
             op_selection = self._parse_asset_selection(selection, job_name=name)
+            # just mooching off of the logic here
             resolved_op_selection_dict = parse_op_selection(mega_job_def, op_selection)
 
-            op_selection_data: Optional[OpSelectionData] = OpSelectionData(
-                op_selection=op_selection,
-                resolved_op_selection=set(
-                    resolved_op_selection_dict.keys()
-                ),  # equivalent to solids_to_execute. currently only gets top level nodes.
-                parent_job_def=mega_job_def,  # used by pipeline snapshot lineage
-            )
+            included_assets = []
+            excluded_assets = list(self.source_assets)
 
-            graph = get_subselected_graph_definition(mega_job_def.graph, resolved_op_selection_dict)
+            op_names = set(list(resolved_op_selection_dict.keys()))
+
+            for asset in self.assets:
+                if asset.op.name in op_names:
+                    included_assets.append(asset)
+                else:
+                    excluded_assets.append(asset)
         else:
-            op_selection_data = None
-            graph = mega_job_def.graph
+            included_assets = cast(List[AssetsDefinition], self.assets)
+            excluded_assets = list(self.source_assets)
 
-        job_def = JobDefinition(
+        return build_assets_job(
             name=name,
+            assets=included_assets,
+            source_assets=excluded_assets,
+            resource_defs=self.resource_defs,
+            executor_def=self.executor_def,
             description=description,
-            mode_def=mode_def,
-            preset_defs=mega_job_def.preset_defs,
-            tags=mega_job_def.tags,
-            hook_defs=mega_job_def.hook_defs,
-            op_retry_policy=mega_job_def._solid_retry_policy,  # pylint: disable=protected-access
-            graph_def=graph,
-            version_strategy=mega_job_def.version_strategy,
-            _op_selection_data=op_selection_data,
+            tags=tags,
         )
-        return job_def
 
-    def _parse_asset_selection(self, selection, job_name):
+    def _parse_asset_selection(self, selection, job_name) -> List[str]:
         """Convert selection over asset key to selection over ops"""
 
-        asset_keys_to_ops = dict()
+        asset_keys_to_ops: Dict[str, List[OpDefinition]] = {}
 
         if isinstance(selection, str):
             selection = [selection]
@@ -146,7 +138,6 @@ class AssetCollection(
 
         source_asset_keys = set()
         for asset in self.assets:
-            # Assume that if a user subselects a source asset, that they want to re-load all inputs that may result from that source asset.
             for asset_key in asset.asset_keys:
                 asset_key_as_str = ".".join([piece for piece in asset_key.path])
                 if not asset_key_as_str in asset_keys_to_ops:
@@ -154,8 +145,13 @@ class AssetCollection(
                 asset_keys_to_ops[asset_key_as_str].append(asset.op)
 
         for asset in self.source_assets:
-            asset_key_as_str = ".".join([piece for piece in asset.key.path])
-            source_asset_keys.add(asset_key_as_str)
+            if isinstance(asset, ForeignAsset):
+                asset_key_as_str = ".".join([piece for piece in asset.key.path])
+                source_asset_keys.add(asset_key_as_str)
+            else:
+                for asset_key in asset.asset_keys:
+                    asset_key_as_str = ".".join([piece for piece in asset_key.path])
+                    source_asset_keys.add(asset_key_as_str)
 
         op_selection = []
 
@@ -169,16 +165,16 @@ class AssetCollection(
                 raise DagsterInvalidDefinitionError(
                     f"When attempting to create job '{job_name}', the clause {clause} within the asset key selection was invalid. Please review the selection syntax here (imagine there is a link here to the docs)."
                 )
-            upstream_part, asset_key, downstream_part = parts
-            if asset_key in source_asset_keys:
+            upstream_part, key_str, downstream_part = parts
+            if key_str in source_asset_keys:
                 raise DagsterInvalidDefinitionError(
-                    f"When attempting to create job '{job_name}', the clause '{clause}' selects asset_key '{asset_key}', which comes from a source asset. Source assets can't be materialized, and therefore can't be subsetted into a job. Please choose a subset on asset keys that are materializable - that is, included on assets within the collection. Valid assets: {list(asset_keys_to_ops.keys())}"
+                    f"When attempting to create job '{job_name}', the clause '{clause}' selects asset_key '{key_str}', which comes from a source asset. Source assets can't be materialized, and therefore can't be subsetted into a job. Please choose a subset on asset keys that are materializable - that is, included on assets within the collection. Valid assets: {list(asset_keys_to_ops.keys())}"
                 )
-            if asset_key not in asset_keys_to_ops:
+            if key_str not in asset_keys_to_ops:
                 raise DagsterInvalidDefinitionError(
                     f"When attempting to create job '{job_name}', the clause '{clause}' within the asset key selection did not match any asset keys. Present asset keys: {list(asset_keys_to_ops.keys())}"
                 )
-            for op in asset_keys_to_ops[asset_key]:
+            for op in asset_keys_to_ops[key_str]:
 
                 op_clause = f"{upstream_part}{op.name}{downstream_part}"
                 op_selection.append(op_clause)

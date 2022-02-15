@@ -167,6 +167,26 @@ def test_resource_override():
     )
 
 
+def asset_aware_io_manager():
+    class MyIOManager(IOManager):
+        def __init__(self):
+            self.db = {}
+
+        def handle_output(self, context, obj):
+            self.db[context.asset_key] = obj
+
+        def load_input(self, context):
+            return self.db.get(context.asset_key)
+
+    io_manager_obj = MyIOManager()
+
+    @io_manager
+    def _asset_aware():
+        return io_manager_obj
+
+    return io_manager_obj, _asset_aware
+
+
 def test_asset_collection_build_subset_job():
     @asset
     def start_asset():
@@ -184,10 +204,16 @@ def test_asset_collection_build_subset_job():
     def follows_o2(o2):
         return o2
 
-    collection = AssetCollection([start_asset, middle_asset, follows_o1, follows_o2])
+    _, io_manager_def = asset_aware_io_manager()
+    collection = AssetCollection(
+        [start_asset, middle_asset, follows_o1, follows_o2],
+        resource_defs={"io_manager": io_manager_def},
+    )
 
     full_job = collection.build_job("full", selection="*")
+
     result = full_job.execute_in_process()
+
     assert result.success
     assert result.output_for_node("follows_o1") == "foo"
     assert result.output_for_node("follows_o2") == "foo"
@@ -195,6 +221,10 @@ def test_asset_collection_build_subset_job():
     test_single = collection.build_job(name="test_single", selection="follows_o2")
     assert len(test_single.all_node_defs) == 1
     assert test_single.all_node_defs[0].name == "follows_o2"
+
+    result = test_single.execute_in_process()
+    assert result.success
+    assert result.output_for_node("follows_o2") == "foo"
 
     test_up_star = collection.build_job(name="test_up_star", selection="*follows_o2")
     assert len(test_up_star.all_node_defs) == 3
@@ -204,7 +234,14 @@ def test_asset_collection_build_subset_job():
         "start_asset",
     }
 
+    result = test_up_star.execute_in_process()
+    assert result.success
+    assert result.output_for_node("middle_asset", "o1") == "foo"
+    assert result.output_for_node("follows_o2") == "foo"
+    assert result.output_for_node("start_asset") == "foo"
+
     test_down_star = collection.build_job(name="test_down_star", selection="start_asset*")
+
     assert len(test_down_star.all_node_defs) == 4
     assert set([node.name for node in test_down_star.all_node_defs]) == {
         "follows_o2",
@@ -213,7 +250,12 @@ def test_asset_collection_build_subset_job():
         "follows_o1",
     }
 
+    result = test_down_star.execute_in_process()
+    assert result.success
+    assert result.output_for_node("follows_o2") == "foo"
+
     test_both_plus = collection.build_job(name="test_both_plus", selection="+o1+")
+
     assert len(test_both_plus.all_node_defs) == 4
     assert set([node.name for node in test_both_plus.all_node_defs]) == {
         "follows_o1",
@@ -222,15 +264,24 @@ def test_asset_collection_build_subset_job():
         "start_asset",
     }
 
+    result = test_both_plus.execute_in_process()
+    assert result.success
+    assert result.output_for_node("follows_o2") == "foo"
+
     test_selection_with_overlap = collection.build_job(
         name="test_multi_asset_multi_selection", selection=["o1", "o2+"]
     )
+
     assert len(test_selection_with_overlap.all_node_defs) == 3
     assert set([node.name for node in test_selection_with_overlap.all_node_defs]) == {
         "follows_o1",
         "follows_o2",
         "middle_asset",
     }
+
+    result = test_selection_with_overlap.execute_in_process()
+    assert result.success
+    assert result.output_for_node("follows_o2") == "foo"
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
