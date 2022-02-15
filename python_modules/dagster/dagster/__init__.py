@@ -18,6 +18,8 @@ from dagster.core.definitions import (
     AssetSensorDefinition,
     CompositeSolidDefinition,
     ConfigMapping,
+    DagsterAssetMetadataValue,
+    DagsterPipelineRunMetadataValue,
     DailyPartitionsDefinition,
     DefaultScheduleStatus,
     DefaultSensorStatus,

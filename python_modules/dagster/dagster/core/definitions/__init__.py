@@ -33,6 +33,8 @@ from .dependency import (
 from .metadata import (
     MetadataValue,
     MetadataEntry,
+    DagsterAssetMetadataValue,
+    DagsterPipelineRunMetadataValue,
     FloatMetadataValue,
     IntMetadataValue,
     JsonMetadataValue,
