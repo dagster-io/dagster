@@ -1,7 +1,7 @@
 import os
 from enum import Enum
 
-from .defines import SupportedPythons
+from .defines import AllSupportedPythons
 from .images.versions import INTEGRATION_IMAGE_VERSION, UNIT_IMAGE_VERSION
 
 TIMEOUT_IN_MIN = 20
@@ -87,7 +87,7 @@ class StepBuilder:
         return self
 
     def on_unit_image(self, ver, env=None):
-        if ver not in SupportedPythons:
+        if ver not in AllSupportedPythons:
             raise Exception("Unsupported python version for unit image {ver}".format(ver=ver))
 
         return self.on_python_image(
@@ -98,7 +98,7 @@ class StepBuilder:
         )
 
     def on_integration_image(self, ver, env=None):
-        if ver not in SupportedPythons:
+        if ver not in AllSupportedPythons:
             raise Exception(
                 "Unsupported python version for integration image {ver}".format(ver=ver)
             )

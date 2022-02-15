@@ -5,14 +5,14 @@ class SupportedPython:
     V3_6 = "3.6.15"
 
 
-SupportedPythons = [
+AllSupportedPythons = [
     SupportedPython.V3_6,
     SupportedPython.V3_7,
     SupportedPython.V3_8,
     SupportedPython.V3_9,
 ]
 
-ExamplePythons = [SupportedPython.V3_8]
+DefaultPythonVersions = [SupportedPython.V3_9]
 
 TOX_MAP = {
     SupportedPython.V3_9: "py39",

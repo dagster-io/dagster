@@ -3,7 +3,7 @@ import subprocess
 
 import yaml
 
-from .defines import SupportedPython, SupportedPythons
+from .defines import AllSupportedPythons, DefaultPythonVersions
 
 DAGIT_PATH = "js_modules/dagit"
 
@@ -99,12 +99,12 @@ def is_release_branch(branch_name: str):
 
 
 def get_python_versions_for_branch(pr_versions=None):
-    pr_versions = pr_versions if pr_versions != None else [SupportedPython.V3_9]
+    pr_versions = pr_versions if pr_versions != None else DefaultPythonVersions
 
     # Run one representative version on PRs, the full set of python versions on master after
     # landing and on release branches before shipping
     branch_name = os.getenv("BUILDKITE_BRANCH")
     if branch_name == "master" or is_release_branch(branch_name):
-        return SupportedPythons
+        return AllSupportedPythons
     else:
         return pr_versions

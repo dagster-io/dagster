@@ -1,6 +1,6 @@
 import os
 
-from ..defines import GCP_CREDS_LOCAL_FILE, TOX_MAP, ExamplePythons, SupportedPython
+from ..defines import GCP_CREDS_LOCAL_FILE, TOX_MAP, DefaultPythonVersions, SupportedPython
 from ..images.versions import COVERAGE_IMAGE_VERSION
 from ..module_build_spec import ModuleBuildSpec
 from ..step_builder import StepBuilder
@@ -268,42 +268,47 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         "examples/airline_demo",
         extra_cmds_fn=airline_demo_extra_cmds_fn,
         buildkite_label="airline-demo",
-        supported_pythons=ExamplePythons,
+        supported_pythons=DefaultPythonVersions,
     ),
     ModuleBuildSpec(
         "examples/dbt_example",
         extra_cmds_fn=dbt_example_extra_cmds_fn,
         buildkite_label="dbt_example",
         upload_coverage=False,
-        supported_pythons=ExamplePythons,
+        supported_pythons=DefaultPythonVersions,
     ),
     ModuleBuildSpec(
         "examples/deploy_docker",
         extra_cmds_fn=deploy_docker_example_extra_cmds_fn,
         buildkite_label="deploy_docker_example",
         upload_coverage=False,
-        supported_pythons=ExamplePythons,
+        supported_pythons=DefaultPythonVersions,
     ),
     ModuleBuildSpec(
         "examples/docs_snippets",
         extra_cmds_fn=docs_snippets_extra_cmds_fn,
         buildkite_label="docs_snippets",
         upload_coverage=False,
-        supported_pythons=ExamplePythons,
+        supported_pythons=DefaultPythonVersions,
     ),
     ModuleBuildSpec(
         "examples/hacker_news_assets",
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
         buildkite_label="hacker_news_assets",
         upload_coverage=False,
-        supported_pythons=ExamplePythons,
+        supported_pythons=DefaultPythonVersions,
     ),
     ModuleBuildSpec(
         "examples/hacker_news",
         env_vars=["SNOWFLAKE_ACCOUNT", "SNOWFLAKE_USER", "SNOWFLAKE_PASSWORD"],
         buildkite_label="hacker_news_example",
         upload_coverage=False,
-        supported_pythons=ExamplePythons,
+        supported_pythons=DefaultPythonVersions,
+    ),
+    ModuleBuildSpec(
+        "examples/airflow_ingest",
+        supported_pythons=[SupportedPython.V3_8],  # run on 3.8
+        upload_coverage=False,
     ),
     ModuleBuildSpec("python_modules/dagit", extra_cmds_fn=dagit_extra_cmds_fn),
     ModuleBuildSpec("python_modules/automation"),
@@ -488,6 +493,7 @@ def examples_tests():
         "deploy_docker",
         "hacker_news",
         "hacker_news_assets",
+        "airflow_ingest",
     ]
 
     examples_root = os.path.join(GIT_REPO_ROOT, "examples")
@@ -501,7 +507,7 @@ def examples_tests():
     tests = []
     for example in examples_packages:
         tests += ModuleBuildSpec(
-            example, upload_coverage=False, supported_pythons=ExamplePythons
+            example, upload_coverage=False, supported_pythons=DefaultPythonVersions
         ).get_tox_build_steps()
     return tests
 

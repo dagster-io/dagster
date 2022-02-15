@@ -3,7 +3,7 @@ import os
 import packaging.version
 import requests
 
-from ..defines import GCP_CREDS_LOCAL_FILE
+from ..defines import GCP_CREDS_LOCAL_FILE, DefaultPythonVersions
 from ..module_build_spec import ModuleBuildSpec
 from ..utils import connect_sibling_docker_container, network_buildkite_container
 from .test_images import publish_test_images, test_image_depends_fn
@@ -168,6 +168,7 @@ def build_steps_integration_suite(
             "BUILDKITE_SECRETS_BUCKET",
             "GOOGLE_APPLICATION_CREDENTIALS",
         ],
+        supported_pythons=DefaultPythonVersions,  # leave version variance to base tests
         upload_coverage=upload_coverage,
         extra_cmds_fn=extra_commands_fn,
         depends_on_fn=test_image_depends_fn,
