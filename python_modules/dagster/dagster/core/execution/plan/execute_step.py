@@ -511,7 +511,7 @@ def _store_output(
     output_context = step_context.get_output_context(step_output_handle)
 
     manager_materializations = []
-    manager_metadata_entries: List[Union[PartitionMetadataEntry, EventMetadataEntry]] = []
+    manager_metadata_entries: List[Union[PartitionMetadataEntry, MetadataEntry]] = []
 
     # output_manager.handle_output is either a generator function, or a normal function with or
     # without a return value. In the case that handle_output is a normal function, we need to

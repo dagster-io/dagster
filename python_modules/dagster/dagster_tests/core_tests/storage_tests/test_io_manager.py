@@ -12,7 +12,7 @@ from dagster import (
     DagsterInvariantViolationError,
     DynamicOut,
     DynamicOutput,
-    EventMetadataEntry,
+    MetadataEntry,
     Field,
     IOManagerDefinition,
     In,
@@ -835,7 +835,7 @@ def test_context_logging_metadata():
                 self.values[keys] = obj
 
                 context.add_output_metadata({"foo": "bar"})
-                yield EventMetadataEntry.text(label="baz", text="baz")
+                yield MetadataEntry.text(label="baz", text="baz")
                 context.add_output_metadata({"bar": "bar"})
                 yield materialization
 

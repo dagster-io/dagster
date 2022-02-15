@@ -6,7 +6,7 @@ from dagster.core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
-    EventMetadataEntry,
+    MetadataEntry,
     Materialization,
     PartitionMetadataEntry,
 )
@@ -107,7 +107,7 @@ class OutputContext:
         self._events: List["DagsterEvent"] = []
         self._user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]] = []
         self._metadata_entries: Optional[
-            List[Union[EventMetadataEntry, PartitionMetadataEntry]]
+            List[Union[MetadataEntry, PartitionMetadataEntry]]
         ] = None
 
     def __enter__(self):
@@ -488,13 +488,13 @@ class OutputContext:
 
     def get_logged_metadata_entries(
         self,
-    ) -> List[Union[EventMetadataEntry, PartitionMetadataEntry]]:
+    ) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
         """Get the list of metadata entries that have been logged for use with this output."""
         return self._metadata_entries or []
 
     def consume_logged_metadata_entries(
         self,
-    ) -> List[Union[EventMetadataEntry, PartitionMetadataEntry]]:
+    ) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
         """Pops and yields all user-generated metadata entries that have been recorded from this context.
 
         If consume_logged_metadata_entries has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_logged_metadata_entries has been called, it will yield all events since the last time consume_logged_metadata_entries was called. Designed for internal use. Users should never need to invoke this method.
