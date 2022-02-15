@@ -15,7 +15,6 @@ from dagster.core.storage.sql import (
 )
 from dagster.core.storage.sqlite import create_db_conn_string, get_sqlite_version
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.seven import IS_WINDOWS
 from dagster.utils import mkdir_p
 from sqlalchemy.pool import NullPool
 

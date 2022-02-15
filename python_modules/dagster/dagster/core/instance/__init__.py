@@ -1105,7 +1105,7 @@ class DagsterInstance:
 
     @property
     def supports_bucket_queries(self):
-        self._run_storage.supports_bucket_queries
+        return self._run_storage.supports_bucket_queries
 
     def wipe(self):
         self._run_storage.wipe()
