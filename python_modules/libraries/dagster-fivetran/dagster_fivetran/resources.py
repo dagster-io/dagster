@@ -7,7 +7,7 @@ from urllib.parse import urljoin
 
 import requests
 from dagster import (
-    EventMetadata,
+    MetadataValue,
     Failure,
     Field,
     StringSource,
@@ -263,8 +263,8 @@ class FivetranResource:
             raise Failure(
                 f"Sync for connector '{connector_id}' failed!",
                 metadata={
-                    "connector_details": EventMetadata.json(connector_details),
-                    "log_url": EventMetadata.url(get_fivetran_logs_url(connector_details)),
+                    "connector_details": MetadataValue.json(connector_details),
+                    "log_url": MetadataValue.url(get_fivetran_logs_url(connector_details)),
                 },
             )
         return connector_details

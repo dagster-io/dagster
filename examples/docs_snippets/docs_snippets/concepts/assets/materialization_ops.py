@@ -107,7 +107,7 @@ def my_partitioned_asset_op(context):
 
 
 # start_materialization_ops_marker_2
-from dagster import op, AssetMaterialization, Output, EventMetadata
+from dagster import op, AssetMaterialization, Output, MetadataValue
 
 
 @op
@@ -119,8 +119,8 @@ def my_metadata_materialization_op(context):
         description="Persisted result to storage",
         metadata={
             "text_metadata": "Text-based metadata for this event",
-            "path": EventMetadata.path(remote_storage_path),
-            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "path": MetadataValue.path(remote_storage_path),
+            "dashboard_url": MetadataValue.url("http://mycoolsite.com/url_for_my_data"),
             "size (bytes)": calculate_bytes(df),
         },
     )
@@ -142,7 +142,7 @@ def my_asset_key_materialization_op(context):
         asset_key=AssetKey(["dashboard", "my_cool_site"]),
         description="Persisted result to storage",
         metadata={
-            "dashboard_url": EventMetadata.url("http://mycoolsite.com/dashboard"),
+            "dashboard_url": MetadataValue.url("http://mycoolsite.com/dashboard"),
             "size (bytes)": calculate_bytes(df),
         },
     )

@@ -10,7 +10,7 @@ from dagster.config.config_type import Array, ConfigType
 from dagster.config.config_type import Noneable as ConfigNoneable
 from dagster.core.definitions.metadata import (
     MetadataEntry,
-    ParseableMetadataEntryData,
+    ParseableMetadataValue,
     parse_metadata,
 )
 from dagster.core.definitions.events import TypeCheck
@@ -98,7 +98,7 @@ class DagsterType:
         kind: DagsterTypeKind = DagsterTypeKind.REGULAR,
         typing_type: t.Any = None,
         metadata_entries: t.Optional[t.List[MetadataEntry]] = None,
-        metadata: t.Optional[t.Dict[str, ParseableMetadataEntryData]] = None,
+        metadata: t.Optional[t.Dict[str, ParseableMetadataValue]] = None,
     ):
         check.opt_str_param(key, "key")
         check.opt_str_param(name, "name")

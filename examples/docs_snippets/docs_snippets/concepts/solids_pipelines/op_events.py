@@ -1,7 +1,7 @@
 # pylint: disable=unused-argument
 from dagster import (
     AssetMaterialization,
-    EventMetadata,
+    MetadataValue,
     ExpectationResult,
     Failure,
     Out,
@@ -79,7 +79,7 @@ def my_metadata_output(context):
         df,
         metadata={
             "text_metadata": "Text-based metadata for this event",
-            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "dashboard_url": MetadataValue.url("http://mycoolsite.com/url_for_my_data"),
             "raw_count": len(df),
             "size (bytes)": calculate_bytes(df),
         },
@@ -99,7 +99,7 @@ def my_metadata_expectation_op(context, df):
         description="ensure dataframe has rows",
         metadata={
             "text_metadata": "Text-based metadata for this event",
-            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "dashboard_url": MetadataValue.url("http://mycoolsite.com/url_for_my_data"),
             "raw_count": len(df),
             "size (bytes)": calculate_bytes(df),
         },
@@ -120,8 +120,8 @@ def my_failure_op():
         raise Failure(
             description="No files to process",
             metadata={
-                "filepath": EventMetadata.path(path),
-                "dashboard_url": EventMetadata.url("http://mycoolsite.com/failures"),
+                "filepath": MetadataValue.path(path),
+                "dashboard_url": MetadataValue.url("http://mycoolsite.com/failures"),
             },
         )
     return some_calculation(my_files)
@@ -140,8 +140,8 @@ def my_failure_metadata_op():
         raise Failure(
             description="No files to process",
             metadata={
-                "filepath": EventMetadata.path(path),
-                "dashboard_url": EventMetadata.url("http://mycoolsite.com/failures"),
+                "filepath": MetadataValue.path(path),
+                "dashboard_url": MetadataValue.url("http://mycoolsite.com/failures"),
             },
         )
     return some_calculation(my_files)

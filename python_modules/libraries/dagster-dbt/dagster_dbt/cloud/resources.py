@@ -7,7 +7,7 @@ from urllib.parse import urljoin
 
 import requests
 from dagster import (
-    EventMetadata,
+    MetadataValue,
     Failure,
     Field,
     StringSource,
@@ -364,7 +364,7 @@ class DbtCloudResourceV2:
                 raise Failure(
                     f"Run {run_id} timed out after "
                     f"{datetime.datetime.now() - poll_start}. Attempted to cancel.",
-                    metadata={"run_page_url": EventMetadata.url(href)},
+                    metadata={"run_page_url": MetadataValue.url(href)},
                 )
 
             # Sleep for the configured time interval before polling again.
@@ -374,8 +374,8 @@ class DbtCloudResourceV2:
         raise Failure(
             f"Run {run_id} failed. Status Message: {run_details['status_message']}",
             metadata={
-                "run_details": EventMetadata.json(run_details),
-                "run_page_url": EventMetadata.url(href),
+                "run_details": MetadataValue.json(run_details),
+                "run_page_url": MetadataValue.url(href),
             },
         )
 

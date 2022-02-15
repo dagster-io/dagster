@@ -7,7 +7,7 @@ import nbformat
 import pytest
 from dagster import execute_pipeline, pipeline
 from dagster.check import CheckError
-from dagster.core.definitions.event_metadata import PathMetadataEntryData
+from dagster.core.definitions.metadata import PathMetadataValue
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path, safe_tempfile_path
@@ -42,7 +42,7 @@ def get_path(materialization_event):
     for (
         metadata_entry
     ) in materialization_event.event_specific_data.materialization.metadata_entries:
-        if isinstance(metadata_entry.entry_data, PathMetadataEntryData):
+        if isinstance(metadata_entry.entry_data, PathMetadataValue):
             return metadata_entry.entry_data.path
 
 

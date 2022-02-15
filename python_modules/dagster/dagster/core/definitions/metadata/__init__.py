@@ -11,23 +11,8 @@ from .table import TableColumn, TableColumnConstraints, TableConstraints, TableR
 if TYPE_CHECKING:
     from dagster.core.definitions.events import AssetKey
 
-EventMetadataEntryData = Union[
-    "TableSchemaMetadataEntryData",
-    "DagsterAssetMetadataEntryData",
-    "DagsterPipelineRunMetadataEntryData",
-    "FloatMetadataEntryData",
-    "IntMetadataEntryData",
-    "JsonMetadataEntryData",
-    "MarkdownMetadataEntryData",
-    "PathMetadataEntryData",
-    "PythonArtifactMetadataEntryData",
-    "TableMetadataEntryData",
-    "TextMetadataEntryData",
-    "UrlMetadataEntryData",
-]
-
-ParseableMetadataEntryData = Union[
-    EventMetadataEntryData,
+ParseableMetadataValue = Union[
+    "MetadataValue",
     dict,
     float,
     int,
@@ -40,7 +25,7 @@ def last_file_comp(path: str) -> str:
     return os.path.basename(os.path.normpath(path))
 
 
-def parse_metadata_entry(label: str, value: ParseableMetadataEntryData) -> "MetadataEntry":
+def parse_metadata_entry(label: str, value: ParseableMetadataValue) -> "MetadataEntry":
     check.str_param(label, "label")
 
     if isinstance(value, (MetadataEntry, PartitionMetadataEntry)):
@@ -81,7 +66,7 @@ def parse_metadata_entry(label: str, value: ParseableMetadataEntryData) -> "Meta
 
 
 def parse_metadata(
-    metadata: Dict[str, ParseableMetadataEntryData],
+    metadata: Dict[str, ParseableMetadataValue],
     metadata_entries: List[Union["MetadataEntry", "PartitionMetadataEntry"]],
     allow_invalid: bool = False,
 ) -> List[Union["MetadataEntry", "PartitionMetadataEntry"]]:
@@ -117,290 +102,7 @@ def parse_metadata(
         for k, v in check.opt_dict_param(metadata, "metadata", key_type=str).items()
     ]
 
-
-## Event metadata data types
-
-
-@whitelist_for_serdes
-class TextMetadataEntryData(
-    NamedTuple(
-        "_TextMetadataEntryData",
-        [
-            ("text", Optional[str]),
-        ],
-    )
-):
-    """Container class for text metadata entry data.
-
-    Args:
-        text (Optional[str]): The text data.
-    """
-
-    def __new__(cls, text: Optional[str]):
-        return super(TextMetadataEntryData, cls).__new__(
-            cls, check.opt_str_param(text, "text", default="")
-        )
-
-
-@whitelist_for_serdes
-class UrlMetadataEntryData(
-    NamedTuple(
-        "_UrlMetadataEntryData",
-        [
-            ("url", Optional[str]),
-        ],
-    )
-):
-    """Container class for URL metadata entry data.
-
-    Args:
-        url (Optional[str]): The URL as a string.
-    """
-
-    def __new__(cls, url: Optional[str]):
-        return super(UrlMetadataEntryData, cls).__new__(
-            cls, check.opt_str_param(url, "url", default="")
-        )
-
-
-@whitelist_for_serdes
-class PathMetadataEntryData(
-    NamedTuple(
-        "_PathMetadataEntryData",
-        [
-            ("path", Optional[str]),
-        ],
-    )
-):
-    """Container class for path metadata entry data.
-
-    Args:
-        path (Optional[str]): The path as a string.
-    """
-
-    def __new__(cls, path: Optional[str]):
-        return super(PathMetadataEntryData, cls).__new__(
-            cls, check.opt_str_param(path, "path", default="")
-        )
-
-
-@whitelist_for_serdes
-class JsonMetadataEntryData(
-    NamedTuple(
-        "_JsonMetadataEntryData",
-        [
-            ("data", Dict[str, Any]),
-        ],
-    )
-):
-    """Container class for JSON metadata entry data.
-
-    Args:
-        data (Dict[str, Any]): The JSON data.
-    """
-
-    def __new__(cls, data: Optional[Dict[str, Any]]):
-        return super(JsonMetadataEntryData, cls).__new__(
-            cls, check.opt_dict_param(data, "data", key_type=str)
-        )
-
-
-@whitelist_for_serdes
-class MarkdownMetadataEntryData(
-    NamedTuple(
-        "_MarkdownMetadataEntryData",
-        [
-            ("md_str", Optional[str]),
-        ],
-    )
-):
-    """Container class for markdown metadata entry data.
-
-    Args:
-        md_str (Optional[str]): The markdown as a string.
-    """
-
-    def __new__(cls, md_str: Optional[str]):
-        return super(MarkdownMetadataEntryData, cls).__new__(
-            cls, check.opt_str_param(md_str, "md_str", default="")
-        )
-
-
-@whitelist_for_serdes
-class PythonArtifactMetadataEntryData(
-    NamedTuple(
-        "_PythonArtifactMetadataEntryData",
-        [
-            ("module", str),
-            ("name", str),
-        ],
-    )
-):
-    """Container class for python artifact metadata entry data.
-
-    Args:
-        module (str): The module where the python artifact can be found
-        name (str): The name of the python artifact
-    """
-
-    def __new__(cls, module: str, name: str):
-        return super(PythonArtifactMetadataEntryData, cls).__new__(
-            cls, check.str_param(module, "module"), check.str_param(name, "name")
-        )
-
-
-@whitelist_for_serdes
-class FloatMetadataEntryData(
-    NamedTuple(
-        "_FloatMetadataEntryData",
-        [
-            ("value", Optional[float]),
-        ],
-    )
-):
-    """Container class for float metadata entry data.
-
-    Args:
-        value (Optional[float]): The float value.
-    """
-
-    def __new__(cls, value: Optional[float]):
-        return super(FloatMetadataEntryData, cls).__new__(
-            cls, check.opt_float_param(value, "value")
-        )
-
-
-@whitelist_for_serdes
-class IntMetadataEntryData(
-    NamedTuple(
-        "_IntMetadataEntryData",
-        [
-            ("value", Optional[int]),
-        ],
-    )
-):
-    """Container class for int metadata entry data.
-
-    Args:
-        value (Optional[int]): The int value.
-    """
-
-    def __new__(cls, value: Optional[int]):
-        return super(IntMetadataEntryData, cls).__new__(cls, check.opt_int_param(value, "value"))
-
-
-@whitelist_for_serdes
-class DagsterPipelineRunMetadataEntryData(
-    NamedTuple(
-        "_DagsterPipelineRunMetadataEntryData",
-        [
-            ("run_id", str),
-        ],
-    )
-):
-    """Representation of a dagster pipeline run.
-
-    Args:
-        run_id (str): The pipeline run id
-    """
-
-    def __new__(cls, run_id: str):
-        return super(DagsterPipelineRunMetadataEntryData, cls).__new__(
-            cls, check.str_param(run_id, "run_id")
-        )
-
-
-@whitelist_for_serdes
-class DagsterAssetMetadataEntryData(
-    NamedTuple("_DagsterAssetMetadataEntryData", [("asset_key", "AssetKey")])
-):
-    """Representation of a dagster asset.
-
-    Args:
-        asset_key (AssetKey): The dagster asset key
-    """
-
-    def __new__(cls, asset_key: "AssetKey"):
-        from dagster.core.definitions.events import AssetKey
-
-        return super(DagsterAssetMetadataEntryData, cls).__new__(
-            cls, check.inst_param(asset_key, "asset_key", AssetKey)
-        )
-
-
-@experimental
-@whitelist_for_serdes
-class TableMetadataEntryData(
-    NamedTuple(
-        "_TableMetadataEntryData",
-        [
-            ("records", List[TableRecord]),
-            ("schema", TableSchema),
-        ],
-    )
-):
-    """Container class for table metadata entry data.
-
-    Args:
-        records (TableRecord): The data as a list of records (i.e. rows).
-        schema (Optional[TableSchema]): A schema for the table.
-    """
-
-    @staticmethod
-    def infer_column_type(value):
-        if isinstance(value, bool):
-            return "bool"
-        elif isinstance(value, int):
-            return "int"
-        elif isinstance(value, float):
-            return "float"
-        else:
-            return "string"
-
-    def __new__(cls, records: List[TableRecord], schema: TableSchema):
-        return super(TableMetadataEntryData, cls).__new__(
-            cls,
-            check.list_param(records, "records", of_type=TableRecord),
-            check.inst_param(schema, "schema", TableSchema),
-        )
-
-
-@experimental
-@whitelist_for_serdes
-class TableSchemaMetadataEntryData(
-    NamedTuple("_TableSchemaMetadataEntryData", [("schema", TableSchema)])
-):
-    """Representation of a schema for arbitrary tabular data.
-
-    Args:
-        schema (TableSchema): The dictionary containing the schema representation.
-    """
-
-    def __new__(cls, schema: TableSchema):
-        return super(TableSchemaMetadataEntryData, cls).__new__(
-            cls, check.inst_param(schema, "schema", TableSchema)
-        )
-
-
-## for runtime checks
-
-EntryDataUnion = (
-    TextMetadataEntryData,
-    UrlMetadataEntryData,
-    PathMetadataEntryData,
-    JsonMetadataEntryData,
-    MarkdownMetadataEntryData,
-    FloatMetadataEntryData,
-    IntMetadataEntryData,
-    PythonArtifactMetadataEntryData,
-    DagsterAssetMetadataEntryData,
-    DagsterPipelineRunMetadataEntryData,
-    TableMetadataEntryData,
-    TableSchemaMetadataEntryData,
-)
-
-
-class EventMetadata:
+class MetadataValue:
     """Utility class to wrap metadata values passed into Dagster events so that they can be
     displayed in Dagit and other tooling.
 
@@ -419,9 +121,9 @@ class EventMetadata:
     """
 
     @staticmethod
-    def text(text: str) -> "TextMetadataEntryData":
+    def text(text: str) -> "TextMetadataValue":
         """Static constructor for a metadata value wrapping text as
-        :py:class:`TextMetadataEntryData`. Can be used as the value type for the `metadata`
+        :py:class:`TextMetadataValue`. Can be used as the value type for the `metadata`
         parameter for supported events. For example:
 
         .. code-block:: python
@@ -438,12 +140,12 @@ class EventMetadata:
         Args:
             text (str): The text string for a metadata entry.
         """
-        return TextMetadataEntryData(text)
+        return TextMetadataValue(text)
 
     @staticmethod
-    def url(url: str) -> "UrlMetadataEntryData":
+    def url(url: str) -> "UrlMetadataValue":
         """Static constructor for a metadata value wrapping a URL as
-        :py:class:`UrlMetadataEntryData`. Can be used as the value type for the `metadata`
+        :py:class:`UrlMetadataValue`. Can be used as the value type for the `metadata`
         parameter for supported events. For example:
 
         .. code-block:: python
@@ -461,12 +163,12 @@ class EventMetadata:
         Args:
             url (str): The URL for a metadata entry.
         """
-        return UrlMetadataEntryData(url)
+        return UrlMetadataValue(url)
 
     @staticmethod
-    def path(path: str) -> "PathMetadataEntryData":
+    def path(path: str) -> "PathMetadataValue":
         """Static constructor for a metadata value wrapping a path as
-        :py:class:`PathMetadataEntryData`. For example:
+        :py:class:`PathMetadataValue`. For example:
 
         .. code-block:: python
 
@@ -482,12 +184,12 @@ class EventMetadata:
         Args:
             path (str): The path for a metadata entry.
         """
-        return PathMetadataEntryData(path)
+        return PathMetadataValue(path)
 
     @staticmethod
-    def json(data: Dict[str, Any]) -> "JsonMetadataEntryData":
+    def json(data: Dict[str, Any]) -> "JsonMetadataValue":
         """Static constructor for a metadata value wrapping a path as
-        :py:class:`JsonMetadataEntryData`. Can be used as the value type for the `metadata`
+        :py:class:`JsonMetadataValue`. Can be used as the value type for the `metadata`
         parameter for supported events. For example:
 
         .. code-block:: python
@@ -505,12 +207,12 @@ class EventMetadata:
         Args:
             data (Dict[str, Any]): The JSON data for a metadata entry.
         """
-        return JsonMetadataEntryData(data)
+        return JsonMetadataValue(data)
 
     @staticmethod
-    def md(data: str) -> "MarkdownMetadataEntryData":
+    def md(data: str) -> "MarkdownMetadataValue":
         """Static constructor for a metadata value wrapping markdown data as
-        :py:class:`MarkdownMetadataEntryData`. Can be used as the value type for the `metadata`
+        :py:class:`MarkdownMetadataValue`. Can be used as the value type for the `metadata`
         parameter for supported events. For example:
 
 
@@ -528,12 +230,12 @@ class EventMetadata:
         Args:
             md_str (str): The markdown for a metadata entry.
         """
-        return MarkdownMetadataEntryData(data)
+        return MarkdownMetadataValue(data)
 
     @staticmethod
-    def python_artifact(python_artifact: Callable) -> "PythonArtifactMetadataEntryData":
+    def python_artifact(python_artifact: Callable) -> "PythonArtifactMetadataValue":
         """Static constructor for a metadata value wrapping a python artifact as
-        :py:class:`PythonArtifactMetadataEntryData`. Can be used as the value type for the
+        :py:class:`PythonArtifactMetadataValue`. Can be used as the value type for the
         `metadata` parameter for supported events. For example:
 
         .. code-block:: python
@@ -552,12 +254,12 @@ class EventMetadata:
             value (Callable): The python class or function for a metadata entry.
         """
         check.callable_param(python_artifact, "python_artifact")
-        return PythonArtifactMetadataEntryData(python_artifact.__module__, python_artifact.__name__)
+        return PythonArtifactMetadataValue(python_artifact.__module__, python_artifact.__name__)
 
     @staticmethod
-    def float(value: float) -> "FloatMetadataEntryData":
+    def float(value: float) -> "FloatMetadataValue":
         """Static constructor for a metadata value wrapping a float as
-        :py:class:`FloatMetadataEntryData`. Can be used as the value type for the `metadata`
+        :py:class:`FloatMetadataValue`. Can be used as the value type for the `metadata`
         parameter for supported events. For example:
 
         .. code-block:: python
@@ -575,12 +277,12 @@ class EventMetadata:
             value (float): The float value for a metadata entry.
         """
 
-        return FloatMetadataEntryData(value)
+        return FloatMetadataValue(value)
 
     @staticmethod
-    def int(value: int) -> "IntMetadataEntryData":
+    def int(value: int) -> "IntMetadataValue":
         """Static constructor for a metadata value wrapping an int as
-        :py:class:`IntMetadataEntryData`. Can be used as the value type for the `metadata`
+        :py:class:`IntMetadataValue`. Can be used as the value type for the `metadata`
         parameter for supported events. For example:
 
         .. code-block:: python
@@ -598,19 +300,19 @@ class EventMetadata:
             value (int): The int value for a metadata entry.
         """
 
-        return IntMetadataEntryData(value)
+        return IntMetadataValue(value)
 
     @staticmethod
-    def pipeline_run(run_id: str) -> "DagsterPipelineRunMetadataEntryData":
+    def pipeline_run(run_id: str) -> "DagsterPipelineRunMetadataValue":
         check.str_param(run_id, "run_id")
-        return DagsterPipelineRunMetadataEntryData(run_id)
+        return DagsterPipelineRunMetadataValue(run_id)
 
     @staticmethod
-    def dagster_run(run_id: str) -> "DagsterPipelineRunMetadataEntryData":
-        return EventMetadata.pipeline_run(run_id)
+    def dagster_run(run_id: str) -> "DagsterPipelineRunMetadataValue":
+        return MetadataValue.pipeline_run(run_id)
 
     @staticmethod
-    def asset(asset_key: "AssetKey") -> "DagsterAssetMetadataEntryData":
+    def asset(asset_key: "AssetKey") -> "DagsterAssetMetadataValue":
         """Static constructor for a metadata value referencing a Dagster asset, by key.
 
         For example:
@@ -633,13 +335,13 @@ class EventMetadata:
         from dagster.core.definitions.events import AssetKey
 
         check.inst_param(asset_key, "asset_key", AssetKey)
-        return DagsterAssetMetadataEntryData(asset_key)
+        return DagsterAssetMetadataValue(asset_key)
 
     @staticmethod
     @experimental
-    def table(records: List[TableRecord], schema: TableSchema) -> "TableMetadataEntryData":
+    def table(records: List[TableRecord], schema: TableSchema) -> "TableMetadataValue":
         """Static constructor for a metadata value wrapping arbitrary tabular data as
-        :py:class:`TableMetadataEntryData`. Can be used as the value type for the `metadata`
+        :py:class:`TableMetadataValue`. Can be used as the value type for the `metadata`
         parameter for supported events. For example:
 
         .. code-block:: python
@@ -669,15 +371,15 @@ class EventMetadata:
             records (List[TableRecord]): The data as a list of records (i.e. rows).
             schema (TableSchema): A schema for the table.
         """
-        return TableMetadataEntryData(records, schema)
+        return TableMetadataValue(records, schema)
 
     @staticmethod
     @experimental
     def table_schema(
         schema: TableSchema,
-    ) -> "TableSchemaMetadataEntryData":
+    ) -> "TableSchemaMetadataValue":
         """Static constructor for a metadata value wrapping a table schema as
-        :py:class:`TableSchemaMetadataEntryData`. Can be used as the value type
+        :py:class:`TableSchemaMetadataValue`. Can be used as the value type
         for the `metadata` parameter for supported events. For example:
 
         .. code-block:: python
@@ -700,10 +402,307 @@ class EventMetadata:
         Args:
             schema (TableSchema): The table schema for a metadata entry.
         """
-        return TableSchemaMetadataEntryData(schema)
+        return TableSchemaMetadataValue(schema)
 
 
-# NOTE: This would better be implemented as a generic with `EventMetadataEntryData` set as a
+
+# ########################
+# ##### METADATA VALUE TYPES
+# ########################
+
+
+@whitelist_for_serdes
+class TextMetadataValue(
+    MetadataValue,
+    NamedTuple(
+        "_TextMetadataValue",
+        [
+            ("text", Optional[str]),
+        ],
+    )
+):
+    """Container class for text metadata entry data.
+
+    Args:
+        text (Optional[str]): The text data.
+    """
+
+    def __new__(cls, text: Optional[str]):
+        return super(TextMetadataValue, cls).__new__(
+            cls, check.opt_str_param(text, "text", default="")
+        )
+
+
+@whitelist_for_serdes
+class UrlMetadataValue(
+    MetadataValue,
+    NamedTuple(
+        "_UrlMetadataValue",
+        [
+            ("url", Optional[str]),
+        ],
+    )
+):
+    """Container class for URL metadata entry data.
+
+    Args:
+        url (Optional[str]): The URL as a string.
+    """
+
+    def __new__(cls, url: Optional[str]):
+        return super(UrlMetadataValue, cls).__new__(
+            cls, check.opt_str_param(url, "url", default="")
+        )
+
+
+@whitelist_for_serdes
+class PathMetadataValue(
+    MetadataValue,
+    NamedTuple(
+        "_PathMetadataValue",
+        [
+            ("path", Optional[str]),
+        ],
+    )
+):
+    """Container class for path metadata entry data.
+
+    Args:
+        path (Optional[str]): The path as a string.
+    """
+
+    def __new__(cls, path: Optional[str]):
+        return super(PathMetadataValue, cls).__new__(
+            cls, check.opt_str_param(path, "path", default="")
+        )
+
+
+@whitelist_for_serdes
+class JsonMetadataValue(
+    MetadataValue,
+    NamedTuple(
+        "_JsonMetadataValue",
+        [
+            ("data", Dict[str, Any]),
+        ],
+    )
+):
+    """Container class for JSON metadata entry data.
+
+    Args:
+        data (Dict[str, Any]): The JSON data.
+    """
+
+    def __new__(cls, data: Optional[Dict[str, Any]]):
+        return super(JsonMetadataValue, cls).__new__(
+            cls, check.opt_dict_param(data, "data", key_type=str)
+        )
+
+
+@whitelist_for_serdes
+class MarkdownMetadataValue(
+    MetadataValue,
+    NamedTuple(
+        "_MarkdownMetadataValue",
+        [
+            ("md_str", Optional[str]),
+        ],
+    )
+):
+    """Container class for markdown metadata entry data.
+
+    Args:
+        md_str (Optional[str]): The markdown as a string.
+    """
+
+    def __new__(cls, md_str: Optional[str]):
+        return super(MarkdownMetadataValue, cls).__new__(
+            cls, check.opt_str_param(md_str, "md_str", default="")
+        )
+
+
+@whitelist_for_serdes
+class PythonArtifactMetadataValue(
+    MetadataValue,
+    NamedTuple(
+        "_PythonArtifactMetadataValue",
+        [
+            ("module", str),
+            ("name", str),
+        ],
+    )
+):
+    """Container class for python artifact metadata entry data.
+
+    Args:
+        module (str): The module where the python artifact can be found
+        name (str): The name of the python artifact
+    """
+
+    def __new__(cls, module: str, name: str):
+        return super(PythonArtifactMetadataValue, cls).__new__(
+            cls, check.str_param(module, "module"), check.str_param(name, "name")
+        )
+
+
+@whitelist_for_serdes
+class FloatMetadataValue(
+    MetadataValue,
+    NamedTuple(
+        "_FloatMetadataValue",
+        [
+            ("value", Optional[float]),
+        ],
+    )
+):
+    """Container class for float metadata entry data.
+
+    Args:
+        value (Optional[float]): The float value.
+    """
+
+    def __new__(cls, value: Optional[float]):
+        return super(FloatMetadataValue, cls).__new__(
+            cls, check.opt_float_param(value, "value")
+        )
+
+
+@whitelist_for_serdes
+class IntMetadataValue(
+    MetadataValue,
+    NamedTuple(
+        "_IntMetadataValue",
+        [
+            ("value", Optional[int]),
+        ],
+    )
+):
+    """Container class for int metadata entry data.
+
+    Args:
+        value (Optional[int]): The int value.
+    """
+
+    def __new__(cls, value: Optional[int]):
+        return super(IntMetadataValue, cls).__new__(cls, check.opt_int_param(value, "value"))
+
+
+@whitelist_for_serdes
+class DagsterPipelineRunMetadataValue(
+    MetadataValue,
+    NamedTuple(
+        "_DagsterPipelineRunMetadataValue",
+        [
+            ("run_id", str),
+        ],
+    )
+):
+    """Representation of a dagster pipeline run.
+
+    Args:
+        run_id (str): The pipeline run id
+    """
+
+    def __new__(cls, run_id: str):
+        return super(DagsterPipelineRunMetadataValue, cls).__new__(
+            cls, check.str_param(run_id, "run_id")
+        )
+
+
+@whitelist_for_serdes
+class DagsterAssetMetadataValue(
+    MetadataValue,
+    NamedTuple("_DagsterAssetMetadataValue", [("asset_key", "AssetKey")])
+):
+    """Representation of a dagster asset.
+
+    Args:
+        asset_key (AssetKey): The dagster asset key
+    """
+
+    def __new__(cls, asset_key: "AssetKey"):
+        from dagster.core.definitions.events import AssetKey
+
+        return super(DagsterAssetMetadataValue, cls).__new__(
+            cls, check.inst_param(asset_key, "asset_key", AssetKey)
+        )
+
+
+@experimental
+@whitelist_for_serdes
+class TableMetadataValue(
+    MetadataValue,
+    NamedTuple(
+        "_TableMetadataValue",
+        [
+            ("records", List[TableRecord]),
+            ("schema", TableSchema),
+        ],
+    )
+):
+    """Container class for table metadata entry data.
+
+    Args:
+        records (TableRecord): The data as a list of records (i.e. rows).
+        schema (Optional[TableSchema]): A schema for the table.
+    """
+
+    @staticmethod
+    def infer_column_type(value):
+        if isinstance(value, bool):
+            return "bool"
+        elif isinstance(value, int):
+            return "int"
+        elif isinstance(value, float):
+            return "float"
+        else:
+            return "string"
+
+    def __new__(cls, records: List[TableRecord], schema: TableSchema):
+        return super(TableMetadataValue, cls).__new__(
+            cls,
+            check.list_param(records, "records", of_type=TableRecord),
+            check.inst_param(schema, "schema", TableSchema),
+        )
+
+
+@experimental
+@whitelist_for_serdes
+class TableSchemaMetadataValue(
+    MetadataValue,
+    NamedTuple("_TableSchemaMetadataValue", [("schema", TableSchema)])
+):
+    """Representation of a schema for arbitrary tabular data.
+
+    Args:
+        schema (TableSchema): The dictionary containing the schema representation.
+    """
+
+    def __new__(cls, schema: TableSchema):
+        return super(TableSchemaMetadataValue, cls).__new__(
+            cls, check.inst_param(schema, "schema", TableSchema)
+        )
+
+
+## for runtime checks
+
+EntryDataUnion = (
+    TextMetadataValue,
+    UrlMetadataValue,
+    PathMetadataValue,
+    JsonMetadataValue,
+    MarkdownMetadataValue,
+    FloatMetadataValue,
+    IntMetadataValue,
+    PythonArtifactMetadataValue,
+    DagsterAssetMetadataValue,
+    DagsterPipelineRunMetadataValue,
+    TableMetadataValue,
+    TableSchemaMetadataValue,
+)
+
+
+# NOTE: This would better be implemented as a generic with `EventMetadataValue` set as a
 # typvar, but as of 2022-01-25 mypy does not support generics on NamedTuple.
 @whitelist_for_serdes
 class MetadataEntry(
@@ -712,7 +711,7 @@ class MetadataEntry(
         [
             ("label", str),
             ("description", Optional[str]),
-            ("entry_data", EventMetadataEntryData),
+            ("entry_data", MetadataValue),
         ],
     ),
 ):
@@ -728,16 +727,16 @@ class MetadataEntry(
     Args:
         label (str): Short display label for this metadata entry.
         description (Optional[str]): A human-readable description of this metadata entry.
-        entry_data (EventMetadataEntryData): Typed metadata entry data. The different types allow
+        entry_data (MetadataValue): Typed metadata entry data. The different types allow
             for customized display in tools like dagit.
     """
 
-    def __new__(cls, label: str, description: Optional[str], entry_data: "EventMetadataEntryData"):
+    def __new__(cls, label: str, description: Optional[str], entry_data: "MetadataValue"):
         return super(MetadataEntry, cls).__new__(
             cls,
             check.str_param(label, "label"),
             check.opt_str_param(description, "description"),
-            check.inst_param(entry_data, "entry_data", EntryDataUnion),
+            check.inst_param(entry_data, "entry_data", MetadataValue),
         )
 
     @staticmethod
@@ -745,7 +744,7 @@ class MetadataEntry(
         text: Optional[str], label: str, description: Optional[str] = None
     ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing text as
-        :py:class:`TextMetadataEntryData`. For example:
+        :py:class:`TextMetadataValue`. For example:
 
         .. code-block:: python
 
@@ -763,14 +762,14 @@ class MetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-        return MetadataEntry(label, description, TextMetadataEntryData(text))
+        return MetadataEntry(label, description, TextMetadataValue(text))
 
     @staticmethod
     def url(
         url: Optional[str], label: str, description: Optional[str] = None
     ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing a URL as
-        :py:class:`UrlMetadataEntryData`. For example:
+        :py:class:`UrlMetadataValue`. For example:
 
         .. code-block:: python
 
@@ -790,14 +789,14 @@ class MetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-        return MetadataEntry(label, description, UrlMetadataEntryData(url))
+        return MetadataEntry(label, description, UrlMetadataValue(url))
 
     @staticmethod
     def path(
         path: Optional[str], label: str, description: Optional[str] = None
     ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing a path as
-        :py:class:`PathMetadataEntryData`. For example:
+        :py:class:`PathMetadataValue`. For example:
 
         .. code-block:: python
 
@@ -813,14 +812,14 @@ class MetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-        return MetadataEntry(label, description, PathMetadataEntryData(path))
+        return MetadataEntry(label, description, PathMetadataValue(path))
 
     @staticmethod
     def fspath(
         path: Optional[str], label: Optional[str] = None, description: Optional[str] = None
     ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing a filesystem path as
-        :py:class:`PathMetadataEntryData`. For example:
+        :py:class:`PathMetadataValue`. For example:
 
         .. code-block:: python
 
@@ -850,7 +849,7 @@ class MetadataEntry(
         description: Optional[str] = None,
     ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing JSON data as
-        :py:class:`JsonMetadataEntryData`. For example:
+        :py:class:`JsonMetadataValue`. For example:
 
         .. code-block:: python
 
@@ -871,14 +870,14 @@ class MetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-        return MetadataEntry(label, description, JsonMetadataEntryData(data))
+        return MetadataEntry(label, description, JsonMetadataValue(data))
 
     @staticmethod
     def md(
         md_str: Optional[str], label: str, description: Optional[str] = None
     ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing markdown data as
-        :py:class:`MarkdownMetadataEntryData`. For example:
+        :py:class:`MarkdownMetadataValue`. For example:
 
         .. code-block:: python
 
@@ -894,7 +893,7 @@ class MetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-        return MetadataEntry(label, description, MarkdownMetadataEntryData(md_str))
+        return MetadataEntry(label, description, MarkdownMetadataValue(md_str))
 
     @staticmethod
     def python_artifact(
@@ -904,7 +903,7 @@ class MetadataEntry(
         return MetadataEntry(
             label,
             description,
-            PythonArtifactMetadataEntryData(python_artifact.__module__, python_artifact.__name__),
+            PythonArtifactMetadataValue(python_artifact.__module__, python_artifact.__name__),
         )
 
     @staticmethod
@@ -912,7 +911,7 @@ class MetadataEntry(
         value: Optional[float], label: str, description: Optional[str] = None
     ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing float as
-        :py:class:`FloatMetadataEntryData`. For example:
+        :py:class:`FloatMetadataValue`. For example:
 
         .. code-block:: python
 
@@ -929,14 +928,14 @@ class MetadataEntry(
             description (Optional[str]): A human-readable description of this metadata entry.
         """
 
-        return MetadataEntry(label, description, FloatMetadataEntryData(value))
+        return MetadataEntry(label, description, FloatMetadataValue(value))
 
     @staticmethod
     def int(
         value: Optional[int], label: str, description: Optional[str] = None
     ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing int as
-        :py:class:`IntMetadataEntryData`. For example:
+        :py:class:`IntMetadataValue`. For example:
 
         .. code-block:: python
 
@@ -953,14 +952,14 @@ class MetadataEntry(
             description (Optional[str]): A human-readable description of this metadata entry.
         """
 
-        return MetadataEntry(label, description, IntMetadataEntryData(value))
+        return MetadataEntry(label, description, IntMetadataValue(value))
 
     @staticmethod
     def pipeline_run(
         run_id: str, label: str, description: Optional[str] = None
     ) -> "MetadataEntry":
         check.str_param(run_id, "run_id")
-        return MetadataEntry(label, description, DagsterPipelineRunMetadataEntryData(run_id))
+        return MetadataEntry(label, description, DagsterPipelineRunMetadataValue(run_id))
 
     @staticmethod
     def asset(
@@ -990,7 +989,7 @@ class MetadataEntry(
         from dagster.core.definitions.events import AssetKey
 
         check.inst_param(asset_key, "asset_key", AssetKey)
-        return MetadataEntry(label, description, DagsterAssetMetadataEntryData(asset_key))
+        return MetadataEntry(label, description, DagsterAssetMetadataValue(asset_key))
 
     @staticmethod
     @experimental
@@ -1001,7 +1000,7 @@ class MetadataEntry(
         schema: Optional[TableSchema] = None,
     ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing tabluar data as
-        :py:class:`TableMetadataEntryData`. For example:
+        :py:class:`TableMetadataValue`. For example:
 
         .. code-block:: python
 
@@ -1047,11 +1046,11 @@ class MetadataEntry(
                 )
             schema = schema or TableSchema(
                 columns=[
-                    TableColumn(name=k, type=TableMetadataEntryData.infer_column_type(v))
+                    TableColumn(name=k, type=TableMetadataValue.infer_column_type(v))
                     for k, v in records[0].data.items()
                 ]
             )
-        return MetadataEntry(label, description, TableMetadataEntryData(records, schema))
+        return MetadataEntry(label, description, TableMetadataValue(records, schema))
 
     @staticmethod
     @experimental
@@ -1059,7 +1058,7 @@ class MetadataEntry(
         schema: TableSchema, label: str, description: Optional[str] = None
     ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing a table schema as
-        :py:class:`TableSchemaMetadataEntryData`. For example:
+        :py:class:`TableSchemaMetadataValue`. For example:
 
         .. code-block:: python
 
@@ -1089,7 +1088,7 @@ class MetadataEntry(
         return MetadataEntry(
             label,
             description,
-            TableSchemaMetadataEntryData(schema),
+            TableSchemaMetadataValue(schema),
         )
 
 

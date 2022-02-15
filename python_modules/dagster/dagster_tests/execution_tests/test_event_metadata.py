@@ -3,12 +3,12 @@ from dagster import (
     AssetMaterialization,
     AssetObservation,
     DagsterEventType,
-    EventMetadata,
-    FloatMetadataEntryData,
-    IntMetadataEntryData,
-    PythonArtifactMetadataEntryData,
-    TextMetadataEntryData,
-    UrlMetadataEntryData,
+    MetadataValue,
+    FloatMetadataValue,
+    IntMetadataValue,
+    PythonArtifactMetadataValue,
+    TextMetadataValue,
+    UrlMetadataValue,
     execute_pipeline,
     pipeline,
     solid,
@@ -70,11 +70,11 @@ def test_event_metadata_asset_materialization():
     entry_map = {
         entry.label: entry.entry_data.__class__ for entry in materialization.metadata_entries
     }
-    assert entry_map["text"] == TextMetadataEntryData
-    assert entry_map["int"] == IntMetadataEntryData
-    assert entry_map["url"] == UrlMetadataEntryData
-    assert entry_map["float"] == FloatMetadataEntryData
-    assert entry_map["python"] == PythonArtifactMetadataEntryData
+    assert entry_map["text"] == TextMetadataValue
+    assert entry_map["int"] == IntMetadataValue
+    assert entry_map["url"] == UrlMetadataValue
+    assert entry_map["float"] == FloatMetadataValue
+    assert entry_map["python"] == PythonArtifactMetadataValue
 
 
 def test_event_metadata_asset_observation():
@@ -107,11 +107,11 @@ def test_event_metadata_asset_observation():
     observation = observation_events[0].event_specific_data.asset_observation
     assert len(observation.metadata_entries) == 5
     entry_map = {entry.label: entry.entry_data.__class__ for entry in observation.metadata_entries}
-    assert entry_map["text"] == TextMetadataEntryData
-    assert entry_map["int"] == IntMetadataEntryData
-    assert entry_map["url"] == UrlMetadataEntryData
-    assert entry_map["float"] == FloatMetadataEntryData
-    assert entry_map["python"] == PythonArtifactMetadataEntryData
+    assert entry_map["text"] == TextMetadataValue
+    assert entry_map["int"] == IntMetadataValue
+    assert entry_map["url"] == UrlMetadataValue
+    assert entry_map["float"] == FloatMetadataValue
+    assert entry_map["python"] == PythonArtifactMetadataValue
 
 
 def test_unknown_metadata_value():
@@ -146,7 +146,7 @@ def test_parse_invalid_metadata():
     entries = parse_metadata(metadata, [], allow_invalid=True)
     assert len(entries) == 1
     assert entries[0].label == "foo"
-    assert entries[0].entry_data == TextMetadataEntryData("[object] (unserializable)")
+    assert entries[0].entry_data == TextMetadataValue("[object] (unserializable)")
 
 
 def test_bad_json_metadata_value():
