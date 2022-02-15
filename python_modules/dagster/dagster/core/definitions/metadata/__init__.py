@@ -424,8 +424,11 @@ class MetadataValue:
 # (e.g. `text`) overriding a static method on the superclass of the same name. This is not a concern
 # for us because these static methods should never be called on instances.
 
+# NOTE: `XMetadataValue` classes are serialized with a storage name of `XMetadataEntryData` to
+# maintain backward compatibility. See docstring of `whitelist_for_serdes` for more info.
 
-@whitelist_for_serdes
+
+@whitelist_for_serdes(storage_name="TextMetadataEntryData")
 class TextMetadataValue(  # type: ignore
     NamedTuple(
         "_TextMetadataValue",
@@ -447,7 +450,7 @@ class TextMetadataValue(  # type: ignore
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="UrlMetadataEntryData")
 class UrlMetadataValue(  # type: ignore
     NamedTuple(
         "_UrlMetadataValue",
@@ -469,7 +472,7 @@ class UrlMetadataValue(  # type: ignore
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="PathMetadataEntryData")
 class PathMetadataValue(  # type: ignore
     NamedTuple(
         "_PathMetadataValue",
@@ -491,7 +494,7 @@ class PathMetadataValue(  # type: ignore
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="JsonMetadataEntryData")
 class JsonMetadataValue(
     NamedTuple(
         "_JsonMetadataValue",
@@ -513,7 +516,7 @@ class JsonMetadataValue(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="MarkdownMetadataEntryData")
 class MarkdownMetadataValue(
     NamedTuple(
         "_MarkdownMetadataValue",
@@ -535,7 +538,7 @@ class MarkdownMetadataValue(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="PythonArtifactMetadataEntryData")
 class PythonArtifactMetadataValue(
     NamedTuple(
         "_PythonArtifactMetadataValue",
@@ -559,7 +562,7 @@ class PythonArtifactMetadataValue(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="FloatMetadataEntryData")
 class FloatMetadataValue(
     NamedTuple(
         "_FloatMetadataValue",
@@ -579,7 +582,7 @@ class FloatMetadataValue(
         return super(FloatMetadataValue, cls).__new__(cls, check.opt_float_param(value, "value"))
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="IntMetadataEntryData")
 class IntMetadataValue(
     NamedTuple(
         "_IntMetadataValue",
@@ -599,7 +602,7 @@ class IntMetadataValue(
         return super(IntMetadataValue, cls).__new__(cls, check.opt_int_param(value, "value"))
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="DagsterPipelineRunMetadataEntryData")
 class DagsterPipelineRunMetadataValue(
     NamedTuple(
         "_DagsterPipelineRunMetadataValue",
@@ -621,7 +624,7 @@ class DagsterPipelineRunMetadataValue(
         )
 
 
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="DagsterAssetMetadataEntryData")
 class DagsterAssetMetadataValue(
     NamedTuple("_DagsterAssetMetadataValue", [("asset_key", "AssetKey")]), MetadataValue
 ):
@@ -640,7 +643,7 @@ class DagsterAssetMetadataValue(
 
 
 @experimental
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="TableMetadataEntryData")
 class TableMetadataValue(
     NamedTuple(
         "_TableMetadataValue",
@@ -678,7 +681,7 @@ class TableMetadataValue(
 
 
 @experimental
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="TableSchemaMetadataEntryData")
 class TableSchemaMetadataValue(
     NamedTuple("_TableSchemaMetadataValue", [("schema", TableSchema)]), MetadataValue
 ):
@@ -700,7 +703,7 @@ class TableSchemaMetadataValue(
 
 # NOTE: This would better be implemented as a generic with `MetadataValue` set as a
 # typevar, but as of 2022-01-25 mypy does not support generics on NamedTuple.
-@whitelist_for_serdes
+@whitelist_for_serdes(storage_name="EventMetadataEntry")
 class MetadataEntry(
     NamedTuple(
         "_MetadataEntry",
