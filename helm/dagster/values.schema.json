@@ -779,6 +779,16 @@
                 "startupProbe"
             ]
         },
+        "IngressPathType": {
+            "title": "IngressPathType",
+            "description": "An enumeration.",
+            "enum": [
+                "Exact",
+                "Prefix",
+                "ImplementationSpecific"
+            ],
+            "type": "string"
+        },
         "IngressTLSConfiguration": {
             "title": "IngressTLSConfiguration",
             "type": "object",
@@ -805,6 +815,9 @@
                     "title": "Path",
                     "type": "string"
                 },
+                "pathType": {
+                    "$ref": "#/definitions/IngressPathType"
+                },
                 "serviceName": {
                     "title": "Servicename",
                     "type": "string"
@@ -823,6 +836,7 @@
             },
             "required": [
                 "path",
+                "pathType",
                 "serviceName",
                 "servicePort"
             ]
@@ -838,6 +852,9 @@
                 "path": {
                     "title": "Path",
                     "type": "string"
+                },
+                "pathType": {
+                    "$ref": "#/definitions/IngressPathType"
                 },
                 "tls": {
                     "$ref": "#/definitions/IngressTLSConfiguration"
@@ -860,6 +877,7 @@
             "required": [
                 "host",
                 "path",
+                "pathType",
                 "tls",
                 "precedingPaths",
                 "succeedingPaths"
@@ -877,6 +895,9 @@
                     "title": "Path",
                     "type": "string"
                 },
+                "pathType": {
+                    "$ref": "#/definitions/IngressPathType"
+                },
                 "tls": {
                     "$ref": "#/definitions/IngressTLSConfiguration"
                 },
@@ -898,6 +919,7 @@
             "required": [
                 "host",
                 "path",
+                "pathType",
                 "tls",
                 "precedingPaths",
                 "succeedingPaths"
@@ -910,6 +932,10 @@
                 "enabled": {
                     "title": "Enabled",
                     "type": "boolean"
+                },
+                "apiVersion": {
+                    "title": "Apiversion",
+                    "type": "string"
                 },
                 "annotations": {
                     "$ref": "#/definitions/Annotations"
