@@ -37,8 +37,6 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
         inst_data=None,
     ):
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
-
-        # NOTE: If changing these defaults, also update the Helm values
         self._max_concurrent_runs = check.opt_int_param(
             max_concurrent_runs, "max_concurrent_runs", 10
         )
