@@ -124,7 +124,6 @@ def test_executor(_init_context):
     return MultiprocessExecutor(
         max_concurrent=4,
         retries=RetryMode.DISABLED,
-        start_method="forkserver",
     )
 
 
