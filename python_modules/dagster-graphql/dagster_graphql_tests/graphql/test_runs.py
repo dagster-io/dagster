@@ -5,6 +5,7 @@ from dagster import (
     AssetMaterialization,
     Output,
     execute_pipeline,
+    graph,
     job,
     lambda_solid,
     op,
@@ -424,6 +425,22 @@ def get_asset_repo():
         return [foo_job]
 
     return asset_repo
+
+
+def get_many_job_repo():
+    @op
+    def foo():
+        pass
+
+    @graph
+    def foo_graph():
+        foo()
+
+    @repository
+    def many_job_repo():
+        return [foo_graph.to_job(name=f"job_{i}") for i in range(30)]
+
+    return many_job_repo
 
 
 def test_runs_over_time():
@@ -891,13 +908,31 @@ def test_repository_batching():
             assert counts.get("DagsterInstance.get_run_records") == 1
 
 
+def test_chunked_repository_batching():
+    with instance_for_test() as instance:
+        with define_out_of_process_context(__file__, "get_many_job_repo", instance) as context:
+            traced_counter.set(Counter())
+            execute_dagster_graphql(
+                context,
+                REPOSITORY_RUNS_QUERY,
+                variables={"repositorySelector": infer_repository_selector(context)},
+            )
+            counter = traced_counter.get()
+            counts = counter.counts()
+            assert counts
+            assert len(counts) == 1
+            # We should have two batch calls to fetch run records, instead of 1 big batch call
+            # or 30 individual calls (there are 30 jobs in this repo)
+            assert counts.get("DagsterInstance.get_run_records") == 2
+
+
 def test_asset_batching():
     with instance_for_test() as instance:
         repo = get_asset_repo()
         foo_job = repo.get_job("foo_job")
         for _ in range(3):
             foo_job.execute_in_process(instance=instance)
-        with define_out_of_process_context(__file__, "asset_repo", instance) as context:
+        with define_out_of_process_context(__file__, "get_asset_repo", instance) as context:
             traced_counter.set(Counter())
             result = execute_dagster_graphql(
                 context, ASSET_RUNS_QUERY, variables={"assetKey": {"path": ["foo"]}}

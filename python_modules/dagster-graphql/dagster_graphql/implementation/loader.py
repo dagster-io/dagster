@@ -10,6 +10,8 @@ from dagster.core.scheduler.instigation import InstigatorType
 from dagster.core.storage.pipeline_run import JobBucket, PipelineRunsFilter, RunRecord, TagBucket
 from dagster.core.storage.tags import SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
 
+MAX_BATCH_SIZE = 25
+
 
 class RepositoryDataType(Enum):
     JOB_RUNS = "job_runs"
@@ -57,37 +59,46 @@ class RepositoryScopedBatchLoader:
 
         if data_type == RepositoryDataType.JOB_RUNS:
             job_names = [x.name for x in self._repository.get_all_external_pipelines()]
-            records = self._instance.get_run_records(
-                bucket_by=JobBucket(bucket_limit=limit, job_names=job_names),
-            )
-            for record in records:
-                fetched[record.pipeline_run.pipeline_name].append(record)
+            while job_names:
+                chunk = job_names[:MAX_BATCH_SIZE]
+                job_names = job_names[MAX_BATCH_SIZE:]
+                records = self._instance.get_run_records(
+                    bucket_by=JobBucket(bucket_limit=limit, job_names=chunk),
+                )
+                for record in records:
+                    fetched[record.pipeline_run.pipeline_name].append(record)
 
         elif data_type == RepositoryDataType.SCHEDULE_RUNS:
             schedule_names = [
                 schedule.name for schedule in self._repository.get_external_schedules()
             ]
-            records = self._instance.get_run_records(
-                bucket_by=TagBucket(
-                    tag_key=SCHEDULE_NAME_TAG,
-                    bucket_limit=limit,
-                    tag_values=schedule_names,
-                ),
-            )
-            for record in records:
-                fetched[record.pipeline_run.tags.get(SCHEDULE_NAME_TAG)].append(record)
+            while schedule_names:
+                chunk = schedule_names[:MAX_BATCH_SIZE]
+                schedule_names = schedule_names[MAX_BATCH_SIZE:]
+                records = self._instance.get_run_records(
+                    bucket_by=TagBucket(
+                        tag_key=SCHEDULE_NAME_TAG,
+                        bucket_limit=limit,
+                        tag_values=chunk,
+                    ),
+                )
+                for record in records:
+                    fetched[record.pipeline_run.tags.get(SCHEDULE_NAME_TAG)].append(record)
 
         elif data_type == RepositoryDataType.SENSOR_RUNS:
             sensor_names = [sensor.name for sensor in self._repository.get_external_sensors()]
-            records = self._instance.get_run_records(
-                bucket_by=TagBucket(
-                    tag_key=SENSOR_NAME_TAG,
-                    bucket_limit=limit,
-                    tag_values=sensor_names,
-                ),
-            )
-            for record in records:
-                fetched[record.pipeline_run.tags.get(SENSOR_NAME_TAG)].append(record)
+            while sensor_names:
+                chunk = sensor_names[:MAX_BATCH_SIZE]
+                sensor_names = sensor_names[MAX_BATCH_SIZE:]
+                records = self._instance.get_run_records(
+                    bucket_by=TagBucket(
+                        tag_key=SENSOR_NAME_TAG,
+                        bucket_limit=limit,
+                        tag_values=chunk,
+                    ),
+                )
+                for record in records:
+                    fetched[record.pipeline_run.tags.get(SENSOR_NAME_TAG)].append(record)
 
         elif data_type == RepositoryDataType.SCHEDULE_STATES:
             schedule_states = self._instance.all_instigator_state(
