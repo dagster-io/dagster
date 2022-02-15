@@ -424,6 +424,7 @@ class MetadataValue:
 # (e.g. `text`) overriding a static method on the superclass of the same name. This is not a concern
 # for us because these static methods should never be called on instances.
 
+
 @whitelist_for_serdes
 class TextMetadataValue(  # type: ignore
     NamedTuple(

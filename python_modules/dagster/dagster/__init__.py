@@ -244,7 +244,6 @@ from dagster.utils.test import (
     execute_solid_within_pipeline,
     execute_solids_within_pipeline,
 )
-from pep562 import pep562
 
 from .version import __version__
 

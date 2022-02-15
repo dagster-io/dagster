@@ -30,27 +30,6 @@ from .dependency import (
     SolidInvocation,
     SolidOutputHandle,
 )
-from .metadata import (
-    MetadataValue,
-    MetadataEntry,
-    DagsterAssetMetadataValue,
-    DagsterPipelineRunMetadataValue,
-    FloatMetadataValue,
-    IntMetadataValue,
-    JsonMetadataValue,
-    MarkdownMetadataValue,
-    PathMetadataValue,
-    PythonArtifactMetadataValue,
-    TableColumn,
-    TableColumnConstraints,
-    TableConstraints,
-    TableMetadataValue,
-    TableRecord,
-    TableSchema,
-    TableSchemaMetadataValue,
-    TextMetadataValue,
-    UrlMetadataValue,
-)
 from .events import (
     AssetKey,
     AssetMaterialization,
