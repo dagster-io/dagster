@@ -14,12 +14,12 @@ from dagster import (
     solid,
 )
 from dagster.check import CheckError
-from dagster.core.definitions.event_metadata import (
-    DagsterInvalidEventMetadata,
-    EventMetadataEntry,
+from dagster.core.definitions.metadata import (
+    DagsterInvalidMetadata,
+    MetadataEntry,
     parse_metadata,
 )
-from dagster.core.definitions.event_metadata.table import (
+from dagster.core.definitions.metadata.table import (
     TableColumn,
     TableColumnConstraints,
     TableConstraints,
@@ -38,7 +38,7 @@ def solid_events_for_type(result, solid_name, event_type):
     ]
 
 
-def test_event_metadata_asset_materialization():
+def test_metadata_asset_materialization():
     @solid(output_defs=[])
     def the_solid(_context):
         yield AssetMaterialization(
@@ -46,9 +46,9 @@ def test_event_metadata_asset_materialization():
             metadata={
                 "text": "FOO",
                 "int": 22,
-                "url": EventMetadata.url("http://fake.com"),
+                "url": MetadataValue.url("http://fake.com"),
                 "float": 0.1,
-                "python": EventMetadata.python_artifact(EventMetadata),
+                "python": MetadataValue.python_artifact(MetadataValue),
             },
         )
 
@@ -77,7 +77,7 @@ def test_event_metadata_asset_materialization():
     assert entry_map["python"] == PythonArtifactMetadataValue
 
 
-def test_event_metadata_asset_observation():
+def test_metadata_asset_observation():
     @solid(output_defs=[])
     def the_solid(_context):
         yield AssetObservation(
@@ -85,9 +85,9 @@ def test_event_metadata_asset_observation():
             metadata={
                 "text": "FOO",
                 "int": 22,
-                "url": EventMetadata.url("http://fake.com"),
+                "url": MetadataValue.url("http://fake.com"),
                 "float": 0.1,
-                "python": EventMetadata.python_artifact(EventMetadata),
+                "python": MetadataValue.python_artifact(MetadataValue),
             },
         )
 
@@ -126,13 +126,13 @@ def test_unknown_metadata_value():
     def the_pipeline():
         the_solid()
 
-    with pytest.raises(DagsterInvalidEventMetadata) as exc_info:
+    with pytest.raises(DagsterInvalidMetadataValue) as exc_info:
         execute_pipeline(the_pipeline)
 
     assert str(exc_info.value) == (
         'Could not resolve the metadata value for "bad" to a known type. '
         "Its type was <class 'dagster.core.instance.DagsterInstance'>. "
-        "Consider wrapping the value with the appropriate EventMetadata type."
+        "Consider wrapping the value with the appropriate MetadataValue type."
     )
 
 
@@ -140,7 +140,7 @@ def test_parse_invalid_metadata():
 
     metadata = {"foo": object()}
 
-    with pytest.raises(DagsterInvalidEventMetadata) as exc_info:
+    with pytest.raises(DagsterInvalidMetadataValue) as exc_info:
         parse_metadata(metadata, [])
 
     entries = parse_metadata(metadata, [], allow_invalid=True)
@@ -161,18 +161,18 @@ def test_bad_json_metadata_value():
     def the_pipeline():
         the_solid()
 
-    with pytest.raises(DagsterInvalidEventMetadata) as exc_info:
+    with pytest.raises(DagsterInvalidMetadataValue) as exc_info:
         execute_pipeline(the_pipeline)
 
     assert str(exc_info.value) == (
         'Could not resolve the metadata value for "bad" to a JSON serializable value. '
-        "Consider wrapping the value with the appropriate EventMetadata type."
+        "Consider wrapping the value with the appropriate MetadataValue type."
     )
 
 
 def test_table_metadata_value_schema_inference():
 
-    table_metadata_value = EventMetadataEntry.table(
+    table_metadata_value =  .table(
         records=[
             TableRecord(name="foo", status=False),
             TableRecord(name="bar", status=True),

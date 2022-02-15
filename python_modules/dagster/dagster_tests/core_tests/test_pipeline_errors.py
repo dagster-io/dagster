@@ -5,7 +5,7 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterTypeCheckDidNotPass,
     DependencyDefinition,
-    EventMetadataEntry,
+    MetadataEntry,
     InputDefinition,
     Output,
     OutputDefinition,
@@ -226,7 +226,7 @@ def test_explicit_failure():
     def throws_failure():
         raise DagsterTypeCheckDidNotPass(
             description="Always fails.",
-            metadata_entries=[EventMetadataEntry.text("why", label="always_fails")],
+            metadata_entries=[MetadataEntry.text("why", label="always_fails")],
         )
 
     @pipeline
@@ -237,4 +237,4 @@ def test_explicit_failure():
         execute_pipeline(pipe)
 
     assert exc_info.value.description == "Always fails."
-    assert exc_info.value.metadata_entries == [EventMetadataEntry.text("why", label="always_fails")]
+    assert exc_info.value.metadata_entries == [MetadataEntry.text("why", label="always_fails")]

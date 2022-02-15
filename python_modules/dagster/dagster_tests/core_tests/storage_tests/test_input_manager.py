@@ -4,7 +4,7 @@ import pytest
 from dagster import (
     DagsterInstance,
     DagsterInvalidDefinitionError,
-    EventMetadataEntry,
+    MetadataEntry,
     IOManager,
     InputDefinition,
     ModeDefinition,
@@ -164,7 +164,7 @@ def test_input_manager_with_failure():
         raise Failure(
             description="Foolure",
             metadata_entries=[
-                EventMetadataEntry.text(label="label", text="text", description="description")
+                MetadataEntry.text(label="label", text="text", description="description")
             ],
         )
 

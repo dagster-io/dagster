@@ -561,7 +561,7 @@ def _store_output(
             raise DagsterInvariantViolationError(
                 f"IO manager on output {output_def.name} has returned "
                 f"value {elt} of type {type(elt).__name__}. The return type can only be "
-                "one of AssetMaterialization, EventMetadataEntry, PartitionMetadataEntry."
+                "one of AssetMaterialization, MetadataEntry, PartitionMetadataEntry."
             )
 
     for event in output_context.consume_events():

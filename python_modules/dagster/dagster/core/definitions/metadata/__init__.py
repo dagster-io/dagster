@@ -31,8 +31,8 @@ def parse_metadata_entry(label: str, value: ParseableMetadataValue) -> "Metadata
     if isinstance(value, (MetadataEntry, PartitionMetadataEntry)):
         raise DagsterInvalidMetadata(
             f"Expected a metadata value, found an instance of {value.__class__.__name__}. Consider "
-            "instead using a EventMetadata wrapper for the value, or using the `metadata_entries` "
-            "parameter to pass in a List[EventMetadataEntry|PartitionMetadataEntry]."
+            "instead using a MetadataValue wrapper for the value, or using the `metadata_entries` "
+            "parameter to pass in a List[MetadataEntry|PartitionMetadataEntry]."
         )
 
     if isinstance(value, EntryDataUnion):
@@ -55,13 +55,13 @@ def parse_metadata_entry(label: str, value: ParseableMetadataValue) -> "Metadata
         except TypeError:
             raise DagsterInvalidMetadata(
                 f'Could not resolve the metadata value for "{label}" to a JSON serializable value. '
-                "Consider wrapping the value with the appropriate EventMetadata type."
+                "Consider wrapping the value with the appropriate MetadataValue type."
             )
 
     raise DagsterInvalidMetadata(
         f'Could not resolve the metadata value for "{label}" to a known type. '
         f"Its type was {type(value)}. Consider wrapping the value with the appropriate "
-        "EventMetadata type."
+        "MetadataValue type."
     )
 
 
@@ -82,7 +82,7 @@ def parse_metadata(
         )
 
     # This is a stopgap measure to deal with unsupported metadata values, which occur when we try
-    # to convert arbitrary metadata (on e.g. OutputDefinition) to EventMetadata, which is required
+    # to convert arbitrary metadata (on e.g. OutputDefinition) to a MetadataValue, which is required
     # for serialization. This will cause unsupported values to be silently replaced with a
     # string placeholder-- eventually we should probably standardize the metadata system across
     # dagster.
@@ -114,7 +114,7 @@ class MetadataValue:
                 asset_key="my_dataset",
                 metadata={
                     "my_text_label": "hello",
-                    "dashboard_url": EventMetadata.url("http://mycoolsite.com/my_dashboard"),
+                    "dashboard_url": MetadataValue.url("http://mycoolsite.com/my_dashboard"),
                     "num_rows": 0,
                 },
             )
@@ -133,7 +133,7 @@ class MetadataValue:
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata={
-                        "my_text_label": EventMetadata.text("hello")
+                        "my_text_label": MetadataValue.text("hello")
                     },
                 )
 
@@ -155,7 +155,7 @@ class MetadataValue:
                 yield AssetMaterialization(
                     asset_key="my_dashboard",
                     metadata={
-                        "dashboard_url": EventMetadata.url("http://mycoolsite.com/my_dashboard"),
+                        "dashboard_url": MetadataValue.url("http://mycoolsite.com/my_dashboard"),
                     }
                 )
 
@@ -177,7 +177,7 @@ class MetadataValue:
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata={
-                        "filepath": EventMetadata.path("path/to/file"),
+                        "filepath": MetadataValue.path("path/to/file"),
                     }
                 )
 
@@ -200,7 +200,7 @@ class MetadataValue:
                     success=not missing_things,
                     label="is_present",
                     metadata={
-                        "about my dataset": EventMetadata.json({"missing_columns": missing_things})
+                        "about my dataset": MetadataValue.json({"missing_columns": missing_things})
                     },
                 )
 
@@ -223,7 +223,7 @@ class MetadataValue:
                 yield AssetMaterialization(
                     asset_key="info",
                     metadata={
-                        'Details': EventMetadata.md(md_str)
+                        'Details': MetadataValue.md(md_str)
                     },
                 )
 
@@ -245,8 +245,8 @@ class MetadataValue:
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata={
-                        "class": EventMetadata.python_artifact(MyClass),
-                        "function": EventMetadata.python_artifact(my_function),
+                        "class": MetadataValue.python_artifact(MyClass),
+                        "function": MetadataValue.python_artifact(my_function),
                     }
                 )
 
@@ -269,7 +269,7 @@ class MetadataValue:
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata={
-                        "size (bytes)": EventMetadata.float(calculate_bytes(df)),
+                        "size (bytes)": MetadataValue.float(calculate_bytes(df)),
                     }
                 )
 
@@ -292,7 +292,7 @@ class MetadataValue:
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata={
-                        "number of rows": EventMetadata.int(len(df)),
+                        "number of rows": MetadataValue.int(len(df)),
                     },
                 )
 
@@ -324,7 +324,7 @@ class MetadataValue:
                 yield AssetMaterialization(
                     asset_key=AssetKey("my_table"),
                     metadata={
-                        "Related asset": EventMetadata.asset(AssetKey('my_other_table')),
+                        "Related asset": MetadataValue.asset(AssetKey('my_other_table')),
                     },
                 )
 
@@ -352,7 +352,7 @@ class MetadataValue:
                     success=not has_errors,
                     label="is_valid",
                     metadata={
-                        "errors": EventMetadata.table(
+                        "errors": MetadataValue.table(
                             records=[
                                 TableRecord(code="invalid-data-type", row=2, col="name"}]
                             ],
@@ -395,7 +395,7 @@ class MetadataValue:
                 type_check_fn=some_validation_fn,
                 name='MyTable',
                 metadata={
-                    'my_table_schema': EventMetadata.table_schema(schema),
+                    'my_table_schema': MetadataValue.table_schema(schema),
                 }
             )
 
@@ -702,12 +702,12 @@ EntryDataUnion = (
 )
 
 
-# NOTE: This would better be implemented as a generic with `EventMetadataValue` set as a
-# typvar, but as of 2022-01-25 mypy does not support generics on NamedTuple.
+# NOTE: This would better be implemented as a generic with `MetadataValue` set as a
+# typevar, but as of 2022-01-25 mypy does not support generics on NamedTuple.
 @whitelist_for_serdes
 class MetadataEntry(
     NamedTuple(
-        "_EventMetadataEntry",
+        "_MetadataEntry",
         [
             ("label", str),
             ("description", Optional[str]),
@@ -721,7 +721,7 @@ class MetadataEntry(
     in Dagit and other tooling.
 
     Should be yielded from within an IO manager to append metadata for a given input/output event.
-    For other event types, passing a dict with `EventMetadata` values to the `metadata` argument
+    For other event types, passing a dict with `MetadataValue` values to the `metadata` argument
     is preferred.
 
     Args:
@@ -753,7 +753,7 @@ class MetadataEntry(
                 yield AssetMaterialization(
                     asset_key="my_dataset",
                     metadata_entries=[
-                        EventMetadataEntry.text("Text-based metadata for this event", "text_metadata")
+                        MetadataEntry.text("Text-based metadata for this event", "text_metadata")
                     ],
                 )
 
@@ -778,7 +778,7 @@ class MetadataEntry(
                 yield AssetMaterialization(
                     asset_key="my_dashboard",
                     metadata_entries=[
-                        EventMetadataEntry.url(
+                        MetadataEntry.url(
                             "http://mycoolsite.com/my_dashboard", label="dashboard_url"
                         ),
                     ],
@@ -804,7 +804,7 @@ class MetadataEntry(
             def emit_metadata(context):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
-                    metadata_entries=[EventMetadataEntry.path("path/to/file", label="filepath")],
+                    metadata_entries=[MetadataEntry.path("path/to/file", label="filepath")],
                 )
 
         Args:
@@ -827,7 +827,7 @@ class MetadataEntry(
             def emit_metadata(context):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
-                    metadata_entries=[EventMetadataEntry.fspath("path/to/file")],
+                    metadata_entries=[MetadataEntry.fspath("path/to/file")],
                 )
 
         Args:
@@ -859,7 +859,7 @@ class MetadataEntry(
                     success=not missing_things,
                     label="is_present",
                     metadata_entries=[
-                        EventMetadataEntry.json(
+                        MetadataEntry.json(
                             label="metadata", data={"missing_columns": missing_things},
                         )
                     ],
@@ -885,7 +885,7 @@ class MetadataEntry(
             def emit_metadata(context, md_str):
                 yield AssetMaterialization(
                     asset_key="info",
-                    metadata_entries=[EventMetadataEntry.md(md_str=md_str)],
+                    metadata_entries=[MetadataEntry.md(md_str=md_str)],
                 )
 
         Args:
@@ -919,7 +919,7 @@ class MetadataEntry(
             def emit_metadata(context, df):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
-                    metadata_entries=[EventMetadataEntry.float(calculate_bytes(df), "size (bytes)")],
+                    metadata_entries=[MetadataEntry.float(calculate_bytes(df), "size (bytes)")],
                 )
 
         Args:
@@ -943,7 +943,7 @@ class MetadataEntry(
             def emit_metadata(context, df):
                 yield AssetMaterialization(
                     asset_key="my_dataset",
-                    metadata_entries=[EventMetadataEntry.int(len(df), "number of rows")],
+                    metadata_entries=[MetadataEntry.int(len(df), "number of rows")],
                 )
 
         Args:
@@ -976,7 +976,7 @@ class MetadataEntry(
                 yield AssetMaterialization(
                     asset_key=AssetKey("my_table"),
                     metadata_entries=[
-                         EventMetadataEntry.asset(AssetKey('my_other_table'), "Related asset"),
+                         MetadataEntry.asset(AssetKey('my_other_table'), "Related asset"),
                     ],
                 )
 
@@ -1010,7 +1010,7 @@ class MetadataEntry(
                     success=not has_errors,
                     label="is_valid",
                     metadata_entries=[
-                        EventMetadataEntry.table(
+                        MetadataEntry.table(
                             label="errors",
                             records=[
                                 TableRecord(code="invalid-data-type", row=2, col="name"}]
@@ -1073,7 +1073,7 @@ class MetadataEntry(
                 type_check_fn=some_validation_fn,
                 name='MyTable',
                 metadata_entries=[
-                    EventMetadataEntry.table_schema(
+                    MetadataEntry.table_schema(
                         schema,
                         label='schema',
                     )
@@ -1101,10 +1101,10 @@ class PartitionMetadataEntry(
         ],
     )
 ):
-    """Event containing an :py:class:`EventMetdataEntry` and the name of a partition that the entry
+    """Event containing an :py:class:`MetdataEntry` and the name of a partition that the entry
     applies to.
 
-    This can be yielded or returned in place of EventMetadataEntries for cases where you are trying
+    This can be yielded or returned in place of MetadataEntries for cases where you are trying
     to associate metadata more precisely.
     """
 

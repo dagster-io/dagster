@@ -170,9 +170,9 @@ def create_dagster_pandas_dataframe_type(
         description (Optional[str]): A markdown-formatted string, displayed in tooling.
         columns (Optional[List[PandasColumn]]): A list of :py:class:`~dagster.PandasColumn` objects
             which express dataframe column schemas and constraints.
-        event_metadata_fn (Optional[Callable[[], Union[Dict[str, Union[str, float, int, Dict, EventMetadata]], List[EventMetadataEntry]]]]):
+        event_metadata_fn (Optional[Callable[[], Union[Dict[str, Union[str, float, int, Dict, MetadataValue]], List[MetadataEntry]]]]):
             A callable which takes your dataframe and returns a dict with string label keys and
-            EventMetadata values. Can optionally return a List[EventMetadataEntry].
+            MetadataValue values. Can optionally return a List[MetadataEntry].
         dataframe_constraints (Optional[List[DataFrameConstraint]]): A list of objects that inherit from
             :py:class:`~dagster.DataFrameConstraint`. This allows you to express dataframe-level constraints.
         loader (Optional[DagsterTypeLoader]): An instance of a class that
@@ -324,7 +324,7 @@ def _execute_summary_stats(type_name, value, event_metadata_fn):
     invalid_message = (
         "The return value of the user-defined summary_statistics function for pandas "
         f"data frame type {type_name} returned {value}. This function must return "
-        "Union[Dict[str, Union[str, float, int, Dict, EventMetadata]], List[EventMetadataEntry]]"
+        "Union[Dict[str, Union[str, float, int, Dict, MetadataValue]], List[MetadataEntry]]"
     )
 
     metadata = None
