@@ -186,7 +186,7 @@ PANDERA_FAILURE_CASES_SCHEMA = TableSchema(
 
 
 def _pandera_errors_to_type_check(
-    error: pa.errors.SchemaErrors, table_schema: TableSchema
+    error: pa.errors.SchemaErrors, _table_schema: TableSchema
 ) -> TypeCheck:
     return TypeCheck(
         success=False,
