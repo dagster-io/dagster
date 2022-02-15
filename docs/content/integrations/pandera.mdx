@@ -9,7 +9,8 @@ The `dagster-pandera` integration library provides an API for generating [Dagste
 
 <Note>
   Though Pandera currently supports validation on DataFrames from a variety of
-  Pandas alternatives (e.g. Dask, Modin, Koalas), at this time <code>dagster-pandera</code>
+  Pandas alternatives (e.g. Dask, Modin, Koalas), at this time{" "}
+  <code>dagster-pandera</code>
   only supports Pandas dataframes.
 </Note>
 
@@ -19,12 +20,12 @@ The `dagster-pandera` integration library provides an API for generating [Dagste
 
 ```python file=/integrations/pandera/example.py
 import random
-import pandera as pa
-from pandera.typing import Series
-import pandas as pd
-from dagster import op, job, Out
-from dagster_pandera import pandera_schema_to_dagster_type
 
+import pandas as pd
+import pandera as pa
+from dagster import Out, job, op
+from dagster_pandera import pandera_schema_to_dagster_type
+from pandera.typing import Series
 
 APPLE_STOCK_PRICES = {
     "name": ["AAPL", "AAPL", "AAPL", "AAPL", "AAPL"],
