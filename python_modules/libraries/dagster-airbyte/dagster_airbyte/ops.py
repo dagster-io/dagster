@@ -97,5 +97,9 @@ def airbyte_sync_op(context):
         )
     yield Output(
         airbyte_output,
-        metadata={**airbyte_output.job_details["attempts"][-1]["attempt"]["totalStats"]},
+        metadata={
+            **airbyte_output.job_details.get("attempts", [{}])[-1]
+            .get("attempt", {})
+            .get("totalStats", {})
+        },
     )

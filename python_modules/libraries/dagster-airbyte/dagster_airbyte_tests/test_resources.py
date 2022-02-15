@@ -17,12 +17,6 @@ def test_trigger_connection():
     )
     responses.add(
         method=responses.POST,
-        url=ab_resource.api_base_url + "/connections/get",
-        json={},
-        status=200,
-    )
-    responses.add(
-        method=responses.POST,
         url=ab_resource.api_base_url + "/connections/sync",
         json={"job": {"id": 1}},
         status=200,
@@ -33,12 +27,7 @@ def test_trigger_connection():
 
 def test_trigger_connection_fail():
     ab_resource = airbyte_resource(
-        build_init_resource_context(
-            config={"host": "some_host", "port": "8000", "request_max_retries": 2}
-        )
-    )
-    responses.add(
-        method=responses.POST, url=ab_resource.api_base_url + "/connections/sync", status=500
+        build_init_resource_context(config={"host": "some_host", "port": "8000"})
     )
     with pytest.raises(Failure, match="Exceeded max number of retries"):
         ab_resource.sync_and_poll("some_connection")
