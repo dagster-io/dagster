@@ -27,54 +27,54 @@ MIN_INT = -2147483648
 
 def iterate_metadata_entries(metadata_entries):
     from ..schema.metadata import (
-        GrapheneFloatMetadataEntry,
-        GrapheneIntMetadataEntry,
-        GrapheneJsonMetadataEntry,
-        GrapheneMarkdownMetadataEntry,
-        GraphenePathMetadataEntry,
-        GraphenePythonArtifactMetadataEntry,
-        GrapheneTextMetadataEntry,
-        GrapheneUrlMetadataEntry,
-        GraphenePipelineRunMetadataEntry,
-        GrapheneAssetMetadataEntry,
-        GrapheneTableMetadataEntry,
-        GrapheneTableSchemaMetadataEntry,
+        GrapheneEventFloatMetadataEntry,
+        GrapheneEventIntMetadataEntry,
+        GrapheneEventJsonMetadataEntry,
+        GrapheneEventMarkdownMetadataEntry,
+        GrapheneEventPathMetadataEntry,
+        GrapheneEventPythonArtifactMetadataEntry,
+        GrapheneEventTextMetadataEntry,
+        GrapheneEventUrlMetadataEntry,
+        GrapheneEventPipelineRunMetadataEntry,
+        GrapheneEventAssetMetadataEntry,
+        GrapheneEventTableMetadataEntry,
+        GrapheneEventTableSchemaMetadataEntry,
     )
 
     check.list_param(metadata_entries, "metadata_entries", of_type=MetadataEntry)
     for metadata_entry in metadata_entries:
         if isinstance(metadata_entry.entry_data, PathMetadataValue):
-            yield GraphenePathMetadataEntry(
+            yield GrapheneEventPathMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 path=metadata_entry.entry_data.path,
             )
         elif isinstance(metadata_entry.entry_data, JsonMetadataValue):
-            yield GrapheneJsonMetadataEntry(
+            yield GrapheneEventJsonMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 jsonString=seven.json.dumps(metadata_entry.entry_data.data),
             )
         elif isinstance(metadata_entry.entry_data, TextMetadataValue):
-            yield GrapheneTextMetadataEntry(
+            yield GrapheneEventTextMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 text=metadata_entry.entry_data.text,
             )
         elif isinstance(metadata_entry.entry_data, UrlMetadataValue):
-            yield GrapheneUrlMetadataEntry(
+            yield GrapheneEventUrlMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 url=metadata_entry.entry_data.url,
             )
         elif isinstance(metadata_entry.entry_data, MarkdownMetadataValue):
-            yield GrapheneMarkdownMetadataEntry(
+            yield GrapheneEventMarkdownMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 md_str=metadata_entry.entry_data.md_str,
             )
         elif isinstance(metadata_entry.entry_data, PythonArtifactMetadataValue):
-            yield GraphenePythonArtifactMetadataEntry(
+            yield GrapheneEventPythonArtifactMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 module=metadata_entry.entry_data.module,
@@ -87,7 +87,7 @@ def iterate_metadata_entries(metadata_entries):
             if isnan(float_val):
                 float_val = None
 
-            yield GrapheneFloatMetadataEntry(
+            yield GrapheneEventFloatMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 floatValue=float_val,
@@ -98,7 +98,7 @@ def iterate_metadata_entries(metadata_entries):
             if MIN_INT <= metadata_entry.entry_data.value <= MAX_INT:
                 int_val = metadata_entry.entry_data.value
 
-            yield GrapheneIntMetadataEntry(
+            yield GrapheneEventIntMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 intValue=int_val,
@@ -106,19 +106,19 @@ def iterate_metadata_entries(metadata_entries):
                 intRepr=str(metadata_entry.entry_data.value),
             )
         elif isinstance(metadata_entry.entry_data, DagsterPipelineRunMetadataValue):
-            yield GraphenePipelineRunMetadataEntry(
+            yield GrapheneEventPipelineRunMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 runId=metadata_entry.entry_data.run_id,
             )
         elif isinstance(metadata_entry.entry_data, DagsterAssetMetadataValue):
-            yield GrapheneAssetMetadataEntry(
+            yield GrapheneEventAssetMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 assetKey=metadata_entry.entry_data.asset_key,
             )
         elif isinstance(metadata_entry.entry_data, TableMetadataValue):
-            yield GrapheneTableMetadataEntry(
+            yield GrapheneEventTableMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 table=GrapheneTable(
@@ -130,7 +130,7 @@ def iterate_metadata_entries(metadata_entries):
                 ),
             )
         elif isinstance(metadata_entry.entry_data, TableSchemaMetadataValue):
-            yield GrapheneTableSchemaMetadataEntry(
+            yield GrapheneEventTableSchemaMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 schema=GrapheneTableSchema(
