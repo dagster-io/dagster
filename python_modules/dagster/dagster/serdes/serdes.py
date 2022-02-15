@@ -50,7 +50,8 @@ EnumEntry = Tuple[Type[Enum], Type["EnumSerializer"]]
 class WhitelistMap(NamedTuple):
     tuples: Dict[str, TupleEntry]
     enums: Dict[str, EnumEntry]
-    names: Dict[str, Dict[str, str]]
+    serialized_names: Dict[str, str]
+    deserialized_names: Dict[str, str]
 
     def register_tuple(
         self,
@@ -90,26 +91,26 @@ class WhitelistMap(NamedTuple):
         return self.enums[name]
 
     def register_serialized_name(self, name: str, serialized_name: str):
-        self.names["serialized"][name] = serialized_name
+        self.serialized_names[name] = serialized_name
 
     def has_serialized_name(self, name: str) -> bool:
-        return name in self.names["serialized"]
+        return name in self.serialized_names
 
     def get_serialized_name(self, name: str) -> str:
-        return self.names["serialized"][name]
+        return self.serialized_names[name]
 
-    def register_deserialized_name(self, name: str, serialized_name: str):
-        self.names["serialized"][name] = serialized_name
+    def register_deserialized_name(self, name: str, deserialized_name: str):
+        self.deserialized_names[name] = deserialized_name
 
     def has_deserialized_name(self, name: str) -> bool:
-        return name in self.names["deserialized"]
+        return name in self.deserialized_names
 
     def get_deserialized_name(self, name: str) -> str:
-        return self.names["deserialized"][name]
+        return self.deserialized_names[name]
 
     @staticmethod
     def create():
-        return WhitelistMap(tuples={}, enums={}, names=dict(serialized={}, deserialized={}))
+        return WhitelistMap(tuples={}, enums={}, serialized_names={}, deserialized_names={})
 
 
 _WHITELIST_MAP = WhitelistMap.create()
