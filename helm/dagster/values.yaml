@@ -944,14 +944,13 @@ dagsterDaemon:
   # marked as failed. If a run had started but then the run worker crashed, the daemon will attempt
   # to resume the run with a new run worker.
   runMonitoring:
-    enabled: false
+    enabled: true
     # Timeout for runs to start (avoids runs hanging in STARTED)
     startTimeoutSeconds: 180
     # How often to check on in progress runs
     pollIntervalSeconds: 120
-    # Max number of times to attempt to resume a run with a new run worker. Defaults to 3 if the the
-    # run launcher supports resuming runs, otherwise defaults to 0.
-    maxResumeRunAttempts: ~
+    # Max number of times to attempt to resume a run with a new run worker
+    maxResumeRunAttempts: 0
 
   # Additional environment variables to set.
   # A Kubernetes ConfigMap will be created with these environment variables. See:
