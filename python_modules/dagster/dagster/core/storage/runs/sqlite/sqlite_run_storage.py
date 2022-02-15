@@ -1,5 +1,4 @@
 import os
-import warnings
 from contextlib import contextmanager
 from urllib.parse import urljoin, urlparse
 

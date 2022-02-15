@@ -5,7 +5,7 @@ from abc import abstractmethod
 from collections import defaultdict
 from datetime import datetime
 from enum import Enum
-from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 
 import pendulum
 import sqlalchemy as db
@@ -175,7 +175,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     def _rows_to_runs(self, rows: Iterable[Tuple]) -> List[PipelineRun]:
         return list(map(self._row_to_run, rows))
 
-    def _row_to_run_record(self, row: Tuple) -> RunRecord:
+    def _row_to_run_record(self, row: Any) -> RunRecord:
         return RunRecord(
             storage_id=check.int_param(row["id"], "id"),
             pipeline_run=deserialize_as(check.str_param(row["run_body"], "run_body"), PipelineRun),
