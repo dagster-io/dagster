@@ -423,13 +423,13 @@ class MetadataValue:
 
 @whitelist_for_serdes
 class TextMetadataValue(
-    MetadataValue,
     NamedTuple(
         "_TextMetadataValue",
         [
             ("text", Optional[str]),
         ],
     ),
+    MetadataValue,
 ):
     """Container class for text metadata entry data.
 
@@ -445,13 +445,13 @@ class TextMetadataValue(
 
 @whitelist_for_serdes
 class UrlMetadataValue(
-    MetadataValue,
     NamedTuple(
         "_UrlMetadataValue",
         [
             ("url", Optional[str]),
         ],
     ),
+    MetadataValue,
 ):
     """Container class for URL metadata entry data.
 
@@ -467,13 +467,13 @@ class UrlMetadataValue(
 
 @whitelist_for_serdes
 class PathMetadataValue(
-    MetadataValue,
     NamedTuple(
         "_PathMetadataValue",
         [
             ("path", Optional[str]),
         ],
     ),
+    MetadataValue,
 ):
     """Container class for path metadata entry data.
 
@@ -489,13 +489,13 @@ class PathMetadataValue(
 
 @whitelist_for_serdes
 class JsonMetadataValue(
-    MetadataValue,
     NamedTuple(
         "_JsonMetadataValue",
         [
             ("data", Dict[str, Any]),
         ],
     ),
+    MetadataValue,
 ):
     """Container class for JSON metadata entry data.
 
@@ -511,13 +511,13 @@ class JsonMetadataValue(
 
 @whitelist_for_serdes
 class MarkdownMetadataValue(
-    MetadataValue,
     NamedTuple(
         "_MarkdownMetadataValue",
         [
             ("md_str", Optional[str]),
         ],
     ),
+    MetadataValue,
 ):
     """Container class for markdown metadata entry data.
 
@@ -533,7 +533,6 @@ class MarkdownMetadataValue(
 
 @whitelist_for_serdes
 class PythonArtifactMetadataValue(
-    MetadataValue,
     NamedTuple(
         "_PythonArtifactMetadataValue",
         [
@@ -541,6 +540,7 @@ class PythonArtifactMetadataValue(
             ("name", str),
         ],
     ),
+    MetadataValue,
 ):
     """Container class for python artifact metadata entry data.
 
@@ -557,13 +557,13 @@ class PythonArtifactMetadataValue(
 
 @whitelist_for_serdes
 class FloatMetadataValue(
-    MetadataValue,
     NamedTuple(
         "_FloatMetadataValue",
         [
             ("value", Optional[float]),
         ],
     ),
+    MetadataValue,
 ):
     """Container class for float metadata entry data.
 
@@ -577,13 +577,13 @@ class FloatMetadataValue(
 
 @whitelist_for_serdes
 class IntMetadataValue(
-    MetadataValue,
     NamedTuple(
         "_IntMetadataValue",
         [
             ("value", Optional[int]),
         ],
     ),
+    MetadataValue,
 ):
     """Container class for int metadata entry data.
 
@@ -597,13 +597,13 @@ class IntMetadataValue(
 
 @whitelist_for_serdes
 class DagsterPipelineRunMetadataValue(
-    MetadataValue,
     NamedTuple(
         "_DagsterPipelineRunMetadataValue",
         [
             ("run_id", str),
         ],
     ),
+    MetadataValue,
 ):
     """Representation of a dagster pipeline run.
 
@@ -619,7 +619,7 @@ class DagsterPipelineRunMetadataValue(
 
 @whitelist_for_serdes
 class DagsterAssetMetadataValue(
-    MetadataValue, NamedTuple("_DagsterAssetMetadataValue", [("asset_key", "AssetKey")])
+    NamedTuple("_DagsterAssetMetadataValue", [("asset_key", "AssetKey")]), MetadataValue
 ):
     """Representation of a dagster asset.
 
@@ -638,7 +638,6 @@ class DagsterAssetMetadataValue(
 @experimental
 @whitelist_for_serdes
 class TableMetadataValue(
-    MetadataValue,
     NamedTuple(
         "_TableMetadataValue",
         [
@@ -646,6 +645,7 @@ class TableMetadataValue(
             ("schema", TableSchema),
         ],
     ),
+    MetadataValue,
 ):
     """Container class for table metadata entry data.
 
@@ -676,7 +676,7 @@ class TableMetadataValue(
 @experimental
 @whitelist_for_serdes
 class TableSchemaMetadataValue(
-    MetadataValue, NamedTuple("_TableSchemaMetadataValue", [("schema", TableSchema)])
+    NamedTuple("_TableSchemaMetadataValue", [("schema", TableSchema)]), MetadataValue
 ):
     """Representation of a schema for arbitrary tabular data.
 
