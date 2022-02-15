@@ -480,9 +480,9 @@ class OutputContext:
                 def handle_output(self, context, obj):
                     context.add_output_metadata({"foo": "bar"})
         """
-        from dagster.core.definitions.event_metadata import parse_metadata
+        from dagster.core.definitions.metadata import normalize_metadata
 
-        self._metadata_entries = parse_metadata(metadata, [])
+        self._metadata_entries = normalize_metadata(metadata, [])
 
     def get_logged_metadata_entries(
         self,
