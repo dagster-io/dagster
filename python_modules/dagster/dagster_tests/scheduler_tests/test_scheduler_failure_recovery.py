@@ -59,7 +59,7 @@ def test_failure_recovery_before_run_created(instance, external_repo, crash_loca
 
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     with pendulum.test(frozen_datetime):
-        instance.start_schedule_and_update_storage_state(external_schedule)
+        instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
 
@@ -72,7 +72,7 @@ def test_failure_recovery_before_run_created(instance, external_repo, crash_loca
 
         assert scheduler_process.exitcode != 0
 
-        ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.STARTED
 
@@ -96,7 +96,7 @@ def test_failure_recovery_before_run_created(instance, external_repo, crash_loca
             partition_time=create_pendulum_time(2019, 2, 26),
         )
 
-        ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -119,7 +119,7 @@ def test_failure_recovery_after_run_created(instance, external_repo, crash_locat
     frozen_datetime = initial_datetime.add()
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     with pendulum.test(frozen_datetime):
-        instance.start_schedule_and_update_storage_state(external_schedule)
+        instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
 
@@ -132,7 +132,7 @@ def test_failure_recovery_after_run_created(instance, external_repo, crash_locat
 
         assert scheduler_process.exitcode != 0
 
-        ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.STARTED
 
@@ -180,7 +180,7 @@ def test_failure_recovery_after_run_created(instance, external_repo, crash_locat
             instance.get_runs()[0], initial_datetime, create_pendulum_time(2019, 2, 26)
         )
 
-        ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -201,7 +201,7 @@ def test_failure_recovery_after_tick_success(instance, external_repo, crash_loca
     frozen_datetime = initial_datetime.add()
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     with pendulum.test(frozen_datetime):
-        instance.start_schedule_and_update_storage_state(external_schedule)
+        instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
 
@@ -224,7 +224,7 @@ def test_failure_recovery_after_tick_success(instance, external_repo, crash_loca
             instance.get_runs()[0], initial_datetime, create_pendulum_time(2019, 2, 26)
         )
 
-        ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
         assert len(ticks) == 1
 
         if crash_signal == get_terminate_signal():
@@ -256,7 +256,7 @@ def test_failure_recovery_after_tick_success(instance, external_repo, crash_loca
             instance.get_runs()[0], initial_datetime, create_pendulum_time(2019, 2, 26)
         )
 
-        ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -277,7 +277,7 @@ def test_failure_recovery_between_multi_runs(instance, external_repo, crash_loca
     frozen_datetime = initial_datetime.add()
     external_schedule = external_repo.get_external_schedule("multi_run_schedule")
     with pendulum.test(frozen_datetime):
-        instance.start_schedule_and_update_storage_state(external_schedule)
+        instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
 
@@ -294,7 +294,7 @@ def test_failure_recovery_between_multi_runs(instance, external_repo, crash_loca
         assert instance.get_runs_count() == 1
         validate_run_exists(instance.get_runs()[0], initial_datetime)
 
-        ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
         assert len(ticks) == 1
 
     frozen_datetime = frozen_datetime.add(minutes=1)
@@ -308,7 +308,7 @@ def test_failure_recovery_between_multi_runs(instance, external_repo, crash_loca
         assert scheduler_process.exitcode == 0
         assert instance.get_runs_count() == 2
         validate_run_exists(instance.get_runs()[0], initial_datetime)
-        ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
         assert len(ticks) == 1
         validate_tick(
             ticks[0],

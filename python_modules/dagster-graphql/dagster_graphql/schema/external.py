@@ -257,7 +257,7 @@ class GrapheneRepository(graphene.ObjectType):
 
     def resolve_assetNodes(self, _graphene_info):
         return [
-            GrapheneAssetNode(self._repository, external_asset_node)
+            GrapheneAssetNode(self._repository_location, self._repository, external_asset_node)
             for external_asset_node in self._repository.get_external_asset_nodes()
         ]
 

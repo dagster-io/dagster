@@ -1,4 +1,5 @@
 import os
+import warnings
 from contextlib import contextmanager
 from urllib.parse import urljoin, urlparse
 
@@ -13,13 +14,15 @@ from dagster.core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
-from dagster.core.storage.sqlite import create_db_conn_string
+from dagster.core.storage.sqlite import create_db_conn_string, get_sqlite_version
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import mkdir_p
 from sqlalchemy.pool import NullPool
 
 from ..schema import InstanceInfo, RunStorageSqlMetadata, RunTagsTable, RunsTable
 from ..sql_run_storage import SqlRunStorage
+
+MINIMUM_SQLITE_VERSION = "3.25.0"
 
 
 class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
@@ -49,6 +52,14 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         check.str_param(conn_string, "conn_string")
         self._conn_string = conn_string
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
+
+        sqlite_version = get_sqlite_version()
+        if sqlite_version < MINIMUM_SQLITE_VERSION:
+            warnings.warn(
+                "You are using an outdated version of SQLite.  In order to ensure that Dagster "
+                "can efficiently query and write to the database, we recommend upgrading to at "
+                f"least version `3.25.0`.  You are currently using version `{sqlite_version}`."
+            )
 
         super().__init__()
 

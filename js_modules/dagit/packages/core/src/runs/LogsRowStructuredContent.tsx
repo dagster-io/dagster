@@ -7,14 +7,18 @@ import {Link, useLocation} from 'react-router-dom';
 import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
 import {PythonErrorFragment} from '../app/types/PythonErrorFragment';
 import {AssetKey} from '../assets/types';
+import {
+  LogRowStructuredContentTable,
+  MetadataEntries,
+  MetadataEntryLink,
+} from '../metadata/MetadataEntry';
+import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
 import {ErrorSource} from '../types/globalTypes';
 
 import {EventTypeColumn} from './LogsRowComponents';
-import {LogRowStructuredContentTable, MetadataEntries, MetadataEntryLink} from './MetadataEntry';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {eventTypeToDisplayType} from './getRunFilterProviders';
 import {LogsRowStructuredFragment} from './types/LogsRowStructuredFragment';
-import {MetadataEntryFragment} from './types/MetadataEntryFragment';
 
 interface IStructuredContentProps {
   node: LogsRowStructuredFragment;

@@ -27,7 +27,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     debug_info = instance.scheduler_debug_info()
     errors = debug_info.errors
     external_schedules = external_repository.get_external_schedules()
-    schedule_states = instance.all_stored_job_state(
+    schedule_states = instance.all_instigator_state(
         external_repository.get_external_origin_id(), InstigatorType.SCHEDULE
     )
     external_schedules_dict = {s.get_external_origin_id(): s for s in external_schedules}
@@ -183,35 +183,29 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
             repo_schedules = external_repo.get_external_schedules()
             stored_schedules_by_origin_id = {
                 stored_schedule_state.job_origin_id: stored_schedule_state
-                for stored_schedule_state in instance.all_stored_job_state(
-                    external_repo.get_external_origin_id(), job_type=InstigatorType.SCHEDULE
+                for stored_schedule_state in instance.all_instigator_state(
+                    external_repo.get_external_origin_id(), instigator_type=InstigatorType.SCHEDULE
                 )
             }
 
             first = True
 
             for external_schedule in repo_schedules:
-                stored_schedule_state = stored_schedules_by_origin_id.get(
-                    external_schedule.get_external_origin_id()
+                schedule_state = external_schedule.get_current_instigator_state(
+                    stored_schedules_by_origin_id.get(external_schedule.get_external_origin_id())
                 )
-                if running_filter and (
-                    not stored_schedule_state
-                    or stored_schedule_state.status == InstigatorStatus.STOPPED
-                ):
+
+                if running_filter and not schedule_state.is_running:
                     continue
-                if stopped_filter and stored_schedule_state and InstigatorStatus.RUNNING:
+                if stopped_filter and schedule_state.is_running:
                     continue
 
                 if name_filter:
                     print_fn(external_schedule.name)
                     continue
 
-                status = (
-                    stored_schedule_state.status
-                    if stored_schedule_state
-                    else InstigatorStatus.STOPPED
-                )
-                schedule_title = f"Schedule: {external_schedule.name} [{status.value}]"
+                status = "RUNNING" if schedule_state.is_running else "STOPPED"
+                schedule_title = f"Schedule: {external_schedule.name} [{status}]"
                 if not first:
                     print_fn("*" * len(schedule_title))
 
@@ -260,7 +254,7 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
             if all_flag:
                 for external_schedule in external_repo.get_external_schedules():
                     try:
-                        instance.start_schedule_and_update_storage_state(external_schedule)
+                        instance.start_schedule(external_schedule)
                     except DagsterInvariantViolationError as ex:
                         raise click.UsageError(ex)
 
@@ -272,9 +266,7 @@ def execute_start_command(schedule_name, all_flag, cli_args, print_fn):
             else:
                 try:
 
-                    instance.start_schedule_and_update_storage_state(
-                        external_repo.get_external_schedule(schedule_name)
-                    )
+                    instance.start_schedule(external_repo.get_external_schedule(schedule_name))
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
 
@@ -297,8 +289,9 @@ def execute_stop_command(schedule_name, cli_args, print_fn, instance=None):
             check_repo_and_scheduler(external_repo, instance)
 
             try:
-                instance.stop_schedule_and_update_storage_state(
-                    external_repo.get_external_schedule(schedule_name).get_external_origin_id()
+                external_schedule = external_repo.get_external_schedule(schedule_name)
+                instance.stop_schedule(
+                    external_schedule.get_external_origin_id(), external_schedule
                 )
             except DagsterInvariantViolationError as ex:
                 raise click.UsageError(ex)
@@ -396,7 +389,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
             repository_name = external_repo.name
 
             if all_running_flag:
-                for schedule_state in instance.all_stored_job_state(
+                for schedule_state in instance.all_instigator_state(
                     external_repo.get_external_origin_id(), InstigatorType.SCHEDULE
                 ):
                     if schedule_state.status == InstigatorStatus.RUNNING:
@@ -404,10 +397,11 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                             external_schedule = external_repo.get_external_schedule(
                                 schedule_state.job_name
                             )
-                            instance.stop_schedule_and_update_storage_state(
-                                schedule_state.job_origin_id
+                            instance.stop_schedule(
+                                schedule_state.job_origin_id,
+                                external_schedule,
                             )
-                            instance.start_schedule_and_update_storage_state(external_schedule)
+                            instance.start_schedule(external_schedule)
                         except DagsterInvariantViolationError as ex:
                             raise click.UsageError(ex)
 
@@ -418,7 +412,9 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                 )
             else:
                 external_schedule = external_repo.get_external_schedule(schedule_name)
-                schedule_state = instance.get_job_state(external_schedule.get_external_origin_id())
+                schedule_state = instance.get_instigator_state(
+                    external_schedule.get_external_origin_id()
+                )
                 if schedule_state != None and schedule_state.status != InstigatorStatus.RUNNING:
                     click.UsageError(
                         "Cannot restart a schedule {name} because is not currently running".format(
@@ -427,8 +423,8 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                     )
 
                 try:
-                    instance.stop_schedule_and_update_storage_state(schedule_state.job_origin_id)
-                    instance.start_schedule_and_update_storage_state(external_schedule)
+                    instance.stop_schedule(schedule_state.job_origin_id, external_schedule)
+                    instance.start_schedule(external_schedule)
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)
 

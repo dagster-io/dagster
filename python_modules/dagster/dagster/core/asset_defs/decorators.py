@@ -177,7 +177,7 @@ class _Asset:
             asset_partitions=partition_fn,
         )
         op = _Op(
-            name=asset_name,
+            name="__".join(out_asset_key.path),
             description=self.description,
             ins=asset_ins,
             out=out,
@@ -251,12 +251,12 @@ def multi_asset(
     )
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
-        asset_name = name or fn.__name__
+        op_name = name or fn.__name__
         asset_ins = build_asset_ins(fn, None, ins or {}, non_argument_deps)
-        asset_outs = build_asset_outs(asset_name, outs, asset_ins, internal_asset_deps or {})
+        asset_outs = build_asset_outs(op_name, outs, asset_ins, internal_asset_deps or {})
 
         op = _Op(
-            name=asset_name,
+            name=op_name,
             description=description,
             ins=asset_ins,
             out=asset_outs,
@@ -278,7 +278,7 @@ def multi_asset(
 
 
 def build_asset_outs(
-    asset_name: str,
+    op_name: str,
     outs: Mapping[str, Out],
     ins: Mapping[str, In],
     internal_asset_deps: Mapping[str, Set[AssetKey]],
@@ -312,14 +312,14 @@ def build_asset_outs(
     for out_name, asset_keys in internal_asset_deps.items():
         check.invariant(
             out_name in outs,
-            f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for asset "
-            f"{asset_name}. Must be one of the outs for this multi_asset {list(outs.keys())}.",
+            f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for multi-asset "
+            f"{op_name}. Must be one of the outs for this multi-asset {list(outs.keys())}.",
         )
         invalid_asset_deps = asset_keys.difference(valid_asset_deps)
         check.invariant(
             not invalid_asset_deps,
             f"Invalid asset dependencies: {invalid_asset_deps} specified in `internal_asset_deps` "
-            f"argument for asset '{asset_name}' on key '{out_name}'. Each specified asset key "
+            f"argument for multi-asset '{op_name}' on key '{out_name}'. Each specified asset key "
             "must be associated with an input to the asset or produced by this asset. Valid "
             f"keys: {valid_asset_deps}",
         )

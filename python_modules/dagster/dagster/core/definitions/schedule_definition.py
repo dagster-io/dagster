@@ -1,6 +1,7 @@
 import copy
 from contextlib import ExitStack
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 import pendulum
@@ -31,6 +32,12 @@ from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from .decorators.schedule import DecoratedScheduleFunction
+
+
+@whitelist_for_serdes
+class DefaultScheduleStatus(Enum):
+    RUNNING = "RUNNING"
+    STOPPED = "STOPPED"
 
 
 class ScheduleEvaluationContext:
@@ -171,6 +178,8 @@ class ScheduleDefinition:
         description (Optional[str]): A human-readable description of the schedule.
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should execute when this
             schedule runs.
+        default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     def __init__(
@@ -192,6 +201,7 @@ class ScheduleDefinition:
         ] = None,
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, PipelineDefinition]] = None,
+        default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     ):
         from .decorators.schedule import DecoratedScheduleFunction
 
@@ -317,6 +327,10 @@ class ScheduleDefinition:
                         schedule_name=name, timezone=self._execution_timezone
                     )
                 )
+
+        self._default_status = check.inst_param(
+            default_status, "default_status", DefaultScheduleStatus
+        )
 
     def __call__(self, *args, **kwargs):
         from .decorators.schedule import DecoratedScheduleFunction
@@ -467,6 +481,10 @@ class ScheduleDefinition:
             return self._target.load()
 
         check.failed("Target is not loadable")
+
+    @property
+    def default_status(self) -> DefaultScheduleStatus:
+        return self._default_status
 
 
 def is_context_provided(params: List[funcsigs.Parameter]) -> bool:

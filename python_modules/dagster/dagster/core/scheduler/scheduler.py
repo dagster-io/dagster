@@ -24,7 +24,7 @@ class DagsterSchedulerError(DagsterError):
 
 
 class DagsterScheduleDoesNotExist(DagsterSchedulerError):
-    """Errors raised when ending a job for a schedule."""
+    """Errors raised when fetching a schedule."""
 
 
 class SchedulerDebugInfo(
@@ -45,32 +45,9 @@ class Scheduler(abc.ABC):
     an external system such as cron to ensure scheduled repeated execution according.
     """
 
-    def _get_schedule_state(self, instance, external_origin_id):
-        schedule_state = instance.get_job_state(external_origin_id)
-        if not schedule_state:
-            raise DagsterScheduleDoesNotExist(
-                "You have attempted to start the job for schedule id {id}, but its state is not in storage.".format(
-                    id=external_origin_id
-                )
-            )
-
-        return schedule_state
-
-    def _create_new_schedule_state(self, instance, external_schedule):
-        schedule_state = InstigatorState(
-            external_schedule.get_external_origin(),
-            InstigatorType.SCHEDULE,
-            InstigatorStatus.STOPPED,
-            ScheduleInstigatorData(external_schedule.cron_schedule),
-        )
-
-        instance.add_job_state(schedule_state)
-        return schedule_state
-
-    def start_schedule_and_update_storage_state(self, instance, external_schedule):
+    def start_schedule(self, instance, external_schedule):
         """
         Updates the status of the given schedule to `InstigatorStatus.RUNNING` in schedule storage,
-        then calls `start_schedule`.
 
         This should not be overridden by subclasses.
 
@@ -83,32 +60,37 @@ class Scheduler(abc.ABC):
         check.inst_param(instance, "instance", DagsterInstance)
         check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
-        schedule_state = instance.get_job_state(external_schedule.get_external_origin_id())
-
-        if not schedule_state:
-            schedule_state = self._create_new_schedule_state(instance, external_schedule)
-
-        if schedule_state.status == InstigatorStatus.RUNNING:
+        schedule_state = instance.get_instigator_state(external_schedule.get_external_origin_id())
+        if external_schedule.get_current_instigator_state(schedule_state).is_running:
             raise DagsterSchedulerError(
                 "You have attempted to start schedule {name}, but it is already running".format(
                     name=external_schedule.name
                 )
             )
 
-        self.start_schedule(instance, external_schedule)
-        started_schedule = schedule_state.with_status(InstigatorStatus.RUNNING).with_data(
-            ScheduleInstigatorData(
-                external_schedule.cron_schedule,
-                get_current_datetime_in_utc().timestamp(),
-            )
+        new_instigator_data = ScheduleInstigatorData(
+            external_schedule.cron_schedule,
+            get_current_datetime_in_utc().timestamp(),
         )
-        instance.update_job_state(started_schedule)
+
+        if not schedule_state:
+            started_schedule = InstigatorState(
+                external_schedule.get_external_origin(),
+                InstigatorType.SCHEDULE,
+                InstigatorStatus.RUNNING,
+                new_instigator_data,
+            )
+            instance.add_instigator_state(started_schedule)
+        else:
+            started_schedule = schedule_state.with_status(InstigatorStatus.RUNNING).with_data(
+                new_instigator_data
+            )
+            instance.update_instigator_state(started_schedule)
         return started_schedule
 
-    def stop_schedule_and_update_storage_state(self, instance, schedule_origin_id):
+    def stop_schedule(self, instance, schedule_origin_id, external_schedule):
         """
         Updates the status of the given schedule to `InstigatorStatus.STOPPED` in schedule storage,
-        then calls `stop_schedule`.
 
         This should not be overridden by subclasses.
 
@@ -117,109 +99,42 @@ class Scheduler(abc.ABC):
         """
 
         check.str_param(schedule_origin_id, "schedule_origin_id")
+        check.opt_inst_param(external_schedule, "external_schedule", ExternalSchedule)
 
-        schedule_state = self._get_schedule_state(instance, schedule_origin_id)
-
-        self.stop_schedule(instance, schedule_origin_id)
-        stopped_schedule = schedule_state.with_status(InstigatorStatus.STOPPED).with_data(
-            ScheduleInstigatorData(
-                cron_schedule=schedule_state.job_specific_data.cron_schedule,
+        schedule_state = instance.get_instigator_state(schedule_origin_id)
+        if (
+            external_schedule
+            and not external_schedule.get_current_instigator_state(schedule_state).is_running
+        ) or (schedule_state and not schedule_state.is_running):
+            raise DagsterSchedulerError(
+                "You have attempted to stop schedule {name}, but it is already stopped".format(
+                    name=external_schedule.name
+                )
             )
-        )
-        instance.update_job_state(stopped_schedule)
+
+        if not schedule_state:
+            stopped_schedule = InstigatorState(
+                external_schedule.get_external_origin(),
+                InstigatorType.SCHEDULE,
+                InstigatorStatus.STOPPED,
+                ScheduleInstigatorData(
+                    external_schedule.cron_schedule,
+                ),
+            )
+            instance.add_instigator_state(stopped_schedule)
+        else:
+            stopped_schedule = schedule_state.with_status(InstigatorStatus.STOPPED).with_data(
+                ScheduleInstigatorData(
+                    cron_schedule=schedule_state.job_specific_data.cron_schedule,
+                )
+            )
+            instance.update_instigator_state(stopped_schedule)
+
         return stopped_schedule
-
-    def stop_schedule_and_delete_from_storage(self, instance, schedule_origin_id):
-        """
-        Deletes a schedule from schedule storage, then calls `stop_schedule`.
-
-        This should not be overridden by subclasses.
-
-        Args:
-            instance (DagsterInstance): The current instance.
-            schedule_origin_id (string): The id of the schedule target to start running.
-        """
-
-        check.inst_param(instance, "instance", DagsterInstance)
-        check.str_param(schedule_origin_id, "schedule_origin_id")
-
-        schedule = self._get_schedule_state(instance, schedule_origin_id)
-        self.stop_schedule(instance, schedule_origin_id)
-        instance.delete_job_state(schedule_origin_id)
-        return schedule
-
-    def refresh_schedule(self, instance, external_schedule):
-        """Refresh a running schedule. This is called when user reconciles the schedule state.
-
-        By default, this method will call stop_schedule and then start_schedule but can be
-        overriden. For example, in the K8s Scheduler we patch the existing cronjob
-        (without stopping it) to minimize downtime.
-
-        Args:
-            instance (DagsterInstance): The current instance.
-            external_schedule (ExternalSchedule): The schedule to start running.
-        """
-        check.inst_param(instance, "instance", DagsterInstance)
-        check.inst_param(external_schedule, "external_schedule", ExternalSchedule)
-
-        self.stop_schedule(instance, external_schedule.get_external_origin_id())
-        self.start_schedule(instance, external_schedule)
 
     @abc.abstractmethod
     def debug_info(self):
         """Returns debug information about the scheduler"""
-
-    @abc.abstractmethod
-    def start_schedule(self, instance, external_schedule):
-        """Start running a schedule. This method is called by `start_schedule_and_update_storage_state`,
-        which first updates the status of the schedule in schedule storage to `InstigatorStatus.RUNNING`,
-        then calls this method.
-
-        For example, in the cron scheduler, this method writes a cron job to the cron tab
-        for the given schedule.
-
-        Args:
-            instance (DagsterInstance): The current instance.
-            external_schedule (ExternalSchedule): The schedule to start running.
-        """
-
-    @abc.abstractmethod
-    def stop_schedule(self, instance, schedule_origin_id):
-        """Stop running a schedule.
-
-        This method is called by
-        1) `stop_schedule_and_update_storage_state`,
-        which first updates the status of the schedule in schedule storage to `InstigatorStatus.STOPPED`,
-        then calls this method.
-        2) `stop_schedule_and_delete_from_storage`, which deletes the schedule from schedule storage
-        then calls this method.
-
-        For example, in the cron scheduler, this method deletes the cron job for a given scheduler
-        from the cron tab.
-
-        Args:
-            instance (DagsterInstance): The current instance.
-            schedule_origin_id (string): The id of the schedule target to stop running.
-        """
-
-    @abc.abstractmethod
-    def running_schedule_count(self, instance, schedule_origin_id):
-        """Returns the number of jobs currently running for the given schedule. This method is used
-        for detecting when the scheduler is out of sync with schedule storage.
-
-        For example, when:
-        - There are duplicate jobs runnning for a single schedule
-        - There are no jobs runnning for a schedule that is set to be running
-        - There are still jobs running for a schedule that is set to be stopped
-
-        When the scheduler and schedule storage are in sync, this method should return:
-        - 1 when a schedule is set to be running
-        - 0 when a schedule is set to be stopped
-
-        Args:
-            instance (DagsterInstance): The current instance.
-            schedule_origin_id (string): The id of the schedule target to return the number of jobs for
-        """
 
     @abc.abstractmethod
     def get_logs_path(self, instance, schedule_origin_id):
@@ -285,20 +200,6 @@ class DagsterDaemonScheduler(Scheduler, ConfigurableClass):
 
     def debug_info(self):
         return ""
-
-    def start_schedule(self, instance, external_schedule):
-        # Automatically picked up by the `dagster scheduler run` command
-        pass
-
-    def stop_schedule(self, instance, schedule_origin_id):
-        # Automatically picked up by the `dagster scheduler run` command
-        pass
-
-    def running_schedule_count(self, instance, schedule_origin_id):
-        state = instance.get_job_state(schedule_origin_id)
-        if not state:
-            return 0
-        return 1 if state.status == InstigatorStatus.RUNNING else 0
 
     def wipe(self, instance):
         pass

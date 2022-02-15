@@ -176,6 +176,8 @@ First, check that the daemon is running. Click on "Status" in the left nav in Da
 
 If there isn't a clear error on this page, or if the daemon should be sending heartbeats but isn't, you may need to check the logs from the daemon process. The steps to do this will depend on your deployment - for example, if you're using Kubernetes, you'll need to get the logs from the pod that's running the daemon. You should be able to search those logs for the name of your schedule (or `SchedulerDaemon` to see all logs associated with the scheduler) to gain an understanding of what's going wrong.
 
+If the daemon output shows errors about not being able to find the schedule, make sure the daemon is using the same `workspace.yaml` file as Dagit. The daemon does not need to restart in order to pick up changes to the `workspace.yaml` file.
+
 Finally, it's possible that the daemon is running correctly, but there's a problem with your schedule code. Check the "Latest tick" row on the page for your schedule. If there was an error while trying to submit runs for your schedule, there should be a red "Failure" box next to the time. Clicking on the box should display an error with a stack trace showing you why the schedule couldn't execute. If the schedule is working as expected, it should display a blue box instead with information about any runs that were created by that schedule tick.
 
 ### Still stuck?

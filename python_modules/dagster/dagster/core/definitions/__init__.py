@@ -120,12 +120,14 @@ from .run_status_sensor_definition import (
     run_status_sensor,
 )
 from .schedule_definition import (
+    DefaultScheduleStatus,
     ScheduleDefinition,
     ScheduleEvaluationContext,
     ScheduleExecutionContext,
 )
 from .sensor_definition import (
     AssetSensorDefinition,
+    DefaultSensorStatus,
     SensorDefinition,
     SensorEvaluationContext,
     SensorExecutionContext,

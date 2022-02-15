@@ -1,7 +1,6 @@
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, ScheduleSelector
-from dagster.core.scheduler.instigation import InstigatorStatus
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 from graphql.execution.base import ResolveInfo
 
@@ -18,7 +17,7 @@ def start_schedule(graphene_info, schedule_selector):
     location = graphene_info.context.get_repository_location(schedule_selector.location_name)
     repository = location.get_repository(schedule_selector.repository_name)
     instance = graphene_info.context.instance
-    schedule_state = instance.start_schedule_and_update_storage_state(
+    schedule_state = instance.start_schedule(
         repository.get_external_schedule(schedule_selector.schedule_name)
     )
     return GrapheneScheduleStateResult(GrapheneInstigationState(schedule_state))
@@ -31,7 +30,17 @@ def stop_schedule(graphene_info, schedule_origin_id):
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     instance = graphene_info.context.instance
-    schedule_state = instance.stop_schedule_and_update_storage_state(schedule_origin_id)
+
+    external_schedules = {
+        job.get_external_origin_id(): job
+        for repository_location in graphene_info.context.repository_locations
+        for repository in repository_location.get_repositories().values()
+        for job in repository.get_external_schedules()
+    }
+
+    schedule_state = instance.stop_schedule(
+        schedule_origin_id, external_schedules.get(schedule_origin_id)
+    )
     return GrapheneScheduleStateResult(GrapheneInstigationState(schedule_state))
 
 
@@ -60,9 +69,9 @@ def get_schedules_or_error(graphene_info, repository_selector):
     external_schedules = repository.get_external_schedules()
     schedule_states_by_name = {
         state.name: state
-        for state in graphene_info.context.instance.all_stored_job_state(
+        for state in graphene_info.context.instance.all_instigator_state(
             repository_origin_id=repository.get_external_origin_id(),
-            job_type=InstigatorType.SCHEDULE,
+            instigator_type=InstigatorType.SCHEDULE,
         )
     }
 
@@ -92,7 +101,7 @@ def get_schedules_for_pipeline(graphene_info, pipeline_selector):
         if external_schedule.pipeline_name != pipeline_selector.pipeline_name:
             continue
 
-        schedule_state = graphene_info.context.instance.get_job_state(
+        schedule_state = graphene_info.context.instance.get_instigator_state(
             external_schedule.get_external_origin_id()
         )
         results.append(GrapheneSchedule(external_schedule, schedule_state))
@@ -116,7 +125,7 @@ def get_schedule_or_error(graphene_info, schedule_selector):
             GrapheneScheduleNotFoundError(schedule_name=schedule_selector.schedule_name)
         )
 
-    schedule_state = graphene_info.context.instance.get_job_state(
+    schedule_state = graphene_info.context.instance.get_instigator_state(
         external_schedule.get_external_origin_id()
     )
     return GrapheneSchedule(external_schedule, schedule_state)
@@ -125,7 +134,7 @@ def get_schedule_or_error(graphene_info, schedule_selector):
 def get_schedule_next_tick(graphene_info, schedule_state):
     from ..schema.instigation import GrapheneFutureInstigationTick
 
-    if schedule_state.status != InstigatorStatus.RUNNING:
+    if not schedule_state.is_running:
         return None
 
     repository_origin = schedule_state.origin.external_repository_origin
@@ -140,6 +149,10 @@ def get_schedule_next_tick(graphene_info, schedule_state):
         return None
 
     repository = repository_location.get_repository(repository_origin.repository_name)
+
+    if not repository.has_external_schedule(schedule_state.name):
+        return None
+
     external_schedule = repository.get_external_schedule(schedule_state.name)
     time_iter = external_schedule.execution_time_iterator(
         get_timestamp_from_utc_datetime(get_current_datetime_in_utc())

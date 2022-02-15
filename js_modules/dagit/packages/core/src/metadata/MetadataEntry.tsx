@@ -19,7 +19,12 @@ import styled from 'styled-components/macro';
 import {copyValue} from '../app/DomUtils';
 import {assertUnreachable, displayNameForAssetKey} from '../app/Util';
 
+import {TableSchema, TABLE_SCHEMA_FRAGMENT} from './TableSchema';
 import {MetadataEntryFragment} from './types/MetadataEntryFragment';
+
+export interface IMetadataEntries {
+  metadataEntries: MetadataEntryFragment[];
+}
 
 export const LogRowStructuredContentTable: React.FC<{
   rows: {label: string; item: JSX.Element}[];
@@ -158,9 +163,9 @@ export const MetadataEntry: React.FC<{
         </MetadataEntryLink>
       );
     case 'EventTableMetadataEntry':
-      return <>TableMetadata</>;
+      return null;
     case 'EventTableSchemaMetadataEntry':
-      return <>TableSchemaMetadata</>;
+      return <TableSchema schema={entry.schema} />;
     default:
       return assertUnreachable(entry);
   }
@@ -205,7 +210,21 @@ export const METADATA_ENTRY_FRAGMENT = gql`
         path
       }
     }
+    ... on EventTableMetadataEntry {
+      table {
+        records
+        schema {
+          ...TableSchemaFragment
+        }
+      }
+    }
+    ... on EventTableSchemaMetadataEntry {
+      schema {
+        ...TableSchemaFragment
+      }
+    }
   }
+  ${TABLE_SCHEMA_FRAGMENT}
 `;
 
 const IconButton = styled.button`

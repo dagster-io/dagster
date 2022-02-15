@@ -115,6 +115,33 @@ def test_asset_with_dagster_type():
     assert my_asset.op.output_defs[0].dagster_type.display_name == "String"
 
 
+def test_asset_with_namespace():
+    @asset(namespace="my_namespace")
+    def my_asset():
+        pass
+
+    assert isinstance(my_asset, AssetsDefinition)
+    assert len(my_asset.op.output_defs) == 1
+    assert len(my_asset.op.input_defs) == 0
+    assert my_asset.op.name == "my_namespace__my_asset"
+    assert my_asset.asset_keys == {AssetKey(["my_namespace", "my_asset"])}
+
+    @asset(namespace=["one", "two", "three"])
+    def multi_component_namespace_asset():
+        pass
+
+    assert isinstance(multi_component_namespace_asset, AssetsDefinition)
+    assert len(multi_component_namespace_asset.op.output_defs) == 1
+    assert len(multi_component_namespace_asset.op.input_defs) == 0
+    assert (
+        multi_component_namespace_asset.op.name
+        == "one__two__three__multi_component_namespace_asset"
+    )
+    assert multi_component_namespace_asset.asset_keys == {
+        AssetKey(["one", "two", "three", "multi_component_namespace_asset"])
+    }
+
+
 def test_asset_with_inputs_and_namespace():
     @asset(namespace="my_namespace")
     def my_asset(arg1):

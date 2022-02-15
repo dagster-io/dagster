@@ -18,7 +18,7 @@ def test_execute_schedule_on_celery_k8s(  # pylint: disable=redefined-outer-name
         dagster_instance_for_daemon, schedule_name
     ) as external_schedule:
         reoriginated_schedule = ReOriginatedExternalScheduleForTest(external_schedule)
-        dagster_instance_for_daemon.start_schedule_and_update_storage_state(reoriginated_schedule)
+        dagster_instance_for_daemon.start_schedule(reoriginated_schedule)
 
         scheduler_runs = dagster_instance_for_daemon.get_runs(
             PipelineRunsFilter(tags=PipelineRun.tags_for_schedule(reoriginated_schedule))
@@ -48,8 +48,8 @@ def test_execute_schedule_on_celery_k8s(  # pylint: disable=redefined-outer-name
                 continue
 
         finally:
-            dagster_instance_for_daemon.stop_schedule_and_update_storage_state(
-                reoriginated_schedule.get_external_origin_id()
+            dagster_instance_for_daemon.stop_schedule(
+                reoriginated_schedule.get_external_origin_id(), reoriginated_schedule
             )
 
         last_run = schedule_runs[0]

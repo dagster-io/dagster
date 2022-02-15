@@ -144,6 +144,11 @@ const CodeMirrorShimStyle = createGlobalStyle`
   .CodeMirror-lint-message.CodeMirror-lint-message-error {
     background: transparent;
   }
+
+  /* Ensure that hints aren't vertically cutoff*/
+  .CodeMirror-hint div {
+    max-height: none !important;
+  }
 `;
 
 const CodeMirrorWhitespaceStyle = createGlobalStyle`
