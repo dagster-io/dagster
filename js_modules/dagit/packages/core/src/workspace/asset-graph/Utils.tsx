@@ -2,6 +2,7 @@ import {gql} from '@apollo/client';
 import {pathVerticalDiagonal} from '@vx/shape';
 import * as dagre from 'dagre';
 
+import {tokenForAssetKey} from '../../app/Util';
 import {AssetNodeDefinitionFragment} from '../../assets/types/AssetNodeDefinitionFragment';
 
 import {getNodeDimensions} from './AssetNode';
@@ -267,7 +268,8 @@ export const buildLiveData = (
   const data: LiveData = {};
 
   for (const liveNode of nodes) {
-    const graphNode = graph.nodes[liveNode.id];
+    const graphNodeKey = JSON.stringify(liveNode.assetKey.path);
+    const graphNode = graph.nodes[graphNodeKey];
     if (!graphNode) {
       continue;
     }
@@ -279,7 +281,7 @@ export const buildLiveData = (
 
     const runs = inProgressRunsByStep.find((r) => r.stepKey === liveNode.opName);
 
-    data[liveNode.id] = {
+    data[graphNodeKey] = {
       lastStepStart,
       lastMaterialization,
       inProgressRunIds: runs?.inProgressRuns.map((r) => r.id) || [],

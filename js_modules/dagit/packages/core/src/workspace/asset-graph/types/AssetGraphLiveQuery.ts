@@ -39,6 +39,11 @@ export interface AssetGraphLiveQuery_repositoryOrError_Repository {
 
 export type AssetGraphLiveQuery_repositoryOrError = AssetGraphLiveQuery_repositoryOrError_PythonError | AssetGraphLiveQuery_repositoryOrError_Repository;
 
+export interface AssetGraphLiveQuery_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface AssetGraphLiveQuery_assetNodes_assetMaterializations_runOrError_RunNotFoundError {
   __typename: "RunNotFoundError" | "PythonError";
 }
@@ -248,6 +253,7 @@ export interface AssetGraphLiveQuery_assetNodes {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  assetKey: AssetGraphLiveQuery_assetNodes_assetKey;
   assetMaterializations: AssetGraphLiveQuery_assetNodes_assetMaterializations[];
 }
 

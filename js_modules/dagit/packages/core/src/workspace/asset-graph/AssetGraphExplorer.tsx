@@ -1,12 +1,5 @@
 import {gql, QueryResult, useQuery} from '@apollo/client';
-import {
-  Box,
-  Checkbox,
-  ColorsWIP,
-  IconWIP,
-  NonIdealState,
-  SplitPanelContainer,
-} from '@dagster-io/ui';
+import {Box, Checkbox, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import _, {flatMap, uniq, uniqBy, without} from 'lodash';
 import React, {useRef} from 'react';
 import {useHistory} from 'react-router-dom';
@@ -426,13 +419,8 @@ const AssetGraphExplorerWithData: React.FC<
           <RightInfoPanel>
             <RightInfoPanelContent>
               <SidebarAssetInfo
-                node={selectedGraphNodes[0].definition}
+                assetKey={selectedGraphNodes[0].assetKey}
                 liveData={liveDataByNode[selectedGraphNodes[0].id]}
-                definition={
-                  handles.find(
-                    (h) => h.solid.definition.name === selectedGraphNodes[0].definition.opName,
-                  )?.solid.definition
-                }
               />
             </RightInfoPanelContent>
           </RightInfoPanel>

@@ -20,7 +20,6 @@ import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../../app/Util';
 import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
-import {DAGSTER_TYPE_FRAGMENT} from '../../dagstertype/DagsterType';
 import {NodeHighlightColors} from '../../graph/OpNode';
 import {OpTags} from '../../graph/OpTags';
 import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntry';
@@ -44,8 +43,8 @@ export const AssetNode: React.FC<{
 }> = React.memo(({definition, metadata, selected, liveData, jobName, inAssetCatalog}) => {
   const launch = useLaunchSingleAssetJob();
 
-  const {runOrError} = liveData?.lastMaterialization || {};
   const event = liveData?.lastMaterialization;
+  const runOrError = event?.runOrError;
   const kind = metadata.find((m) => m.key === 'kind')?.value;
   const repoAddress = buildRepoAddress(
     definition.repository.name,
@@ -214,7 +213,9 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
   fragment AssetNodeLiveFragment on AssetNode {
     id
     opName
-
+    assetKey {
+      path
+    }
     assetMaterializations(limit: 1) {
       ...LatestMaterializationMetadataFragment
 
@@ -237,26 +238,14 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     }
   }
 
-  ${LATEST_MATERIALIZATION_METADATA_FRAGMENT}
   ${METADATA_ENTRY_FRAGMENT}
+  ${LATEST_MATERIALIZATION_METADATA_FRAGMENT}
 `;
 
 export const ASSET_NODE_FRAGMENT = gql`
   fragment AssetNodeFragment on AssetNode {
     id
     opName
-    op {
-      name
-      description
-      outputDefinitions {
-        metadataEntries {
-          ...MetadataEntryFragment
-        }
-        type {
-          ...DagsterTypeFragment
-        }
-      }
-    }
     description
     partitionDefinition
     assetKey {
@@ -271,8 +260,6 @@ export const ASSET_NODE_FRAGMENT = gql`
       }
     }
   }
-  ${METADATA_ENTRY_FRAGMENT}
-  ${DAGSTER_TYPE_FRAGMENT}
 `;
 
 export const getNodeDimensions = (def: {

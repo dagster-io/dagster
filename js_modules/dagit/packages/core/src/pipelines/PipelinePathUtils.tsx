@@ -53,7 +53,7 @@ export function instanceAssetsExplorerPathToURL(path: Omit<ExplorerPath, 'pipeli
   return (
     '/instance/asset-graph' +
     explorerPathToString({...path, pipelineName: __REPOSITORY_MEGA_JOB}).replace(
-      /instancewide/g,
+      __REPOSITORY_MEGA_JOB,
       '',
     )
   );

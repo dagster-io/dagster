@@ -9,6 +9,11 @@ import { RunStatus } from "./../../../types/globalTypes";
 // GraphQL fragment: AssetNodeLiveFragment
 // ====================================================
 
+export interface AssetNodeLiveFragment_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
 export interface AssetNodeLiveFragment_assetMaterializations_runOrError_RunNotFoundError {
   __typename: "RunNotFoundError" | "PythonError";
 }
@@ -218,5 +223,6 @@ export interface AssetNodeLiveFragment {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  assetKey: AssetNodeLiveFragment_assetKey;
   assetMaterializations: AssetNodeLiveFragment_assetMaterializations[];
 }

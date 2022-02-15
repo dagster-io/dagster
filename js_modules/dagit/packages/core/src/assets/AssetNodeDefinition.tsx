@@ -4,6 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {displayNameForAssetKey, tokenForAssetKey} from '../app/Util';
+import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
 import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -13,6 +14,11 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
 import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
+import {
+  AssetMetadataTable,
+  ASSET_NODE_OP_METADATA_FRAGMENT,
+  metadataForAssetNode,
+} from './AssetMetadata';
 import {AssetNodeList} from './AssetNodeList';
 import {PartitionHealthSummary, usePartitionHealthData} from './PartitionHealthSummary';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
@@ -22,6 +28,7 @@ export const AssetNodeDefinition: React.FC<{
   liveDataByNode: LiveData;
 }> = ({assetNode, liveDataByNode}) => {
   const partitionHealthData = usePartitionHealthData([assetNode.assetKey]);
+  const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
   const repoAddress = buildRepoAddress(
     assetNode.repository.name,
     assetNode.repository.location.name,
@@ -44,12 +51,26 @@ export const AssetNodeDefinition: React.FC<{
             <Subheading>Definition in Repository</Subheading>
             <DefinitionLocation assetNode={assetNode} repoAddress={repoAddress} />
           </Box>
-          <Box padding={{vertical: 16, horizontal: 24}} style={{flex: 1}}>
+          <Box padding={{vertical: 16, horizontal: 24}} style={{flex: 1, minHeight: 120}}>
             <Description
               description={assetNode.description || 'No description provided.'}
               maxHeight={260}
             />
           </Box>
+          {assetMetadata.length > 0 && (
+            <>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+                flex={{justifyContent: 'space-between', gap: 8}}
+              >
+                <Subheading>Metadata</Subheading>
+              </Box>
+              <Box padding={{top: 16, bottom: 4}} style={{flex: 1}}>
+                <AssetMetadataTable assetMetadata={assetMetadata} />
+              </Box>
+            </>
+          )}
           {assetNode.partitionDefinition && (
             <>
               <Box
@@ -89,7 +110,15 @@ export const AssetNodeDefinition: React.FC<{
           </Box>
           <AssetNodeList items={assetNode.dependedBy} liveDataByNode={liveDataByNode} />
         </Box>
-        <Box style={{flex: 0.5}} flex={{direction: 'column'}}></Box>
+        <Box style={{flex: 0.5}} flex={{direction: 'column'}}>
+          <Box
+            padding={{vertical: 16, horizontal: 24}}
+            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+          >
+            <Subheading>Type</Subheading>
+          </Box>
+          {assetType ? <DagsterTypeSummary type={assetType} /> : 'No type data provided.'}
+        </Box>
       </Box>
     </>
   );
@@ -130,7 +159,7 @@ const DefinitionLocation: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
   repoAddress: RepoAddress;
 }> = ({assetNode, repoAddress}) => (
-  <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}}>
+  <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}} style={{lineHeight: 0}}>
     {assetNode.jobNames
       .filter((jobNames) => jobNames !== __REPOSITORY_MEGA_JOB)
       .map((jobName) => (
@@ -173,6 +202,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
 
     ...AssetNodeFragment
     ...AssetNodeLiveFragment
+    ...AssetNodeOpMetadataFragment
 
     dependencies {
       asset {
@@ -195,4 +225,5 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   }
   ${ASSET_NODE_FRAGMENT}
   ${ASSET_NODE_LIVE_FRAGMENT}
+  ${ASSET_NODE_OP_METADATA_FRAGMENT}
 `;

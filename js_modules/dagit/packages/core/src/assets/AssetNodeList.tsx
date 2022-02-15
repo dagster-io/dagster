@@ -32,7 +32,7 @@ export const AssetNodeList: React.FC<{
             style={{position: 'relative', flexShrink: 0, width: 240, height: 90}}
             onClick={(e) => {
               e.stopPropagation();
-              history.push(`/instance/assets/${asset.assetKey.path.join('/')}`);
+              history.push(`/instance/assets/${asset.assetKey.path.join('/')}?view=definition`);
             }}
           >
             {asset.jobNames.length ? (
