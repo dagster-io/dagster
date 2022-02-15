@@ -1,5 +1,5 @@
-import warnings
 import os
+import warnings
 from datetime import datetime
 from typing import Any, Callable, List, NamedTuple, Optional, Union, cast
 
@@ -41,7 +41,7 @@ from dagster.serdes.errors import DeserializationError
 from dagster.serdes.serdes import register_serdes_tuple_fallbacks
 from dagster.seven import JSONDecodeError
 from dagster.utils import utc_datetime_from_timestamp
-from dagster.utils.error import serializable_error_info_from_exc_info, SerializableErrorInfo
+from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from ..decorator_utils import get_function_params
 
@@ -353,7 +353,6 @@ class RunStatusSensorDefinition(SensorDefinition):
         self._run_status_sensor_fn = check.callable_param(
             run_status_sensor_fn, "run_status_sensor_fn"
         )
-        self._pipeline_run_status = pipeline_run_status
 
         def _wrapped_fn(context: SensorEvaluationContext):
             # initiate the cursor to (most recent event id, current timestamp) when:

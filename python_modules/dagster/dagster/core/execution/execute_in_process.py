@@ -65,6 +65,4 @@ def core_execute_in_process(
         )
         event_list = list(_execute_run_iterable)
 
-    # import pdb; pdb.set_trace()
-
     return ExecuteInProcessResult(node, event_list, pipeline_run, output_capture)

@@ -8,25 +8,18 @@ from dagster import (
     RunRequest,
     SensorEvaluationContext,
     SensorExecutionContext,
-    build_sensor_context,
     build_run_status_sensor_context,
-    run_status_sensor,
-    run_failure_sensor,
-    sensor,
-    op,
+    build_sensor_context,
     job,
-    EventRecordsFilter,
+    op,
+    run_failure_sensor,
+    run_status_sensor,
+    sensor,
 )
 from dagster.core.errors import DagsterInvalidInvocationError
+from dagster.core.events import DagsterEventType
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
-
-from dagster.core.events import (
-    DagsterEvent,
-    DagsterEventType,
-    PipelineFailureData,
-)
-from dagster.utils.error import SerializableErrorInfo
 
 
 def test_sensor_context_backcompat():
@@ -127,15 +120,17 @@ def test_run_status_sensor():
     result = my_job.execute_in_process(instance=instance, raise_on_error=False)
 
     dagster_run = instance.get_run_by_id(result.run_id)
-    dagster_event = list(filter(
-        lambda event: event.event_type == DagsterEventType.PIPELINE_FAILURE, result.all_events
-    ))[0]
+    dagster_event = list(
+        filter(
+            lambda event: event.event_type == DagsterEventType.PIPELINE_FAILURE, result.all_events
+        )
+    )[0]
 
     context = build_run_status_sensor_context(
         sensor_name="failure_sensor",
         dagster_instance=instance,
         dagster_run=dagster_run,
-        dagster_event=dagster_event
+        dagster_event=dagster_event,
     ).for_run_failure()
 
     failure_sensor(context)
@@ -153,20 +148,21 @@ def test_run_status_sensor():
     def my_job_2():
         succeeds()
 
-
     instance = DagsterInstance.ephemeral()
     result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
 
     dagster_run = result.run
-    dagster_event = list(filter(
-        lambda event: event.event_type == DagsterEventType.PIPELINE_SUCCESS, result.all_events
-    ))[0]
+    dagster_event = list(
+        filter(
+            lambda event: event.event_type == DagsterEventType.PIPELINE_SUCCESS, result.all_events
+        )
+    )[0]
 
     context = build_run_status_sensor_context(
         sensor_name="status_sensor",
         dagster_instance=instance,
         dagster_run=dagster_run,
-        dagster_event=dagster_event
+        dagster_event=dagster_event,
     )
 
     status_sensor(context)

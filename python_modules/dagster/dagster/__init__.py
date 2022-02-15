@@ -134,10 +134,9 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.configurable import configured
 from dagster.core.definitions.policy import Backoff, Jitter, RetryPolicy
+from dagster.core.definitions.run_status_sensor_definition import build_run_status_sensor_context
 from dagster.core.definitions.schedule_definition import build_schedule_context
 from dagster.core.definitions.sensor_definition import build_sensor_context
-from dagster.core.definitions.run_status_sensor_definition import build_run_status_sensor_context
-
 from dagster.core.definitions.utils import (
     config_from_files,
     config_from_pkg_resources,

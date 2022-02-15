@@ -816,7 +816,7 @@ class DagsterEvent(
             )
         else:
             # when the failure happens trying to bring up context, the pipeline_context hasn't been
-            # built and so can't use x
+            # built and so can't use from_pipeline
             check.str_param(pipeline_context_or_name, "pipeline_name")
             event = DagsterEvent(
                 event_type_value=DagsterEventType.RUN_FAILURE.value,
