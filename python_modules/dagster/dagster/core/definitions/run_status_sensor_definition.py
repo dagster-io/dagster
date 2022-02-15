@@ -166,9 +166,9 @@ class RunFailureSensorContext(RunStatusSensorContext):
 
 def build_run_status_sensor_context(
     sensor_name: str,
-    pipeline_run_status: PipelineRunStatus,
-    dagster_instance: Optional[DagsterInstance] = None,
-    error_info: Optional[SerializableErrorInfo] = None,
+    dagster_event: DagsterEvent,
+    dagster_instance: DagsterInstance,
+    dagster_run: DagsterRun,
 ) -> RunStatusSensorContext:
     """
     Builds run status sensor context from provided parameters.
@@ -176,70 +176,18 @@ def build_run_status_sensor_context(
     This function can be used to provide the context argument when directly invoking a function
     decorated with `@run_status_sensor` or `@run_failure_sensor`, such as when writing unit tests.
 
-    If `PipelineRunStatus.FAILURE` is passed for `pipeline_run_status` a `RunFailureSensorContext`
-    will be returned, otherwise a `RunStatusSensorContext` will be returned. These contexts can be
-    converted to a `PipelineFailureContext` using the `to_pipeline_failure()` method
-
     Args:
         sensor_name (str): The name of the sensor the context is being constructed for.
-        pipeline_run_status (PipelineRunStatus): The PipelineRunStatus that will trigger the sensor.
-        dagster_instance (Optional[DagsterInstance]): The dagster instance configured for the
-            context. Defaults to DagsterInstance.ephemeral().
-        error_info (Optional[SerializableErrorInfo]): Optional error info to be included in the
-            context.
-
-    Examples:
-        .. code-block:: python
-
-            context = build_run_status_sensor_context(
-                sensor_name="my_sensor",
-                pipeline_run_status=PipelineRunStatus.FAILURE
-            )
-            sensor_to_invoke(context)
+        dagster_event (DagsterEvent): A DagsterEvent with the same event type as the one that
+            triggers the run_status_sensor
+        dagster_instance (DagsterInstance): The dagster instance configured for the context.
+        dagster_run (DagsterRun): DagsterRun object from running a job
     """
-    dagster_event_type = PIPELINE_RUN_STATUS_TO_EVENT_TYPE[pipeline_run_status]
-
-    if dagster_instance is None:
-        dagster_instance = DagsterInstance.ephemeral()
-
-    ctx_cls = RunStatusSensorContext
-    event_specific_data: Union[PipelineFailureData, PipelineCanceledData, None] = None
-
-    if dagster_event_type == DagsterEventType.RUN_FAILURE:
-        ctx_cls = RunFailureSensorContext
-        event_specific_data = PipelineFailureData(
-            check.opt_inst_param(error_info, "error_info", SerializableErrorInfo)
-        )
-    elif dagster_event_type == DagsterEventType.RUN_CANCELED:
-        event_specific_data = PipelineCanceledData(
-            check.opt_inst_param(error_info, "error_info", SerializableErrorInfo)
-        )
-
-    dagster_event = DagsterEvent(
-        event_type_value=dagster_event_type.value,
-        pipeline_name="testing_mock",
-        event_specific_data=event_specific_data,
-        message="dagster event context message mock",
-        pid=os.getpid(),
-    )
-
-    return ctx_cls(
-        sensor_name=sensor_name,
-        instance=dagster_instance,
-        dagster_run=DagsterRun(),
-        dagster_event=dagster_event,
-    )
-
-def build_run_status_sensor_context_with_dagster_event(
-    sensor_name: str,
-    dagster_event: DagsterEvent,
-    dagster_instance: Optional[DagsterInstance] = None,
-) -> RunStatusSensorContext:
 
     return RunStatusSensorContext(
         sensor_name=sensor_name,
         instance=dagster_instance,
-        dagster_run=DagsterRun(),
+        dagster_run=dagster_run,
         dagster_event=dagster_event,
     )
 
@@ -572,14 +520,10 @@ class RunStatusSensorDefinition(SensorDefinition):
                     kwargs[context_param_name], context_param_name, RunStatusSensorContext
                 )
 
-            context = (
-                context
-                if context
-                else build_run_status_sensor_context(
-                    sensor_name=self._name,
-                    pipeline_run_status=self._pipeline_run_status,
+            if not context:
+                raise DagsterInvalidInvocationError(
+                    "Context must be provided for direct invocation of run status sensor."
                 )
-            )
 
             return self._run_status_sensor_fn(context)
 

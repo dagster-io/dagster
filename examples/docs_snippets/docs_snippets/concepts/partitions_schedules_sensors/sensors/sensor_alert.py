@@ -19,16 +19,49 @@ def my_slack_on_run_failure(context: RunFailureSensorContext):
 
 # end_alert_sensor_marker
 
+# start_alert_sensor_testing_with_context_setup
+from dagster import op, job
+
+
+@op
+def fails():
+    raise Exception("failure!")
+
+
+@job
+def my_job_fails():
+    fails()
+
+
+# end_alert_sensor_testing_with_context_setup
+
 # start_alert_sensor_testing_with_context
-from dagster import build_run_status_sensor_context
+
+from dagster import DagsterEventType, DagsterInstance, build_run_status_sensor_context
 
 
-def test_my_slack_on_run_failure():
-    context = build_run_status_sensor_context(
-        sensor_name="my_slack_on_run_failure",
-        pipeline_run_status=PipelineRunStatus.FAILURE,
-    )
-    my_slack_on_run_failure(context)
+# execute the job
+instance = DagsterInstance.ephemeral()
+result = my_job_fails.execute_in_process(instance=instance, raise_on_error=False)
+
+# retrieve the DagsterRun
+dagster_run = result.run
+
+# retrieve an event with the same PipelineRunStatus as the one that triggers your run status sensor
+dagster_event = list(
+    filter(lambda event: event.event_type == DagsterEventType.PIPELINE_FAILURE, result.all_events)
+)[0]
+
+# create the context
+context = build_run_status_sensor_context(
+    sensor_name="my_slack_on_run_failure",
+    dagster_instance=instance,
+    dagster_run=dagster_run,
+    dagster_event=dagster_event,
+)
+
+# run the sensor
+my_slack_on_run_failure(context)
 
 # end_alert_sensor_testing_with_context
 
@@ -70,17 +103,48 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
 
 # end_success_sensor_marker
 
+# start_run_status_sensor_testing_with_context_setup
+from dagster import op, job
+
+
+@op
+def succeeds():
+    return 1
+
+
+@job
+def my_job_succeeds():
+    succeeds()
+
+
+# end_run_status_sensor_testing_with_context_setup
+
 # start_run_status_sensor_testing_with_context
-from dagster import build_run_status_sensor_context
 
+from dagster import DagsterEventType, DagsterInstance, build_run_status_sensor_context
 
-def test_my_slack_on_run_success():
-    context = build_run_status_sensor_context(
-        sensor_name="my_slack_on_run_success",
-        pipeline_run_status=PipelineRunStatus.SUCCESS
-    )
-    my_slack_on_run_success(context)
+# execute the job
+instance = DagsterInstance.ephemeral()
+result = my_job_succeeds.execute_in_process(instance=instance)
 
+# retrieve the DagsterRun
+dagster_run = result.run
+
+# retrieve an event with the same PipelineRunStatus as the one that triggers your run status sensor
+dagster_event = list(
+    filter(lambda event: event.event_type == DagsterEventType.PIPELINE_SUCCESS, result.all_events)
+)[0]
+
+# create the context
+context = build_run_status_sensor_context(
+    sensor_name="my_slack_on_run_success",
+    dagster_instance=instance,
+    dagster_run=dagster_run,
+    dagster_event=dagster_event,
+)
+
+# run the sensor
+my_slack_on_run_success(context)
 
 # end_run_status_sensor_testing_with_context
 

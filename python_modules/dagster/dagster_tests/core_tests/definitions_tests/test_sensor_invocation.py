@@ -13,12 +13,14 @@ from dagster import (
     run_status_sensor,
     run_failure_sensor,
     sensor,
+    op,
+    job,
+    EventRecordsFilter,
 )
 from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
 
-from dagster.core.definitions.run_status_sensor_definition import build_run_status_sensor_context_with_dagster_event
 from dagster.core.events import (
     DagsterEvent,
     DagsterEventType,
@@ -107,62 +109,64 @@ def test_instance_access_with_mock():
     assert build_sensor_context(instance=mock_instance).instance == mock_instance
 
 
-def test_build_run_status_sensor_context():
+def test_run_status_sensor():
+    # run failure sensor test
     @run_failure_sensor
     def failure_sensor(context):
         assert context.dagster_event.event_type_value == "PIPELINE_FAILURE"
 
-    ctx = build_run_status_sensor_context(
-        sensor_name="failure_sensor",
-        dagster_instance=DagsterInstance.ephemeral(),
-        pipeline_run_status=PipelineRunStatus.FAILURE,
-        error_info=SerializableErrorInfo(message="fail", stack=["fail1", "fail2"], cls_name="unit_test")
-    )
-    failure_sensor(ctx)
+    @op
+    def will_fail():
+        raise Exception("failure")
 
+    @job
+    def my_job():
+        will_fail()
+
+    instance = DagsterInstance.ephemeral()
+    result = my_job.execute_in_process(instance=instance, raise_on_error=False)
+
+    dagster_run = instance.get_run_by_id(result.run_id)
+    dagster_event = list(filter(
+        lambda event: event.event_type == DagsterEventType.PIPELINE_FAILURE, result.all_events
+    ))[0]
+
+    context = build_run_status_sensor_context(
+        sensor_name="failure_sensor",
+        dagster_instance=instance,
+        dagster_run=dagster_run,
+        dagster_event=dagster_event
+    ).for_run_failure()
+
+    failure_sensor(context)
+
+    # run status sensor test
     @run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
     def status_sensor(context):
         assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
 
-    ctx = build_run_status_sensor_context(
+    @op
+    def succeeds():
+        return 1
+
+    @job
+    def my_job_2():
+        succeeds()
+
+
+    instance = DagsterInstance.ephemeral()
+    result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
+
+    dagster_run = result.run
+    dagster_event = list(filter(
+        lambda event: event.event_type == DagsterEventType.PIPELINE_SUCCESS, result.all_events
+    ))[0]
+
+    context = build_run_status_sensor_context(
         sensor_name="status_sensor",
-        dagster_instance=DagsterInstance.ephemeral(),
-        pipeline_run_status=PipelineRunStatus.SUCCESS,
-    )
-    status_sensor(ctx)
-
-def test_build_run_status_sensor_context_with_dagster_event():
-    @run_failure_sensor
-    def failure_sensor(context):
-        assert context.dagster_event.event_type_value == "PIPELINE_FAILURE"
-
-    dagster_event = DagsterEvent(
-        event_type_value=DagsterEventType.PIPELINE_FAILURE.value,
-        pipeline_name="my_unit_test",
-        event_specific_data=PipelineFailureData(
-            SerializableErrorInfo(message="fail", stack=["fail1", "fail2"], cls_name="unit_test")
-        )
-    )
-
-    ctx = build_run_status_sensor_context_with_dagster_event(
-        sensor_name="failure_sensor",
-        dagster_instance=DagsterInstance.ephemeral(),
-        dagster_event=dagster_event,
-    )
-    failure_sensor(ctx.for_run_failure())
-
-    @run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
-    def status_sensor(context):
-        assert context.dagster_event.event_type_value == "PIPELINE_SUCCESS"
-
-    dagster_event = DagsterEvent(
-        event_type_value=DagsterEventType.PIPELINE_SUCCESS.value,
-        pipeline_name="my_unit_test",
-    )
-
-    ctx = build_run_status_sensor_context_with_dagster_event(
-        sensor_name="status_sensor",
-        dagster_instance=DagsterInstance.ephemeral(),
+        dagster_instance=instance,
+        dagster_run=dagster_run,
         dagster_event=dagster_event
     )
-    status_sensor(ctx)
+
+    status_sensor(context)

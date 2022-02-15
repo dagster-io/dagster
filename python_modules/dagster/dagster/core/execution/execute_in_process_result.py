@@ -12,6 +12,7 @@ from dagster.core.events import (
     StepMaterializationData,
 )
 from dagster.core.execution.plan.outputs import StepOutputHandle
+from dagster.core.storage.pipeline_run import DagsterRun
 
 
 class ExecuteInProcessResult:
@@ -19,7 +20,7 @@ class ExecuteInProcessResult:
         self,
         node_def: NodeDefinition,
         all_events: List[DagsterEvent],
-        run_id: str,
+        run: DagsterRun,
         output_capture: Optional[Dict[StepOutputHandle, Any]],
     ):
         self._node_def = node_def
@@ -27,7 +28,8 @@ class ExecuteInProcessResult:
         # If top-level result, no handle will be provided
         self._handle = NodeHandle(node_def.name, parent=None)
         self._event_list = all_events
-        self._run_id = run_id
+        self._run_id = run.run_id
+        self._run = run
 
         self._output_capture = check.opt_dict_param(
             output_capture, "output_capture", key_type=StepOutputHandle
@@ -51,9 +53,20 @@ class ExecuteInProcessResult:
         return step_events
 
     @property
+    def all_events(self) -> List[DagsterEvent]:
+        """List[DagsterEvent]: All dagster events emitted during in-process execution."""
+
+        return self._event_list
+
+    @property
     def run_id(self) -> str:
         """str: The run id for the executed run"""
         return self._run_id
+
+    @property
+    def run(self) -> DagsterRun:
+        """DagsterRun: the dagster run for the executed run."""
+        return self._run
 
     def events_for_node(self, node_name: str) -> List[DagsterEvent]:
         """Retrieves all dagster events for a specific node.
