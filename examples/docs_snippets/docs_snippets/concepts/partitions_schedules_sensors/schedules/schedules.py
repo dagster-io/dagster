@@ -1,4 +1,12 @@
-from dagster import RunRequest, ScheduleDefinition, ScheduleEvaluationContext, job, op, schedule
+from dagster import (
+    DefaultScheduleStatus,
+    RunRequest,
+    ScheduleDefinition,
+    ScheduleEvaluationContext,
+    job,
+    op,
+    schedule,
+)
 
 
 # start_basic_schedule
@@ -40,3 +48,10 @@ my_timezone_schedule = ScheduleDefinition(
 )
 
 # end_timezone
+
+# start_running_in_code
+my_running_schedule = ScheduleDefinition(
+    job=my_job, cron_schedule="0 9 * * *", default_status=DefaultScheduleStatus.RUNNING
+)
+
+# end_running_in_code
