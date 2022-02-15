@@ -2,7 +2,6 @@ import {gql} from '@apollo/client';
 import {pathVerticalDiagonal} from '@vx/shape';
 import * as dagre from 'dagre';
 
-import {tokenForAssetKey} from '../../app/Util';
 import {AssetNodeDefinitionFragment} from '../../assets/types/AssetNodeDefinitionFragment';
 
 import {getNodeDimensions} from './AssetNode';

@@ -1,8 +1,6 @@
 import * as React from 'react';
 import {useLocation} from 'react-router-dom';
 
-import {useFeatureFlags} from './Flags';
-
 function useMatchMedia(query: string) {
   const match = React.useRef(matchMedia(query));
   const [result, setResult] = React.useState(match.current.matches);
