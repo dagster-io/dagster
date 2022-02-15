@@ -483,7 +483,7 @@ dagster_event = list(filter(
 ))[0]
 
 # create the context
-context = build_run_status_sensor_context(
+run_status_sensor_context = build_run_status_sensor_context(
     sensor_name="my_slack_on_run_success",
     dagster_instance=instance,
     dagster_run=dagster_run,
@@ -491,7 +491,7 @@ context = build_run_status_sensor_context(
 )
 
 # run the sensor
-my_slack_on_run_success(context)
+my_slack_on_run_success(run_status_sensor_context)
 ```
 You may notice that we trigger our run status sensor on `PipelineRunStatus.SUCCESS` but we filter the events from the job execution on `DagsterEventType.PIPELINE_SUCCESS`. There is an internal mapping between `PipelineRunStatus` and `DagsterEventType`
 
@@ -554,7 +554,7 @@ dagster_event = list(filter(
 ))[0]
 
 # create the context
-context = build_run_status_sensor_context(
+run_failure_sensor_context = build_run_status_sensor_context(
     sensor_name="my_slack_on_run_failure",
     dagster_instance=instance,
     dagster_run=dagster_run,
@@ -562,7 +562,7 @@ context = build_run_status_sensor_context(
 ).for_run_failure()
 
 # run the sensor
-my_slack_on_run_failure(context)
+my_slack_on_run_failure(run_failure_sensor_context)
 ```
 Note the additional function call `for_run_failure()` after creating the `context`. The `context` provided by <PyObject object="run_failure_sensor" /> is a subclass of the context provided by <PyObject object="run_status_sensor" /> and can be built using this additional call.
 

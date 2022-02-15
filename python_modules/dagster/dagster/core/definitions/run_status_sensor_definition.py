@@ -1,4 +1,3 @@
-import os
 import warnings
 from datetime import datetime
 from typing import Any, Callable, List, NamedTuple, Optional, Union, cast
@@ -21,9 +20,6 @@ from dagster.core.errors import (
 from dagster.core.events import (
     PIPELINE_RUN_STATUS_TO_EVENT_TYPE,
     DagsterEvent,
-    DagsterEventType,
-    PipelineCanceledData,
-    PipelineFailureData,
 )
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import (
@@ -41,7 +37,7 @@ from dagster.serdes.errors import DeserializationError
 from dagster.serdes.serdes import register_serdes_tuple_fallbacks
 from dagster.seven import JSONDecodeError
 from dagster.utils import utc_datetime_from_timestamp
-from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 from ..decorator_utils import get_function_params
 

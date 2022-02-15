@@ -22,11 +22,9 @@ def my_slack_on_run_failure(context: RunFailureSensorContext):
 # start_alert_sensor_testing_with_context_setup
 from dagster import op, job
 
-
 @op
 def fails():
     raise Exception("failure!")
-
 
 @job
 def my_job_fails():
@@ -53,7 +51,7 @@ dagster_event = list(
 )[0]
 
 # create the context
-context = build_run_status_sensor_context(
+run_failure_sensor_context = build_run_status_sensor_context(
     sensor_name="my_slack_on_run_failure",
     dagster_instance=instance,
     dagster_run=dagster_run,
@@ -61,7 +59,7 @@ context = build_run_status_sensor_context(
 )
 
 # run the sensor
-my_slack_on_run_failure(context)
+my_slack_on_run_failure(run_failure_sensor_context)
 
 # end_alert_sensor_testing_with_context
 
@@ -104,13 +102,10 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
 # end_success_sensor_marker
 
 # start_run_status_sensor_testing_with_context_setup
-from dagster import op, job
-
 
 @op
 def succeeds():
     return 1
-
 
 @job
 def my_job_succeeds():
@@ -120,8 +115,6 @@ def my_job_succeeds():
 # end_run_status_sensor_testing_with_context_setup
 
 # start_run_status_sensor_testing_with_context
-
-from dagster import DagsterEventType, DagsterInstance, build_run_status_sensor_context
 
 # execute the job
 instance = DagsterInstance.ephemeral()
@@ -136,7 +129,7 @@ dagster_event = list(
 )[0]
 
 # create the context
-context = build_run_status_sensor_context(
+run_status_sensor_context = build_run_status_sensor_context(
     sensor_name="my_slack_on_run_success",
     dagster_instance=instance,
     dagster_run=dagster_run,
@@ -144,7 +137,7 @@ context = build_run_status_sensor_context(
 )
 
 # run the sensor
-my_slack_on_run_success(context)
+my_slack_on_run_success(run_status_sensor_context)
 
 # end_run_status_sensor_testing_with_context
 
