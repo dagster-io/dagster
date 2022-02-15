@@ -26,7 +26,7 @@ MIN_INT = -2147483648
 
 
 def iterate_metadata_entries(metadata_entries):
-    from ..schema.logs.events import (
+    from ..schema.metadata import (
         GrapheneFloatMetadataEntry,
         GrapheneIntMetadataEntry,
         GrapheneJsonMetadataEntry,
