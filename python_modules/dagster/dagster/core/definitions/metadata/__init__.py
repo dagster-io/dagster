@@ -2,7 +2,7 @@ import os
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 from dagster import check, seven
-from dagster.core.errors import DagsterInvalidEventMetadata
+from dagster.core.errors import DagsterInvalidMetadata
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.backcompat import experimental, experimental_class_warning
 
@@ -29,7 +29,7 @@ def parse_metadata_entry(label: str, value: ParseableMetadataValue) -> "Metadata
     check.str_param(label, "label")
 
     if isinstance(value, (MetadataEntry, PartitionMetadataEntry)):
-        raise DagsterInvalidEventMetadata(
+        raise DagsterInvalidMetadata(
             f"Expected a metadata value, found an instance of {value.__class__.__name__}. Consider "
             "instead using a EventMetadata wrapper for the value, or using the `metadata_entries` "
             "parameter to pass in a List[EventMetadataEntry|PartitionMetadataEntry]."
@@ -53,12 +53,12 @@ def parse_metadata_entry(label: str, value: ParseableMetadataValue) -> "Metadata
             seven.dumps(value)
             return MetadataEntry.json(value, label)
         except TypeError:
-            raise DagsterInvalidEventMetadata(
+            raise DagsterInvalidMetadata(
                 f'Could not resolve the metadata value for "{label}" to a JSON serializable value. '
                 "Consider wrapping the value with the appropriate EventMetadata type."
             )
 
-    raise DagsterInvalidEventMetadata(
+    raise DagsterInvalidMetadata(
         f'Could not resolve the metadata value for "{label}" to a known type. '
         f"Its type was {type(value)}. Consider wrapping the value with the appropriate "
         "EventMetadata type."
@@ -71,7 +71,7 @@ def parse_metadata(
     allow_invalid: bool = False,
 ) -> List[Union["MetadataEntry", "PartitionMetadataEntry"]]:
     if metadata and metadata_entries:
-        raise DagsterInvalidEventMetadata(
+        raise DagsterInvalidMetadata(
             "Attempted to provide both `metadata` and `metadata_entries` arguments to an event. "
             "Must provide only one of the two."
         )
@@ -91,7 +91,7 @@ def parse_metadata(
         for k, v in metadata.items():
             try:
                 metadata_entries.append(parse_metadata_entry(k, v))
-            except DagsterInvalidEventMetadata:
+            except DagsterInvalidMetadata:
                 metadata_entries.append(
                     MetadataEntry.text(f"[{v.__class__.__name__}] (unserializable)", k)
                 )
@@ -1097,7 +1097,7 @@ class PartitionMetadataEntry(
         "_PartitionMetadataEntry",
         [
             ("partition", str),
-            ("entry", "EventMetadataEntry"),
+            ("entry", "MetadataEntry"),
         ],
     )
 ):

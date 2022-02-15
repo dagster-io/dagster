@@ -513,8 +513,8 @@ class DagsterInvalidAssetKey(DagsterError):
     """Error raised by invalid asset key"""
 
 
-class DagsterInvalidEventMetadata(DagsterError):
-    """Error raised by invalid event metadata parameters"""
+class DagsterInvalidMetadata(DagsterError):
+    """Error raised by invalid metadata parameters"""
 
 
 class HookExecutionError(DagsterUserCodeExecutionError):

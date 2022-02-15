@@ -14,7 +14,7 @@ from dagster import (
 from dagster.check import CheckError
 from dagster.config.field_utils import Selector
 from dagster.core.definitions.metadata import parse_metadata
-from dagster.core.errors import DagsterInvalidEventMetadata
+from dagster.core.errors import DagsterInvalidMetadata
 from dagster.utils import dict_without_keys
 from dagster.utils.backcompat import experimental
 from dagster_pandas.constraints import (
@@ -339,5 +339,5 @@ def _execute_summary_stats(type_name, value, event_metadata_fn):
 
     try:
         return parse_metadata(metadata, metadata_entries)
-    except (DagsterInvalidEventMetadata, CheckError):
+    except (DagsterInvalidMetadata, CheckError):
         raise DagsterInvariantViolationError(invalid_message)
