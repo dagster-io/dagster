@@ -1,7 +1,7 @@
 import {useMutation} from '@apollo/client';
-import {IconName} from '@dagster-io/ui/src/components/Icon';
 import * as React from 'react';
 
+import {IconName} from '../../../ui/src';
 import {AppContext} from '../app/AppContext';
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {TelemetryAction, useTelemetryAction} from '../app/Telemetry';
