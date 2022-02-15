@@ -1,6 +1,6 @@
 import pytest
 import responses
-from dagster import EventMetadataEntry, Failure, build_init_resource_context
+from dagster import MetadataEntry, Failure, build_init_resource_context
 from dagster_airbyte import AirbyteOutput, AirbyteState, airbyte_resource
 from dagster_airbyte.utils import generate_materializations
 
@@ -255,9 +255,9 @@ def test_assets():
     materializations = list(generate_materializations(airbyte_output, []))
     assert len(materializations) == 2
 
-    assert EventMetadataEntry.text("a,b", "columns") in materializations[0].metadata_entries
-    assert EventMetadataEntry.int(1234, "bytesEmitted") in materializations[0].metadata_entries
-    assert EventMetadataEntry.int(4321, "recordsCommitted") in materializations[0].metadata_entries
+    assert MetadataEntry.text("a,b", "columns") in materializations[0].metadata_entries
+    assert MetadataEntry.int(1234, "bytesEmitted") in materializations[0].metadata_entries
+    assert MetadataEntry.int(4321, "recordsCommitted") in materializations[0].metadata_entries
 
 
 @responses.activate
