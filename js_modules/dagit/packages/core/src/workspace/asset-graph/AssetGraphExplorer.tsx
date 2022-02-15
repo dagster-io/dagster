@@ -316,13 +316,15 @@ const AssetGraphExplorerWithData: React.FC<
                 {layout.nodes.map((layoutNode) => {
                   const graphNode = assetGraphData.nodes[layoutNode.id];
                   const path = JSON.parse(layoutNode.id);
-                  if (
-                    layoutNode.x + layoutNode.width < bounds.left ||
-                    layoutNode.y + layoutNode.height < bounds.top ||
-                    layoutNode.x > bounds.right ||
-                    layoutNode.y > bounds.bottom
-                  ) {
-                    return null;
+
+                  if (isNodeOffscreen(layoutNode, bounds)) {
+                    return layoutNode.id === lastSelectedNode?.id ? (
+                      <RecenterGraph
+                        viewportRef={viewportEl}
+                        x={layoutNode.x + layoutNode.width / 2}
+                        y={layoutNode.y + layoutNode.height / 2}
+                      />
+                    ) : null;
                   }
 
                   return (
@@ -492,6 +494,18 @@ const AssetQueryInputContainer = styled.div`
   display: flex;
 `;
 
+const isNodeOffscreen = (
+  layoutNode: {x: number; y: number; width: number; height: number},
+  bounds: {top: number; left: number; right: number; bottom: number},
+) => {
+  return (
+    layoutNode.x + layoutNode.width < bounds.left ||
+    layoutNode.y + layoutNode.height < bounds.top ||
+    layoutNode.x > bounds.right ||
+    layoutNode.y > bounds.bottom
+  );
+};
+
 const graphDirectionOf = ({graph, from, to}: {graph: GraphData; from: Node; to: Node}) => {
   const stack = [from];
   while (stack.length) {
@@ -550,4 +564,19 @@ const titleForLaunch = (nodes: Node[], liveDataByNode: LiveData) => {
   return `${isRematerializeForAll ? 'Rematerialize' : 'Materialize'} ${
     nodes.length === 0 ? `All` : nodes.length === 1 ? `Selected` : `Selected (${nodes.length})`
   }`;
+};
+
+// This is similar to react-router's "<Redirect />" in that it immediately performs
+// the action you rendered.
+//
+const RecenterGraph: React.FC<{
+  viewportRef: React.MutableRefObject<SVGViewport | undefined>;
+  x: number;
+  y: number;
+}> = ({viewportRef, x, y}) => {
+  React.useEffect(() => {
+    viewportRef.current?.smoothZoomToSVGCoords(x, y, viewportRef.current.state.scale);
+  }, [viewportRef, x, y]);
+
+  return <span />;
 };
