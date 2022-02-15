@@ -83,7 +83,7 @@ def my_metadata_output(context):
         df,
         metadata={
             "text_metadata": "Text-based metadata for this event",
-            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "dashboard_url": MetadataValue.url("http://mycoolsite.com/url_for_my_data"),
             "raw_count": len(df),
             "size (bytes)": calculate_bytes(df),
         },
@@ -120,7 +120,7 @@ To learn more about assets and how they are surfaced once you send this event, c
 Attaching metadata to Asset Materializations is an important way of tracking aspects of a given asset over time. This functions essentially identically to other events which accept a `metadata` parameter, allowing you to attach a set of structured labels and values to display.
 
 ```python file=concepts/assets/materialization_ops.py startafter=start_materialization_ops_marker_2 endbefore=end_materialization_ops_marker_2
-from dagster import op, AssetMaterialization, Output, EventMetadata
+from dagster import op, AssetMaterialization, Output, MetadataValue
 
 
 @op
@@ -132,8 +132,8 @@ def my_metadata_materialization_op(context):
         description="Persisted result to storage",
         metadata={
             "text_metadata": "Text-based metadata for this event",
-            "path": EventMetadata.path(remote_storage_path),
-            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "path": MetadataValue.path(remote_storage_path),
+            "dashboard_url": MetadataValue.url("http://mycoolsite.com/url_for_my_data"),
             "size (bytes)": calculate_bytes(df),
         },
     )
@@ -167,7 +167,7 @@ def my_metadata_expectation_op(context, df):
         description="ensure dataframe has rows",
         metadata={
             "text_metadata": "Text-based metadata for this event",
-            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "dashboard_url": MetadataValue.url("http://mycoolsite.com/url_for_my_data"),
             "raw_count": len(df),
             "size (bytes)": calculate_bytes(df),
         },
@@ -195,8 +195,8 @@ def my_failure_op():
         raise Failure(
             description="No files to process",
             metadata={
-                "filepath": EventMetadata.path(path),
-                "dashboard_url": EventMetadata.url("http://mycoolsite.com/failures"),
+                "filepath": MetadataValue.path(path),
+                "dashboard_url": MetadataValue.url("http://mycoolsite.com/failures"),
             },
         )
     return some_calculation(my_files)
@@ -215,8 +215,8 @@ def my_failure_metadata_op():
         raise Failure(
             description="No files to process",
             metadata={
-                "filepath": EventMetadata.path(path),
-                "dashboard_url": EventMetadata.url("http://mycoolsite.com/failures"),
+                "filepath": MetadataValue.path(path),
+                "dashboard_url": MetadataValue.url("http://mycoolsite.com/failures"),
             },
         )
     return some_calculation(my_files)
