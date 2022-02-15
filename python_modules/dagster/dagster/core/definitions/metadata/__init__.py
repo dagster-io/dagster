@@ -420,9 +420,12 @@ class MetadataValue:
 # ##### METADATA VALUE TYPES
 # ########################
 
+# NOTE: We have `type: ignore` in a few places below because mypy complains about an instance method
+# (e.g. `text`) overriding a static method on the superclass of the same name. This is not a concern
+# for us because these static methods should never be called on instances.
 
 @whitelist_for_serdes
-class TextMetadataValue(
+class TextMetadataValue(  # type: ignore
     NamedTuple(
         "_TextMetadataValue",
         [
@@ -444,7 +447,7 @@ class TextMetadataValue(
 
 
 @whitelist_for_serdes
-class UrlMetadataValue(
+class UrlMetadataValue(  # type: ignore
     NamedTuple(
         "_UrlMetadataValue",
         [
@@ -466,7 +469,7 @@ class UrlMetadataValue(
 
 
 @whitelist_for_serdes
-class PathMetadataValue(
+class PathMetadataValue(  # type: ignore
     NamedTuple(
         "_PathMetadataValue",
         [
