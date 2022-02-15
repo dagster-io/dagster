@@ -11,7 +11,7 @@ from .table import TableColumn, TableColumnConstraints, TableConstraints, TableR
 if TYPE_CHECKING:
     from dagster.core.definitions.events import AssetKey
 
-ParseableMetadataValue = Union[
+RawMetadataValue = Union[
     "MetadataValue",
     dict,
     float,
@@ -25,7 +25,7 @@ def last_file_comp(path: str) -> str:
     return os.path.basename(os.path.normpath(path))
 
 
-def parse_metadata_entry(label: str, value: ParseableMetadataValue) -> "MetadataEntry":
+def package_metadata_value(label: str, value: RawMetadataValue) -> "MetadataEntry":
     check.str_param(label, "label")
 
     if isinstance(value, (MetadataEntry, PartitionMetadataEntry)):
@@ -65,8 +65,8 @@ def parse_metadata_entry(label: str, value: ParseableMetadataValue) -> "Metadata
     )
 
 
-def parse_metadata(
-    metadata: Dict[str, ParseableMetadataValue],
+def normalize_metadata(
+    metadata: Dict[str, RawMetadataValue],
     metadata_entries: List[Union["MetadataEntry", "PartitionMetadataEntry"]],
     allow_invalid: bool = False,
 ) -> List[Union["MetadataEntry", "PartitionMetadataEntry"]]:
@@ -90,7 +90,7 @@ def parse_metadata(
         metadata_entries = []
         for k, v in metadata.items():
             try:
-                metadata_entries.append(parse_metadata_entry(k, v))
+                metadata_entries.append(package_metadata_value(k, v))
             except DagsterInvalidMetadata:
                 metadata_entries.append(
                     MetadataEntry.text(f"[{v.__class__.__name__}] (unserializable)", k)
@@ -98,7 +98,7 @@ def parse_metadata(
         return metadata_entries
 
     return [
-        parse_metadata_entry(k, v)
+        package_metadata_value(k, v)
         for k, v in check.opt_dict_param(metadata, "metadata", key_type=str).items()
     ]
 

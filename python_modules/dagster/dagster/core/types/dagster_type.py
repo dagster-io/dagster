@@ -10,8 +10,8 @@ from dagster.config.config_type import Array, ConfigType
 from dagster.config.config_type import Noneable as ConfigNoneable
 from dagster.core.definitions.metadata import (
     MetadataEntry,
-    ParseableMetadataValue,
-    parse_metadata,
+    RawMetadataValue,
+    normalize_metadata,
 )
 from dagster.core.definitions.events import TypeCheck
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
@@ -98,7 +98,7 @@ class DagsterType:
         kind: DagsterTypeKind = DagsterTypeKind.REGULAR,
         typing_type: t.Any = None,
         metadata_entries: t.Optional[t.List[MetadataEntry]] = None,
-        metadata: t.Optional[t.Dict[str, ParseableMetadataValue]] = None,
+        metadata: t.Optional[t.Dict[str, RawMetadataValue]] = None,
     ):
         check.opt_str_param(key, "key")
         check.opt_str_param(name, "name")
@@ -148,7 +148,7 @@ class DagsterType:
             metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
-        self._metadata_entries = parse_metadata(metadata, metadata_entries)
+        self._metadata_entries = normalize_metadata(metadata, metadata_entries)
 
     def type_check(self, context: "TypeCheckContext", value: object) -> TypeCheck:
         retval = self._type_check_fn(context, value)
