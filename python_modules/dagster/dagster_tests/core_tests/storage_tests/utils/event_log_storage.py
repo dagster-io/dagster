@@ -254,6 +254,14 @@ def two_solids():
     solid_two()
 
 
+def cursor_datetime_args():
+    # parametrization function to test constructing run-sharded event log cursors, with both
+    # timezone-aware and timezone-naive datetimes
+    yield None
+    yield pendulum.now()
+    yield pendulum.now().naive()
+
+
 class TestEventLogStorage:
     """
     You can extend this class to easily run these set of tests on any event log storage. When extending,
@@ -1155,7 +1163,10 @@ class TestEventLogStorage:
         assert len(step_stats[0].markers) == 1
         assert step_stats[0].markers[0].end_time >= step_stats[0].markers[0].start_time + 0.1
 
-    def test_get_event_records(self, storage):
+    @pytest.mark.parametrize(
+        "cursor_dt", cursor_datetime_args()
+    )  # test both tz-aware and naive datetimes
+    def test_get_event_records(self, storage, cursor_dt):
         if isinstance(storage, SqliteEventLogStorage):
             # test sqlite in test_get_event_records_sqlite
             pytest.skip()
@@ -1193,48 +1204,23 @@ class TestEventLogStorage:
         assert _event_types([all_records[-1].event_log_entry]) == [DagsterEventType.PIPELINE_START]
 
         # after cursor
-        assert not list(
-            filter(
-                lambda r: r.storage_id <= 2,
-                storage.get_event_records(EventRecordsFilter(after_cursor=2)),
-            )
-        )
-        assert [
-            i.storage_id
-            for i in storage.get_event_records(
-                EventRecordsFilter(after_cursor=min_record_num + 2), ascending=True, limit=2
-            )
-        ] == [min_record_num + 3, min_record_num + 4]
-        assert [
-            i.storage_id
-            for i in storage.get_event_records(
-                EventRecordsFilter(after_cursor=min_record_num + 2), ascending=False, limit=2
-            )
-        ] == [max_record_num, max_record_num - 1]
+        def _build_cursor(record_id_cursor, run_cursor_dt):
+            if not run_cursor_dt:
+                return record_id_cursor
+            return RunShardedEventsCursor(id=record_id_cursor, run_updated_after=run_cursor_dt)
 
-        # make sure we can accept a run-sharded cursor, where the update_time is some random time
-        # (tzaware)
-        run_cursor_datetime = pendulum.now()
         assert not list(
             filter(
                 lambda r: r.storage_id <= 2,
                 storage.get_event_records(
-                    EventRecordsFilter(
-                        after_cursor=RunShardedEventsCursor(
-                            id=2, run_updated_after=run_cursor_datetime
-                        )
-                    )
+                    EventRecordsFilter(after_cursor=_build_cursor(2, cursor_dt))
                 ),
             )
         )
         assert [
             i.storage_id
             for i in storage.get_event_records(
-                EventRecordsFilter(
-                    after_cursor=RunShardedEventsCursor(
-                        id=min_record_num + 2, run_updated_after=run_cursor_datetime
-                    ),
-                ),
+                EventRecordsFilter(after_cursor=_build_cursor(min_record_num + 2, cursor_dt)),
                 ascending=True,
                 limit=2,
             )
@@ -1242,53 +1228,7 @@ class TestEventLogStorage:
         assert [
             i.storage_id
             for i in storage.get_event_records(
-                EventRecordsFilter(
-                    after_cursor=RunShardedEventsCursor(
-                        id=min_record_num + 2,
-                        run_updated_after=run_cursor_datetime,
-                    )
-                ),
-                ascending=False,
-                limit=2,
-            )
-        ] == [max_record_num, max_record_num - 1]
-
-        # make sure we can accept a run-sharded cursor, where the update_time is some random time
-        # (tznaive)
-        run_cursor_naive = pendulum.now().naive()
-        assert not list(
-            filter(
-                lambda r: r.storage_id <= 2,
-                storage.get_event_records(
-                    EventRecordsFilter(
-                        after_cursor=RunShardedEventsCursor(
-                            id=2, run_updated_after=run_cursor_naive
-                        )
-                    )
-                ),
-            )
-        )
-        assert [
-            i.storage_id
-            for i in storage.get_event_records(
-                EventRecordsFilter(
-                    after_cursor=RunShardedEventsCursor(
-                        id=min_record_num + 2, run_updated_after=run_cursor_naive
-                    ),
-                ),
-                ascending=True,
-                limit=2,
-            )
-        ] == [min_record_num + 3, min_record_num + 4]
-        assert [
-            i.storage_id
-            for i in storage.get_event_records(
-                EventRecordsFilter(
-                    after_cursor=RunShardedEventsCursor(
-                        id=min_record_num + 2,
-                        run_updated_after=run_cursor_naive,
-                    )
-                ),
+                EventRecordsFilter(after_cursor=_build_cursor(min_record_num + 2, cursor_dt)),
                 ascending=False,
                 limit=2,
             )
@@ -1303,7 +1243,6 @@ class TestEventLogStorage:
 
     def test_get_event_records_sqlite(self, storage):
         if not isinstance(storage, SqliteEventLogStorage):
-            # test sqlite in test_get_event_records_sqlite
             pytest.skip()
 
         asset_key = AssetKey(["path", "to", "asset_one"])
