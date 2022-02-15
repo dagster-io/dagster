@@ -74,7 +74,7 @@ class AssetCollection(
     def build_job(
         self,
         name: str,
-        asset_key_selection: Optional[Union[str, List[str]]] = None,
+        selection: Optional[Union[str, List[str]]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
         description: Optional[str] = None,
     ) -> JobDefinition:
@@ -82,10 +82,8 @@ class AssetCollection(
 
         check.str_param(name, "name")
 
-        if not isinstance(asset_key_selection, str):
-            asset_key_selection = check.opt_list_param(
-                asset_key_selection, "asset_key_selection", of_type=str
-            )
+        if not isinstance(selection, str):
+            selection = check.opt_list_param(selection, "selection", of_type=str)
         executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
         description = check.opt_str_param(description, "description")
 
@@ -104,8 +102,8 @@ class AssetCollection(
             executor_defs=[executor_def or orig_mode_def.executor_defs[0]],
         )
 
-        if asset_key_selection:
-            op_selection = self._parse_asset_selection(asset_key_selection, job_name=name)
+        if selection:
+            op_selection = self._parse_asset_selection(selection, job_name=name)
             resolved_op_selection_dict = parse_op_selection(mega_job_def, op_selection)
 
             op_selection_data: Optional[OpSelectionData] = OpSelectionData(
@@ -135,16 +133,16 @@ class AssetCollection(
         )
         return job_def
 
-    def _parse_asset_selection(self, asset_key_selection, job_name):
+    def _parse_asset_selection(self, selection, job_name):
         """Convert selection over asset key to selection over ops"""
 
         asset_keys_to_ops = dict()
 
-        if isinstance(asset_key_selection, str):
-            asset_key_selection = [asset_key_selection]
+        if isinstance(selection, str):
+            selection = [selection]
 
-        if len(asset_key_selection) == 1 and asset_key_selection[0] == "*":
-            return asset_key_selection
+        if len(selection) == 1 and selection[0] == "*":
+            return selection
 
         source_asset_keys = set()
         for asset in self.assets:
@@ -161,7 +159,7 @@ class AssetCollection(
 
         op_selection = []
 
-        for clause in asset_key_selection:
+        for clause in selection:
             token_matching = re.compile(r"^(\*?\+*)?([.\w\d\[\]?_-]+)(\+*\*?)?$").search(
                 clause.strip()
             )

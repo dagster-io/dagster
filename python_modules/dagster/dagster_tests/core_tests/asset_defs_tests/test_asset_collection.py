@@ -186,17 +186,17 @@ def test_asset_collection_build_subset_job():
 
     collection = AssetCollection([start_asset, middle_asset, follows_o1, follows_o2])
 
-    full_job = collection.build_job("full", asset_key_selection="*")
+    full_job = collection.build_job("full", selection="*")
     result = full_job.execute_in_process()
     assert result.success
     assert result.output_for_node("follows_o1") == "foo"
     assert result.output_for_node("follows_o2") == "foo"
 
-    test_single = collection.build_job(name="test_single", asset_key_selection="follows_o2")
+    test_single = collection.build_job(name="test_single", selection="follows_o2")
     assert len(test_single.all_node_defs) == 1
     assert test_single.all_node_defs[0].name == "follows_o2"
 
-    test_up_star = collection.build_job(name="test_up_star", asset_key_selection="*follows_o2")
+    test_up_star = collection.build_job(name="test_up_star", selection="*follows_o2")
     assert len(test_up_star.all_node_defs) == 3
     assert set([node.name for node in test_up_star.all_node_defs]) == {
         "follows_o2",
@@ -204,7 +204,7 @@ def test_asset_collection_build_subset_job():
         "start_asset",
     }
 
-    test_down_star = collection.build_job(name="test_down_star", asset_key_selection="start_asset*")
+    test_down_star = collection.build_job(name="test_down_star", selection="start_asset*")
     assert len(test_down_star.all_node_defs) == 4
     assert set([node.name for node in test_down_star.all_node_defs]) == {
         "follows_o2",
@@ -213,7 +213,7 @@ def test_asset_collection_build_subset_job():
         "follows_o1",
     }
 
-    test_both_plus = collection.build_job(name="test_both_plus", asset_key_selection="+o1+")
+    test_both_plus = collection.build_job(name="test_both_plus", selection="+o1+")
     assert len(test_both_plus.all_node_defs) == 4
     assert set([node.name for node in test_both_plus.all_node_defs]) == {
         "follows_o1",
@@ -223,7 +223,7 @@ def test_asset_collection_build_subset_job():
     }
 
     test_selection_with_overlap = collection.build_job(
-        name="test_multi_asset_multi_selection", asset_key_selection=["o1", "o2+"]
+        name="test_multi_asset_multi_selection", selection=["o1", "o2+"]
     )
     assert len(test_selection_with_overlap.all_node_defs) == 3
     assert set([node.name for node in test_selection_with_overlap.all_node_defs]) == {
@@ -236,10 +236,10 @@ def test_asset_collection_build_subset_job():
         DagsterInvalidDefinitionError,
         match=r"When attempting to create job 'bad_subset', the clause 'doesnt_exist' within the asset key selection did not match any asset keys. Present asset keys: \['start_asset', 'o1', 'o2', 'follows_o1', 'follows_o2'\]",
     ):
-        collection.build_job(name="bad_subset", asset_key_selection="doesnt_exist")
+        collection.build_job(name="bad_subset", selection="doesnt_exist")
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=r"When attempting to create job 'bad_query_arguments', the clause follows_o1= within the asset key selection was invalid. Please review the selection syntax here \(imagine there is a link here to the docs\).",
     ):
-        collection.build_job(name="bad_query_arguments", asset_key_selection="follows_o1=")
+        collection.build_job(name="bad_query_arguments", selection="follows_o1=")
