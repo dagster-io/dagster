@@ -3,6 +3,7 @@ from typing import Dict, Generator, Tuple
 
 import pytest
 from dagster import (
+    AssetKey,
     AssetMaterialization,
     AssetObservation,
     DagsterInvalidConfigError,
@@ -617,6 +618,7 @@ def test_metadata_logging():
     assert result.success
     assert result.output_for_node("basic") == "baz"
     events = result.events_for_node("basic")
+    assert len(events[1].event_specific_data.metadata_entries) == 1
     metadata_entry = events[1].event_specific_data.metadata_entries[0]
     assert metadata_entry.label == "foo"
     assert metadata_entry.entry_data.text == "bar"
@@ -720,3 +722,18 @@ def test_log_metadata_after_dynamic_output():
         match="In op 'the_op', attempted to log output metadata for output 'result' with mapping_key 'one' which has already been yielded. Metadata must be logged before the output is yielded.",
     ):
         execute_op_in_graph(the_op)
+
+
+def test_log_metadata_asset_materialization():
+    key = AssetKey(["foo"])
+
+    @op(out=Out(asset_key=key))
+    def the_op(context):
+        context.add_output_metadata({"bar": "baz"})
+        return 5
+
+    result = execute_op_in_graph(the_op)
+    materialization = result.asset_materializations_for_node("the_op")[0]
+    assert len(materialization.metadata_entries) == 1
+    assert materialization.metadata_entries[0].label == "bar"
+    assert materialization.metadata_entries[0].entry_data.text == "baz"
