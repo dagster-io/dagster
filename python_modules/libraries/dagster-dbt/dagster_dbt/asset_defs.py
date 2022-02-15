@@ -173,7 +173,7 @@ def load_assets_from_dbt_project(
         filter(None, (line.get("unique_id") for line in cli_output.logs))
     )
 
-    dbt_nodes = manifest_json["nodes"]
+    dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"]}
     return [
         _dbt_nodes_to_assets(
             dbt_nodes,
@@ -216,7 +216,7 @@ def load_assets_from_dbt_manifest(
             default, the asset key will simply be the name of the dbt model.
     """
     check.dict_param(manifest_json, "manifest_json", key_type=str)
-    dbt_nodes = manifest_json["nodes"]
+    dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"]}
     selected_unique_ids = selected_unique_ids or set(
         unique_id
         for unique_id, node_info in dbt_nodes.items()
