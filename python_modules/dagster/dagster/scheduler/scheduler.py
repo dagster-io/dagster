@@ -116,7 +116,7 @@ def launch_scheduled_runs(
 
     all_schedule_states = {
         schedule_state.origin.get_id(): schedule_state
-        for schedule_state in instance.all_instigator_state(job_type=InstigatorType.SCHEDULE)
+        for schedule_state in instance.all_instigator_state(instigator_type=InstigatorType.SCHEDULE)
     }
 
     schedules = {}

@@ -189,7 +189,7 @@ def execute_sensor_iteration(
 
     all_sensor_states = {
         sensor_state.origin.get_id(): sensor_state
-        for sensor_state in instance.all_instigator_state(job_type=InstigatorType.SENSOR)
+        for sensor_state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
     }
 
     sensors = {}

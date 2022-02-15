@@ -130,8 +130,8 @@ class SqlScheduleStorage(ScheduleStorage):
             query = query.limit(limit)
         return query
 
-    def get_ticks(self, job_origin_id, before=None, after=None, limit=None):
-        check.str_param(job_origin_id, "job_origin_id")
+    def get_ticks(self, origin_id, before=None, after=None, limit=None):
+        check.str_param(origin_id, "origin_id")
         check.opt_float_param(before, "before")
         check.opt_float_param(after, "after")
         check.opt_int_param(limit, "limit")
@@ -139,7 +139,7 @@ class SqlScheduleStorage(ScheduleStorage):
         query = (
             db.select([JobTickTable.c.id, JobTickTable.c.tick_body])
             .select_from(JobTickTable)
-            .where(JobTickTable.c.job_origin_id == job_origin_id)
+            .where(JobTickTable.c.job_origin_id == origin_id)
             .order_by(JobTickTable.c.id.desc())
         )
 
