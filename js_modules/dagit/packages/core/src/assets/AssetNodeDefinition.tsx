@@ -1,9 +1,12 @@
 import {gql} from '@apollo/client';
-import {Box, ColorsWIP, IconWIP, Caption, Subheading, Mono} from '@dagster-io/ui';
+import {Box, ColorsWIP, IconWIP, Caption, Subheading, Mono, MetadataTable} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
 import {displayNameForAssetKey, tokenForAssetKey} from '../app/Util';
+import {DagsterTypeSummary} from '../dagstertype/DagsterType';
+import {MetadataEntry} from '../metadata/MetadataEntry';
+import {MetadataEntryFragment} from '../metadata/types/MetadataEntryFragment';
 import {Description} from '../pipelines/Description';
 import {explorerPathToString} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -18,6 +21,22 @@ import {AssetNodeList} from './AssetNodeList';
 import {PartitionHealthSummary, usePartitionHealthData} from './PartitionHealthSummary';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
+const AssetMetadataTable: React.FC<{
+  assetMetadata: MetadataEntryFragment[];
+}> = ({assetMetadata}) => {
+  const rows = assetMetadata.map((entry) => {
+    return {
+      key: entry.label,
+      value: <MetadataEntry entry={entry} />,
+    };
+  });
+  return (
+    <Box padding={{vertical: 16, horizontal: 24}}>
+      <MetadataTable rows={rows} />
+    </Box>
+  );
+};
+
 export const AssetNodeDefinition: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
   liveDataByNode: LiveData;
@@ -27,6 +46,8 @@ export const AssetNodeDefinition: React.FC<{
     assetNode.repository.name,
     assetNode.repository.location.name,
   );
+  const assetType = assetNode.op?.outputDefinitions[0]?.type;
+  const assetMetadata = assetNode.op?.outputDefinitions[0]?.metadataEntries;
 
   return (
     <>
@@ -42,7 +63,8 @@ export const AssetNodeDefinition: React.FC<{
             flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>Definition in Repository</Subheading>
-            <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}}>
+            {/* Need a better way than height 0 to prevent PipelineReference from being too tall */}
+            <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}} style={{height: 0}}>
               {assetNode.jobs.map((job) => (
                 <Mono key={job.id}>
                   <PipelineReference
@@ -65,12 +87,26 @@ export const AssetNodeDefinition: React.FC<{
               )}
             </Box>
           </Box>
-          <Box padding={{top: 16, horizontal: 24, bottom: 4}} style={{flex: 1}}>
+          <Box padding={{top: 16, horizontal: 24, bottom: 16}} style={{minHeight: 112}}>
             <Description
               description={assetNode.description || 'No description provided.'}
               maxHeight={260}
             />
           </Box>
+          {assetMetadata && (
+            <>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+                flex={{justifyContent: 'space-between', gap: 8}}
+              >
+                <Subheading>Metadata</Subheading>
+              </Box>
+              <Box padding={{top: 16, bottom: 4}} style={{flex: 1}}>
+                <AssetMetadataTable assetMetadata={assetMetadata} />
+              </Box>
+            </>
+          )}
           {assetNode.partitionDefinition && (
             <>
               <Box
@@ -90,9 +126,24 @@ export const AssetNodeDefinition: React.FC<{
             </>
           )}
         </Box>
+        {assetType && (
+          <Box
+            // padding={{vertical: 16, horizontal: 24}}
+            border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}
+            flex={{direction: 'column'}}
+          >
+            <Box
+              padding={{vertical: 16, left: 24, right: 12}}
+              border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+            >
+              <Subheading>Type</Subheading>
+            </Box>
+            <DagsterTypeSummary type={assetType} />
+          </Box>
+        )}
         <Box
           border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}
-          style={{width: '40%', height: 330}}
+          style={{width: '40%'}}
           flex={{direction: 'column'}}
         >
           <Box

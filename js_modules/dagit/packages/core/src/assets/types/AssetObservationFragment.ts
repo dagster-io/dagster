@@ -39,12 +39,6 @@ export interface AssetObservationFragment_stepStats {
   startTime: number | null;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry" | "EventTableMetadataEntry";
-  label: string;
-  description: string | null;
-}
-
 export interface AssetObservationFragment_metadataEntries_EventPathMetadataEntry {
   __typename: "EventPathMetadataEntry";
   label: string;
@@ -122,7 +116,79 @@ export interface AssetObservationFragment_metadataEntries_EventAssetMetadataEntr
   assetKey: AssetObservationFragment_metadataEntries_EventAssetMetadataEntry_assetKey;
 }
 
-export type AssetObservationFragment_metadataEntries = AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry | AssetObservationFragment_metadataEntries_EventPathMetadataEntry | AssetObservationFragment_metadataEntries_EventJsonMetadataEntry | AssetObservationFragment_metadataEntries_EventUrlMetadataEntry | AssetObservationFragment_metadataEntries_EventTextMetadataEntry | AssetObservationFragment_metadataEntries_EventMarkdownMetadataEntry | AssetObservationFragment_metadataEntries_EventPythonArtifactMetadataEntry | AssetObservationFragment_metadataEntries_EventFloatMetadataEntry | AssetObservationFragment_metadataEntries_EventIntMetadataEntry | AssetObservationFragment_metadataEntries_EventPipelineRunMetadataEntry | AssetObservationFragment_metadataEntries_EventAssetMetadataEntry;
+export interface AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
+  constraints: AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table_schema;
+}
+
+export interface AssetObservationFragment_metadataEntries_EventTableMetadataEntry {
+  __typename: "EventTableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table;
+}
+
+export interface AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry {
+  __typename: "EventTableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry_schema;
+}
+
+export type AssetObservationFragment_metadataEntries = AssetObservationFragment_metadataEntries_EventPathMetadataEntry | AssetObservationFragment_metadataEntries_EventJsonMetadataEntry | AssetObservationFragment_metadataEntries_EventUrlMetadataEntry | AssetObservationFragment_metadataEntries_EventTextMetadataEntry | AssetObservationFragment_metadataEntries_EventMarkdownMetadataEntry | AssetObservationFragment_metadataEntries_EventPythonArtifactMetadataEntry | AssetObservationFragment_metadataEntries_EventFloatMetadataEntry | AssetObservationFragment_metadataEntries_EventIntMetadataEntry | AssetObservationFragment_metadataEntries_EventPipelineRunMetadataEntry | AssetObservationFragment_metadataEntries_EventAssetMetadataEntry | AssetObservationFragment_metadataEntries_EventTableMetadataEntry | AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry;
 
 export interface AssetObservationFragment {
   __typename: "ObservationEvent";
