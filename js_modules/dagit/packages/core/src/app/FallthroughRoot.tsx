@@ -5,8 +5,6 @@ import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
-import {useFeatureFlags} from './Flags';
-
 const InstanceRedirect = () => {
   const location = useLocation();
   const path = `${location.pathname}${location.search}`;
@@ -19,6 +17,9 @@ export const FallthroughRoot = () => {
       <Route path={['/runs/(.*)?', '/assets/(.*)?', '/scheduler']}>
         <InstanceRedirect />
       </Route>
+      <Route path="/home">
+        <FinalRedirectOrLoadingRoot />
+      </Route>
       <Route path="*">
         <FinalRedirectOrLoadingRoot />
       </Route>
@@ -29,12 +30,6 @@ export const FallthroughRoot = () => {
 const FinalRedirectOrLoadingRoot = () => {
   const workspaceContext = React.useContext(WorkspaceContext);
   const {allRepos, loading, locationEntries} = workspaceContext;
-
-  const {flagInstanceOverview} = useFeatureFlags();
-
-  if (flagInstanceOverview) {
-    return <Redirect to="/instance" />;
-  }
 
   if (loading) {
     return (
@@ -49,34 +44,41 @@ const FinalRedirectOrLoadingRoot = () => {
 
   // If we have location entries but no repos, we have no useful objects to show.
   // Redirect to Workspace overview to surface relevant errors to the user.
-  if (!allRepos.length && locationEntries.length) {
+  if (locationEntries.length && allRepos.length === 0) {
     return <Redirect to="/workspace" />;
   }
 
-  // Default to the first job available in the first repo. This is kind of a legacy
-  // approach, and might be worth rethinking.
-  const firstRepo = allRepos[0] || null;
-  if (firstRepo?.repository.pipelines.length) {
-    const first = firstRepo.repository.pipelines[0];
+  // If we have exactly one job, route to the job's overview / graph tab
+  const reposWithJob = allRepos.filter((r) => r.repository.pipelines.length > 0);
+  if (reposWithJob.length === 1) {
+    const repo = reposWithJob[0];
+    const job = repo.repository.pipelines[0];
     return (
       <Redirect
         to={workspacePipelinePath({
-          repoName: firstRepo.repository.name,
-          repoLocation: firstRepo.repositoryLocation.name,
-          pipelineName: first.name,
-          isJob: first.isJob,
+          repoName: repo.repository.name,
+          repoLocation: repo.repositoryLocation.name,
+          pipelineName: job.name,
+          isJob: job.isJob,
         })}
       />
     );
   }
 
+  // If we have more than one job, route to the instance overview
+  if (reposWithJob.length > 1) {
+    return <Redirect to="/instance" />;
+  }
+
+  const repoWithNoJob = allRepos[0];
+
   return (
     <Box padding={{vertical: 64}}>
       <NonIdealState
         icon="no-results"
-        title={firstRepo ? 'No pipelines or jobs' : 'No repositories'}
+        title={repoWithNoJob ? 'No pipelines or jobs' : 'No repositories'}
         description={
-          firstRepo
+          repoWithNoJob
             ? 'Your repository is loaded but no pipelines or jobs were found.'
             : 'Add a repository to get started.'
         }

@@ -16,9 +16,7 @@ import {
   FontFamily,
 } from '@dagster-io/ui';
 import * as React from 'react';
-import {Redirect} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {ScheduleOrSensorTag} from '../nav/JobMetadata';
@@ -57,16 +55,6 @@ import {
 } from './types/InstanceOverviewInitialQuery';
 import {LastTenRunsPerJobQuery} from './types/LastTenRunsPerJobQuery';
 import {OverviewJobFragment} from './types/OverviewJobFragment';
-
-export const InstanceOverviewPage = () => {
-  const {flagInstanceOverview} = useFeatureFlags();
-
-  if (!flagInstanceOverview) {
-    return <Redirect to="/instance" />;
-  }
-
-  return <OverviewContent />;
-};
 
 const intent = (status: RunStatus) => {
   switch (status) {
@@ -114,7 +102,7 @@ const initialState: State = {
 
 const POLL_INTERVAL = 15 * 1000;
 
-const OverviewContent = () => {
+export const InstanceOverviewPage = () => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
 

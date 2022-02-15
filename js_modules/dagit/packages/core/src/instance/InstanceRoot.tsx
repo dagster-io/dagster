@@ -2,7 +2,6 @@ import {MainContent} from '@dagster-io/ui';
 import * as React from 'react';
 import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {AssetEntryRoot} from '../assets/AssetEntryRoot';
 import {AssetsCatalogRoot} from '../assets/AssetsCatalogRoot';
 import {InstanceAssetGraphExplorer} from '../assets/InstanceAssetGraphExplorer';
@@ -14,7 +13,6 @@ import {InstanceStatusRoot} from './InstanceStatusRoot';
 
 export const InstanceRoot = () => {
   const {pathname} = useLocation();
-  const {flagInstanceOverview} = useFeatureFlags();
   const main = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
@@ -45,12 +43,7 @@ export const InstanceRoot = () => {
         <Route path="/instance/:tab">
           <InstanceStatusRoot />
         </Route>
-        <Route
-          path="*"
-          render={() => (
-            <Redirect to={flagInstanceOverview ? '/instance/overview' : '/instance/health'} />
-          )}
-        />
+        <Route path="*" render={() => <Redirect to="/instance/overview" />} />
       </Switch>
     </MainContent>
   );

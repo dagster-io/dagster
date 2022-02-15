@@ -72,16 +72,6 @@ const SettingsRoot = () => {
                 />
               ),
             },
-            {
-              key: 'Instance overview page',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(FeatureFlag.flagInstanceOverview)}
-                  onChange={() => toggleFlag(FeatureFlag.flagInstanceOverview)}
-                />
-              ),
-            },
           ]}
         />
       </Box>
