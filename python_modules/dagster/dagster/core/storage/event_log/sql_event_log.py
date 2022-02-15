@@ -634,13 +634,9 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.limit(limit)
 
         if ascending:
-            query = query.order_by(
-                SqlEventLogStorageTable.c.timestamp.asc(), SqlEventLogStorageTable.c.id.asc()
-            )
+            query = query.order_by(SqlEventLogStorageTable.c.id.asc())
         else:
-            query = query.order_by(
-                SqlEventLogStorageTable.c.timestamp.desc(), SqlEventLogStorageTable.c.id.desc()
-            )
+            query = query.order_by(SqlEventLogStorageTable.c.id.desc())
 
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
