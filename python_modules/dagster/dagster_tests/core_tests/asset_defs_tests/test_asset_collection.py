@@ -33,7 +33,7 @@ def test_asset_collection_from_list():
 
     assert len(the_repo.get_all_jobs()) == 1
     asset_collection_underlying_job = the_repo.get_all_jobs()[0]
-    assert asset_collection_underlying_job.name == collection.name
+    assert asset_collection_underlying_job.name == collection.all_assets_job_name
 
     result = asset_collection_underlying_job.execute_in_process()
     assert result.success
@@ -68,7 +68,7 @@ def test_asset_collection_foreign_asset():
         return [collection]
 
     asset_collection_underlying_job = the_repo.get_all_jobs()[0]
-    assert asset_collection_underlying_job.name == collection.name
+    assert asset_collection_underlying_job.name == collection.all_assets_job_name
 
     result = asset_collection_underlying_job.execute_in_process()
     assert result.success
@@ -90,7 +90,7 @@ def test_asset_collection_with_resources():
         return [collection]
 
     asset_collection_underlying_job = the_repo.get_all_jobs()[0]
-    assert asset_collection_underlying_job.name == collection.name
+    assert asset_collection_underlying_job.name == collection.all_assets_job_name
 
     result = asset_collection_underlying_job.execute_in_process()
     assert result.success

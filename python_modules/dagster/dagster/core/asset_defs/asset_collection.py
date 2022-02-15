@@ -64,7 +64,8 @@ class AssetCollection(
         )
 
     @property
-    def name(self) -> str:
+    def all_assets_job_name(self) -> str:
+        """The name of the mega-job that the provided list of assets is coerced into."""
         return "__ASSET_COLLECTION"
 
 

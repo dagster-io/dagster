@@ -636,8 +636,8 @@ class CachingRepositoryData(RepositoryData):
 
             elif isinstance(definition, AssetCollection):
                 asset_collection = definition
-                pipelines_or_jobs[asset_collection.name] = build_assets_job(
-                    asset_collection.name,
+                pipelines_or_jobs[asset_collection.all_assets_job_name] = build_assets_job(
+                    asset_collection.all_assets_job_name,
                     assets=asset_collection.assets,
                     source_assets=asset_collection.source_assets,
                     resource_defs=asset_collection.resource_defs,
