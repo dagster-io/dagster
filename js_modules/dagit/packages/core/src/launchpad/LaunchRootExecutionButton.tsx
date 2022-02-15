@@ -1,4 +1,5 @@
 import {useMutation} from '@apollo/client';
+import {IconName} from '@dagster-io/ui/src/components/Icon';
 import * as React from 'react';
 
 import {AppContext} from '../app/AppContext';
@@ -18,6 +19,7 @@ interface LaunchRootExecutionButtonProps {
   getVariables: () => undefined | LaunchPipelineExecutionVariables;
   pipelineName: string;
   title?: string;
+  icon?: IconName;
 }
 
 export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecutionButtonProps> = (
@@ -57,8 +59,8 @@ export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecut
     <LaunchButton
       runCount={1}
       config={{
-        icon: 'open_in_new',
         onClick: onLaunch,
+        icon: props.icon || 'open_in_new',
         title: props.title || 'Launch Run',
         disabled: props.disabled || !canLaunchPipelineExecution,
         tooltip: !canLaunchPipelineExecution ? DISABLED_MESSAGE : undefined,

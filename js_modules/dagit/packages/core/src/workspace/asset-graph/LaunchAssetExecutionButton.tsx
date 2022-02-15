@@ -67,7 +67,7 @@ export const LaunchAssetExecutionButton: React.FC<{
       {partitionDefinition ? (
         <>
           <ButtonWIP
-            icon={<IconWIP name="open_in_new" />}
+            icon={<IconWIP name="materialization" />}
             disabled={!!disabledReason}
             intent="primary"
             onClick={() => setShowingPartitionDialog(true)}
@@ -88,6 +88,7 @@ export const LaunchAssetExecutionButton: React.FC<{
           pipelineName={jobName}
           disabled={!!disabledReason}
           title={title}
+          icon="materialization"
           getVariables={() => ({
             executionParams: {
               mode: 'default',

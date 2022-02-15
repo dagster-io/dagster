@@ -58,7 +58,7 @@ export const AssetNode: React.FC<{
       content={
         <MenuWIP>
           <MenuItemWIP
-            icon="open_in_new"
+            icon="materialization"
             onClick={(e) => {
               launch(repoAddress, jobName, definition.opName);
               e.stopPropagation();
