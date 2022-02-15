@@ -3,9 +3,11 @@ from collections import defaultdict
 
 import pytest
 from dagster import (
+    AssetCollection,
     AssetKey,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
+    ForeignAsset,
     PipelineDefinition,
     SensorDefinition,
     SolidDefinition,
@@ -22,7 +24,6 @@ from dagster import (
     sensor,
     solid,
 )
-from dagster.core.asset_defs import ForeignAsset
 from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 
 
@@ -568,6 +569,6 @@ def test_foreign_assets():
 
     @repository
     def my_repo():
-        return [foo, bar]
+        return [AssetCollection(assets=[], source_assets=[foo, bar])]
 
     assert my_repo.foreign_assets_by_key == {AssetKey("foo"): foo, AssetKey("bar"): bar}
