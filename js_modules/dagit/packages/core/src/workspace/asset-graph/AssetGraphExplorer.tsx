@@ -61,6 +61,7 @@ interface Props {
 
   pipelineSelector?: PipelineSelector;
   handles?: GraphExplorerSolidHandleFragment[];
+  filterNodes?: (assetNode: AssetGraphQuery_assetNodes) => boolean;
 
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
@@ -69,10 +70,18 @@ interface Props {
 export const AssetGraphExplorer: React.FC<Props> = (props) => {
   const {pipelineSelector, explorerPath} = props;
 
-  const queryResult = useQuery<AssetGraphQuery, AssetGraphQueryVariables>(ASSETS_GRAPH_QUERY, {
+  const fetchResult = useQuery<AssetGraphQuery, AssetGraphQueryVariables>(ASSETS_GRAPH_QUERY, {
     variables: {pipelineSelector},
     notifyOnNetworkStatusChange: true,
   });
+
+  const fetchResultFilteredNodes = React.useMemo(() => {
+    const nodes = fetchResult.data?.assetNodes;
+    if (!nodes) {
+      return undefined;
+    }
+    return props.filterNodes ? nodes.filter(props.filterNodes) : nodes;
+  }, [fetchResult.data, props.filterNodes]);
 
   const {
     assetGraphData,
@@ -80,7 +89,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
     graphAssetKeys,
     applyingEmptyDefault,
   } = React.useMemo(() => {
-    if (queryResult.data?.assetNodes === undefined) {
+    if (fetchResultFilteredNodes === undefined) {
       return {
         graphAssetKeys: [],
         graphQueryItems: [],
@@ -88,7 +97,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
         applyingEmptyDefault: false,
       };
     }
-    const graphQueryItems = buildGraphQueryItems(queryResult.data.assetNodes);
+    const graphQueryItems = buildGraphQueryItems(fetchResultFilteredNodes);
     const {all, applyingEmptyDefault} = filterByQuery(graphQueryItems, explorerPath.opsQuery);
 
     return {
@@ -97,7 +106,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
       graphQueryItems,
       applyingEmptyDefault,
     };
-  }, [queryResult.data, explorerPath.opsQuery]);
+  }, [fetchResultFilteredNodes, explorerPath.opsQuery]);
 
   const liveResult = useQuery<AssetGraphLiveQuery, AssetGraphLiveQueryVariables>(
     ASSETS_GRAPH_LIVE_QUERY,
@@ -131,7 +140,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
   useDidLaunchEvent(liveResult.refetch);
 
   return (
-    <Loading allowStaleData queryResult={queryResult}>
+    <Loading allowStaleData queryResult={fetchResult}>
       {() => {
         if (!assetGraphData) {
           return <NonIdealState icon="error" title="Query Error" />;

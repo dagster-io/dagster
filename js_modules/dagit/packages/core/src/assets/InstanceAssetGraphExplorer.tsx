@@ -1,4 +1,4 @@
-import {Body, Box, ColorsWIP, Heading, PageHeader} from '@dagster-io/ui';
+import {Box, ColorsWIP, Heading, PageHeader} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router';
 import {useHistory} from 'react-router-dom';
@@ -8,7 +8,10 @@ import {
   instanceAssetsExplorerPathFromString,
   instanceAssetsExplorerPathToURL,
 } from '../pipelines/PipelinePathUtils';
+import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {AssetGraphExplorer} from '../workspace/asset-graph/AssetGraphExplorer';
+import {AssetGraphQuery_assetNodes} from '../workspace/asset-graph/types/AssetGraphQuery';
+import {buildRepoPath} from '../workspace/buildRepoAddress';
 
 import {AssetViewModeSwitch} from './AssetViewModeSwitch';
 import {useAssetView} from './useAssetView';
@@ -17,10 +20,21 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
   const params = useParams();
   const history = useHistory();
   const [_, _setView] = useAssetView();
+  const {visibleRepos} = React.useContext(WorkspaceContext);
 
   // This is a bit of a hack, but our explorer path needs a job name and we'd like
   // to continue sharing the parsing/stringifying logic from the job graph UI
   const explorerPath = instanceAssetsExplorerPathFromString(params[0]);
+
+  const filterNodes = React.useMemo(() => {
+    const visibleRepoAddresses = visibleRepos.map((v) =>
+      buildRepoPath(v.repository.name, v.repositoryLocation.name),
+    );
+    return (node: AssetGraphQuery_assetNodes) =>
+      visibleRepoAddresses.includes(
+        buildRepoPath(node.repository.name, node.repository.location.name),
+      );
+  }, [visibleRepos]);
 
   return (
     <Box
@@ -47,6 +61,7 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
       </Box>
       <AssetGraphExplorer
         options={{preferAssetRendering: true, explodeComposites: true}}
+        filterNodes={filterNodes}
         explorerPath={explorerPath}
         onChangeExplorerPath={(path, mode) => {
           history[mode](instanceAssetsExplorerPathToURL(path));

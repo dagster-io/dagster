@@ -197,7 +197,7 @@ const useWorkspaceState = (): WorkspaceState => {
  * selection into localStorage so that the default selection in new browser windows
  * is the repo currently active in your session.
  */
-export const useVisibleRepos = (
+const useVisibleRepos = (
   allRepos: DagsterRepoOption[],
 ): [DagsterRepoOption[], WorkspaceState['toggleVisible']] => {
   // Initialize local state with an empty Set.

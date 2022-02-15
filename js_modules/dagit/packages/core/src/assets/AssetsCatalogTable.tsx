@@ -112,7 +112,7 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
                     <RepoFilterButton />
                     <TextInput
                       value={search}
-                      style={{width: '600px'}}
+                      style={{width: '30vw', minWidth: 150, maxWidth: 400}}
                       placeholder="Search all asset_keys..."
                       onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
                     />
