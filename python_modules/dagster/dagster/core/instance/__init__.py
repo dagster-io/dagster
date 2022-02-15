@@ -1103,6 +1103,10 @@ class DagsterInstance:
             filters, limit, order_by, ascending, cursor, bucket_by
         )
 
+    @property
+    def supports_bucket_queries(self):
+        self._run_storage.supports_bucket_queries
+
     def wipe(self):
         self._run_storage.wipe()
         self._event_storage.wipe()
