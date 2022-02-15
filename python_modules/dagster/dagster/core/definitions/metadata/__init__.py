@@ -24,46 +24,9 @@ RawMetadataValue = Union[
 def last_file_comp(path: str) -> str:
     return os.path.basename(os.path.normpath(path))
 
-
-def package_metadata_value(label: str, value: RawMetadataValue) -> "MetadataEntry":
-    check.str_param(label, "label")
-
-    if isinstance(value, (MetadataEntry, PartitionMetadataEntry)):
-        raise DagsterInvalidMetadata(
-            f"Expected a metadata value, found an instance of {value.__class__.__name__}. Consider "
-            "instead using a MetadataValue wrapper for the value, or using the `metadata_entries` "
-            "parameter to pass in a List[MetadataEntry|PartitionMetadataEntry]."
-        )
-
-    if isinstance(value, EntryDataUnion):
-        return MetadataEntry(label, None, value)
-
-    if isinstance(value, str):
-        return MetadataEntry.text(value, label)
-
-    if isinstance(value, float):
-        return MetadataEntry.float(value, label)
-
-    if isinstance(value, int):
-        return MetadataEntry.int(value, label)
-
-    if isinstance(value, dict):
-        try:
-            # check that the value is JSON serializable
-            seven.dumps(value)
-            return MetadataEntry.json(value, label)
-        except TypeError:
-            raise DagsterInvalidMetadata(
-                f'Could not resolve the metadata value for "{label}" to a JSON serializable value. '
-                "Consider wrapping the value with the appropriate MetadataValue type."
-            )
-
-    raise DagsterInvalidMetadata(
-        f'Could not resolve the metadata value for "{label}" to a known type. '
-        f"Its type was {type(value)}. Consider wrapping the value with the appropriate "
-        "MetadataValue type."
-    )
-
+# ########################
+# ##### NORMALIZATION
+# ########################
 
 def normalize_metadata(
     metadata: Dict[str, RawMetadataValue],
@@ -101,6 +64,49 @@ def normalize_metadata(
         package_metadata_value(k, v)
         for k, v in check.opt_dict_param(metadata, "metadata", key_type=str).items()
     ]
+
+def package_metadata_value(label: str, value: RawMetadataValue) -> "MetadataEntry":
+    check.str_param(label, "label")
+
+    if isinstance(value, (MetadataEntry, PartitionMetadataEntry)):
+        raise DagsterInvalidMetadata(
+            f"Expected a metadata value, found an instance of {value.__class__.__name__}. Consider "
+            "instead using a MetadataValue wrapper for the value, or using the `metadata_entries` "
+            "parameter to pass in a List[MetadataEntry|PartitionMetadataEntry]."
+        )
+
+    if isinstance(value, MetadataValue):
+        return MetadataEntry(label, None, value)
+
+    if isinstance(value, str):
+        return MetadataEntry.text(value, label)
+
+    if isinstance(value, float):
+        return MetadataEntry.float(value, label)
+
+    if isinstance(value, int):
+        return MetadataEntry.int(value, label)
+
+    if isinstance(value, dict):
+        try:
+            # check that the value is JSON serializable
+            seven.dumps(value)
+            return MetadataEntry.json(value, label)
+        except TypeError:
+            raise DagsterInvalidMetadata(
+                f'Could not resolve the metadata value for "{label}" to a JSON serializable value. '
+                "Consider wrapping the value with the appropriate MetadataValue type."
+            )
+
+    raise DagsterInvalidMetadata(
+        f'Could not resolve the metadata value for "{label}" to a known type. '
+        f"Its type was {type(value)}. Consider wrapping the value with the appropriate "
+        "MetadataValue type."
+    )
+
+# ########################
+# ##### METADATA VALUE
+# ########################
 
 class MetadataValue:
     """Utility class to wrap metadata values passed into Dagster events so that they can be
@@ -683,24 +689,9 @@ class TableSchemaMetadataValue(
             cls, check.inst_param(schema, "schema", TableSchema)
         )
 
-
-## for runtime checks
-
-EntryDataUnion = (
-    TextMetadataValue,
-    UrlMetadataValue,
-    PathMetadataValue,
-    JsonMetadataValue,
-    MarkdownMetadataValue,
-    FloatMetadataValue,
-    IntMetadataValue,
-    PythonArtifactMetadataValue,
-    DagsterAssetMetadataValue,
-    DagsterPipelineRunMetadataValue,
-    TableMetadataValue,
-    TableSchemaMetadataValue,
-)
-
+# ########################
+# ##### METADATA ENTRY
+# ########################
 
 # NOTE: This would better be implemented as a generic with `MetadataValue` set as a
 # typevar, but as of 2022-01-25 mypy does not support generics on NamedTuple.
