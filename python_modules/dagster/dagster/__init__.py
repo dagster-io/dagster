@@ -258,6 +258,8 @@ __all__ = [
     "AssetObservation",
     "AssetSensorDefinition",
     "AssetsDefinition",
+    "DagsterAssetMetadataValue",
+    "DagsterPipelineRunMetadataValue",
     "TableColumn",
     "TableColumnConstraints",
     "TableConstraints",
