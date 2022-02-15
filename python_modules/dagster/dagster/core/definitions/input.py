@@ -2,6 +2,7 @@ from collections import namedtuple
 from typing import NamedTuple, Optional, Set
 
 from dagster import check
+from dagster.core.definitions.event_metadata import EventMetadataEntry, parse_metadata
 from dagster.core.definitions.events import AssetKey
 from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import (
@@ -96,6 +97,9 @@ class InputDefinition:
         self._root_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
 
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        self._metadata_entries = check.is_list(
+            parse_metadata(self._metadata, [], allow_invalid=True), EventMetadataEntry
+        )
 
         if asset_key:
             experimental_arg_warning("asset_key", "InputDefinition.__init__")
@@ -152,6 +156,10 @@ class InputDefinition:
     @property
     def is_asset(self):
         return self._asset_key is not None
+
+    @property
+    def metadata_entries(self):
+        return self._metadata_entries
 
     @property
     def hardcoded_asset_key(self) -> Optional[AssetKey]:

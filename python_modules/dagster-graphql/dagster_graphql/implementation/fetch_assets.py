@@ -54,7 +54,7 @@ def get_asset_nodes_by_asset_key(graphene_info):
     from ..schema.asset_graph import GrapheneAssetNode
 
     return {
-        external_asset_node.asset_key: GrapheneAssetNode(repository, external_asset_node)
+        external_asset_node.asset_key: GrapheneAssetNode(location, repository, external_asset_node)
         for location in graphene_info.context.repository_locations
         for repository in location.get_repositories().values()
         for external_asset_node in repository.get_external_asset_nodes()
@@ -65,7 +65,7 @@ def get_asset_nodes(graphene_info):
     from ..schema.asset_graph import GrapheneAssetNode
 
     return [
-        GrapheneAssetNode(repository, external_asset_node)
+        GrapheneAssetNode(location, repository, external_asset_node)
         for location in graphene_info.context.repository_locations
         for repository in location.get_repositories().values()
         for external_asset_node in repository.get_external_asset_nodes()

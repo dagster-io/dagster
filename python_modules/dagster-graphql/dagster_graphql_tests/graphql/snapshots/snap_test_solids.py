@@ -252,6 +252,54 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'asset_1'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'failure_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'asset_1'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'asset_2'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'failure_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'asset_2'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'asset_3'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'failure_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'asset_3'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'asset_one'
                 },
                 'invocations': [
@@ -1293,6 +1341,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'solid_that_gets_tags'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'solid_with_input_output_metadata'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'pipeline_with_input_output_metadata'
+                        },
+                        'solidHandle': {
+                            'handleID': 'solid_with_input_output_metadata'
                         }
                     }
                 ]

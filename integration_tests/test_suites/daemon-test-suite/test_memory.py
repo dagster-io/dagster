@@ -1,13 +1,12 @@
 import inspect
-import sys
+import os
 import time
 from contextlib import contextmanager
 
 import objgraph
 from dagster import RunRequest, pipeline, repository, schedule, sensor, solid
-from dagster.core.host_representation import ManagedGrpcPythonEnvRepositoryLocationOrigin
 from dagster.core.test_utils import instance_for_test
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.daemon.controller import daemon_controller_from_instance
 
 
@@ -46,16 +45,20 @@ def example_repo():
 
 @contextmanager
 def get_example_repository_location():
-    loadable_target_origin = LoadableTargetOrigin(
-        executable_path=sys.executable,
-        python_file=__file__,
-    )
-    location_name = "example_repo_location"
+    load_target = workspace_load_target()
+    origin = load_target.create_origins()[0]
 
-    origin = ManagedGrpcPythonEnvRepositoryLocationOrigin(loadable_target_origin, location_name)
-
-    with origin.create_test_location() as location:
+    with origin.create_single_location() as location:
         yield location
+
+
+def workspace_load_target():
+    return PythonFileTarget(
+        python_file=__file__,
+        attribute=None,
+        working_directory=os.path.dirname(__file__),
+        location_name=None,
+    )
 
 
 @contextmanager
@@ -84,11 +87,11 @@ def test_no_memory_leaks():
         external_schedule = repo.get_external_schedule("always_run_schedule")
         external_sensor = repo.get_external_sensor("always_on_sensor")
 
-        instance.start_schedule_and_update_storage_state(external_schedule)
+        instance.start_schedule(external_schedule)
         instance.start_sensor(external_sensor)
 
         with daemon_controller_from_instance(
-            instance, wait_for_processes_on_exit=True
+            instance, workspace_load_target=workspace_load_target(), wait_for_processes_on_exit=True
         ) as controller:
             start_time = time.time()
 

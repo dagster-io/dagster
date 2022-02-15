@@ -273,7 +273,7 @@ def test_sensor_next_ticks(graphql_context):
     assert not next_tick
 
     # test default sensor with no tick
-    graphql_context.instance.add_job_state(
+    graphql_context.instance.add_instigator_state(
         InstigatorState(
             external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
         )
@@ -288,7 +288,7 @@ def test_sensor_next_ticks(graphql_context):
     assert not next_tick
 
     # test default sensor with last tick
-    _create_tick(graphql_context.instance)
+    _create_tick(graphql_context)
 
     result = execute_dagster_graphql(
         graphql_context, GET_SENSOR_QUERY, variables={"sensorSelector": sensor_selector}
@@ -300,10 +300,14 @@ def test_sensor_next_ticks(graphql_context):
     assert next_tick
 
 
-def _create_tick(instance):
-    with create_test_daemon_workspace() as workspace:
+def _create_tick(graphql_context):
+    with create_test_daemon_workspace(
+        graphql_context.process_context.workspace_load_target
+    ) as workspace:
         list(
-            execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon"), workspace)
+            execute_sensor_iteration(
+                graphql_context.instance, get_default_daemon_logger("SensorDaemon"), workspace
+            )
         )
 
 
@@ -325,7 +329,7 @@ def test_sensor_tick_range(graphql_context):
     assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 0
 
     # turn the sensor on
-    graphql_context.instance.add_job_state(
+    graphql_context.instance.add_instigator_state(
         InstigatorState(
             external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
         )
@@ -334,15 +338,15 @@ def test_sensor_tick_range(graphql_context):
     now = pendulum.now("US/Central")
     one = now.subtract(days=2).subtract(hours=1)
     with pendulum.test(one):
-        _create_tick(graphql_context.instance)
+        _create_tick(graphql_context)
 
     two = now.subtract(days=1).subtract(hours=1)
     with pendulum.test(two):
-        _create_tick(graphql_context.instance)
+        _create_tick(graphql_context)
 
     three = now.subtract(hours=1)
     with pendulum.test(three):
-        _create_tick(graphql_context.instance)
+        _create_tick(graphql_context)
 
     result = execute_dagster_graphql(
         graphql_context,
@@ -399,6 +403,6 @@ def test_repository_batching(graphql_context):
     # batch call to fetch instigator state, instead of separate calls for each sensor (~5 distinct
     # sensors in the repo)
     # 1) `get_run_records` is fetched to instantiate GrapheneRun
-    # 2) `all_stored_job_state` is fetched to instantiate GrapheneSensor
+    # 2) `all_instigator_state` is fetched to instantiate GrapheneSensor
     assert counts.get("DagsterInstance.get_run_records") == 1
-    assert counts.get("DagsterInstance.all_stored_job_state") == 1
+    assert counts.get("DagsterInstance.all_instigator_state") == 1

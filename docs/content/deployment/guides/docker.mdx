@@ -115,7 +115,7 @@ Dagit servers expose a health check endpoint at `/dagit_info`, which returns a J
 
 ## Multi-container Docker deployment
 
-More advanced dagster deployments will require deploying more than one container. For example, if you are using [dagster-daemon](/deployment/dagster-daemon) to run schedules and sensors or manage a queue of runs, you'll likely want a separate container running the `dagster-daemon` service. You can also configure your [workspace](/concepts/repositories-workspaces/workspaces) so that your code can be updated and deployed separately in its own container running a gRPC server, without needing to redeploy the other dagster services. To enable this setup, include a container exposing a gRPC server at a port, and add that port in your `workspace.yaml` file.
+More advanced dagster deployments will require deploying more than one container. For example, if you are using [dagster-daemon](/deployment/dagster-daemon) to run schedules and sensors or manage a queue of runs, you'll likely want a separate container running the `dagster-daemon` service. This service must have access to your `dagster.yaml` and `workspace.yaml` files, just like the Dagit container. You can also configure your [workspace](/concepts/repositories-workspaces/workspaces) so that your code can be updated and deployed separately in its own container running a gRPC server, without needing to redeploy the other dagster services. To enable this setup, include a container exposing a gRPC server at a port, and add that port in your `workspace.yaml` file.
 
 For example, your user code container might have the following Dockerfile:
 
@@ -166,6 +166,8 @@ load_from:
 ```
 
 When you update your code, you can rebuild and restart your user code container without needing to redeploy other parts of the system. Dagit will automatically notice that a new server has been redeployed and prompt you to refresh your workspace.
+
+When you add or remove a user code container, you can also remove the corresponding entry from your `workspace.yaml` file. If this file is mounted on the dagit and dagster-daemon containers as a volume, you can pick up the changes in Dagit by reloading the workspace from the Workspace tab. The dagster-daemon container will automatically pick up the changes by periodically reloading the workspace from the `workspace.yaml` file.
 
 ## Launching runs in containers
 

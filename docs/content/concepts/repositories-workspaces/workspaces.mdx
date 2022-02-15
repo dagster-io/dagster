@@ -68,11 +68,11 @@ load_from:
 
 ## Using a Workspace
 
-Dagit will look for the `workspace.yaml` file in the current directory by default, allowing you to launch Dagit from that directory with no arguments:
+Both Dagit and the [dagster-daemon process](/deployment/dagster-daemon) need to know how to load your workspace. By default, they will look for the `workspace.yaml` file in the current directory, allowing you to launch from that directory with no arguments:
 
     dagit
 
-Using a `workspace.yaml` keeps you from having to type the same command-line flags repeatedly to load your code. You can also load the workspace yaml file from a different folder with `-w`. See detailed references in the [`dagit API docs`](/\_apidocs/cli#dagit).
+Using a `workspace.yaml` file keeps you from having to type the same command-line flags repeatedly to load your code. You can also load the workspace yaml file from a different folder with `-w`. See detailed references in the [API docs](/\_apidocs/cli#dagit).
 
 ## Examples
 

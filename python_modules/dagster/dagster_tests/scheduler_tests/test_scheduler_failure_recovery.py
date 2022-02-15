@@ -11,9 +11,11 @@ from dagster.core.test_utils import (
     get_terminate_signal,
 )
 from dagster.scheduler.scheduler import launch_scheduled_runs
-from dagster.seven import IS_WINDOWS, multiprocessing
+from dagster.seven import IS_WINDOWS
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster.utils import get_dagster_multiproc_ctx
 
+from .conftest import workspace_load_target
 from .test_scheduler_run import (
     logger,
     validate_run_exists,
@@ -25,7 +27,7 @@ from .test_scheduler_run import (
 def _test_launch_scheduled_runs_in_subprocess(instance_ref, execution_datetime, debug_crash_flags):
     with DagsterInstance.from_ref(instance_ref) as instance:
         try:
-            with create_test_daemon_workspace() as workspace:
+            with create_test_daemon_workspace(workspace_load_target()) as workspace:
                 with pendulum.test(execution_datetime):
                     list(
                         launch_scheduled_runs(
@@ -57,11 +59,11 @@ def test_failure_recovery_before_run_created(instance, external_repo, crash_loca
 
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     with pendulum.test(frozen_datetime):
-        instance.start_schedule_and_update_storage_state(external_schedule)
+        instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
 
-        scheduler_process = multiprocessing.Process(
+        scheduler_process = get_dagster_multiproc_ctx().Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, debug_crash_flags],
         )
@@ -70,7 +72,7 @@ def test_failure_recovery_before_run_created(instance, external_repo, crash_loca
 
         assert scheduler_process.exitcode != 0
 
-        ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.STARTED
 
@@ -78,7 +80,7 @@ def test_failure_recovery_before_run_created(instance, external_repo, crash_loca
 
     frozen_datetime = frozen_datetime.add(minutes=5)
     with pendulum.test(frozen_datetime):
-        scheduler_process = multiprocessing.Process(
+        scheduler_process = get_dagster_multiproc_ctx().Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, None],
         )
@@ -94,7 +96,7 @@ def test_failure_recovery_before_run_created(instance, external_repo, crash_loca
             partition_time=create_pendulum_time(2019, 2, 26),
         )
 
-        ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -117,11 +119,11 @@ def test_failure_recovery_after_run_created(instance, external_repo, crash_locat
     frozen_datetime = initial_datetime.add()
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     with pendulum.test(frozen_datetime):
-        instance.start_schedule_and_update_storage_state(external_schedule)
+        instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
 
-        scheduler_process = multiprocessing.Process(
+        scheduler_process = get_dagster_multiproc_ctx().Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, debug_crash_flags],
         )
@@ -130,7 +132,7 @@ def test_failure_recovery_after_run_created(instance, external_repo, crash_locat
 
         assert scheduler_process.exitcode != 0
 
-        ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
         assert len(ticks) == 1
         assert ticks[0].status == TickStatus.STARTED
 
@@ -164,7 +166,7 @@ def test_failure_recovery_after_run_created(instance, external_repo, crash_locat
     with pendulum.test(frozen_datetime):
 
         # Running again just launches the existing run and marks the tick as success
-        scheduler_process = multiprocessing.Process(
+        scheduler_process = get_dagster_multiproc_ctx().Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, None],
         )
@@ -178,7 +180,7 @@ def test_failure_recovery_after_run_created(instance, external_repo, crash_locat
             instance.get_runs()[0], initial_datetime, create_pendulum_time(2019, 2, 26)
         )
 
-        ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -199,11 +201,11 @@ def test_failure_recovery_after_tick_success(instance, external_repo, crash_loca
     frozen_datetime = initial_datetime.add()
     external_schedule = external_repo.get_external_schedule("simple_schedule")
     with pendulum.test(frozen_datetime):
-        instance.start_schedule_and_update_storage_state(external_schedule)
+        instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
 
-        scheduler_process = multiprocessing.Process(
+        scheduler_process = get_dagster_multiproc_ctx().Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, debug_crash_flags],
         )
@@ -222,7 +224,7 @@ def test_failure_recovery_after_tick_success(instance, external_repo, crash_loca
             instance.get_runs()[0], initial_datetime, create_pendulum_time(2019, 2, 26)
         )
 
-        ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
         assert len(ticks) == 1
 
         if crash_signal == get_terminate_signal():
@@ -241,7 +243,7 @@ def test_failure_recovery_after_tick_success(instance, external_repo, crash_loca
     frozen_datetime = frozen_datetime.add(minutes=1)
     with pendulum.test(frozen_datetime):
         # Running again just marks the tick as success since the run has already started
-        scheduler_process = multiprocessing.Process(
+        scheduler_process = get_dagster_multiproc_ctx().Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, None],
         )
@@ -254,7 +256,7 @@ def test_failure_recovery_after_tick_success(instance, external_repo, crash_loca
             instance.get_runs()[0], initial_datetime, create_pendulum_time(2019, 2, 26)
         )
 
-        ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
         assert len(ticks) == 1
         validate_tick(
             ticks[0],
@@ -275,11 +277,11 @@ def test_failure_recovery_between_multi_runs(instance, external_repo, crash_loca
     frozen_datetime = initial_datetime.add()
     external_schedule = external_repo.get_external_schedule("multi_run_schedule")
     with pendulum.test(frozen_datetime):
-        instance.start_schedule_and_update_storage_state(external_schedule)
+        instance.start_schedule(external_schedule)
 
         debug_crash_flags = {external_schedule.name: {crash_location: crash_signal}}
 
-        scheduler_process = multiprocessing.Process(
+        scheduler_process = get_dagster_multiproc_ctx().Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, debug_crash_flags],
         )
@@ -292,12 +294,12 @@ def test_failure_recovery_between_multi_runs(instance, external_repo, crash_loca
         assert instance.get_runs_count() == 1
         validate_run_exists(instance.get_runs()[0], initial_datetime)
 
-        ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
         assert len(ticks) == 1
 
     frozen_datetime = frozen_datetime.add(minutes=1)
     with pendulum.test(frozen_datetime):
-        scheduler_process = multiprocessing.Process(
+        scheduler_process = get_dagster_multiproc_ctx().Process(
             target=_test_launch_scheduled_runs_in_subprocess,
             args=[instance.get_ref(), frozen_datetime, None],
         )
@@ -306,7 +308,7 @@ def test_failure_recovery_between_multi_runs(instance, external_repo, crash_loca
         assert scheduler_process.exitcode == 0
         assert instance.get_runs_count() == 2
         validate_run_exists(instance.get_runs()[0], initial_datetime)
-        ticks = instance.get_job_ticks(external_schedule.get_external_origin_id())
+        ticks = instance.get_ticks(external_schedule.get_external_origin_id())
         assert len(ticks) == 1
         validate_tick(
             ticks[0],

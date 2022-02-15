@@ -264,6 +264,14 @@ class ReconstructablePipeline(
     def get_python_origin_id(self):
         return self.get_python_origin().get_id()
 
+    def get_module(self) -> Optional[str]:
+        """Return the module the pipeline is found in, the origin is a module code pointer"""
+        pointer = self.get_python_origin().get_repo_pointer()
+        if isinstance(pointer, ModuleCodePointer):
+            return pointer.module
+
+        return None
+
 
 def reconstructable(target):
     """

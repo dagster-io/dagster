@@ -87,6 +87,7 @@ type Repository {
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
   inProgressRunsByStep: [InProgressRunsByStep!]!
+  latestRunByStep: [RunStatsByStep!]!
 }
 
 type RepositoryLocation {
@@ -158,6 +159,7 @@ type InputDefinition {
   name: String!
   description: String
   type: DagsterType!
+  metadataEntries: [EventMetadataEntry!]!
 }
 
 type SolidDefinition implements ISolidDefinition {
@@ -177,6 +179,7 @@ type OutputDefinition {
   description: String
   isDynamic: Boolean
   type: DagsterType!
+  metadataEntries: [EventMetadataEntry!]!
 }
 
 interface DagsterType {
@@ -1339,6 +1342,20 @@ type InProgressRunsByStep {
   stepKey: String!
   unstartedRuns: [Run!]!
   inProgressRuns: [Run!]!
+}
+
+union RunStatsByStep = LatestRun | JobRunsCount
+
+type LatestRun {
+  stepKey: String!
+  run: Run
+}
+
+type JobRunsCount {
+  stepKey: String!
+  jobNames: [String!]!
+  count: Int!
+  sinceLatestMaterialization: Boolean!
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError

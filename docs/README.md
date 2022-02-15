@@ -1,6 +1,6 @@
 # Dagster Documentation Site
 
-This folder contains the code for the Dagster documentation site at https://docs.dagster.io
+This folder contains the code for the Dagster documentation site at https://docs.dagster.io.
 
 ## Getting Started
 
@@ -48,21 +48,11 @@ To rebuild the docs site, run in the docs dir:
 tox -vv -e py38-sphinx
 ```
 
-Sphinx requires all the modules for which it is building API docs to be installed, but doesn't
-require their dependencies to be installed, as long as the Dagster modules can be imported. We create the
-docs environment for Sphinx by first installing from `docs-dagster-requirements.txt` with no
-dependencies, then installing any required dependecies from `docs-build-requirements.txt`. Most
-dependencies imported by dagster can go in the list of mocked imports in `autodoc_mock_imports`
-in `docs/sphinx/conf.py`, since they're not actually needed to build the docs, but the relatively
-small number of dependencies that are actually needed to import the dagster packages and build the
-docs can be found in `docs-build-requirements.txt`.
+Sphinx requires all the modules for which it is building API docs to be installed, but doesn't require their dependencies to be installed, as long as the Dagster modules can be imported. We create the docs environment for Sphinx by first installing from `docs-dagster-requirements.txt` with no dependencies, then installing any required dependencies from `docs-build-requirements.txt`. Most dependencies imported by dagster can go in the list of mocked imports in `autodoc_mock_imports` in `docs/sphinx/conf.py`, since they're not actually needed to build the docs, but the relatively small number of dependencies that are actually needed to import the dagster packages and build the docs can be found in `docs-build-requirements.txt`.
 
 If you don't build the API documentation and include the changes in your diff, you will see a build error reminding you to do so.
 
-If the test that checks whether the sphinx build passes is failing due to an import-related error,
-it likely indicates that a dependency needs to be added to `autodoc_mock_imports` in `conf.py` if it isn't
-actually needed to import the Dagster library (most common), or added to `docs-build-requirements.txt` if
-it actually needs to be included just for the library to be able to be imported (less common)
+If the test that checks whether the sphinx build passes is failing due to an import-related error, it likely indicates that a dependency needs to be added to `autodoc_mock_imports` in `conf.py` if it isn't actually needed to import the Dagster library (most common), or added to `docs-build-requirements.txt` if it actually needs to be included just for the library to be able to be imported (less common).
 
 <br />
 
@@ -75,6 +65,7 @@ We use MDX, which is a content format that lets us use JSX in our markdown docum
 We want the code snippets in our documentation to be high quality. We maintain quality by authoring snippets in the `/examples/docs_snippets` folder and testing them to make sure they work and we don't break them in the future.
 
 **Example:**
+
 To include snippets from the code base, you can provide additional properties to the markdown code fence block:
 
 Using markers:
@@ -153,9 +144,8 @@ pip install selenium
 ```
 
 Install Selenium's chrome driver:
-- Download chromedriver from [here](https://chromedriver.chromium.org/downloads).
-- Add it to /usr/local/bin
-- Run `xattr -d com.apple.quarantine /usr/local/bin/chromedriver` (gross)
+- `brew install chromedriver` OR download chromedriver from [here](https://chromedriver.chromium.org/downloads)) and manually add to /usr/local/bin
+- You may need to run `xattr -d com.apple.quarantine /usr/local/bin/chromedriver` (gross)
 
 #### Capturing a screenshot
 

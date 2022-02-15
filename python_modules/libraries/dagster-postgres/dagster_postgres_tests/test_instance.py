@@ -199,12 +199,12 @@ def test_skip_autocreate(hostname, conn_string):
             instance.all_asset_keys()
 
         with pytest.raises(db.exc.ProgrammingError):
-            instance.all_stored_job_state()
+            instance.all_instigator_state()
 
     with instance_for_test(overrides=yaml.safe_load(full_pg_config(hostname))) as instance:
         instance.get_runs()
         instance.all_asset_keys()
-        instance.all_stored_job_state()
+        instance.all_instigator_state()
 
     TestPostgresInstance.clean_run_storage(conn_string, should_autocreate_tables=False)
     TestPostgresInstance.clean_event_log_storage(conn_string, should_autocreate_tables=False)

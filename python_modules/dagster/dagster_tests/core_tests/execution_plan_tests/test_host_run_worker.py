@@ -121,7 +121,10 @@ def test_host_run_worker():
     config_schema={},
 )
 def test_executor(_init_context):
-    return MultiprocessExecutor(max_concurrent=4, retries=RetryMode.DISABLED)
+    return MultiprocessExecutor(
+        max_concurrent=4,
+        retries=RetryMode.DISABLED,
+    )
 
 
 def test_custom_executor_fn():

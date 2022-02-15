@@ -4,6 +4,7 @@ from collections import Counter
 from contextlib import ExitStack
 
 import mock
+import pendulum
 import pytest
 from dagster import (
     AssetKey,
@@ -16,7 +17,6 @@ from dagster import (
     Output,
     OutputDefinition,
     RetryRequested,
-    job,
     op,
     pipeline,
     resource,
@@ -53,6 +53,7 @@ from dagster.core.test_utils import instance_for_test
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.utils import datetime_as_float
 
 DEFAULT_RUN_ID = "foo"
 
@@ -251,6 +252,14 @@ def one_solid():
 def two_solids():
     solid_one()
     solid_two()
+
+
+def cursor_datetime_args():
+    # parametrization function to test constructing run-sharded event log cursors, with both
+    # timezone-aware and timezone-naive datetimes
+    yield None
+    yield pendulum.now()
+    yield pendulum.now().naive()
 
 
 class TestEventLogStorage:
@@ -1154,7 +1163,10 @@ class TestEventLogStorage:
         assert len(step_stats[0].markers) == 1
         assert step_stats[0].markers[0].end_time >= step_stats[0].markers[0].start_time + 0.1
 
-    def test_get_event_records(self, storage):
+    @pytest.mark.parametrize(
+        "cursor_dt", cursor_datetime_args()
+    )  # test both tz-aware and naive datetimes
+    def test_get_event_records(self, storage, cursor_dt):
         if isinstance(storage, SqliteEventLogStorage):
             # test sqlite in test_get_event_records_sqlite
             pytest.skip()
@@ -1192,22 +1204,33 @@ class TestEventLogStorage:
         assert _event_types([all_records[-1].event_log_entry]) == [DagsterEventType.PIPELINE_START]
 
         # after cursor
+        def _build_cursor(record_id_cursor, run_cursor_dt):
+            if not run_cursor_dt:
+                return record_id_cursor
+            return RunShardedEventsCursor(id=record_id_cursor, run_updated_after=run_cursor_dt)
+
         assert not list(
             filter(
                 lambda r: r.storage_id <= 2,
-                storage.get_event_records(EventRecordsFilter(after_cursor=2)),
+                storage.get_event_records(
+                    EventRecordsFilter(after_cursor=_build_cursor(2, cursor_dt))
+                ),
             )
         )
         assert [
             i.storage_id
             for i in storage.get_event_records(
-                EventRecordsFilter(after_cursor=min_record_num + 2), ascending=True, limit=2
+                EventRecordsFilter(after_cursor=_build_cursor(min_record_num + 2, cursor_dt)),
+                ascending=True,
+                limit=2,
             )
         ] == [min_record_num + 3, min_record_num + 4]
         assert [
             i.storage_id
             for i in storage.get_event_records(
-                EventRecordsFilter(after_cursor=min_record_num + 2), ascending=False, limit=2
+                EventRecordsFilter(after_cursor=_build_cursor(min_record_num + 2, cursor_dt)),
+                ascending=False,
+                limit=2,
             )
         ] == [max_record_num, max_record_num - 1]
 
@@ -1219,7 +1242,6 @@ class TestEventLogStorage:
         ]
 
     def test_get_event_records_sqlite(self, storage):
-        # test for sqlite only because sqlite requires special logic to handle cross-run queries
         if not isinstance(storage, SqliteEventLogStorage):
             pytest.skip()
 
@@ -1303,12 +1325,32 @@ class TestEventLogStorage:
             for event in events:
                 storage.store_event(event)
 
-            # of_type
+            update_timestamp = run_records[-1].update_timestamp
+            tzaware_dt = pendulum.from_timestamp(datetime_as_float(update_timestamp), tz="UTC")
+
+            # use tz-aware cursor
             filtered_records = storage.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.PIPELINE_SUCCESS,
                     after_cursor=RunShardedEventsCursor(
-                        id=0, run_updated_after=run_records[-1].update_timestamp
+                        id=0, run_updated_after=tzaware_dt
+                    ),  # events after first run
+                ),
+                ascending=True,
+            )
+            assert len(filtered_records) == 2
+            assert _event_types([r.event_log_entry for r in filtered_records]) == [
+                DagsterEventType.PIPELINE_SUCCESS,
+                DagsterEventType.PIPELINE_SUCCESS,
+            ]
+            assert [r.event_log_entry.run_id for r in filtered_records] == ["2", "3"]
+
+            # use tz-naive cursor
+            filtered_records = storage.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.PIPELINE_SUCCESS,
+                    after_cursor=RunShardedEventsCursor(
+                        id=0, run_updated_after=tzaware_dt.naive()
                     ),  # events after first run
                 ),
                 ascending=True,

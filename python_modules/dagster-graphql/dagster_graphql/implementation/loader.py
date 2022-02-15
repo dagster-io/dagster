@@ -90,17 +90,17 @@ class RepositoryScopedBatchLoader:
                 fetched[record.pipeline_run.tags.get(SENSOR_NAME_TAG)].append(record)
 
         elif data_type == RepositoryDataType.SCHEDULE_STATES:
-            schedule_states = self._instance.all_stored_job_state(
+            schedule_states = self._instance.all_instigator_state(
                 repository_origin_id=self._repository.get_external_origin_id(),
-                job_type=InstigatorType.SCHEDULE,
+                instigator_type=InstigatorType.SCHEDULE,
             )
             for state in schedule_states:
                 fetched[state.name].append(state)
 
         elif data_type == RepositoryDataType.SENSOR_STATES:
-            sensor_states = self._instance.all_stored_job_state(
+            sensor_states = self._instance.all_instigator_state(
                 repository_origin_id=self._repository.get_external_origin_id(),
-                job_type=InstigatorType.SENSOR,
+                instigator_type=InstigatorType.SENSOR,
             )
             for state in sensor_states:
                 fetched[state.name].append(state)

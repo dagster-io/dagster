@@ -1,5 +1,4 @@
 from dagster import job, op, repository
-from dagster.core.definitions.run_request import RunRequest
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert import (
     email_on_run_failure,
     my_slack_on_run_failure,
@@ -7,7 +6,6 @@ from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert im
     slack_on_run_failure,
 )
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensors import (
-    isolated_run_request,
     log_file_job,
     my_directory_sensor,
     sensor_A,
@@ -39,12 +37,6 @@ def test_log_file_job():
 def test_my_directory_sensor():
     # TODO: Actually test
     assert my_directory_sensor
-
-
-def test_isolated_run_rquest():
-    request = next(isolated_run_request())
-    assert request
-    assert isinstance(request, RunRequest)
 
 
 def test_interval_sensors():

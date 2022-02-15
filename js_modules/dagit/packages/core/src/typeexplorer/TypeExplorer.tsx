@@ -3,6 +3,10 @@ import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {gqlTypePredicate} from '../app/Util';
+import {dagsterTypeKind} from '../dagstertype/DagsterType';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
+import {TableSchema} from '../metadata/TableSchema';
 import {Description} from '../pipelines/Description';
 import {SidebarSection, SidebarSubhead, SidebarTitle} from '../pipelines/SidebarComponents';
 
@@ -15,7 +19,11 @@ interface ITypeExplorerProps {
 }
 
 export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
-  const {name, inputSchemaType, outputSchemaType, description} = props.type;
+  const {name, metadataEntries, inputSchemaType, outputSchemaType, description} = props.type;
+  const typeKind = dagsterTypeKind(props.type);
+  const displayName = typeKind === 'standard' ? name : `${name} (${typeKind})`;
+  const tableSchema = metadataEntries.find(gqlTypePredicate('EventTableSchemaMetadataEntry'))
+    ?.schema;
   return (
     <div>
       <SidebarSubhead />
@@ -23,7 +31,7 @@ export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
         <SidebarTitle>
           <Link to="?tab=types">{props.isGraph ? 'Graph types' : 'Pipeline types'}</Link>
           {' > '}
-          {name}
+          {displayName}
         </SidebarTitle>
       </Box>
       <SidebarSection title="Description">
@@ -31,6 +39,11 @@ export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
           <Description description={description || 'No Description Provided'} />
         </Box>
       </SidebarSection>
+      {tableSchema && (
+        <SidebarSection title="Columns">
+          <TableSchema schema={tableSchema} itemHorizontalPadding={24} />
+        </SidebarSection>
+      )}
       {inputSchemaType && (
         <SidebarSection title="Input">
           <Box padding={{vertical: 16, horizontal: 24}}>
@@ -59,6 +72,9 @@ export const TYPE_EXPLORER_FRAGMENT = gql`
   fragment TypeExplorerFragment on DagsterType {
     name
     description
+    metadataEntries {
+      ...MetadataEntryFragment
+    }
     inputSchemaType {
       ...ConfigTypeSchemaFragment
       recursiveConfigTypes {
@@ -72,6 +88,6 @@ export const TYPE_EXPLORER_FRAGMENT = gql`
       }
     }
   }
-
+  ${METADATA_ENTRY_FRAGMENT}
   ${CONFIG_TYPE_SCHEMA_FRAGMENT}
 `;
