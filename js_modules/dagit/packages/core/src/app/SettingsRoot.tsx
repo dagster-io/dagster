@@ -82,16 +82,6 @@ const SettingsRoot = () => {
                 />
               ),
             },
-            {
-              key: 'Collapse sidebar on instance pages',
-              value: (
-                <Checkbox
-                  format="switch"
-                  checked={flags.includes(FeatureFlag.flagCollapseInstancePagesSidebar)}
-                  onChange={() => toggleFlag(FeatureFlag.flagCollapseInstancePagesSidebar)}
-                />
-              ),
-            },
           ]}
         />
       </Box>
