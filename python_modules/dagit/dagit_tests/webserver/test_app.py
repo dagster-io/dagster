@@ -2,8 +2,8 @@ import gc
 
 import objgraph
 from dagit.graphql import GraphQLWS
-from dagit.starlette import ROOT_ADDRESS_STATIC_RESOURCES
 from dagit.version import __version__ as dagit_version
+from dagit.webserver import ROOT_ADDRESS_STATIC_RESOURCES
 from dagster import __version__ as dagster_version
 from dagster import job, op
 from dagster.seven import json
