@@ -8,7 +8,7 @@ from dagster.core.host_representation.historical import HistoricalPipeline
 from dagster.core.snap import CompositeSolidDefSnap, DependencyStructureIndex, SolidDefSnap
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster_graphql.implementation.events import iterate_metadata_entries
-from dagster_graphql.schema.logs.events import GrapheneEventMetadataEntry, GrapheneRunStepStats
+from dagster_graphql.schema.logs.events import GrapheneMetadataEntry, GrapheneRunStepStats
 
 from .config_types import GrapheneConfigTypeField
 from .dagster_types import GrapheneDagsterType, to_dagster_type
@@ -26,7 +26,7 @@ class GrapheneInputDefinition(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     type = graphene.NonNull(GrapheneDagsterType)
-    metadata_entries = non_null_list(GrapheneEventMetadataEntry)
+    metadata_entries = non_null_list(GrapheneMetadataEntry)
 
     class Meta:
         name = "InputDefinition"
@@ -64,7 +64,7 @@ class GrapheneOutputDefinition(graphene.ObjectType):
     description = graphene.String()
     is_dynamic = graphene.Boolean()
     type = graphene.NonNull(GrapheneDagsterType)
-    metadata_entries = non_null_list(GrapheneEventMetadataEntry)
+    metadata_entries = non_null_list(GrapheneMetadataEntry)
 
     class Meta:
         name = "OutputDefinition"

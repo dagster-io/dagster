@@ -1101,7 +1101,7 @@ class PartitionMetadataEntry(
         ],
     )
 ):
-    """Event containing an :py:class:`MetdataEntry` and the name of a partition that the entry
+    """Event containing an :py:class:`MetadataEntry` and the name of a partition that the entry
     applies to.
 
     This can be yielded or returned in place of MetadataEntries for cases where you are trying

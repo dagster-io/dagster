@@ -28,7 +28,7 @@ class GrapheneMessageEvent(graphene.Interface):
         name = "MessageEvent"
 
 
-class GrapheneEventMetadataEntry(graphene.Interface):
+class GrapheneMetadataEntry(graphene.Interface):
     label = graphene.NonNull(graphene.String)
     description = graphene.String()
 
@@ -39,7 +39,7 @@ class GrapheneEventMetadataEntry(graphene.Interface):
 class GrapheneDisplayableEvent(graphene.Interface):
     label = graphene.NonNull(graphene.String)
     description = graphene.String()
-    metadataEntries = non_null_list(GrapheneEventMetadataEntry)
+    metadataEntries = non_null_list(GrapheneMetadataEntry)
 
     class Meta:
         name = "DisplayableEvent"
@@ -162,81 +162,81 @@ class GrapheneExecutionStepSkippedEvent(graphene.ObjectType):
         name = "ExecutionStepSkippedEvent"
 
 
-class GrapheneEventPathMetadataEntry(graphene.ObjectType):
+class GraphenePathMetadataEntry(graphene.ObjectType):
     path = graphene.NonNull(graphene.String)
 
     class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
+        interfaces = (GrapheneMetadataEntry,)
         name = "EventPathMetadataEntry"
 
 
-class GrapheneEventTableMetadataEntry(graphene.ObjectType):
+class GrapheneTableMetadataEntry(graphene.ObjectType):
     table = graphene.NonNull(GrapheneTable)
 
     class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
+        interfaces = (GrapheneMetadataEntry,)
         name = "EventTableMetadataEntry"
 
 
-class GrapheneEventTableSchemaMetadataEntry(graphene.ObjectType):
+class GrapheneTableSchemaMetadataEntry(graphene.ObjectType):
 
     schema = graphene.NonNull(GrapheneTableSchema)
 
     class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
+        interfaces = (GrapheneMetadataEntry,)
         name = "EventTableSchemaMetadataEntry"
 
 
-class GrapheneEventJsonMetadataEntry(graphene.ObjectType):
+class GrapheneJsonMetadataEntry(graphene.ObjectType):
     jsonString = graphene.NonNull(graphene.String)
 
     class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
+        interfaces = (GrapheneMetadataEntry,)
         name = "EventJsonMetadataEntry"
 
 
-class GrapheneEventTextMetadataEntry(graphene.ObjectType):
+class GrapheneTextMetadataEntry(graphene.ObjectType):
     text = graphene.NonNull(graphene.String)
 
     class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
+        interfaces = (GrapheneMetadataEntry,)
         name = "EventTextMetadataEntry"
 
 
-class GrapheneEventUrlMetadataEntry(graphene.ObjectType):
+class GrapheneUrlMetadataEntry(graphene.ObjectType):
     url = graphene.NonNull(graphene.String)
 
     class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
+        interfaces = (GrapheneMetadataEntry,)
         name = "EventUrlMetadataEntry"
 
 
-class GrapheneEventMarkdownMetadataEntry(graphene.ObjectType):
+class GrapheneMarkdownMetadataEntry(graphene.ObjectType):
     md_str = graphene.NonNull(graphene.String)
 
     class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
+        interfaces = (GrapheneMetadataEntry,)
         name = "EventMarkdownMetadataEntry"
 
 
-class GrapheneEventPythonArtifactMetadataEntry(graphene.ObjectType):
+class GraphenePythonArtifactMetadataEntry(graphene.ObjectType):
     module = graphene.NonNull(graphene.String)
     name = graphene.NonNull(graphene.String)
 
     class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
+        interfaces = (GrapheneMetadataEntry,)
         name = "EventPythonArtifactMetadataEntry"
 
 
-class GrapheneEventFloatMetadataEntry(graphene.ObjectType):
+class GrapheneFloatMetadataEntry(graphene.ObjectType):
     floatValue = graphene.Field(graphene.Float)
 
     class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
+        interfaces = (GrapheneMetadataEntry,)
         name = "EventFloatMetadataEntry"
 
 
-class GrapheneEventIntMetadataEntry(graphene.ObjectType):
+class GrapheneIntMetadataEntry(graphene.ObjectType):
     intValue = graphene.Field(
         graphene.Int, description="Nullable to allow graceful degrade on > 32 bit numbers"
     )
@@ -246,23 +246,23 @@ class GrapheneEventIntMetadataEntry(graphene.ObjectType):
     )
 
     class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
+        interfaces = (GrapheneMetadataEntry,)
         name = "EventIntMetadataEntry"
 
 
-class GrapheneEventPipelineRunMetadataEntry(graphene.ObjectType):
+class GraphenePipelineRunMetadataEntry(graphene.ObjectType):
     runId = graphene.NonNull(graphene.String)
 
     class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
+        interfaces = (GrapheneMetadataEntry,)
         name = "EventPipelineRunMetadataEntry"
 
 
-class GrapheneEventAssetMetadataEntry(graphene.ObjectType):
+class GrapheneAssetMetadataEntry(graphene.ObjectType):
     assetKey = graphene.NonNull(GrapheneAssetKey)
 
     class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
+        interfaces = (GrapheneMetadataEntry,)
         name = "EventAssetMetadataEntry"
 
 
