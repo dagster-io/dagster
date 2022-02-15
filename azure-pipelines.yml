@@ -8,8 +8,7 @@ parameters:
   - name: py3_versions
     type: object
     default:
-      - "3.6"
-      - "3.7"
+      - "3.9"
   - name: py3_env_suffixes
     type: object
     default:
