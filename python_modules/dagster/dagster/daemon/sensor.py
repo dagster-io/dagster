@@ -89,7 +89,7 @@ class SensorLaunchContext:
         self._tick = self._tick.with_run(run_id, run_key)
 
     def _write(self):
-        self._instance.update_job_tick(self._tick)
+        self._instance.update_tick(self._tick)
         if self._tick.status in FULFILLED_TICK_STATES:
             last_run_key = (
                 self._job_state.job_specific_data.last_run_key
@@ -98,7 +98,7 @@ class SensorLaunchContext:
             )
             if self._tick.run_keys:
                 last_run_key = self._tick.run_keys[-1]
-            self._instance.update_job_state(
+            self._instance.update_instigator_state(
                 self._job_state.with_data(
                     SensorInstigatorData(
                         last_tick_timestamp=self._tick.timestamp,
@@ -120,7 +120,7 @@ class SensorLaunchContext:
 
         self._write()
 
-        self._instance.purge_job_ticks(
+        self._instance.purge_ticks(
             self._job_state.job_origin_id,
             tick_status=TickStatus.SKIPPED,
             before=pendulum.now("UTC").subtract(days=7).timestamp(),  #  keep the last 7 days
@@ -189,7 +189,7 @@ def execute_sensor_iteration(
 
     all_sensor_states = {
         sensor_state.origin.get_id(): sensor_state
-        for sensor_state in instance.all_stored_job_state(job_type=InstigatorType.SENSOR)
+        for sensor_state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
     }
 
     sensors = {}
@@ -270,11 +270,11 @@ def execute_sensor_iteration(
                     InstigatorStatus.AUTOMATICALLY_RUNNING,
                     SensorInstigatorData(min_interval=external_sensor.min_interval_seconds),
                 )
-                instance.add_job_state(sensor_state)
+                instance.add_instigator_state(sensor_state)
             elif _is_under_min_interval(sensor_state, external_sensor, now):
                 continue
 
-            tick = instance.create_job_tick(
+            tick = instance.create_tick(
                 TickData(
                     job_origin_id=sensor_state.job_origin_id,
                     job_name=sensor_state.job_name,

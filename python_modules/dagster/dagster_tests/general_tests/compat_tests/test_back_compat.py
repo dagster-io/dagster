@@ -408,7 +408,7 @@ def test_0_10_0_schedule_wipe():
         assert "job_ticks" in get_sqlite3_tables(db_path)
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as upgraded_instance:
-            assert len(upgraded_instance.all_stored_job_state()) == 0
+            assert len(upgraded_instance.all_instigator_state()) == 0
 
 
 def test_0_10_6_add_bulk_actions_table():

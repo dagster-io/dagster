@@ -69,9 +69,9 @@ def get_schedules_or_error(graphene_info, repository_selector):
     external_schedules = repository.get_external_schedules()
     schedule_states_by_name = {
         state.name: state
-        for state in graphene_info.context.instance.all_stored_job_state(
+        for state in graphene_info.context.instance.all_instigator_state(
             repository_origin_id=repository.get_external_origin_id(),
-            job_type=InstigatorType.SCHEDULE,
+            instigator_type=InstigatorType.SCHEDULE,
         )
     }
 
@@ -101,7 +101,7 @@ def get_schedules_for_pipeline(graphene_info, pipeline_selector):
         if external_schedule.pipeline_name != pipeline_selector.pipeline_name:
             continue
 
-        schedule_state = graphene_info.context.instance.get_job_state(
+        schedule_state = graphene_info.context.instance.get_instigator_state(
             external_schedule.get_external_origin_id()
         )
         results.append(GrapheneSchedule(external_schedule, schedule_state))
@@ -125,7 +125,7 @@ def get_schedule_or_error(graphene_info, schedule_selector):
             GrapheneScheduleNotFoundError(schedule_name=schedule_selector.schedule_name)
         )
 
-    schedule_state = graphene_info.context.instance.get_job_state(
+    schedule_state = graphene_info.context.instance.get_instigator_state(
         external_schedule.get_external_origin_id()
     )
     return GrapheneSchedule(external_schedule, schedule_state)

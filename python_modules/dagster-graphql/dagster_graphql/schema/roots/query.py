@@ -13,7 +13,10 @@ from dagster.core.scheduler.instigation import InstigatorType
 from ...implementation.external import fetch_repositories, fetch_repository, fetch_workspace
 from ...implementation.fetch_assets import get_asset, get_asset_node, get_asset_nodes, get_assets
 from ...implementation.fetch_backfills import get_backfill, get_backfills
-from ...implementation.fetch_jobs import get_job_state_or_error, get_unloadable_job_states_or_error
+from ...implementation.fetch_jobs import (
+    get_instigator_state_or_error,
+    get_unloadable_instigator_states_or_error,
+)
 from ...implementation.fetch_partition_sets import get_partition_set, get_partition_sets_or_error
 from ...implementation.fetch_pipelines import (
     get_pipeline_or_error,
@@ -321,15 +324,15 @@ class GrapheneDagitQuery(graphene.ObjectType):
         )
 
     def resolve_instigationStateOrError(self, graphene_info, instigationSelector):
-        return get_job_state_or_error(
+        return get_instigator_state_or_error(
             graphene_info, InstigationSelector.from_graphql_input(instigationSelector)
         )
 
     def resolve_unloadableInstigationStatesOrError(self, graphene_info, **kwargs):
-        job_type = (
+        instigation_type = (
             InstigatorType(kwargs["instigationType"]) if "instigationType" in kwargs else None
         )
-        return get_unloadable_job_states_or_error(graphene_info, job_type)
+        return get_unloadable_instigator_states_or_error(graphene_info, instigation_type)
 
     def resolve_pipelineOrError(self, graphene_info, **kwargs):
         return get_pipeline_or_error(

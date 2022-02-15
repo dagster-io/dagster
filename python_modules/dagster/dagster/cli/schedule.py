@@ -27,7 +27,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     debug_info = instance.scheduler_debug_info()
     errors = debug_info.errors
     external_schedules = external_repository.get_external_schedules()
-    schedule_states = instance.all_stored_job_state(
+    schedule_states = instance.all_instigator_state(
         external_repository.get_external_origin_id(), InstigatorType.SCHEDULE
     )
     external_schedules_dict = {s.get_external_origin_id(): s for s in external_schedules}
@@ -183,8 +183,8 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
             repo_schedules = external_repo.get_external_schedules()
             stored_schedules_by_origin_id = {
                 stored_schedule_state.job_origin_id: stored_schedule_state
-                for stored_schedule_state in instance.all_stored_job_state(
-                    external_repo.get_external_origin_id(), job_type=InstigatorType.SCHEDULE
+                for stored_schedule_state in instance.all_instigator_state(
+                    external_repo.get_external_origin_id(), instigator_type=InstigatorType.SCHEDULE
                 )
             }
 
@@ -389,7 +389,7 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
             repository_name = external_repo.name
 
             if all_running_flag:
-                for schedule_state in instance.all_stored_job_state(
+                for schedule_state in instance.all_instigator_state(
                     external_repo.get_external_origin_id(), InstigatorType.SCHEDULE
                 ):
                     if schedule_state.status == InstigatorStatus.RUNNING:
@@ -412,7 +412,9 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                 )
             else:
                 external_schedule = external_repo.get_external_schedule(schedule_name)
-                schedule_state = instance.get_job_state(external_schedule.get_external_origin_id())
+                schedule_state = instance.get_instigator_state(
+                    external_schedule.get_external_origin_id()
+                )
                 if schedule_state != None and schedule_state.status != InstigatorStatus.RUNNING:
                     click.UsageError(
                         "Cannot restart a schedule {name} because is not currently running".format(

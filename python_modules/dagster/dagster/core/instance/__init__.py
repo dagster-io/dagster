@@ -1695,7 +1695,7 @@ records = instance.get_event_records(
         errors = []
 
         schedules = []
-        for schedule_state in self.all_stored_job_state(job_type=InstigatorType.SCHEDULE):
+        for schedule_state in self.all_instigator_state(instigator_type=InstigatorType.SCHEDULE):
             schedule_info = {
                 schedule_state.job_name: {
                     "status": schedule_state.status.value,
@@ -1729,10 +1729,10 @@ records = instance.get_event_records(
             "Can only manually start a sensor that does not have its status set in code",
         )
 
-        job_state = self.get_job_state(external_sensor.get_external_origin_id())
+        state = self.get_instigator_state(external_sensor.get_external_origin_id())
 
-        if not job_state:
-            return self.add_job_state(
+        if not state:
+            return self.add_instigator_state(
                 InstigatorState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
@@ -1741,7 +1741,7 @@ records = instance.get_event_records(
                 )
             )
         else:
-            return self.update_job_state(job_state.with_status(InstigatorStatus.RUNNING))
+            return self.update_instigator_state(state.with_status(InstigatorStatus.RUNNING))
 
     def stop_sensor(self, job_origin_id, external_sensor):
         from dagster.core.scheduler.instigation import (
@@ -1751,10 +1751,10 @@ records = instance.get_event_records(
         )
         from dagster.core.definitions.run_request import InstigatorType
 
-        job_state = self.get_job_state(job_origin_id)
+        state = self.get_instigator_state(job_origin_id)
 
-        if not job_state:
-            return self.add_job_state(
+        if not state:
+            return self.add_instigator_state(
                 InstigatorState(
                     external_sensor.get_external_origin(),
                     InstigatorType.SENSOR,
@@ -1763,54 +1763,48 @@ records = instance.get_event_records(
                 )
             )
         else:
-            return self.update_job_state(job_state.with_status(InstigatorStatus.STOPPED))
+            return self.update_instigator_state(state.with_status(InstigatorStatus.STOPPED))
 
     @traced
-    def all_stored_job_state(self, repository_origin_id=None, job_type=None):
-        return self._schedule_storage.all_stored_job_state(repository_origin_id, job_type)
+    def all_instigator_state(self, repository_origin_id=None, instigator_type=None):
+        return self._schedule_storage.all_instigator_state(repository_origin_id, instigator_type)
 
     @traced
-    def get_job_state(self, job_origin_id):
-        return self._schedule_storage.get_job_state(job_origin_id)
+    def get_instigator_state(self, origin_id):
+        return self._schedule_storage.get_instigator_state(origin_id)
 
-    def add_job_state(self, job_state):
-        return self._schedule_storage.add_job_state(job_state)
+    def add_instigator_state(self, state):
+        return self._schedule_storage.add_instigator_state(state)
 
-    def update_job_state(self, job_state):
-        return self._schedule_storage.update_job_state(job_state)
+    def update_instigator_state(self, state):
+        return self._schedule_storage.update_instigator_state(state)
 
-    def delete_job_state(self, job_origin_id):
-        return self._schedule_storage.delete_job_state(job_origin_id)
+    def delete_instigator_state(self, origin_id):
+        return self._schedule_storage.delete_instigator_state(origin_id)
 
     @traced
-    def get_job_tick(self, job_origin_id, timestamp):
-        matches = self._schedule_storage.get_job_ticks(
-            job_origin_id, before=timestamp + 1, after=timestamp - 1, limit=1
+    def get_tick(self, origin_id, timestamp):
+        matches = self._schedule_storage.get_ticks(
+            origin_id, before=timestamp + 1, after=timestamp - 1, limit=1
         )
         return matches[0] if len(matches) else None
 
     @traced
-    def get_job_ticks(self, job_origin_id, before=None, after=None, limit=None):
-        return self._schedule_storage.get_job_ticks(
-            job_origin_id, before=before, after=after, limit=limit
-        )
+    def get_ticks(self, origin_id, before=None, after=None, limit=None):
+        return self._schedule_storage.get_ticks(origin_id, before=before, after=after, limit=limit)
+
+    def create_tick(self, tick_data):
+        return self._schedule_storage.create_tick(tick_data)
+
+    def update_tick(self, tick):
+        return self._schedule_storage.update_tick(tick)
 
     @traced
-    def get_latest_job_tick(self, job_origin_id):
-        return self._schedule_storage.get_latest_job_tick(job_origin_id)
+    def get_tick_stats(self, origin_id):
+        return self._schedule_storage.get_tick_stats(origin_id)
 
-    def create_job_tick(self, job_tick_data):
-        return self._schedule_storage.create_job_tick(job_tick_data)
-
-    def update_job_tick(self, tick):
-        return self._schedule_storage.update_job_tick(tick)
-
-    @traced
-    def get_job_tick_stats(self, job_origin_id):
-        return self._schedule_storage.get_job_tick_stats(job_origin_id)
-
-    def purge_job_ticks(self, job_origin_id, tick_status, before):
-        self._schedule_storage.purge_job_ticks(job_origin_id, tick_status, before)
+    def purge_ticks(self, origin_id, tick_status, before):
+        self._schedule_storage.purge_ticks(origin_id, tick_status, before)
 
     def wipe_all_schedules(self):
         if self._scheduler:

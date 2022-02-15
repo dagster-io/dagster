@@ -180,6 +180,10 @@ class InstigatorTick(namedtuple("_InstigatorTick", "tick_id job_tick_data")):
         return self._replace(job_tick_data=self.job_tick_data.with_origin_run(origin_run_id))
 
     @property
+    def tick_data(self):
+        return self.job_tick_data
+
+    @property
     def job_origin_id(self):
         return self.job_tick_data.job_origin_id
 
@@ -277,7 +281,7 @@ class TickData(
             failure_count (int): The number of times this tick has failed. If the status is not
                 FAILED, this is the number of previous failures before it reached the current state.
         """
-        _validate_job_tick_args(job_type, status, run_ids, error, skip_reason)
+        _validate_tick_args(job_type, status, run_ids, error, skip_reason)
         return super(TickData, cls).__new__(
             cls,
             check.str_param(job_origin_id, "job_origin_id"),
@@ -287,8 +291,8 @@ class TickData(
             check.float_param(timestamp, "timestamp"),
             check.opt_list_param(run_ids, "run_ids", of_type=str),
             check.opt_list_param(run_keys, "run_keys", of_type=str),
-            error,  # validated in _validate_job_tick_args
-            skip_reason,  # validated in _validate_job_tick_args
+            error,  # validated in _validate_tick_args
+            skip_reason,  # validated in _validate_tick_args
             cursor=check.opt_str_param(cursor, "cursor"),
             origin_run_ids=check.opt_list_param(origin_run_ids, "origin_run_ids", of_type=str),
             failure_count=check.opt_int_param(failure_count, "failure_count", 0),
@@ -358,7 +362,7 @@ register_serdes_tuple_fallbacks({"JobTickData": TickData})
 JobTickData = TickData
 
 
-def _validate_job_tick_args(job_type, status, run_ids=None, error=None, skip_reason=None):
+def _validate_tick_args(job_type, status, run_ids=None, error=None, skip_reason=None):
     check.inst_param(job_type, "job_type", InstigatorType)
     check.inst_param(status, "status", TickStatus)
 
