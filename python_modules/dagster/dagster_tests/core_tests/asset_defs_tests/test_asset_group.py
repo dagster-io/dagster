@@ -313,3 +313,35 @@ def test_asset_group_build_subset_job():
         r"asset keys produced by a given asset when subsetting.",
     ):
         group.build_job(name="test_subselect_only_one_key", selection="o1")
+
+
+def test_asset_group_from_package_name():
+    from . import asset_package
+
+    collection = AssetGroup.from_package_name(asset_package.__name__)
+    assert len(collection.assets) == 4
+    assert {asset.op.name for asset in collection.assets} == {
+        "little_richard",
+        "miles_davis",
+        "chuck_berry",
+        "bb_king",
+    }
+    assert {source_asset.key for source_asset in collection.source_assets} == {
+        AssetKey("elvis_presley")
+    }
+
+
+def test_asset_group_from_package_module():
+    from . import asset_package
+
+    collection = AssetGroup.from_package_module(asset_package)
+    assert len(collection.assets) == 4
+    assert {asset.op.name for asset in collection.assets} == {
+        "little_richard",
+        "miles_davis",
+        "chuck_berry",
+        "bb_king",
+    }
+    assert {source_asset.key for source_asset in collection.source_assets} == {
+        AssetKey("elvis_presley")
+    }

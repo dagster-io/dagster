@@ -1,5 +1,21 @@
+import os
+import pkgutil
 import re
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Union, cast
+from importlib import import_module
+from types import ModuleType
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    cast,
+)
 
 from dagster import check
 from dagster.utils import merge_dicts
@@ -214,6 +230,86 @@ class AssetGroup(
                     f"When building job '{job_name}', the asset '{op_name}' contains asset keys {sorted(list(asset_key_set))}, but attempted to select only {sorted(list(asset_key_set.intersection(seen_asset_keys)))}. Selecting only some of the asset keys for a particular asset is not yet supported behavior. Please select all asset keys produced by a given asset when subsetting."
                 )
         return op_selection
+
+    @staticmethod
+    def from_package_module(
+        package_module: ModuleType,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        executor_def: Optional[ExecutorDefinition] = None,
+    ) -> "AssetGroup":
+        """
+        Constructs an AssetGroup that includes all asset definitions in all sub-modules of the
+        given package module.
+
+        A package module is the result of importing a package.
+
+        Args:
+            package_module (ModuleType): The package module to looks for assets inside.
+            resource_defs (Optional[Mapping[str, ResourceDefinition]]): A dictionary of resource
+                definitions to include on the returned asset group.
+            executor_def (Optional[ExecutorDefinition]): An executor to include on the returned
+                asset group.
+
+        Returns:
+            AssetGroup: An asset group with all the assets in the package.
+        """
+        assets = set()
+        source_assets = set()
+        for module in _find_modules_in_package(package_module):
+            for attr in dir(module):
+                value = getattr(module, attr)
+                if isinstance(value, AssetsDefinition):
+                    assets.add(value)
+                if isinstance(value, SourceAsset):
+                    source_assets.add(value)
+
+        return AssetGroup(
+            assets=list(assets),
+            source_assets=list(source_assets),
+            resource_defs=resource_defs,
+            executor_def=executor_def,
+        )
+
+    @staticmethod
+    def from_package_name(
+        package_name: str,
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        executor_def: Optional[ExecutorDefinition] = None,
+    ) -> "AssetGroup":
+        """
+        Constructs an AssetGroup that includes all asset definitions in all sub-modules of the
+        given package.
+
+        Args:
+            package_name (str): The name of a Python package to look for assets inside.
+            resource_defs (Optional[Mapping[str, ResourceDefinition]]): A dictionary of resource
+                definitions to include on the returned asset group.
+            executor_def (Optional[ExecutorDefinition]): An executor to include on the returned
+                asset group.
+
+        Returns:
+            AssetGroup: An asset group with all the assets in the package.
+        """
+        package_module = import_module(package_name)
+        return AssetGroup.from_package_module(
+            package_module, resource_defs=resource_defs, executor_def=executor_def
+        )
+
+
+def _find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]:
+    yield package_module
+    package_path = package_module.__file__
+    if package_path:
+        for _, modname, is_pkg in pkgutil.walk_packages([os.path.dirname(package_path)]):
+            submodule = import_module(f"{package_module.__name__}.{modname}")
+            if is_pkg:
+                yield from _find_modules_in_package(submodule)
+            else:
+                yield submodule
+    else:
+        raise ValueError(
+            f"Tried find modules in package {package_module}, but its __file__ is None"
+        )
 
 
 def _validate_resource_reqs_for_asset_group(
