@@ -3,7 +3,7 @@ from dagster import (
     AssetMaterialization,
     DagsterInvariantViolationError,
     DagsterType,
-    EventMetadataEntry,
+    MetadataEntry,
     Field,
     StringSource,
     TypeCheck,
@@ -96,9 +96,9 @@ def df_type_check(_, value):
     return TypeCheck(
         success=True,
         metadata_entries=[
-            EventMetadataEntry.text(str(len(value)), "row_count", "Number of rows in DataFrame"),
+            MetadataEntry.text(str(len(value)), "row_count", "Number of rows in DataFrame"),
             # string cast columns since they may be things like datetime
-            EventMetadataEntry.json({"columns": list(map(str, value.columns))}, "metadata"),
+            MetadataEntry.json({"columns": list(map(str, value.columns))}, "metadata"),
         ],
     )
 
@@ -292,7 +292,7 @@ def create_structured_dataframe_type(
             typechecks_succeeded = typechecks_succeeded and result_val
             result_dict = result.metadata_entries[0].entry_data.data
             metadata.append(
-                EventMetadataEntry.json(
+                MetadataEntry.json(
                     result_dict,
                     "{}-constraint-metadata".format(key),
                 )

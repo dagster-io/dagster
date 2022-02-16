@@ -9,11 +9,11 @@ from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster.utils.backcompat import experimental_class_param_warning
 
 from .metadata import (
-    EventMetadataEntry,
-    ParseableMetadataEntryData,
+    MetadataEntry,
+    RawMetadataValue,
     PartitionMetadataEntry,
     last_file_comp,
-    parse_metadata,
+    normalize_metadata,
 )
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
@@ -145,7 +145,7 @@ class Output(
         [
             ("value", Any),
             ("output_name", str),
-            ("metadata_entries", List[Union[PartitionMetadataEntry, EventMetadataEntry]]),
+            ("metadata_entries", List[Union[PartitionMetadataEntry, MetadataEntry]]),
         ],
     )
 ):
@@ -175,22 +175,22 @@ class Output(
         cls,
         value: Any,
         output_name: Optional[str] = DEFAULT_OUTPUT,
-        metadata_entries: Optional[List[Union[EventMetadataEntry, PartitionMetadataEntry]]] = None,
-        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
+        metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
 
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_list_param(
             metadata_entries,
             "metadata_entries",
-            of_type=(EventMetadataEntry, PartitionMetadataEntry),
+            of_type=(MetadataEntry, PartitionMetadataEntry),
         )
 
         return super(Output, cls).__new__(
             cls,
             value,
             check.str_param(output_name, "output_name"),
-            parse_metadata(metadata, metadata_entries),
+            normalize_metadata(metadata, metadata_entries),
         )
 
 
@@ -201,7 +201,7 @@ class DynamicOutput(
             ("value", Any),
             ("mapping_key", str),
             ("output_name", str),
-            ("metadata_entries", List[Union[PartitionMetadataEntry, EventMetadataEntry]]),
+            ("metadata_entries", List[Union[PartitionMetadataEntry, MetadataEntry]]),
         ],
     )
 ):
@@ -236,13 +236,13 @@ class DynamicOutput(
         value: Any,
         mapping_key: str,
         output_name: Optional[str] = DEFAULT_OUTPUT,
-        metadata_entries: Optional[List[Union[PartitionMetadataEntry, EventMetadataEntry]]] = None,
-        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
+        metadata_entries: Optional[List[Union[PartitionMetadataEntry, MetadataEntry]]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
 
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
 
         return super(DynamicOutput, cls).__new__(
@@ -250,7 +250,7 @@ class DynamicOutput(
             value=value,
             mapping_key=check_valid_name(check.str_param(mapping_key, "mapping_key")),
             output_name=check.str_param(output_name, "output_name"),
-            metadata_entries=parse_metadata(metadata, metadata_entries),
+            metadata_entries=normalize_metadata(metadata, metadata_entries),
         )
 
 
@@ -261,7 +261,7 @@ class AssetObservation(
         [
             ("asset_key", AssetKey),
             ("description", Optional[str]),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
             ("partition", Optional[str]),
         ],
     )
@@ -283,9 +283,9 @@ class AssetObservation(
         cls,
         asset_key: Union[List[str], AssetKey, str],
         description: Optional[str] = None,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
         partition: Optional[str] = None,
-        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
@@ -300,7 +300,7 @@ class AssetObservation(
 
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
 
         return super(AssetObservation, cls).__new__(
@@ -308,7 +308,7 @@ class AssetObservation(
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
             metadata_entries=cast(
-                List[EventMetadataEntry], parse_metadata(metadata, metadata_entries)
+                List[MetadataEntry], normalize_metadata(metadata, metadata_entries)
             ),
             partition=check.opt_str_param(partition, "partition"),
         )
@@ -325,7 +325,7 @@ class AssetMaterialization(
         [
             ("asset_key", AssetKey),
             ("description", Optional[str]),
-            ("metadata_entries", List[Union[EventMetadataEntry, PartitionMetadataEntry]]),
+            ("metadata_entries", List[Union[MetadataEntry, PartitionMetadataEntry]]),
             ("partition", Optional[str]),
             ("tags", Dict[str, str]),
         ],
@@ -362,10 +362,10 @@ class AssetMaterialization(
         cls,
         asset_key: Union[List[str], AssetKey, str],
         description: Optional[str] = None,
-        metadata_entries: Optional[List[Union[EventMetadataEntry, PartitionMetadataEntry]]] = None,
+        metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         partition: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
-        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
@@ -383,14 +383,14 @@ class AssetMaterialization(
 
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
 
         return super(AssetMaterialization, cls).__new__(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
-            metadata_entries=parse_metadata(metadata, metadata_entries),
+            metadata_entries=normalize_metadata(metadata, metadata_entries),
             partition=check.opt_str_param(partition, "partition"),
             tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
         )
@@ -417,7 +417,7 @@ class AssetMaterialization(
         return AssetMaterialization(
             asset_key=cast(Union[str, AssetKey, List[str]], asset_key),
             description=description,
-            metadata_entries=[EventMetadataEntry.fspath(path)],
+            metadata_entries=[MetadataEntry.fspath(path)],
         )
 
 
@@ -436,7 +436,7 @@ class Materialization(
         [
             ("label", str),
             ("description", Optional[str]),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
             ("asset_key", AssetKey),
             ("partition", Optional[str]),
             ("tags", Dict[str, str]),
@@ -470,7 +470,7 @@ class Materialization(
         cls,
         label: str = None,
         description: Optional[str] = None,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
         asset_key: Optional[Union[str, AssetKey]] = None,
         partition: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
@@ -494,7 +494,7 @@ class Materialization(
             warnings.warn("`Materialization` is deprecated; use `AssetMaterialization` instead.")
 
         metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
 
         return super(Materialization, cls).__new__(
@@ -502,7 +502,7 @@ class Materialization(
             label=check.str_param(label, "label"),
             description=check.opt_str_param(description, "description"),
             metadata_entries=check.opt_list_param(
-                metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+                metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
             asset_key=asset_key,
             partition=check.opt_str_param(partition, "partition"),
@@ -524,7 +524,7 @@ class Materialization(
         return Materialization(
             label=last_file_comp(path),
             description=description,
-            metadata_entries=[EventMetadataEntry.fspath(path)],
+            metadata_entries=[MetadataEntry.fspath(path)],
             asset_key=asset_key,
         )
 
@@ -537,7 +537,7 @@ class ExpectationResult(
             ("success", bool),
             ("label", Optional[str]),
             ("description", Optional[str]),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
         ],
     )
 ):
@@ -564,11 +564,11 @@ class ExpectationResult(
         success: bool,
         label: Optional[str] = None,
         description: Optional[str] = None,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
-        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
         metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
 
@@ -578,7 +578,7 @@ class ExpectationResult(
             label=check.opt_str_param(label, "label", "result"),
             description=check.opt_str_param(description, "description"),
             metadata_entries=cast(
-                List[EventMetadataEntry], parse_metadata(metadata, metadata_entries)
+                List[MetadataEntry], normalize_metadata(metadata, metadata_entries)
             ),
         )
 
@@ -590,7 +590,7 @@ class TypeCheck(
         [
             ("success", bool),
             ("description", Optional[str]),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
         ],
     )
 ):
@@ -618,12 +618,12 @@ class TypeCheck(
         cls,
         success: bool,
         description: Optional[str] = None,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
-        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
 
         metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
 
@@ -632,7 +632,7 @@ class TypeCheck(
             success=check.bool_param(success, "success"),
             description=check.opt_str_param(description, "description"),
             metadata_entries=cast(
-                List[EventMetadataEntry], parse_metadata(metadata, metadata_entries)
+                List[MetadataEntry], normalize_metadata(metadata, metadata_entries)
             ),
         )
 
@@ -657,17 +657,17 @@ class Failure(Exception):
     def __init__(
         self,
         description: Optional[str] = None,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
-        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
         metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
 
         super(Failure, self).__init__(description)
         self.description = check.opt_str_param(description, "description")
-        self.metadata_entries = parse_metadata(metadata, metadata_entries)
+        self.metadata_entries = normalize_metadata(metadata, metadata_entries)
 
 
 class RetryRequested(Exception):

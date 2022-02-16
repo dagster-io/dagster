@@ -4,7 +4,7 @@ from dagster import check, seven
 from dagster.core.definitions.metadata import (
     DagsterAssetMetadataEntryData,
     DagsterPipelineRunMetadataEntryData,
-    EventMetadataEntry,
+    MetadataEntry,
     FloatMetadataEntryData,
     IntMetadataEntryData,
     JsonMetadataEntryData,
@@ -41,7 +41,7 @@ def iterate_metadata_entries(metadata_entries):
         GrapheneEventTableSchemaMetadataEntry,
     )
 
-    check.list_param(metadata_entries, "metadata_entries", of_type=EventMetadataEntry)
+    check.list_param(metadata_entries, "metadata_entries", of_type=MetadataEntry)
     for metadata_entry in metadata_entries:
         if isinstance(metadata_entry.entry_data, PathMetadataEntryData):
             yield GrapheneEventPathMetadataEntry(

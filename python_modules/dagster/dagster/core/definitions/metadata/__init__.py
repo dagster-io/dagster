@@ -40,10 +40,10 @@ def last_file_comp(path: str) -> str:
     return os.path.basename(os.path.normpath(path))
 
 
-def parse_metadata_entry(label: str, value: ParseableMetadataEntryData) -> "EventMetadataEntry":
+def parse_metadata_entry(label: str, value: ParseableMetadataEntryData) -> "MetadataEntry":
     check.str_param(label, "label")
 
-    if isinstance(value, (EventMetadataEntry, PartitionMetadataEntry)):
+    if isinstance(value, (MetadataEntry, PartitionMetadataEntry)):
         raise DagsterInvalidEventMetadata(
             f"Expected a metadata value, found an instance of {value.__class__.__name__}. Consider "
             "instead using a EventMetadata wrapper for the value, or using the `metadata_entries` "
@@ -51,22 +51,22 @@ def parse_metadata_entry(label: str, value: ParseableMetadataEntryData) -> "Even
         )
 
     if isinstance(value, EntryDataUnion):
-        return EventMetadataEntry(label, None, value)
+        return MetadataEntry(label, None, value)
 
     if isinstance(value, str):
-        return EventMetadataEntry.text(value, label)
+        return MetadataEntry.text(value, label)
 
     if isinstance(value, float):
-        return EventMetadataEntry.float(value, label)
+        return MetadataEntry.float(value, label)
 
     if isinstance(value, int):
-        return EventMetadataEntry.int(value, label)
+        return MetadataEntry.int(value, label)
 
     if isinstance(value, dict):
         try:
             # check that the value is JSON serializable
             seven.dumps(value)
-            return EventMetadataEntry.json(value, label)
+            return MetadataEntry.json(value, label)
         except TypeError:
             raise DagsterInvalidEventMetadata(
                 f'Could not resolve the metadata value for "{label}" to a JSON serializable value. '
@@ -82,9 +82,9 @@ def parse_metadata_entry(label: str, value: ParseableMetadataEntryData) -> "Even
 
 def parse_metadata(
     metadata: Dict[str, ParseableMetadataEntryData],
-    metadata_entries: List[Union["EventMetadataEntry", "PartitionMetadataEntry"]],
+    metadata_entries: List[Union["MetadataEntry", "PartitionMetadataEntry"]],
     allow_invalid: bool = False,
-) -> List[Union["EventMetadataEntry", "PartitionMetadataEntry"]]:
+) -> List[Union["MetadataEntry", "PartitionMetadataEntry"]]:
     if metadata and metadata_entries:
         raise DagsterInvalidEventMetadata(
             "Attempted to provide both `metadata` and `metadata_entries` arguments to an event. "
@@ -93,7 +93,7 @@ def parse_metadata(
 
     if metadata_entries:
         return check.list_param(
-            metadata_entries, "metadata_entries", (EventMetadataEntry, PartitionMetadataEntry)
+            metadata_entries, "metadata_entries", (MetadataEntry, PartitionMetadataEntry)
         )
 
     # This is a stopgap measure to deal with unsupported metadata values, which occur when we try
@@ -108,7 +108,7 @@ def parse_metadata(
                 metadata_entries.append(parse_metadata_entry(k, v))
             except DagsterInvalidEventMetadata:
                 metadata_entries.append(
-                    EventMetadataEntry.text(f"[{v.__class__.__name__}] (unserializable)", k)
+                    MetadataEntry.text(f"[{v.__class__.__name__}] (unserializable)", k)
                 )
         return metadata_entries
 
@@ -706,7 +706,7 @@ class EventMetadata:
 # NOTE: This would better be implemented as a generic with `EventMetadataEntryData` set as a
 # typvar, but as of 2022-01-25 mypy does not support generics on NamedTuple.
 @whitelist_for_serdes
-class EventMetadataEntry(
+class MetadataEntry(
     NamedTuple(
         "_EventMetadataEntry",
         [
@@ -733,7 +733,7 @@ class EventMetadataEntry(
     """
 
     def __new__(cls, label: str, description: Optional[str], entry_data: "EventMetadataEntryData"):
-        return super(EventMetadataEntry, cls).__new__(
+        return super(MetadataEntry, cls).__new__(
             cls,
             check.str_param(label, "label"),
             check.opt_str_param(description, "description"),
@@ -743,7 +743,7 @@ class EventMetadataEntry(
     @staticmethod
     def text(
         text: Optional[str], label: str, description: Optional[str] = None
-    ) -> "EventMetadataEntry":
+    ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing text as
         :py:class:`TextMetadataEntryData`. For example:
 
@@ -763,12 +763,12 @@ class EventMetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-        return EventMetadataEntry(label, description, TextMetadataEntryData(text))
+        return MetadataEntry(label, description, TextMetadataEntryData(text))
 
     @staticmethod
     def url(
         url: Optional[str], label: str, description: Optional[str] = None
-    ) -> "EventMetadataEntry":
+    ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing a URL as
         :py:class:`UrlMetadataEntryData`. For example:
 
@@ -790,12 +790,12 @@ class EventMetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-        return EventMetadataEntry(label, description, UrlMetadataEntryData(url))
+        return MetadataEntry(label, description, UrlMetadataEntryData(url))
 
     @staticmethod
     def path(
         path: Optional[str], label: str, description: Optional[str] = None
-    ) -> "EventMetadataEntry":
+    ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing a path as
         :py:class:`PathMetadataEntryData`. For example:
 
@@ -813,12 +813,12 @@ class EventMetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-        return EventMetadataEntry(label, description, PathMetadataEntryData(path))
+        return MetadataEntry(label, description, PathMetadataEntryData(path))
 
     @staticmethod
     def fspath(
         path: Optional[str], label: Optional[str] = None, description: Optional[str] = None
-    ) -> "EventMetadataEntry":
+    ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing a filesystem path as
         :py:class:`PathMetadataEntryData`. For example:
 
@@ -841,14 +841,14 @@ class EventMetadataEntry(
             path = cast(str, check.str_param(path, "path"))
             label = last_file_comp(path)
 
-        return EventMetadataEntry.path(path, label, description)
+        return MetadataEntry.path(path, label, description)
 
     @staticmethod
     def json(
         data: Optional[Dict[str, Any]],
         label: str,
         description: Optional[str] = None,
-    ) -> "EventMetadataEntry":
+    ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing JSON data as
         :py:class:`JsonMetadataEntryData`. For example:
 
@@ -871,12 +871,12 @@ class EventMetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-        return EventMetadataEntry(label, description, JsonMetadataEntryData(data))
+        return MetadataEntry(label, description, JsonMetadataEntryData(data))
 
     @staticmethod
     def md(
         md_str: Optional[str], label: str, description: Optional[str] = None
-    ) -> "EventMetadataEntry":
+    ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing markdown data as
         :py:class:`MarkdownMetadataEntryData`. For example:
 
@@ -894,14 +894,14 @@ class EventMetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-        return EventMetadataEntry(label, description, MarkdownMetadataEntryData(md_str))
+        return MetadataEntry(label, description, MarkdownMetadataEntryData(md_str))
 
     @staticmethod
     def python_artifact(
         python_artifact: Callable[..., Any], label: str, description: Optional[str] = None
-    ) -> "EventMetadataEntry":
+    ) -> "MetadataEntry":
         check.callable_param(python_artifact, "python_artifact")
-        return EventMetadataEntry(
+        return MetadataEntry(
             label,
             description,
             PythonArtifactMetadataEntryData(python_artifact.__module__, python_artifact.__name__),
@@ -910,7 +910,7 @@ class EventMetadataEntry(
     @staticmethod
     def float(
         value: Optional[float], label: str, description: Optional[str] = None
-    ) -> "EventMetadataEntry":
+    ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing float as
         :py:class:`FloatMetadataEntryData`. For example:
 
@@ -929,12 +929,12 @@ class EventMetadataEntry(
             description (Optional[str]): A human-readable description of this metadata entry.
         """
 
-        return EventMetadataEntry(label, description, FloatMetadataEntryData(value))
+        return MetadataEntry(label, description, FloatMetadataEntryData(value))
 
     @staticmethod
     def int(
         value: Optional[int], label: str, description: Optional[str] = None
-    ) -> "EventMetadataEntry":
+    ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing int as
         :py:class:`IntMetadataEntryData`. For example:
 
@@ -953,19 +953,19 @@ class EventMetadataEntry(
             description (Optional[str]): A human-readable description of this metadata entry.
         """
 
-        return EventMetadataEntry(label, description, IntMetadataEntryData(value))
+        return MetadataEntry(label, description, IntMetadataEntryData(value))
 
     @staticmethod
     def pipeline_run(
         run_id: str, label: str, description: Optional[str] = None
-    ) -> "EventMetadataEntry":
+    ) -> "MetadataEntry":
         check.str_param(run_id, "run_id")
-        return EventMetadataEntry(label, description, DagsterPipelineRunMetadataEntryData(run_id))
+        return MetadataEntry(label, description, DagsterPipelineRunMetadataEntryData(run_id))
 
     @staticmethod
     def asset(
         asset_key: "AssetKey", label: str, description: Optional[str] = None
-    ) -> "EventMetadataEntry":
+    ) -> "MetadataEntry":
         """Static constructor for a metadata entry referencing a Dagster asset, by key.
 
         For example:
@@ -990,7 +990,7 @@ class EventMetadataEntry(
         from dagster.core.definitions.events import AssetKey
 
         check.inst_param(asset_key, "asset_key", AssetKey)
-        return EventMetadataEntry(label, description, DagsterAssetMetadataEntryData(asset_key))
+        return MetadataEntry(label, description, DagsterAssetMetadataEntryData(asset_key))
 
     @staticmethod
     @experimental
@@ -999,7 +999,7 @@ class EventMetadataEntry(
         label: str,
         description: Optional[str] = None,
         schema: Optional[TableSchema] = None,
-    ) -> "EventMetadataEntry":
+    ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing tabluar data as
         :py:class:`TableMetadataEntryData`. For example:
 
@@ -1051,13 +1051,13 @@ class EventMetadataEntry(
                     for k, v in records[0].data.items()
                 ]
             )
-        return EventMetadataEntry(label, description, TableMetadataEntryData(records, schema))
+        return MetadataEntry(label, description, TableMetadataEntryData(records, schema))
 
     @staticmethod
     @experimental
     def table_schema(
         schema: TableSchema, label: str, description: Optional[str] = None
-    ) -> "EventMetadataEntry":
+    ) -> "MetadataEntry":
         """Static constructor for a metadata entry containing a table schema as
         :py:class:`TableSchemaMetadataEntryData`. For example:
 
@@ -1086,7 +1086,7 @@ class EventMetadataEntry(
             label (str): Short display label for this metadata entry.
             description (Optional[str]): A human-readable description of this metadata entry.
         """
-        return EventMetadataEntry(
+        return MetadataEntry(
             label,
             description,
             TableSchemaMetadataEntryData(schema),
@@ -1109,10 +1109,10 @@ class PartitionMetadataEntry(
     to associate metadata more precisely.
     """
 
-    def __new__(cls, partition: str, entry: EventMetadataEntry):
+    def __new__(cls, partition: str, entry: MetadataEntry):
         experimental_class_warning("PartitionMetadataEntry")
         return super(PartitionMetadataEntry, cls).__new__(
             cls,
             check.str_param(partition, "partition"),
-            check.inst_param(entry, "entry", EventMetadataEntry),
+            check.inst_param(entry, "entry", MetadataEntry),
         )

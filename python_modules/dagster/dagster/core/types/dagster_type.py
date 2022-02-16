@@ -9,7 +9,7 @@ from dagster.builtins import BuiltinEnum
 from dagster.config.config_type import Array, ConfigType
 from dagster.config.config_type import Noneable as ConfigNoneable
 from dagster.core.definitions.metadata import (
-    EventMetadataEntry,
+    MetadataEntry,
     ParseableMetadataEntryData,
     parse_metadata,
 )
@@ -97,7 +97,7 @@ class DagsterType:
         required_resource_keys: t.Set[str] = None,
         kind: DagsterTypeKind = DagsterTypeKind.REGULAR,
         typing_type: t.Any = None,
-        metadata_entries: t.Optional[t.List[EventMetadataEntry]] = None,
+        metadata_entries: t.Optional[t.List[MetadataEntry]] = None,
         metadata: t.Optional[t.Dict[str, ParseableMetadataEntryData]] = None,
     ):
         check.opt_str_param(key, "key")
@@ -145,7 +145,7 @@ class DagsterType:
         self.typing_type = typing_type
 
         metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         self._metadata_entries = parse_metadata(metadata, metadata_entries)
@@ -176,7 +176,7 @@ class DagsterType:
         return _RUNTIME_MAP[builtin_enum]
 
     @property
-    def metadata_entries(self) -> t.List[EventMetadataEntry]:
+    def metadata_entries(self) -> t.List[MetadataEntry]:
         return self._metadata_entries  # type: ignore
 
     @property

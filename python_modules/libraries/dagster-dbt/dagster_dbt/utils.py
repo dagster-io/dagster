@@ -1,13 +1,13 @@
 from typing import Any, Dict, Iterator, List, Optional
 
 import dateutil
-from dagster import AssetMaterialization, EventMetadataEntry, check
+from dagster import AssetMaterialization, MetadataEntry, check
 
 from .types import DbtOutput
 
 
 def _get_asset_materialization(
-    unique_id: str, asset_key_prefix: List[str], metadata: List[EventMetadataEntry]
+    unique_id: str, asset_key_prefix: List[str], metadata: List[MetadataEntry]
 ) -> AssetMaterialization:
     return AssetMaterialization(
         description=f"dbt node: {unique_id}",
@@ -16,20 +16,20 @@ def _get_asset_materialization(
     )
 
 
-def _node_result_to_metadata(node_result: Dict[str, Any]) -> List[EventMetadataEntry]:
+def _node_result_to_metadata(node_result: Dict[str, Any]) -> List[MetadataEntry]:
     return [
-        EventMetadataEntry.text(
+        MetadataEntry.text(
             text=node_result["config"]["materialized"],
             label="Materialization Strategy",
         ),
-        EventMetadataEntry.text(text=node_result["database"], label="Database"),
-        EventMetadataEntry.text(text=node_result["schema"], label="Schema"),
-        EventMetadataEntry.text(text=node_result["alias"], label="Alias"),
-        EventMetadataEntry.text(text=node_result["description"], label="Description"),
+        MetadataEntry.text(text=node_result["database"], label="Database"),
+        MetadataEntry.text(text=node_result["schema"], label="Schema"),
+        MetadataEntry.text(text=node_result["alias"], label="Alias"),
+        MetadataEntry.text(text=node_result["description"], label="Description"),
     ]
 
 
-def _timing_to_metadata(timings: List[Dict[str, Any]]) -> List[EventMetadataEntry]:
+def _timing_to_metadata(timings: List[Dict[str, Any]]) -> List[MetadataEntry]:
     metadata = []
     for timing in timings:
         if timing["name"] == "execute":
@@ -44,13 +44,13 @@ def _timing_to_metadata(timings: List[Dict[str, Any]]) -> List[EventMetadataEntr
         duration = completed_at - started_at
         metadata.extend(
             [
-                EventMetadataEntry.text(
+                MetadataEntry.text(
                     text=started_at.isoformat(timespec="seconds"), label=f"{desc} Started At"
                 ),
-                EventMetadataEntry.text(
+                MetadataEntry.text(
                     text=started_at.isoformat(timespec="seconds"), label=f"{desc} Completed At"
                 ),
-                EventMetadataEntry.float(value=duration.total_seconds(), label=f"{desc} Duration"),
+                MetadataEntry.float(value=duration.total_seconds(), label=f"{desc} Duration"),
             ]
         )
     return metadata
@@ -79,7 +79,7 @@ def result_to_materialization(
 
     # all versions represent timing the same way
     metadata = [
-        EventMetadataEntry.float(value=result["execution_time"], label="Execution Time (seconds)")
+        MetadataEntry.float(value=result["execution_time"], label="Execution Time (seconds)")
     ] + _timing_to_metadata(result["timing"])
 
     # working with a response that contains the node block (RPC and CLI 0.18.x)
@@ -98,7 +98,7 @@ def result_to_materialization(
 
     if docs_url:
         metadata = [
-            EventMetadataEntry.url(url=f"{docs_url}#!/model/{unique_id}", label="docs_url")
+            MetadataEntry.url(url=f"{docs_url}#!/model/{unique_id}", label="docs_url")
         ] + metadata
 
     return AssetMaterialization(

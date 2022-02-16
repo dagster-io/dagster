@@ -32,7 +32,7 @@ from .dependency import (
 )
 from .metadata import (
     EventMetadata,
-    EventMetadataEntry,
+    MetadataEntry,
     FloatMetadataEntryData,
     IntMetadataEntryData,
     JsonMetadataEntryData,

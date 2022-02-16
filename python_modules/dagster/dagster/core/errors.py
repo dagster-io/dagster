@@ -477,12 +477,12 @@ class DagsterTypeCheckDidNotPass(DagsterError):
     """
 
     def __init__(self, description=None, metadata_entries=None, dagster_type=None):
-        from dagster import EventMetadataEntry, DagsterType
+        from dagster import MetadataEntry, DagsterType
 
         super(DagsterTypeCheckDidNotPass, self).__init__(description)
         self.description = check.opt_str_param(description, "description")
         self.metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
         self.dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
 

@@ -9,7 +9,7 @@ from dagster import (
     Array,
     AssetKey,
     EventMetadata,
-    EventMetadataEntry,
+    MetadataEntry,
     ExperimentalWarning,
     Field,
     ModeDefinition,
@@ -79,7 +79,7 @@ class MyDatabaseIOManager(PickledObjectFilesystemIOManager):
     def handle_output(self, context, obj):
         super().handle_output(context, obj)
         # can pretend this actually came from a library call
-        yield EventMetadataEntry(
+        yield MetadataEntry(
             label="num rows written to db", description=None, entry_data=EventMetadata.int(len(obj))
         )
 

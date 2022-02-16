@@ -1,7 +1,7 @@
 from typing import Any, Dict, List
 
 import pandas
-from dagster import AssetKey, AssetMaterialization, EventMetadataEntry
+from dagster import AssetKey, AssetMaterialization, MetadataEntry
 from dagster_dbt import DbtOutput
 
 from .snowflake_io_manager import connect_snowflake
@@ -21,9 +21,9 @@ class DbtAssetResource:
     def __init__(self, asset_key_prefix: List[str]):
         self._asset_key_prefix = asset_key_prefix
 
-    def _get_metadata(self, result: Dict[str, Any]) -> List[EventMetadataEntry]:
+    def _get_metadata(self, result: Dict[str, Any]) -> List[MetadataEntry]:
         return [
-            EventMetadataEntry.float(
+            MetadataEntry.float(
                 value=result["execution_time"], label="Execution Time (seconds)"
             )
         ]
@@ -69,7 +69,7 @@ class SnowflakeQueryDbtAssetResource(DbtAssetResource):
         self._dbt_schema = dbt_schema
         super().__init__(asset_key_prefix=["snowflake", dbt_schema])
 
-    def _get_metadata(self, result: Dict[str, Any]) -> List[EventMetadataEntry]:
+    def _get_metadata(self, result: Dict[str, Any]) -> List[MetadataEntry]:
         """
         Here, we run queries against our output Snowflake database tables to add additional context
         to our asset materializations.
@@ -82,6 +82,6 @@ class SnowflakeQueryDbtAssetResource(DbtAssetResource):
                 f"SELECT * FROM {table_name} SAMPLE ROW (10 rows)", con
             )
         return super()._get_metadata(result) + [
-            EventMetadataEntry.int(int(n_rows.iloc[0][0]), "dbt Model Number of Rows"),
-            EventMetadataEntry.md(sample_rows.astype("str").to_markdown(), "dbt Model Sample Rows"),
+            MetadataEntry.int(int(n_rows.iloc[0][0]), "dbt Model Number of Rows"),
+            MetadataEntry.md(sample_rows.astype("str").to_markdown(), "dbt Model Sample Rows"),
         ]

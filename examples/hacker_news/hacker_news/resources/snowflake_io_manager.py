@@ -3,7 +3,7 @@ import textwrap
 from contextlib import contextmanager
 from typing import Mapping, Optional, Sequence, Union
 
-from dagster import AssetKey, EventMetadataEntry, IOManager, InputContext, OutputContext, io_manager
+from dagster import AssetKey, MetadataEntry, IOManager, InputContext, OutputContext, io_manager
 from pandas import DataFrame as PandasDataFrame
 from pandas import read_sql
 from pyspark.sql import DataFrame as SparkDataFrame
@@ -93,7 +93,7 @@ class SnowflakeIOManager(IOManager):
                 "SnowflakeIOManager only supports pandas DataFrames and spark DataFrames"
             )
 
-        yield EventMetadataEntry.text(
+        yield MetadataEntry.text(
             self._get_select_statement(
                 table, schema, context.metadata.get("columns"), partition_bounds
             ),
@@ -103,8 +103,8 @@ class SnowflakeIOManager(IOManager):
     def _handle_pandas_output(self, obj: PandasDataFrame, schema: str, table: str):
         from snowflake import connector  # pylint: disable=no-name-in-module
 
-        yield EventMetadataEntry.int(obj.shape[0], "Rows")
-        yield EventMetadataEntry.md(pandas_columns_to_markdown(obj), "DataFrame columns")
+        yield MetadataEntry.int(obj.shape[0], "Rows")
+        yield MetadataEntry.md(pandas_columns_to_markdown(obj), "DataFrame columns")
 
         connector.paramstyle = "pyformat"
         with connect_snowflake(config=self._config, schema=schema) as con:
@@ -127,7 +127,7 @@ class SnowflakeIOManager(IOManager):
             "sfWarehouse": self._config["warehouse"],
             "dbtable": table,
         }
-        yield EventMetadataEntry.md(spark_columns_to_markdown(df.schema), "DataFrame columns")
+        yield MetadataEntry.md(spark_columns_to_markdown(df.schema), "DataFrame columns")
 
         df.write.format("net.snowflake.spark.snowflake").options(**options).mode("append").save()
 
