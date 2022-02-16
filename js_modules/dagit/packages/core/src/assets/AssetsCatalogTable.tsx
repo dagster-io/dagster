@@ -1,6 +1,6 @@
 import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
-import {useHistory} from 'react-router-dom';
+import {Redirect, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Box, CursorPaginationControls, CursorPaginationProps, TextInput} from '../../../ui/src';
@@ -40,10 +40,6 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
   );
 
   const setView = (view: 'flat' | 'graph' | 'directory') => {
-    if (view === 'graph') {
-      history.push('/instance/asset-graph');
-      return;
-    }
     _setView(view);
     if (view === 'flat' && prefixPath) {
       history.push('/instance/assets');
@@ -54,7 +50,12 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
 
   const assetsQuery = useQuery<AssetCatalogTableQuery>(ASSET_CATALOG_TABLE_QUERY, {
     notifyOnNetworkStatusChange: true,
+    skip: view === 'graph',
   });
+
+  if (view === 'graph') {
+    return <Redirect to="/instance/asset-graph" />;
+  }
 
   return (
     <Wrapper>
