@@ -3,11 +3,6 @@
 
 import dagster
 import pytest
-
-# ########################
-# ##### METADATA IMPORTS
-# ########################
-
 from dagster.core.definitions.metadata import (
     DagsterAssetMetadataValue,
     DagsterPipelineRunMetadataValue,
@@ -24,6 +19,11 @@ from dagster.core.definitions.metadata import (
     TextMetadataValue,
     UrlMetadataValue,
 )
+
+# ########################
+# ##### METADATA IMPORTS
+# ########################
+
 
 
 METADATA_DEPRECATIONS = {
@@ -51,6 +51,10 @@ METADATA_DEPRECATIONS = {
 def metadata_entry_class_name(request):
     return request.param
 
+
 def test_deprecated_metadata_classes(metadata_entry_class_name):
     with pytest.warns(DeprecationWarning):
-        assert getattr(dagster, metadata_entry_class_name) == METADATA_DEPRECATIONS[metadata_entry_class_name][1]
+        assert (
+            getattr(dagster, metadata_entry_class_name)
+            == METADATA_DEPRECATIONS[metadata_entry_class_name][1]
+        )

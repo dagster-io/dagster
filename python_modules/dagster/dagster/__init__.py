@@ -260,7 +260,11 @@ _DEPRECATED = {
     "PathMetadataEntryData": ("PathMetadataValue", PathMetadataValue, "0.15.0"),
     "JsonMetadataEntryData": ("JsonMetadataValue", JsonMetadataValue, "0.15.0"),
     "MarkdownMetadataEntryData": ("MarkdownMetadataValue", MarkdownMetadataValue, "0.15.0"),
-    "PythonArtifactMetadataEntryData": ("PythonArtifactMetadataValue", PythonArtifactMetadataValue, "0.15.0"),
+    "PythonArtifactMetadataEntryData": (
+        "PythonArtifactMetadataValue",
+        PythonArtifactMetadataValue,
+        "0.15.0",
+    ),
     "FloatMetadataEntryData": ("FloatMetadataValue", FloatMetadataValue, "0.15.0"),
     "IntMetadataEntryData": ("IntMetadataValue", IntMetadataValue, "0.15.0"),
     "DagsterPipelineRunMetadataEntryData": (
@@ -268,9 +272,17 @@ _DEPRECATED = {
         DagsterPipelineRunMetadataValue,
         "0.15.0",
     ),
-    "DagsterAssetMetadataEntryData": ("DagsterAssetMetadataValue", DagsterAssetMetadataValue, "0.15.0"),
+    "DagsterAssetMetadataEntryData": (
+        "DagsterAssetMetadataValue",
+        DagsterAssetMetadataValue,
+        "0.15.0",
+    ),
     "TableMetadataEntryData": ("TableMetadataValue", TableMetadataValue, "0.15.0"),
-    "TableSchemaMetadataEntryData": ("TableSchemaMetadataValue", TableSchemaMetadataValue, "0.15.0"),
+    "TableSchemaMetadataEntryData": (
+        "TableSchemaMetadataValue",
+        TableSchemaMetadataValue,
+        "0.15.0",
+    ),
 }
 
 
