@@ -719,7 +719,7 @@ def deprecated_metadata_entry_constructor(fn):
         deprecation_warning(
             f"Function `MetadataEntry.{fn.__name__}`",
             "0.15.0",
-            additional_warn_txt="In the future use `MetadataValue` and the `metadata` keyword argument instead.",
+            additional_warn_txt="In the future, construct `MetadataEntry` by calling the constructor directly and passing a `MetadataValue`.",
         )
         return fn(*args, **kwargs)
 
