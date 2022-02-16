@@ -142,15 +142,17 @@ from dagster import op, AssetMaterialization, job
 def my_asset_key_materialization_op(context):
     df = read_df()
     remote_storage_path = persist_to_storage(df)
-    yield AssetMaterialization(
-        asset_key=AssetKey(["dashboard", "my_cool_site"]),
-        description="Persisted result to storage",
-        metadata={
-            "dashboard_url": EventMetadata.url("http://mycoolsite.com/dashboard"),
-            "size (bytes)": calculate_bytes(df),
-        },
+    context.log_event(
+        AssetMaterialization(
+            asset_key=AssetKey(["dashboard", "my_cool_site"]),
+            description="Persisted result to storage",
+            metadata={
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/dashboard"),
+                "size (bytes)": calculate_bytes(df),
+            },
+        )
     )
-    yield Output(remote_storage_path)
+    return remote_storage_path
 
 
 # end_materialization_ops_marker_3
@@ -159,3 +161,16 @@ def my_asset_key_materialization_op(context):
 @job
 def my_asset_job():
     my_materialization_op()
+
+
+# start_materialization_yield
+from dagster import op, AssetMaterialization, Output
+
+
+@op
+def my_op_yields_materializations():
+    yield AssetMaterialization(asset_key="my_dataset")
+    yield Output(None)
+
+
+# end_materialization_yield

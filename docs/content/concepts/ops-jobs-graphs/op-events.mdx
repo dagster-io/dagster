@@ -44,7 +44,56 @@ Because returning a value from an op is such a fundamental part of creating a da
 For ops with a single output, you can simply return a value directly from the `compute_fn`. Internally, this will be converted to a Dagster <PyObject object="Output"/> event with the default output name `result`:
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_op_output_1 endbefore=end_op_output_1
-from dagster import op
+# start_op_output_0
+from dagster import (
+    AssetMaterialization,
+    EventMetadata,
+    ExpectationResult,
+    Failure,
+    Out,
+    Output,
+    RetryRequested,
+    op,
+)
+
+
+def do_some_transform(_):
+    return []
+
+
+def calculate_bytes(_):
+    return 0.0
+
+
+def get_some_data():
+    return []
+
+
+def some_calculation(_):
+    return 0
+
+
+def get_files(_path):
+    return []
+
+
+def store_to_s3(_):
+    return
+
+
+def flaky_operation():
+    return 0
+
+
+
+
+@op
+def my_simple_yield_op(context):
+    yield Output(1)
+
+
+# end_op_output_0
+
 
 
 @op
@@ -55,7 +104,46 @@ def my_simple_return_op(context):
 While this is perhaps the most intuitive way to return a value from a function, once you have multiple outputs defined on your op, or want to yield additional, non-output information from the body of your op, explicitly returning a value is no longer an option. In these cases, you'll want to explicitly yield <PyObject object="Output"/> events. With that in mind, the above example can be converted to the equivalent yield pattern like so:
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_op_output_0 endbefore=end_op_output_0
-from dagster import op
+from dagster import (
+    AssetMaterialization,
+    EventMetadata,
+    ExpectationResult,
+    Failure,
+    Out,
+    Output,
+    RetryRequested,
+    op,
+)
+
+
+def do_some_transform(_):
+    return []
+
+
+def calculate_bytes(_):
+    return 0.0
+
+
+def get_some_data():
+    return []
+
+
+def some_calculation(_):
+    return 0
+
+
+def get_files(_path):
+    return []
+
+
+def store_to_s3(_):
+    return
+
+
+def flaky_operation():
+    return 0
+
+
 
 
 @op
@@ -66,7 +154,66 @@ def my_simple_yield_op(context):
 or, if you have a specific output name other than the default `result`:
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_op_output_2 endbefore=end_op_output_2
-from dagster import op
+# start_op_output_1
+# start_op_output_0
+from dagster import (
+    AssetMaterialization,
+    EventMetadata,
+    ExpectationResult,
+    Failure,
+    Out,
+    Output,
+    RetryRequested,
+    op,
+)
+
+
+def do_some_transform(_):
+    return []
+
+
+def calculate_bytes(_):
+    return 0.0
+
+
+def get_some_data():
+    return []
+
+
+def some_calculation(_):
+    return 0
+
+
+def get_files(_path):
+    return []
+
+
+def store_to_s3(_):
+    return
+
+
+def flaky_operation():
+    return 0
+
+
+
+
+@op
+def my_simple_yield_op(context):
+    yield Output(1)
+
+
+# end_op_output_0
+
+
+
+@op
+def my_simple_return_op(context):
+    return 1
+
+
+# end_op_output_1
+
 
 
 @op(out={"my_output": Out(int)})
@@ -85,7 +232,76 @@ The <PyObject object="EventMetadata" /> class contains a set of static wrappers 
 The following example demonstrates how you might use this functionality:
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_op_output_3 endbefore=end_op_output_3
-from dagster import op, EventMetadata
+# start_op_output_2
+# start_op_output_1
+# start_op_output_0
+from dagster import (
+    AssetMaterialization,
+    EventMetadata,
+    ExpectationResult,
+    Failure,
+    Out,
+    Output,
+    RetryRequested,
+    op,
+)
+
+
+def do_some_transform(_):
+    return []
+
+
+def calculate_bytes(_):
+    return 0.0
+
+
+def get_some_data():
+    return []
+
+
+def some_calculation(_):
+    return 0
+
+
+def get_files(_path):
+    return []
+
+
+def store_to_s3(_):
+    return
+
+
+def flaky_operation():
+    return 0
+
+
+
+
+@op
+def my_simple_yield_op(context):
+    yield Output(1)
+
+
+# end_op_output_0
+
+
+
+@op
+def my_simple_return_op(context):
+    return 1
+
+
+# end_op_output_1
+
+
+
+@op(out={"my_output": Out(int)})
+def my_named_yield_op(context):
+    yield Output(1, output_name="my_output")
+
+
+# end_op_output_2
+
 
 
 @op
@@ -112,7 +328,172 @@ to keep track of can be considered an asset.
 Generally, you'd want to send this event directly after you persist the asset to your external system. All <PyObject object="AssetMaterialization" /> events must define an `asset_key`, which is a unique identifier to describe the asset you are persisting.
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_asset_op endbefore=end_asset_op
-from dagster import AssetMaterialization, op
+# start_retry_op
+# start_failure_metadata_op
+# start_failure_op
+# start_metadata_expectation_op
+# start_op_output_3
+# start_op_output_2
+# start_op_output_1
+# start_op_output_0
+from dagster import (
+    AssetMaterialization,
+    EventMetadata,
+    ExpectationResult,
+    Failure,
+    Out,
+    Output,
+    RetryRequested,
+    op,
+)
+
+
+def do_some_transform(_):
+    return []
+
+
+def calculate_bytes(_):
+    return 0.0
+
+
+def get_some_data():
+    return []
+
+
+def some_calculation(_):
+    return 0
+
+
+def get_files(_path):
+    return []
+
+
+def store_to_s3(_):
+    return
+
+
+def flaky_operation():
+    return 0
+
+
+
+
+@op
+def my_simple_yield_op(context):
+    yield Output(1)
+
+
+# end_op_output_0
+
+
+
+@op
+def my_simple_return_op(context):
+    return 1
+
+
+# end_op_output_1
+
+
+
+@op(out={"my_output": Out(int)})
+def my_named_yield_op(context):
+    yield Output(1, output_name="my_output")
+
+
+# end_op_output_2
+
+
+
+@op
+def my_metadata_output(context):
+    df = get_some_data()
+    context.add_output_metadata(
+        {
+            "text_metadata": "Text-based metadata for this event",
+            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "raw_count": len(df),
+            "size (bytes)": calculate_bytes(df),
+        }
+    )
+    return df
+
+
+# end_op_output_3
+
+
+
+@op
+def my_metadata_expectation_op(context, df):
+    df = do_some_transform(df)
+    context.log_event(
+        ExpectationResult(
+            success=len(df) > 0,
+            description="ensure dataframe has rows",
+            metadata={
+                "text_metadata": "Text-based metadata for this event",
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+                "raw_count": len(df),
+                "size (bytes)": calculate_bytes(df),
+            },
+        )
+    )
+    return df
+
+
+# end_metadata_expectation_op
+
+
+
+@op
+def my_failure_op():
+    path = "/path/to/files"
+    my_files = get_files(path)
+    if len(my_files) == 0:
+        raise Failure(
+            description="No files to process",
+            metadata={
+                "filepath": EventMetadata.path(path),
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/failures"),
+            },
+        )
+    return some_calculation(my_files)
+
+
+# end_failure_op
+
+
+
+@op
+def my_failure_metadata_op():
+    path = "/path/to/files"
+    my_files = get_files(path)
+    if len(my_files) == 0:
+        raise Failure(
+            description="No files to process",
+            metadata={
+                "filepath": EventMetadata.path(path),
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/failures"),
+            },
+        )
+    return some_calculation(my_files)
+
+
+# end_failure_metadata_op
+
+
+
+@op
+def my_retry_op():
+    try:
+        result = flaky_operation()
+    except Exception as e:
+        raise RetryRequested(max_retries=3) from e
+    return result
+
+
+# end_retry_op
+
 
 
 @op
@@ -163,7 +544,192 @@ def my_metadata_materialization_op(context):
 Ops can emit structured events to represent the results of a data quality test. The data quality event class is the <PyObject object="ExpectationResult" />. To generate an expectation result, we can log an <PyObject object="ExpectationResult" /> event in our op.
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_expectation_op endbefore=end_expectation_op
-from dagster import ExpectationResult, op
+# start_asset_op
+# start_retry_op
+# start_failure_metadata_op
+# start_failure_op
+# start_metadata_expectation_op
+# start_op_output_3
+# start_op_output_2
+# start_op_output_1
+# start_op_output_0
+from dagster import (
+    AssetMaterialization,
+    EventMetadata,
+    ExpectationResult,
+    Failure,
+    Out,
+    Output,
+    RetryRequested,
+    op,
+)
+
+
+def do_some_transform(_):
+    return []
+
+
+def calculate_bytes(_):
+    return 0.0
+
+
+def get_some_data():
+    return []
+
+
+def some_calculation(_):
+    return 0
+
+
+def get_files(_path):
+    return []
+
+
+def store_to_s3(_):
+    return
+
+
+def flaky_operation():
+    return 0
+
+
+
+
+@op
+def my_simple_yield_op(context):
+    yield Output(1)
+
+
+# end_op_output_0
+
+
+
+@op
+def my_simple_return_op(context):
+    return 1
+
+
+# end_op_output_1
+
+
+
+@op(out={"my_output": Out(int)})
+def my_named_yield_op(context):
+    yield Output(1, output_name="my_output")
+
+
+# end_op_output_2
+
+
+
+@op
+def my_metadata_output(context):
+    df = get_some_data()
+    context.add_output_metadata(
+        {
+            "text_metadata": "Text-based metadata for this event",
+            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "raw_count": len(df),
+            "size (bytes)": calculate_bytes(df),
+        }
+    )
+    return df
+
+
+# end_op_output_3
+
+
+
+@op
+def my_metadata_expectation_op(context, df):
+    df = do_some_transform(df)
+    context.log_event(
+        ExpectationResult(
+            success=len(df) > 0,
+            description="ensure dataframe has rows",
+            metadata={
+                "text_metadata": "Text-based metadata for this event",
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+                "raw_count": len(df),
+                "size (bytes)": calculate_bytes(df),
+            },
+        )
+    )
+    return df
+
+
+# end_metadata_expectation_op
+
+
+
+@op
+def my_failure_op():
+    path = "/path/to/files"
+    my_files = get_files(path)
+    if len(my_files) == 0:
+        raise Failure(
+            description="No files to process",
+            metadata={
+                "filepath": EventMetadata.path(path),
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/failures"),
+            },
+        )
+    return some_calculation(my_files)
+
+
+# end_failure_op
+
+
+
+@op
+def my_failure_metadata_op():
+    path = "/path/to/files"
+    my_files = get_files(path)
+    if len(my_files) == 0:
+        raise Failure(
+            description="No files to process",
+            metadata={
+                "filepath": EventMetadata.path(path),
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/failures"),
+            },
+        )
+    return some_calculation(my_files)
+
+
+# end_failure_metadata_op
+
+
+
+@op
+def my_retry_op():
+    try:
+        result = flaky_operation()
+    except Exception as e:
+        raise RetryRequested(max_retries=3) from e
+    return result
+
+
+# end_retry_op
+
+
+
+@op
+def my_asset_op(context):
+    df = get_some_data()
+    store_to_s3(df)
+    context.log_event(
+        AssetMaterialization(
+            asset_key="s3.my_asset",
+            description="A df I stored in s3",
+        )
+    )
+
+    result = do_some_transform(df)
+    return result
+
+
+# end_asset_op
+
 
 
 @op
@@ -182,7 +748,95 @@ Like many other event types in Dagster, there are a variety of types of metadata
 This example shows metadata entries of different types attached to the same expectation result:
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_metadata_expectation_op endbefore=end_metadata_expectation_op
-from dagster import op, ExpectationResult, EventMetadata
+# start_op_output_3
+# start_op_output_2
+# start_op_output_1
+# start_op_output_0
+from dagster import (
+    AssetMaterialization,
+    EventMetadata,
+    ExpectationResult,
+    Failure,
+    Out,
+    Output,
+    RetryRequested,
+    op,
+)
+
+
+def do_some_transform(_):
+    return []
+
+
+def calculate_bytes(_):
+    return 0.0
+
+
+def get_some_data():
+    return []
+
+
+def some_calculation(_):
+    return 0
+
+
+def get_files(_path):
+    return []
+
+
+def store_to_s3(_):
+    return
+
+
+def flaky_operation():
+    return 0
+
+
+
+
+@op
+def my_simple_yield_op(context):
+    yield Output(1)
+
+
+# end_op_output_0
+
+
+
+@op
+def my_simple_return_op(context):
+    return 1
+
+
+# end_op_output_1
+
+
+
+@op(out={"my_output": Out(int)})
+def my_named_yield_op(context):
+    yield Output(1, output_name="my_output")
+
+
+# end_op_output_2
+
+
+
+@op
+def my_metadata_output(context):
+    df = get_some_data()
+    context.add_output_metadata(
+        {
+            "text_metadata": "Text-based metadata for this event",
+            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "raw_count": len(df),
+            "size (bytes)": calculate_bytes(df),
+        }
+    )
+    return df
+
+
+# end_op_output_3
+
 
 
 @op
@@ -215,7 +869,118 @@ if, in the body of your op, you detect an issue that would not raise an error on
 its own, but would still cause problems if the execution were to continue.
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_failure_op endbefore=end_failure_op
-from dagster import op, Failure
+# start_metadata_expectation_op
+# start_op_output_3
+# start_op_output_2
+# start_op_output_1
+# start_op_output_0
+from dagster import (
+    AssetMaterialization,
+    EventMetadata,
+    ExpectationResult,
+    Failure,
+    Out,
+    Output,
+    RetryRequested,
+    op,
+)
+
+
+def do_some_transform(_):
+    return []
+
+
+def calculate_bytes(_):
+    return 0.0
+
+
+def get_some_data():
+    return []
+
+
+def some_calculation(_):
+    return 0
+
+
+def get_files(_path):
+    return []
+
+
+def store_to_s3(_):
+    return
+
+
+def flaky_operation():
+    return 0
+
+
+
+
+@op
+def my_simple_yield_op(context):
+    yield Output(1)
+
+
+# end_op_output_0
+
+
+
+@op
+def my_simple_return_op(context):
+    return 1
+
+
+# end_op_output_1
+
+
+
+@op(out={"my_output": Out(int)})
+def my_named_yield_op(context):
+    yield Output(1, output_name="my_output")
+
+
+# end_op_output_2
+
+
+
+@op
+def my_metadata_output(context):
+    df = get_some_data()
+    context.add_output_metadata(
+        {
+            "text_metadata": "Text-based metadata for this event",
+            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "raw_count": len(df),
+            "size (bytes)": calculate_bytes(df),
+        }
+    )
+    return df
+
+
+# end_op_output_3
+
+
+
+@op
+def my_metadata_expectation_op(context, df):
+    df = do_some_transform(df)
+    context.log_event(
+        ExpectationResult(
+            success=len(df) > 0,
+            description="ensure dataframe has rows",
+            metadata={
+                "text_metadata": "Text-based metadata for this event",
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+                "raw_count": len(df),
+                "size (bytes)": calculate_bytes(df),
+            },
+        )
+    )
+    return df
+
+
+# end_metadata_expectation_op
+
 
 
 @op
@@ -238,7 +1003,138 @@ def my_failure_op():
 As is the case with many Dagster-provided classes, you can attach a list <PyObject object="EventMetadataEntry"/> denoting an arbitrary set of metadata relevant to the failure.
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_failure_metadata_op endbefore=end_failure_metadata_op
-from dagster import op, Failure, EventMetadata
+# start_failure_op
+# start_metadata_expectation_op
+# start_op_output_3
+# start_op_output_2
+# start_op_output_1
+# start_op_output_0
+from dagster import (
+    AssetMaterialization,
+    EventMetadata,
+    ExpectationResult,
+    Failure,
+    Out,
+    Output,
+    RetryRequested,
+    op,
+)
+
+
+def do_some_transform(_):
+    return []
+
+
+def calculate_bytes(_):
+    return 0.0
+
+
+def get_some_data():
+    return []
+
+
+def some_calculation(_):
+    return 0
+
+
+def get_files(_path):
+    return []
+
+
+def store_to_s3(_):
+    return
+
+
+def flaky_operation():
+    return 0
+
+
+
+
+@op
+def my_simple_yield_op(context):
+    yield Output(1)
+
+
+# end_op_output_0
+
+
+
+@op
+def my_simple_return_op(context):
+    return 1
+
+
+# end_op_output_1
+
+
+
+@op(out={"my_output": Out(int)})
+def my_named_yield_op(context):
+    yield Output(1, output_name="my_output")
+
+
+# end_op_output_2
+
+
+
+@op
+def my_metadata_output(context):
+    df = get_some_data()
+    context.add_output_metadata(
+        {
+            "text_metadata": "Text-based metadata for this event",
+            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "raw_count": len(df),
+            "size (bytes)": calculate_bytes(df),
+        }
+    )
+    return df
+
+
+# end_op_output_3
+
+
+
+@op
+def my_metadata_expectation_op(context, df):
+    df = do_some_transform(df)
+    context.log_event(
+        ExpectationResult(
+            success=len(df) > 0,
+            description="ensure dataframe has rows",
+            metadata={
+                "text_metadata": "Text-based metadata for this event",
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+                "raw_count": len(df),
+                "size (bytes)": calculate_bytes(df),
+            },
+        )
+    )
+    return df
+
+
+# end_metadata_expectation_op
+
+
+
+@op
+def my_failure_op():
+    path = "/path/to/files"
+    my_files = get_files(path)
+    if len(my_files) == 0:
+        raise Failure(
+            description="No files to process",
+            metadata={
+                "filepath": EventMetadata.path(path),
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/failures"),
+            },
+        )
+    return some_calculation(my_files)
+
+
+# end_failure_op
+
 
 
 @op
@@ -267,7 +1163,158 @@ execution.
 You can configure the number of retries to be attempted with the `max_retries` parameter.
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_retry_op endbefore=end_retry_op
-from dagster import op, RetryRequested
+# start_failure_metadata_op
+# start_failure_op
+# start_metadata_expectation_op
+# start_op_output_3
+# start_op_output_2
+# start_op_output_1
+# start_op_output_0
+from dagster import (
+    AssetMaterialization,
+    EventMetadata,
+    ExpectationResult,
+    Failure,
+    Out,
+    Output,
+    RetryRequested,
+    op,
+)
+
+
+def do_some_transform(_):
+    return []
+
+
+def calculate_bytes(_):
+    return 0.0
+
+
+def get_some_data():
+    return []
+
+
+def some_calculation(_):
+    return 0
+
+
+def get_files(_path):
+    return []
+
+
+def store_to_s3(_):
+    return
+
+
+def flaky_operation():
+    return 0
+
+
+
+
+@op
+def my_simple_yield_op(context):
+    yield Output(1)
+
+
+# end_op_output_0
+
+
+
+@op
+def my_simple_return_op(context):
+    return 1
+
+
+# end_op_output_1
+
+
+
+@op(out={"my_output": Out(int)})
+def my_named_yield_op(context):
+    yield Output(1, output_name="my_output")
+
+
+# end_op_output_2
+
+
+
+@op
+def my_metadata_output(context):
+    df = get_some_data()
+    context.add_output_metadata(
+        {
+            "text_metadata": "Text-based metadata for this event",
+            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "raw_count": len(df),
+            "size (bytes)": calculate_bytes(df),
+        }
+    )
+    return df
+
+
+# end_op_output_3
+
+
+
+@op
+def my_metadata_expectation_op(context, df):
+    df = do_some_transform(df)
+    context.log_event(
+        ExpectationResult(
+            success=len(df) > 0,
+            description="ensure dataframe has rows",
+            metadata={
+                "text_metadata": "Text-based metadata for this event",
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+                "raw_count": len(df),
+                "size (bytes)": calculate_bytes(df),
+            },
+        )
+    )
+    return df
+
+
+# end_metadata_expectation_op
+
+
+
+@op
+def my_failure_op():
+    path = "/path/to/files"
+    my_files = get_files(path)
+    if len(my_files) == 0:
+        raise Failure(
+            description="No files to process",
+            metadata={
+                "filepath": EventMetadata.path(path),
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/failures"),
+            },
+        )
+    return some_calculation(my_files)
+
+
+# end_failure_op
+
+
+
+@op
+def my_failure_metadata_op():
+    path = "/path/to/files"
+    my_files = get_files(path)
+    if len(my_files) == 0:
+        raise Failure(
+            description="No files to process",
+            metadata={
+                "filepath": EventMetadata.path(path),
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/failures"),
+            },
+        )
+    return some_calculation(my_files)
+
+
+# end_failure_metadata_op
+
 
 
 @op

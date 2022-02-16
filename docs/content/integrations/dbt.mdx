@@ -263,7 +263,7 @@ For full documentation on all available config, [visit the API docs for dagster-
 `dagster_dbt` is configured to automatically create [Asset Materializations](/concepts/assets/asset-materializations) for each of your dbt models when you run the `run` command (via either the CLI or over RPC). These materializations are populated with metadata that is automatically parsed from the dbt response. The available metadata differs between dbt versions. If there's anything you would like to add to these materializations, you can explicitly invoke the underlying <PyObject module='dagster_dbt.utils' object='generate_materializations'/> utility function, and modify each of the resulting materializations like so:
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_asset_mats endbefore=end_marker_dbt_asset_mats dedent=4
-from dagster import op, Output
+from dagster import op
 from dagster_dbt.utils import generate_materializations
 
 @op(required_resource_keys={"dbt"})

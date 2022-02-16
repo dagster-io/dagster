@@ -49,15 +49,12 @@ def flaky_operation():
     return 0
 
 
-
-
 @op
 def my_simple_yield_op(context):
     yield Output(1)
 
 
 # end_op_output_0
-
 
 
 @op
@@ -68,14 +65,12 @@ def my_simple_return_op(context):
 # end_op_output_1
 
 
-
 @op(out={"my_output": Out(int)})
 def my_named_yield_op(context):
     yield Output(1, output_name="my_output")
 
 
 # end_op_output_2
-
 
 
 @op
@@ -93,7 +88,6 @@ def my_metadata_output(context):
 
 
 # end_op_output_3
-
 
 
 @op
@@ -117,7 +111,6 @@ def my_metadata_expectation_op(context, df):
 # end_metadata_expectation_op
 
 
-
 @op
 def my_failure_op():
     path = "/path/to/files"
@@ -134,7 +127,6 @@ def my_failure_op():
 
 
 # end_failure_op
-
 
 
 @op
@@ -155,7 +147,6 @@ def my_failure_metadata_op():
 # end_failure_metadata_op
 
 
-
 @op
 def my_retry_op():
     try:
@@ -166,7 +157,6 @@ def my_retry_op():
 
 
 # end_retry_op
-
 
 
 @op
@@ -185,7 +175,6 @@ def my_asset_op(context):
 
 
 # end_asset_op
-
 
 
 @op

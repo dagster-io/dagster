@@ -312,3 +312,17 @@ src="/images/concepts/assets/asset-lineage.png"
 width={1607}
 height={1031}
 />
+
+### Legacy syntax for AssetMaterializations
+
+We also support yielding <PyObject object="AssetMaterialization" /> objects from within the body of an op, although it is preferred to use the <PyObject object="OpExecutionContext" method="log_event" /> method. When using the yield syntax, it is also necessary to yield all Outputs.
+
+```python file=/concepts/assets/materialization_ops.py startafter=start_materialization_yield endbefore=end_materialization_yield
+from dagster import op, AssetMaterialization, Output
+
+
+@op
+def my_op_yields_materializations():
+    yield AssetMaterialization(asset_key="my_dataset")
+    yield Output(None)
+```
