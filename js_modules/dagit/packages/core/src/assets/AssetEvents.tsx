@@ -101,7 +101,11 @@ function useRecentAssetEvents(
   }, [data, loading, refetch, loadUsingPartitionKeys]);
 }
 
-function useMostRecentRuns(repositorySelector?: RepositorySelector) {
+function useRecentRunWarnings(
+  assetKey: AssetKey,
+  grouped: AssetEventGroup[],
+  repositorySelector?: RepositorySelector,
+) {
   const {data} = useQuery<LastRunQuery, LastRunQueryVariables>(LAST_RUNS_QUERY, {
     skip: !repositorySelector,
     variables: {
@@ -123,8 +127,20 @@ function useMostRecentRuns(repositorySelector?: RepositorySelector) {
         jobRunsCounts.push(item);
       }
     }
-    return {latestRuns, jobRunsCounts};
-  }, [data]);
+
+    const assetName = assetKey.path[assetKey.path.length - 1];
+    const jobRunsThatDidntMaterializeAsset = jobRunsCounts.find((jrc) => jrc.stepKey === assetName);
+    const latestRunForStepKey = latestRuns.find((lr) => lr.stepKey === assetName);
+
+    const runWhichFailedToMaterialize =
+      !jobRunsThatDidntMaterializeAsset &&
+      latestRunForStepKey &&
+      (!grouped.length || grouped[0].latest?.runId !== latestRunForStepKey.run?.id)
+        ? latestRunForStepKey.run
+        : undefined;
+
+    return {jobRunsThatDidntMaterializeAsset, runWhichFailedToMaterialize};
+  }, [data, assetKey, grouped]);
 }
 
 export const AssetEvents: React.FC<Props> = ({
@@ -154,8 +170,6 @@ export const AssetEvents: React.FC<Props> = ({
     refetch,
   } = useRecentAssetEvents(assetKey, assetHasDefinedPartitions, xAxis, before);
 
-  const {latestRuns, jobRunsCounts} = useMostRecentRuns(repository);
-
   React.useEffect(() => {
     if (params.asOf) {
       return;
@@ -180,16 +194,11 @@ export const AssetEvents: React.FC<Props> = ({
     }
   }, [loadedPartitionKeys, materializations, observations, xAxis]);
 
-  const jobRunsThatDidntMaterializeAsset = jobRunsCounts.find(
-    (jrc) => jrc.stepKey === assetKey.path[assetKey.path.length - 1],
+  const {jobRunsThatDidntMaterializeAsset, runWhichFailedToMaterialize} = useRecentRunWarnings(
+    assetKey,
+    grouped,
+    repository,
   );
-
-  const runWhichFailedToMaterialize =
-    !jobRunsThatDidntMaterializeAsset &&
-    latestRuns.length &&
-    (!grouped.length || grouped[0].latest?.runId !== latestRuns[0].run?.id)
-      ? latestRuns[0].run
-      : undefined;
 
   const activeItems = React.useMemo(() => new Set([xAxis]), [xAxis]);
 
