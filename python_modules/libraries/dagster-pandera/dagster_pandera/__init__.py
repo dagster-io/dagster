@@ -7,7 +7,7 @@ import pandas as pd
 import pandera as pa
 from dagster import (
     DagsterType,
-    EventMetadataEntry,
+    MetadataEntry,
     TableColumn,
     TableColumnConstraints,
     TableConstraints,
@@ -62,7 +62,7 @@ def pandera_schema_to_dagster_type(
     `name` is defined, a name of the form `DagsterPanderaDataframe<n>` is generated.
 
     Additional metadata is also extracted from the Pandera schema and attached to the returned
-    `DagsterType` in an `EventMetadataEntry` object. The extracted metadata includes:
+    `DagsterType` in an `MetadataEntry` object. The extracted metadata includes:
 
     - Descriptions on the schema and constituent columns and checks.
     - Data types for each column.
@@ -107,7 +107,7 @@ def pandera_schema_to_dagster_type(
         name=name,
         description=norm_schema.description,
         metadata_entries=[
-            EventMetadataEntry.table_schema(tschema, label="schema"),
+            MetadataEntry.table_schema(tschema, label="schema"),
         ],
     )
 
