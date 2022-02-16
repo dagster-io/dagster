@@ -14,7 +14,7 @@ A software-defined asset combines:
 
 .. autodecorator:: asset
 
-.. autoclass:: AssetCollection
+.. autoclass:: AssetGroup
 
 .. autodecorator:: multi_asset
 

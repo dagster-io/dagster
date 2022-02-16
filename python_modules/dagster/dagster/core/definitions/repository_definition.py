@@ -555,7 +555,7 @@ class CachingRepositoryData(RepositoryData):
         """Static constructor.
 
         Args:
-            repository_definitions (List[Union[PipelineDefinition, PartitionSetDefinition, ScheduleDefinition, AssetCollection]]):
+            repository_definitions (List[Union[PipelineDefinition, PartitionSetDefinition, ScheduleDefinition, AssetGroup]]):
                 Use this constructor when you have no need to lazy load pipelines/jobs or other
                 definitions.
         """

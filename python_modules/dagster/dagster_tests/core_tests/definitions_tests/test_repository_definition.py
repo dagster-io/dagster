@@ -3,7 +3,7 @@ from collections import defaultdict
 
 import pytest
 from dagster import (
-    AssetCollection,
+    AssetGroup,
     AssetKey,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
@@ -569,6 +569,6 @@ def test_source_assets():
 
     @repository
     def my_repo():
-        return [AssetCollection(assets=[], source_assets=[foo, bar])]
+        return [AssetGroup(assets=[], source_assets=[foo, bar])]
 
     assert my_repo.source_assets_by_key == {AssetKey("foo"): foo, AssetKey("bar"): bar}

@@ -1,5 +1,5 @@
 from dagster import asset
-from dagster.core.asset_defs.asset_collection import AssetCollection
+from dagster.core.asset_defs.asset_collection import AssetGroup
 
 
 @asset
@@ -12,5 +12,5 @@ def asset2():
     pass
 
 
-ac1 = AssetCollection([asset1])
-ac2 = AssetCollection([asset2])
+ac1 = AssetGroup([asset1])
+ac2 = AssetGroup([asset2])

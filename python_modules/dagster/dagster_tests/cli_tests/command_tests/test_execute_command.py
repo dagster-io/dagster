@@ -383,7 +383,7 @@ def test_attribute_is_wrong_thing():
             DagsterInvariantViolationError,
             match=re.escape(
                 "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, "
-                "AssetCollection, or RepositoryDefinition. Got 123."
+                "AssetGroup, or RepositoryDefinition. Got 123."
             ),
         ):
             execute_execute_command(
@@ -404,7 +404,7 @@ def test_attribute_fn_returns_wrong_thing():
             DagsterInvariantViolationError,
             match=re.escape(
                 "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, "
-                "AssetCollection, or RepositoryDefinition."
+                "AssetGroup, or RepositoryDefinition."
             ),
         ):
             execute_execute_command(
