@@ -8,7 +8,6 @@ from .jobs import bollinger_analysis
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
 
-
 @repository(name="bollinger")
 def repo():
     return [
