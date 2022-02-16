@@ -173,3 +173,19 @@ def test_dagit_db_statement_timeout(deployment_template: HelmTemplate):
     command = " ".join(dagit_deployments[0].spec.template.spec.containers[0].command)
 
     assert f"--db-statement-timeout {db_statement_timeout_ms}" in command
+
+
+def test_dagit_labels(deployment_template: HelmTemplate):
+    deployment_labels = {"deployment_label": "label"}
+    pod_labels = {"pod_label": "label"}
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(
+            deploymentLabels=deployment_labels,
+            labels=pod_labels,
+        )
+    )
+
+    [dagit_deployment] = deployment_template.render(helm_values)
+
+    assert set(deployment_labels.items()).issubset(dagit_deployment.metadata.labels.items())
+    assert set(pod_labels.items()).issubset(dagit_deployment.spec.template.metadata.labels.items())
