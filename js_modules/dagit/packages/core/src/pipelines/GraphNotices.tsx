@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, IconWIP, NonIdealState} from '@dagster-io/ui';
+import {ColorsWIP, IconWIP, NonIdealState} from '@dagster-io/ui';
 import {capitalize} from 'lodash';
 import * as React from 'react';
 import styled from 'styled-components/macro';
