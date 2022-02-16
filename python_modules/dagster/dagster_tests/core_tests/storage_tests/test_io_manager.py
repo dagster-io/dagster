@@ -17,7 +17,6 @@ from dagster import (
     IOManagerDefinition,
     In,
     InputDefinition,
-    MetadataEntry,
     ModeDefinition,
     Out,
     OutputDefinition,
@@ -893,7 +892,7 @@ def test_metadata_dynamic_outputs():
             keys = tuple(context.get_output_identifier())
             self.values[keys] = obj
 
-            yield EventMetadataEntry.text(label="handle_output", text="I come from handle_output")
+            yield MetadataEntry.text(label="handle_output", text="I come from handle_output")
 
         def load_input(self, context):
             keys = tuple(context.upstream_output.get_output_identifier())
