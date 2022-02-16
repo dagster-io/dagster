@@ -23,7 +23,7 @@ class _Repository:
         self.description = check.opt_str_param(description, "description")
 
     def __call__(self, fn: Callable[[], Any]) -> RepositoryDefinition:
-        from dagster.core.asset_defs import AssetCollection
+        from dagster.core.asset_defs import SourceAsset, AssetGroup
 
         check.callable_param(fn, "fn")
 

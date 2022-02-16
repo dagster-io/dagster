@@ -559,7 +559,7 @@ class CachingRepositoryData(RepositoryData):
                 Use this constructor when you have no need to lazy load pipelines/jobs or other
                 definitions.
         """
-        from dagster.core.asset_defs import AssetCollection, build_assets_job
+        from dagster.core.asset_defs import SourceAsset, AssetGroup, build_assets_job
 
         pipelines_or_jobs = {}
         partition_sets = {}
@@ -625,14 +625,14 @@ class CachingRepositoryData(RepositoryData):
                     )
                 pipelines_or_jobs[coerced.name] = coerced
 
-            elif isinstance(definition, AssetCollection):
-                asset_collection = definition
-                pipelines_or_jobs[asset_collection.all_assets_job_name] = build_assets_job(
-                    asset_collection.all_assets_job_name,
-                    assets=asset_collection.assets,
-                    source_assets=asset_collection.source_assets,
-                    resource_defs=asset_collection.resource_defs,
-                    executor_def=asset_collection.executor_def,
+            elif isinstance(definition, AssetGroup):
+                asset_group = definition
+                pipelines_or_jobs[asset_group.all_assets_job_name] = build_assets_job(
+                    asset_group.all_assets_job_name,
+                    assets=asset_group.assets,
+                    source_assets=asset_group.source_assets,
+                    resource_defs=asset_group.resource_defs,
+                    executor_def=asset_group.executor_def,
                 )
                 source_assets = {
                     source_asset.key: source_asset
@@ -937,7 +937,7 @@ class CachingRepositoryData(RepositoryData):
 
 
 class RepositoryDefinition:
-    """Define a repository that contains a collection of definitions.
+    """Define a repository that contains a group of definitions.
 
     Users should typically not create objects of this class directly. Instead, use the
     :py:func:`@repository` decorator.
