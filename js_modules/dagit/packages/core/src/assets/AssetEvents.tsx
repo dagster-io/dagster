@@ -109,6 +109,7 @@ function useRecentRunWarnings(
 ) {
   const {data} = useQuery<LastRunQuery, LastRunQueryVariables>(LAST_RUNS_QUERY, {
     skip: !repositorySelector,
+    pollInterval: 15 * 1000,
     variables: {
       repositorySelector: repositorySelector!,
     },
@@ -131,13 +132,14 @@ function useRecentRunWarnings(
 
     const assetName = opName;
     const jobRunsThatDidntMaterializeAsset = jobRunsCounts.find((jrc) => jrc.stepKey === assetName);
-    const latestRunForStepKey = latestRuns.find((lr) => lr.stepKey === assetName);
+    const latestRunForStepKey = latestRuns.find((lr) => lr.stepKey === assetName)?.run;
 
     const runWhichFailedToMaterialize =
       !jobRunsThatDidntMaterializeAsset &&
       latestRunForStepKey &&
-      (!grouped.length || grouped[0].latest?.runId !== latestRunForStepKey.run?.id)
-        ? latestRunForStepKey.run
+      latestRunForStepKey.status === 'FAILURE' &&
+      (!grouped.length || grouped[0].latest?.runId !== latestRunForStepKey?.id)
+        ? latestRunForStepKey
         : undefined;
 
     return {jobRunsThatDidntMaterializeAsset, runWhichFailedToMaterialize};
