@@ -635,11 +635,13 @@ class CachingRepositoryData(RepositoryData):
                 foreign_assets[definition.key] = definition
 
             elif isinstance(definition, AssetCollection):
-                pipelines_or_jobs["__REPOSITORY_MEGA_JOB"] = build_assets_job(
-                    "__REPOSITORY_MEGA_JOB",
-                    definition.assets,
-                    resource_defs=definition.resource_defs,
-                    executor_def=definition.executor_def,
+                asset_collection = definition
+                pipelines_or_jobs[asset_collection.all_assets_job_name] = build_assets_job(
+                    asset_collection.all_assets_job_name,
+                    assets=asset_collection.assets,
+                    source_assets=asset_collection.source_assets,
+                    resource_defs=asset_collection.resource_defs,
+                    executor_def=asset_collection.executor_def,
                 )
 
             else:

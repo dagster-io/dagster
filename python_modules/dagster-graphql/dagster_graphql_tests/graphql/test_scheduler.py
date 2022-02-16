@@ -417,7 +417,7 @@ def test_get_unloadable_job(graphql_context):
         second=59,
     )
     with pendulum.test(initial_datetime):
-        instance.add_job_state(
+        instance.add_instigator_state(
             InstigatorState(
                 _get_unloadable_schedule_origin("unloadable_running"),
                 InstigatorType.SCHEDULE,
@@ -429,7 +429,7 @@ def test_get_unloadable_job(graphql_context):
             )
         )
 
-        instance.add_job_state(
+        instance.add_instigator_state(
             InstigatorState(
                 _get_unloadable_schedule_origin("unloadable_stopped"),
                 InstigatorType.SCHEDULE,
@@ -512,6 +512,6 @@ def test_repository_batching(graphql_context):
     # batch call to fetch instigator state, instead of separate calls for each schedule (~18
     # distinct schedules in the repo)
     # 1) `get_run_records` is fetched to instantiate GrapheneRun
-    # 2) `all_stored_job_state` is fetched to instantiate GrapheneSchedule
+    # 2) `all_instigator_state` is fetched to instantiate GrapheneSchedule
     assert counts.get("DagsterInstance.get_run_records") == 1
-    assert counts.get("DagsterInstance.all_stored_job_state") == 1
+    assert counts.get("DagsterInstance.all_instigator_state") == 1

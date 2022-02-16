@@ -3,6 +3,7 @@ from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Sh
 from dagster.config.config_schema import ConfigSchema
 from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.asset_defs import (
+    AssetCollection,
     AssetIn,
     AssetsDefinition,
     ForeignAsset,
@@ -200,6 +201,7 @@ from dagster.core.storage.event_log import (
     RunShardedEventsCursor,
 )
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
+from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster.core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 from dagster.core.storage.mem_io_manager import mem_io_manager
@@ -248,6 +250,7 @@ from dagster.config.source import BoolSource, StringSource, IntSource  # isort:s
 
 __all__ = [
     # Definition
+    "AssetCollection",
     "AssetKey",
     "AssetIn",
     "AssetMaterialization",
@@ -507,6 +510,7 @@ __all__ = [
     "RootInputManager",
     "RootInputManagerDefinition",
     "root_input_manager",
+    "fs_asset_io_manager",
     "fs_io_manager",
     "mem_io_manager",
     "custom_path_fs_io_manager",

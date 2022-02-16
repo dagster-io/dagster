@@ -1,61 +1,72 @@
 import json
 import os
-import subprocess
 import textwrap
-from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Set
+from typing import AbstractSet, Any, Callable, Dict, Mapping, Optional, Sequence, Set, Tuple
 
-from dagster import AssetKey, Out, Output, SolidExecutionContext, check
+from dagster import AssetKey, Out, Output, SolidExecutionContext, check, get_dagster_logger
 from dagster.core.asset_defs import AssetsDefinition, multi_asset
+from dagster_dbt.cli.types import DbtCliOutput
+from dagster_dbt.cli.utils import execute_cli
 from dagster_dbt.utils import generate_materializations
 
 
 def _load_manifest_for_project(
     project_dir: str, profiles_dir: str, target_dir: str, select: str
-) -> Mapping[str, Any]:
-    command_list = [
-        "dbt",
-        "ls",
-        "--project-dir",
-        project_dir,
-        "--profiles-dir",
-        profiles_dir,
-        "--select",
-        select,
-        "--resource-type",
-        "model",
-    ]
+) -> Tuple[Mapping[str, Any], DbtCliOutput]:
     # running "dbt ls" regenerates the manifest.json, which includes a superset of the actual
     # "dbt ls" output
-    subprocess.Popen(command_list, stdout=subprocess.PIPE).wait()
+    cli_output = execute_cli(
+        executable="dbt",
+        command="ls",
+        log=get_dagster_logger(),
+        flags_dict={
+            "project-dir": project_dir,
+            "profiles-dir": profiles_dir,
+            "select": select,
+            "resource-type": "model",
+            "output": "json",
+        },
+        warn_error=False,
+        ignore_handled_error=False,
+        target_path=target_dir,
+    )
     manifest_path = os.path.join(target_dir, "manifest.json")
     with open(manifest_path, "r") as f:
-        return json.load(f)
+        return json.load(f), cli_output
 
 
 def _get_node_name(node_info: Mapping[str, Any]):
     return "__".join([node_info["resource_type"], node_info["package_name"], node_info["name"]])
 
 
+def _get_node_asset_key(node_info):
+    return AssetKey(node_info["name"])
+
+
 def _dbt_nodes_to_assets(
-    node_infos: Sequence[Mapping[str, Any]],
+    dbt_nodes: Mapping[str, Any],
+    select: str,
+    selected_unique_ids: AbstractSet[str] = None,
     runtime_metadata_fn: Optional[
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
     io_manager_key: Optional[str] = None,
+    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
 ) -> AssetsDefinition:
     outs: Dict[str, Out] = {}
     sources: Set[AssetKey] = set()
-    out_name_to_node_info: Dict[str, Dict[str, Any]] = {}
+    out_name_to_node_info: Dict[str, Mapping[str, Any]] = {}
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
-    for node_info in node_infos:
-        node_name = node_info["name"]
+    for unique_id, node_info in dbt_nodes.items():
+        if unique_id not in selected_unique_ids:
+            continue
         asset_deps = set()
-        for dep in node_info["depends_on"]["nodes"]:
-            dep_type = dep.split(".")[0]
-            dep_name = dep.split(".")[-1]
+        for dep_name in node_info["depends_on"]["nodes"]:
+            dep_type = dbt_nodes[dep_name]["resource_type"]
+            dep_asset_key = node_info_to_asset_key(dbt_nodes[dep_name])
             if dep_type == "source":
-                sources.add(AssetKey(dep_name))
-            asset_deps.add(AssetKey(dep_name))
+                sources.add(dep_asset_key)
+            asset_deps.add(dep_asset_key)
         code_block = textwrap.indent(node_info["raw_sql"], "    ")
         description_sections = [
             node_info["description"],
@@ -66,9 +77,10 @@ def _dbt_nodes_to_assets(
         ]
         description = "\n\n".join(filter(None, description_sections))
 
+        node_name = node_info["name"]
         outs[node_name] = Out(
             dagster_type=None,
-            asset_key=AssetKey(node_name),
+            asset_key=node_info_to_asset_key(node_info),
             description=description,
             io_manager_key=io_manager_key,
         )
@@ -84,7 +96,7 @@ def _dbt_nodes_to_assets(
         internal_asset_deps=internal_asset_deps,
     )
     def _dbt_project_multi_assset(context):
-        dbt_output = context.resources.dbt.run()
+        dbt_output = context.resources.dbt.run(select=select)
         # yield an Output for each materialization generated in the run
         for materialization in generate_materializations(dbt_output):
             output_name = materialization.asset_key.path[-1]
@@ -125,6 +137,7 @@ def load_assets_from_dbt_project(
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
     io_manager_key: Optional[str] = None,
+    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
 ) -> Sequence[AssetsDefinition]:
     """
     Loads a set of DBT models from a DBT project into Dagster assets.
@@ -143,6 +156,9 @@ def load_assets_from_dbt_project(
         io_manager_key (Optional[str]): The IO manager key that will be set on each of the returned
             assets. When other ops are downstream of the loaded assets, the IOManager specified
             here determines how the inputs to those ops are loaded. Defaults to "io_manager".
+        node_info_to_asset_key: (Mapping[str, Any] -> AssetKey): A function that takes a dictionary
+            of dbt node info and returns the AssetKey that you want to represent that node. By
+            default, the asset key will simply be the name of the dbt model.
     """
     check.str_param(project_dir, "project_dir")
     profiles_dir = check.opt_str_param(
@@ -150,8 +166,24 @@ def load_assets_from_dbt_project(
     )
     target_dir = check.opt_str_param(target_dir, "target_dir", os.path.join(project_dir, "target"))
 
-    manifest_json = _load_manifest_for_project(project_dir, profiles_dir, target_dir, select or "*")
-    return load_assets_from_dbt_manifest(manifest_json, runtime_metadata_fn, io_manager_key)
+    manifest_json, cli_output = _load_manifest_for_project(
+        project_dir, profiles_dir, target_dir, select or "*"
+    )
+    selected_unique_ids: Set[str] = set(
+        filter(None, (line.get("unique_id") for line in cli_output.logs))
+    )
+
+    dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"]}
+    return [
+        _dbt_nodes_to_assets(
+            dbt_nodes,
+            select=select or "*",
+            selected_unique_ids=selected_unique_ids,
+            runtime_metadata_fn=runtime_metadata_fn,
+            io_manager_key=io_manager_key,
+            node_info_to_asset_key=node_info_to_asset_key,
+        ),
+    ]
 
 
 def load_assets_from_dbt_manifest(
@@ -160,11 +192,13 @@ def load_assets_from_dbt_manifest(
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
     io_manager_key: Optional[str] = None,
+    selected_unique_ids: Optional[AbstractSet[str]] = None,
+    node_info_to_asset_key: Callable[[Mapping[str, Any]], AssetKey] = _get_node_asset_key,
 ) -> Sequence[AssetsDefinition]:
     """
-    Loads a set of DBT models, described in a manifest.json, into Dagster assets.
+    Loads a set of dbt models, described in a manifest.json, into Dagster assets.
 
-    Creates one Dagster asset for each DBT model.
+    Creates one Dagster asset for each dbt model.
 
     Args:
         manifest_json (Optional[Mapping[str, Any]]): The contents of a DBT manifest.json, which contains
@@ -175,13 +209,32 @@ def load_assets_from_dbt_manifest(
         io_manager_key (Optional[str]): The IO manager key that will be set on each of the returned
             assets. When other ops are downstream of the loaded assets, the IOManager specified
             here determines how the inputs to those ops are loaded. Defaults to "io_manager".
+        selected_unique_ids (Optional[Set[str]]): The set of dbt unique_ids that you want to load
+            as assets.
+        node_info_to_asset_key: (Mapping[str, Any] -> AssetKey): A function that takes a dictionary
+            of dbt node info and returns the AssetKey that you want to represent that node. By
+            default, the asset key will simply be the name of the dbt model.
     """
     check.dict_param(manifest_json, "manifest_json", key_type=str)
-    dbt_nodes = list(manifest_json["nodes"].values())
+    dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"]}
+    selected_unique_ids = selected_unique_ids or set(
+        unique_id
+        for unique_id, node_info in dbt_nodes.items()
+        if node_info["resource_type"] == "model"
+    )
+    # create a selection string by converting the unique ids to model names
+    select = (
+        "*"
+        if selected_unique_ids is None
+        else " ".join((uid.split(".")[-1] for uid in selected_unique_ids))
+    )
     return [
         _dbt_nodes_to_assets(
-            [node_info for node_info in dbt_nodes if node_info["resource_type"] == "model"],
+            dbt_nodes,
             runtime_metadata_fn=runtime_metadata_fn,
             io_manager_key=io_manager_key,
+            select=select,
+            selected_unique_ids=selected_unique_ids,
+            node_info_to_asset_key=node_info_to_asset_key,
         )
     ]

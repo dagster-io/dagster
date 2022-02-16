@@ -20,6 +20,7 @@ from dagster.core.definitions.resource_definition import ResourceDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.execution.context.input import InputContext, build_input_context
 from dagster.core.execution.context.output import build_output_context
+from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.storage.root_input_manager import RootInputManagerDefinition, root_input_manager
 from dagster.utils.backcompat import experimental
 from dagster.utils.merger import merge_dicts
@@ -92,7 +93,9 @@ def build_assets_job(
         output_mappings=None,
         config=None,
     ).to_job(
-        resource_defs=merge_dicts(resource_defs or {}, {"root_manager": root_manager}),
+        resource_defs=merge_dicts(
+            {"io_manager": fs_asset_io_manager}, resource_defs or {}, {"root_manager": root_manager}
+        ),
         config=config or partitioned_config,
         tags=tags,
         executor_def=executor_def,

@@ -14,98 +14,90 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """Delete all schedules from storage"""
 
     @abc.abstractmethod
-    def all_stored_job_state(
-        self, repository_origin_id: str = None, job_type: InstigatorType = None
+    def all_instigator_state(
+        self, repository_origin_id: str = None, instigator_type: InstigatorType = None
     ) -> Iterable[InstigatorState]:
         """Return all InstigationStates present in storage
 
         Args:
             repository_origin_id (Optional[str]): The ExternalRepository target id to scope results to
-            job_type (Optional[InstigatorType]): The InstigatorType to scope results to
+            instigator_type (Optional[InstigatorType]): The InstigatorType to scope results to
         """
 
     @abc.abstractmethod
-    def get_job_state(self, job_origin_id: str) -> InstigatorState:
-        """Return the unique job with the given id
+    def get_instigator_state(self, origin_id: str) -> InstigatorState:
+        """Return the instigator state for the given id
 
         Args:
-            job_origin_id (str): The unique job identifier
+            origin_id (str): The unique instigator identifier
         """
 
     @abc.abstractmethod
-    def add_job_state(self, job: InstigatorState):
-        """Add a job to storage.
+    def add_instigator_state(self, state: InstigatorState):
+        """Add an instigator state to storage.
 
         Args:
-            job (InstigatorState): The job to add
+            state (InstigatorState): The state to add
         """
 
     @abc.abstractmethod
-    def update_job_state(self, job: InstigatorState):
-        """Update a job in storage.
+    def update_instigator_state(self, state: InstigatorState):
+        """Update an instigator state in storage.
 
         Args:
-            job (InstigatorState): The job to update
+            state (InstigatorState): The state to update
         """
 
     @abc.abstractmethod
-    def delete_job_state(self, job_origin_id: str):
-        """Delete a job in storage.
+    def delete_instigator_state(self, origin_id: str):
+        """Delete a state in storage.
 
         Args:
-            job_origin_id (str): The id of the ExternalJob target to delete
+            origin_id (str): The id of the instigator target to delete
         """
 
     @abc.abstractmethod
-    def get_job_ticks(
-        self, job_origin_id: str, before: float = None, after: float = None, limit: int = None
+    def get_ticks(
+        self, origin_id: str, before: float = None, after: float = None, limit: int = None
     ) -> Iterable[InstigatorTick]:
-        """Get the ticks for a given job.
+        """Get the ticks for a given instigator.
 
         Args:
-            job_origin_id (str): The id of the ExternalJob target
+            origin_id (str): The id of the instigator target
         """
 
     @abc.abstractmethod
-    def get_latest_job_tick(self, job_origin_id: str) -> InstigatorTick:
-        """Get the most recent tick for a given job.
+    def create_tick(self, tick_data: TickData):
+        """Add a tick to storage.
 
         Args:
-            job_origin_id (str): The id of the ExternalJob target
+            tick_data (TickData): The tick to add
         """
 
     @abc.abstractmethod
-    def create_job_tick(self, job_tick_data: TickData):
-        """Add a job tick to storage.
+    def update_tick(self, tick: InstigatorTick):
+        """Update a tick already in storage.
 
         Args:
-            job_tick_data (TickData): The job tick to add
+            tick (InstigatorTick): The tick to update
         """
 
     @abc.abstractmethod
-    def update_job_tick(self, tick: InstigatorTick):
-        """Update a job tick already in storage.
+    def purge_ticks(self, origin_id: str, tick_status: TickStatus, before: float):
+        """Wipe ticks for an instigator for a certain status and timestamp.
 
         Args:
-            tick (InstigatorTick): The job tick to update
-        """
-
-    @abc.abstractmethod
-    def purge_job_ticks(self, job_origin_id: str, tick_status: TickStatus, before: float):
-        """Wipe ticks for a job for a certain status and timestamp.
-
-        Args:
-            job_origin_id (str): The id of the ExternalJob target to delete
+            origin_id (str): The id of the instigator target to delete
             tick_status (TickStatus): The tick status to wipe
             before (datetime): All ticks before this datetime will get purged
         """
 
     @abc.abstractmethod
-    def get_job_tick_stats(self, job_origin_id: str):
-        """Get tick stats for a given job.
+    def get_tick_stats(self, origin_id: str):
+        """Get tick stats for a given instigator.
 
         Args:
-            job_origin_id (str): The id of the ExternalJob target
+            origin_id (str): The id of the instigator target
         """
 
     @abc.abstractmethod

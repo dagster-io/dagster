@@ -87,6 +87,7 @@ type Repository {
   assetNodes: [AssetNode!]!
   displayMetadata: [RepositoryMetadata!]!
   inProgressRunsByStep: [InProgressRunsByStep!]!
+  latestRunByStep: [RunStatsByStep!]!
 }
 
 type RepositoryLocation {
@@ -1342,6 +1343,20 @@ type InProgressRunsByStep {
   stepKey: String!
   unstartedRuns: [Run!]!
   inProgressRuns: [Run!]!
+}
+
+union RunStatsByStep = LatestRun | JobRunsCount
+
+type LatestRun {
+  stepKey: String!
+  run: Run
+}
+
+type JobRunsCount {
+  stepKey: String!
+  jobNames: [String!]!
+  count: Int!
+  sinceLatestMaterialization: Boolean!
 }
 
 union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError

@@ -14,6 +14,8 @@ A software-defined asset combines:
 
 .. autodecorator:: asset
 
+.. autoclass:: AssetCollection
+
 .. autodecorator:: multi_asset
 
 .. autofunction:: build_assets_job
@@ -22,3 +24,5 @@ A software-defined asset combines:
 
 .. autoclass:: ForeignAsset
 
+.. autoconfigurable:: fs_asset_io_manager
+  :annotation: IOManagerDefinition

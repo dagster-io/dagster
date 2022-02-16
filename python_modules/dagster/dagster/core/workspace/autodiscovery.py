@@ -8,6 +8,7 @@ from dagster import (
     PipelineDefinition,
     RepositoryDefinition,
 )
+from dagster.core.asset_defs import AssetCollection
 from dagster.core.code_pointer import load_python_file, load_python_module
 
 LoadableTarget = namedtuple("LoadableTarget", "attribute target_definition")
@@ -78,10 +79,26 @@ def loadable_targets_from_loaded_module(module):
             )
         )
 
-    else:
+    loadable_asset_collections = _loadable_targets_of_type(module, AssetCollection)
+    if len(loadable_asset_collections) == 1:
+        return loadable_asset_collections
+
+    elif len(loadable_asset_collections) > 1:
+        var_names = repr([a.attribute for a in loadable_asset_collections])
         raise DagsterInvariantViolationError(
-            'No jobs, pipelines, graphs, or repositories found in "{}".'.format(module.__name__)
+            (
+                f'More than one asset collection found in "{module.__name__}". '
+                "If you load a file or module directly it must either have one repository, one "
+                "job, one pipeline, one graph, or one asset collection scope. Found asset "
+                f"collections defined in variables: {var_names}."
+            )
         )
+
+    raise DagsterInvariantViolationError(
+        'No jobs, pipelines, graphs, asset collections, or repositories found in "{}".'.format(
+            module.__name__
+        )
+    )
 
 
 def _loadable_targets_of_type(module, klass):

@@ -120,8 +120,10 @@ const buildSuggestions = (
     const solidItem = item as GraphExplorerSolidHandleFragment_solid;
     const isGraph =
       solidItem.definition && solidItem.definition.__typename === 'CompositeSolidDefinition';
+
     return {name: item.name, isGraph};
   });
+
   for (const item of available) {
     if (isDynamicStep(item.name)) {
       available.push({name: dynamicKeyWithoutIndex(item.name), isGraph: item.isGraph});

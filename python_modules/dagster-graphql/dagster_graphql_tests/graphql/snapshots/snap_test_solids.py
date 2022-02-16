@@ -252,6 +252,54 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'asset_1'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'failure_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'asset_1'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'asset_2'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'failure_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'asset_2'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'asset_3'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'failure_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'asset_3'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'asset_one'
                 },
                 'invocations': [

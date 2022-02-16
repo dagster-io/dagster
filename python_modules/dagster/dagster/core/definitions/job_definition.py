@@ -1,5 +1,17 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional, Tuple, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from dagster import check
 from dagster.core.definitions.composition import MappedInputPlaceholder
@@ -86,6 +98,10 @@ class JobDefinition(PipelineDefinition):
     @property
     def executor_def(self) -> ExecutorDefinition:
         return self.mode_definitions[0].executor_defs[0]
+
+    @property
+    def resource_defs(self) -> Mapping[str, ResourceDefinition]:
+        return self.mode_definitions[0].resource_defs
 
     def execute_in_process(
         self,
