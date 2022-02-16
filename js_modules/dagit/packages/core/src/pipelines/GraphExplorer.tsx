@@ -240,10 +240,10 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
 
           {solids.length === 0 ? (
             <EmptyDAGNotice nodeType="op" isGraph={isGraph} />
-          ) : Object.keys(queryResultOps.all).length === 0 ? (
-            <EntirelyFilteredDAGNotice nodeType="op" />
           ) : queryResultOps.applyingEmptyDefault ? (
             <LargeDAGNotice nodeType="op" />
+          ) : Object.keys(queryResultOps.all).length === 0 ? (
+            <EntirelyFilteredDAGNotice nodeType="op" />
           ) : undefined}
 
           <PipelineGraphContainer

@@ -296,10 +296,10 @@ const AssetGraphExplorerWithData: React.FC<
         <>
           {graphQueryItems.length === 0 ? (
             <EmptyDAGNotice nodeType="asset" isGraph />
-          ) : Object.keys(assetGraphData.nodes).length === 0 ? (
-            <EntirelyFilteredDAGNotice nodeType="asset" />
           ) : applyingEmptyDefault ? (
             <LargeDAGNotice nodeType="asset" />
+          ) : Object.keys(assetGraphData.nodes).length === 0 ? (
+            <EntirelyFilteredDAGNotice nodeType="asset" />
           ) : undefined}
           <SVGViewport
             ref={(r) => (viewportEl.current = r || undefined)}

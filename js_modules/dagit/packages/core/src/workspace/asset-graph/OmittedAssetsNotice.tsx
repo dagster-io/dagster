@@ -1,9 +1,8 @@
 import {gql, useQuery} from '@apollo/client';
-import {isEqual} from 'lodash';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {ColorsWIP, IconWIP} from '../../../../ui/src';
+import {ColorsWIP} from '../../../../ui/src';
 import {AssetKey} from '../../assets/types';
 
 import {OmittedAssetCountQuery} from './types/OmittedAssetCountQuery';
@@ -22,18 +21,16 @@ export const OmittedAssetsNotice: React.FC<{assetKeys: AssetKey[]}> = ({assetKey
   const missing = allAssetKeys.filter((a) => !assetKeysJSONs.includes(JSON.stringify(a.key)))
     .length;
 
-  return (
-    <Container>
-      <IconWIP name="warning" size={16} color={ColorsWIP.Yellow500} />
-      {`${missing} asset${missing > 1 ? 's have' : ' has'} no definition`}
-    </Container>
-  );
+  if (missing === 0) {
+    return <span />;
+  }
+  return <Container>Only software-defined assets are shown</Container>;
 };
 
 const Container = styled.div`
-  background: ${ColorsWIP.Yellow50};
+  background: ${ColorsWIP.Gray100};
   border-radius: 8px;
-  color: ${ColorsWIP.Yellow700};
+  color: ${ColorsWIP.Gray500};
   align-items: center;
   display: flex;
   padding: 4px 8px;
