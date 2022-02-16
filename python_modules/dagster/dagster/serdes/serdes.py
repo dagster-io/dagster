@@ -593,3 +593,14 @@ def _path_msg(descent_path: str) -> str:
 
 def _root(val: Any) -> str:
     return f"<root:{val.__class__.__name__}>"
+
+
+def replace_storage_keys(storage_dict: Dict[str, Any], key_mapping: Dict[str, str]):
+    """ returns a version of the storage dict that replaces all the keys """
+    result = {}
+    for key, value in storage_dict.items():
+        if key not in key_mapping:
+            result[key] = value
+        else:
+            result[key_mapping[key]] = value
+    return result

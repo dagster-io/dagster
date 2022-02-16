@@ -39,11 +39,11 @@ class SkippedSensorRun(namedtuple("SkippedSensorRun", "run_key existing_run")):
 
 
 class SensorLaunchContext:
-    def __init__(self, external_sensor, job_state, tick, instance, logger):
+    def __init__(self, external_sensor, state, tick, instance, logger):
         self._external_sensor = external_sensor
         self._instance = instance
         self._logger = logger
-        self._job_state = job_state
+        self._state = state
         self._tick = tick
 
     @property
@@ -92,14 +92,12 @@ class SensorLaunchContext:
         self._instance.update_tick(self._tick)
         if self._tick.status in FULFILLED_TICK_STATES:
             last_run_key = (
-                self._job_state.job_specific_data.last_run_key
-                if self._job_state.job_specific_data
-                else None
+                self._state.instigator_data.last_run_key if self._state.instigator_data else None
             )
             if self._tick.run_keys:
                 last_run_key = self._tick.run_keys[-1]
             self._instance.update_instigator_state(
-                self._job_state.with_data(
+                self._state.with_data(
                     SensorInstigatorData(
                         last_tick_timestamp=self._tick.timestamp,
                         last_run_key=last_run_key,
@@ -121,7 +119,7 @@ class SensorLaunchContext:
         self._write()
 
         self._instance.purge_ticks(
-            self._job_state.job_origin_id,
+            self._state.instigator_origin_id,
             tick_status=TickStatus.SKIPPED,
             before=pendulum.now("UTC").subtract(days=7).timestamp(),  #  keep the last 7 days
         )
@@ -276,9 +274,9 @@ def execute_sensor_iteration(
 
             tick = instance.create_tick(
                 TickData(
-                    job_origin_id=sensor_state.job_origin_id,
-                    job_name=sensor_state.job_name,
-                    job_type=InstigatorType.SENSOR,
+                    instigator_origin_id=sensor_state.instigator_origin_id,
+                    instigator_name=sensor_state.instigator_name,
+                    instigator_type=InstigatorType.SENSOR,
                     status=TickStatus.STARTED,
                     timestamp=now.timestamp(),
                 )
@@ -314,7 +312,7 @@ def _evaluate_sensor(
     instance,
     workspace,
     external_sensor,
-    job_state,
+    state,
     sensor_debug_crash_flags=None,
 ):
     context.logger.info(f"Checking for new runs for sensor: {external_sensor.name}")
@@ -329,9 +327,9 @@ def _evaluate_sensor(
         instance,
         repository_handle,
         external_sensor.name,
-        job_state.job_specific_data.last_tick_timestamp if job_state.job_specific_data else None,
-        job_state.job_specific_data.last_run_key if job_state.job_specific_data else None,
-        job_state.job_specific_data.cursor if job_state.job_specific_data else None,
+        state.instigator_data.last_tick_timestamp if state.instigator_data else None,
+        state.instigator_data.last_run_key if state.instigator_data else None,
+        state.instigator_data.cursor if state.instigator_data else None,
     )
 
     yield
@@ -452,17 +450,17 @@ def _evaluate_sensor(
     yield
 
 
-def _is_under_min_interval(job_state, external_sensor, now):
-    if not job_state.job_specific_data:
+def _is_under_min_interval(state, external_sensor, now):
+    if not state.instigator_data:
         return False
 
-    if not job_state.job_specific_data.last_tick_timestamp:
+    if not state.instigator_data.last_tick_timestamp:
         return False
 
     if not external_sensor.min_interval_seconds:
         return False
 
-    elapsed = now.timestamp() - job_state.job_specific_data.last_tick_timestamp
+    elapsed = now.timestamp() - state.instigator_data.last_tick_timestamp
     return elapsed < external_sensor.min_interval_seconds
 
 

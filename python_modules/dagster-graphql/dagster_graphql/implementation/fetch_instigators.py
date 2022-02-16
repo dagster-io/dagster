@@ -11,27 +11,32 @@ def get_unloadable_instigator_states_or_error(graphene_info, instigator_type=Non
     from ..schema.instigation import GrapheneInstigationState, GrapheneInstigationStates
 
     check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
-    job_states = graphene_info.context.instance.all_instigator_state(
+    instigator_states = graphene_info.context.instance.all_instigator_state(
         instigator_type=instigator_type
     )
-    external_jobs = [
-        job
+    external_instigators = [
+        instigator
         for repository_location in graphene_info.context.repository_locations
         for repository in repository_location.get_repositories().values()
-        for job in repository.get_external_schedules() + repository.get_external_sensors()
+        for instigator in repository.get_external_schedules() + repository.get_external_sensors()
     ]
 
-    job_origin_ids = {job.get_external_origin_id() for job in external_jobs}
+    instigator_origin_ids = {
+        instigator.get_external_origin_id() for instigator in external_instigators
+    }
 
     unloadable_states = [
-        job_state
-        for job_state in job_states
-        if job_state.job_origin_id not in job_origin_ids
-        and job_state.status == InstigatorStatus.RUNNING
+        instigator_state
+        for instigator_state in instigator_states
+        if instigator_state.instigator_origin_id not in instigator_origin_ids
+        and instigator_state.status == InstigatorStatus.RUNNING
     ]
 
     return GrapheneInstigationStates(
-        results=[GrapheneInstigationState(job_state=job_state) for job_state in unloadable_states]
+        results=[
+            GrapheneInstigationState(instigator_state=instigator_state)
+            for instigator_state in unloadable_states
+        ]
     )
 
 
