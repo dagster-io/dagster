@@ -315,6 +315,10 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     def delete_run(self, run_id: str):
         """Remove a run from storage"""
 
+    @property
+    def supports_bucket_queries(self):
+        return True
+
     def migrate(self, print_fn: Callable = None, force_rebuild_all: bool = False):
         """Call this method to run any required data migrations"""
 

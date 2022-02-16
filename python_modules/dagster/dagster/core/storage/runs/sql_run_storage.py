@@ -241,6 +241,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def _bucket_rank_column(self, bucket_by, order_by, ascending):
         check.inst_param(bucket_by, "bucket_by", (JobBucket, TagBucket))
+        check.invariant(
+            self.supports_bucket_queries, "Bucket queries are not supported by this storage layer"
+        )
         sorting_column = getattr(RunsTable.c, order_by) if order_by else RunsTable.c.id
         direction = db.asc if ascending else db.desc
         bucket_column = (
