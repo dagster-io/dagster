@@ -8,6 +8,7 @@ import styled from 'styled-components/macro';
 import {filterByQuery, GraphQueryItem} from '../../app/GraphQueryImpl';
 import {QueryCountdown} from '../../app/QueryCountdown';
 import {tokenForAssetKey} from '../../app/Util';
+import {AssetKey} from '../../assets/types';
 import {SVGViewport} from '../../graph/SVGViewport';
 import {useDocumentTitle} from '../../hooks/useDocumentTitle';
 import {
@@ -34,6 +35,7 @@ import {AssetLinks} from './AssetLinks';
 import {AssetNode, ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
 import {ForeignNode} from './ForeignNode';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
+import {OmittedAssetsNotice} from './OmittedAssetsNotice';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {
   buildGraphData,
@@ -151,6 +153,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
         }
 
         const hasCycles = graphHasCycles(assetGraphData);
+        const assetKeys = fetchResult.data?.assetNodes.map((a) => a.assetKey) || [];
 
         if (hasCycles) {
           return (
@@ -165,6 +168,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
         return (
           <AssetGraphExplorerWithData
             key={explorerPath.pipelineName}
+            assetKeys={assetKeys}
             assetGraphData={assetGraphData}
             graphQueryItems={graphQueryItems}
             applyingEmptyDefault={applyingEmptyDefault}
@@ -180,6 +184,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
 
 const AssetGraphExplorerWithData: React.FC<
   {
+    assetKeys: AssetKey[];
     assetGraphData: GraphData;
     graphQueryItems: GraphQueryItem[];
     liveDataByNode: LiveData;
@@ -384,23 +389,28 @@ const AssetGraphExplorerWithData: React.FC<
           )}
 
           <Box
-            flex={{alignItems: 'center', gap: 12}}
+            flex={{direction: 'column', alignItems: 'flex-end', gap: 8}}
             style={{position: 'absolute', right: 12, top: 12}}
           >
-            <QueryCountdown pollInterval={5 * 1000} queryResult={liveDataQueryResult} />
+            <Box flex={{alignItems: 'center', gap: 12}}>
+              <QueryCountdown pollInterval={5 * 1000} queryResult={liveDataQueryResult} />
 
-            <LaunchAssetExecutionButton
-              title={titleForLaunch(selectedGraphNodes, liveDataByNode)}
-              preferredJobName={explorerPath.pipelineName}
-              assets={launchGraphNodes.map((n) => n.definition)}
-              upstreamAssetKeys={uniqBy(
-                flatMap(launchGraphNodes.map((n) => n.definition.dependencyKeys)),
-                (key) => JSON.stringify(key),
-              ).filter(
-                (key) =>
-                  !launchGraphNodes.some((n) => JSON.stringify(n.assetKey) === JSON.stringify(key)),
-              )}
-            />
+              <LaunchAssetExecutionButton
+                title={titleForLaunch(selectedGraphNodes, liveDataByNode)}
+                preferredJobName={explorerPath.pipelineName}
+                assets={launchGraphNodes.map((n) => n.definition)}
+                upstreamAssetKeys={uniqBy(
+                  flatMap(launchGraphNodes.map((n) => n.definition.dependencyKeys)),
+                  (key) => JSON.stringify(key),
+                ).filter(
+                  (key) =>
+                    !launchGraphNodes.some(
+                      (n) => JSON.stringify(n.assetKey) === JSON.stringify(key),
+                    ),
+                )}
+              />
+            </Box>
+            {!props.pipelineSelector && <OmittedAssetsNotice assetKeys={props.assetKeys} />}
           </Box>
           <QueryOverlay>
             <GraphQueryInput
