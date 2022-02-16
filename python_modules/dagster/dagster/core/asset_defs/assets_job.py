@@ -27,14 +27,14 @@ from dagster.utils.merger import merge_dicts
 
 from .asset import AssetsDefinition
 from .asset_partitions import get_upstream_partitions_for_partition_range
-from .foreign_asset import ForeignAsset
+from .source_asset import SourceAsset
 
 
 @experimental
 def build_assets_job(
     name: str,
     assets: List[AssetsDefinition],
-    source_assets: Optional[Sequence[Union[ForeignAsset, AssetsDefinition]]] = None,
+    source_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]] = None,
     resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
     config: Union[ConfigMapping, Dict[str, Any], PartitionedConfig] = None,
@@ -51,7 +51,7 @@ def build_assets_job(
         assets (List[AssetsDefinition]): A list of assets or
             multi-assets - usually constructed using the :py:func:`@asset` or :py:func:`@multi_asset`
             decorator.
-        source_assets (Optional[Sequence[Union[ForeignAsset, AssetsDefinition]]]): A list of
+        source_assets (Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]): A list of
             assets that are not materialized by this job, but that assets in this job depend on.
         resource_defs (Optional[Dict[str, ResourceDefinition]]): Resource defs to be included in
             this job.
@@ -76,7 +76,7 @@ def build_assets_job(
     """
     check.str_param(name, "name")
     check.list_param(assets, "assets", of_type=AssetsDefinition)
-    check.opt_list_param(source_assets, "source_assets", of_type=(ForeignAsset, AssetsDefinition))
+    check.opt_list_param(source_assets, "source_assets", of_type=(SourceAsset, AssetsDefinition))
     check.opt_str_param(description, "description")
     source_assets_by_key = build_source_assets_by_key(source_assets)
 
@@ -182,11 +182,11 @@ def build_job_partitions_from_assets(
 
 
 def build_source_assets_by_key(
-    source_assets: Optional[Sequence[Union[ForeignAsset, AssetsDefinition]]]
-) -> Mapping[AssetKey, Union[ForeignAsset, OutputDefinition]]:
-    source_assets_by_key: Dict[AssetKey, Union[ForeignAsset, OutputDefinition]] = {}
+    source_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]]
+) -> Mapping[AssetKey, Union[SourceAsset, OutputDefinition]]:
+    source_assets_by_key: Dict[AssetKey, Union[SourceAsset, OutputDefinition]] = {}
     for asset_source in source_assets or []:
-        if isinstance(asset_source, ForeignAsset):
+        if isinstance(asset_source, SourceAsset):
             source_assets_by_key[asset_source.key] = asset_source
         elif isinstance(asset_source, AssetsDefinition):
             for asset_key, output_def in asset_source.output_defs_by_asset_key.items():
@@ -228,7 +228,7 @@ def build_op_deps(
 
 
 def build_root_manager(
-    source_assets_by_key: Mapping[AssetKey, Union[ForeignAsset, OutputDefinition]]
+    source_assets_by_key: Mapping[AssetKey, Union[SourceAsset, OutputDefinition]]
 ) -> RootInputManagerDefinition:
     source_asset_io_manager_keys = {
         source_asset.io_manager_key for source_asset in source_assets_by_key.values()

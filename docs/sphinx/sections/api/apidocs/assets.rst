@@ -22,7 +22,7 @@ A software-defined asset combines:
 
 .. autoclass:: AssetIn
 
-.. autoclass:: ForeignAsset
+.. autoclass:: SourceAsset
 
 .. autoconfigurable:: fs_asset_io_manager
   :annotation: IOManagerDefinition

@@ -8,7 +8,7 @@ from ..definitions.resource_definition import ResourceDefinition
 from ..errors import DagsterInvalidDefinitionError
 from .asset import AssetsDefinition
 from .assets_job import build_root_manager, build_source_assets_by_key
-from .foreign_asset import ForeignAsset
+from .source_asset import SourceAsset
 
 
 class AssetCollection(
@@ -16,7 +16,7 @@ class AssetCollection(
         "_AssetCollection",
         [
             ("assets", Sequence[AssetsDefinition]),
-            ("source_assets", Sequence[ForeignAsset]),
+            ("source_assets", Sequence[SourceAsset]),
             ("resource_defs", Mapping[str, ResourceDefinition]),
             ("executor_def", Optional[ExecutorDefinition]),
         ],
@@ -25,14 +25,14 @@ class AssetCollection(
     def __new__(
         cls,
         assets: Sequence[AssetsDefinition],
-        source_assets: Optional[Sequence[ForeignAsset]] = None,
+        source_assets: Optional[Sequence[SourceAsset]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
     ):
         from dagster.core.definitions.graph_definition import default_job_io_manager
 
         check.list_param(assets, "assets", of_type=AssetsDefinition)
-        source_assets = check.opt_list_param(source_assets, "source_assets", of_type=ForeignAsset)
+        source_assets = check.opt_list_param(source_assets, "source_assets", of_type=SourceAsset)
         resource_defs = check.opt_dict_param(
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
@@ -71,7 +71,7 @@ class AssetCollection(
 
 def _validate_resource_reqs_for_asset_collection(
     asset_list: Sequence[AssetsDefinition],
-    source_assets: Sequence[ForeignAsset],
+    source_assets: Sequence[SourceAsset],
     resource_defs: Mapping[str, ResourceDefinition],
 ):
     present_resource_keys = set(resource_defs.keys())

@@ -1,7 +1,7 @@
 import pytest
 from dagster import AssetKey, DagsterInvariantViolationError, Out
 from dagster.check import CheckError
-from dagster.core.asset_defs import AssetIn, ForeignAsset, asset, build_assets_job, multi_asset
+from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
 from dagster.core.host_representation.external_data import (
     ExternalAssetDependedBy,
     ExternalAssetDependency,
@@ -19,7 +19,7 @@ def test_single_asset_job():
         return 1
 
     assets_job = build_assets_job("assets_job", [asset1])
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], foreign_assets_by_key={})
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -45,7 +45,7 @@ def test_two_asset_job():
         assert asset1 == 1
 
     assets_job = build_assets_job("assets_job", [asset1, asset2])
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], foreign_assets_by_key={})
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -78,14 +78,14 @@ def test_two_asset_job():
 
 
 def test_input_name_matches_output_name():
-    not_result = ForeignAsset(key=AssetKey("not_result"), description=None)
+    not_result = SourceAsset(key=AssetKey("not_result"), description=None)
 
     @asset(ins={"result": AssetIn(asset_key=AssetKey("not_result"))})
     def something(result):  # pylint: disable=unused-argument
         pass
 
     assets_job = build_assets_job("assets_job", [something], source_assets=[not_result])
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], foreign_assets_by_key={})
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -127,7 +127,7 @@ def test_two_downstream_assets_job():
         assert asset1 == 1
 
     assets_job = build_assets_job("assets_job", [asset1, asset2_a, asset2_b])
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], foreign_assets_by_key={})
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -186,7 +186,7 @@ def test_cross_job_asset_dependency():
     assets_job1 = build_assets_job("assets_job1", [asset1])
     assets_job2 = build_assets_job("assets_job2", [asset2], source_assets=[asset1])
     external_asset_nodes = external_asset_graph_from_defs(
-        [assets_job1, assets_job2], foreign_assets_by_key={}
+        [assets_job1, assets_job2], source_assets_by_key={}
     )
 
     assert external_asset_nodes == [
@@ -227,7 +227,7 @@ def test_same_asset_in_multiple_pipelines():
     job1 = build_assets_job("job1", [asset1])
     job2 = build_assets_job("job2", [asset1])
 
-    external_asset_nodes = external_asset_graph_from_defs([job1, job2], foreign_assets_by_key={})
+    external_asset_nodes = external_asset_graph_from_defs([job1, job2], source_assets_by_key={})
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -255,7 +255,7 @@ def test_basic_multi_asset():
 
     assets_job = build_assets_job("assets_job", [assets])
 
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], foreign_assets_by_key={})
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
 
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -297,7 +297,7 @@ def test_inter_op_dependency():
 
     assets_job = build_assets_job("assets_job", [in1, in2, assets, downstream])
 
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], foreign_assets_by_key={})
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
     # sort so that test is deterministic
     sorted_nodes = sorted(
         [
@@ -421,9 +421,9 @@ def test_inter_op_dependency():
     ]
 
 
-def test_source_not_foreign_asset():
+def test_source_asset_with_op():
 
-    foo = ForeignAsset(key=AssetKey("foo"), description=None)
+    foo = SourceAsset(key=AssetKey("foo"), description=None)
 
     @asset
     def bar(foo):  # pylint: disable=unused-argument
@@ -431,7 +431,7 @@ def test_source_not_foreign_asset():
 
     assets_job = build_assets_job("assets_job", [bar], source_assets=[foo])
 
-    external_asset_nodes = external_asset_graph_from_defs([assets_job], foreign_assets_by_key={})
+    external_asset_nodes = external_asset_graph_from_defs([assets_job], source_assets_by_key={})
     assert external_asset_nodes == [
         ExternalAssetNode(
             asset_key=AssetKey("foo"),
@@ -452,12 +452,12 @@ def test_source_not_foreign_asset():
     ]
 
 
-def test_unused_foreign_asset():
-    foo = ForeignAsset(key=AssetKey("foo"), description="abc")
-    bar = ForeignAsset(key=AssetKey("bar"), description="def")
+def test_unused_source_asset():
+    foo = SourceAsset(key=AssetKey("foo"), description="abc")
+    bar = SourceAsset(key=AssetKey("bar"), description="def")
 
     external_asset_nodes = external_asset_graph_from_defs(
-        [], foreign_assets_by_key={AssetKey("foo"): foo, AssetKey("bar"): bar}
+        [], source_assets_by_key={AssetKey("foo"): foo, AssetKey("bar"): bar}
     )
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -477,8 +477,8 @@ def test_unused_foreign_asset():
     ]
 
 
-def test_used_foreign_asset():
-    bar = ForeignAsset(key=AssetKey("bar"), description="def")
+def test_used_source_asset():
+    bar = SourceAsset(key=AssetKey("bar"), description="def")
 
     @asset
     def foo(bar):
@@ -487,7 +487,7 @@ def test_used_foreign_asset():
     job1 = build_assets_job("job1", [foo], source_assets=[bar])
 
     external_asset_nodes = external_asset_graph_from_defs(
-        [job1], foreign_assets_by_key={AssetKey("bar"): bar}
+        [job1], source_assets_by_key={AssetKey("bar"): bar}
     )
     assert external_asset_nodes == [
         ExternalAssetNode(
@@ -514,8 +514,8 @@ def test_used_foreign_asset():
     ]
 
 
-def test_foreign_asset_conflicts_with_asset():
-    bar_foreign_asset = ForeignAsset(key=AssetKey("bar"), description="def")
+def test_source_asset_conflicts_with_asset():
+    bar_source_asset = SourceAsset(key=AssetKey("bar"), description="def")
 
     @asset
     def bar():
@@ -525,7 +525,7 @@ def test_foreign_asset_conflicts_with_asset():
 
     with pytest.raises(DagsterInvariantViolationError):
         external_asset_graph_from_defs(
-            [job1], foreign_assets_by_key={AssetKey("bar"): bar_foreign_asset}
+            [job1], source_assets_by_key={AssetKey("bar"): bar_source_asset}
         )
 
 

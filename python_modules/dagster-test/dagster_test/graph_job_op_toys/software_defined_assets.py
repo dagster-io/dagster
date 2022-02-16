@@ -1,9 +1,9 @@
 # pylint: disable=redefined-outer-name
 import time
 
-from dagster import AssetKey, ForeignAsset, IOManager, IOManagerDefinition, asset, build_assets_job
+from dagster import AssetKey, IOManager, IOManagerDefinition, SourceAsset, asset, build_assets_job
 
-sfo_q2_weather_sample = ForeignAsset(key=AssetKey("sfo_q2_weather_sample"))
+sfo_q2_weather_sample = SourceAsset(key=AssetKey("sfo_q2_weather_sample"))
 
 
 class DataFrame:
