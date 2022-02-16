@@ -2,8 +2,13 @@ import os
 import textwrap
 
 import pandas as pd
-from dagster import AssetKey, EventMetadataEntry, MemoizableIOManager, io_manager
-from dagster.core.definitions.event_metadata import TableSchemaMetadataEntryData
+from dagster import (
+    AssetKey,
+    MetadataEntry,
+    MemoizableIOManager,
+    io_manager,
+    TableSchemaMetadataValue,
+)
 
 
 class LocalCsvIOManager(MemoizableIOManager):
@@ -24,11 +29,11 @@ class LocalCsvIOManager(MemoizableIOManager):
         with open(fpath + ".version", "w") as f:
             f.write(context.version if context.version else "None")
 
-        yield EventMetadataEntry.int(obj.shape[0], "Rows")
-        yield EventMetadataEntry.path(fpath, "Path")
-        yield EventMetadataEntry.md(obj.head(5).to_markdown(), "Sample")
-        yield EventMetadataEntry.text(context.version, "Resolved version")
-        yield EventMetadataEntry.table_schema(
+        yield MetadataEntry.int(obj.shape[0], "Rows")
+        yield MetadataEntry.path(fpath, "Path")
+        yield MetadataEntry.md(obj.head(5).to_markdown(), "Sample")
+        yield MetadataEntry.text(context.version, "Resolved version")
+        yield MetadataEntry.table_schema(
             self.get_schema(context.dagster_type),
             "Schema",
         )
@@ -38,7 +43,7 @@ class LocalCsvIOManager(MemoizableIOManager):
             (
                 x
                 for x in dagster_type.metadata_entries
-                if isinstance(x.entry_data, TableSchemaMetadataEntryData)
+                if isinstance(x.entry_data, TableSchemaMetadataValue)
             ),
             None,
         )
