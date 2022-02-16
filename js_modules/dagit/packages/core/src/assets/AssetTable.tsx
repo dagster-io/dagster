@@ -1,4 +1,4 @@
-import {gql, RefetchQueriesFunction} from '@apollo/client';
+import {gql, RefetchQueriesFunction, useQuery} from '@apollo/client';
 import {
   Box,
   ButtonWIP,
@@ -12,21 +12,46 @@ import {
   Popover,
   Table,
 } from '@dagster-io/ui';
+import {isEqual} from 'lodash';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
 import {tokenForAssetKey} from '../app/Util';
+import {Timestamp} from '../app/time/Timestamp';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
 
 import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';
+import {
+  AssetMaterializationTimesQuery,
+  AssetMaterializationTimesQueryVariables,
+} from './types/AssetMaterializationTimesQuery';
 import {AssetTableFragment as Asset} from './types/AssetTableFragment';
 
 type AssetKey = {path: string[]};
+const TIME_FORMAT = {showSeconds: true, showTimezone: true};
+
+function useLastMaterializationTimes(assets: Asset[]) {
+  const {data} = useQuery<AssetMaterializationTimesQuery, AssetMaterializationTimesQueryVariables>(
+    ASSET_LAST_MATERIALIZATIONS,
+    {
+      variables: {assetKeys: assets.map(({key}) => ({path: key.path}))},
+    },
+  );
+  return React.useMemo(() => {
+    const lastMaterializationTimes = (data?.assetNodes || [])
+      .filter((node) => node.assetMaterializations.length)
+      .map((node) => ({
+        path: JSON.parse(node.id) as string[],
+        unix: Number(node.assetMaterializations[0].timestamp) / 1000,
+      }));
+    return {lastMaterializationTimes};
+  }, [data]);
+}
 
 export const AssetTable = ({
   assets,
@@ -57,6 +82,8 @@ export const AssetTable = ({
   const [{checkedIds: checkedPaths}, {onToggleFactory, onToggleAll}] = useSelectionReducer(
     Object.keys(assetGroups),
   );
+
+  const {lastMaterializationTimes} = useLastMaterializationTimes(assets);
 
   const pageDisplayPathKeys = Object.keys(assetGroups).sort().slice(0, maxDisplayCount);
   pageDisplayPathKeys.forEach((pathKey) => {
@@ -92,6 +119,7 @@ export const AssetTable = ({
               />
             </th>
             <th>Asset Key</th>
+            <th style={{width: 340}}>Latest Materialization</th>
             <th style={{width: 340}}>Defined In</th>
             <th style={{width: 80}}>Actions</th>
           </tr>
@@ -108,6 +136,7 @@ export const AssetTable = ({
                 onToggleChecked={onToggleFactory(pathStr)}
                 onWipe={(assets: Asset[]) => setToWipe(assets.map((asset) => asset.key))}
                 canWipe={canWipeAssets}
+                lastMaterializationTimes={lastMaterializationTimes}
               />
             );
           })}
@@ -131,89 +160,113 @@ const AssetEntryRow: React.FC<{
   onToggleChecked: (values: {checked: boolean; shiftKey: boolean}) => void;
   assets: Asset[];
   onWipe: (assets: Asset[]) => void;
+  lastMaterializationTimes: {path: string[]; unix: number}[];
   canWipe?: boolean;
-}> = React.memo(({prefixPath, path, assets, isSelected, onToggleChecked, onWipe, canWipe}) => {
-  const fullPath = [...prefixPath, ...path];
-  const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
-  const representsSingleAsset =
-    assets.length === 1 && fullPath.join('/') === assets[0].key.path.join('/');
-  const asset = representsSingleAsset ? assets[0] : null;
+}> = React.memo(
+  ({
+    prefixPath,
+    path,
+    assets,
+    isSelected,
+    onToggleChecked,
+    onWipe,
+    lastMaterializationTimes,
+    canWipe,
+  }) => {
+    const fullPath = [...prefixPath, ...path];
+    const linkUrl = `/instance/assets/${fullPath.map(encodeURIComponent).join('/')}`;
+    const representsSingleAsset =
+      assets.length === 1 && fullPath.join('/') === assets[0].key.path.join('/');
+    const asset = representsSingleAsset ? assets[0] : null;
 
-  const onChange = (e: React.FormEvent<HTMLInputElement>) => {
-    if (e.target instanceof HTMLInputElement) {
-      const {checked} = e.target;
-      const shiftKey =
-        e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
-      onToggleChecked({checked, shiftKey});
-    }
-  };
-  return (
-    <tr>
-      <td style={{paddingRight: '4px'}}>
-        <Checkbox checked={isSelected} onChange={onChange} />
-      </td>
-      <td>
-        <AssetLink path={path} url={linkUrl} trailingSlash={!representsSingleAsset} />
-        <Description>
-          {asset?.definition &&
-            asset.definition.description &&
-            markdownToPlaintext(asset.definition.description).split('\n')[0]}
-        </Description>
-      </td>
-      <td>
-        {asset?.definition && (
-          <Box flex={{direction: 'column', gap: 2}}>
-            <RepositoryLink
-              showIcon
-              showRefresh={false}
-              repoAddress={{
-                name: asset.definition.repository.name,
-                location: asset.definition.repository.location.name,
-              }}
-            />
-          </Box>
-        )}
-      </td>
-      <td>
-        {asset ? (
-          <Box flex={{gap: 8, alignItems: 'center'}}>
-            <Link
-              to={instanceAssetsExplorerPathToURL({
-                opsQuery: `++"${tokenForAssetKey({path})}"++`,
-                opNames: [tokenForAssetKey({path})],
-              })}
-            >
-              <ButtonWIP disabled={!asset.definition?.opName}>View in Asset Graph</ButtonWIP>
-            </Link>
-            <Popover
-              position="bottom-right"
-              content={
-                <MenuWIP>
-                  <MenuLink
-                    text="View details…"
-                    to={`/instance/assets/${path.join('/')}`}
-                    icon="view_list"
-                  />
-                  <MenuItemWIP
-                    text="Wipe Asset…"
-                    icon="delete"
-                    disabled={!canWipe}
-                    intent="danger"
-                    onClick={() => canWipe && onWipe(assets)}
-                  />
-                </MenuWIP>
-              }
-            >
-              <ButtonWIP icon={<IconWIP name="expand_more" />} />
-            </Popover>
-          </Box>
-        ) : (
-          <span />
-        )}
-      </td>
-    </tr>
-  );
-});
+    const onChange = (e: React.FormEvent<HTMLInputElement>) => {
+      if (e.target instanceof HTMLInputElement) {
+        const {checked} = e.target;
+        const shiftKey =
+          e.nativeEvent instanceof MouseEvent && e.nativeEvent.getModifierState('Shift');
+        onToggleChecked({checked, shiftKey});
+      }
+    };
+
+    const materializationTime =
+      asset &&
+      lastMaterializationTimes.find((timeEntry) => isEqual(timeEntry.path, asset.key.path))?.unix;
+
+    return (
+      <tr>
+        <td style={{paddingRight: '4px'}}>
+          <Checkbox checked={isSelected} onChange={onChange} />
+        </td>
+        <td>
+          <AssetLink path={path} url={linkUrl} trailingSlash={!representsSingleAsset} />
+          <Description>
+            {asset?.definition &&
+              asset.definition.description &&
+              markdownToPlaintext(asset.definition.description).split('\n')[0]}
+          </Description>
+        </td>
+        <td>
+          {materializationTime ? (
+            <Timestamp timestamp={{unix: materializationTime}} timeFormat={TIME_FORMAT} />
+          ) : (
+            '-'
+          )}
+        </td>
+        <td>
+          {asset?.definition && (
+            <Box flex={{direction: 'column', gap: 2}}>
+              <RepositoryLink
+                showIcon
+                showRefresh={false}
+                repoAddress={{
+                  name: asset.definition.repository.name,
+                  location: asset.definition.repository.location.name,
+                }}
+              />
+            </Box>
+          )}
+        </td>
+        <td>
+          {asset ? (
+            <Box flex={{gap: 8, alignItems: 'center'}}>
+              <Link
+                to={instanceAssetsExplorerPathToURL({
+                  opsQuery: `++"${tokenForAssetKey({path})}"++`,
+                  opNames: [tokenForAssetKey({path})],
+                })}
+              >
+                <ButtonWIP disabled={!asset.definition?.opName}>View in Asset Graph</ButtonWIP>
+              </Link>
+              <Popover
+                position="bottom-right"
+                content={
+                  <MenuWIP>
+                    <MenuLink
+                      text="View details…"
+                      to={`/instance/assets/${path.join('/')}`}
+                      icon="view_list"
+                    />
+                    <MenuItemWIP
+                      text="Wipe Asset…"
+                      icon="delete"
+                      disabled={!canWipe}
+                      intent="danger"
+                      onClick={() => canWipe && onWipe(assets)}
+                    />
+                  </MenuWIP>
+                }
+              >
+                <ButtonWIP icon={<IconWIP name="expand_more" />} />
+              </Popover>
+            </Box>
+          ) : (
+            <span />
+          )}
+        </td>
+      </tr>
+    );
+  },
+);
 
 const AssetBulkActions: React.FC<{
   selected: Asset[];
@@ -277,6 +330,21 @@ export const ASSET_TABLE_FRAGMENT = gql`
         location {
           id
           name
+        }
+      }
+    }
+  }
+`;
+
+const ASSET_LAST_MATERIALIZATIONS = gql`
+  query AssetMaterializationTimesQuery($assetKeys: [AssetKeyInput!]) {
+    assetNodes(assetKeys: $assetKeys, loadMaterializations: true) {
+      id
+      ... on AssetNode {
+        id
+        assetMaterializations(limit: 1) {
+          timestamp
+          runId
         }
       }
     }
