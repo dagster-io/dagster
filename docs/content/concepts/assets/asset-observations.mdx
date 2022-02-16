@@ -5,36 +5,41 @@ description: Dagster provides functionality to record metadata about assets.
 
 # Asset Observations
 
-An asset observation is an event that records metadata about a given asset.
+An asset observation is an event that records metadata about a given asset. Unlike asset materializations, asset observations do not signify that an asset has been mutated.
 
 ## Relevant APIs
 
-| Name                                                    | Description                                                          |
-| ------------------------------------------------------- | -------------------------------------------------------------------- |
-| <PyObject module="dagster" object="AssetObservation" /> | Dagster event indicating that an asset's metadata has been recorded. |
-| <PyObject module="dagster" object="AssetKey" />         | A unique identifier for a particular external asset                  |
+| Name                                   | Description                                                          |
+| -------------------------------------- | -------------------------------------------------------------------- |
+| <PyObject object="AssetObservation" /> | Dagster event indicating that an asset's metadata has been recorded. |
+| <PyObject object="AssetKey" />         | A unique identifier for a particular external asset.                 |
 
 ## Overview
 
-<PyObject module="dagster" object="AssetObservation" /> events are used to communicate
-to Dagster that metadata has been recorded about a given asset. Asset observation
-events can be yielded at runtime within ops and assets. An asset must be defined
-using the <PyObject object="asset" decorator /> decorator or have existing materializations
-in order for its observations to be displayed.
+<PyObject object="AssetObservation" /> events are used record metadata in Dagster
+about a given asset. Asset observation events can be yielded at runtime within ops
+and assets. An asset must be defined using the <PyObject
+object="asset"
+decorator
+/> decorator or have existing materializations in order for its observations to be
+displayed.
 
 ## Yielding an AssetObservation from an Asset
 
-To make Dagster aware that we have recorded metadata about an asset, we can yield an <PyObject module="dagster" object="AssetObservation" /> event:
+To make Dagster aware that we have recorded metadata about an asset, we can yield an <PyObject object="AssetObservation" /> event:
 
 ```python file=/concepts/assets/observations.py startafter=start_observation_asset_marker_0 endbefore=end_observation_asset_marker_0
 from dagster import AssetObservation
 
 
-@asset
-def observation_asset():
+@op
+def observation_op():
     df = read_df()
     remote_storage_path = persist_to_storage(df)
-    yield AssetObservation(asset_key=AssetKey("observation_asset"), metadata={"num_rows": len(df)})
+    yield AssetObservation(asset_key="observation_asset", metadata={"num_rows": len(df)})
+    yield AssetMaterialization(
+        asset_key="observation_asset", description="Persisted result to storage"
+    )
     yield Output(5)
 ```
 
@@ -42,21 +47,21 @@ We should now see an observation event in the event log when we execute this ass
 
 <Image
 alt="asset-observation"
-src="/images/concepts/assets/asset-observation.png"
+src="/images/concepts/assets/observation.png"
 width={1417}
 height={917}
 />
 
 ### Attaching Metadata to an AssetObservation
 
-There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject module="dagster" object="EventMetadataEntry" /> class. Each observation event optionally takes a list of metadata entries that are then displayed in the event log and the [Asset Details](/concepts/dagit/dagit#asset-details) page. Check our API docs for <PyObject module="dagster" object="EventMetadataEntry" /> for more details on the types of event metadata available.
+There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject object="EventMetadataEntry" /> class. Each observation event optionally takes a list of metadata entries that are then displayed in the event log and the [Asset Details](/concepts/dagit/dagit#asset-details) page. Check our API docs for <PyObject object="EventMetadataEntry" /> for more details on the types of event metadata available.
 
 ```python file=concepts/assets/observations.py startafter=start_observation_asset_marker_2 endbefore=end_observation_asset_marker_2
-from dagster import asset, AssetObservation, Output, EventMetadata
+from dagster import op, AssetObservation, Output, EventMetadata
 
 
-@asset
-def my_dataset():
+@op
+def observes_dataset_op():
     df = read_df()
     remote_storage_path = persist_to_storage(df)
     yield AssetObservation(
@@ -68,6 +73,7 @@ def my_dataset():
             "size (bytes)": calculate_bytes(df),
         },
     )
+    yield AssetMaterialization(asset_key="my_dataset")
     yield Output(remote_storage_path)
 ```
 
@@ -88,12 +94,12 @@ If you are observing a single slice of an asset (e.g. a single day's worth of da
 from dagster import op, AssetMaterialization, Output
 
 
-@asset(partitions_def=DailyPartitionsDefinition(start_date="2022-02-15"))
-def my_partitioned_dataset(context):
-    partition_date = context.partition_key
+@op(config_schema={"date": str})
+def partitioned_dataset_op(context):
+    partition_date = context.op_config["date"]
     df = read_df_for_date(partition_date)
     remote_storage_path = persist_to_storage(df)
-    yield AssetMaterialization(asset_key="my_partitioned_dataset", partition=partition_date)
     yield AssetObservation(asset_key="my_partitioned_dataset", partition=partition_date)
+    yield AssetMaterialization(asset_key="my_partitioned_dataset", partition=partition_date)
     yield Output(remote_storage_path)
 ```
