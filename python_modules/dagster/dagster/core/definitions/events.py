@@ -6,7 +6,7 @@ from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Tuple, Un
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidAssetKey
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
-from dagster.utils.backcompat import experimental_arg_warning, experimental_class_param_warning
+from dagster.utils.backcompat import experimental_class_param_warning
 
 from .event_metadata import (
     EventMetadataEntry,
@@ -178,10 +178,6 @@ class Output(
         metadata_entries: Optional[List[Union[EventMetadataEntry, PartitionMetadataEntry]]] = None,
         metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
     ):
-        if metadata_entries:
-            experimental_arg_warning("metadata_entries", "Output.__new__")
-        elif metadata:
-            experimental_arg_warning("metadata", "Output.__new__")
 
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_list_param(
@@ -243,10 +239,6 @@ class DynamicOutput(
         metadata_entries: Optional[List[Union[PartitionMetadataEntry, EventMetadataEntry]]] = None,
         metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
     ):
-        if metadata_entries:
-            experimental_arg_warning("metadata_entries", "DynamicOutput.__new__")
-        elif metadata:
-            experimental_arg_warning("metadata", "DynamicOutput.__new__")
 
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_list_param(
