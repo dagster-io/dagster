@@ -7,7 +7,7 @@ from dagster.core.errors import DagsterInvalidMetadata
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.backcompat import deprecation_warning, experimental, experimental_class_warning
 
-from .table import TableColumn, TableRecord, TableSchema
+from .table import TableColumn, TableColumnConstraints, TableConstraints, TableRecord, TableSchema
 
 if TYPE_CHECKING:
     from dagster.core.definitions.events import AssetKey
@@ -44,7 +44,7 @@ def normalize_metadata(
 
     if metadata_entries:
         deprecation_warning(
-            "Argument `metadata_entries`",
+            'Argument "metadata_entries"',
             "0.15.0",
             additional_warn_txt="Use argument `metadata` instead. The `MetadataEntry` `description` attribute is also deprecated-- argument `metadata` takes a label: value dictionary.",
             stacklevel=4,  # to get the caller of `normalize_metadata`
@@ -756,6 +756,12 @@ class MetadataEntry(
     """
 
     def __new__(cls, label: str, description: Optional[str], entry_data: "MetadataValue"):
+        if description is not None:
+            deprecation_warning(
+                f'The "description" attribute on "MetadataEntry"',
+                "0.15.0",
+                additional_warn_txt='In the future, no descriptions will be accepted on "MetadataEntry" objects.',
+            )
         return super(MetadataEntry, cls).__new__(
             cls,
             check.str_param(label, "label"),
