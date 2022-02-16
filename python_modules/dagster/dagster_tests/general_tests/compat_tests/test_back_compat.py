@@ -24,6 +24,7 @@ from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.events import DagsterEvent
 from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance, InstanceRef
+from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus
@@ -693,3 +694,21 @@ def test_external_job_origin_instigator_origin():
     assert isinstance(job_to_instigator, ExternalInstigatorOrigin)
     # ensure that the origin id is stable
     assert job_to_instigator.get_id() == job_origin.get_id()
+
+
+def test_schedule_namedtuple_job_instigator_backcompat():
+    src_dir = file_relative_path(__file__, "snapshot_0_13_19_instigator_named_tuples/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            states = instance.all_instigator_state()
+            assert len(states) == 2
+            check.is_list(states, of_type=InstigatorState)
+            for state in states:
+                assert state.instigator_type
+                assert state.instigator_data
+                ticks = instance.get_ticks(state.instigator_origin_id)
+                check.is_list(ticks, of_type=InstigatorTick)
+                for tick in ticks:
+                    assert tick.tick_data
+                    assert tick.instigator_type
+                    assert tick.instigator_name

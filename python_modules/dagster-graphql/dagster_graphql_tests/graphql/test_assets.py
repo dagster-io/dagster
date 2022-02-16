@@ -88,11 +88,8 @@ GET_ASSET_IN_PROGRESS_RUNS = """
             ... on Repository {
                 assetNodes {
                     opName
+                    jobNames
                     description
-                    jobs {
-                        id
-                        name
-                    }
                 }
                 inProgressRunsByStep {
                     stepKey

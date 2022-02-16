@@ -31,7 +31,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
         external_repository.get_external_origin_id(), InstigatorType.SCHEDULE
     )
     external_schedules_dict = {s.get_external_origin_id(): s for s in external_schedules}
-    schedule_states_dict = {s.job_origin_id: s for s in schedule_states}
+    schedule_states_dict = {s.instigator_origin_id: s for s in schedule_states}
 
     external_schedule_origin_ids = set(external_schedules_dict.keys())
     schedule_state_ids = set(schedule_states_dict.keys())
@@ -43,7 +43,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     for schedule_origin_id in external_schedule_origin_ids & schedule_state_ids:
         schedule_state = schedule_states_dict[schedule_origin_id]
         external_schedule = external_schedules_dict[schedule_origin_id]
-        if schedule_state.job_specific_data.cron_schedule != external_schedule.cron_schedule:
+        if schedule_state.instigator_data.cron_schedule != external_schedule.cron_schedule:
             changed_schedules.append(schedule_origin_id)
 
     if not errors and not added_schedules and not changed_schedules and not removed_schedules:
@@ -94,7 +94,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
         )
         print_fn(
             click.style("\t cron_schedule: ", fg="yellow")
-            + click.style(schedule_state.job_specific_data.cron_schedule, fg="red")
+            + click.style(schedule_state.instigator_data.cron_schedule, fg="red")
             + " => "
             + click.style(external_schedule.cron_schedule, fg="green")
         )
@@ -103,7 +103,8 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
         print_fn(
             click.style(
                 "  - {name} (delete) [{id}]".format(
-                    name=schedule_states_dict[schedule_origin_id].job_name, id=schedule_origin_id
+                    name=schedule_states_dict[schedule_origin_id].instigator_name,
+                    id=schedule_origin_id,
                 ),
                 fg="red",
             )
@@ -182,7 +183,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
 
             repo_schedules = external_repo.get_external_schedules()
             stored_schedules_by_origin_id = {
-                stored_schedule_state.job_origin_id: stored_schedule_state
+                stored_schedule_state.instigator_origin_id: stored_schedule_state
                 for stored_schedule_state in instance.all_instigator_state(
                     external_repo.get_external_origin_id(), instigator_type=InstigatorType.SCHEDULE
                 )
@@ -395,10 +396,10 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                     if schedule_state.status == InstigatorStatus.RUNNING:
                         try:
                             external_schedule = external_repo.get_external_schedule(
-                                schedule_state.job_name
+                                schedule_state.instigator_name
                             )
                             instance.stop_schedule(
-                                schedule_state.job_origin_id,
+                                schedule_state.instigator_origin_id,
                                 external_schedule,
                             )
                             instance.start_schedule(external_schedule)
@@ -418,12 +419,12 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
                 if schedule_state != None and schedule_state.status != InstigatorStatus.RUNNING:
                     click.UsageError(
                         "Cannot restart a schedule {name} because is not currently running".format(
-                            name=schedule_state.job_name
+                            name=schedule_state.instigator_name
                         )
                     )
 
                 try:
-                    instance.stop_schedule(schedule_state.job_origin_id, external_schedule)
+                    instance.stop_schedule(schedule_state.instigator_origin_id, external_schedule)
                     instance.start_schedule(external_schedule)
                 except DagsterInvariantViolationError as ex:
                     raise click.UsageError(ex)

@@ -210,7 +210,7 @@ class JobDefinition(PipelineDefinition):
 
         resolved_op_selection_dict = parse_op_selection(self, op_selection)
 
-        sub_graph = _get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
+        sub_graph = get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
 
         return JobDefinition(
             name=self.name,
@@ -310,7 +310,7 @@ def _dep_key_of(node: Node) -> NodeInvocation:
     )
 
 
-def _get_subselected_graph_definition(
+def get_subselected_graph_definition(
     graph: GraphDefinition,
     resolved_op_selection_dict: Dict,
     parent_handle: Optional[NodeHandle] = None,
@@ -330,7 +330,7 @@ def _get_subselected_graph_definition(
 
         # rebuild graph if any nodes inside the graph are selected
         if node.is_graph and resolved_op_selection_dict[node.name] is not LeafNodeSelection:
-            definition = _get_subselected_graph_definition(
+            definition = get_subselected_graph_definition(
                 node.definition,
                 resolved_op_selection_dict[node.name],
                 parent_handle=node_handle,

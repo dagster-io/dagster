@@ -381,14 +381,14 @@ class RepositoryData(ABC):
     def has_sensor(self, sensor_name):
         return sensor_name in self.get_sensor_names()
 
-    def get_foreign_assets_by_key(self):
+    def get_source_assets_by_key(self):
         return {}
 
 
 class CachingRepositoryData(RepositoryData):
     """Default implementation of RepositoryData used by the :py:func:`@repository <repository>` decorator."""
 
-    def __init__(self, pipelines, jobs, partition_sets, schedules, sensors, foreign_assets):
+    def __init__(self, pipelines, jobs, partition_sets, schedules, sensors, source_assets):
         """Constructs a new CachingRepositoryData object.
 
         You may pass pipeline, job, partition_set, and schedule definitions directly, or you may pass
@@ -411,14 +411,14 @@ class CachingRepositoryData(RepositoryData):
                 The schedules belonging to the repository.
             sensors (Dict[str, Union[SensorDefinition, Callable[[], SensorDefinition]]]):
                 The sensors belonging to a repository.
-            foreign_assets (Dict[str, ForeignAsset]): The foreign assets belonging to a repository.
+            source_assets (Dict[str, SourceAsset]): The source assets belonging to a repository.
         """
         check.dict_param(pipelines, "pipelines", key_type=str)
         check.dict_param(jobs, "jobs", key_type=str)
         check.dict_param(partition_sets, "partition_sets", key_type=str)
         check.dict_param(schedules, "schedules", key_type=str)
         check.dict_param(sensors, "sensors", key_type=str)
-        check.dict_param(foreign_assets, "foreign_assets", key_type=AssetKey)
+        check.dict_param(source_assets, "source_assets", key_type=AssetKey)
 
         self._pipelines = _CacheingDefinitionIndex(
             PipelineDefinition,
@@ -448,7 +448,7 @@ class CachingRepositoryData(RepositoryData):
             for schedule in self._schedules.get_all_definitions()
             if isinstance(schedule, PartitionScheduleDefinition)
         ]
-        self._foreign_assets = foreign_assets
+        self._source_assets = source_assets
 
         def load_partition_sets_from_pipelines():
             job_partition_sets = []
@@ -548,24 +548,24 @@ class CachingRepositoryData(RepositoryData):
                     f"Object mapped to {key} is not an instance of JobDefinition or GraphDefinition."
                 )
 
-        return CachingRepositoryData(**repository_definitions, foreign_assets={})
+        return CachingRepositoryData(**repository_definitions, source_assets={})
 
     @classmethod
     def from_list(cls, repository_definitions):
         """Static constructor.
 
         Args:
-            repository_definition (List[Union[PipelineDefinition, PartitionSetDefinition, ScheduleDefinition, ForeignAsset]]):
+            repository_definitions (List[Union[PipelineDefinition, PartitionSetDefinition, ScheduleDefinition, AssetCollection]]):
                 Use this constructor when you have no need to lazy load pipelines/jobs or other
                 definitions.
         """
-        from dagster.core.asset_defs import ForeignAsset, AssetCollection, build_assets_job
+        from dagster.core.asset_defs import AssetCollection, build_assets_job
 
         pipelines_or_jobs = {}
         partition_sets = {}
         schedules = {}
         sensors = {}
-        foreign_assets = {}
+        source_assets = {}
         for definition in repository_definitions:
             if isinstance(definition, PipelineDefinition):
                 if (
@@ -624,15 +624,6 @@ class CachingRepositoryData(RepositoryData):
                         )
                     )
                 pipelines_or_jobs[coerced.name] = coerced
-            elif isinstance(definition, ForeignAsset):
-                if (
-                    definition.key in foreign_assets
-                    and foreign_assets[definition.key] != definition
-                ):
-                    raise DagsterInvalidDefinitionError(
-                        f"Duplicate foreign asset found for {definition.key}"
-                    )
-                foreign_assets[definition.key] = definition
 
             elif isinstance(definition, AssetCollection):
                 asset_collection = definition
@@ -643,6 +634,10 @@ class CachingRepositoryData(RepositoryData):
                     resource_defs=asset_collection.resource_defs,
                     executor_def=asset_collection.executor_def,
                 )
+                source_assets = {
+                    source_asset.key: source_asset
+                    for source_asset in asset_collection.source_assets
+                }
 
             else:
                 check.failed(f"Unexpected repository entry {definition}")
@@ -661,7 +656,7 @@ class CachingRepositoryData(RepositoryData):
             partition_sets=partition_sets,
             schedules=schedules,
             sensors=sensors,
-            foreign_assets=foreign_assets,
+            source_assets=source_assets,
         )
 
     def get_pipeline_names(self):
@@ -876,8 +871,8 @@ class CachingRepositoryData(RepositoryData):
     def has_sensor(self, sensor_name):
         return self._sensors.has_definition(sensor_name)
 
-    def get_foreign_assets_by_key(self):
-        return self._foreign_assets
+    def get_source_assets_by_key(self):
+        return self._source_assets
 
     def _check_solid_defs(self):
         solid_defs = {}
@@ -1084,8 +1079,8 @@ class RepositoryDefinition:
         return self._repository_data.has_sensor(name)
 
     @property
-    def foreign_assets_by_key(self):
-        return self._repository_data.get_foreign_assets_by_key()
+    def source_assets_by_key(self):
+        return self._repository_data.get_source_assets_by_key()
 
     # If definition comes from the @repository decorator, then the __call__ method will be
     # overwritten. Therefore, we want to maintain the call-ability of repository definitions.

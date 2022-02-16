@@ -458,8 +458,8 @@ def validate_tick(
     expected_skip_reason=None,
 ):
     tick_data = tick.tick_data
-    assert tick_data.job_origin_id == external_schedule.get_external_origin_id()
-    assert tick_data.job_name == external_schedule.name
+    assert tick_data.instigator_origin_id == external_schedule.get_external_origin_id()
+    assert tick_data.instigator_name == external_schedule.name
     assert tick_data.timestamp == expected_datetime.timestamp()
     assert tick_data.status == expected_status
     assert set(tick_data.run_ids) == set(expected_run_ids)
@@ -647,9 +647,9 @@ def test_old_tick_schedule(instance, workspace, external_repo):
         # Create an old tick from several days ago
         instance.create_tick(
             TickData(
-                job_origin_id=external_schedule.get_external_origin_id(),
-                job_name="simple_schedule",
-                job_type=InstigatorType.SCHEDULE,
+                instigator_origin_id=external_schedule.get_external_origin_id(),
+                instigator_name="simple_schedule",
+                instigator_type=InstigatorType.SCHEDULE,
                 status=TickStatus.STARTED,
                 timestamp=pendulum.now("UTC").subtract(days=3).timestamp(),
             )
@@ -1873,8 +1873,7 @@ def test_status_in_code_schedule(instance):
 
             assert instigator_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
             assert (
-                instigator_state.job_specific_data.start_timestamp
-                == pendulum.now("UTC").timestamp()
+                instigator_state.instigator_data.start_timestamp == pendulum.now("UTC").timestamp()
             )
 
             ticks = instance.get_ticks(always_running_origin.get_id())

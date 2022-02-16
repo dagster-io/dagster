@@ -69,7 +69,7 @@ from dagster import (
     usable_as_dagster_type,
     weekly_schedule,
 )
-from dagster.core.asset_defs import ForeignAsset, asset, build_assets_job
+from dagster.core.asset_defs import SourceAsset, asset, build_assets_job
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
@@ -1351,11 +1351,11 @@ class DummyIOManager(IOManager):
         pass
 
 
-dummy_foreign_asset = ForeignAsset(key=AssetKey("dummy_foreign_asset"))
+dummy_source_asset = SourceAsset(key=AssetKey("dummy_source_asset"))
 
 
 @asset
-def first_asset(dummy_foreign_asset):  # pylint: disable=redefined-outer-name,unused-argument
+def first_asset(dummy_source_asset):  # pylint: disable=redefined-outer-name,unused-argument
     return 1
 
 
@@ -1378,7 +1378,7 @@ def never_runs_asset(hanging_asset):  # pylint: disable=redefined-outer-name,unu
 
 hanging_job = build_assets_job(
     name="hanging_job",
-    source_assets=[dummy_foreign_asset],
+    source_assets=[dummy_source_asset],
     assets=[first_asset, hanging_asset, never_runs_asset],
     resource_defs={
         "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),

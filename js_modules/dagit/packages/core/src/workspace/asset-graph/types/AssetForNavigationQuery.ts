@@ -13,17 +13,11 @@ export interface AssetForNavigationQuery_assetOrError_AssetNotFoundError {
   __typename: "AssetNotFoundError";
 }
 
-export interface AssetForNavigationQuery_assetOrError_Asset_definition_jobs {
-  __typename: "Pipeline";
-  id: string;
-  name: string;
-}
-
 export interface AssetForNavigationQuery_assetOrError_Asset_definition {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
-  jobs: AssetForNavigationQuery_assetOrError_Asset_definition_jobs[];
+  jobNames: string[];
 }
 
 export interface AssetForNavigationQuery_assetOrError_Asset {

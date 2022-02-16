@@ -5,10 +5,8 @@ from os import path
 from typing import List
 
 import nbformat
-from dagster import DagsterInstance
 from dagster import __version__ as dagster_version
 from dagster import check
-from dagster.cli.workspace.cli_target import get_workspace_process_context_from_kwargs
 from dagster.core.debug import DebugRunPayload
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
@@ -243,24 +241,6 @@ class DagitWebserver(GraphQLServer):
             ]
         else:
             return routes
-
-
-def default_app(debug=False):
-    instance = DagsterInstance.get()
-    process_context = get_workspace_process_context_from_kwargs(
-        instance=instance,
-        version=__version__,
-        read_only=False,
-        kwargs={},
-    )
-
-    return DagitWebserver(
-        process_context,
-    ).create_asgi_app(debug=debug)
-
-
-def debug_app():
-    return default_app(debug=True)
 
 
 class DagsterTracedCounterMiddleware:

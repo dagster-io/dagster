@@ -10,19 +10,24 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
 
-export const RepositoryLink: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
+export const RepositoryLink: React.FC<{
+  repoAddress: RepoAddress;
+  showIcon?: boolean;
+  showRefresh?: boolean;
+}> = ({repoAddress, showIcon = false, showRefresh = true}) => {
   const {location} = repoAddress;
   const {canReloadRepositoryLocation} = usePermissions();
 
   return (
     <Box flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}}>
+      {showIcon && <IconWIP name="folder" style={{marginRight: 8}} color={ColorsWIP.Gray400} />}
       <RepositoryName
         to={workspacePathFromAddress(repoAddress)}
         title={repoAddressAsString(repoAddress)}
       >
         {repoAddressAsString(repoAddress)}
       </RepositoryName>
-      {canReloadRepositoryLocation ? (
+      {canReloadRepositoryLocation && showRefresh ? (
         <ReloadRepositoryLocationButton location={location}>
           {({tryReload, reloading}) => (
             <ReloadTooltip

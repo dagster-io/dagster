@@ -300,33 +300,9 @@ class DagsterInstance:
 
         self._run_coordinator = check.inst_param(run_coordinator, "run_coordinator", RunCoordinator)
         self._run_coordinator.register_instance(self)
-        if hasattr(self._run_coordinator, "initialize") and inspect.ismethod(
-            getattr(self._run_coordinator, "initialize")
-        ):
-            warnings.warn(
-                "The initialize method on RunCoordinator has been deprecated as of 0.11.0 and will "
-                "no longer be called during DagsterInstance init. Instead, the DagsterInstance "
-                "will be made automatically available on any run coordinator associated with a "
-                "DagsterInstance. In test, you may need to call RunCoordinator.register_instance() "
-                "(mixed in from MayHaveInstanceWeakref). If you need to make use of the instance "
-                "to set up your custom RunCoordinator, you should override "
-                "RunCoordintor.register_instance(). This warning will be removed in 0.12.0."
-            )
 
         self._run_launcher = check.inst_param(run_launcher, "run_launcher", RunLauncher)
         self._run_launcher.register_instance(self)
-        if hasattr(self._run_launcher, "initialize") and inspect.ismethod(
-            getattr(self._run_launcher, "initialize")
-        ):
-            warnings.warn(
-                "The initialize method on RunLauncher has been deprecated as of 0.11.0 and will "
-                "no longer be called during DagsterInstance init. Instead, the DagsterInstance "
-                "will be made automatically available on any run launcher associated with a "
-                "DagsterInstance. In test, you may need to call RunLauncher.register_instance() "
-                "(mixed in from MayHaveInstanceWeakref). If you need to make use of the instance "
-                "to set up your custom RunLauncher, you should override "
-                "RunLauncher.register_instance(). This warning will be removed in 0.12.0."
-            )
 
         self._settings = check.opt_dict_param(settings, "settings")
 
@@ -334,17 +310,20 @@ class DagsterInstance:
 
         self._subscribers: Dict[str, List[Callable]] = defaultdict(list)
 
-        if self.run_monitoring_enabled:
-            check.invariant(
-                self.run_launcher.supports_check_run_worker_health,
-                "The configured run launcher does not support run monitoring.",
+        run_monitoring_enabled = self.run_monitoring_settings.get("enabled", False)
+        if run_monitoring_enabled and not self.run_launcher.supports_check_run_worker_health:
+            run_monitoring_enabled = False
+            warnings.warn(
+                "The configured run launcher does not support run monitoring, disabling it.",
             )
-
-            if self.run_monitoring_max_resume_run_attempts:
-                check.invariant(
-                    self.run_launcher.supports_resume_run,
-                    "The configured run launcher does not support resuming runs. Set max_resume_run_attempts to 0.",
-                )
+        self._run_monitoring_enabled = run_monitoring_enabled
+        if self.run_monitoring_enabled and self.run_monitoring_max_resume_run_attempts:
+            check.invariant(
+                self.run_launcher.supports_resume_run,
+                "The configured run launcher does not support resuming runs. "
+                "Set max_resume_run_attempts to 0 to use run monitoring. Any runs with a failed run "
+                "worker will be marked as failed, but will not be resumed.",
+            )
 
     # ctors
 
@@ -604,24 +583,10 @@ class DagsterInstance:
 
     @property
     def run_monitoring_enabled(self) -> bool:
-        if self.is_ephemeral:
-            return False
-
-        run_monitoring_enabled_default = False
-
-        run_monitoring_settings = self.get_settings("run_monitoring")
-
-        if not run_monitoring_settings:
-            return run_monitoring_enabled_default
-
-        if "enabled" in run_monitoring_settings:
-            return run_monitoring_settings["enabled"]
-        else:
-            return run_monitoring_enabled_default
+        return self._run_monitoring_enabled
 
     @property
     def run_monitoring_settings(self) -> Dict:
-        check.invariant(self.run_monitoring_enabled, "run_monitoring is not enabled")
         return self.get_settings("run_monitoring")
 
     @property
@@ -1137,6 +1102,10 @@ class DagsterInstance:
         return self._run_storage.get_run_records(
             filters, limit, order_by, ascending, cursor, bucket_by
         )
+
+    @property
+    def supports_bucket_queries(self):
+        return self._run_storage.supports_bucket_queries
 
     def wipe(self):
         self._run_storage.wipe()
@@ -1697,10 +1666,10 @@ records = instance.get_event_records(
         schedules = []
         for schedule_state in self.all_instigator_state(instigator_type=InstigatorType.SCHEDULE):
             schedule_info = {
-                schedule_state.job_name: {
+                schedule_state.instigator_name: {
                     "status": schedule_state.status.value,
-                    "cron_schedule": schedule_state.job_specific_data.cron_schedule,
-                    "schedule_origin_id": schedule_state.job_origin_id,
+                    "cron_schedule": schedule_state.instigator_data.cron_schedule,
+                    "schedule_origin_id": schedule_state.instigator_origin_id,
                     "repository_origin_id": schedule_state.repository_origin_id,
                 }
             }
@@ -1743,7 +1712,7 @@ records = instance.get_event_records(
         else:
             return self.update_instigator_state(state.with_status(InstigatorStatus.RUNNING))
 
-    def stop_sensor(self, job_origin_id, external_sensor):
+    def stop_sensor(self, instigator_origin_id, external_sensor):
         from dagster.core.scheduler.instigation import (
             InstigatorState,
             InstigatorStatus,
@@ -1751,7 +1720,7 @@ records = instance.get_event_records(
         )
         from dagster.core.definitions.run_request import InstigatorType
 
-        state = self.get_instigator_state(job_origin_id)
+        state = self.get_instigator_state(instigator_origin_id)
 
         if not state:
             return self.add_instigator_state(

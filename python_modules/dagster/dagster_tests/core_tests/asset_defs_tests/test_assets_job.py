@@ -8,7 +8,7 @@ from dagster import (
     IOManager,
     io_manager,
 )
-from dagster.core.asset_defs import AssetIn, ForeignAsset, asset, build_assets_job
+from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
 from dagster.core.snap import DependencyStructureIndex
 from dagster.core.snap.dep_snapshot import (
     OutputHandleSnap,
@@ -193,7 +193,7 @@ def test_asset_key_for_asset_with_namespace_str():
     assert result.output_for_node("success_asset") == "foo"
 
 
-def test_foreign_asset():
+def test_source_asset():
     @asset
     def asset1(source1):
         assert source1 == 5
@@ -213,7 +213,7 @@ def test_foreign_asset():
     job = build_assets_job(
         "a",
         [asset1],
-        source_assets=[ForeignAsset(AssetKey("source1"), io_manager_key="special_io_manager")],
+        source_assets=[SourceAsset(AssetKey("source1"), io_manager_key="special_io_manager")],
         resource_defs={"special_io_manager": my_io_manager},
     )
     assert job.graph.node_defs == [asset1.op]

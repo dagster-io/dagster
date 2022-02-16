@@ -434,6 +434,18 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ModuleBuildSpec("python_modules/libraries/dagster-mlflow", upload_coverage=False),
     ModuleBuildSpec("python_modules/libraries/dagster-mysql", extra_cmds_fn=mysql_extra_cmds_fn),
     ModuleBuildSpec(
+        "python_modules/libraries/dagster-pandera",
+        supported_pythons=(
+            [
+                SupportedPython.V3_7,
+                SupportedPython.V3_8,
+                SupportedPython.V3_9,
+            ]
+            if (branch_name == "master" or is_release_branch(branch_name))
+            else [SupportedPython.V3_9]
+        ),
+    ),
+    ModuleBuildSpec(
         "python_modules/libraries/dagster-postgres", extra_cmds_fn=postgres_extra_cmds_fn
     ),
     ModuleBuildSpec(

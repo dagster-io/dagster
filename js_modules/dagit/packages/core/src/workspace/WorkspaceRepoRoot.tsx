@@ -128,4 +128,5 @@ export const WorkspaceRepoRoot: React.FC<Props> = (props) => {
 const Container = styled.div`
   flex: 1;
   flex-grow: 1;
+  min-height: 0;
 `;

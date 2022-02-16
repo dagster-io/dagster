@@ -77,22 +77,22 @@ def start_sensor(graphene_info, sensor_selector):
 
 
 @capture_error
-def stop_sensor(graphene_info, job_origin_id):
+def stop_sensor(graphene_info, instigator_origin_id):
     from ..schema.sensors import GrapheneStopSensorMutationResult
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.str_param(job_origin_id, "job_origin_id")
+    check.str_param(instigator_origin_id, "instigator_origin_id")
     instance = graphene_info.context.instance
 
     external_sensors = {
-        job.get_external_origin_id(): job
+        sensor.get_external_origin_id(): sensor
         for repository_location in graphene_info.context.repository_locations
         for repository in repository_location.get_repositories().values()
-        for job in repository.get_external_sensors()
+        for sensor in repository.get_external_sensors()
     }
-    instance.stop_sensor(job_origin_id, external_sensors.get(job_origin_id))
-    job_state = graphene_info.context.instance.get_instigator_state(job_origin_id)
-    return GrapheneStopSensorMutationResult(job_state)
+    instance.stop_sensor(instigator_origin_id, external_sensors.get(instigator_origin_id))
+    state = graphene_info.context.instance.get_instigator_state(instigator_origin_id)
+    return GrapheneStopSensorMutationResult(state)
 
 
 @capture_error
@@ -116,11 +116,14 @@ def get_unloadable_sensor_states_or_error(graphene_info):
     unloadable_states = [
         sensor_state
         for sensor_state in sensor_states
-        if sensor_state.job_origin_id not in sensor_origin_ids
+        if sensor_state.instigator_origin_id not in sensor_origin_ids
     ]
 
     return GrapheneInstigationStates(
-        results=[GrapheneInstigationState(job_state=job_state) for job_state in unloadable_states]
+        results=[
+            GrapheneInstigationState(instigator_state=sensor_state)
+            for sensor_state in unloadable_states
+        ]
     )
 
 
@@ -177,7 +180,7 @@ def get_sensor_next_tick(graphene_info, sensor_state):
     if not sensor_state.is_running:
         return None
 
-    ticks = graphene_info.context.instance.get_ticks(sensor_state.job_origin_id, limit=1)
+    ticks = graphene_info.context.instance.get_ticks(sensor_state.instigator_origin_id, limit=1)
     if not ticks:
         return None
     latest_tick = ticks[0]
