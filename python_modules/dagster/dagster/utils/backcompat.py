@@ -60,17 +60,17 @@ def canonicalize_backcompat_args(new_val, new_arg, old_val, old_arg, breaking_ve
     if new_val is not None:
         if old_val is not None:
             check.failed(
-                "Do not use deprecated `{old_arg}` now that you are using `{new_arg}`.".format(
+                'Do not use deprecated "{old_arg}" now that you are using "{new_arg}".'.format(
                     old_arg=old_arg, new_arg=new_arg
                 )
             )
         return new_val
     if old_val is not None:
-        _additional_warn_txt = f"Use `{new_arg}` instead." + (
+        _additional_warn_txt = f'Use "{new_arg}" instead.' + (
             (" " + additional_warn_txt) if additional_warn_txt else ""
         )
         deprecation_warning(
-            f"Argument `{old_arg}`", breaking_version, _additional_warn_txt, stacklevel + 1
+            f'Argument "{old_arg}"', breaking_version, _additional_warn_txt, stacklevel + 1
         )
         return coerce_old_to_new(old_val) if coerce_old_to_new else old_val
 
