@@ -19,7 +19,27 @@ def my_slack_on_run_failure(context: RunFailureSensorContext):
 
 # end_alert_sensor_marker
 
-# start_alert_sensor_testing_with_context_setup
+
+def email_alert(_):
+    pass
+
+
+# start_simple_fail_sensor
+
+
+@run_failure_sensor
+def my_email_failure_sensor(context: RunFailureSensorContext):
+    message = (
+        f'Job "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}'
+    )
+    email_alert(message)
+
+
+# end_simple_fail_sensor
+
+
+# start_failure_sensor_testing_with_context_setup
+
 from dagster import op, job
 
 
@@ -33,12 +53,10 @@ def my_job_fails():
     fails()
 
 
-# end_alert_sensor_testing_with_context_setup
+# end_failure_sensor_testing_with_context_setup
 
-# start_alert_sensor_testing_with_context
-
+# start_alert_sensor_testing_with_context_marker
 from dagster import DagsterEventType, DagsterInstance, build_run_status_sensor_context
-
 
 # execute the job
 instance = DagsterInstance.ephemeral()
@@ -58,12 +76,12 @@ run_failure_sensor_context = build_run_status_sensor_context(
     dagster_instance=instance,
     dagster_run=dagster_run,
     dagster_event=dagster_event,
-)
+).for_run_failure()
 
 # run the sensor
-my_slack_on_run_failure(run_failure_sensor_context)
+my_email_failure_sensor(run_failure_sensor_context)
 
-# end_alert_sensor_testing_with_context
+# end_alert_sensor_testing_with_context_marker
 
 
 # start_slack_marker
@@ -103,6 +121,17 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
 
 # end_success_sensor_marker
 
+# start_simple_success_sensor
+
+
+@run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
+def my_email_sensor(context: RunStatusSensorContext):
+    message = f'Job "{context.pipeline_run.pipeline_name}" succeeded.'
+    email_alert(message)
+
+
+# end_simple_success_sensor
+
 # start_run_status_sensor_testing_with_context_setup
 
 
@@ -118,7 +147,7 @@ def my_job_succeeds():
 
 # end_run_status_sensor_testing_with_context_setup
 
-# start_run_status_sensor_testing_with_context
+# start_run_status_sensor_testing_marker
 
 # execute the job
 instance = DagsterInstance.ephemeral()
@@ -141,9 +170,9 @@ run_status_sensor_context = build_run_status_sensor_context(
 )
 
 # run the sensor
-my_slack_on_run_success(run_status_sensor_context)
+my_email_sensor(run_status_sensor_context)
 
-# end_run_status_sensor_testing_with_context
+# end_run_status_sensor_testing_marker
 
 my_jobs = []
 
