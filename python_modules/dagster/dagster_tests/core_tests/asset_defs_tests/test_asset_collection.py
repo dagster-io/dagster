@@ -3,13 +3,14 @@ from dagster import (
     AssetKey,
     DagsterInvalidDefinitionError,
     IOManager,
+    Out,
     in_process_executor,
     io_manager,
     mem_io_manager,
     repository,
     resource,
 )
-from dagster.core.asset_defs import AssetCollection, AssetIn, SourceAsset, asset
+from dagster.core.asset_defs import AssetCollection, AssetIn, SourceAsset, asset, multi_asset
 
 
 def test_asset_collection_from_list():
@@ -140,7 +141,9 @@ def test_asset_collection_requires_root_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"Output 'result' with AssetKey 'AssetKey\(\['asset_foo'\]\)' requires io manager 'blah' but was not provided on asset collection. Provided resources: \['io_manager', 'root_manager'\]",
+        match=r"Output 'result' with AssetKey 'AssetKey\(\['asset_foo'\]\)' "
+        r"requires io manager 'blah' but was not provided on asset collection. "
+        r"Provided resources: \['io_manager', 'root_manager'\]",
     ):
         AssetCollection([asset_foo])
 
@@ -152,7 +155,9 @@ def test_resource_override():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Resource dictionary included resource with key 'root_manager', which is a reserved resource keyword in Dagster. Please change this key, and then change all places that require this key to a new value.",
+        match="Resource dictionary included resource with key 'root_manager', "
+        "which is a reserved resource keyword in Dagster. Please change this "
+        "key, and then change all places that require this key to a new value.",
     ):
         AssetCollection([], resource_defs={"root_manager": the_resource})
 
@@ -164,3 +169,147 @@ def test_resource_override():
     assert (  # pylint: disable=comparison-with-callable
         asset_collection_underlying_job.resource_defs["io_manager"] == mem_io_manager
     )
+
+
+def asset_aware_io_manager():
+    class MyIOManager(IOManager):
+        def __init__(self):
+            self.db = {}
+
+        def handle_output(self, context, obj):
+            self.db[context.asset_key] = obj
+
+        def load_input(self, context):
+            return self.db.get(context.asset_key)
+
+    io_manager_obj = MyIOManager()
+
+    @io_manager
+    def _asset_aware():
+        return io_manager_obj
+
+    return io_manager_obj, _asset_aware
+
+
+def test_asset_collection_build_subset_job():
+    @asset
+    def start_asset():
+        return "foo"
+
+    @multi_asset(outs={"o1": Out(asset_key=AssetKey("o1")), "o2": Out(asset_key=AssetKey("o2"))})
+    def middle_asset(start_asset):
+        return (start_asset, start_asset)
+
+    @asset
+    def follows_o1(o1):
+        return o1
+
+    @asset
+    def follows_o2(o2):
+        return o2
+
+    _, io_manager_def = asset_aware_io_manager()
+    collection = AssetCollection(
+        [start_asset, middle_asset, follows_o1, follows_o2],
+        resource_defs={"io_manager": io_manager_def},
+    )
+
+    full_job = collection.build_job("full", selection="*")
+
+    result = full_job.execute_in_process()
+
+    assert result.success
+    assert result.output_for_node("follows_o1") == "foo"
+    assert result.output_for_node("follows_o2") == "foo"
+
+    test_single = collection.build_job(name="test_single", selection="follows_o2")
+    assert len(test_single.all_node_defs) == 1
+    assert test_single.all_node_defs[0].name == "follows_o2"
+
+    result = test_single.execute_in_process()
+    assert result.success
+    assert result.output_for_node("follows_o2") == "foo"
+
+    test_up_star = collection.build_job(name="test_up_star", selection="*follows_o2")
+    assert len(test_up_star.all_node_defs) == 3
+    assert set([node.name for node in test_up_star.all_node_defs]) == {
+        "follows_o2",
+        "middle_asset",
+        "start_asset",
+    }
+
+    result = test_up_star.execute_in_process()
+    assert result.success
+    assert result.output_for_node("middle_asset", "o1") == "foo"
+    assert result.output_for_node("follows_o2") == "foo"
+    assert result.output_for_node("start_asset") == "foo"
+
+    test_down_star = collection.build_job(name="test_down_star", selection="start_asset*")
+
+    assert len(test_down_star.all_node_defs) == 4
+    assert set([node.name for node in test_down_star.all_node_defs]) == {
+        "follows_o2",
+        "middle_asset",
+        "start_asset",
+        "follows_o1",
+    }
+
+    result = test_down_star.execute_in_process()
+    assert result.success
+    assert result.output_for_node("follows_o2") == "foo"
+
+    test_both_plus = collection.build_job(name="test_both_plus", selection=["+o1+", "o2"])
+
+    assert len(test_both_plus.all_node_defs) == 4
+    assert set([node.name for node in test_both_plus.all_node_defs]) == {
+        "follows_o1",
+        "follows_o2",
+        "middle_asset",
+        "start_asset",
+    }
+
+    result = test_both_plus.execute_in_process()
+    assert result.success
+    assert result.output_for_node("follows_o2") == "foo"
+
+    test_selection_with_overlap = collection.build_job(
+        name="test_multi_asset_multi_selection", selection=["o1", "o2+"]
+    )
+
+    assert len(test_selection_with_overlap.all_node_defs) == 3
+    assert set([node.name for node in test_selection_with_overlap.all_node_defs]) == {
+        "follows_o1",
+        "follows_o2",
+        "middle_asset",
+    }
+
+    result = test_selection_with_overlap.execute_in_process()
+    assert result.success
+    assert result.output_for_node("follows_o2") == "foo"
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"When attempting to create job 'bad_subset', the clause "
+        r"'doesnt_exist' within the asset key selection did not match any asset "
+        r"keys. Present asset keys: \['start_asset', 'o1', 'o2', 'follows_o1', 'follows_o2'\]",
+    ):
+        collection.build_job(name="bad_subset", selection="doesnt_exist")
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"When attempting to create job 'bad_query_arguments', the clause "
+        r"follows_o1= within the asset key selection was invalid. Please review "
+        r"the selection syntax here: "
+        r"https://docs.dagster.io/concepts/ops-jobs-graphs/job-execution#op-selection-syntax.",
+    ):
+        collection.build_job(name="bad_query_arguments", selection="follows_o1=")
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"When building job 'test_subselect_only_one_key', the asset "
+        r"'middle_asset' contains asset keys \['o1', 'o2'\], but attempted to "
+        r"select only \['o1'\]. Selecting only some of the asset keys for a "
+        r"particular asset is not yet supported behavior. Please select all "
+        r"asset keys produced by a given asset when subsetting.",
+    ):
+        collection.build_job(name="test_subselect_only_one_key", selection="o1")
