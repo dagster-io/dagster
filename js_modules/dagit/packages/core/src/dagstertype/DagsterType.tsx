@@ -47,9 +47,7 @@ export const DagsterTypeSummary: React.FC<{
   horizontalPadding?: Spacing;
 }> = ({type, horizontalPadding}) => {
   horizontalPadding = horizontalPadding || 0;
-  const tableSchemaEntry = type.metadataEntries.find(
-    gqlTypePredicate('TableSchemaMetadataEntry'),
-  );
+  const tableSchemaEntry = type.metadataEntries.find(gqlTypePredicate('TableSchemaMetadataEntry'));
   return (
     <Box
       flex={{direction: 'column', gap: 8}}

@@ -4,7 +4,6 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
-
 snapshots = Snapshot()
 
 snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[postgres_with_default_run_launcher_deployed_grpc_env] 1'] = [
