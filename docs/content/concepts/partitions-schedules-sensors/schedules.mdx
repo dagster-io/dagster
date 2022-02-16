@@ -133,9 +133,9 @@ Hourly schedules will be unaffected by daylight savings time transitions - the s
 In order for a schedule to run, it must be started. You can start or stop the schedule in Dagit, or with the `dagster schedule start` and `dagster schedule stop` commands. You can also start your schedule by setting the default status to `DefaultScheduleStatus.RUNNING` in code:
 
 ```python file=concepts/partitions_schedules_sensors/schedules/schedules.py startafter=start_running_in_code endbefore=end_running_in_code
-my_running_schedule = ScheduleDefinition(
-    job=my_job, cron_schedule="0 9 * * *", default_status=DefaultScheduleStatus.RUNNING
-)
+@schedule(job=my_job, cron_schedule="0 0 * * *", default_status=DefaultScheduleStatus.RUNNING)
+def my_running_schedule(context: ScheduleEvaluationContext):
+    return {}
 ```
 
 If you manually start or stop a schedule in Dagit, that will override any default status that is set in code.

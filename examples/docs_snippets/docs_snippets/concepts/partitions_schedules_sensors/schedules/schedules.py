@@ -50,8 +50,11 @@ my_timezone_schedule = ScheduleDefinition(
 # end_timezone
 
 # start_running_in_code
-my_running_schedule = ScheduleDefinition(
-    job=my_job, cron_schedule="0 9 * * *", default_status=DefaultScheduleStatus.RUNNING
-)
+
+
+@schedule(job=my_job, cron_schedule="0 0 * * *", default_status=DefaultScheduleStatus.RUNNING)
+def my_running_schedule(context: ScheduleEvaluationContext):
+    return {}
+
 
 # end_running_in_code
