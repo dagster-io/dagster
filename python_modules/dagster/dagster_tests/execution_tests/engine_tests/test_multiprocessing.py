@@ -4,10 +4,10 @@ import time
 
 import pytest
 from dagster import (
-    MetadataEntry,
     Failure,
     Field,
     InputDefinition,
+    MetadataEntry,
     Nothing,
     Output,
     OutputDefinition,

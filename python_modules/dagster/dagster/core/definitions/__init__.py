@@ -76,6 +76,27 @@ from .hook_definition import HookDefinition
 from .input import GraphIn, In, InputDefinition, InputMapping
 from .job_definition import JobDefinition
 from .logger_definition import LoggerDefinition, build_init_logger_context, logger
+from .metadata import (
+    DagsterAssetMetadataValue,
+    DagsterPipelineRunMetadataValue,
+    FloatMetadataValue,
+    IntMetadataValue,
+    JsonMetadataValue,
+    MarkdownMetadataValue,
+    MetadataEntry,
+    MetadataValue,
+    PathMetadataValue,
+    PythonArtifactMetadataValue,
+    TableColumn,
+    TableColumnConstraints,
+    TableConstraints,
+    TableMetadataValue,
+    TableRecord,
+    TableSchema,
+    TableSchemaMetadataValue,
+    TextMetadataValue,
+    UrlMetadataValue,
+)
 from .mode import ModeDefinition
 from .op_definition import OpDefinition
 from .output import (

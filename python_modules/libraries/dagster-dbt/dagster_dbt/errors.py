@@ -1,7 +1,7 @@
 from abc import ABC
 from typing import Any, Dict, List
 
-from dagster import MetadataEntry, Failure, check
+from dagster import Failure, MetadataEntry, check
 
 
 class DagsterDbtError(Failure, ABC):
@@ -18,9 +18,7 @@ class DagsterDbtCliUnexpectedOutputError(DagsterDbtError):
         line_nos_str = ", ".join(map(str, invalid_line_nos))
         description = f"dbt CLI emitted unexpected output on lines {line_nos_str}"
         metadata_entries = [
-            MetadataEntry.json(
-                {"line_nos": invalid_line_nos}, "Invalid CLI Output Line Numbers"
-            )
+            MetadataEntry.json({"line_nos": invalid_line_nos}, "Invalid CLI Output Line Numbers")
         ]
         super().__init__(description, metadata_entries)
         self.invalid_line_nos = invalid_line_nos

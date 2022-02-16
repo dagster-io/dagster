@@ -3,9 +3,9 @@ from dagster import (
     AssetMaterialization,
     AssetObservation,
     DagsterEventType,
-    MetadataValue,
     FloatMetadataValue,
     IntMetadataValue,
+    MetadataValue,
     PythonArtifactMetadataValue,
     TextMetadataValue,
     UrlMetadataValue,
@@ -17,7 +17,7 @@ from dagster.check import CheckError
 from dagster.core.definitions.metadata import (
     DagsterInvalidMetadata,
     MetadataEntry,
-    parse_metadata,
+    normalize_metadata,
 )
 from dagster.core.definitions.metadata.table import (
     TableColumn,
@@ -126,7 +126,7 @@ def test_unknown_metadata_value():
     def the_pipeline():
         the_solid()
 
-    with pytest.raises(DagsterInvalidMetadataValue) as exc_info:
+    with pytest.raises(DagsterInvalidMetadata) as exc_info:
         execute_pipeline(the_pipeline)
 
     assert str(exc_info.value) == (
@@ -140,10 +140,10 @@ def test_parse_invalid_metadata():
 
     metadata = {"foo": object()}
 
-    with pytest.raises(DagsterInvalidMetadataValue) as exc_info:
-        parse_metadata(metadata, [])
+    with pytest.raises(DagsterInvalidMetadata) as exc_info:
+        normalize_metadata(metadata, [])
 
-    entries = parse_metadata(metadata, [], allow_invalid=True)
+    entries = normalize_metadata(metadata, [], allow_invalid=True)
     assert len(entries) == 1
     assert entries[0].label == "foo"
     assert entries[0].entry_data == TextMetadataValue("[object] (unserializable)")
@@ -161,7 +161,7 @@ def test_bad_json_metadata_value():
     def the_pipeline():
         the_solid()
 
-    with pytest.raises(DagsterInvalidMetadataValue) as exc_info:
+    with pytest.raises(DagsterInvalidMetadata) as exc_info:
         execute_pipeline(the_pipeline)
 
     assert str(exc_info.value) == (
@@ -172,7 +172,7 @@ def test_bad_json_metadata_value():
 
 def test_table_metadata_value_schema_inference():
 
-    table_metadata_value =  .table(
+    table_metadata_value = MetadataEntry.table(
         records=[
             TableRecord(name="foo", status=False),
             TableRecord(name="bar", status=True),

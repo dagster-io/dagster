@@ -11,12 +11,14 @@ class GrapheneMetadataItemDefinition(graphene.ObjectType):
     class Meta:
         name = "MetadataItemDefinition"
 
+
 class GrapheneMetadataEntry(graphene.Interface):
     label = graphene.NonNull(graphene.String)
     description = graphene.String()
 
     class Meta:
         name = "EventMetadataEntry"
+
 
 class GraphenePathMetadataEntry(graphene.ObjectType):
     path = graphene.NonNull(graphene.String)
@@ -120,6 +122,7 @@ class GrapheneAssetMetadataEntry(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMetadataEntry,)
         name = "EventAssetMetadataEntry"
+
 
 def types():
     return [

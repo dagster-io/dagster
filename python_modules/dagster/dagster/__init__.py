@@ -26,8 +26,6 @@ from dagster.core.definitions import (
     DynamicOutput,
     DynamicOutputDefinition,
     DynamicPartitionsDefinition,
-    MetadataValue,
-    MetadataEntry,
     ExecutorDefinition,
     ExecutorRequirement,
     ExpectationResult,
@@ -47,6 +45,8 @@ from dagster.core.definitions import (
     LoggerDefinition,
     MarkdownMetadataValue,
     Materialization,
+    MetadataEntry,
+    MetadataValue,
     ModeDefinition,
     MonthlyPartitionsDefinition,
     MultiDependencyDefinition,
@@ -242,11 +242,11 @@ from dagster.utils.test import (
     execute_solid_within_pipeline,
     execute_solids_within_pipeline,
 )
+from pep562 import pep562
 
 from .version import __version__
 
 from dagster.config.source import BoolSource, StringSource, IntSource  # isort:skip
-
 
 __all__ = [
     # Definition

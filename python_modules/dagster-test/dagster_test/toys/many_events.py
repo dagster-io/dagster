@@ -1,8 +1,8 @@
 from dagster import (
     AssetMaterialization,
-    MetadataValue,
     ExpectationResult,
     InputDefinition,
+    MetadataValue,
     ModeDefinition,
     Nothing,
     Output,

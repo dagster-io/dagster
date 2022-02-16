@@ -153,6 +153,7 @@ class GrapheneExecutionStepSkippedEvent(graphene.ObjectType):
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
         name = "ExecutionStepSkippedEvent"
 
+
 class GrapheneObjectStoreOperationType(graphene.Enum):
     SET_OBJECT = "SET_OBJECT"
     GET_OBJECT = "GET_OBJECT"

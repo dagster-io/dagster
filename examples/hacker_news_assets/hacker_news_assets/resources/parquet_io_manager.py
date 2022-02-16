@@ -3,7 +3,7 @@ from typing import Union
 
 import pandas
 import pyspark
-from dagster import MetadataEntry, Field, IOManager, OutputContext, check, io_manager
+from dagster import Field, IOManager, MetadataEntry, OutputContext, check, io_manager
 from dagster.seven.temp_dir import get_system_temp_directory
 
 

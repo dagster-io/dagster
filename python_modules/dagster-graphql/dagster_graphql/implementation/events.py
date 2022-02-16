@@ -4,11 +4,11 @@ from dagster import check, seven
 from dagster.core.definitions.metadata import (
     DagsterAssetMetadataValue,
     DagsterPipelineRunMetadataValue,
-    MetadataEntry,
     FloatMetadataValue,
     IntMetadataValue,
     JsonMetadataValue,
     MarkdownMetadataValue,
+    MetadataEntry,
     PathMetadataValue,
     PythonArtifactMetadataValue,
     TableMetadataValue,

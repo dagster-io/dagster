@@ -4,9 +4,9 @@ import os
 import docker.client
 from dagster import (
     DagsterInstance,
-    MetadataEntry,
     Executor,
     Field,
+    MetadataEntry,
     StringSource,
     check,
     executor,

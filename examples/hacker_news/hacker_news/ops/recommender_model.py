@@ -1,6 +1,6 @@
 import random
 
-from dagster import MetadataValue, In, InputDefinition, Out, Output, op
+from dagster import In, InputDefinition, MetadataValue, Out, Output, op
 from dagster.utils import file_relative_path
 from dagstermill import define_dagstermill_solid
 from hacker_news.ops.user_story_matrix import IndexedCooMatrix

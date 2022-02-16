@@ -15,12 +15,12 @@ from dagster.core.definitions import (
     TypeCheck,
 )
 from dagster.core.definitions.decorators.solid import DecoratedSolidFunction
+from dagster.core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster.core.definitions.metadata import (
     MetadataEntry,
     PartitionMetadataEntry,
     normalize_metadata,
 )
-from dagster.core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster.core.errors import (
     DagsterExecutionHandleOutputError,
     DagsterInvariantViolationError,

@@ -4,7 +4,7 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import Optional, Sequence, Tuple, Union
 
-from dagster import MetadataEntry, IOManager, InputContext, OutputContext, io_manager
+from dagster import IOManager, InputContext, MetadataEntry, OutputContext, io_manager
 from pandas import DataFrame as PandasDataFrame
 from pandas import read_sql
 from pyspark.sql import DataFrame as SparkDataFrame

@@ -1,9 +1,9 @@
 from dagster import (
     AssetMaterialization,
-    MetadataEntry,
     Field,
     FileHandle,
     In,
+    MetadataEntry,
     Out,
     Output,
     StringSource,

@@ -14,8 +14,8 @@ from typing import (
 )
 
 from dagster import check
-from dagster.core.definitions.metadata import MetadataEntry, normalize_metadata
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.metadata import MetadataEntry, normalize_metadata
 from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster.utils.backcompat import experimental_arg_warning

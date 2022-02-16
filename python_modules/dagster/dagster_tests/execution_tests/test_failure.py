@@ -1,4 +1,4 @@
-from dagster import MetadataEntry, Failure, execute_pipeline, lambda_solid, pipeline
+from dagster import Failure, MetadataEntry, execute_pipeline, lambda_solid, pipeline
 
 
 def test_failure():

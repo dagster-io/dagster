@@ -4,9 +4,9 @@ import pytest
 from dagster import (
     DagsterInstance,
     DagsterInvalidDefinitionError,
-    MetadataEntry,
     IOManager,
     InputDefinition,
+    MetadataEntry,
     ModeDefinition,
     OutputDefinition,
     PythonObjectDagsterType,

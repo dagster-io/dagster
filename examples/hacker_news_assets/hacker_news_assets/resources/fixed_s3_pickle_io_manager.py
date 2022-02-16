@@ -1,7 +1,7 @@
 import pickle
 
 import boto3
-from dagster import MetadataEntry, IOManager, io_manager
+from dagster import IOManager, MetadataEntry, io_manager
 
 
 def s3_client():

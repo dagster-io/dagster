@@ -23,9 +23,7 @@ class DbtAssetResource:
 
     def _get_metadata(self, result: Dict[str, Any]) -> List[MetadataEntry]:
         return [
-            MetadataEntry.float(
-                value=result["execution_time"], label="Execution Time (seconds)"
-            )
+            MetadataEntry.float(value=result["execution_time"], label="Execution Time (seconds)")
         ]
 
     def get_asset_materializations(self, dbt_output: DbtOutput) -> List[AssetMaterialization]:

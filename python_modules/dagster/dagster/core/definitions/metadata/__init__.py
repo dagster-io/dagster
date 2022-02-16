@@ -24,9 +24,11 @@ RawMetadataValue = Union[
 def last_file_comp(path: str) -> str:
     return os.path.basename(os.path.normpath(path))
 
+
 # ########################
 # ##### NORMALIZATION
 # ########################
+
 
 def normalize_metadata(
     metadata: Dict[str, RawMetadataValue],
@@ -64,6 +66,7 @@ def normalize_metadata(
         package_metadata_value(k, v)
         for k, v in check.opt_dict_param(metadata, "metadata", key_type=str).items()
     ]
+
 
 def package_metadata_value(label: str, value: RawMetadataValue) -> "MetadataEntry":
     check.str_param(label, "label")
@@ -104,9 +107,11 @@ def package_metadata_value(label: str, value: RawMetadataValue) -> "MetadataEntr
         "MetadataValue type."
     )
 
+
 # ########################
 # ##### METADATA VALUE
 # ########################
+
 
 class MetadataValue:
     """Utility class to wrap metadata values passed into Dagster events so that they can be
@@ -411,7 +416,6 @@ class MetadataValue:
         return TableSchemaMetadataValue(schema)
 
 
-
 # ########################
 # ##### METADATA VALUE TYPES
 # ########################
@@ -425,7 +429,7 @@ class TextMetadataValue(
         [
             ("text", Optional[str]),
         ],
-    )
+    ),
 ):
     """Container class for text metadata entry data.
 
@@ -447,7 +451,7 @@ class UrlMetadataValue(
         [
             ("url", Optional[str]),
         ],
-    )
+    ),
 ):
     """Container class for URL metadata entry data.
 
@@ -469,7 +473,7 @@ class PathMetadataValue(
         [
             ("path", Optional[str]),
         ],
-    )
+    ),
 ):
     """Container class for path metadata entry data.
 
@@ -491,7 +495,7 @@ class JsonMetadataValue(
         [
             ("data", Dict[str, Any]),
         ],
-    )
+    ),
 ):
     """Container class for JSON metadata entry data.
 
@@ -513,7 +517,7 @@ class MarkdownMetadataValue(
         [
             ("md_str", Optional[str]),
         ],
-    )
+    ),
 ):
     """Container class for markdown metadata entry data.
 
@@ -536,7 +540,7 @@ class PythonArtifactMetadataValue(
             ("module", str),
             ("name", str),
         ],
-    )
+    ),
 ):
     """Container class for python artifact metadata entry data.
 
@@ -559,7 +563,7 @@ class FloatMetadataValue(
         [
             ("value", Optional[float]),
         ],
-    )
+    ),
 ):
     """Container class for float metadata entry data.
 
@@ -568,9 +572,7 @@ class FloatMetadataValue(
     """
 
     def __new__(cls, value: Optional[float]):
-        return super(FloatMetadataValue, cls).__new__(
-            cls, check.opt_float_param(value, "value")
-        )
+        return super(FloatMetadataValue, cls).__new__(cls, check.opt_float_param(value, "value"))
 
 
 @whitelist_for_serdes
@@ -581,7 +583,7 @@ class IntMetadataValue(
         [
             ("value", Optional[int]),
         ],
-    )
+    ),
 ):
     """Container class for int metadata entry data.
 
@@ -601,7 +603,7 @@ class DagsterPipelineRunMetadataValue(
         [
             ("run_id", str),
         ],
-    )
+    ),
 ):
     """Representation of a dagster pipeline run.
 
@@ -617,8 +619,7 @@ class DagsterPipelineRunMetadataValue(
 
 @whitelist_for_serdes
 class DagsterAssetMetadataValue(
-    MetadataValue,
-    NamedTuple("_DagsterAssetMetadataValue", [("asset_key", "AssetKey")])
+    MetadataValue, NamedTuple("_DagsterAssetMetadataValue", [("asset_key", "AssetKey")])
 ):
     """Representation of a dagster asset.
 
@@ -644,7 +645,7 @@ class TableMetadataValue(
             ("records", List[TableRecord]),
             ("schema", TableSchema),
         ],
-    )
+    ),
 ):
     """Container class for table metadata entry data.
 
@@ -675,8 +676,7 @@ class TableMetadataValue(
 @experimental
 @whitelist_for_serdes
 class TableSchemaMetadataValue(
-    MetadataValue,
-    NamedTuple("_TableSchemaMetadataValue", [("schema", TableSchema)])
+    MetadataValue, NamedTuple("_TableSchemaMetadataValue", [("schema", TableSchema)])
 ):
     """Representation of a schema for arbitrary tabular data.
 
@@ -688,6 +688,7 @@ class TableSchemaMetadataValue(
         return super(TableSchemaMetadataValue, cls).__new__(
             cls, check.inst_param(schema, "schema", TableSchema)
         )
+
 
 # ########################
 # ##### METADATA ENTRY
@@ -731,9 +732,7 @@ class MetadataEntry(
         )
 
     @staticmethod
-    def text(
-        text: Optional[str], label: str, description: Optional[str] = None
-    ) -> "MetadataEntry":
+    def text(text: Optional[str], label: str, description: Optional[str] = None) -> "MetadataEntry":
         """Static constructor for a metadata entry containing text as
         :py:class:`TextMetadataValue`. For example:
 
@@ -756,9 +755,7 @@ class MetadataEntry(
         return MetadataEntry(label, description, TextMetadataValue(text))
 
     @staticmethod
-    def url(
-        url: Optional[str], label: str, description: Optional[str] = None
-    ) -> "MetadataEntry":
+    def url(url: Optional[str], label: str, description: Optional[str] = None) -> "MetadataEntry":
         """Static constructor for a metadata entry containing a URL as
         :py:class:`UrlMetadataValue`. For example:
 
@@ -783,9 +780,7 @@ class MetadataEntry(
         return MetadataEntry(label, description, UrlMetadataValue(url))
 
     @staticmethod
-    def path(
-        path: Optional[str], label: str, description: Optional[str] = None
-    ) -> "MetadataEntry":
+    def path(path: Optional[str], label: str, description: Optional[str] = None) -> "MetadataEntry":
         """Static constructor for a metadata entry containing a path as
         :py:class:`PathMetadataValue`. For example:
 
@@ -864,9 +859,7 @@ class MetadataEntry(
         return MetadataEntry(label, description, JsonMetadataValue(data))
 
     @staticmethod
-    def md(
-        md_str: Optional[str], label: str, description: Optional[str] = None
-    ) -> "MetadataEntry":
+    def md(md_str: Optional[str], label: str, description: Optional[str] = None) -> "MetadataEntry":
         """Static constructor for a metadata entry containing markdown data as
         :py:class:`MarkdownMetadataValue`. For example:
 
@@ -922,9 +915,7 @@ class MetadataEntry(
         return MetadataEntry(label, description, FloatMetadataValue(value))
 
     @staticmethod
-    def int(
-        value: Optional[int], label: str, description: Optional[str] = None
-    ) -> "MetadataEntry":
+    def int(value: Optional[int], label: str, description: Optional[str] = None) -> "MetadataEntry":
         """Static constructor for a metadata entry containing int as
         :py:class:`IntMetadataValue`. For example:
 
@@ -946,9 +937,7 @@ class MetadataEntry(
         return MetadataEntry(label, description, IntMetadataValue(value))
 
     @staticmethod
-    def pipeline_run(
-        run_id: str, label: str, description: Optional[str] = None
-    ) -> "MetadataEntry":
+    def pipeline_run(run_id: str, label: str, description: Optional[str] = None) -> "MetadataEntry":
         check.str_param(run_id, "run_id")
         return MetadataEntry(label, description, DagsterPipelineRunMetadataValue(run_id))
 

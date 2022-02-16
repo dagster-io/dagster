@@ -7,9 +7,9 @@ from urllib.parse import urljoin
 
 import requests
 from dagster import (
-    MetadataValue,
     Failure,
     Field,
+    MetadataValue,
     StringSource,
     __version__,
     check,

@@ -8,12 +8,8 @@ from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster.config.config_type import Array, ConfigType
 from dagster.config.config_type import Noneable as ConfigNoneable
-from dagster.core.definitions.metadata import (
-    MetadataEntry,
-    RawMetadataValue,
-    normalize_metadata,
-)
 from dagster.core.definitions.events import TypeCheck
+from dagster.core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.serdes import whitelist_for_serdes
 

@@ -1,9 +1,9 @@
 # pylint: disable=unused-argument
 from dagster import (
     AssetMaterialization,
-    MetadataValue,
     ExpectationResult,
     Failure,
+    MetadataValue,
     Out,
     Output,
     RetryRequested,

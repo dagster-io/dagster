@@ -2,9 +2,9 @@ import datetime
 
 import great_expectations as ge
 from dagster import (
-    MetadataEntry,
     ExpectationResult,
     InputDefinition,
+    MetadataEntry,
     Noneable,
     Output,
     OutputDefinition,

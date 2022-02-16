@@ -8,8 +8,8 @@ from dagster import (
     DagsterEvent,
     DagsterEventType,
     DagsterInstance,
-    MetadataEntry,
     Executor,
+    MetadataEntry,
     check,
     executor,
     multiple_process_executor_requirements,
@@ -395,9 +395,7 @@ def create_k8s_job_task(celery_app, **task_kwargs):
                     MetadataEntry.text(job_name, "Kubernetes Job name"),
                     MetadataEntry.text(job_config.job_image, "Job image"),
                     MetadataEntry.text(job_config.image_pull_policy, "Image pull policy"),
-                    MetadataEntry.text(
-                        str(job_config.image_pull_secrets), "Image pull secrets"
-                    ),
+                    MetadataEntry.text(str(job_config.image_pull_secrets), "Image pull secrets"),
                     MetadataEntry.text(
                         str(job_config.service_account_name), "Service account name"
                     ),

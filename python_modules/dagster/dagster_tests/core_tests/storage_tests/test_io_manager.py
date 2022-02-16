@@ -17,6 +17,7 @@ from dagster import (
     IOManagerDefinition,
     In,
     InputDefinition,
+    MetadataEntry,
     ModeDefinition,
     Out,
     OutputDefinition,

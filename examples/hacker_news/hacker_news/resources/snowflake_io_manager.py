@@ -3,7 +3,7 @@ import textwrap
 from contextlib import contextmanager
 from typing import Mapping, Optional, Sequence, Union
 
-from dagster import AssetKey, MetadataEntry, IOManager, InputContext, OutputContext, io_manager
+from dagster import AssetKey, IOManager, InputContext, MetadataEntry, OutputContext, io_manager
 from pandas import DataFrame as PandasDataFrame
 from pandas import read_sql
 from pyspark.sql import DataFrame as SparkDataFrame

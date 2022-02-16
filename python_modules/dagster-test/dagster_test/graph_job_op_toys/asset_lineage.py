@@ -8,10 +8,10 @@ import pandas as pd
 from dagster import (
     Array,
     AssetKey,
-    MetadataValue,
-    MetadataEntry,
     ExperimentalWarning,
     Field,
+    MetadataEntry,
+    MetadataValue,
     Out,
     Output,
     Partition,

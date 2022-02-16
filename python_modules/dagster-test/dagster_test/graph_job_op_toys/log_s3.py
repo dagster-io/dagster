@@ -1,4 +1,4 @@
-from dagster import AssetKey, AssetMaterialization, MetadataValue, Field, Output, graph, op
+from dagster import AssetKey, AssetMaterialization, Field, MetadataValue, Output, graph, op
 
 
 @op(

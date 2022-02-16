@@ -9,10 +9,10 @@ from dagster.core.definitions import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
-    MetadataEntry,
     ExpectationResult,
     HookDefinition,
     Materialization,
+    MetadataEntry,
     NodeHandle,
 )
 from dagster.core.definitions.events import AssetLineageInfo, ObjectStoreOperationType

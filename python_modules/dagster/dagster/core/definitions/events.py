@@ -10,8 +10,8 @@ from dagster.utils.backcompat import experimental_class_param_warning
 
 from .metadata import (
     MetadataEntry,
-    RawMetadataValue,
     PartitionMetadataEntry,
+    RawMetadataValue,
     last_file_comp,
     normalize_metadata,
 )

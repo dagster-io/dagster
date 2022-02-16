@@ -6,8 +6,8 @@ from dagster.core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
-    MetadataEntry,
     Materialization,
+    MetadataEntry,
     PartitionMetadataEntry,
 )
 from dagster.core.definitions.op_definition import OpDefinition
@@ -106,9 +106,7 @@ class OutputContext:
 
         self._events: List["DagsterEvent"] = []
         self._user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]] = []
-        self._metadata_entries: Optional[
-            List[Union[MetadataEntry, PartitionMetadataEntry]]
-        ] = None
+        self._metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None
 
     def __enter__(self):
         if self._resources_cm:

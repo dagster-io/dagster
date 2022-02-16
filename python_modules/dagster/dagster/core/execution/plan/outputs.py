@@ -3,8 +3,8 @@ from typing import List, NamedTuple, Optional, Union
 from dagster import check
 from dagster.core.definitions import (
     AssetMaterialization,
-    MetadataEntry,
     Materialization,
+    MetadataEntry,
     NodeHandle,
 )
 from dagster.serdes import whitelist_for_serdes
