@@ -17,10 +17,6 @@ def persist_to_storage(df):
     return "tmp"
 
 
-def read_csv(_path):
-    return pd.DataFrame()
-
-
 def calculate_bytes(df):
     return 1.0
 

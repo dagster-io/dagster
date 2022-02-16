@@ -16,9 +16,11 @@ An asset observation is an event that records metadata about a given asset.
 
 ## Overview
 
-<PyObject module="dagster" object="AssetObservation" /> events are used to communicate to Dagster that metadata has been recorded about a given asset. Asset observation
-events can be yielded at runtime within ops and assets. An asset must be defined using the <PyObject object="asset" decorator /> decorator or have existing materializations in order for its
-observations to be displayed.
+<PyObject module="dagster" object="AssetObservation" /> events are used to communicate
+to Dagster that metadata has been recorded about a given asset. Asset observation
+events can be yielded at runtime within ops and assets. An asset must be defined
+using the <PyObject object="asset" decorator /> decorator or have existing materializations
+in order for its observations to be displayed.
 
 ## Yielding an AssetObservation from an Asset
 
@@ -47,8 +49,7 @@ height={917}
 
 ### Attaching Metadata to an AssetObservation
 
-There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject module="dagster" object="EventMetadataEntry" /> class. Each observation event optionally takes a list of metadata entries that are then displayed in the event log and the [Asset Details](/concepts/dagit/dagit#asset-details) page.
-Check our API docs for <PyObject module="dagster" object="EventMetadataEntry" /> for more details on the types of event metadata available.
+There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject module="dagster" object="EventMetadataEntry" /> class. Each observation event optionally takes a list of metadata entries that are then displayed in the event log and the [Asset Details](/concepts/dagit/dagit#asset-details) page. Check our API docs for <PyObject module="dagster" object="EventMetadataEntry" /> for more details on the types of event metadata available.
 
 ```python file=concepts/assets/observations.py startafter=start_observation_asset_marker_2 endbefore=end_observation_asset_marker_2
 from dagster import asset, AssetObservation, Output, EventMetadata
@@ -87,7 +88,7 @@ If you are observing a single slice of an asset (e.g. a single day's worth of da
 from dagster import op, AssetMaterialization, Output
 
 
-@asset
+@asset(partitions_def=DailyPartitionsDefinition(start_date="2022-02-15"))
 def my_partitioned_dataset(context):
     partition_date = context.partition_key
     df = read_df_for_date(partition_date)
