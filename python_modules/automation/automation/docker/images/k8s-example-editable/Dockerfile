@@ -3,9 +3,6 @@ FROM "${BASE_IMAGE}"
 
 ARG DAGSTER_VERSION
 
-RUN apt-get update -yqq && \
-    apt-get install -yqq cron
-
 COPY build_cache/ /
 
 RUN pip install \
