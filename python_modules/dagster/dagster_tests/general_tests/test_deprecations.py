@@ -2,15 +2,11 @@
 # deprecations for the current version.
 
 import re
+
 import dagster
 import pytest
 from dagster.core.definitions.events import Output
 from dagster.core.definitions.input import InputDefinition
-
-# ########################
-# ##### METADATA IMPORTS
-# ########################
-
 from dagster.core.definitions.metadata import (
     DagsterAssetMetadataValue,
     DagsterPipelineRunMetadataValue,
@@ -60,9 +56,14 @@ METADATA_DEPRECATIONS = {
 def metadata_entry_class_name(request):
     return request.param
 
+
 def test_metadata_classes(metadata_entry_class_name):
     with pytest.warns(DeprecationWarning):
-        assert getattr(dagster, metadata_entry_class_name) == METADATA_DEPRECATIONS[metadata_entry_class_name][1]
+        assert (
+            getattr(dagster, metadata_entry_class_name)
+            == METADATA_DEPRECATIONS[metadata_entry_class_name][1]
+        )
+
 
 # ########################
 # ##### METADATA ARGUMENTS
@@ -85,7 +86,7 @@ def test_metadata_entries():
 def test_arbitrary_metadata():
 
     with pytest.warns(DeprecationWarning, match=re.escape("arbitrary metadata values")):
-         OutputDefinition(metadata={"foo": object()})
+        OutputDefinition(metadata={"foo": object()})
 
     with pytest.warns(DeprecationWarning, match=re.escape("arbitrary metadata values")):
         InputDefinition(metadata={"foo": object()})
