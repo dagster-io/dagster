@@ -9,19 +9,20 @@ import {OmittedAssetCountQuery} from './types/OmittedAssetCountQuery';
 
 export const OmittedAssetsNotice: React.FC<{assetKeys: AssetKey[]}> = ({assetKeys}) => {
   const result = useQuery<OmittedAssetCountQuery>(OMITTED_ASSET_COUNT_QUERY);
-  const allAssetKeys =
+  const allMaterializationKeys =
     (result.data?.assetsOrError.__typename === 'AssetConnection' &&
       result.data.assetsOrError.nodes) ||
     [];
-  if (allAssetKeys.length === 0) {
+  if (allMaterializationKeys.length === 0) {
     return <span />;
   }
 
   const assetKeysJSONs = assetKeys.map((key) => JSON.stringify(key));
-  const missing = allAssetKeys.filter((a) => !assetKeysJSONs.includes(JSON.stringify(a.key)))
-    .length;
+  const materializationsNotShown = allMaterializationKeys.filter(
+    (a) => !assetKeysJSONs.includes(JSON.stringify(a.key)),
+  ).length;
 
-  if (missing === 0) {
+  if (materializationsNotShown === 0) {
     return <span />;
   }
   return <Container>Only software-defined assets are shown</Container>;
