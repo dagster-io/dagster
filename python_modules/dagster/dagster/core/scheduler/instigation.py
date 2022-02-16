@@ -98,18 +98,19 @@ class InstigatorStateSerializer(DefaultNamedTupleSerializer):
         whitelist_map: WhitelistMap,
         descent_path: str,
     ) -> NamedTuple:
-        raw_dict = {
-            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
-            for key, value in storage_dict.items()
-        }
-        # For backcompat, we store:
-        # instigator_type as job_type
-        # instigator_data as job_specific_data
-        return klass(
-            **{key: value for key, value in raw_dict.items() if key in args_for_class},
-            instigator_type=raw_dict.get("job_type"),
-            instigator_data=raw_dict.get("job_specific_data"),
-        )
+        klass_kwargs = {}
+        for key, value in storage_dict.items():
+            unpacked = unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            if key in args_for_class:
+                klass_kwargs[key] = unpacked
+            elif key == "job_type":
+                # For backcompat, we store instigator_type as job_type
+                klass_kwargs["instigator_type"] = unpacked
+            elif key == "job_specific_data":
+                # For backcompat, we store instigator_data as job_specific_data
+                klass_kwargs["instigator_data"] = unpacked
+
+        return klass(**klass_kwargs)
 
     @classmethod
     def value_to_storage_dict(
@@ -215,16 +216,16 @@ class TickSerializer(DefaultNamedTupleSerializer):
         whitelist_map: WhitelistMap,
         descent_path: str,
     ) -> NamedTuple:
-        raw_dict = {
-            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
-            for key, value in storage_dict.items()
-        }
-        # For backcompat, we store:
-        # tick_data as job_tick_data
-        return klass(
-            **{key: value for key, value in raw_dict.items() if key in args_for_class},
-            tick_data=raw_dict.get("job_tick_data"),
-        )
+        klass_kwargs = {}
+        for key, value in storage_dict.items():
+            unpacked = unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            if key in args_for_class:
+                klass_kwargs[key] = unpacked
+            elif key == "job_tick_data":
+                # For backcompat, we store tick_data as job_tick_data
+                klass_kwargs["tick_data"] = unpacked
+
+        return klass(**klass_kwargs)
 
     @classmethod
     def value_to_storage_dict(
@@ -338,20 +339,22 @@ class TickDataSerializer(DefaultNamedTupleSerializer):
         whitelist_map: WhitelistMap,
         descent_path: str,
     ) -> NamedTuple:
-        raw_dict = {
-            key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
-            for key, value in storage_dict.items()
-        }
-        # For backcompat, we store:
-        # instigator_origin_id as job_origin_id
-        # instigator_name as job_name
-        # instigator_type as job_type
-        return klass(
-            **{key: value for key, value in raw_dict.items() if key in args_for_class},
-            instigator_origin_id=raw_dict.get("job_origin_id"),
-            instigator_name=raw_dict.get("job_name"),
-            instigator_type=raw_dict.get("job_type"),
-        )
+        klass_kwargs = {}
+        for key, value in storage_dict.items():
+            unpacked = unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+            if key in args_for_class:
+                klass_kwargs[key] = unpacked
+            elif key == "job_origin_id":
+                # For backcompat, we store instigator_origin_id as job_origin_id
+                klass_kwargs["instigator_origin_id"] = unpacked
+            elif key == "job_name":
+                # For backcompat, we store instigator_name as job_name
+                klass_kwargs["instigator_name"] = unpacked
+            elif key == "job_type":
+                # For backcompat, we store instigator_type as job_type
+                klass_kwargs["instigator_type"] = unpacked
+
+        return klass(**klass_kwargs)
 
     @classmethod
     def value_to_storage_dict(
