@@ -241,6 +241,10 @@
           {
             "title": "Asset Materializations",
             "path": "/concepts/assets/asset-materializations"
+          },
+          {
+            "title": "Asset Observations",
+            "path": "/concepts/assets/asset-observations"
           }
         ]
       }
