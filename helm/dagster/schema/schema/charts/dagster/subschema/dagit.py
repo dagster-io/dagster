@@ -1,5 +1,7 @@
 from typing import Dict, List, Optional
 
+from pydantic import Extra  # pylint: disable=no-name-in-module
+
 from ...utils import kubernetes
 from ...utils.utils import BaseModel
 
@@ -36,3 +38,6 @@ class Dagit(BaseModel):
     annotations: kubernetes.Annotations
     enableReadOnly: bool
     dbStatementTimeout: Optional[int]
+
+    class Config:
+        extra = Extra.forbid

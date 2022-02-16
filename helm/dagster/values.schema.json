@@ -388,7 +388,8 @@
                 "startupProbe",
                 "annotations",
                 "enableReadOnly"
-            ]
+            ],
+            "additionalProperties": false
         },
         "VolumeMount": {
             "title": "VolumeMount",
@@ -1937,7 +1938,8 @@
                     "title": "Dagsterhandlerconfig",
                     "type": "object"
                 }
-            }
+            },
+            "additionalProperties": false
         },
         "RunCoordinatorType": {
             "title": "RunCoordinatorType",
@@ -2237,7 +2239,8 @@
                 "startupProbe",
                 "annotations",
                 "runMonitoring"
-            ]
+            ],
+            "additionalProperties": false
         },
         "Busybox": {
             "title": "Busybox",
