@@ -334,17 +334,20 @@ class DagsterInstance:
 
         self._subscribers: Dict[str, List[Callable]] = defaultdict(list)
 
-        if self.run_monitoring_enabled:
-            check.invariant(
-                self.run_launcher.supports_check_run_worker_health,
-                "The configured run launcher does not support run monitoring.",
+        run_monitoring_enabled = self.run_monitoring_settings.get("enabled", False)
+        if run_monitoring_enabled and not self.run_launcher.supports_check_run_worker_health:
+            run_monitoring_enabled = False
+            warnings.warn(
+                "The configured run launcher does not support run monitoring, disabling it.",
             )
-
-            if self.run_monitoring_max_resume_run_attempts:
-                check.invariant(
-                    self.run_launcher.supports_resume_run,
-                    "The configured run launcher does not support resuming runs. Set max_resume_run_attempts to 0.",
-                )
+        self._run_monitoring_enabled = run_monitoring_enabled
+        if self.run_monitoring_enabled and self.run_monitoring_max_resume_run_attempts:
+            check.invariant(
+                self.run_launcher.supports_resume_run,
+                "The configured run launcher does not support resuming runs. "
+                "Set max_resume_run_attempts to 0 to use run monitoring. Any runs with a failed run "
+                "worker will be marked as failed, but will not be resumed.",
+            )
 
     # ctors
 
@@ -604,24 +607,10 @@ class DagsterInstance:
 
     @property
     def run_monitoring_enabled(self) -> bool:
-        if self.is_ephemeral:
-            return False
-
-        run_monitoring_enabled_default = False
-
-        run_monitoring_settings = self.get_settings("run_monitoring")
-
-        if not run_monitoring_settings:
-            return run_monitoring_enabled_default
-
-        if "enabled" in run_monitoring_settings:
-            return run_monitoring_settings["enabled"]
-        else:
-            return run_monitoring_enabled_default
+        return self._run_monitoring_enabled
 
     @property
     def run_monitoring_settings(self) -> Dict:
-        check.invariant(self.run_monitoring_enabled, "run_monitoring is not enabled")
         return self.get_settings("run_monitoring")
 
     @property
