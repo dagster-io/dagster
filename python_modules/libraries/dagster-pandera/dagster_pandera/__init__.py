@@ -11,7 +11,6 @@ from dagster import (
     TableColumn,
     TableColumnConstraints,
     TableConstraints,
-    TableRecord,
     TableSchema,
     TypeCheck,
     TypeCheckContext,
@@ -191,32 +190,6 @@ def _pandera_errors_to_type_check(
     return TypeCheck(
         success=False,
         description=str(error),
-        # TODO: Leaving this out until quality rendering of TableMetadata is supported.
-        # metadata_entries=[
-        #     EventMetadataEntry.int(len(error.failure_cases), "Total number failures"),
-        #     EventMetadataEntry.table(
-        #         label="Failure cases (first 10)",
-        #         records=[
-        #             _pandera_failure_case_to_table_record(row)
-        #             for row in itertools.islice(error.failure_cases.itertuples(), 10)
-        #         ],
-        #         schema=PANDERA_FAILURE_CASES_SCHEMA,
-        #     ),
-        #     EventMetadataEntry.table_schema(table_schema, label="schema"),
-        # ],
-    )
-
-
-def _pandera_failure_case_to_table_record(case):
-    return TableRecord(
-        schema_context=case.schema_context.__class__.__name__,
-        column=case.column,
-        check=case.check,
-        check_number=case.check_number,
-        failure_case=case.failure_case
-        if isinstance(case.failure_case, (int, float))
-        else str(case.failure_case),
-        index=case.index,
     )
 
 
