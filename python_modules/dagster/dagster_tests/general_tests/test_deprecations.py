@@ -25,7 +25,6 @@ from dagster.core.definitions.metadata import (
 # ########################
 
 
-
 METADATA_DEPRECATIONS = {
     "EventMetadataEntry": ("MetadataEntry", MetadataEntry),
     "EventMetadata": ("MetadataValue", MetadataValue),
