@@ -1,5 +1,5 @@
 """isort:skip_file"""
-from dagster import job, op, EventMetadataEntry
+from dagster import job, op
 
 
 @op
@@ -54,9 +54,8 @@ class DataframeTableIOManagerWithMetadata(IOManager):
         table_name = context.name
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
-        # attach these to the Handled Output event
-        yield EventMetadataEntry.int(len(obj), label="number of rows")
-        yield EventMetadataEntry.text(table_name, label="table name")
+        # attach this metadata to the Handled Output event
+        context.add_output_metadata({"number of rows": len(obj), "table name": table_name})
 
     def load_input(self, context):
         table_name = context.upstream_output.name

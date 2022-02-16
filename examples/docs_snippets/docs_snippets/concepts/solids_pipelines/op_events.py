@@ -1,4 +1,14 @@
 # pylint: disable=unused-argument
+# start_expectation_op
+# start_asset_op
+# start_retry_op
+# start_failure_metadata_op
+# start_failure_op
+# start_metadata_expectation_op
+# start_op_output_3
+# start_op_output_2
+# start_op_output_1
+# start_op_output_0
 from dagster import (
     AssetMaterialization,
     EventMetadata,
@@ -39,7 +49,6 @@ def flaky_operation():
     return 0
 
 
-# start_op_output_0
 
 
 @op
@@ -49,7 +58,6 @@ def my_simple_yield_op(context):
 
 # end_op_output_0
 
-# start_op_output_1
 
 
 @op
@@ -59,7 +67,6 @@ def my_simple_return_op(context):
 
 # end_op_output_1
 
-# start_op_output_2
 
 
 @op(out={"my_output": Out(int)})
@@ -69,47 +76,46 @@ def my_named_yield_op(context):
 
 # end_op_output_2
 
-# start_op_output_3
 
 
 @op
 def my_metadata_output(context):
     df = get_some_data()
-    yield Output(
-        df,
-        metadata={
+    context.add_output_metadata(
+        {
             "text_metadata": "Text-based metadata for this event",
             "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
             "raw_count": len(df),
             "size (bytes)": calculate_bytes(df),
-        },
+        }
     )
+    return df
 
 
 # end_op_output_3
 
-# start_metadata_expectation_op
 
 
 @op
 def my_metadata_expectation_op(context, df):
     df = do_some_transform(df)
-    yield ExpectationResult(
-        success=len(df) > 0,
-        description="ensure dataframe has rows",
-        metadata={
-            "text_metadata": "Text-based metadata for this event",
-            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
-            "raw_count": len(df),
-            "size (bytes)": calculate_bytes(df),
-        },
+    context.log_event(
+        ExpectationResult(
+            success=len(df) > 0,
+            description="ensure dataframe has rows",
+            metadata={
+                "text_metadata": "Text-based metadata for this event",
+                "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+                "raw_count": len(df),
+                "size (bytes)": calculate_bytes(df),
+            },
+        )
     )
-    yield Output(df)
+    return df
 
 
 # end_metadata_expectation_op
 
-# start_failure_op
 
 
 @op
@@ -129,7 +135,6 @@ def my_failure_op():
 
 # end_failure_op
 
-# start_failure_metadata_op
 
 
 @op
@@ -149,7 +154,6 @@ def my_failure_metadata_op():
 
 # end_failure_metadata_op
 
-# start_retry_op
 
 
 @op
@@ -163,20 +167,34 @@ def my_retry_op():
 
 # end_retry_op
 
-# start_asset_op
 
 
 @op
 def my_asset_op(context):
     df = get_some_data()
     store_to_s3(df)
-    yield AssetMaterialization(
-        asset_key="s3.my_asset",
-        description="A df I stored in s3",
+    context.log_event(
+        AssetMaterialization(
+            asset_key="s3.my_asset",
+            description="A df I stored in s3",
+        )
     )
 
     result = do_some_transform(df)
-    yield Output(result)
+    return result
 
 
 # end_asset_op
+
+
+
+@op
+def my_expectation_op(context, df):
+    do_some_transform(df)
+    context.log_event(
+        ExpectationResult(success=len(df) > 0, description="ensure dataframe has rows")
+    )
+    return df
+
+
+# end_expectation_op

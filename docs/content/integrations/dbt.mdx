@@ -270,10 +270,12 @@ from dagster_dbt.utils import generate_materializations
 def dbt_run_with_custom_assets(context):
     dbt_result = context.resources.dbt.run()
     for materialization in generate_materializations(dbt_result):
-        yield materialization._replace(
-            metadata_entries=[...]  # insert whatever metadata you want here
+        context.log_event(
+            materialization._replace(
+                metadata_entries=[...]  # insert whatever metadata you want here
+            )
         )
-    yield Output(dbt_result)
+    return dbt_result
 ```
 
 **dbt CLI: Set the dbt profile and target to load**

@@ -1,7 +1,7 @@
 import os
 
 import pandas as pd
-from dagster import AssetKey, AssetMaterialization, EventMetadataEntry, IOManager
+from dagster import AssetKey, AssetMaterialization, IOManager
 
 
 def read_csv(_path):
@@ -65,8 +65,9 @@ class PandasCsvIOManagerWithOutputAsset(IOManager):
 
         obj.to_csv(file_path)
 
-        yield EventMetadataEntry.int(obj.shape[0], label="number of rows")
-        yield EventMetadataEntry.float(obj["some_column"].mean(), "some_column mean")
+        context.add_output_metadata(
+            {"number of rows": obj.shape[0], "some_column mean": obj["some_column"].mean()}
+        )
 
     def get_output_asset_key(self, context):
         file_path = os.path.join("my_base_dir", context.step_key, context.name)
@@ -86,8 +87,9 @@ class PandasCsvIOManagerWithOutputAssetPartitions(IOManager):
 
         obj.to_csv(file_path)
 
-        yield EventMetadataEntry.int(obj.shape[0], label="number of rows")
-        yield EventMetadataEntry.float(obj["some_column"].mean(), "some_column mean")
+        context.add_output_metadata(
+            {"number of rows": obj.shape[0], "some_column mean": obj["some_column"].mean()}
+        )
 
     def get_output_asset_key(self, context):
         file_path = os.path.join("my_base_dir", context.step_key, context.name)

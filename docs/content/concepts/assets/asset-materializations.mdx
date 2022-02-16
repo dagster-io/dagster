@@ -11,7 +11,7 @@ Op outputs often correspond to assets. For example, an op might be responsible f
 
 Assets can also have partitions, which refer to slices of the overall asset. The simplest example would be a table that has a partition for each day. A given op execution may simply write a single day's worth of data to that table, rather than dropping the entire table and replacing it with new data.
 
-Dagster lets you track the interactions between ops, outputs, and assets over time and view them in the Dagit [Asset Catalog](/concepts/dagit/dagit#assets). Every asset has a "key", which serves as a unique identifier for that particular entity. The act of creating or updating the contents of an asset is called a "materialization", and Dagster tracks these materializations using <PyObject object="AssetMaterialization" /> events. These events can either be yielded by the user at runtime, or automatically created by Dagster in cases where an <PyObject object="AssetKey" /> has been referenced by an op output.
+Dagster lets you track the interactions between ops, outputs, and assets over time and view them in the Dagit [Asset Catalog](/concepts/dagit/dagit#assets). Every asset has a "key", which serves as a unique identifier for that particular entity. The act of creating or updating the contents of an asset is called a "materialization", and Dagster tracks these materializations using <PyObject object="AssetMaterialization" /> events. These events can either be logged by the user at runtime, or automatically created by Dagster in cases where an <PyObject object="AssetKey" /> has been referenced by an op output.
 
 ## Relevant APIs
 
@@ -27,7 +27,7 @@ There are two general patterns for dealing with assets when using Dagster:
 - Put the logic to write/store assets inside the body of an op.
 - Focus the op purely on business logic, and delegate the logic to write/store assets to an [IOManager](/concepts/io-management/io-managers).
 
-Regardless of which pattern you are using, <PyObject module="dagster" object="AssetMaterialization" /> events are used to communicate to Dagster that a materialization has occurred. You can create these events either by explicitly yielding them at runtime, or (using an experimental interface), have Dagster automatically generate them by defining that a given op output corresponds to a given <PyObject module="dagster" object="AssetKey" />.
+Regardless of which pattern you are using, <PyObject module="dagster" object="AssetMaterialization" /> events are used to communicate to Dagster that a materialization has occurred. You can create these events either by explicitly logging them at runtime, or (using an experimental interface), have Dagster automatically generate them by defining that a given op output corresponds to a given <PyObject module="dagster" object="AssetKey" />.
 
 ## Explicit AssetMaterializations
 
@@ -166,8 +166,9 @@ def my_partitioned_asset_op(context):
     partition_date = context.op_config["date"]
     df = read_df_for_date(partition_date)
     remote_storage_path = persist_to_storage(df)
-    yield AssetMaterialization(asset_key="my_dataset", partition=partition_date)
-    yield Output(remote_storage_path)
+    materialization = AssetMaterialization(asset_key="my_dataset", partition=partition_date)
+    context.log_event(materialization)
+    return remote_storage_path
 ```
 
 ## Linking Op Outputs to Assets <Experimental />
@@ -182,15 +183,15 @@ from dagster import op, Output, AssetMaterialization
 def my_asset_op(context):
     df = read_df()
     persist_to_storage(df)
-    yield AssetMaterialization(asset_key="my_dataset")
-    yield Output(df)
+    context.log_event(AssetMaterialization(asset_key="my_dataset"))
+    return df
 ```
 
 In this case, the <PyObject object="AssetMaterialization" /> and the <PyObject object="Output" /> events both correspond to the same data, the dataframe that we have created. With this in mind, we can simplify the above code, and provide useful information to the Dagster framework, by making this link between the `my_dataset` asset and the output of this op explicit.
 
-Just as there are two places in which you can yield runtime <PyObject object="AssetMaterialization" /> events (within an op body and within an IOManager), we provide two different interfaces for linking an op output to to an asset. Regardless of which you choose, every time the op runs and yields that output, an <PyObject object="AssetMaterialization" /> event will automatically be created to record this information.
+Just as there are two places in which you can log runtime <PyObject object="AssetMaterialization" /> events (within an op body and within an IOManager), we provide two different interfaces for linking an op output to to an asset. Regardless of which you choose, every time the op runs and returns that output, an <PyObject object="AssetMaterialization" /> event will automatically be created to record this information.
 
-If you specified any metadata entries on the <PyObject object="Output" /> event while yielding it (see: [Op Event Docs](/concepts/ops-jobs-graphs/op-events#attaching-metadata-to-outputs)), these entries will automatically be attached to the materialization event for this asset.
+If you used <PyObject object="OpExecutionContext" method="add_output_metadata" /> to specify metadata for an output (see: [Op Event Docs](/concepts/ops-jobs-graphs/op-events#attaching-metadata-to-outputs)), these entries will automatically be attached to the materialization event for this asset.
 
 ### Linking assets to an Output Definition <Experimental />
 
@@ -204,7 +205,7 @@ from dagster import op, Output, Out, AssetKey
 def my_constant_asset_op(context):
     df = read_df()
     persist_to_storage(df)
-    yield Output(df)
+    return df
 ```
 
 ### Linking assets to outputs with an IOManager <Experimental />
@@ -224,17 +225,18 @@ class PandasCsvIOManagerWithOutputAsset(IOManager):
 
         obj.to_csv(file_path)
 
-        yield EventMetadataEntry.int(obj.shape[0], label="number of rows")
-        yield EventMetadataEntry.float(obj["some_column"].mean(), "some_column mean")
+        context.add_output_metadata(
+            {"number of rows": obj.shape[0], "some_column mean": obj["some_column"].mean()}
+        )
 
     def get_output_asset_key(self, context):
         file_path = os.path.join("my_base_dir", context.step_key, context.name)
         return AssetKey(file_path)
 ```
 
-When an output is linked to an asset in this way, the generated <PyObject object="AssetMaterialization" /> event will contain any <PyObject object="EventMetadataEntry" /> information yielded from the `handle_output` function (in addiition to all of the `metadata` specified on the corresponding <PyObject object="Output" /> event).
+When an output is linked to an asset in this way, the generated <PyObject object="AssetMaterialization" /> event will contain any <PyObject object="EventMetadataEntry" /> information added from the `handle_output` function (in addition to all of the output `metadata` specified within the op.
 
-See the [IOManager docs](/concepts/io-management/io-managers#yielding-metadata-from-an-iomanager) for more information on yielding these entries from an IOManager.
+See the [IOManager docs](/concepts/io-management/io-managers#adding-output-metadata-from-an-iomanager) for more information on adding output metadata from an IOManager.
 
 #### Specifying partitions for an output-linked asset
 
@@ -253,8 +255,9 @@ class PandasCsvIOManagerWithOutputAssetPartitions(IOManager):
 
         obj.to_csv(file_path)
 
-        yield EventMetadataEntry.int(obj.shape[0], label="number of rows")
-        yield EventMetadataEntry.float(obj["some_column"].mean(), "some_column mean")
+        context.add_output_metadata(
+            {"number of rows": obj.shape[0], "some_column mean": obj["some_column"].mean()}
+        )
 
     def get_output_asset_key(self, context):
         file_path = os.path.join("my_base_dir", context.step_key, context.name)

@@ -55,8 +55,8 @@ from dagster import op, Output, AssetMaterialization
 def my_asset_op(context):
     df = read_df()
     persist_to_storage(df)
-    yield AssetMaterialization(asset_key="my_dataset")
-    yield Output(df)
+    context.log_event(AssetMaterialization(asset_key="my_dataset"))
+    return df
 
 
 # end_simple_asset_op
@@ -69,7 +69,7 @@ from dagster import op, Output, Out, AssetKey
 def my_constant_asset_op(context):
     df = read_df()
     persist_to_storage(df)
-    yield Output(df)
+    return df
 
 
 # end_output_def_mat_op_0

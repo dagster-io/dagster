@@ -18,7 +18,7 @@ payroll_expectations = ge_validation_op_factory(
 )
 ```
 
-The GE validations will happen inside the ops created above. Each of the ops will yield an <PyObject object="ExpectationResult" /> with a structured dict of metadata from the GE suite. The structured metadata contain both summary stats from the suite and expectation by expectation results. The op will output the full result in case you want to process it differently. Here's how other ops could use the full result, where `expectation` is the result:
+The GE validations will happen inside the ops created above. Each of the ops will log an <PyObject object="ExpectationResult" /> with a structured dict of metadata from the GE suite. The structured metadata contain both summary stats from the suite and expectation by expectation results. The op will output the full result in case you want to process it differently. Here's how other ops could use the full result, where `expectation` is the result:
 
 ```python file=../../ge_example/ge_example/ge_demo.py startafter=start_ge_demo_marker_op endbefore=end_ge_demo_marker_op
 @op
