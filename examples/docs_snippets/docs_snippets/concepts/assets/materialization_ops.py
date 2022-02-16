@@ -39,8 +39,10 @@ from dagster import op, Output
 def my_materialization_op(context):
     df = read_df()
     remote_storage_path = persist_to_storage(df)
-    yield AssetMaterialization(asset_key="my_dataset", description="Persisted result to storage")
-    yield Output(remote_storage_path)
+    context.log_event(
+        AssetMaterialization(asset_key="my_dataset", description="Persisted result to storage")
+    )
+    return remote_storage_path
 
 
 # end_materialization_ops_marker_1
@@ -99,8 +101,9 @@ def my_partitioned_asset_op(context):
     partition_date = context.op_config["date"]
     df = read_df_for_date(partition_date)
     remote_storage_path = persist_to_storage(df)
-    yield AssetMaterialization(asset_key="my_dataset", partition=partition_date)
-    yield Output(remote_storage_path)
+    materialization = AssetMaterialization(asset_key="my_dataset", partition=partition_date)
+    context.log_event(materialization)
+    return remote_storage_path
 
 
 # end_partitioned_asset_materialization
@@ -114,7 +117,7 @@ from dagster import op, AssetMaterialization, Output, EventMetadata
 def my_metadata_materialization_op(context):
     df = read_df()
     remote_storage_path = persist_to_storage(df)
-    yield AssetMaterialization(
+    materialization = AssetMaterialization(
         asset_key="my_dataset",
         description="Persisted result to storage",
         metadata={
@@ -124,7 +127,8 @@ def my_metadata_materialization_op(context):
             "size (bytes)": calculate_bytes(df),
         },
     )
-    yield Output(remote_storage_path)
+    context.log_event(materialization)
+    return remote_storage_path
 
 
 # end_materialization_ops_marker_2

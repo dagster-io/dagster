@@ -127,7 +127,7 @@ from dagster import op, AssetMaterialization, Output, EventMetadata
 def my_metadata_materialization_op(context):
     df = read_df()
     remote_storage_path = persist_to_storage(df)
-    yield AssetMaterialization(
+    materialization = AssetMaterialization(
         asset_key="my_dataset",
         description="Persisted result to storage",
         metadata={
@@ -137,7 +137,8 @@ def my_metadata_materialization_op(context):
             "size (bytes)": calculate_bytes(df),
         },
     )
-    yield Output(remote_storage_path)
+    context.log_event(materialization)
+    return remote_storage_path
 ```
 
 ### Expectation Results
