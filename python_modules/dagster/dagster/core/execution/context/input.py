@@ -1,7 +1,7 @@
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast, Iterator, List
 
 from dagster import check
-from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.events import AssetKey, AssetObservation
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.solid_definition import SolidDefinition
@@ -84,6 +84,9 @@ class InputContext:
             self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
             self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
             self._cm_scope_entered = False
+
+        self._events: List["DagsterEvent"] = []
+        self._user_events: List[Union[AssetObservation]] = []
 
     def __enter__(self):
         if self._resources_cm:
@@ -285,6 +288,73 @@ class InputContext:
             partitions_def.time_window_for_partition_key(partition_key_range.start).start,
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
+
+    def log_event(self, event: AssetObservation) -> None:
+        """Log an AssetObservation from within the body of an io manager's `load_input` method.
+
+        Events logged with this method will appear in the event log.
+
+        Args:
+            event (AssetObservation): The event to log.
+
+        Examples:
+
+        .. code-block:: python
+
+            from dagster import IOManager, AssetObservation
+
+            class MyIOManager(IOManager):
+                def load_input(self, context):
+                    context.log_event(AssetObservation(asset_key="my_asset", metadata={"hello": "world"}))
+                    return 1
+        """
+        from dagster.core.events import DagsterEvent, AssetObservation
+
+        if isinstance(event, AssetObservation):
+            if self._step_context:
+                self._events.append(DagsterEvent.asset_observation(self._step_context, event))
+            self._user_events.append(event)
+        else:
+            check.failed("Unexpected event {event}".format(event=event))
+
+    def consume_events(self) -> Iterator["DagsterEvent"]:
+        """Pops and yields all user-generated events that have been recorded from this context.
+
+        If consume_events has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
+        """
+
+        events = self._events
+        self._events = []
+        yield from events
+
+    def get_logged_events(
+        self,
+    ) -> List[Union[AssetObservation]]:
+        """Retrieve the list of user-generated events that were logged via the context.
+
+
+        User-generated events that were yielded will not appear in this list.
+
+        **Examples:**
+
+        .. code-block:: python
+
+            from dagster import IOManager, build_output_context, AssetObservation
+
+            class MyIOManager(IOManager):
+                def load_input(self, context, obj):
+                    ...
+
+            def test_load_input():
+                mgr = MyIOManager()
+                context = build_output_context()
+                mgr.load_input(context)
+                all_user_events = context.get_logged_events()
+                materializations = [event for event in all_user_events if isinstance(event, AssetObservation)]
+                ...
+        """
+
+        return self._user_events
 
 
 def build_input_context(
