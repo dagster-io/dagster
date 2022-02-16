@@ -1,7 +1,7 @@
 import hashlib
+import inspect
 from abc import ABC, abstractmethod, abstractproperty
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, NamedTuple, Optional, Set, Union, cast
-
 from dagster import check
 from dagster.core.definitions import InputDefinition, NodeHandle, PipelineDefinition
 from dagster.core.definitions.events import AssetLineageInfo
@@ -158,7 +158,7 @@ class FromRootInputManager(
             ].config,
             resources=build_resources_for_manager(input_def.root_manager_key, step_context),
         )
-        yield _load_input_with_input_manager(loader, load_input_context)
+        yield from _load_input_with_input_manager(loader, load_input_context)
         yield DagsterEvent.loaded_input(
             step_context,
             input_name=input_def.name,
@@ -276,7 +276,9 @@ class FromStepOutput(
             f"Please ensure that the resource returned for resource key "
             f'"{manager_key}" is an IOManager.',
         )
-        yield _load_input_with_input_manager(input_manager, self.get_load_context(step_context))
+        yield from _load_input_with_input_manager(
+            input_manager, self.get_load_context(step_context)
+        )
         yield DagsterEvent.loaded_input(
             step_context,
             input_name=self.input_name,
@@ -583,7 +585,10 @@ def _load_input_with_input_manager(input_manager: "InputManager", context: "Inpu
     ):
         value = input_manager.load_input(context)
     # close user code boundary before returning value
-    return value
+    for event in context.consume_events():
+        yield event
+
+    yield value
 
 
 @whitelist_for_serdes

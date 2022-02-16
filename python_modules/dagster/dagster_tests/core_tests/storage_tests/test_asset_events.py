@@ -1,7 +1,10 @@
 import pytest
 from dagster import (
+    op,
+    job,
     AssetKey,
     InputDefinition,
+    AssetObservation,
     ModeDefinition,
     Output,
     OutputDefinition,
@@ -128,6 +131,63 @@ def test_output_definition_multiple_partition_materialization():
         AssetKey(["table2"]),
         metadata_entries=[entry2],
         parent_assets=[n_asset_keys("table1", 3)],
+    )
+
+
+def test_io_manager_logs_observations():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            context.log_event(AssetObservation(asset_key="my_asset", metadata={"foo": "bar"}))
+
+        def load_input(self, context):
+            context.log_event(AssetObservation(asset_key="my_asset", metadata={"hello": "world"}))
+            context.log_event(AssetObservation(asset_key="my_asset", metadata={"1": "2"}))
+            return 1
+
+    @io_manager
+    def my_io_manager(_):
+        return MyIOManager()
+
+    @op
+    def op1():
+        return
+
+    @op
+    def op2(_input1):
+        return
+
+    @job(resource_defs={"io_manager": my_io_manager})
+    def my_job():
+        op2(op1())
+
+    get_observation = lambda event: event.event_specific_data.asset_observation
+
+    result = my_job.execute_in_process()
+    observations = [
+        event for event in result.all_node_events if event.event_type_value == "ASSET_OBSERVATION"
+    ]
+
+    # op1 handle output
+    assert observations[0].step_key == "op1"
+    assert get_observation(observations[0]) == AssetObservation(
+        asset_key="my_asset", metadata={"foo": "bar"}
+    )
+
+    # op2 load input
+    assert observations[1].step_key == "op2"
+    assert get_observation(observations[1]) == AssetObservation(
+        asset_key="my_asset", metadata={"hello": "world"}
+    )
+    # second observation in op2 load input
+    assert observations[2].step_key == "op2"
+    assert get_observation(observations[2]) == AssetObservation(
+        asset_key="my_asset", metadata={"1": "2"}
+    )
+
+    # op2 handle output
+    assert observations[3].step_key == "op2"
+    assert get_observation(observations[3]) == AssetObservation(
+        asset_key="my_asset", metadata={"foo": "bar"}
     )
 
 
