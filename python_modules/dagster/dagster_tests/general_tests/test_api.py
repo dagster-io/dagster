@@ -14,3 +14,11 @@ def test_all():
             and not exported in dagster._DEPRECATED
         ):
             assert exported in dagster.__all__
+
+
+def test_deprecated_imports(mocker):
+    Bar = object()
+    mocker.patch("dagster._DEPRECATED", {"Foo": ("Bar", Bar)})
+    from dagster import Foo  # pylint: disable=no-name-in-module
+
+    assert Foo is Bar
