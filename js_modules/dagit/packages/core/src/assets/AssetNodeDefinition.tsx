@@ -9,7 +9,7 @@ import {Description} from '../pipelines/Description';
 import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
-import {LiveData, __REPOSITORY_MEGA_JOB} from '../workspace/asset-graph/Utils';
+import {LiveData, __ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
@@ -104,21 +104,21 @@ export const AssetNodeDefinition: React.FC<{
             <Subheading>Type</Subheading>
           </Box>
           {assetType ? <DagsterTypeSummary type={assetType} /> : 'No type data provided.'}
+          {assetMetadata.length > 0 && (
+            <>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+                flex={{justifyContent: 'space-between', gap: 8}}
+              >
+                <Subheading>Metadata</Subheading>
+              </Box>
+              <Box style={{flex: 1}}>
+                <AssetMetadataTable assetMetadata={assetMetadata} />
+              </Box>
+            </>
+          )}
         </Box>
-        {assetMetadata.length > 0 && (
-          <>
-            <Box
-              padding={{vertical: 16, horizontal: 24}}
-              border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
-              flex={{justifyContent: 'space-between', gap: 8}}
-            >
-              <Subheading>Metadata</Subheading>
-            </Box>
-            <Box padding={{top: 16, bottom: 4}} style={{flex: 1}}>
-              <AssetMetadataTable assetMetadata={assetMetadata} />
-            </Box>
-          </>
-        )}
       </Box>
     </>
   );
@@ -161,7 +161,7 @@ const DefinitionLocation: React.FC<{
 }> = ({assetNode, repoAddress}) => (
   <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}} style={{lineHeight: 0}}>
     {assetNode.jobNames
-      .filter((jobNames) => jobNames !== __REPOSITORY_MEGA_JOB)
+      .filter((jobNames) => jobNames !== __ASSET_GROUP)
       .map((jobName) => (
         <Mono key={jobName}>
           <PipelineReference

@@ -23,7 +23,7 @@ import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunStatusWithStats} from '../runs/RunStatusDots';
 import {titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
-import {__REPOSITORY_MEGA_JOB} from '../workspace/asset-graph/Utils';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
@@ -231,7 +231,7 @@ const EventGroupRow: React.FC<{
         </Group>
       </td>
       <td>
-        {run.pipelineName !== __REPOSITORY_MEGA_JOB && (
+        {run.pipelineName !== __ASSET_GROUP && (
           <Box margin={{bottom: 4}}>
             <Box padding={{left: 8}}>
               <PipelineReference

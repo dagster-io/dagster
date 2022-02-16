@@ -2,7 +2,7 @@ import {Mono} from '@dagster-io/ui';
 import React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 
-import {__REPOSITORY_MEGA_JOB} from '../workspace/asset-graph/Utils';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 
 export interface ExplorerPath {
   pipelineName: string;
@@ -48,16 +48,13 @@ export function explorerPathFromString(path: string): ExplorerPath {
 export function instanceAssetsExplorerPathFromString(path: string): ExplorerPath {
   // This is a bit of a hack, but our explorer path needs a job name and we'd like
   // to continue sharing the parsing/stringifying logic from the job graph UI
-  return explorerPathFromString(__REPOSITORY_MEGA_JOB + path || '/');
+  return explorerPathFromString(__ASSET_GROUP + path || '/');
 }
 
 export function instanceAssetsExplorerPathToURL(path: Omit<ExplorerPath, 'pipelineName'>) {
   return (
     '/instance/asset-graph' +
-    explorerPathToString({...path, pipelineName: __REPOSITORY_MEGA_JOB}).replace(
-      __REPOSITORY_MEGA_JOB,
-      '',
-    )
+    explorerPathToString({...path, pipelineName: __ASSET_GROUP}).replace(__ASSET_GROUP, '')
   );
 }
 

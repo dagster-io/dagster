@@ -22,7 +22,7 @@ import {
   isThisThingAJob,
   useRepositoryOptions,
 } from '../workspace/WorkspaceContext';
-import {__REPOSITORY_MEGA_JOB} from '../workspace/asset-graph/Utils';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
@@ -232,7 +232,7 @@ const RunRow: React.FC<{
       </td>
       <td>
         <Box flex={{direction: 'column', gap: 5}}>
-          {run.pipelineName !== __REPOSITORY_MEGA_JOB ? (
+          {run.pipelineName !== __ASSET_GROUP ? (
             <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
               <PipelineReference
                 isJob={isJob}

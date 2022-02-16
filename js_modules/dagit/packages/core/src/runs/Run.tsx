@@ -11,7 +11,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RunStatus} from '../types/globalTypes';
-import {__REPOSITORY_MEGA_JOB} from '../workspace/asset-graph/Utils';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 
 import {ComputeLogPanel} from './ComputeLogPanel';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
@@ -57,10 +57,9 @@ export const Run: React.FC<RunProps> = (props) => {
   useFavicon(run ? runStatusFavicon(run.status) : '/favicon.svg');
   useDocumentTitle(
     run
-      ? `${run.pipelineName !== __REPOSITORY_MEGA_JOB ? run.pipelineName : ''} ${runId.slice(
-          0,
-          8,
-        )} [${run.status}]`
+      ? `${run.pipelineName !== __ASSET_GROUP ? run.pipelineName : ''} ${runId.slice(0, 8)} [${
+          run.status
+        }]`
       : `Run: ${runId}`,
   );
 

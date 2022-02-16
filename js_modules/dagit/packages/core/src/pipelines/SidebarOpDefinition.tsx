@@ -9,7 +9,7 @@ import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignatur
 import {pluginForMetadata} from '../plugins';
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
-import {__REPOSITORY_MEGA_JOB} from '../workspace/asset-graph/Utils';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {RepoAddress} from '../workspace/types';
 
 import {Description} from './Description';
@@ -258,7 +258,7 @@ const InvocationList: React.FC<{
   onClickInvocation: (arg: SidebarOpInvocationInfo) => void;
 }> = ({invocations, onClickInvocation}) => {
   const [showAll, setShowAll] = React.useState<boolean>(false);
-  const visible = invocations.filter((i) => i.pipelineName !== __REPOSITORY_MEGA_JOB);
+  const visible = invocations.filter((i) => i.pipelineName !== __ASSET_GROUP);
   const clipped = showAll ? visible : visible.slice(0, DEFAULT_INVOCATIONS_SHOWN);
 
   return (

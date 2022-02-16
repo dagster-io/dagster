@@ -10,7 +10,7 @@ import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry'
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
-import {__REPOSITORY_MEGA_JOB} from '../workspace/asset-graph/Utils';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
@@ -57,7 +57,7 @@ export const LatestMaterializationMetadata: React.FC<{
                     <Mono>{titleForRun({runId: latestEvent.runId})}</Mono>
                   </Link>
                 </Box>
-                {latestRun.pipelineName !== __REPOSITORY_MEGA_JOB && (
+                {latestRun.pipelineName !== __ASSET_GROUP && (
                   <>
                     <Box padding={{left: 8, top: 4}}>
                       <PipelineReference

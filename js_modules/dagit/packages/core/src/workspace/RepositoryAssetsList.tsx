@@ -7,7 +7,7 @@ import styled from 'styled-components/macro';
 import {displayNameForAssetKey} from '../app/Util';
 import {RepositoryLink} from '../nav/RepositoryLink';
 
-import {__REPOSITORY_MEGA_JOB} from './asset-graph/Utils';
+import {__ASSET_GROUP} from './asset-graph/Utils';
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';

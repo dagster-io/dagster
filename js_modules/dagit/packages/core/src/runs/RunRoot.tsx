@@ -5,7 +5,7 @@ import {useParams} from 'react-router-dom';
 
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
-import {__REPOSITORY_MEGA_JOB} from '../workspace/asset-graph/Utils';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
@@ -77,7 +77,7 @@ export const RunRoot = () => {
                   <TagWIP icon="info" />
                 </Popover>
                 <RunStatusTag status={run.status} />
-                {run.pipelineName !== __REPOSITORY_MEGA_JOB ? (
+                {run.pipelineName !== __ASSET_GROUP ? (
                   <TagWIP icon="run">
                     Run of{' '}
                     <PipelineReference

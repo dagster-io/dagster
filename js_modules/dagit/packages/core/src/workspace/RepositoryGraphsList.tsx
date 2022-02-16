@@ -4,7 +4,7 @@ import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {__REPOSITORY_MEGA_JOB} from './asset-graph/Utils';
+import {__ASSET_GROUP} from './asset-graph/Utils';
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
@@ -76,9 +76,7 @@ export const RepositoryGraphsList: React.FC<Props> = (props) => {
       return null;
     }
     const jobGraphNames = new Set<string>(
-      repo.pipelines
-        .filter((p) => p.isJob && p.name !== __REPOSITORY_MEGA_JOB)
-        .map((p) => p.graphName),
+      repo.pipelines.filter((p) => p.isJob && p.name !== __ASSET_GROUP).map((p) => p.graphName),
     );
     const items: Item[] = Array.from(jobGraphNames).map((graphName) => ({
       name: graphName,

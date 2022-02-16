@@ -17,7 +17,7 @@ import {InProgressRunsFragment} from './types/InProgressRunsFragment';
 type AssetNode = AssetGraphQuery_assetNodes;
 type AssetKey = AssetGraphQuery_assetNodes_assetKey;
 
-export const __REPOSITORY_MEGA_JOB = '__REPOSITORY_MEGA_JOB';
+export const __ASSET_GROUP = '__ASSET_GROUP';
 
 export interface Node {
   id: string;

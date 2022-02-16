@@ -29,7 +29,7 @@ import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {buildRepoAddress} from '../buildRepoAddress';
 import {workspacePath, workspacePipelinePathGuessRepo} from '../workspacePath';
 
-import {LiveDataForNode, __REPOSITORY_MEGA_JOB} from './Utils';
+import {LiveDataForNode, __ASSET_GROUP} from './Utils';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
 import {useLaunchSingleAssetJob} from './useLaunchSingleAssetJob';
 
@@ -116,7 +116,7 @@ export const AssetNode: React.FC<{
             {runOrError?.__typename === 'Run' && event ? (
               <>
                 <StatsRow>
-                  {runOrError.pipelineName !== __REPOSITORY_MEGA_JOB ? (
+                  {runOrError.pipelineName !== __ASSET_GROUP ? (
                     <Link
                       data-tooltip={runOrError.pipelineName}
                       data-tooltip-style={RunLinkTooltipStyle}
