@@ -33,6 +33,7 @@ class Dagit(BaseModel):
     podSecurityContext: kubernetes.PodSecurityContext
     securityContext: kubernetes.SecurityContext
     resources: kubernetes.Resources
+    readinessProbe: kubernetes.ReadinessProbe
     livenessProbe: kubernetes.LivenessProbe
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations

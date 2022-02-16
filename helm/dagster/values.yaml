@@ -125,32 +125,22 @@ dagit:
   # requests:
   #   cpu: 100m
   #   memory: 128Mi
-  # Liveness probe detects when to restart dagit.
+  # Readiness probe detects when the pod is ready to serve requests.
   # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
-  livenessProbe:
+  readinessProbe:
     httpGet:
       path: "/dagit_info"
       port: 80
-    # initialDelaySeconds: 60
     periodSeconds: 20
     timeoutSeconds: 3
     successThreshold: 1
     failureThreshold: 3
-  # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
-  # then liveness probe takes over. Current delay is 2 min (10 sec * 12) but can be increased based
-  # on workspace load times.
-  # If on kubernetes < v1.16, then disable `startupProbe` and comment in
-  # `initialDelaySeconds: 60` under `livenessProbe`
+
+  # As of 0.14.0, liveness probes are disabled by default. If you want to enable them, it's recommended to also
+  # enable startup probes.
+  livenessProbe: {}
   startupProbe:
-    enabled: true
-    httpGet:
-      path: "/dagit_info"
-      port: 80
-    initialDelaySeconds: 1
-    periodSeconds: 10
-    timeoutSeconds: 3
-    successThreshold: 1
-    failureThreshold: 12
+    enabled: false
 
 ####################################################################################################
 # Compute Log Manager: Configuration for the compute log manager
@@ -322,33 +312,22 @@ dagster-user-deployments:
       podSecurityContext: {}
       securityContext: {}
       resources: {}
-      # Liveness Probe and Startup Probe are optional. For more configuration docs, see:
+      # Readiness probe detects when the pod is ready to serve requests.
       # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
-      # Note that Startup Probe is only available as a kubernetes v1.16+ feature.
-      livenessProbe:
-        # If `livenessProbe` has no `exec` field, then the following default will be used:
+      readinessProbe:
+        # If `readinessProbe` has no `exec` field, then the following default will be used:
         # exec:
         #   command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
-        initialDelaySeconds: 0
         periodSeconds: 20
         timeoutSeconds: 3
         successThreshold: 1
         failureThreshold: 3
 
-      # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
-      # then liveness probe takes over.
-      # If on kubernetes < v1.16, then disable `startupProbe` and comment in
-      # `initialDelaySeconds: 60` under `livenessProbe`
+      # As of 0.14.0, liveness probes are disabled by default. If you want to enable them, it's recommended to also
+      # enable startup probes.
+      livenessProbe: {}
       startupProbe:
-        enabled: true
-        # If `startupProbe` has no `exec` field, then the following default will be used:
-        # exec:
-        #   command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
-        initialDelaySeconds: 0
-        periodSeconds: 10
-        timeoutSeconds: 3
-        successThreshold: 1
-        failureThreshold: 3
+        enabled: false
 
       service:
         annotations: {}
@@ -1020,30 +999,11 @@ dagsterDaemon:
   securityContext: {}
   resources: {}
 
-  livenessProbe:
-    exec:
-      command:
-        - "dagster-daemon"
-        - "liveness-check"
-    # initialDelaySeconds: 60
-    periodSeconds: 30
-    failureThreshold: 3
-    timeoutSeconds: 3
-
-  # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
-  # then liveness probe takes over. Current delay is 2 min (10 sec * 12) but can be increased based
-  # on workspace load times.
-  # If on kubernetes < v1.16, then disable `startupProbe` and comment in
-  # `initialDelaySeconds: 60` under `livenessProbe`
-  startupProbe:
-    enabled: true
-    exec:
-      command:
-        - "dagster-daemon"
-        - "liveness-check"
-    periodSeconds: 10
-    failureThreshold: 12
-    timeoutSeconds: 3
+  # As of 0.14.0, liveness probes are disabled by default. If you want to enable them, it's recommended to also
+  # enable startup probes.
+  livenessProbe: {}
+  readinessProbe: {}
+  startupProbe: {}
 
 ####################################################################################################
 # busybox: Configuration for the busybox image used to check connections

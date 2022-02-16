@@ -77,6 +77,7 @@ class Daemon(BaseModel):
     securityContext: kubernetes.SecurityContext
     resources: kubernetes.Resources
     livenessProbe: kubernetes.LivenessProbe
+    readinessProbe: kubernetes.ReadinessProbe
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations
     runMonitoring: Dict[str, Any]
