@@ -4,10 +4,10 @@ import textwrap
 import pandas as pd
 from dagster import (
     AssetKey,
-    MetadataEntry,
     MemoizableIOManager,
-    io_manager,
+    MetadataEntry,
     TableSchemaMetadataValue,
+    io_manager,
 )
 
 
