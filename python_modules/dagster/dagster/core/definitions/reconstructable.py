@@ -307,8 +307,8 @@ def reconstructable(target):
     call), or in interactive environments such as the Python REPL or Jupyter notebooks.
 
     If you need to reconstruct objects constructed in these ways, you should use
-    :py:func:`~dagster.core.definitions.reconstructable.build_reconstructable_target` instead,
-    which allows you to specify your own reconstruction strategy.
+    :py:func:`~dagster.reconstructable.build_reconstructable_job` instead, which allows you to
+    specify your own reconstruction strategy.
 
     Examples:
 
@@ -353,7 +353,7 @@ def reconstructable(target):
         raise DagsterInvariantViolationError(
             "Reconstructable target can not be a lambda. Use a function or "
             "decorated function defined at module scope instead, or use "
-            "build_reconstructable_target."
+            "build_reconstructable_job."
         )
 
     if seven.qualname_differs(target):
@@ -361,7 +361,7 @@ def reconstructable(target):
             'Reconstructable target "{target.__name__}" has a different '
             '__qualname__ "{target.__qualname__}" indicating it is not '
             "defined at module scope. Use a function or decorated function "
-            "defined at module scope instead, or use build_reconstructable_target.".format(
+            "defined at module scope instead, or use build_reconstructable_job.".format(
                 target=target
             )
         )
@@ -379,10 +379,9 @@ def reconstructable(target):
     python_file = get_python_file_from_target(target)
     if not python_file:
         raise DagsterInvariantViolationError(
-            "reconstructable() can not reconstruct jobs or pipelines defined in interactive environments "
-            "like <stdin>, IPython, or Jupyter notebooks. "
-            "Use a pipeline defined in a module or file instead, or "
-            "use build_reconstructable_target."
+            "reconstructable() can not reconstruct jobs or pipelines defined in interactive "
+            "environments like <stdin>, IPython, or Jupyter notebooks. "
+            "Use a pipeline defined in a module or file instead, or use build_reconstructable_job."
         )
 
     pointer = FileCodePointer(
@@ -393,7 +392,7 @@ def reconstructable(target):
 
 
 @experimental
-def build_reconstructable_target(
+def build_reconstructable_job(
     reconstructor_module_name,
     reconstructor_function_name,
     reconstructable_args=None,
@@ -432,7 +431,7 @@ def build_reconstructable_target(
 
         # module: mymodule
 
-        from dagster import JobDefinition, job, build_reconstructable_target
+        from dagster import JobDefinition, job, build_reconstructable_job
 
         class JobFactory:
             def make_job(*args, **kwargs):
@@ -455,7 +454,7 @@ def build_reconstructable_target(
 
         foo_job = factory.make_job(*foo_job_args, **foo_job_kwargs)
 
-        reconstructable_foo_job = build_reconstructable_target(
+        reconstructable_foo_job = build_reconstructable_job(
             'mymodule',
             'reconstruct_job',
             foo_job_args,
@@ -494,7 +493,9 @@ def build_reconstructable_target(
     )
 
 
-build_reconstructable_pipeline = build_reconstructable_target
+# back compat, in case users have imported these directly
+build_reconstructable_pipeline = build_reconstructable_job
+build_reconstructable_target = build_reconstructable_job
 
 
 def bootstrap_standalone_recon_pipeline(pointer):

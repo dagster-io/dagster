@@ -106,7 +106,7 @@ from .preset import PresetDefinition
 from .reconstructable import (
     ReconstructablePipeline,
     build_reconstructable_pipeline,
-    build_reconstructable_target,
+    build_reconstructable_job,
     reconstructable,
 )
 from .repository_definition import RepositoryData, RepositoryDefinition

@@ -17,4 +17,4 @@ Reconstructable jobs
 .. autoclass:: reconstructable
    :noindex:
 
-.. autofunction:: build_reconstructable_target
+.. autofunction:: build_reconstructable_job
