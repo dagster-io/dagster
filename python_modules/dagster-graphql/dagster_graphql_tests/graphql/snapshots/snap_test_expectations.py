@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[postgres_with_default_run_launcher_deployed_grpc_env] 1'] = [
@@ -15,7 +16,7 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[p
             'label': 'always_false',
             'metadataEntries': [
                 {
-                    '__typename': 'EventJsonMetadataEntry',
+                    '__typename': 'JsonMetadataEntry',
                     'description': None,
                     'jsonString': '{"reason": "Relentless pessimism."}',
                     'label': 'data'
@@ -41,7 +42,7 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[p
             'label': 'always_true',
             'metadataEntries': [
                 {
-                    '__typename': 'EventJsonMetadataEntry',
+                    '__typename': 'JsonMetadataEntry',
                     'description': None,
                     'jsonString': '{"reason": "Just because."}',
                     'label': 'data'
@@ -87,7 +88,7 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[p
             'label': 'always_false',
             'metadataEntries': [
                 {
-                    '__typename': 'EventJsonMetadataEntry',
+                    '__typename': 'JsonMetadataEntry',
                     'description': None,
                     'jsonString': '{"reason": "Relentless pessimism."}',
                     'label': 'data'
@@ -113,7 +114,7 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[p
             'label': 'always_true',
             'metadataEntries': [
                 {
-                    '__typename': 'EventJsonMetadataEntry',
+                    '__typename': 'JsonMetadataEntry',
                     'description': None,
                     'jsonString': '{"reason": "Just because."}',
                     'label': 'data'
@@ -159,7 +160,7 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[s
             'label': 'always_false',
             'metadataEntries': [
                 {
-                    '__typename': 'EventJsonMetadataEntry',
+                    '__typename': 'JsonMetadataEntry',
                     'description': None,
                     'jsonString': '{"reason": "Relentless pessimism."}',
                     'label': 'data'
@@ -185,7 +186,7 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[s
             'label': 'always_true',
             'metadataEntries': [
                 {
-                    '__typename': 'EventJsonMetadataEntry',
+                    '__typename': 'JsonMetadataEntry',
                     'description': None,
                     'jsonString': '{"reason": "Just because."}',
                     'label': 'data'
@@ -231,7 +232,7 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[s
             'label': 'always_false',
             'metadataEntries': [
                 {
-                    '__typename': 'EventJsonMetadataEntry',
+                    '__typename': 'JsonMetadataEntry',
                     'description': None,
                     'jsonString': '{"reason": "Relentless pessimism."}',
                     'label': 'data'
@@ -257,7 +258,7 @@ snapshots['TestExpectations.test_basic_expectations_within_compute_step_events[s
             'label': 'always_true',
             'metadataEntries': [
                 {
-                    '__typename': 'EventJsonMetadataEntry',
+                    '__typename': 'JsonMetadataEntry',
                     'description': None,
                     'jsonString': '{"reason": "Just because."}',
                     'label': 'data'

@@ -181,7 +181,7 @@ GET_ASSET_OBSERVATIONS = """
                     metadataEntries {
                         label
                         description
-                        ... on EventTextMetadataEntry {
+                        ... on TextMetadataEntry {
                             text
                         }
                     }
