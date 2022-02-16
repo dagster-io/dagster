@@ -298,9 +298,9 @@ def test_asset_collection_build_subset_job():
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=r"When attempting to create job 'bad_query_arguments', the clause "
-        r"follows_o1= within the asset key selection was invalid. Please "
-        r"review the selection syntax here "
-        r"\(imagine there is a link here to the docs\).",
+        r"follows_o1= within the asset key selection was invalid. Please review "
+        r"the selection syntax here: "
+        r"https://docs.dagster.io/concepts/ops-jobs-graphs/job-execution#op-selection-syntax.",
     ):
         collection.build_job(name="bad_query_arguments", selection="follows_o1=")
 
@@ -312,6 +312,4 @@ def test_asset_collection_build_subset_job():
         r"particular asset is not yet supported behavior. Please select all "
         r"asset keys produced by a given asset when subsetting.",
     ):
-        test_subselect_one_asset_key = collection.build_job(
-            name="test_subselect_only_one_key", selection="o1"
-        )
+        collection.build_job(name="test_subselect_only_one_key", selection="o1")

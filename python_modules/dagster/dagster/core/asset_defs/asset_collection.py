@@ -101,7 +101,10 @@ class AssetCollection(
 
         if selection:
             op_selection = self._parse_asset_selection(selection, job_name=name)
-            # just mooching off of the logic here
+            # We currently re-use the logic from op selection to parse the
+            # asset key selection, but this has disadvantages. Eventually we
+            # will want to decouple these implementations.
+            # https://github.com/dagster-io/dagster/issues/6647.
             resolved_op_selection_dict = parse_op_selection(mega_job_def, op_selection)
 
             included_assets = []
@@ -131,7 +134,7 @@ class AssetCollection(
         )
 
     def _parse_asset_selection(self, selection: Union[str, List[str]], job_name: str) -> List[str]:
-        """Convert selection over asset key to selection over ops"""
+        """Convert selection over asset keys to selection over ops"""
 
         asset_keys_to_ops: Dict[str, List[OpDefinition]] = {}
         op_names_to_asset_keys: Dict[str, Set[str]] = {}
@@ -144,6 +147,7 @@ class AssetCollection(
             return selection
 
         source_asset_keys = set()
+
         for asset in self.assets:
             if asset.op.name not in op_names_to_asset_keys:
                 op_names_to_asset_keys[asset.op.name] = set()
@@ -169,16 +173,20 @@ class AssetCollection(
             token_matching = re.compile(r"^(\*?\+*)?([.\w\d\[\]?_-]+)(\+*\*?)?$").search(
                 clause.strip()
             )
-            # return None if query is invalid
             parts = token_matching.groups() if token_matching is not None else None
             if parts is None:
                 raise DagsterInvalidDefinitionError(
                     f"When attempting to create job '{job_name}', the clause "
                     f"{clause} within the asset key selection was invalid. Please "
-                    "review the selection syntax here (imagine there is a link "
-                    "here to the docs)."
+                    "review the selection syntax here: "
+                    "https://docs.dagster.io/concepts/ops-jobs-graphs/job-execution#op-selection-syntax."
                 )
             upstream_part, key_str, downstream_part = parts
+
+            # Error if you express a clause in terms of a source asset key.
+            # Eventually we will want to support selection over source asset
+            # keys as a means of running downstream ops.
+            # https://github.com/dagster-io/dagster/issues/6647
             if key_str in source_asset_keys:
                 raise DagsterInvalidDefinitionError(
                     f"When attempting to create job '{job_name}', the clause '{clause}' selects asset_key '{key_str}', which comes from a source asset. Source assets can't be materialized, and therefore can't be subsetted into a job. Please choose a subset on asset keys that are materializable - that is, included on assets within the collection. Valid assets: {list(asset_keys_to_ops.keys())}"
@@ -195,7 +203,10 @@ class AssetCollection(
                 op_clause = f"{upstream_part}{op.name}{downstream_part}"
                 op_selection.append(op_clause)
 
-        # Verify that for each selected asset key, the corresponding op had all asset keys selected.
+        # Verify that for each selected asset key, the corresponding op had all
+        # asset keys selected. Eventually, we will want to have specific syntax
+        # that allows for selecting all asset keys for a given multi-asset
+        # https://github.com/dagster-io/dagster/issues/6647.
         for op_name, asset_key_set in op_names_to_asset_keys.items():
             are_keys_in_set = [key in seen_asset_keys for key in asset_key_set]
             if any(are_keys_in_set) and not all(are_keys_in_set):
