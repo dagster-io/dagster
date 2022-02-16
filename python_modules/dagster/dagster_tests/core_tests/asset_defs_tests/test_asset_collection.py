@@ -141,7 +141,9 @@ def test_asset_collection_requires_root_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"Output 'result' with AssetKey 'AssetKey\(\['asset_foo'\]\)' requires io manager 'blah' but was not provided on asset collection. Provided resources: \['io_manager', 'root_manager'\]",
+        match=r"Output 'result' with AssetKey 'AssetKey\(\['asset_foo'\]\)' "
+        r"requires io manager 'blah' but was not provided on asset collection. "
+        r"Provided resources: \['io_manager', 'root_manager'\]",
     ):
         AssetCollection([asset_foo])
 
@@ -153,7 +155,9 @@ def test_resource_override():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match="Resource dictionary included resource with key 'root_manager', which is a reserved resource keyword in Dagster. Please change this key, and then change all places that require this key to a new value.",
+        match="Resource dictionary included resource with key 'root_manager', "
+        "which is a reserved resource keyword in Dagster. Please change this "
+        "key, and then change all places that require this key to a new value.",
     ):
         AssetCollection([], resource_defs={"root_manager": the_resource})
 
@@ -285,12 +289,17 @@ def test_asset_collection_build_subset_job():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"When attempting to create job 'bad_subset', the clause 'doesnt_exist' within the asset key selection did not match any asset keys. Present asset keys: \['start_asset', 'o1', 'o2', 'follows_o1', 'follows_o2'\]",
+        match=r"When attempting to create job 'bad_subset', the clause "
+        r"'doesnt_exist' within the asset key selection did not match any asset "
+        r"keys. Present asset keys: \['start_asset', 'o1', 'o2', 'follows_o1', 'follows_o2'\]",
     ):
         collection.build_job(name="bad_subset", selection="doesnt_exist")
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"When attempting to create job 'bad_query_arguments', the clause follows_o1= within the asset key selection was invalid. Please review the selection syntax here \(imagine there is a link here to the docs\).",
+        match=r"When attempting to create job 'bad_query_arguments', the clause "
+        r"follows_o1= within the asset key selection was invalid. Please "
+        r"review the selection syntax here "
+        r"\(imagine there is a link here to the docs\).",
     ):
         collection.build_job(name="bad_query_arguments", selection="follows_o1=")

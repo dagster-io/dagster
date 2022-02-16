@@ -46,7 +46,10 @@ class AssetCollection(
 
         if "root_manager" in resource_defs:
             raise DagsterInvalidDefinitionError(
-                "Resource dictionary included resource with key 'root_manager', which is a reserved resource keyword in Dagster. Please change this key, and then change all places that require this key to a new value."
+                "Resource dictionary included resource with key 'root_manager', "
+                "which is a reserved resource keyword in Dagster. Please change "
+                "this key, and then change all places that require this key to "
+                "a new value."
             )
         # In the case of collisions, merge_dicts takes values from the dictionary latest in the list, so we place the user provided resource defs after the defaults.
         resource_defs = merge_dicts(
@@ -102,7 +105,7 @@ class AssetCollection(
             resolved_op_selection_dict = parse_op_selection(mega_job_def, op_selection)
 
             included_assets = []
-            excluded_assets = list(self.source_assets)
+            excluded_assets: List[Union[AssetsDefinition, ForeignAsset]] = list(self.source_assets)
 
             op_names = set(list(resolved_op_selection_dict.keys()))
 
@@ -113,6 +116,8 @@ class AssetCollection(
                     excluded_assets.append(asset)
         else:
             included_assets = cast(List[AssetsDefinition], self.assets)
+            # Call to list(...) serves as a copy constructor, so that we don't
+            # accidentally add to the original list
             excluded_assets = list(self.source_assets)
 
         return build_assets_job(
@@ -125,7 +130,7 @@ class AssetCollection(
             tags=tags,
         )
 
-    def _parse_asset_selection(self, selection, job_name) -> List[str]:
+    def _parse_asset_selection(self, selection: Union[str, List[str]], job_name: str) -> List[str]:
         """Convert selection over asset key to selection over ops"""
 
         asset_keys_to_ops: Dict[str, List[OpDefinition]] = {}
@@ -163,7 +168,10 @@ class AssetCollection(
             parts = token_matching.groups() if token_matching is not None else None
             if parts is None:
                 raise DagsterInvalidDefinitionError(
-                    f"When attempting to create job '{job_name}', the clause {clause} within the asset key selection was invalid. Please review the selection syntax here (imagine there is a link here to the docs)."
+                    f"When attempting to create job '{job_name}', the clause "
+                    f"{clause} within the asset key selection was invalid. Please "
+                    "review the selection syntax here (imagine there is a link "
+                    "here to the docs)."
                 )
             upstream_part, key_str, downstream_part = parts
             if key_str in source_asset_keys:
