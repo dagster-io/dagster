@@ -41,6 +41,9 @@ def _table_data_to_materialization(
 def generate_materializations(fivetran_output: FivetranOutput, asset_key_prefix: List[str]):
     for schema in fivetran_output.schema_config["schemas"].values():
         schema_name = schema["name_in_destination"]
+        schema_prefix = fivetran_output.connector_details.get("config", {}).get("schema_prefix")
+        if schema_prefix:
+            schema_name = f"{schema_prefix}_{schema_name}"
         if not schema["enabled"]:
             continue
         for table_data in schema["tables"].values():

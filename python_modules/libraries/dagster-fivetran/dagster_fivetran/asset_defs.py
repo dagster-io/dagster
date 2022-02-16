@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from dagster import AssetKey, AssetsDefinition, Out, Output, multi_asset
+from dagster import AssetKey, AssetsDefinition, Out, Output, check, multi_asset
 from dagster.utils.backcompat import experimental
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
 from dagster_fivetran.utils import generate_materializations
@@ -9,15 +9,15 @@ from dagster_fivetran.utils import generate_materializations
 @experimental
 def build_fivetran_assets(
     connector_id: str,
-    asset_keys: List[AssetKey],
-    name: Optional[str] = None,
+    destination_tables: List[str],
     poll_interval: float = DEFAULT_POLL_INTERVAL,
     poll_timeout: Optional[float] = None,
     io_manager_key: Optional[str] = None,
-) -> AssetsDefinition:
+    asset_key_prefix: List[str] = None,
+) -> List[AssetsDefinition]:
 
     """
-    Create a @multi_asset for a given Fivetran connector.
+    Build a set of assets for a given Fivetran connector.
 
     Returns an AssetsDefintion which connects the specified ``asset_keys`` to the computation that
     will update them. Internally, executes a Fivetran sync for a given ``connector_id``, and
@@ -28,19 +28,14 @@ def build_fivetran_assets(
     Args:
         connector_id (str): The Fivetran Connector ID that this op will sync. You can retrieve this
             value from the "Setup" tab of a given connector in the Fivetran UI.
-        asset_keys (List[AssetKey]): The set of asset keys that Dagster will expect this asset to produce.
-            These should be of the form ``AssetKey([<schema_name>, <table_name>])`` where
-            ``<schema_name>`` and ``<table_name>`` represent the location of the tables in the
-            Fivetran destination. Any AssetKey listed here MUST be sync'd every time this computation
-            is executed, otherwise an exception will be raised. Additional tables that are updated
-            during the sync but not listed here will be recorded with runtime AssetMaterialization
-            events. The set of tables that are sync'd by Fivetran but are not explicitly set in the
-            asset_keys argument may change over time as the Fivetran connector is updated.
-        name (Optional[str]): A name for the underlying computation.
+        destination_tables (List[str]): `schema_name.table_name` for each table that you want to be
+            represented in the Dagster asset graph for this connection.
         poll_interval (float): The time (in seconds) that will be waited between successive polls.
         poll_timeout (Optional[float]): The maximum time that will waited before this operation is
             timed out. By default, this will never time out.
         io_manager_key (Optional[str]): The io_manager to be used to handle each of these assets.
+        asset_key_prefix (Optional[List[str]]): A prefix for the asset keys inside this asset.
+            If left blank, assets will have a key of `AssetKey([schema_name, table_name])`.
 
     Examples:
 
@@ -58,8 +53,9 @@ def build_fivetran_assets(
             }
         )
 
-        fivetran_assets = build_fivetran_assets(connector_id="foobar", asset_keys=[
-            AssetKey(["schema1", "table1"]), AssetKey(["schema2", "table2"])
+        fivetran_assets = build_fivetran_assets(
+            connector_id="foobar",
+            table_names=["schema1.table1", "schema2.table2"],
         ])
 
         my_fivetran_job = build_assets_job(
@@ -70,11 +66,17 @@ def build_fivetran_assets(
 
     """
 
+    asset_key_prefix = check.opt_list_param(asset_key_prefix, "asset_key_prefix", of_type=str)
+
+    tracked_asset_keys = {
+        AssetKey(asset_key_prefix + table.split(".")) for table in destination_tables
+    }
+
     @multi_asset(
-        name=name or f"fivetran_sync_{connector_id}",
+        name=f"fivetran_sync_{connector_id}",
         outs={
             "_".join(key.path): Out(io_manager_key=io_manager_key, asset_key=key)
-            for key in asset_keys
+            for key in tracked_asset_keys
         },
         required_resource_keys={"fivetran"},
     )
@@ -84,16 +86,20 @@ def build_fivetran_assets(
             poll_interval=poll_interval,
             poll_timeout=poll_timeout,
         )
-        for materialization in generate_materializations(fivetran_output, asset_key_prefix=[]):
+        for materialization in generate_materializations(
+            fivetran_output, asset_key_prefix=asset_key_prefix
+        ):
             # scan through all tables actually created, if it was expected then emit an Output.
             # otherwise, emit a runtime AssetMaterialization
-            if materialization.asset_key in asset_keys:
+            if materialization.asset_key in tracked_asset_keys:
                 yield Output(
                     value=None,
                     output_name="_".join(materialization.asset_key.path),
-                    metadata_entries=materialization.metadata_entries,
+                    metadata={
+                        entry.label: entry.entry_data for entry in materialization.metadata_entries
+                    },
                 )
             else:
                 yield materialization
 
-    return _assets
+    return [_assets]
