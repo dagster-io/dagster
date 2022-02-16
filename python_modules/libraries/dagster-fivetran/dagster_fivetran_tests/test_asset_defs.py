@@ -2,7 +2,7 @@ import pytest
 import responses
 from dagster import AssetKey, DagsterStepOutputNotFoundError, build_assets_job
 from dagster_fivetran import fivetran_resource
-from dagster_fivetran.assets import build_fivetran_assets
+from dagster_fivetran.asset_defs import build_fivetran_assets
 from dagster_fivetran.resources import FIVETRAN_API_BASE, FIVETRAN_CONNECTOR_PATH
 
 from .utils import (
@@ -16,43 +16,42 @@ from .utils import (
 
 def test_fivetran_asset_keys():
 
-    ft_asset = build_fivetran_assets(
-        connector_id=DEFAULT_CONNECTOR_ID, asset_keys=[AssetKey("foo"), AssetKey("bar")]
+    ft_assets = build_fivetran_assets(
+        connector_id=DEFAULT_CONNECTOR_ID, destination_tables=["x.foo", "y.bar"]
     )
-    assert ft_asset.asset_keys == {AssetKey("foo"), AssetKey("bar")}
+    assert ft_assets[0].asset_keys == {AssetKey(["x", "foo"]), AssetKey(["y", "bar"])}
 
 
 @pytest.mark.parametrize(
-    "asset_keys,should_error",
+    "tables,should_error",
     [
         ([], False),
-        ([AssetKey(["schema1", "tracked"])], False),
-        ([AssetKey(["schema1", "tracked"]), AssetKey(["schema2", "tracked"])], False),
-        ([AssetKey(["does", "notexist"])], True),
-        ([AssetKey(["schema1", "tracked"]), AssetKey(["does", "notexist"])], True),
+        (["schema1.tracked"], False),
+        (["schema1.tracked", "schema2.tracked"], False),
+        (["does.not_exist"], True),
+        (["schema1.tracked", "does.not_exist"], True),
     ],
 )
-def test_fivetran_asset_run(asset_keys, should_error):
+def test_fivetran_asset_run(tables, should_error):
 
     ft_resource = fivetran_resource.configured({"api_key": "foo", "api_secret": "bar"})
     final_data = {"succeeded_at": "2021-01-01T02:00:00.0Z"}
     api_prefix = f"{FIVETRAN_API_BASE}/{FIVETRAN_CONNECTOR_PATH}{DEFAULT_CONNECTOR_ID}"
 
     fivetran_assets = build_fivetran_assets(
-        name="my_cool_ft_assets",
         connector_id=DEFAULT_CONNECTOR_ID,
-        asset_keys=asset_keys,
+        destination_tables=tables,
         poll_interval=0.1,
         poll_timeout=10,
     )
 
     # expect the multi asset to have one asset key and one output for each specified asset key
-    assert fivetran_assets.asset_keys == set(asset_keys)
-    assert len(fivetran_assets.op.output_defs) == len(asset_keys)
+    assert fivetran_assets[0].asset_keys == {AssetKey(table.split(".")) for table in tables}
+    assert len(fivetran_assets[0].op.output_defs) == len(tables)
 
     fivetran_assets_job = build_assets_job(
         name="fivetran_assets_job",
-        assets=[fivetran_assets],
+        assets=fivetran_assets,
         resource_defs={"fivetran": ft_resource},
     )
 
@@ -85,15 +84,15 @@ def test_fivetran_asset_run(asset_keys, should_error):
             # make sure we only have outputs for the explicit asset keys
             outputs = [
                 event
-                for event in result.events_for_node("my_cool_ft_assets")
+                for event in result.events_for_node(f"fivetran_sync_{DEFAULT_CONNECTOR_ID}")
                 if event.event_type_value == "STEP_OUTPUT"
             ]
-            assert len(outputs) == len(asset_keys)
+            assert len(outputs) == len(tables)
 
             # make sure we have asset materializations for all the schemas/tables that were actually sync'd
             asset_materializations = [
                 event
-                for event in result.events_for_node("my_cool_ft_assets")
+                for event in result.events_for_node(f"fivetran_sync_{DEFAULT_CONNECTOR_ID}")
                 if event.event_type_value == "ASSET_MATERIALIZATION"
             ]
             assert len(asset_materializations) == 3
