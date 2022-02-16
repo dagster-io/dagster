@@ -102,6 +102,7 @@ def rename_warning(new_name, old_name, breaking_version, additional_warn_txt=Non
             breaking_version=breaking_version,
         )
         + ((" " + additional_warn_txt) if additional_warn_txt else ""),
+        category=DeprecationWarning,
         stacklevel=stacklevel,
     )
 
