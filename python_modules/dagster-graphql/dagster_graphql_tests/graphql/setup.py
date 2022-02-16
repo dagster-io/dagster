@@ -243,7 +243,7 @@ def solid_partitioned_asset(_):
 
 @solid
 def tag_asset_solid(_):
-    yield AssetMaterialization(asset_key="a", tags={"foo": "FOO"})
+    yield AssetMaterialization(asset_key="a")
     yield Output(1)
 
 
