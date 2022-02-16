@@ -22,9 +22,11 @@ def my_slack_on_run_failure(context: RunFailureSensorContext):
 # start_alert_sensor_testing_with_context_setup
 from dagster import op, job
 
+
 @op
 def fails():
     raise Exception("failure!")
+
 
 @job
 def my_job_fails():
@@ -103,9 +105,11 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
 
 # start_run_status_sensor_testing_with_context_setup
 
+
 @op
 def succeeds():
     return 1
+
 
 @job
 def my_job_succeeds():

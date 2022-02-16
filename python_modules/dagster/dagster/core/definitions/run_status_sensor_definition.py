@@ -18,10 +18,7 @@ from dagster.core.errors import (
     RunStatusSensorExecutionError,
     user_code_error_boundary,
 )
-from dagster.core.events import (
-    PIPELINE_RUN_STATUS_TO_EVENT_TYPE,
-    DagsterEvent,
-)
+from dagster.core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import (
     DagsterRun,
