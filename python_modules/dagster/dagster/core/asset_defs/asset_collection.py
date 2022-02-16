@@ -108,7 +108,7 @@ class AssetCollection(
             resolved_op_selection_dict = parse_op_selection(mega_job_def, op_selection)
 
             included_assets = []
-            excluded_assets: List[Union[AssetsDefinition, ForeignAsset]] = list(self.source_assets)
+            excluded_assets: List[Union[AssetsDefinition, SourceAsset]] = list(self.source_assets)
 
             op_names = set(list(resolved_op_selection_dict.keys()))
 
@@ -159,7 +159,7 @@ class AssetCollection(
                 asset_keys_to_ops[asset_key_as_str].append(asset.op)
 
         for asset in self.source_assets:
-            if isinstance(asset, ForeignAsset):
+            if isinstance(asset, SourceAsset):
                 asset_key_as_str = ".".join([piece for piece in asset.key.path])
                 source_asset_keys.add(asset_key_as_str)
             else:
