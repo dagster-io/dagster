@@ -5,9 +5,9 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import pandera as pa
 import requests
+import seaborn as sns
 from dagster_pandera import pandera_schema_to_dagster_type
 from pandera.typing import Series
-import seaborn as sns
 
 # ****************************************************************************
 # ***** TYPES ****************************************************************
@@ -57,8 +57,10 @@ AnomalousEventsDgType = pandera_schema_to_dagster_type(AnomalousEvents)
 DATA_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "../data"))
 SP500_CSV_URL = "https://raw.githubusercontent.com/plotly/datasets/master/all_stocks_5yr.csv"
 
+
 def normalize_path(path: str) -> str:
     return path if path[0] == "/" else os.path.join(DATA_ROOT, path)
+
 
 def download_file(url: str, path: str):
     """Download a file from a URL to a local path. If relative path, will be resolved relative to `DATA_ROOT`."""
@@ -66,6 +68,7 @@ def download_file(url: str, path: str):
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "wb") as f:
         f.write(requests.get(url).content)
+
 
 def load_prices_csv(path: str) -> pd.DataFrame:
     """Load a CSV file containing stock prices. CSV should conform to the schema in the
@@ -76,6 +79,7 @@ def load_prices_csv(path: str) -> pd.DataFrame:
     df = df.rename(columns={"Name": "name"})
     df = df.dropna()
     return df
+
 
 def load_sp500_prices(download: bool = True) -> pd.DataFrame:
     path = normalize_path("all_stocks_5yr.csv")

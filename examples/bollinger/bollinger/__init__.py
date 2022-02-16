@@ -1,11 +1,12 @@
 import warnings
 
-from dagster import repository, ExperimentalWarning
+from dagster import ExperimentalWarning, repository
+
+from . import lib
+from .jobs import bollinger_analysis
 
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
-from .jobs import bollinger_analysis
-from . import lib
 
 
 @repository(name="bollinger")

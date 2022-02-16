@@ -10,6 +10,7 @@ from ..lib import (
     load_sp500_prices,
 )
 
+
 @asset(
     dagster_type=StockPricesDgType,
     metadata={"owner": "alice@example.com"},
