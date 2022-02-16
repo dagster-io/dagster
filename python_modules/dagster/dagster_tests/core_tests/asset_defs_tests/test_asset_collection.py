@@ -9,7 +9,7 @@ from dagster import (
     repository,
     resource,
 )
-from dagster.core.asset_defs import AssetCollection, AssetIn, ForeignAsset, asset
+from dagster.core.asset_defs import AssetCollection, AssetIn, SourceAsset, asset
 
 
 def test_asset_collection_from_list():
@@ -39,8 +39,8 @@ def test_asset_collection_from_list():
     assert result.success
 
 
-def test_asset_collection_foreign_asset():
-    foo_fa = ForeignAsset(key=AssetKey("foo"), io_manager_key="the_manager")
+def test_asset_collection_source_asset():
+    foo_fa = SourceAsset(key=AssetKey("foo"), io_manager_key="the_manager")
 
     @asset
     def asset_depends_on_source(foo):
@@ -108,13 +108,13 @@ def test_asset_collection_missing_resources():
     ):
         AssetCollection([asset_foo])
 
-    foreign_asset_io_req = ForeignAsset(key=AssetKey("foo"), io_manager_key="foo")
+    source_asset_io_req = SourceAsset(key=AssetKey("foo"), io_manager_key="foo")
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
         match=r"SourceAsset with key AssetKey\(\['foo'\]\) requires io manager with key 'foo', which was not provided on AssetCollection. Provided keys: \['io_manager', 'root_manager'\]",
     ):
-        AssetCollection([], source_assets=[foreign_asset_io_req])
+        AssetCollection([], source_assets=[source_asset_io_req])
 
 
 def test_asset_collection_with_executor():

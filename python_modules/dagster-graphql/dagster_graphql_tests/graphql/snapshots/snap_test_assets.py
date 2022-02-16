@@ -90,7 +90,7 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[asset_aware_instance_in_pr
             {
                 'key': {
                     'path': [
-                        'dummy_foreign_asset'
+                        'dummy_source_asset'
                     ]
                 }
             },
@@ -224,7 +224,7 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[postgres_with_default_run_
             {
                 'key': {
                     'path': [
-                        'dummy_foreign_asset'
+                        'dummy_source_asset'
                     ]
                 }
             },
@@ -358,7 +358,7 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
             {
                 'key': {
                     'path': [
-                        'dummy_foreign_asset'
+                        'dummy_source_asset'
                     ]
                 }
             },

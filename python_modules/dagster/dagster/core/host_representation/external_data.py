@@ -10,7 +10,7 @@ from datetime import datetime
 from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple
 
 from dagster import StaticPartitionsDefinition, check
-from dagster.core.asset_defs import ForeignAsset
+from dagster.core.asset_defs import SourceAsset
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 from dagster.core.definitions import (
     JobDefinition,
@@ -600,13 +600,13 @@ def external_repository_data_from_def(repository_def):
             key=lambda sd: sd.name,
         ),
         external_asset_graph_data=external_asset_graph_from_defs(
-            pipelines, foreign_assets_by_key=repository_def.foreign_assets_by_key
+            pipelines, source_assets_by_key=repository_def.source_assets_by_key
         ),
     )
 
 
 def external_asset_graph_from_defs(
-    pipelines: Sequence[PipelineDefinition], foreign_assets_by_key: Mapping[AssetKey, ForeignAsset]
+    pipelines: Sequence[PipelineDefinition], source_assets_by_key: Mapping[AssetKey, SourceAsset]
 ) -> Sequence[ExternalAssetNode]:
     node_defs_by_asset_key: Dict[
         AssetKey, List[Tuple[OutputDefinition, NodeDefinition, PipelineDefinition]]
@@ -662,7 +662,7 @@ def external_asset_graph_from_defs(
                     )
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
         node_defs_by_asset_key.keys()
-    ).difference(foreign_assets_by_key.keys())
+    ).difference(source_assets_by_key.keys())
 
     asset_nodes = [
         ExternalAssetNode(
@@ -674,20 +674,20 @@ def external_asset_graph_from_defs(
         for asset_key in asset_keys_without_definitions
     ]
 
-    for foreign_asset in foreign_assets_by_key.values():
-        if foreign_asset.key in node_defs_by_asset_key:
+    for source_asset in source_assets_by_key.values():
+        if source_asset.key in node_defs_by_asset_key:
             raise DagsterInvariantViolationError(
-                f"Asset with key {foreign_asset.key.to_string()} is defined both as a foreign asset"
-                " and as a non-foreign asset"
+                f"Asset with key {source_asset.key.to_string()} is defined both as a source asset"
+                " and as a non-source asset"
             )
 
         asset_nodes.append(
             ExternalAssetNode(
-                asset_key=foreign_asset.key,
-                dependencies=list(deps[foreign_asset.key].values()),
-                depended_by=dep_by[foreign_asset.key],
+                asset_key=source_asset.key,
+                dependencies=list(deps[source_asset.key].values()),
+                depended_by=dep_by[source_asset.key],
                 job_names=[],
-                op_description=foreign_asset.description,
+                op_description=source_asset.description,
             )
         )
 
