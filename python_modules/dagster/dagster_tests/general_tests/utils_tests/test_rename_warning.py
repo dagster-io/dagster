@@ -6,7 +6,7 @@ from dagster.utils.backcompat import rename_warning
 
 def test_no_additional_warn_text():
     with pytest.warns(
-        UserWarning,
+        DeprecationWarning,
         match=re.escape(
             '"an_old_name" is deprecated and will be removed in 0.3.0, use "a_new_name" instead.'
         ),
