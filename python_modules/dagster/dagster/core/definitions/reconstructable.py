@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from .repository_definition import RepositoryDefinition
     from .pipeline_definition import PipelineDefinition
     from .graph_definition import GraphDefinition
-    from dagster.core.asset_defs.asset_collection import AssetGroup
+    from dagster.core.asset_defs.asset_group import AssetGroup
 
 
 def get_ephemeral_repository_name(pipeline_name: str) -> str:
@@ -548,7 +548,7 @@ def def_from_pointer(
     from .pipeline_definition import PipelineDefinition
     from .repository_definition import RepositoryDefinition
     from .graph_definition import GraphDefinition
-    from dagster.core.asset_defs.asset_collection import AssetGroup
+    from dagster.core.asset_defs.asset_group import AssetGroup
 
     if isinstance(
         target, (PipelineDefinition, RepositoryDefinition, GraphDefinition, AssetGroup)
@@ -600,7 +600,7 @@ def repository_def_from_target_def(target):
     from .pipeline_definition import PipelineDefinition
     from .graph_definition import GraphDefinition
     from .repository_definition import CachingRepositoryData, RepositoryDefinition
-    from dagster.core.asset_defs.asset_collection import AssetGroup
+    from dagster.core.asset_defs.asset_group import AssetGroup
 
     # special case - we can wrap a single pipeline in a repository
     if isinstance(target, (PipelineDefinition, GraphDefinition)):

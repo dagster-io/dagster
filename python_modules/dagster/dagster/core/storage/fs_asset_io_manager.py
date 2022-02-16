@@ -42,7 +42,7 @@ def fs_asset_io_manager(init_context):
         def asset2(asset1):
             return df[:5]
 
-        asset_collection = AssetGroup(
+        asset_group = AssetGroup(
             [asset1, asset2],
             resource_defs={
                 "io_manager": fs_asset_io_manager.configured({"base_path": "/my/base/path"})
@@ -65,7 +65,7 @@ def fs_asset_io_manager(init_context):
         def asset2(asset1):
             return df[:5]
 
-        asset_collection = AssetGroup(
+        asset_group = AssetGroup(
             [asset1, asset2],
             resource_defs={
                 "my_io_manager": fs_asset_io_manager.configured({"base_path": "/my/base/path"})

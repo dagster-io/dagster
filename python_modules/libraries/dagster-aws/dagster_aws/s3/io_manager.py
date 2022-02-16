@@ -132,7 +132,7 @@ def s3_pickle_asset_io_manager(init_context):
 
     .. code-block:: python
 
-        asset_collection = AssetGroup(
+        asset_group = AssetGroup(
             assets...,
             resource_defs={'io_manager': s3_pickle_asset_io_manager, "s3": s3_resource, ...}),
         )

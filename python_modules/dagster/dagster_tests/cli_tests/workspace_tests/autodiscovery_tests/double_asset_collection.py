@@ -1,5 +1,5 @@
 from dagster import asset
-from dagster.core.asset_defs.asset_collection import AssetGroup
+from dagster.core.asset_defs.asset_group import AssetGroup
 
 
 @asset
