@@ -1,7 +1,5 @@
 import sys
 
-from pep562 import pep562
-
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
 from dagster.config.config_schema import ConfigSchema
@@ -248,6 +246,7 @@ from dagster.utils.test import (
     execute_solid_within_pipeline,
     execute_solids_within_pipeline,
 )
+from pep562 import pep562
 
 from .version import __version__
 
@@ -264,20 +263,25 @@ _DEPRECATED = {
     "PythonArtifactMetadataEntryData": ("PythonArtifactMetadataValue", PythonArtifactMetadataValue),
     "FloatMetadataEntryData": ("FloatMetadataValue", FloatMetadataValue),
     "IntMetadataEntryData": ("IntMetadataValue", IntMetadataValue),
-    "DagsterPipelineRunMetadataEntryData": ("DagsterPipelineRunMetadataValue", DagsterPipelineRunMetadataValue),
+    "DagsterPipelineRunMetadataEntryData": (
+        "DagsterPipelineRunMetadataValue",
+        DagsterPipelineRunMetadataValue,
+    ),
     "DagsterAssetMetadataEntryData": ("DagsterAssetMetadataValue", DagsterAssetMetadataValue),
     "TableMetadataEntryData": ("TableMetadataValue", TableMetadataValue),
     "TableSchemaMetadataEntryData": ("TableSchemaMetadataValue", TableSchemaMetadataValue),
 }
 
+
 def __getattr__(name):
     if name in _DEPRECATED:
         new_name, value = _DEPRECATED[name]
         stacklevel = 3 if sys.version_info >= (3, 7) else 4
-        rename_warning(new_name, name, '0.15.0', stacklevel=stacklevel)
+        rename_warning(new_name, name, "0.15.0", stacklevel=stacklevel)
         return value
     else:
         raise AttributeError("module '{}' has no attribute '{}'".format(__name__, name))
+
 
 def __dir__():
     return sorted(list(__all__) + list(_DEPRECATED.keys()))
