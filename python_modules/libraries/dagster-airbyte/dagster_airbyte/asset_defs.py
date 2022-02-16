@@ -1,7 +1,7 @@
 from typing import List, Optional
-from dagster import Output, Out, AssetKey, check
-from dagster.core.asset_defs import AssetsDefinition, multi_asset
 
+from dagster import AssetKey, Out, Output, check
+from dagster.core.asset_defs import AssetsDefinition, multi_asset
 from dagster_airbyte.utils import generate_materializations
 
 
@@ -28,8 +28,12 @@ def build_airbyte_assets(
     @multi_asset(
         name=f"airbyte_sync_{connection_id[:5]}",
         outs={
-            table_name: Out(asset_key=AssetKey(asset_key_prefix + [table_name]))
-            for table_name in destination_tables
+            table: Out(
+                asset_key=AssetKey(
+                    asset_key_prefix + [table],
+                )
+            )
+            for table in destination_tables
         },
         required_resource_keys={"airbyte"},
         compute_kind="airbyte",

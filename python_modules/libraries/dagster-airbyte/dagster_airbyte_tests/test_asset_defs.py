@@ -1,12 +1,6 @@
 import responses
-from dagster import build_init_resource_context, build_assets_job, EventMetadataEntry
-from dagster_airbyte import (
-    AirbyteOutput,
-    airbyte_resource,
-    airbyte_sync_op,
-    build_airbyte_assets,
-    AirbyteState,
-)
+from dagster import EventMetadataEntry, build_assets_job, build_init_resource_context
+from dagster_airbyte import AirbyteState, airbyte_resource, build_airbyte_assets
 
 
 @responses.activate
