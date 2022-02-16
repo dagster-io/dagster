@@ -300,33 +300,9 @@ class DagsterInstance:
 
         self._run_coordinator = check.inst_param(run_coordinator, "run_coordinator", RunCoordinator)
         self._run_coordinator.register_instance(self)
-        if hasattr(self._run_coordinator, "initialize") and inspect.ismethod(
-            getattr(self._run_coordinator, "initialize")
-        ):
-            warnings.warn(
-                "The initialize method on RunCoordinator has been deprecated as of 0.11.0 and will "
-                "no longer be called during DagsterInstance init. Instead, the DagsterInstance "
-                "will be made automatically available on any run coordinator associated with a "
-                "DagsterInstance. In test, you may need to call RunCoordinator.register_instance() "
-                "(mixed in from MayHaveInstanceWeakref). If you need to make use of the instance "
-                "to set up your custom RunCoordinator, you should override "
-                "RunCoordintor.register_instance(). This warning will be removed in 0.12.0."
-            )
 
         self._run_launcher = check.inst_param(run_launcher, "run_launcher", RunLauncher)
         self._run_launcher.register_instance(self)
-        if hasattr(self._run_launcher, "initialize") and inspect.ismethod(
-            getattr(self._run_launcher, "initialize")
-        ):
-            warnings.warn(
-                "The initialize method on RunLauncher has been deprecated as of 0.11.0 and will "
-                "no longer be called during DagsterInstance init. Instead, the DagsterInstance "
-                "will be made automatically available on any run launcher associated with a "
-                "DagsterInstance. In test, you may need to call RunLauncher.register_instance() "
-                "(mixed in from MayHaveInstanceWeakref). If you need to make use of the instance "
-                "to set up your custom RunLauncher, you should override "
-                "RunLauncher.register_instance(). This warning will be removed in 0.12.0."
-            )
 
         self._settings = check.opt_dict_param(settings, "settings")
 
