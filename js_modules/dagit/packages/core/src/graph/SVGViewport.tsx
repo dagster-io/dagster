@@ -220,6 +220,9 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     // The wheel event cannot be prevented via the `onWheel` handler.
     document.addEventListener('wheel', this.onWheel, {passive: false});
 
+    // The op/asset graphs clip rendered nodes to the visible region, so changes to the
+    // size of the viewport need to cause re-renders. Otherwise you expand the window
+    // and see nothing in the newly visible areas.
     if (
       this.element.current &&
       this.element.current instanceof HTMLElement &&

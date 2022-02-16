@@ -21,9 +21,6 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
   const history = useHistory();
   const [_, _setView] = useAssetView();
   const {visibleRepos} = React.useContext(WorkspaceContext);
-
-  // This is a bit of a hack, but our explorer path needs a job name and we'd like
-  // to continue sharing the parsing/stringifying logic from the job graph UI
   const explorerPath = instanceAssetsExplorerPathFromString(params[0]);
 
   const filterNodes = React.useMemo(() => {

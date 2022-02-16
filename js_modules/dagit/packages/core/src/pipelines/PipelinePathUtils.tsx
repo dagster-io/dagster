@@ -46,6 +46,8 @@ export function explorerPathFromString(path: string): ExplorerPath {
 }
 
 export function instanceAssetsExplorerPathFromString(path: string): ExplorerPath {
+  // This is a bit of a hack, but our explorer path needs a job name and we'd like
+  // to continue sharing the parsing/stringifying logic from the job graph UI
   return explorerPathFromString(__REPOSITORY_MEGA_JOB + path || '/');
 }
 

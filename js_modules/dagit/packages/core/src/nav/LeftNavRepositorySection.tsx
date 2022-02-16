@@ -23,6 +23,8 @@ const LoadedRepositorySection: React.FC<{
       /([^\/]+)\/(pipelines|jobs|solids|ops|sensors|schedules)\/([^\/]+)\/?([^\/]+)?/,
     ) || [];
 
+  // Covert the "jobname~*opquery*" path component to "jobname"
+  // so we know to select it in the sidebar
   const selector =
     item && (type === 'pipelines' || type === 'jobs')
       ? explorerPathFromString(item).pipelineName

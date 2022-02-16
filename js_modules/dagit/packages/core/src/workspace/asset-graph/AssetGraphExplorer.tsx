@@ -60,8 +60,12 @@ interface Props {
   setOptions?: (options: GraphExplorerOptions) => void;
 
   pipelineSelector?: PipelineSelector;
-  handles?: GraphExplorerSolidHandleFragment[];
   filterNodes?: (assetNode: AssetGraphQuery_assetNodes) => boolean;
+
+  // Optionally pass op handles to display op metadata on the assets linked to each op.
+  // (eg: the "ipynb" tag annotation). Right now, we already have this data loaded for
+  // individual jobs, and the global asset graph quietly doesn't display these.
+  handles?: GraphExplorerSolidHandleFragment[];
 
   explorerPath: ExplorerPath;
   onChangeExplorerPath: (path: ExplorerPath, mode: 'replace' | 'push') => void;
