@@ -12,6 +12,7 @@ from dagster.core.definitions.time_window_partitions import (
 from dagster.core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
+    from dagster.core.events import DagsterEvent
     from .output import OutputContext
     from dagster.core.definitions.resource_definition import Resources
     from dagster.core.log_manager import DagsterLogManager
@@ -308,7 +309,7 @@ class InputContext:
                     context.log_event(AssetObservation(asset_key="my_asset", metadata={"hello": "world"}))
                     return 1
         """
-        from dagster.core.events import DagsterEvent, AssetObservation
+        from dagster.core.events import DagsterEvent
 
         if isinstance(event, AssetObservation):
             if self._step_context:

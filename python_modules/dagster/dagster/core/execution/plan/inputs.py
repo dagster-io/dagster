@@ -1,5 +1,4 @@
 import hashlib
-import inspect
 from abc import ABC, abstractmethod, abstractproperty
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, NamedTuple, Optional, Set, Union, cast
 
