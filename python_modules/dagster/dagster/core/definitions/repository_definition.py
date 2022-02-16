@@ -555,11 +555,11 @@ class CachingRepositoryData(RepositoryData):
         """Static constructor.
 
         Args:
-            repository_definition (List[Union[PipelineDefinition, PartitionSetDefinition, ScheduleDefinition, ForeignAsset]]):
+            repository_definitions (List[Union[PipelineDefinition, PartitionSetDefinition, ScheduleDefinition, AssetCollection]]):
                 Use this constructor when you have no need to lazy load pipelines/jobs or other
                 definitions.
         """
-        from dagster.core.asset_defs import ForeignAsset, AssetCollection, build_assets_job
+        from dagster.core.asset_defs import AssetCollection, build_assets_job
 
         pipelines_or_jobs = {}
         partition_sets = {}
@@ -624,15 +624,6 @@ class CachingRepositoryData(RepositoryData):
                         )
                     )
                 pipelines_or_jobs[coerced.name] = coerced
-            elif isinstance(definition, ForeignAsset):
-                if (
-                    definition.key in foreign_assets
-                    and foreign_assets[definition.key] != definition
-                ):
-                    raise DagsterInvalidDefinitionError(
-                        f"Duplicate foreign asset found for {definition.key}"
-                    )
-                foreign_assets[definition.key] = definition
 
             elif isinstance(definition, AssetCollection):
                 asset_collection = definition
@@ -643,6 +634,10 @@ class CachingRepositoryData(RepositoryData):
                     resource_defs=asset_collection.resource_defs,
                     executor_def=asset_collection.executor_def,
                 )
+                foreign_assets = {
+                    foreign_asset.key: foreign_asset
+                    for foreign_asset in asset_collection.source_assets
+                }
 
             else:
                 check.failed(f"Unexpected repository entry {definition}")
