@@ -188,6 +188,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
                   }
                 : undefined
             }
+            opName={definition?.opName}
           />
         ))}
     </div>

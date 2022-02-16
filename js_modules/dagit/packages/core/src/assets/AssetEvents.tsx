@@ -53,6 +53,7 @@ interface Props {
   // grouping /before/ loading all the data.
   assetHasDefinedPartitions: boolean;
   repository?: RepositorySelector;
+  opName?: string | null;
 }
 
 /**
@@ -102,7 +103,7 @@ function useRecentAssetEvents(
 }
 
 function useRecentRunWarnings(
-  assetKey: AssetKey,
+  opName: string | null | undefined,
   grouped: AssetEventGroup[],
   repositorySelector?: RepositorySelector,
 ) {
@@ -128,7 +129,7 @@ function useRecentRunWarnings(
       }
     }
 
-    const assetName = assetKey.path[assetKey.path.length - 1];
+    const assetName = opName;
     const jobRunsThatDidntMaterializeAsset = jobRunsCounts.find((jrc) => jrc.stepKey === assetName);
     const latestRunForStepKey = latestRuns.find((lr) => lr.stepKey === assetName);
 
@@ -140,7 +141,7 @@ function useRecentRunWarnings(
         : undefined;
 
     return {jobRunsThatDidntMaterializeAsset, runWhichFailedToMaterialize};
-  }, [data, assetKey, grouped]);
+  }, [data, grouped, opName]);
 }
 
 export const AssetEvents: React.FC<Props> = ({
@@ -152,6 +153,7 @@ export const AssetEvents: React.FC<Props> = ({
   setParams,
   liveData,
   repository,
+  opName,
 }) => {
   const before = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
   const xAxisDefault = assetHasDefinedPartitions ? 'partition' : 'time';
@@ -195,7 +197,7 @@ export const AssetEvents: React.FC<Props> = ({
   }, [loadedPartitionKeys, materializations, observations, xAxis]);
 
   const {jobRunsThatDidntMaterializeAsset, runWhichFailedToMaterialize} = useRecentRunWarnings(
-    assetKey,
+    opName,
     grouped,
     repository,
   );
