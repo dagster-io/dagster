@@ -51,7 +51,10 @@ const LaunchpadSetupAllowedRoot: React.FC<Props> = (props) => {
       }
       if (queryString.solidSelection instanceof Array) {
         newSession.solidSelection = queryString.solidSelection as string[];
-      } else if (typeof queryString.solidSelection === 'string') {
+      } else if (
+        typeof queryString.solidSelection === 'string' &&
+        queryString.solidSelection.length > 0
+      ) {
         newSession.solidSelection = [queryString.solidSelection];
       }
       if (typeof queryString.solidSelectionQuery === 'string') {
