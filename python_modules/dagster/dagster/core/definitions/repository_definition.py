@@ -559,7 +559,7 @@ class CachingRepositoryData(RepositoryData):
                 Use this constructor when you have no need to lazy load pipelines/jobs or other
                 definitions.
         """
-        from dagster.core.asset_defs import SourceAsset, AssetGroup, build_assets_job
+        from dagster.core.asset_defs import AssetGroup, build_assets_job
 
         pipelines_or_jobs = {}
         partition_sets = {}
@@ -635,8 +635,7 @@ class CachingRepositoryData(RepositoryData):
                     executor_def=asset_group.executor_def,
                 )
                 source_assets = {
-                    source_asset.key: source_asset
-                    for source_asset in asset_collection.source_assets
+                    source_asset.key: source_asset for source_asset in asset_group.source_assets
                 }
 
             else:
