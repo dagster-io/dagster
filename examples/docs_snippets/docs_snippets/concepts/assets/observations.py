@@ -1,6 +1,6 @@
 """isort:skip_file"""
 # pylint: disable=unused-argument,reimported
-from dagster import op, job, IOManager
+from dagster import op, job
 
 
 def read_df():
@@ -26,7 +26,7 @@ from dagster import AssetObservation
 @op
 def observation_op():
     df = read_df()
-    remote_storage_path = persist_to_storage(df)
+    persist_to_storage(df)
     yield AssetObservation(asset_key="observation_asset", metadata={"num_rows": len(df)})
     yield AssetMaterialization(
         asset_key="observation_asset", description="Persisted result to storage"
