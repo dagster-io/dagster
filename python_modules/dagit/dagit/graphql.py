@@ -66,6 +66,9 @@ class GraphQLServer(ABC):
     def make_request_context(self, conn: HTTPConnection):
         raise NotImplementedError()
 
+    def handle_graphql_errors(self, errors):
+        return [format_graphql_error(err) for err in errors]
+
     async def graphql_http_endpoint(self, request: Request):
         """
         fork of starlette GraphQLApp to allow for
@@ -124,11 +127,12 @@ class GraphQLServer(ABC):
             middleware=self._graphql_middleware,
         )
 
-        error_data = [format_graphql_error(err) for err in result.errors] if result.errors else None
         response_data = {"data": result.data}
-        if error_data:
-            response_data["errors"] = error_data
-        status_code = status.HTTP_400_BAD_REQUEST if result.errors else status.HTTP_200_OK
+        status_code = status.HTTP_200_OK
+
+        if result.errors:
+            response_data["errors"] = self.handle_graphql_errors(result.errors)
+            status_code = status.HTTP_400_BAD_REQUEST
 
         return JSONResponse(response_data, status_code=status_code)
 
