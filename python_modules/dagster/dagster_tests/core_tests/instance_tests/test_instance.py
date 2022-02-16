@@ -200,14 +200,14 @@ class TestNonResumeRunLauncher(RunLauncher, ConfigurableClass):
         return True
 
 
-def test_run_monitoring():
-    with pytest.raises(CheckError):
-        with instance_for_test(
-            overrides={
-                "run_monitoring": {"enabled": True},
-            }
-        ):
-            pass
+def test_run_monitoring(capsys):
+    with instance_for_test(
+        overrides={
+            "run_monitoring": {"enabled": True},
+        }
+    ) as instance:
+        # not supported by default run launcher
+        assert not instance.run_monitoring_enabled
 
     settings = {"enabled": True}
     with instance_for_test(
