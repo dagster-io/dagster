@@ -114,6 +114,7 @@ def build_spec_celery_k8s_suite():
         "-markusercodedeploymentsubchart",
         "-markdaemon",
         "-markredis",
+        "-markmonitoring",
     ]
     directory = os.path.join(
         "integration_tests", "test_suites", "celery-k8s-integration-test-suite"
