@@ -190,9 +190,7 @@ If you specified any metadata entries on the <PyObject object="Output" /> event 
 
 ### Linking assets to an Output Definition <Experimental />
 
-For cases where you are storing your asset within the body of an op, the easiest way of linking an asset to an op output is with the `asset_key` parameter on the relevant <PyObject object="OutputDefinition"/> in your op.
-
-You can define a constant <PyObject object="AssetKey"/> that identifies the asset you are linking.
+For cases where you are storing your asset within the body of an op, the easiest way of linking an asset to an op output is with the `asset_key` parameter on the relevant <PyObject object="OutputDefinition"/> in your op. To do this, you may define a constant <PyObject object="AssetKey"/> that identifies the asset you are linking.
 
 ```python file=/concepts/assets/materialization_ops.py startafter=start_output_def_mat_op_0 endbefore=end_output_def_mat_op_0
 from dagster import op, Output, Out, AssetKey
