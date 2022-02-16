@@ -28,7 +28,7 @@ def create_dagit_cli():
 DEFAULT_DAGIT_HOST = "127.0.0.1"
 DEFAULT_DAGIT_PORT = 3000
 
-DEFAULT_DB_STATEMENT_TIMEOUT = 5000  # 5 sec
+DEFAULT_DB_STATEMENT_TIMEOUT = 15000  # 15 sec
 
 
 @click.command(
