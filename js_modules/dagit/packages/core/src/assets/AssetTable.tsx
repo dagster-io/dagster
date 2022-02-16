@@ -206,8 +206,10 @@ const AssetEntryRow: React.FC<{
           </Description>
         </td>
         <td>
-          {materializationTime && (
+          {materializationTime ? (
             <Timestamp timestamp={{unix: materializationTime}} timeFormat={TIME_FORMAT} />
+          ) : (
+            '-'
           )}
         </td>
         <td>
