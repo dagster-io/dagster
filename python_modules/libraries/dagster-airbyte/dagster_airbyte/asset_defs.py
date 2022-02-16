@@ -2,9 +2,11 @@ from typing import List, Optional
 
 from dagster import AssetKey, Out, Output, check
 from dagster.core.asset_defs import AssetsDefinition, multi_asset
+from dagster.utils.backcompat import experimental
 from dagster_airbyte.utils import generate_materializations
 
 
+@experimental
 def build_airbyte_assets(
     connection_id: str,
     destination_tables: List[str],
