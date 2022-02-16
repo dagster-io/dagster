@@ -8,7 +8,7 @@ from dagster import (
     PipelineDefinition,
     RepositoryDefinition,
 )
-from dagster.core.asset_defs import AssetCollection
+from dagster.core.asset_defs import AssetGroup
 from dagster.core.code_pointer import load_python_file, load_python_module
 
 LoadableTarget = namedtuple("LoadableTarget", "attribute target_definition")
@@ -79,12 +79,12 @@ def loadable_targets_from_loaded_module(module):
             )
         )
 
-    loadable_asset_collections = _loadable_targets_of_type(module, AssetCollection)
-    if len(loadable_asset_collections) == 1:
-        return loadable_asset_collections
+    loadable_asset_groups = _loadable_targets_of_type(module, AssetGroup)
+    if len(loadable_asset_groups) == 1:
+        return loadable_asset_groups
 
-    elif len(loadable_asset_collections) > 1:
-        var_names = repr([a.attribute for a in loadable_asset_collections])
+    elif len(loadable_asset_groups) > 1:
+        var_names = repr([a.attribute for a in loadable_asset_groups])
         raise DagsterInvariantViolationError(
             (
                 f'More than one asset collection found in "{module.__name__}". '

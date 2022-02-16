@@ -14,9 +14,9 @@ from .assets_job import build_assets_job, build_root_manager, build_source_asset
 from .source_asset import SourceAsset
 
 
-class AssetCollection(
+class AssetGroup(
     NamedTuple(
-        "_AssetCollection",
+        "_AssetGroup",
         [
             ("assets", Sequence[AssetsDefinition]),
             ("source_assets", Sequence[SourceAsset]),
@@ -57,11 +57,11 @@ class AssetCollection(
             resource_defs,
         )
 
-        _validate_resource_reqs_for_asset_collection(
+        _validate_resource_reqs_for_asset_group(
             asset_list=assets, source_assets=source_assets, resource_defs=resource_defs
         )
 
-        return super(AssetCollection, cls).__new__(
+        return super(AssetGroup, cls).__new__(
             cls,
             assets=assets,
             source_assets=source_assets,
@@ -72,7 +72,7 @@ class AssetCollection(
     @property
     def all_assets_job_name(self) -> str:
         """The name of the mega-job that the provided list of assets is coerced into."""
-        return "__ASSET_COLLECTION"
+        return "__ASSET_GROUP"
 
     def build_job(
         self,
@@ -189,7 +189,7 @@ class AssetCollection(
             # https://github.com/dagster-io/dagster/issues/6647
             if key_str in source_asset_keys:
                 raise DagsterInvalidDefinitionError(
-                    f"When attempting to create job '{job_name}', the clause '{clause}' selects asset_key '{key_str}', which comes from a source asset. Source assets can't be materialized, and therefore can't be subsetted into a job. Please choose a subset on asset keys that are materializable - that is, included on assets within the collection. Valid assets: {list(asset_keys_to_ops.keys())}"
+                    f"When attempting to create job '{job_name}', the clause '{clause}' selects asset_key '{key_str}', which comes from a source asset. Source assets can't be materialized, and therefore can't be subsetted into a job. Please choose a subset on asset keys that are materializable - that is, included on assets within the group. Valid assets: {list(asset_keys_to_ops.keys())}"
                 )
             if key_str not in asset_keys_to_ops:
                 raise DagsterInvalidDefinitionError(
@@ -216,7 +216,7 @@ class AssetCollection(
         return op_selection
 
 
-def _validate_resource_reqs_for_asset_collection(
+def _validate_resource_reqs_for_asset_group(
     asset_list: Sequence[AssetsDefinition],
     source_assets: Sequence[SourceAsset],
     resource_defs: Mapping[str, ResourceDefinition],
@@ -227,19 +227,19 @@ def _validate_resource_reqs_for_asset_collection(
         missing_resource_keys = list(set(resource_keys) - present_resource_keys)
         if missing_resource_keys:
             raise DagsterInvalidDefinitionError(
-                f"AssetCollection is missing required resource keys for asset '{asset_def.op.name}'. Missing resource keys: {missing_resource_keys}"
+                f"AssetGroup is missing required resource keys for asset '{asset_def.op.name}'. Missing resource keys: {missing_resource_keys}"
             )
 
         for asset_key, output_def in asset_def.output_defs_by_asset_key.items():
             if output_def.io_manager_key and output_def.io_manager_key not in present_resource_keys:
                 raise DagsterInvalidDefinitionError(
-                    f"Output '{output_def.name}' with AssetKey '{asset_key}' requires io manager '{output_def.io_manager_key}' but was not provided on asset collection. Provided resources: {sorted(list(present_resource_keys))}"
+                    f"Output '{output_def.name}' with AssetKey '{asset_key}' requires io manager '{output_def.io_manager_key}' but was not provided on asset group. Provided resources: {sorted(list(present_resource_keys))}"
                 )
 
     for source_asset in source_assets:
         if source_asset.io_manager_key and source_asset.io_manager_key not in present_resource_keys:
             raise DagsterInvalidDefinitionError(
-                f"SourceAsset with key {source_asset.key} requires io manager with key '{source_asset.io_manager_key}', which was not provided on AssetCollection. Provided keys: {sorted(list(present_resource_keys))}"
+                f"SourceAsset with key {source_asset.key} requires io manager with key '{source_asset.io_manager_key}', which was not provided on AssetGroup. Provided keys: {sorted(list(present_resource_keys))}"
             )
 
     for resource_key, resource_def in resource_defs.items():
@@ -247,5 +247,5 @@ def _validate_resource_reqs_for_asset_collection(
         missing_resource_keys = sorted(list(set(resource_keys) - present_resource_keys))
         if missing_resource_keys:
             raise DagsterInvalidDefinitionError(
-                f"AssetCollection is missing required resource keys for resource '{resource_key}'. Missing resource keys: {missing_resource_keys}"
+                f"AssetGroup is missing required resource keys for resource '{resource_key}'. Missing resource keys: {missing_resource_keys}"
             )

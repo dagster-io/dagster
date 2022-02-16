@@ -95,7 +95,7 @@ def test_bad_target():
         DagsterInvariantViolationError,
         match=re.escape(
             "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, "
-            "AssetCollection, or RepositoryDefinition. Got None."
+            "AssetGroup, or RepositoryDefinition. Got None."
         ),
     ):
         reconstructable(not_the_pipeline)
