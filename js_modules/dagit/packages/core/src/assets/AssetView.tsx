@@ -180,6 +180,14 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             paramsTimeWindowOnly={!!params.asOf}
             setParams={setParams}
             liveData={definition ? liveDataByNode[definition.id] : undefined}
+            repository={
+              definition?.repository
+                ? {
+                    repositoryLocationName: definition?.repository.location.name,
+                    repositoryName: definition.repository.name,
+                  }
+                : undefined
+            }
           />
         ))}
     </div>

@@ -7,13 +7,18 @@ import {
   Spinner,
   Caption,
   Subheading,
+  Warning,
 } from '@dagster-io/ui';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
+import qs from 'qs';
 import * as React from 'react';
+import {Link} from 'react-router-dom';
 
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {SidebarSection} from '../pipelines/SidebarComponents';
+import {titleForRun} from '../runs/RunUtils';
+import {RepositorySelector} from '../types/globalTypes';
 import {CurrentRunsBanner} from '../workspace/asset-graph/CurrentRunsBanner';
 import {LiveDataForNode} from '../workspace/asset-graph/Utils';
 
@@ -25,6 +30,12 @@ import {LatestMaterializationMetadata} from './LastMaterializationMetadata';
 import {AssetEventGroup, groupByPartition} from './groupByPartition';
 import {AssetKey} from './types';
 import {AssetEventsQuery, AssetEventsQueryVariables} from './types/AssetEventsQuery';
+import {
+  LastRunQuery,
+  LastRunQueryVariables,
+  LastRunQuery_repositoryOrError_Repository_latestRunByStep_JobRunsCount,
+  LastRunQuery_repositoryOrError_Repository_latestRunByStep_LatestRun,
+} from './types/LastRunQuery';
 
 interface Props {
   assetKey: AssetKey;
@@ -41,6 +52,7 @@ interface Props {
   // This is passed in because we need to know whether to default to partition
   // grouping /before/ loading all the data.
   assetHasDefinedPartitions: boolean;
+  repository?: RepositorySelector;
 }
 
 /**
@@ -89,6 +101,32 @@ function useRecentAssetEvents(
   }, [data, loading, refetch, loadUsingPartitionKeys]);
 }
 
+function useMostRecentRuns(repositorySelector?: RepositorySelector) {
+  const {data} = useQuery<LastRunQuery, LastRunQueryVariables>(LAST_RUNS_QUERY, {
+    skip: !repositorySelector,
+    variables: {
+      repositorySelector: repositorySelector!,
+    },
+  });
+  return React.useMemo(() => {
+    const lastRunInfo =
+      data?.repositoryOrError.__typename === 'Repository' &&
+      data.repositoryOrError.latestRunByStep.length > 0
+        ? data.repositoryOrError
+        : null;
+    const latestRuns: LastRunQuery_repositoryOrError_Repository_latestRunByStep_LatestRun[] = [];
+    const jobRunsCounts: LastRunQuery_repositoryOrError_Repository_latestRunByStep_JobRunsCount[] = [];
+    for (const item of lastRunInfo?.latestRunByStep || []) {
+      if (item.__typename === 'LatestRun') {
+        latestRuns.push(item);
+      } else if (item.__typename === 'JobRunsCount') {
+        jobRunsCounts.push(item);
+      }
+    }
+    return {latestRuns, jobRunsCounts};
+  }, [data]);
+}
+
 export const AssetEvents: React.FC<Props> = ({
   assetKey,
   assetLastMaterializedAt,
@@ -97,6 +135,7 @@ export const AssetEvents: React.FC<Props> = ({
   params,
   setParams,
   liveData,
+  repository,
 }) => {
   const before = params.asOf ? `${Number(params.asOf) + 1}` : undefined;
   const xAxisDefault = assetHasDefinedPartitions ? 'partition' : 'time';
@@ -114,6 +153,8 @@ export const AssetEvents: React.FC<Props> = ({
     loading,
     refetch,
   } = useRecentAssetEvents(assetKey, assetHasDefinedPartitions, xAxis, before);
+
+  const {latestRuns, jobRunsCounts} = useMostRecentRuns(repository);
 
   React.useEffect(() => {
     if (params.asOf) {
@@ -138,6 +179,17 @@ export const AssetEvents: React.FC<Props> = ({
       }));
     }
   }, [loadedPartitionKeys, materializations, observations, xAxis]);
+
+  const jobRunsThatDidntMaterializeAsset = jobRunsCounts.find(
+    (jrc) => jrc.stepKey === assetKey.path[assetKey.path.length - 1],
+  );
+
+  const runWhichFailedToMaterialize =
+    !jobRunsThatDidntMaterializeAsset &&
+    latestRuns.length &&
+    (!grouped.length || grouped[0].latest?.runId !== latestRuns[0].run?.id)
+      ? latestRuns[0].run
+      : undefined;
 
   const activeItems = React.useMemo(() => new Set([xAxis]), [xAxis]);
 
@@ -249,6 +301,41 @@ export const AssetEvents: React.FC<Props> = ({
             </div>
           ) : null}
         </Box>
+        {!!jobRunsThatDidntMaterializeAsset && (
+          <Warning>
+            <span>
+              {jobRunsThatDidntMaterializeAsset.jobNames.length > 1
+                ? `${jobRunsThatDidntMaterializeAsset.jobNames.slice(0, -1).join(', ')} and ${
+                    jobRunsThatDidntMaterializeAsset.jobNames.slice(-1)[0]
+                  }`
+                : jobRunsThatDidntMaterializeAsset.jobNames[0]}{' '}
+              ran{' '}
+              <Link
+                to={`/instance/runs?${
+                  jobRunsThatDidntMaterializeAsset.jobNames.length > 1
+                    ? ''
+                    : qs.stringify({
+                        'q[]': `job:${jobRunsThatDidntMaterializeAsset.jobNames[0]}`,
+                      })
+                }`}
+              >
+                {jobRunsThatDidntMaterializeAsset.count} times
+              </Link>{' '}
+              but did not materialize this asset
+            </span>
+          </Warning>
+        )}
+        {!!runWhichFailedToMaterialize && (
+          <Warning errorBackground>
+            <span>
+              Run{' '}
+              <Link to={`/instance/runs/${runWhichFailedToMaterialize.id}`}>
+                {titleForRun({runId: runWhichFailedToMaterialize.id})}
+              </Link>{' '}
+              failed to materialize this asset
+            </span>
+          </Warning>
+        )}
         <CurrentRunsBanner liveData={liveData} />
         {grouped.length > 0 ? (
           <AssetEventsTable
@@ -549,4 +636,30 @@ const ASSET_EVENTS_QUERY = gql`
   }
   ${METADATA_ENTRY_FRAGMENT}
   ${ASSET_LINEAGE_FRAGMENT}
+`;
+
+export const LAST_RUNS_QUERY = gql`
+  query LastRunQuery($repositorySelector: RepositorySelector!) {
+    repositoryOrError(repositorySelector: $repositorySelector) {
+      ... on Repository {
+        id
+        latestRunByStep {
+          __typename
+          ... on LatestRun {
+            stepKey
+            run {
+              id
+              status
+            }
+          }
+          ... on JobRunsCount {
+            stepKey
+            jobNames
+            count
+            sinceLatestMaterialization
+          }
+        }
+      }
+    }
+  }
 `;
