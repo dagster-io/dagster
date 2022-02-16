@@ -258,7 +258,7 @@ def test_asset_collection_build_subset_job():
     assert result.success
     assert result.output_for_node("follows_o2") == "foo"
 
-    test_both_plus = collection.build_job(name="test_both_plus", selection="+o1+")
+    test_both_plus = collection.build_job(name="test_both_plus", selection=["+o1+", "o2"])
 
     assert len(test_both_plus.all_node_defs) == 4
     assert set([node.name for node in test_both_plus.all_node_defs]) == {
@@ -303,3 +303,15 @@ def test_asset_collection_build_subset_job():
         r"\(imagine there is a link here to the docs\).",
     ):
         collection.build_job(name="bad_query_arguments", selection="follows_o1=")
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"When building job 'test_subselect_only_one_key', the asset "
+        r"'middle_asset' contains asset keys \['o1', 'o2'\], but attempted to "
+        r"select only \['o1'\]. Selecting only some of the asset keys for a "
+        r"particular asset is not yet supported behavior. Please select all "
+        r"asset keys produced by a given asset when subsetting.",
+    ):
+        test_subselect_one_asset_key = collection.build_job(
+            name="test_subselect_only_one_key", selection="o1"
+        )

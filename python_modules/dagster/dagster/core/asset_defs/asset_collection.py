@@ -1,5 +1,5 @@
 import re
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Union, cast
 
 from dagster import check
 from dagster.utils import merge_dicts
@@ -134,6 +134,8 @@ class AssetCollection(
         """Convert selection over asset key to selection over ops"""
 
         asset_keys_to_ops: Dict[str, List[OpDefinition]] = {}
+        op_names_to_asset_keys: Dict[str, Set[str]] = {}
+        seen_asset_keys: Set[str] = set()
 
         if isinstance(selection, str):
             selection = [selection]
@@ -143,8 +145,11 @@ class AssetCollection(
 
         source_asset_keys = set()
         for asset in self.assets:
+            if asset.op.name not in op_names_to_asset_keys:
+                op_names_to_asset_keys[asset.op.name] = set()
             for asset_key in asset.asset_keys:
                 asset_key_as_str = ".".join([piece for piece in asset_key.path])
+                op_names_to_asset_keys[asset.op.name].add(asset_key_as_str)
                 if not asset_key_as_str in asset_keys_to_ops:
                     asset_keys_to_ops[asset_key_as_str] = []
                 asset_keys_to_ops[asset_key_as_str].append(asset.op)
@@ -182,10 +187,21 @@ class AssetCollection(
                 raise DagsterInvalidDefinitionError(
                     f"When attempting to create job '{job_name}', the clause '{clause}' within the asset key selection did not match any asset keys. Present asset keys: {list(asset_keys_to_ops.keys())}"
                 )
+
+            seen_asset_keys.add(key_str)
+
             for op in asset_keys_to_ops[key_str]:
 
                 op_clause = f"{upstream_part}{op.name}{downstream_part}"
                 op_selection.append(op_clause)
+
+        # Verify that for each selected asset key, the corresponding op had all asset keys selected.
+        for op_name, asset_key_set in op_names_to_asset_keys.items():
+            are_keys_in_set = [key in seen_asset_keys for key in asset_key_set]
+            if any(are_keys_in_set) and not all(are_keys_in_set):
+                raise DagsterInvalidDefinitionError(
+                    f"When building job '{job_name}', the asset '{op_name}' contains asset keys {sorted(list(asset_key_set))}, but attempted to select only {sorted(list(asset_key_set.intersection(seen_asset_keys)))}. Selecting only some of the asset keys for a particular asset is not yet supported behavior. Please select all asset keys produced by a given asset when subsetting."
+                )
         return op_selection
 
 
