@@ -17,17 +17,18 @@ import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
 import {ShortcutHandler} from '../app/ShortcutHandler';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
-import {RepoDetails, RepoSelector} from './RepoSelector';
+import {RepoSelector, RepoSelectorOption} from './RepoSelector';
 
 interface Props {
-  allRepos: RepoDetails[];
-  selected: Set<RepoDetails>;
-  onToggle: (repoAddress: RepoDetails) => void;
+  allRepos: RepoSelectorOption[];
+  selected: RepoSelectorOption[];
+  onToggle: (repoAddress: RepoAddress) => void;
 }
 
 export const RepoNavItem: React.FC<Props> = (props) => {
@@ -39,13 +40,13 @@ export const RepoNavItem: React.FC<Props> = (props) => {
       return <span style={{color: ColorsWIP.Gray700}}>No repositories</span>;
     }
     if (allRepos.length === 1) {
-      return <SingleRepoSummary repoAddress={allRepos[0].repoAddress} />;
+      return <SingleRepoSummary repo={allRepos[0]} />;
     }
-    if (selected.size === 1) {
+    if (selected.length === 1) {
       const selectedRepo = Array.from(selected)[0];
-      return <SingleRepoSummary repoAddress={selectedRepo.repoAddress} />;
+      return <SingleRepoSummary repo={selectedRepo} />;
     }
-    return <span>{`${selected.size} of ${allRepos.length} shown`}</span>;
+    return <span>{`${selected.length} of ${allRepos.length} shown`}</span>;
   };
 
   return (
@@ -71,7 +72,7 @@ export const RepoNavItem: React.FC<Props> = (props) => {
               <DialogHeader icon="repo" label="Repositories" />
               <div>
                 <Box padding={{vertical: 8, horizontal: 24}}>
-                  {`${selected.size} of ${allRepos.length} selected`}
+                  {`${selected.length} of ${allRepos.length} selected`}
                 </Box>
                 <RepoSelector
                   options={allRepos}
@@ -96,7 +97,8 @@ export const RepoNavItem: React.FC<Props> = (props) => {
   );
 };
 
-const SingleRepoSummary: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) => {
+const SingleRepoSummary: React.FC<{repo: RepoSelectorOption}> = ({repo}) => {
+  const repoAddress = buildRepoAddress(repo.repository.name, repo.repositoryLocation.name);
   const {canReloadRepositoryLocation} = usePermissions();
   return (
     <Group direction="row" spacing={4} alignItems="center">

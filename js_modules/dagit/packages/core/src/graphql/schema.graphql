@@ -217,6 +217,7 @@ type AssetNode {
   opName: String
   op: SolidDefinition
   jobs: [Pipeline!]!
+  jobNames: [String!]!
   repository: Repository!
   dependencies: [AssetDependency!]!
   dependedBy: [AssetDependency!]!

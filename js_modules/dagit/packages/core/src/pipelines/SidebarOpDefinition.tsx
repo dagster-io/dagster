@@ -9,6 +9,7 @@ import {OpTypeSignature, OP_TYPE_SIGNATURE_FRAGMENT} from '../ops/OpTypeSignatur
 import {pluginForMetadata} from '../plugins';
 import {ConfigTypeSchema, CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {DAGSTER_TYPE_WITH_TOOLTIP_FRAGMENT, TypeWithTooltip} from '../typeexplorer/TypeWithTooltip';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {RepoAddress} from '../workspace/types';
 
 import {Description} from './Description';
@@ -257,20 +258,21 @@ const InvocationList: React.FC<{
   onClickInvocation: (arg: SidebarOpInvocationInfo) => void;
 }> = ({invocations, onClickInvocation}) => {
   const [showAll, setShowAll] = React.useState<boolean>(false);
-  const displayed = showAll ? invocations : invocations.slice(0, DEFAULT_INVOCATIONS_SHOWN);
+  const visible = invocations.filter((i) => i.pipelineName !== __ASSET_GROUP);
+  const clipped = showAll ? visible : visible.slice(0, DEFAULT_INVOCATIONS_SHOWN);
 
   return (
     <>
-      {displayed.map((invocation, idx) => (
+      {clipped.map((invocation, idx) => (
         <Invocation
           key={idx}
           invocation={invocation}
           onClick={() => onClickInvocation(invocation)}
         />
       ))}
-      {displayed.length < invocations.length && (
+      {clipped.length < visible.length && (
         <ShowAllButton onClick={() => setShowAll(true)}>
-          {`Show ${invocations.length - displayed.length} More Invocations`}
+          {`Show ${invocations.length - clipped.length} More Invocations`}
         </ShowAllButton>
       )}
     </>

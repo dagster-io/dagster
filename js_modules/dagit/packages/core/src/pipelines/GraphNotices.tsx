@@ -5,10 +5,11 @@ import styled from 'styled-components/macro';
 
 export const LargeDAGNotice = ({nodeType}: {nodeType: 'op' | 'asset'}) => (
   <LargeDAGContainer>
+    <IconWIP name="arrow_upward" size={24} />
     <LargeDAGInstructionBox>
       <p>
-        This is a large DAG that may be difficult to visualize. Type <code>*</code> in the subset
-        box below to render the entire thing, or type a {nodeType} name and use:
+        This is a large DAG that may be difficult to visualize. Type <code>*</code> in the graph
+        filter bar to render the entire thing, or type {nodeType} names and use:
       </p>
       <ul style={{marginBottom: 0}}>
         <li>
@@ -22,7 +23,6 @@ export const LargeDAGNotice = ({nodeType}: {nodeType: 'op' | 'asset'}) => (
         </li>
       </ul>
     </LargeDAGInstructionBox>
-    <IconWIP name="arrow_downward" size={24} />
   </LargeDAGContainer>
 );
 
@@ -31,39 +31,64 @@ export const EmptyDAGNotice: React.FC<{isGraph: boolean; nodeType: 'asset' | 'op
   nodeType,
 }) => {
   return (
-    <NonIdealState
-      icon="no-results"
-      title={isGraph ? 'Empty graph' : 'Empty pipeline'}
-      description={
-        <>
-          <div>This {isGraph ? 'graph' : 'pipeline'} is empty.</div>
-          <div>{capitalize(nodeType)} will appear here when you add them.</div>
-        </>
-      }
-    />
+    <CenteredContainer>
+      <NonIdealState
+        icon="no-results"
+        title={isGraph ? 'Empty graph' : 'Empty pipeline'}
+        description={
+          <div>
+            This {isGraph ? 'graph' : 'pipeline'} is empty. {capitalize(nodeType)}s will appear here
+            when they are added to loaded repositories.
+          </div>
+        }
+      />
+    </CenteredContainer>
   );
 };
 
-const LargeDAGContainer = styled.div`
-  width: 50vw;
+export const EntirelyFilteredDAGNotice: React.FC<{nodeType: 'asset' | 'op'}> = ({nodeType}) => {
+  return (
+    <CenteredContainer>
+      <NonIdealState
+        icon="no-results"
+        title="Nothing to display"
+        description={
+          <div>
+            No {nodeType}s match your query filter. Try removing your filter, typing <code>*</code>{' '}
+            to render the entire graph, or entering another filter string.
+          </div>
+        }
+      />
+    </CenteredContainer>
+  );
+};
+
+const CenteredContainer = styled.div`
   position: absolute;
-  transform: translateX(-50%);
+  top: 50%;
   left: 50%;
-  bottom: 60px;
+  transform: translate(-50%, -50%);
+`;
+
+const LargeDAGContainer = styled.div`
+  width: 45vw;
+  position: absolute;
+  left: 40px;
+  top: 60px;
   z-index: 2;
-  max-width: 600px;
+  max-width: 500px;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  .bp3-icon {
-    color: ${ColorsWIP.Gray200};
+  [role='img'] {
+    opacity: 0.5;
+    margin-left: 10vw;
   }
 `;
 
 const LargeDAGInstructionBox = styled.div`
   padding: 15px 20px;
   border: 1px solid #fff5c3;
-  margin-bottom: 20px;
+  margin-top: 20px;
   color: ${ColorsWIP.Gray800};
   background: #fffbe5;
   text-align: left;

@@ -5,8 +5,9 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../app/Util';
-import {PipelineReference} from '../pipelines/PipelineReference';
+import {RepositoryLink} from '../nav/RepositoryLink';
 
+import {__ASSET_GROUP} from './asset-graph/Utils';
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
@@ -25,9 +26,13 @@ const REPOSITORY_ASSETS_LIST_QUERY = gql`
           }
           opName
           description
-          jobs {
+          repository {
             id
             name
+            location {
+              id
+              name
+            }
           }
         }
       }
@@ -109,15 +114,12 @@ export const RepositoryAssetsList: React.FC<Props> = (props) => {
             </td>
             <td>
               <Box flex={{direction: 'column', gap: 2}}>
-                {asset.jobs.map(({name}) => (
-                  <PipelineReference
-                    showIcon
-                    isJob
-                    key={name}
-                    pipelineName={name}
-                    pipelineHrefContext={repoAddress}
-                  />
-                ))}
+                <RepositoryLink
+                  repoAddress={{
+                    name: asset.repository.name,
+                    location: asset.repository.location.name,
+                  }}
+                />
               </Box>
             </td>
           </tr>

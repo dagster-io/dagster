@@ -20,7 +20,6 @@ import styled from 'styled-components/macro';
 
 import {displayNameForAssetKey} from '../../app/Util';
 import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
-import {DAGSTER_TYPE_FRAGMENT} from '../../dagstertype/DagsterType';
 import {NodeHighlightColors} from '../../graph/OpNode';
 import {OpTags} from '../../graph/OpTags';
 import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntry';
@@ -30,7 +29,7 @@ import {TimestampDisplay} from '../../schedules/TimestampDisplay';
 import {buildRepoAddress} from '../buildRepoAddress';
 import {workspacePath, workspacePipelinePathGuessRepo} from '../workspacePath';
 
-import {LiveDataForNode} from './Utils';
+import {LiveDataForNode, __ASSET_GROUP} from './Utils';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
 import {useLaunchSingleAssetJob} from './useLaunchSingleAssetJob';
 
@@ -44,8 +43,8 @@ export const AssetNode: React.FC<{
 }> = React.memo(({definition, metadata, selected, liveData, jobName, inAssetCatalog}) => {
   const launch = useLaunchSingleAssetJob();
 
-  const {runOrError} = liveData?.lastMaterialization || {};
   const event = liveData?.lastMaterialization;
+  const runOrError = event?.runOrError;
   const kind = metadata.find((m) => m.key === 'kind')?.value;
   const repoAddress = buildRepoAddress(
     definition.repository.name,
@@ -59,7 +58,7 @@ export const AssetNode: React.FC<{
       content={
         <MenuWIP>
           <MenuItemWIP
-            icon="open_in_new"
+            icon="materialization"
             onClick={(e) => {
               launch(repoAddress, jobName, definition.opName);
               e.stopPropagation();
@@ -114,10 +113,10 @@ export const AssetNode: React.FC<{
             <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
           )}
           <Stats>
-            {event ? (
+            {runOrError?.__typename === 'Run' && event ? (
               <>
-                {runOrError?.__typename === 'Run' && (
-                  <StatsRow>
+                <StatsRow>
+                  {runOrError.pipelineName !== __ASSET_GROUP ? (
                     <Link
                       data-tooltip={runOrError.pipelineName}
                       data-tooltip-style={RunLinkTooltipStyle}
@@ -136,21 +135,22 @@ export const AssetNode: React.FC<{
                     >
                       {runOrError.pipelineName}
                     </Link>
-                    <Link
-                      style={{fontFamily: FontFamily.monospace, fontSize: 14}}
-                      to={`/instance/runs/${runOrError.runId}?${qs.stringify({
-                        timestamp: event.stepStats.endTime,
-                        selection: event.stepStats.stepKey,
-                        logs: `step:${event.stepStats.stepKey}`,
-                      })}`}
-                      onClick={(e) => e.stopPropagation()}
-                      target="_blank"
-                    >
-                      {titleForRun({runId: runOrError.runId})}
-                    </Link>
-                  </StatsRow>
-                )}
-
+                  ) : (
+                    <span />
+                  )}
+                  <Link
+                    style={{fontFamily: FontFamily.monospace, fontSize: 14}}
+                    to={`/instance/runs/${runOrError.runId}?${qs.stringify({
+                      timestamp: event.stepStats.endTime,
+                      selection: event.stepStats.stepKey,
+                      logs: `step:${event.stepStats.stepKey}`,
+                    })}`}
+                    onClick={(e) => e.stopPropagation()}
+                    target="_blank"
+                  >
+                    {titleForRun({runId: runOrError.runId})}
+                  </Link>
+                </StatsRow>
                 <StatsRow>
                   {event.stepStats.endTime ? (
                     <TimestampDisplay
@@ -213,7 +213,9 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
   fragment AssetNodeLiveFragment on AssetNode {
     id
     opName
-
+    assetKey {
+      path
+    }
     assetMaterializations(limit: 1) {
       ...LatestMaterializationMetadataFragment
 
@@ -236,26 +238,14 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     }
   }
 
-  ${LATEST_MATERIALIZATION_METADATA_FRAGMENT}
   ${METADATA_ENTRY_FRAGMENT}
+  ${LATEST_MATERIALIZATION_METADATA_FRAGMENT}
 `;
 
 export const ASSET_NODE_FRAGMENT = gql`
   fragment AssetNodeFragment on AssetNode {
     id
     opName
-    op {
-      name
-      description
-      outputDefinitions {
-        metadataEntries {
-          ...MetadataEntryFragment
-        }
-        type {
-          ...DagsterTypeFragment
-        }
-      }
-    }
     description
     partitionDefinition
     assetKey {
@@ -270,8 +260,6 @@ export const ASSET_NODE_FRAGMENT = gql`
       }
     }
   }
-  ${METADATA_ENTRY_FRAGMENT}
-  ${DAGSTER_TYPE_FRAGMENT}
 `;
 
 export const getNodeDimensions = (def: {
