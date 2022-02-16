@@ -758,9 +758,8 @@ class MetadataEntry(
     def __new__(cls, label: str, description: Optional[str], entry_data: "MetadataValue"):
         if description is not None:
             deprecation_warning(
-                f'The "description" attribute on "MetadataEntry"',
+                'The "description" attribute on "MetadataEntry"',
                 "0.15.0",
-                additional_warn_txt='In the future, no descriptions will be accepted on "MetadataEntry" objects.',
             )
         return super(MetadataEntry, cls).__new__(
             cls,
