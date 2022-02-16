@@ -103,7 +103,13 @@ export const AssetNodeDefinition: React.FC<{
           >
             <Subheading>Type</Subheading>
           </Box>
-          {assetType ? <DagsterTypeSummary type={assetType} /> : 'No type data provided.'}
+          {assetType ? (
+            <DagsterTypeSummary type={assetType} />
+          ) : (
+            <Box padding={{vertical: 16, horizontal: 24}}>
+              <Description description="No type data provided." />
+            </Box>
+          )}
           {assetMetadata.length > 0 && (
             <>
               <Box
