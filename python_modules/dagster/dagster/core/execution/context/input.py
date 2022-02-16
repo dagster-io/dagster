@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast, Iterator, List
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey, AssetObservation

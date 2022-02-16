@@ -1,15 +1,15 @@
 import pytest
 from dagster import (
-    op,
-    job,
     AssetKey,
-    InputDefinition,
     AssetObservation,
+    InputDefinition,
     ModeDefinition,
     Output,
     OutputDefinition,
     execute_pipeline,
     io_manager,
+    job,
+    op,
     pipeline,
     solid,
 )
