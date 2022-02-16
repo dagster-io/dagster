@@ -140,7 +140,7 @@ class SqlScheduleStorage(ScheduleStorage):
             db.select([JobTickTable.c.id, JobTickTable.c.tick_body])
             .select_from(JobTickTable)
             .where(JobTickTable.c.job_origin_id == origin_id)
-            .order_by(JobTickTable.c.id.desc())
+            .order_by(JobTickTable.c.timestamp.desc())
         )
 
         query = self._add_filter_limit(query, before=before, after=after, limit=limit)
