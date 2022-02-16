@@ -1,8 +1,6 @@
 """isort:skip_file"""
 # pylint: disable=unused-argument,reimported
-import os
-import pandas as pd
-from dagster import op, job, IOManager, AssetKey
+from dagster import op, job, IOManager
 
 
 def read_df():
