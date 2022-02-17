@@ -150,7 +150,7 @@
             "title": "ReadinessProbe",
             "type": "object",
             "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
         "StartupProbe": {
             "title": "StartupProbe",
