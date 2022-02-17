@@ -240,7 +240,7 @@ export const RunTimeline = ({jobs, range}: {jobs: TimelineJob[]; range: [number,
             </div>
           </>
         ) : (
-          <NoRunsTimeline top={TIME_HEADER_HEIGHT} />
+          <NoRunsTimeline />
         )
       ) : null}
     </Timeline>
