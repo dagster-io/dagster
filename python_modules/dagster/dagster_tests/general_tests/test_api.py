@@ -18,9 +18,10 @@ def test_all():
             assert exported in dagster.__all__
 
 
-def test_deprecated_imports(mocker):
+def test_deprecated_imports(monkeypatch):
     Bar = object()
-    mocker.patch("dagster._DEPRECATED", {"Foo": ("Bar", Bar, "0.0.0")})
+
+    monkeypatch.setattr(dagster, "_DEPRECATED", {"Foo": ("Bar", Bar, "0.0.0")}, raising=True)
     with pytest.warns(DeprecationWarning, match=re.escape('"Foo" is deprecated')):
         from dagster import Foo  # pylint: disable=no-name-in-module
 
