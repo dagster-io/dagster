@@ -26,11 +26,7 @@ from dagster import AssetObservation
 @op
 def observation_op():
     df = read_df()
-    persist_to_storage(df)
     yield AssetObservation(asset_key="observation_asset", metadata={"num_rows": len(df)})
-    yield AssetMaterialization(
-        asset_key="observation_asset", description="Persisted result to storage"
-    )
     yield Output(5)
 
 
@@ -44,10 +40,8 @@ from dagster import op, AssetMaterialization, Output
 def partitioned_dataset_op(context):
     partition_date = context.op_config["date"]
     df = read_df_for_date(partition_date)
-    remote_storage_path = persist_to_storage(df)
     yield AssetObservation(asset_key="my_partitioned_dataset", partition=partition_date)
-    yield AssetMaterialization(asset_key="my_partitioned_dataset", partition=partition_date)
-    yield Output(remote_storage_path)
+    yield Output(df)
 
 
 # end_partitioned_asset_observation
@@ -78,5 +72,10 @@ def observes_dataset_op():
 
 
 @job
-def my_job():
+def my_observation_job():
     observation_op()
+
+
+@job
+def my_dataset_job():
+    observes_dataset_op()
