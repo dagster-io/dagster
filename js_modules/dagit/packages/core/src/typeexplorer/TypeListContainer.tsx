@@ -1,4 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
+import {Box, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {ExplorerPath} from '../pipelines/PipelinePathUtils';
@@ -13,7 +14,6 @@ import {RepoAddress} from '../workspace/types';
 
 import {TypeList, TYPE_LIST_FRAGMENT} from './TypeList';
 import {TypeListContainerQuery} from './types/TypeListContainerQuery';
-import {Box, NonIdealState} from '../../../ui/src';
 
 interface ITypeListContainerProps {
   explorerPath: ExplorerPath;
