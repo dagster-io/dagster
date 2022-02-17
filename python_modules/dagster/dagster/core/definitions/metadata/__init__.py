@@ -740,7 +740,7 @@ class MetadataEntry(
         [
             ("label", str),
             ("description", Optional[str]),
-            ("value", MetadataValue),
+            ("entry_data", MetadataValue),
         ],
     ),
 ):
@@ -764,8 +764,8 @@ class MetadataEntry(
         cls,
         label: str,
         description: Optional[str],
-        value: Optional["MetadataValue"] = None,
         entry_data: Optional["MetadataValue"] = None,
+        value: Optional["MetadataValue"] = None,
     ):
         if description is not None:
             deprecation_warning(
@@ -789,6 +789,11 @@ class MetadataEntry(
             check.opt_str_param(description, "description"),
             check.inst_param(value, "value", MetadataValue),
         )
+
+    @property
+    def value(self):
+        """Alias of `entry_data`."""
+        return self.entry_data
 
     @staticmethod
     @deprecated_metadata_entry_constructor
