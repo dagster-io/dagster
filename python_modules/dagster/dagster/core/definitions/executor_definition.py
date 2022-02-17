@@ -289,7 +289,7 @@ MULTI_PROC_CONFIG = {
         ),
         is_required=False,
         description=(
-            "Select how subprocesses are created. Defaults to forkserver if available.\n"
+            "Select how subprocesses are created. Defaults to spawn.\n"
             "When forkserver is selected, set_forkserver_preload will be called with either:\n"
             "* the preload_modules list if provided by config\n"
             "* the module containing the Job if it was loaded from a module\n"
