@@ -285,7 +285,6 @@ __all__ = [
     "DagsterAssetMetadataEntryData",
     "TableMetadataEntryData",
     "TableSchemaMetadataEntryData",
-
     # Definition
     "AssetGroup",
     "AssetKey",
