@@ -206,7 +206,7 @@ class DynamicOutput(
     )
 ):
     """
-    (Experimental) Variant of :py:class:`Output <dagster.Output>` used to support
+    Variant of :py:class:`Output <dagster.Output>` used to support
     dynamic mapping & collect. Each ``DynamicOutput`` produced by an op represents
     one item in a set that can be processed individually with ``map`` or gathered
     with ``collect``.
