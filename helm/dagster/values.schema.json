@@ -133,7 +133,7 @@
             "additionalProperties": {
                 "type": "string"
             },
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations"
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/annotations"
         },
         "schema__charts__utils__kubernetes__Service": {
             "title": "Service",
@@ -211,13 +211,13 @@
             "title": "ConfigMapEnvSource",
             "type": "object",
             "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.ConfigMapEnvSource"
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.ConfigMapEnvSource"
         },
         "SecretEnvSource": {
             "title": "SecretEnvSource",
             "type": "object",
             "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecretEnvSource"
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecretEnvSource"
         },
         "NodeSelector": {
             "title": "NodeSelector",
@@ -225,12 +225,12 @@
             "additionalProperties": {
                 "type": "string"
             },
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/nodeSelector"
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/nodeSelector"
         },
         "Affinity": {
             "title": "Affinity",
             "type": "object",
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity"
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Affinity"
         },
         "Tolerations": {
             "title": "Tolerations",
@@ -238,22 +238,22 @@
             "items": {
                 "type": "object"
             },
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/tolerations"
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSpec/properties/tolerations"
         },
         "PodSecurityContext": {
             "title": "PodSecurityContext",
             "type": "object",
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.PodSecurityContext"
         },
         "SecurityContext": {
             "title": "SecurityContext",
             "type": "object",
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.SecurityContext"
         },
         "Resources": {
             "title": "Resources",
             "type": "object",
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.ResourceRequirements"
         },
         "ReadinessProbe": {
             "title": "ReadinessProbe",
@@ -265,7 +265,7 @@
             "title": "LivenessProbe",
             "type": "object",
             "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
         "StartupProbe": {
             "title": "StartupProbe",
@@ -277,7 +277,7 @@
                     "type": "boolean"
                 }
             },
-            "$ref": "https://kubernetesjsonschema.dev/v1.16.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Probe"
         },
         "Dagit": {
             "title": "Dagit",
@@ -405,13 +405,13 @@
             "title": "VolumeMount",
             "type": "object",
             "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.VolumeMount"
         },
         "Volume": {
             "title": "Volume",
             "type": "object",
             "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.Volume"
         },
         "UserDeployment": {
             "title": "UserDeployment",
@@ -992,7 +992,7 @@
             "title": "SecretRef",
             "type": "object",
             "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.api.core.v1.LocalObjectReference"
         },
         "ComputeLogManagerType": {
             "title": "ComputeLogManagerType",
@@ -1508,7 +1508,7 @@
             "title": "Labels",
             "type": "object",
             "properties": {},
-            "$ref": "https://kubernetesjsonschema.dev/v1.15.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels"
+            "$ref": "https://kubernetesjsonschema.dev/v1.18.0/_definitions.json#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta/properties/labels"
         },
         "CeleryWorkerQueue": {
             "title": "CeleryWorkerQueue",
