@@ -2,45 +2,45 @@
 
 # 0.14.0 “Never Felt Like This Before”
 
-## Major Changes
+### Major Changes
 
 - Software-defined assets sit on top of the graph/job/op APIs and enable a novel way of constructing Dagster jobs that puts assets at the forefront. Instead of defining a graph of ops and recording which assets those ops end up materializing, you define a set of assets, each of which knows how to compute its contents from upstream assets. Using these new abstractions, you can track asset lineage, metadata, and status at a glance and generate assets across your entire data platform. For more information, view the software-defined assets concepts page [here](https://docs.dagster.io/concepts/assets/software-defined-assets).
 - Going along with our investments into software-defined assets, we’ve made it easier to [define a set of assets](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#assets) where each Dagster asset maps to a dbt model. All of the dependency information between the dbt models will be reflected in the Dagster asset graph, while still running your dbt project in a single step.
 - In 0.14.0 Dagit gets a new operational homepage that we’ve dubbed the “factory floor” view. This new homepage provides a quick snapshot of all the jobs in your data platform. From here you can monitor the status of each job’s latest run or quickly re-execute a job. The new timeline view reports the status of all recent runs in a convenient gantt chart.
 - You can now write schedules and sensors that default to running as soon as they are loaded in your workspace, without needing to be started manually in Dagit. For example, you can create a sensor like this:
-```python
-from dagster import sensor, DefaultSensorStatus
+  ```python
+  from dagster import sensor, DefaultSensorStatus
 
-@sensor(job=my_job, default_status=DefaultSensorStatus.RUNNING)
-def my_running_sensor():
-    ...
-```
-or a schedule like this:
-```python
-@schedule(job=my_job, cron_schedule="0 0 * * *", default_status=DefaultScheduleStatus.RUNNING)
-    def my_running_schedule(context: ScheduleEvaluationContext):
-        ...
-```
-As soon as schedules or sensors with the `default_status` field set to `RUNNING` are included in the workspace loaded by your Dagster Daemon, they will begin creating ticks and submitting runs.
+  @sensor(job=my_job, default_status=DefaultSensorStatus.RUNNING)
+  def my_running_sensor():
+      ...
+  ```
+  or a schedule like this:
+  ```python
+  @schedule(job=my_job, cron_schedule="0 0 * * *", default_status=DefaultScheduleStatus.RUNNING)
+      def my_running_schedule(context: ScheduleEvaluationContext):
+          ...
+  ```
+  As soon as schedules or sensors with the `default_status` field set to `RUNNING` are included in the workspace loaded by your Dagster Daemon, they will begin creating ticks and submitting runs.
 - Op selection now supports selecting ops inside subgraphs. For example, to select an op `my_op` inside a subgraph `my_graph`, you can now specify the query as `"my_graph.my_op"`. It is supported in both Dagit and Python APIs.
 - Dagster Types can now have attached metadata. This allows `TableSchema` objects to be attached to Dagster Types via `TableSchemaMetadata.` A Dagster Type with a `TableSchema` will have the schema rendered in Dagit.
 - Dagster has a new integration library `dagster-pandera.` [Pandera](https://pandera.readthedocs.io/) is a dataframe validation library. `dagster-pandera` wraps Pandera dataframe schemas in Dagster types. This provides two main benefits: (1) Pandera’s rich schema validation can be used for runtime data validation of Pandas dataframes in Dagster ops/assets; (2) Pandera schema information is displayed in Dagit using a new `TableSchema` API for representing arbitrary table schemas.
 - Dagster allows for various user events to be yielded within the body of an op, such as `AssetMaterialization`, `ExpectationResult`, and `AssetObservation` (API docs [here](https://docs.dagster.io/_apidocs/solids#event-types)). Previously, these events were yielded from the body of the op in order to show up in the event log. This caused lint errors for many users, and also forced usage of the `Output` API.
 - Now, user events can be logged via the context of an op using the `[OpExecutionContext.log_event](https://docs.dagster.io/_apidocs/execution#dagster.OpExecutionContext.log_event)` method. Separately, output metadata can also be logged using the `[OpExecutionContext.add_output_metadata](https://docs.dagster.io/_apidocs/execution#dagster.OpExecutionContext.add_output_metadata)` method.
-```python
-from dagster import op, AssetMaterialization
+  ```python
+  from dagster import op, AssetMaterialization
 
-@op
-def the_op(context):
-    context.log_event(AssetMaterialization(...))
-    context.add_output_metadata({"foo": "bar"})
-    ...
-```
+  @op
+  def the_op(context):
+      context.log_event(AssetMaterialization(...))
+      context.add_output_metadata({"foo": "bar"})
+      ...
+  ```
 - A new Airbyte integration ([dagster-airbyte](https://docs.dagster.io/_apidocs/libraries/dagster-airbyte#airbyte-dagster-airbyte)) allows you to kick off and monitor [Airbyte](https://airbyte.com/) syncs from within Dagster. The original contribution from @airbytehq’s own @marcosmarxm includes a [resource implementation](https://docs.dagster.io/_apidocs/libraries/dagster-airbyte#resources) as well as a [pre-built op](https://docs.dagster.io/_apidocs/libraries/dagster-airbyte#ops) for this purpose, and we’ve extended this library to support [software-defined asset](https://docs.dagster.io/_apidocs/libraries/dagster-airbyte#assets) use cases as well. Regardless of which interface you use, Dagster will automatically capture the Airbyte log output (in the compute logs for the relevant steps) and track the created tables over time (via AssetMaterializations).
 - The [ECSRunLauncher](https://docs.dagster.io/deployment/guides/ecs) (introduced in Dagster 0.11.15) is no longer considered experimental. You can bootstrap your own Dagster deployment on ECS using our [docker compose example](https://github.com/dagster-io/dagster/tree/master/examples/deploy_ecs) or you can use it in conjunction with a [managed Dagster Cloud deployment](https://docs.dagster.cloud/agents/ecs/setup). Since its introduction, we’ve added the ability to customize Fargate container memory and CPU, mount secrets from AWS SecretsManager, and run with a variety of AWS networking configurations. Join us in [#dagster-ecs](https://dagster.slack.com/archives/C014UDS8LAV) in Slack!
 - [Helm] The default liveness and startup probes for Dagit and user deployments have been replaced with readiness probes. The liveness and startup probe for the Daemon has been removed. We observed and heard from users that under load, Dagit could fail the liveness probe which would result in the pod restarting. With the new readiness probe, the pod will not restart but will stop serving new traffic until it recovers. If you experience issues with any of the probe changes, you can revert to the old behavior by specifying liveness and startup probes in your Helm values (and reach out via an issue or Slack).
 
-## Breaking Changes and Deprecations
+### Breaking Changes and Deprecations
 
 - The Dagster Daemon now uses the same `workspace.yaml` file as Dagit to locate your Dagster code. You should ensure that if you make any changes to your `workspace.yaml` file, they are included in both Dagit’s copy and the Dagster Daemon’s copy. When you make changes to the `workspace.yaml` file, you don’t need to restart either Dagit or the Dagster Daemon - in Dagit, you can reload the workspace from the Workspace tab, and the Dagster Daemon will periodically check the `workspace.yaml` file for changes every 60 seconds. If you are using the Dagster Helm chart, no changes are required to include the workspace in the Dagster Daemon.
 - Dagster’s metadata API has undergone a signficant overhaul. Changes include:
@@ -55,20 +55,20 @@ def the_op(context):
 - In previous releases, it was possible to supply either an `AssetKey`, or a function that produced an `AssetKey` from an `OutputContext` as the `asset_key` argument to an `Out`/`OutputDefinition`. The latter behavior makes it impossible to gain information about these relationships without running a job, and has been deprecated. However, we still support supplying a static `AssetKey` as an argument.
 - We have renamed many of the core APIs that interact with `ScheduleStorage`, which keeps track of sensor/schedule state and ticks.  The old term for the generic schedule/sensor “job” has been replaced by the term “instigator” in order to avoid confusion with the execution API introduced in `0.12.0`.  If you have implemented your own schedule storage, you may need to change your method signatures appropriately.
 - In this release, we’ve migrated Dagit to be powered by Starlette instead of Flask. If you have implemented a custom run coordinator, you may need to make the following change:
-```python
-from flask import has_request_context, request
+  ```python
+  from flask import has_request_context, request
 
 
-def submit_run(self, context: SubmitRunContext) -> PipelineRun:
-    jwt_claims_header = (
-        request.headers.get("X-Amzn-Oidc-Data", None) if has_request_context() else None
-    )
-```
-Should be replaced by:
-```python
-def submit_run(self, context: SubmitRunContext) -> PipelineRun:
-    jwt_claims_header = context.get_request_header("X-Amzn-Oidc-Data")
-```
+  def submit_run(self, context: SubmitRunContext) -> PipelineRun:
+      jwt_claims_header = (
+          request.headers.get("X-Amzn-Oidc-Data", None) if has_request_context() else None
+      )
+  ```
+  Should be replaced by:
+  ```python
+  def submit_run(self, context: SubmitRunContext) -> PipelineRun:
+      jwt_claims_header = context.get_request_header("X-Amzn-Oidc-Data")
+  ```
 - Dagit
     - Dagit no longer allows non-software-defined asset materializations to be be graphed or grouped by partition. This feature could render in incorrect / incomplete ways because no partition space was defined for the asset.
     - Dagit’s “Jobs” sidebar now collapses by default on Instance, Job, and Asset pages. To show the left sidebar, click the “hamburger” icon in the upper left.
