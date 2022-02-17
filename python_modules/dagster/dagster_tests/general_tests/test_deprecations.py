@@ -58,11 +58,10 @@ def metadata_entry_class_name(request):
 
 
 def test_metadata_classes(metadata_entry_class_name):
-    with pytest.warns(DeprecationWarning):
-        assert (
-            getattr(dagster, metadata_entry_class_name)
-            == METADATA_DEPRECATIONS[metadata_entry_class_name][1]
-        )
+    assert (
+        getattr(dagster, metadata_entry_class_name)
+        == METADATA_DEPRECATIONS[metadata_entry_class_name][1]
+    )
 
 
 # ########################
