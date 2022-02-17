@@ -17,9 +17,11 @@
   ```
   or a schedule like this:
   ```python
-      - @schedule(job=my_job, cron_schedule="0 0 * * *", default_status=DefaultScheduleStatus.RUNNING)
-          def my_running_schedule(context: ScheduleEvaluationContext):
-              ...
+  from dagster import schedule, DefaultScheduleStatus, ScheduleEvaluationContext
+
+  @schedule(job=my_job, cron_schedule="0 0 * * *", default_status=DefaultScheduleStatus.RUNNING)
+  def my_running_schedule(context: ScheduleEvaluationContext):
+      ...
   ```
   As soon as schedules or sensors with the default_status field set to `RUNNING` are included in the workspace loaded by your Dagster Daemon, they will begin creating ticks and submitting runs.
 - Op selection now supports selecting ops inside subgraphs. For example, to select an op my_op inside a subgraph my_graph, you can now specify the query as `my_graph.my_op`. This is supported in both Dagit and Python APIs.
