@@ -219,25 +219,29 @@ export const RunTimeline = ({jobs, range}: {jobs: TimelineJob[]; range: [number,
     }
   }, []);
 
-  const height = ROW_HEIGHT * jobs.length;
+  const height = ROW_HEIGHT * (jobs.length || 1);
 
   return (
     <Timeline $height={TIME_HEADER_HEIGHT + height} ref={containerRef}>
       {width ? (
-        <>
-          <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={height} />
-          <div>
-            {jobs.map((job, ii) => (
-              <RunTimelineRow
-                key={job.key}
-                job={job}
-                top={ii * ROW_HEIGHT + TIME_HEADER_HEIGHT}
-                range={range}
-                width={width}
-              />
-            ))}
-          </div>
-        </>
+        jobs.length ? (
+          <>
+            <TimeDividers interval={ONE_HOUR_MSEC} range={range} height={height} />
+            <div>
+              {jobs.map((job, ii) => (
+                <RunTimelineRow
+                  key={job.key}
+                  job={job}
+                  top={ii * ROW_HEIGHT + TIME_HEADER_HEIGHT}
+                  range={range}
+                  width={width}
+                />
+              ))}
+            </div>
+          </>
+        ) : (
+          <NoRunsTimeline top={TIME_HEADER_HEIGHT} />
+        )
       ) : null}
     </Timeline>
   );
@@ -522,6 +526,14 @@ const RunTimelineRow = ({
         })}
       </RunChunks>
     </Row>
+  );
+};
+
+const NoRunsTimeline = ({top}: {top: number}) => {
+  return (
+    <Box flex={{justifyContent: 'center', alignItems: 'center'}} padding={24}>
+      No runs or upcoming runs found for this time window.
+    </Box>
   );
 };
 
