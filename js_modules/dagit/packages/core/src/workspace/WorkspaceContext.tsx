@@ -36,12 +36,17 @@ export type WorkspaceState = {
   loading: boolean;
   locationEntries: WorkspaceRepositoryLocationNode[];
   allRepos: DagsterRepoOption[];
+  visibleRepos: DagsterRepoOption[];
+
   refetch: () => Promise<ApolloQueryResult<RootWorkspaceQuery>>;
+  toggleVisible: (repoAddress: RepoAddress) => void;
 };
 
 export const WorkspaceContext = React.createContext<WorkspaceState>(
   new Error('WorkspaceContext should never be uninitialized') as any,
 );
+
+export const HIDDEN_REPO_KEYS = 'dagit.hidden-repo-keys';
 
 const ROOT_WORKSPACE_QUERY = gql`
   query RootWorkspaceQuery {
@@ -121,15 +126,24 @@ const ROOT_WORKSPACE_QUERY = gql`
   ${REPOSITORY_INFO_FRAGMENT}
 `;
 
-export const getRepositoryOptionHash = (a: DagsterRepoOption) =>
-  `${a.repository.name}:${a.repositoryLocation.name}`;
+const hiddenKeysFromLocalStorage = () => {
+  const keys = window.localStorage.getItem(HIDDEN_REPO_KEYS);
+  if (keys) {
+    const parsed = JSON.parse(keys);
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+  }
+
+  return [];
+};
 
 /**
  * A hook that supplies the current workspace state of Dagit, including the current
  * "active" repo based on the URL or localStorage, all fetched repositories available
  * in the workspace, and loading/error state for the relevant query.
  */
-const useWorkspaceState = () => {
+const useWorkspaceState = (): WorkspaceState => {
   const {data, loading, refetch} = useQuery<RootWorkspaceQuery>(ROOT_WORKSPACE_QUERY, {
     fetchPolicy: 'cache-and-network',
   });
@@ -141,17 +155,17 @@ const useWorkspaceState = () => {
     [workspaceOrError],
   );
 
-  const {options, error} = React.useMemo(() => {
-    let options: DagsterRepoOption[] = [];
+  const {allRepos, error} = React.useMemo(() => {
+    let allRepos: DagsterRepoOption[] = [];
     if (!workspaceOrError) {
-      return {options, error: null};
+      return {allRepos, error: null};
     }
 
     if (workspaceOrError.__typename === 'PythonError') {
-      return {options, error: workspaceOrError};
+      return {allRepos, error: workspaceOrError};
     }
 
-    options = workspaceOrError.locationEntries.reduce((accum, locationEntry) => {
+    allRepos = workspaceOrError.locationEntries.reduce((accum, locationEntry) => {
       if (locationEntry.locationOrLoadError?.__typename !== 'RepositoryLocation') {
         return accum;
       }
@@ -162,21 +176,69 @@ const useWorkspaceState = () => {
       return [...accum, ...reposForLocation];
     }, [] as DagsterRepoOption[]);
 
-    return {error: null, options};
+    return {error: null, allRepos};
   }, [workspaceOrError]);
+
+  const [visibleRepos, toggleVisible] = useVisibleRepos(allRepos);
 
   return {
     refetch,
     loading: loading && !data, // Only "loading" on initial load.
     error,
     locationEntries,
-    allRepos: options,
+    allRepos,
+    visibleRepos,
+    toggleVisible,
   };
 };
+
+/**
+ * useVisibleRepos vends `[reposForKeys, toggleVisible]` and internally mirrors the current
+ * selection into localStorage so that the default selection in new browser windows
+ * is the repo currently active in your session.
+ */
+const useVisibleRepos = (
+  allRepos: DagsterRepoOption[],
+): [DagsterRepoOption[], WorkspaceState['toggleVisible']] => {
+  // Initialize local state with an empty Set.
+  const [hiddenKeys, setHiddenKeys] = React.useState(hiddenKeysFromLocalStorage());
+
+  const toggleVisible = React.useCallback((repoAddress: RepoAddress) => {
+    const key = `${repoAddress.name}:${repoAddress.location}`;
+
+    setHiddenKeys((current) => {
+      let nextHiddenKeys = [...(current || [])];
+      if (nextHiddenKeys.includes(key)) {
+        nextHiddenKeys = nextHiddenKeys.filter((k) => k !== key);
+      } else {
+        nextHiddenKeys = [...nextHiddenKeys, key];
+      }
+      window.localStorage.setItem(HIDDEN_REPO_KEYS, JSON.stringify(nextHiddenKeys));
+      return nextHiddenKeys;
+    });
+  }, []);
+
+  const visibleOptions = React.useMemo(() => {
+    // If there's only one repo, skip the local storage check -- we have to show this one.
+    if (allRepos.length === 1) {
+      return allRepos;
+    } else {
+      return allRepos.filter((o) => !hiddenKeys.includes(getRepositoryOptionHash(o)));
+    }
+  }, [allRepos, hiddenKeys]);
+
+  return [visibleOptions, toggleVisible];
+};
+
+// Public
+
+export const getRepositoryOptionHash = (a: DagsterRepoOption) =>
+  `${a.repository.name}:${a.repositoryLocation.name}`;
 
 export const WorkspaceProvider: React.FC = (props) => {
   const {children} = props;
   const workspaceState = useWorkspaceState();
+
   return <WorkspaceContext.Provider value={workspaceState}>{children}</WorkspaceContext.Provider>;
 };
 

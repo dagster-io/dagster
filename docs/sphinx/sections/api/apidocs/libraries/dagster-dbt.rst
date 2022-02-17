@@ -79,6 +79,12 @@ dbt Cloud Resources
 .. autoconfigurable:: dbt_cloud_resource
     :annotation: ResourceDefinition
 
+Assets
+======
+
+.. autofunction:: load_assets_from_dbt_project
+
+.. autofunction:: load_assets_from_dbt_manifest
 
 Types
 =====

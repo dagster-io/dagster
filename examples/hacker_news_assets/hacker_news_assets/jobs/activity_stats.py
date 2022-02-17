@@ -2,7 +2,7 @@ import json
 import os
 
 import pandas as pd
-from dagster import EventMetadata, build_assets_job
+from dagster import MetadataValue, build_assets_job
 from dagster.utils import file_relative_path
 from dagster_dbt import dbt_cli_resource
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
@@ -29,7 +29,7 @@ def asset_metadata(_context, model_info):
         df = pd.read_sql(f"SELECT * FROM {model_info['name']} LIMIT 5", con=con)
         num_rows = con.execute(f"SELECT COUNT(*) FROM {model_info['name']}").fetchone()
 
-    return {"Data sample": EventMetadata.md(df.to_markdown()), "Rows": num_rows[0]}
+    return {"Data sample": MetadataValue.md(df.to_markdown()), "Rows": num_rows[0]}
 
 
 # this list has one element per dbt model

@@ -93,11 +93,42 @@ def test_double_graph():
     )
 
 
+def test_single_asset_group():
+    path = file_relative_path(__file__, "single_asset_group.py")
+    loadable_targets = loadable_targets_from_python_file(path)
+
+    assert len(loadable_targets) == 1
+    symbol = loadable_targets[0].attribute
+    assert symbol == "my_asset_group"
+
+    repo_def = repository_def_from_pointer(CodePointer.from_python_file(path, symbol, None))
+
+    isinstance(repo_def, RepositoryDefinition)
+    the_job = repo_def.get_job("__ASSET_GROUP")
+    assert len(the_job.graph.node_defs) == 2
+
+
+def test_double_asset_group():
+    path = file_relative_path(__file__, "double_asset_group.py")
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+        loadable_targets_from_python_file(path)
+
+    assert str(exc_info.value) == (
+        'More than one asset collection found in "double_asset_group". '
+        "If you load a file or module directly it must either have one repository, one "
+        "job, one pipeline, one graph, or one asset collection scope. Found asset "
+        "collections defined in variables: ['ac1', 'ac2']."
+    )
+
+
 def test_no_loadable_targets():
     with pytest.raises(DagsterInvariantViolationError) as exc_info:
         loadable_targets_from_python_file(file_relative_path(__file__, "nada.py"))
 
-    assert str(exc_info.value) == 'No jobs, pipelines, graphs, or repositories found in "nada".'
+    assert (
+        str(exc_info.value)
+        == 'No jobs, pipelines, graphs, asset collections, or repositories found in "nada".'
+    )
 
 
 def test_single_repository_in_module():

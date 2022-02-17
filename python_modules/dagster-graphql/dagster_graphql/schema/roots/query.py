@@ -13,7 +13,7 @@ from dagster.core.scheduler.instigation import InstigatorType
 from ...implementation.external import fetch_repositories, fetch_repository, fetch_workspace
 from ...implementation.fetch_assets import get_asset, get_asset_node, get_asset_nodes, get_assets
 from ...implementation.fetch_backfills import get_backfill, get_backfills
-from ...implementation.fetch_jobs import (
+from ...implementation.fetch_instigators import (
     get_instigator_state_or_error,
     get_unloadable_instigator_states_or_error,
 )

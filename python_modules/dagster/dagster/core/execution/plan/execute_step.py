@@ -15,12 +15,12 @@ from dagster.core.definitions import (
     TypeCheck,
 )
 from dagster.core.definitions.decorators.solid import DecoratedSolidFunction
-from dagster.core.definitions.event_metadata import (
-    EventMetadataEntry,
-    PartitionMetadataEntry,
-    parse_metadata,
-)
 from dagster.core.definitions.events import AssetLineageInfo, DynamicOutput
+from dagster.core.definitions.metadata import (
+    MetadataEntry,
+    PartitionMetadataEntry,
+    normalize_metadata,
+)
 from dagster.core.errors import (
     DagsterExecutionHandleOutputError,
     DagsterInvariantViolationError,
@@ -104,7 +104,7 @@ def _step_output_error_checked_user_event_sequence(
                 value=output.value,
                 output_name=output.output_name,
                 metadata_entries=output.metadata_entries
-                + parse_metadata(cast(Dict[str, Any], metadata), []),
+                + normalize_metadata(cast(Dict[str, Any], metadata), []),
             )
         else:
             if not output_def.is_dynamic:
@@ -125,7 +125,7 @@ def _step_output_error_checked_user_event_sequence(
                 value=output.value,
                 output_name=output.output_name,
                 metadata_entries=output.metadata_entries
-                + parse_metadata(cast(Dict[str, Any], metadata), []),
+                + normalize_metadata(cast(Dict[str, Any], metadata), []),
                 mapping_key=output.mapping_key,
             )
 
@@ -262,7 +262,7 @@ def _type_check_output(
             ),
             version=version,
             metadata_entries=[
-                entry for entry in output.metadata_entries if isinstance(entry, EventMetadataEntry)
+                entry for entry in output.metadata_entries if isinstance(entry, MetadataEntry)
             ],
         ),
     )
@@ -460,13 +460,13 @@ def _get_output_asset_materializations(
     asset_partitions: Set[str],
     output: Union[Output, DynamicOutput],
     output_def: OutputDefinition,
-    io_manager_metadata_entries: List[Union[EventMetadataEntry, PartitionMetadataEntry]],
+    io_manager_metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]],
 ) -> Iterator[AssetMaterialization]:
 
     all_metadata = output.metadata_entries + io_manager_metadata_entries
 
     if asset_partitions:
-        metadata_mapping: Dict[str, List[Union[EventMetadataEntry, PartitionMetadataEntry]]] = {
+        metadata_mapping: Dict[str, List[Union[MetadataEntry, PartitionMetadataEntry]]] = {
             partition: [] for partition in asset_partitions
         }
         for entry in all_metadata:
@@ -511,7 +511,7 @@ def _store_output(
     output_context = step_context.get_output_context(step_output_handle)
 
     manager_materializations = []
-    manager_metadata_entries: List[Union[PartitionMetadataEntry, EventMetadataEntry]] = []
+    manager_metadata_entries: List[Union[PartitionMetadataEntry, MetadataEntry]] = []
 
     # output_manager.handle_output is either a generator function, or a normal function with or
     # without a return value. In the case that handle_output is a normal function, we need to
@@ -552,7 +552,7 @@ def _store_output(
             yield elt
         elif isinstance(elt, AssetMaterialization):
             manager_materializations.append(elt)
-        elif isinstance(elt, (EventMetadataEntry, PartitionMetadataEntry)):
+        elif isinstance(elt, (MetadataEntry, PartitionMetadataEntry)):
             experimental_functionality_warning(
                 "Yielding metadata from an IOManager's handle_output() function"
             )
@@ -561,7 +561,7 @@ def _store_output(
             raise DagsterInvariantViolationError(
                 f"IO manager on output {output_def.name} has returned "
                 f"value {elt} of type {type(elt).__name__}. The return type can only be "
-                "one of AssetMaterialization, EventMetadataEntry, PartitionMetadataEntry."
+                "one of AssetMaterialization, MetadataEntry, PartitionMetadataEntry."
             )
 
     for event in output_context.consume_events():
@@ -603,7 +603,7 @@ def _store_output(
         output_name=step_output_handle.output_name,
         manager_key=output_def.io_manager_key,
         metadata_entries=[
-            entry for entry in manager_metadata_entries if isinstance(entry, EventMetadataEntry)
+            entry for entry in manager_metadata_entries if isinstance(entry, MetadataEntry)
         ],
     )
 

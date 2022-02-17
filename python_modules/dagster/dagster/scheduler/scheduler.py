@@ -224,7 +224,11 @@ def launch_scheduled_runs(
                 end_datetime_utc,
                 max_catchup_runs,
                 max_tick_retries,
-                (debug_crash_flags.get(schedule_state.job_name) if debug_crash_flags else None),
+                (
+                    debug_crash_flags.get(schedule_state.instigator_name)
+                    if debug_crash_flags
+                    else None
+                ),
                 log_verbose_checks=log_verbose_checks,
             )
         except Exception:
@@ -251,13 +255,11 @@ def launch_scheduled_runs_for_schedule(
     check.opt_inst_param(schedule_state, "schedule_state", InstigatorState)
     check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
 
-    job_origin_id = external_schedule.get_external_origin_id()
-    ticks = instance.get_ticks(job_origin_id, limit=1)
+    instigator_origin_id = external_schedule.get_external_origin_id()
+    ticks = instance.get_ticks(instigator_origin_id, limit=1)
     latest_tick = ticks[0] if ticks else None
 
-    start_timestamp_utc = (
-        schedule_state.job_specific_data.start_timestamp if schedule_state else None
-    )
+    start_timestamp_utc = schedule_state.instigator_data.start_timestamp if schedule_state else None
 
     if latest_tick:
         if latest_tick.status == TickStatus.STARTED or (
@@ -277,7 +279,7 @@ def launch_scheduled_runs_for_schedule(
                 else latest_tick.timestamp + 1
             )
     else:
-        start_timestamp_utc = schedule_state.job_specific_data.start_timestamp
+        start_timestamp_utc = schedule_state.instigator_data.start_timestamp
 
     schedule_name = external_schedule.name
 
@@ -330,9 +332,9 @@ def launch_scheduled_runs_for_schedule(
         else:
             tick = instance.create_tick(
                 TickData(
-                    job_origin_id=external_schedule.get_external_origin_id(),
-                    job_name=schedule_name,
-                    job_type=InstigatorType.SCHEDULE,
+                    instigator_origin_id=instigator_origin_id,
+                    instigator_name=schedule_name,
+                    instigator_type=InstigatorType.SCHEDULE,
                     status=TickStatus.STARTED,
                     timestamp=schedule_timestamp,
                 )

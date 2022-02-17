@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from .repository_definition import RepositoryDefinition
     from .pipeline_definition import PipelineDefinition
     from .graph_definition import GraphDefinition
+    from dagster.core.asset_defs.asset_group import AssetGroup
 
 
 def get_ephemeral_repository_name(pipeline_name: str) -> str:
@@ -511,13 +512,16 @@ def _check_is_loadable(definition):
     from .pipeline_definition import PipelineDefinition
     from .repository_definition import RepositoryDefinition
     from .graph_definition import GraphDefinition
+    from dagster.core.asset_defs import AssetGroup
 
-    if not isinstance(definition, (PipelineDefinition, RepositoryDefinition, GraphDefinition)):
+    if not isinstance(
+        definition, (PipelineDefinition, RepositoryDefinition, GraphDefinition, AssetGroup)
+    ):
         raise DagsterInvariantViolationError(
             (
-                "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, or a "
-                "RepositoryDefinition. Got {definition}."
-            ).format(definition=repr(definition))
+                "Loadable attributes must be either a JobDefinition, GraphDefinition, "
+                f"PipelineDefinition, AssetGroup, or RepositoryDefinition. Got {repr(definition)}."
+            )
         )
     return definition
 
@@ -544,9 +548,10 @@ def def_from_pointer(
     from .pipeline_definition import PipelineDefinition
     from .repository_definition import RepositoryDefinition
     from .graph_definition import GraphDefinition
+    from dagster.core.asset_defs.asset_group import AssetGroup
 
     if isinstance(
-        target, (PipelineDefinition, RepositoryDefinition, GraphDefinition)
+        target, (PipelineDefinition, RepositoryDefinition, GraphDefinition, AssetGroup)
     ) or not callable(target):
         return _check_is_loadable(target)
 
@@ -581,7 +586,7 @@ def pipeline_def_from_pointer(pointer: CodePointer) -> "PipelineDefinition":
 @overload
 # NOTE: mypy can't handle these overloads but pyright can
 def repository_def_from_target_def(  # type: ignore
-    target: Union["RepositoryDefinition", "PipelineDefinition", "GraphDefinition"]
+    target: Union["RepositoryDefinition", "PipelineDefinition", "GraphDefinition", "AssetGroup"]
 ) -> "RepositoryDefinition":
     ...
 
@@ -595,6 +600,7 @@ def repository_def_from_target_def(target):
     from .pipeline_definition import PipelineDefinition
     from .graph_definition import GraphDefinition
     from .repository_definition import CachingRepositoryData, RepositoryDefinition
+    from dagster.core.asset_defs.asset_group import AssetGroup
 
     # special case - we can wrap a single pipeline in a repository
     if isinstance(target, (PipelineDefinition, GraphDefinition)):
@@ -602,6 +608,10 @@ def repository_def_from_target_def(target):
         return RepositoryDefinition(
             name=get_ephemeral_repository_name(target.name),
             repository_data=CachingRepositoryData.from_list([target]),
+        )
+    elif isinstance(target, AssetGroup):
+        return RepositoryDefinition(
+            name="__repository__", repository_data=CachingRepositoryData.from_list([target])
         )
     elif isinstance(target, RepositoryDefinition):
         return target

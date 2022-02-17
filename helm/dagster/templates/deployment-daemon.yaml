@@ -8,6 +8,9 @@ metadata:
     {{- include "dagster.labels" $ | nindent 4 }}
     component: dagster-daemon
     deployment: daemon
+    {{- with .Values.dagsterDaemon.deploymentLabels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
   annotations:
     {{- range $key, $value := .Values.dagsterDaemon.annotations }}
     {{ $key }}: {{ $value | squote }}
@@ -27,6 +30,9 @@ spec:
         {{- include "dagster.selectorLabels" $ | nindent 8 }}
         component: dagster-daemon
         deployment: daemon
+        {{- with .Values.dagsterDaemon.labels }}
+        {{- . | toYaml | nindent 8 }}
+        {{- end }}
       annotations:
         {{- if $userDeployments.enabled }}
         checksum/dagster-workspace: {{ include (print $.Template.BasePath "/configmap-workspace.yaml") . | sha256sum }}
@@ -101,6 +107,10 @@ spec:
           {{- if .Values.dagsterDaemon.livenessProbe }}
           livenessProbe:
             {{- toYaml .Values.dagsterDaemon.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.dagsterDaemon.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.dagsterDaemon.readinessProbe | nindent 12 }}
           {{- end }}
           {{- if .Values.dagsterDaemon.startupProbe.enabled}}
           {{- $startupProbe := omit .Values.dagsterDaemon.startupProbe "enabled" }}

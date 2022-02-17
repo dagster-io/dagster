@@ -4,7 +4,7 @@ from unittest import mock
 
 import objgraph
 from dagit.graphql import GraphQLWS
-from dagit.starlette import DagitWebserver
+from dagit.webserver import DagitWebserver
 from dagster import execute_pipeline, pipeline, solid
 from dagster.core.test_utils import environ, instance_for_test
 from dagster.core.workspace.context import WorkspaceProcessContext

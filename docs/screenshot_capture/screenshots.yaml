@@ -74,6 +74,18 @@
   width: 1536
   height: 1152
 
+- path: concepts/assets/software-defined-assets/catalog.png
+  defs_file: examples/docs_snippets/docs_snippets/concepts/assets/asset_group.py
+  url: http://127.0.0.1:3000/instance/assets
+
+- path: concepts/assets/software-defined-assets/details.png
+  defs_file: examples/docs_snippets/docs_snippets/concepts/assets/asset_group.py
+  url: http://127.0.0.1:3000/instance/assets/upstream_asset?view=definition
+
+- path: concepts/assets/software-defined-assets/graph.png
+  defs_file: examples/docs_snippets/docs_snippets/concepts/assets/asset_group.py
+  url: http://127.0.0.1:3000/instance/asset-graph
+
 - path: concepts/config-dagit.png
   vetted: false
 
@@ -224,3 +236,16 @@
 
 - path: guides/dagster_pandas/tutorial2.png
   vetted: false
+
+- path: guides/dagster_pandera/schema.png
+  defs_file: examples/docs_snippets/docs_snippets/integrations/pandera/example.py
+  url: http://localhost:3000/workspace/__repository__stocks_job@example.py/jobs/stocks_job/?tab=types&typeName=StockPrices
+  vetted: false
+
+- path: guides/dagster_pandera/error-report.png
+  defs_file: examples/docs_snippets/docs_snippets/integrations/pandera/example.py
+  url: http://localhost:3000/workspace/__repository__stocks_job@example.py/jobs/stocks_job/playground
+  vetted: false
+  steps:
+    - launch run
+    - click on failed "Step Output"

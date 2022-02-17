@@ -19,3 +19,8 @@ Resources
 
 .. autoclass:: FivetranResource
     :members:
+
+Assets
+======
+
+.. autofunction:: build_fivetran_assets

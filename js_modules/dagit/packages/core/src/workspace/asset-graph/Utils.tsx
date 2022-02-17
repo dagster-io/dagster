@@ -17,6 +17,8 @@ import {InProgressRunsFragment} from './types/InProgressRunsFragment';
 type AssetNode = AssetGraphQuery_assetNodes;
 type AssetKey = AssetGraphQuery_assetNodes_assetKey;
 
+export const __ASSET_GROUP = '__ASSET_GROUP';
+
 export interface Node {
   id: string;
   assetKey: AssetKey;
@@ -265,7 +267,8 @@ export const buildLiveData = (
   const data: LiveData = {};
 
   for (const liveNode of nodes) {
-    const graphNode = graph.nodes[liveNode.id];
+    const graphNodeKey = JSON.stringify(liveNode.assetKey.path);
+    const graphNode = graph.nodes[graphNodeKey];
     if (!graphNode) {
       continue;
     }
@@ -277,7 +280,7 @@ export const buildLiveData = (
 
     const runs = inProgressRunsByStep.find((r) => r.stepKey === liveNode.opName);
 
-    data[liveNode.id] = {
+    data[graphNodeKey] = {
       lastStepStart,
       lastMaterialization,
       inProgressRunIds: runs?.inProgressRuns.map((r) => r.id) || [],

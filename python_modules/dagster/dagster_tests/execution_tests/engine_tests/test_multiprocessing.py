@@ -4,10 +4,10 @@ import time
 
 import pytest
 from dagster import (
-    EventMetadataEntry,
     Failure,
     Field,
     InputDefinition,
+    MetadataEntry,
     Nothing,
     Output,
     OutputDefinition,
@@ -382,7 +382,7 @@ def throw():
     raise Failure(
         description="it Failure",
         metadata_entries=[
-            EventMetadataEntry.text(label="label", text="text", description="description")
+            MetadataEntry.text(label="label", text="text", description="description")
         ],
     )
 

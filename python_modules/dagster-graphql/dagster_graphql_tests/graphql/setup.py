@@ -21,7 +21,6 @@ from dagster import (
     DynamicOutputDefinition,
     Enum,
     EnumValue,
-    EventMetadataEntry,
     ExpectationResult,
     Field,
     HourlyPartitionsDefinition,
@@ -31,6 +30,7 @@ from dagster import (
     Int,
     Map,
     Materialization,
+    MetadataEntry,
     ModeDefinition,
     Noneable,
     Nothing,
@@ -69,7 +69,7 @@ from dagster import (
     usable_as_dagster_type,
     weekly_schedule,
 )
-from dagster.core.asset_defs import ForeignAsset, asset, build_assets_job
+from dagster.core.asset_defs import SourceAsset, asset, build_assets_job
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
@@ -691,26 +691,26 @@ def materialization_pipeline():
             asset_key="all_types",
             description="a materialization with all metadata types",
             metadata_entries=[
-                EventMetadataEntry.text("text is cool", "text"),
-                EventMetadataEntry.url("https://bigty.pe/neato", "url"),
-                EventMetadataEntry.fspath("/tmp/awesome", "path"),
-                EventMetadataEntry.json({"is_dope": True}, "json"),
-                EventMetadataEntry.python_artifact(EventMetadataEntry, "python class"),
-                EventMetadataEntry.python_artifact(file_relative_path, "python function"),
-                EventMetadataEntry.float(1.2, "float"),
-                EventMetadataEntry.int(1, "int"),
-                EventMetadataEntry.float(float("nan"), "float NaN"),
-                EventMetadataEntry.int(LONG_INT, "long int"),
-                EventMetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
-                EventMetadataEntry.asset(AssetKey("my_asset"), "my asset"),
-                EventMetadataEntry.table(
+                MetadataEntry.text("text is cool", "text"),
+                MetadataEntry.url("https://bigty.pe/neato", "url"),
+                MetadataEntry.fspath("/tmp/awesome", "path"),
+                MetadataEntry.json({"is_dope": True}, "json"),
+                MetadataEntry.python_artifact(MetadataEntry, "python class"),
+                MetadataEntry.python_artifact(file_relative_path, "python function"),
+                MetadataEntry.float(1.2, "float"),
+                MetadataEntry.int(1, "int"),
+                MetadataEntry.float(float("nan"), "float NaN"),
+                MetadataEntry.int(LONG_INT, "long int"),
+                MetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
+                MetadataEntry.asset(AssetKey("my_asset"), "my asset"),
+                MetadataEntry.table(
                     label="table",
                     records=[
                         TableRecord(foo=1, bar=2),
                         TableRecord(foo=3, bar=4),
                     ],
                 ),
-                EventMetadataEntry.table_schema(
+                MetadataEntry.table_schema(
                     label="table_schema",
                     schema=TableSchema(
                         columns=[
@@ -1299,18 +1299,18 @@ def backcompat_materialization_pipeline():
             asset_key="all_types",
             description="a materialization with all metadata types",
             metadata_entries=[
-                EventMetadataEntry.text("text is cool", "text"),
-                EventMetadataEntry.url("https://bigty.pe/neato", "url"),
-                EventMetadataEntry.fspath("/tmp/awesome", "path"),
-                EventMetadataEntry.json({"is_dope": True}, "json"),
-                EventMetadataEntry.python_artifact(EventMetadataEntry, "python class"),
-                EventMetadataEntry.python_artifact(file_relative_path, "python function"),
-                EventMetadataEntry.float(1.2, "float"),
-                EventMetadataEntry.int(1, "int"),
-                EventMetadataEntry.float(float("nan"), "float NaN"),
-                EventMetadataEntry.int(LONG_INT, "long int"),
-                EventMetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
-                EventMetadataEntry.asset(AssetKey("my_asset"), "my asset"),
+                MetadataEntry.text("text is cool", "text"),
+                MetadataEntry.url("https://bigty.pe/neato", "url"),
+                MetadataEntry.fspath("/tmp/awesome", "path"),
+                MetadataEntry.json({"is_dope": True}, "json"),
+                MetadataEntry.python_artifact(MetadataEntry, "python class"),
+                MetadataEntry.python_artifact(file_relative_path, "python function"),
+                MetadataEntry.float(1.2, "float"),
+                MetadataEntry.int(1, "int"),
+                MetadataEntry.float(float("nan"), "float NaN"),
+                MetadataEntry.int(LONG_INT, "long int"),
+                MetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
+                MetadataEntry.asset(AssetKey("my_asset"), "my asset"),
             ],
         )
         yield Output(None)
@@ -1351,11 +1351,11 @@ class DummyIOManager(IOManager):
         pass
 
 
-dummy_foreign_asset = ForeignAsset(key=AssetKey("dummy_foreign_asset"))
+dummy_source_asset = SourceAsset(key=AssetKey("dummy_source_asset"))
 
 
 @asset
-def first_asset(dummy_foreign_asset):  # pylint: disable=redefined-outer-name,unused-argument
+def first_asset(dummy_source_asset):  # pylint: disable=redefined-outer-name,unused-argument
     return 1
 
 
@@ -1378,7 +1378,7 @@ def never_runs_asset(hanging_asset):  # pylint: disable=redefined-outer-name,unu
 
 hanging_job = build_assets_job(
     name="hanging_job",
-    source_assets=[dummy_foreign_asset],
+    source_assets=[dummy_source_asset],
     assets=[first_asset, hanging_asset, never_runs_asset],
     resource_defs={
         "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),

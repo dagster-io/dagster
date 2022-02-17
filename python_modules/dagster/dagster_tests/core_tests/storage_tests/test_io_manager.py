@@ -10,11 +10,13 @@ from dagster import (
     DagsterInstance,
     DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
-    EventMetadataEntry,
+    DynamicOut,
+    DynamicOutput,
     Field,
     IOManagerDefinition,
     In,
     InputDefinition,
+    MetadataEntry,
     ModeDefinition,
     Out,
     OutputDefinition,
@@ -833,7 +835,7 @@ def test_context_logging_metadata():
                 self.values[keys] = obj
 
                 context.add_output_metadata({"foo": "bar"})
-                yield EventMetadataEntry.text(label="baz", text="baz")
+                yield MetadataEntry.text(label="baz", text="baz")
                 context.add_output_metadata({"bar": "bar"})
                 yield materialization
 
@@ -879,3 +881,38 @@ def test_context_logging_metadata():
         match="When handling output 'result' of op 'the_op', received a materialization with metadata, while context.add_output_metadata was used within the same call to handle_output. Due to potential conflicts, this is not allowed. Please specify metadata in one place within the `handle_output` function.",
     ):
         build_for_materialization(AssetMaterialization("has_metadata", metadata={"bar": "baz"}))
+
+
+def test_metadata_dynamic_outputs():
+    class DummyIOManager(IOManager):
+        def __init__(self):
+            self.values = {}
+
+        def handle_output(self, context, obj):
+            keys = tuple(context.get_output_identifier())
+            self.values[keys] = obj
+
+            yield MetadataEntry.text(label="handle_output", text="I come from handle_output")
+
+        def load_input(self, context):
+            keys = tuple(context.upstream_output.get_output_identifier())
+            return self.values[keys]
+
+    @op(out=DynamicOut(asset_key=AssetKey(["foo"])))
+    def the_op():
+        yield DynamicOutput(1, mapping_key="one", metadata={"one": "blah"})
+        yield DynamicOutput(2, mapping_key="two", metadata={"two": "blah"})
+
+    @graph
+    def the_graph():
+        the_op()
+
+    result = the_graph.execute_in_process(resources={"io_manager": DummyIOManager()})
+    materializations = result.asset_materializations_for_node("the_op")
+    assert len(materializations) == 2
+    for materialization in materializations:
+        assert materialization.metadata_entries[1].label == "handle_output"
+        assert materialization.metadata_entries[1].entry_data.text == "I come from handle_output"
+
+    assert materializations[0].metadata_entries[0].label == "one"
+    assert materializations[1].metadata_entries[0].label == "two"

@@ -1,4 +1,4 @@
-from dagster import DagsterInstance, EventMetadataEntry, check
+from dagster import DagsterInstance, MetadataEntry, check
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
@@ -47,8 +47,8 @@ def create_task(celery_app, **task_kwargs):
             pipeline_run,
             EngineEventData(
                 [
-                    EventMetadataEntry.text(step_keys_str, "step_keys"),
-                    EventMetadataEntry.text(self.request.hostname, "Celery worker"),
+                    MetadataEntry.text(step_keys_str, "step_keys"),
+                    MetadataEntry.text(self.request.hostname, "Celery worker"),
                 ],
                 marker_end=DELEGATE_MARKER,
             ),

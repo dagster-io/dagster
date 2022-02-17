@@ -373,9 +373,9 @@ def validate_tick(
     expected_error=None,
 ):
     tick_data = tick.tick_data
-    assert tick_data.job_origin_id == external_sensor.get_external_origin_id()
-    assert tick_data.job_name == external_sensor.name
-    assert tick_data.job_type == InstigatorType.SENSOR
+    assert tick_data.instigator_origin_id == external_sensor.get_external_origin_id()
+    assert tick_data.instigator_name == external_sensor.name
+    assert tick_data.instigator_type == InstigatorType.SENSOR
     assert tick_data.status == expected_status
     assert tick_data.timestamp == expected_datetime.timestamp()
     if expected_run_ids is not None:

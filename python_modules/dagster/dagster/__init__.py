@@ -1,11 +1,14 @@
+import sys
+
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
 from dagster.config.config_schema import ConfigSchema
 from dagster.config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.asset_defs import (
+    AssetGroup,
     AssetIn,
     AssetsDefinition,
-    ForeignAsset,
+    SourceAsset,
     asset,
     build_assets_job,
     multi_asset,
@@ -17,6 +20,8 @@ from dagster.core.definitions import (
     AssetSensorDefinition,
     CompositeSolidDefinition,
     ConfigMapping,
+    DagsterAssetMetadataValue,
+    DagsterPipelineRunMetadataValue,
     DailyPartitionsDefinition,
     DefaultScheduleStatus,
     DefaultSensorStatus,
@@ -25,13 +30,11 @@ from dagster.core.definitions import (
     DynamicOutput,
     DynamicOutputDefinition,
     DynamicPartitionsDefinition,
-    EventMetadata,
-    EventMetadataEntry,
     ExecutorDefinition,
     ExecutorRequirement,
     ExpectationResult,
     Failure,
-    FloatMetadataEntryData,
+    FloatMetadataValue,
     GraphDefinition,
     GraphIn,
     GraphOut,
@@ -40,12 +43,14 @@ from dagster.core.definitions import (
     In,
     InputDefinition,
     InputMapping,
-    IntMetadataEntryData,
+    IntMetadataValue,
     JobDefinition,
-    JsonMetadataEntryData,
+    JsonMetadataValue,
     LoggerDefinition,
-    MarkdownMetadataEntryData,
+    MarkdownMetadataValue,
     Materialization,
+    MetadataEntry,
+    MetadataValue,
     ModeDefinition,
     MonthlyPartitionsDefinition,
     MultiDependencyDefinition,
@@ -60,11 +65,11 @@ from dagster.core.definitions import (
     PartitionSetDefinition,
     PartitionedConfig,
     PartitionsDefinition,
-    PathMetadataEntryData,
+    PathMetadataValue,
     PipelineDefinition,
     PipelineFailureSensorContext,
     PresetDefinition,
-    PythonArtifactMetadataEntryData,
+    PythonArtifactMetadataValue,
     RepositoryData,
     RepositoryDefinition,
     ResourceDefinition,
@@ -86,13 +91,13 @@ from dagster.core.definitions import (
     TableColumn,
     TableColumnConstraints,
     TableConstraints,
-    TableMetadataEntryData,
+    TableMetadataValue,
     TableRecord,
     TableSchema,
-    TableSchemaMetadataEntryData,
-    TextMetadataEntryData,
+    TableSchemaMetadataValue,
+    TextMetadataValue,
     TypeCheck,
-    UrlMetadataEntryData,
+    UrlMetadataValue,
     WeeklyPartitionsDefinition,
     asset_sensor,
     build_init_logger_context,
@@ -201,6 +206,7 @@ from dagster.core.storage.event_log import (
     RunShardedEventsCursor,
 )
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
+from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
 from dagster.core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 from dagster.core.storage.mem_io_manager import mem_io_manager
@@ -246,32 +252,66 @@ from .version import __version__
 
 from dagster.config.source import BoolSource, StringSource, IntSource  # isort:skip
 
+# DEPRECATIONS
+# TODO: find a way to add warnings
+EventMetadataEntry = MetadataEntry
+EventMetadata = MetadataValue
+TextMetadataEntryData = TextMetadataValue
+UrlMetadataEntryData = UrlMetadataValue
+PathMetadataEntryData = PathMetadataValue
+JsonMetadataEntryData = JsonMetadataValue
+MarkdownMetadataEntryData = MarkdownMetadataValue
+PythonArtifactMetadataEntryData = PythonArtifactMetadataValue
+FloatMetadataEntryData = FloatMetadataValue
+IntMetadataEntryData = IntMetadataValue
+DagsterPipelineRunMetadataEntryData = DagsterPipelineRunMetadataValue
+DagsterAssetMetadataEntryData = DagsterAssetMetadataValue
+TableMetadataEntryData = TableMetadataValue
+TableSchemaMetadataEntryData = TableSchemaMetadataValue
+
 
 __all__ = [
+    # DEPRECATIONS
+    "EventMetadataEntry",
+    "EventMetadata",
+    "TextMetadataEntryData",
+    "UrlMetadataEntryData",
+    "PathMetadataEntryData",
+    "JsonMetadataEntryData",
+    "MarkdownMetadataEntryData",
+    "PythonArtifactMetadataEntryData",
+    "FloatMetadataEntryData",
+    "IntMetadataEntryData",
+    "DagsterPipelineRunMetadataEntryData",
+    "DagsterAssetMetadataEntryData",
+    "TableMetadataEntryData",
+    "TableSchemaMetadataEntryData",
     # Definition
+    "AssetGroup",
     "AssetKey",
     "AssetIn",
     "AssetMaterialization",
     "AssetObservation",
     "AssetSensorDefinition",
     "AssetsDefinition",
+    "DagsterAssetMetadataValue",
+    "DagsterPipelineRunMetadataValue",
     "TableColumn",
     "TableColumnConstraints",
     "TableConstraints",
     "TableRecord",
-    "TableSchemaMetadataEntryData",
+    "TableSchemaMetadataValue",
     "TableSchema",
     "CompositeSolidDefinition",
     "ConfigMapping",
     "DependencyDefinition",
-    "EventMetadata",
-    "EventMetadataEntry",
+    "MetadataValue",
+    "MetadataEntry",
     "ExecutorDefinition",
     "ExecutorRequirement",
     "ExpectationResult",
     "Failure",
     "Field",
-    "ForeignAsset",
     "Map",
     "GraphDefinition",
     "GraphIn",
@@ -281,12 +321,12 @@ __all__ = [
     "In",
     "InputDefinition",
     "InputMapping",
-    "JsonMetadataEntryData",
+    "JsonMetadataValue",
     "LoggerDefinition",
     "build_init_logger_context",
-    "MarkdownMetadataEntryData",
-    "IntMetadataEntryData",
-    "FloatMetadataEntryData",
+    "MarkdownMetadataValue",
+    "IntMetadataValue",
+    "FloatMetadataValue",
     "Materialization",
     "ModeDefinition",
     "MultiDependencyDefinition",
@@ -295,19 +335,20 @@ __all__ = [
     "Output",
     "OutputDefinition",
     "OutputMapping",
-    "PathMetadataEntryData",
+    "PathMetadataValue",
     "PipelineDefinition",
     "PresetDefinition",
-    "PythonArtifactMetadataEntryData",
+    "PythonArtifactMetadataValue",
     "RepositoryData",
     "RepositoryDefinition",
     "ResourceDefinition",
     "SolidDefinition",
+    "SourceAsset",
     "NodeInvocation",
     "SolidInvocation",
-    "TableMetadataEntryData",
-    "TextMetadataEntryData",
-    "UrlMetadataEntryData",
+    "TableMetadataValue",
+    "TextMetadataValue",
+    "UrlMetadataValue",
     "make_values_resource",
     "RetryPolicy",
     "Backoff",
@@ -509,6 +550,7 @@ __all__ = [
     "RootInputManager",
     "RootInputManagerDefinition",
     "root_input_manager",
+    "fs_asset_io_manager",
     "fs_io_manager",
     "mem_io_manager",
     "custom_path_fs_io_manager",

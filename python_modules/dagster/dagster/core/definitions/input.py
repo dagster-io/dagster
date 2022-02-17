@@ -2,8 +2,8 @@ from collections import namedtuple
 from typing import NamedTuple, Optional, Set
 
 from dagster import check
-from dagster.core.definitions.event_metadata import EventMetadataEntry, parse_metadata
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.metadata import MetadataEntry, normalize_metadata
 from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import (
     BuiltinScalarDagsterType,
@@ -98,7 +98,7 @@ class InputDefinition:
 
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         self._metadata_entries = check.is_list(
-            parse_metadata(self._metadata, [], allow_invalid=True), EventMetadataEntry
+            normalize_metadata(self._metadata, [], allow_invalid=True), MetadataEntry
         )
 
         if asset_key:

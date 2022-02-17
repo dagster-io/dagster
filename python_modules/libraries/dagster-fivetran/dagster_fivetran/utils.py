@@ -1,6 +1,6 @@
 from typing import Any, Dict, List
 
-from dagster import AssetMaterialization, EventMetadata
+from dagster import AssetMaterialization, MetadataValue
 from dagster_fivetran.types import FivetranOutput
 
 
@@ -25,12 +25,12 @@ def _table_data_to_materialization(
     if not table_data["enabled"]:
         return None
     metadata = {
-        "connector_url": EventMetadata.url(
+        "connector_url": MetadataValue.url(
             get_fivetran_connector_url(fivetran_output.connector_details)
         )
     }
     if table_data.get("columns"):
-        metadata["column_info"] = EventMetadata.json(table_data.get("columns"))
+        metadata["column_info"] = MetadataValue.json(table_data.get("columns"))
     return AssetMaterialization(
         asset_key=asset_key,
         description=f"Table generated via Fivetran sync: {schema_name}.{table_name}",
@@ -41,6 +41,9 @@ def _table_data_to_materialization(
 def generate_materializations(fivetran_output: FivetranOutput, asset_key_prefix: List[str]):
     for schema in fivetran_output.schema_config["schemas"].values():
         schema_name = schema["name_in_destination"]
+        schema_prefix = fivetran_output.connector_details.get("config", {}).get("schema_prefix")
+        if schema_prefix:
+            schema_name = f"{schema_prefix}_{schema_name}"
         if not schema["enabled"]:
             continue
         for table_data in schema["tables"].values():

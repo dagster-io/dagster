@@ -615,16 +615,6 @@ def helm_chart_for_k8s_run_launcher(
                 "runMonitoring": {"enabled": True, "pollIntervalSeconds": 5}
                 if run_monitoring
                 else {},
-                "startupProbe": {
-                    "periodSeconds": 10,
-                    "failureThreshold": 12,
-                    "timeoutSeconds": 12,
-                },
-                "livenessProbe": {
-                    "periodSeconds": 30,
-                    "failureThreshold": 12,
-                    "timeoutSeconds": 12,
-                },
             },
             "imagePullSecrets": [{"name": TEST_IMAGE_PULL_SECRET_NAME}],
         },
@@ -776,16 +766,6 @@ def _base_helm_config(docker_image):
             "env": {"TEST_SET_ENV_VAR": "test_dagit_env_var"},
             "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
             "envSecrets": [{"name": TEST_SECRET_NAME}],
-            "livenessProbe": {
-                "httpGet": {"path": "/dagit_info", "port": 80},
-                "periodSeconds": 20,
-                "failureThreshold": 3,
-            },
-            "startupProbe": {
-                "httpGet": {"path": "/dagit_info", "port": 80},
-                "failureThreshold": 6,
-                "periodSeconds": 10,
-            },
             "annotations": {"dagster-integration-tests": "dagit-pod-annotation"},
             "service": {"annotations": {"dagster-integration-tests": "dagit-svc-annotation"}},
         },
@@ -872,16 +852,6 @@ def _base_helm_config(docker_image):
             "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
             "envSecrets": [{"name": TEST_SECRET_NAME}],
             "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
-            "startupProbe": {
-                "periodSeconds": 10,
-                "failureThreshold": 12,
-                "timeoutSeconds": 12,
-            },
-            "livenessProbe": {
-                "periodSeconds": 30,
-                "failureThreshold": 12,
-                "timeoutSeconds": 12,
-            },
             "runMonitoring": {
                 "enabled": True,
                 "pollIntervalSeconds": 5,
@@ -913,16 +883,6 @@ def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
                 "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
                 "envSecrets": [{"name": TEST_SECRET_NAME}],
                 "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
-                "startupProbe": {
-                    "periodSeconds": 10,
-                    "failureThreshold": 12,
-                    "timeoutSeconds": 12,
-                },
-                "livenessProbe": {
-                    "periodSeconds": 30,
-                    "failureThreshold": 12,
-                    "timeoutSeconds": 12,
-                },
             },
         },
     )

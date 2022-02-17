@@ -215,3 +215,19 @@ def test_run_monitoring(
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
 
     assert instance["run_monitoring"]["enabled"] == True
+
+
+def test_daemon_labels(template: HelmTemplate):
+    deployment_labels = {"deployment_label": "label"}
+    pod_labels = {"pod_label": "label"}
+    helm_values = DagsterHelmValues.construct(
+        dagsterDaemon=Daemon.construct(
+            deploymentLabels=deployment_labels,
+            labels=pod_labels,
+        )
+    )
+
+    [daemon_deployment] = template.render(helm_values)
+
+    assert set(deployment_labels.items()).issubset(daemon_deployment.metadata.labels.items())
+    assert set(pod_labels.items()).issubset(daemon_deployment.spec.template.metadata.labels.items())

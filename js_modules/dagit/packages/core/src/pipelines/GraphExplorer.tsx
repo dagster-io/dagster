@@ -14,7 +14,7 @@ import {OpNameOrPath} from '../ops/OpNameOrPath';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {RepoAddress} from '../workspace/types';
 
-import {EmptyDAGNotice, LargeDAGNotice} from './GraphNotices';
+import {EmptyDAGNotice, EntirelyFilteredDAGNotice, LargeDAGNotice} from './GraphNotices';
 import {ExplorerPath} from './PipelinePathUtils';
 import {
   SidebarTabbedContainer,
@@ -167,8 +167,18 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
       firstInitialPercent={70}
       first={
         <>
-          <PathOverlay>
-            {explorerPath.opNames.length > 1 && (
+          {solidsQueryEnabled ? (
+            <QueryOverlay>
+              <GraphQueryInput
+                items={solids}
+                value={explorerPath.opsQuery}
+                placeholder="Type an op subset…"
+                popoverPosition="bottom-left"
+                onChange={handleQueryChange}
+              />
+            </QueryOverlay>
+          ) : explorerPath.opNames.length > 1 ? (
+            <BreadcrumbsOverlay>
               <Breadcrumbs
                 currentBreadcrumbRenderer={() => <span />}
                 items={explorerPath.opNames.map((name, idx) => ({
@@ -180,35 +190,45 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
                     ),
                 }))}
               />
-            )}
-            {showAssetRenderingOption && (
-              <Checkbox
-                format="switch"
-                label="View as Asset Graph"
-                checked={options.preferAssetRendering}
-                onChange={() => {
-                  onChangeExplorerPath({...explorerPath, opNames: []}, 'replace');
-                  setOptions({
-                    ...options,
-                    preferAssetRendering: !options.preferAssetRendering,
-                  });
-                }}
-              />
-            )}
-          </PathOverlay>
+            </BreadcrumbsOverlay>
+          ) : null}
 
-          {solidsQueryEnabled && (
-            <PipelineGraphQueryInputContainer>
-              <GraphQueryInput
-                items={solids}
-                value={explorerPath.opsQuery}
-                placeholder="Type an op subset…"
-                onChange={handleQueryChange}
-              />
-            </PipelineGraphQueryInputContainer>
+          {(showAssetRenderingOption || explodeCompositesEnabled) && (
+            <OptionsOverlay>
+              {showAssetRenderingOption && (
+                <Checkbox
+                  format="switch"
+                  label="View as Asset Graph"
+                  checked={options.preferAssetRendering}
+                  onChange={() => {
+                    onChangeExplorerPath({...explorerPath, opNames: []}, 'replace');
+                    setOptions({
+                      ...options,
+                      preferAssetRendering: !options.preferAssetRendering,
+                    });
+                  }}
+                />
+              )}
+              {explodeCompositesEnabled && (
+                <OptionsOverlay>
+                  <Checkbox
+                    format="switch"
+                    label="Explode graphs"
+                    checked={options.explodeComposites}
+                    onChange={() => {
+                      handleQueryChange('');
+                      setOptions({
+                        ...options,
+                        explodeComposites: !options.explodeComposites,
+                      });
+                    }}
+                  />
+                </OptionsOverlay>
+              )}
+            </OptionsOverlay>
           )}
 
-          <SearchOverlay>
+          <HighlightOverlay>
             <TextInput
               name="highlighted"
               icon="search"
@@ -216,27 +236,16 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
               placeholder="Highlight…"
               onChange={(e) => setNameMatch(e.target.value)}
             />
-          </SearchOverlay>
-          {explodeCompositesEnabled && (
-            <OptionsOverlay>
-              <Checkbox
-                label="Explode graphs"
-                checked={options.explodeComposites}
-                onChange={() => {
-                  handleQueryChange('');
-                  setOptions({
-                    ...options,
-                    explodeComposites: !options.explodeComposites,
-                  });
-                }}
-              />
-            </OptionsOverlay>
-          )}
+          </HighlightOverlay>
+
           {solids.length === 0 ? (
             <EmptyDAGNotice nodeType="op" isGraph={isGraph} />
           ) : queryResultOps.applyingEmptyDefault ? (
             <LargeDAGNotice nodeType="op" />
+          ) : Object.keys(queryResultOps.all).length === 0 ? (
+            <EntirelyFilteredDAGNotice nodeType="op" />
           ) : undefined}
+
           <PipelineGraphContainer
             pipelineName={pipelineOrGraph.name}
             ops={queryResultOps.all}
@@ -326,17 +335,20 @@ export const RightInfoPanelContent = styled.div`
   overflow-y: auto;
 `;
 
-const OptionsOverlay = styled.div`
+export const OptionsOverlay = styled.div`
+  background-color: ${Color(ColorsWIP.White).fade(0.6).toString()};
   z-index: 2;
   padding: 15px 15px;
   display: inline-flex;
   align-items: stretch;
+  white-space: nowrap;
   position: absolute;
   bottom: 0;
   left: 0;
+  gap: 8px;
 `;
 
-export const SearchOverlay = styled.div`
+export const HighlightOverlay = styled.div`
   background-color: ${Color(ColorsWIP.White).fade(0.6).toString()};
   z-index: 2;
   padding: 12px 12px 0 0;
@@ -347,7 +359,15 @@ export const SearchOverlay = styled.div`
   right: 0;
 `;
 
-export const PathOverlay = styled.div`
+export const QueryOverlay = styled.div`
+  z-index: 2;
+  position: absolute;
+  top: 10px;
+  left: 20px;
+  white-space: nowrap;
+`;
+
+export const BreadcrumbsOverlay = styled.div`
   background-color: ${Color(ColorsWIP.White).fade(0.6).toString()};
   z-index: 2;
   padding: 12px 0 0 20px;
@@ -356,14 +376,6 @@ export const PathOverlay = styled.div`
   display: inline-flex;
   align-items: center;
   position: absolute;
+  top: 0;
   left: 0;
-`;
-
-const PipelineGraphQueryInputContainer = styled.div`
-  z-index: 2;
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  white-space: nowrap;
 `;

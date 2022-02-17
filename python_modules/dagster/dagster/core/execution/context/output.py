@@ -6,8 +6,8 @@ from dagster.core.definitions.events import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
-    EventMetadataEntry,
     Materialization,
+    MetadataEntry,
     PartitionMetadataEntry,
 )
 from dagster.core.definitions.op_definition import OpDefinition
@@ -106,9 +106,7 @@ class OutputContext:
 
         self._events: List["DagsterEvent"] = []
         self._user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]] = []
-        self._metadata_entries: Optional[
-            List[Union[EventMetadataEntry, PartitionMetadataEntry]]
-        ] = None
+        self._metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None
 
     def __enter__(self):
         if self._resources_cm:
@@ -482,19 +480,19 @@ class OutputContext:
                 def handle_output(self, context, obj):
                     context.add_output_metadata({"foo": "bar"})
         """
-        from dagster.core.definitions.event_metadata import parse_metadata
+        from dagster.core.definitions.metadata import normalize_metadata
 
-        self._metadata_entries = parse_metadata(metadata, [])
+        self._metadata_entries = normalize_metadata(metadata, [])
 
     def get_logged_metadata_entries(
         self,
-    ) -> List[Union[EventMetadataEntry, PartitionMetadataEntry]]:
+    ) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
         """Get the list of metadata entries that have been logged for use with this output."""
         return self._metadata_entries or []
 
     def consume_logged_metadata_entries(
         self,
-    ) -> List[Union[EventMetadataEntry, PartitionMetadataEntry]]:
+    ) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
         """Pops and yields all user-generated metadata entries that have been recorded from this context.
 
         If consume_logged_metadata_entries has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_logged_metadata_entries has been called, it will yield all events since the last time consume_logged_metadata_entries was called. Designed for internal use. Users should never need to invoke this method.

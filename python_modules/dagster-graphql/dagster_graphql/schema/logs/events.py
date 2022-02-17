@@ -9,8 +9,8 @@ from ...implementation.fetch_runs import get_run_by_id, get_step_stats
 from ...implementation.loader import BatchRunLoader
 from ..asset_key import GrapheneAssetKey, GrapheneAssetLineageInfo
 from ..errors import GraphenePythonError, GrapheneRunNotFoundError
+from ..metadata import GrapheneEventMetadataEntry
 from ..runs import GrapheneStepEventStatus
-from ..table import GrapheneTable, GrapheneTableSchema
 from ..util import non_null_list
 from .log_level import GrapheneLogLevel
 
@@ -26,14 +26,6 @@ class GrapheneMessageEvent(graphene.Interface):
 
     class Meta:
         name = "MessageEvent"
-
-
-class GrapheneEventMetadataEntry(graphene.Interface):
-    label = graphene.NonNull(graphene.String)
-    description = graphene.String()
-
-    class Meta:
-        name = "EventMetadataEntry"
 
 
 class GrapheneDisplayableEvent(graphene.Interface):
@@ -160,110 +152,6 @@ class GrapheneExecutionStepSkippedEvent(graphene.ObjectType):
     class Meta:
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent)
         name = "ExecutionStepSkippedEvent"
-
-
-class GrapheneEventPathMetadataEntry(graphene.ObjectType):
-    path = graphene.NonNull(graphene.String)
-
-    class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
-        name = "EventPathMetadataEntry"
-
-
-class GrapheneEventTableMetadataEntry(graphene.ObjectType):
-    table = graphene.NonNull(GrapheneTable)
-
-    class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
-        name = "EventTableMetadataEntry"
-
-
-class GrapheneEventTableSchemaMetadataEntry(graphene.ObjectType):
-
-    schema = graphene.NonNull(GrapheneTableSchema)
-
-    class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
-        name = "EventTableSchemaMetadataEntry"
-
-
-class GrapheneEventJsonMetadataEntry(graphene.ObjectType):
-    jsonString = graphene.NonNull(graphene.String)
-
-    class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
-        name = "EventJsonMetadataEntry"
-
-
-class GrapheneEventTextMetadataEntry(graphene.ObjectType):
-    text = graphene.NonNull(graphene.String)
-
-    class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
-        name = "EventTextMetadataEntry"
-
-
-class GrapheneEventUrlMetadataEntry(graphene.ObjectType):
-    url = graphene.NonNull(graphene.String)
-
-    class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
-        name = "EventUrlMetadataEntry"
-
-
-class GrapheneEventMarkdownMetadataEntry(graphene.ObjectType):
-    md_str = graphene.NonNull(graphene.String)
-
-    class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
-        name = "EventMarkdownMetadataEntry"
-
-
-class GrapheneEventPythonArtifactMetadataEntry(graphene.ObjectType):
-    module = graphene.NonNull(graphene.String)
-    name = graphene.NonNull(graphene.String)
-
-    class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
-        name = "EventPythonArtifactMetadataEntry"
-
-
-class GrapheneEventFloatMetadataEntry(graphene.ObjectType):
-    floatValue = graphene.Field(graphene.Float)
-
-    class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
-        name = "EventFloatMetadataEntry"
-
-
-class GrapheneEventIntMetadataEntry(graphene.ObjectType):
-    intValue = graphene.Field(
-        graphene.Int, description="Nullable to allow graceful degrade on > 32 bit numbers"
-    )
-    intRepr = graphene.NonNull(
-        graphene.String,
-        description="String representation of the int to support greater than 32 bit",
-    )
-
-    class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
-        name = "EventIntMetadataEntry"
-
-
-class GrapheneEventPipelineRunMetadataEntry(graphene.ObjectType):
-    runId = graphene.NonNull(graphene.String)
-
-    class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
-        name = "EventPipelineRunMetadataEntry"
-
-
-class GrapheneEventAssetMetadataEntry(graphene.ObjectType):
-    assetKey = graphene.NonNull(GrapheneAssetKey)
-
-    class Meta:
-        interfaces = (GrapheneEventMetadataEntry,)
-        name = "EventAssetMetadataEntry"
 
 
 class GrapheneObjectStoreOperationType(graphene.Enum):

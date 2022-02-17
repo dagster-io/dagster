@@ -7,6 +7,9 @@ metadata:
   labels:
     {{- include "dagster.labels" . | nindent 4 }}
     component: {{ include "dagster.dagit.componentName" . }}
+    {{- with .Values.dagit.deploymentLabels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
   annotations:
     {{- range $key, $value := .Values.dagit.annotations }}
     {{ $key }}: {{ $value | squote }}
@@ -22,6 +25,9 @@ spec:
       labels:
         {{- include "dagster.selectorLabels" . | nindent 8 }}
         component: {{ include "dagster.dagit.componentName" . }}
+        {{- with .Values.dagit.labels }}
+        {{- . | toYaml | nindent 8 }}
+        {{- end }}
       annotations:
         {{- if $userDeployments.enabled }}
         checksum/dagster-workspace: {{ include (print $.Template.BasePath "/configmap-workspace.yaml") . | sha256sum }}
@@ -97,6 +103,10 @@ spec:
               protocol: TCP
           resources:
             {{- toYaml .Values.dagit.resources | nindent 12 }}
+        {{- if .Values.dagit.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.dagit.readinessProbe | nindent 12 }}
+        {{- end }}
         {{- if .Values.dagit.livenessProbe }}
           livenessProbe:
             {{- toYaml .Values.dagit.livenessProbe | nindent 12 }}

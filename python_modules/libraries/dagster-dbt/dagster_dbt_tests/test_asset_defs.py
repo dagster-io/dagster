@@ -1,7 +1,7 @@
 import json
 from unittest.mock import MagicMock
 
-from dagster import AssetKey, EventMetadataEntry, ResourceDefinition
+from dagster import AssetKey, MetadataEntry, ResourceDefinition
 from dagster.core.asset_defs import build_assets_job
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 from dagster.utils import file_relative_path
@@ -66,8 +66,8 @@ def test_runtime_metadata_fn():
     ]
     assert len(materializations) == 4
     assert materializations[0].metadata_entries == [
-        EventMetadataEntry.text(dbt_assets[0].op.name, label="op_name"),
-        EventMetadataEntry.text(materializations[0].asset_key.path[0], label="dbt_model"),
+        MetadataEntry.text(dbt_assets[0].op.name, label="op_name"),
+        MetadataEntry.text(materializations[0].asset_key.path[0], label="dbt_model"),
     ]
 
 
