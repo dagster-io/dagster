@@ -19,10 +19,11 @@ def test_all():
 
 
 def test_deprecated_imports(monkeypatch):
-    Bar = object()
 
-    monkeypatch.setattr(dagster, "_DEPRECATED", {"Foo": ("Bar", Bar, "0.0.0")}, raising=True)
-    with pytest.warns(DeprecationWarning, match=re.escape('"Foo" is deprecated')):
-        from dagster import Foo  # pylint: disable=no-name-in-module
+    # Using `EventMetadataEntry` as a standin for the rest since monkeypatch does not work on 3.6
+    from dagster import MetadataEntry
 
-    assert Foo is Bar
+    with pytest.warns(DeprecationWarning, match=re.escape('"EventMetadataEntry" is deprecated')):
+        from dagster import EventMetadataEntry  # pylint: disable=no-name-in-module
+
+    assert EventMetadataEntry is MetadataEntry
