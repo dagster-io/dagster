@@ -1,4 +1,5 @@
 import sys
+import typing
 
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
@@ -240,7 +241,7 @@ from dagster.core.types.python_set import Set
 from dagster.core.types.python_tuple import Tuple
 from dagster.utils import file_relative_path
 from dagster.utils.alert import make_email_on_run_failure_sensor
-from dagster.utils.backcompat import ExperimentalWarning
+from dagster.utils.backcompat import ExperimentalWarning, rename_warning
 from dagster.utils.log import get_dagster_logger
 from dagster.utils.partitions import (
     create_offset_partition_selector,
@@ -258,40 +259,92 @@ from .version import __version__
 
 from dagster.config.source import BoolSource, StringSource, IntSource  # isort:skip
 
-# DEPRECATIONS
-# TODO: find a way to add warnings
-EventMetadataEntry = MetadataEntry
-EventMetadata = MetadataValue
-TextMetadataEntryData = TextMetadataValue
-UrlMetadataEntryData = UrlMetadataValue
-PathMetadataEntryData = PathMetadataValue
-JsonMetadataEntryData = JsonMetadataValue
-MarkdownMetadataEntryData = MarkdownMetadataValue
-PythonArtifactMetadataEntryData = PythonArtifactMetadataValue
-FloatMetadataEntryData = FloatMetadataValue
-IntMetadataEntryData = IntMetadataValue
-DagsterPipelineRunMetadataEntryData = DagsterPipelineRunMetadataValue
-DagsterAssetMetadataEntryData = DagsterAssetMetadataValue
-TableMetadataEntryData = TableMetadataValue
-TableSchemaMetadataEntryData = TableSchemaMetadataValue
+# ########################
+# ##### DEPRECATED ALIASES
+# ########################
 
+# NOTE: Unfortunately we have to declare deprecated aliases twice-- the top
+# level declaration informs pylint that the module contains the attribute (this
+# prevents generating noisy lint errors for users), but the entry in
+# `_DEPRECATED` is required  for us to generate the deprecation warning. Note
+# that the typing.Annotated functionality introduced in Python 3.9 (or
+# available through the `typing-extensions` package) would allow us to avoid
+# the double declaration, e.g.:
+#
+# EventMetadataEntry: Annotated[Type[MetadataEntry], MetadataEntry, "0.15.0"]
+
+EventMetadataEntry: typing.Type[MetadataEntry]
+EventMetadata: typing.Type[MetadataValue]
+TextMetadataEntryData: typing.Type[TextMetadataValue]
+UrlMetadataEntryData: typing.Type[UrlMetadataValue]
+PathMetadataEntryData: typing.Type[PathMetadataValue]
+JsonMetadataEntryData: typing.Type[JsonMetadataValue]
+MarkdownMetadataEntryData: typing.Type[MarkdownMetadataValue]
+PythonArtifactMetadataEntryData: typing.Type[PythonArtifactMetadataValue]
+FloatMetadataEntryData: typing.Type[FloatMetadataValue]
+IntMetadataEntryData: typing.Type[IntMetadataValue]
+DagsterPipelineRunMetadataEntryData: typing.Type[DagsterPipelineRunMetadataValue]
+DagsterAssetMetadataEntryData: typing.Type[DagsterAssetMetadataValue]
+TableMetadataEntryData: typing.Type[TableMetadataValue]
+TableSchemaMetadataEntryData: typing.Type[TableSchemaMetadataValue]
+
+_DEPRECATED = {
+    "EventMetadataEntry": ("MetadataEntry", MetadataEntry, "0.15.0"),
+    "EventMetadata": ("MetadataValue", MetadataValue, "0.15.0"),
+    "TextMetadataEntryData": ("TextMetadataValue", TextMetadataValue, "0.15.0"),
+    "UrlMetadataEntryData": ("UrlMetadataValue", UrlMetadataValue, "0.15.0"),
+    "PathMetadataEntryData": ("PathMetadataValue", PathMetadataValue, "0.15.0"),
+    "JsonMetadataEntryData": ("JsonMetadataValue", JsonMetadataValue, "0.15.0"),
+    "MarkdownMetadataEntryData": ("MarkdownMetadataValue", MarkdownMetadataValue, "0.15.0"),
+    "PythonArtifactMetadataEntryData": (
+        "PythonArtifactMetadataValue",
+        PythonArtifactMetadataValue,
+        "0.15.0",
+    ),
+    "FloatMetadataEntryData": ("FloatMetadataValue", FloatMetadataValue, "0.15.0"),
+    "IntMetadataEntryData": ("IntMetadataValue", IntMetadataValue, "0.15.0"),
+    "DagsterPipelineRunMetadataEntryData": (
+        "DagsterPipelineRunMetadataValue",
+        DagsterPipelineRunMetadataValue,
+        "0.15.0",
+    ),
+    "DagsterAssetMetadataEntryData": (
+        "DagsterAssetMetadataValue",
+        DagsterAssetMetadataValue,
+        "0.15.0",
+    ),
+    "TableMetadataEntryData": ("TableMetadataValue", TableMetadataValue, "0.15.0"),
+    "TableSchemaMetadataEntryData": (
+        "TableSchemaMetadataValue",
+        TableSchemaMetadataValue,
+        "0.15.0",
+    ),
+}
+
+
+def __getattr__(name):
+    if name in _DEPRECATED:
+        new_name, value, breaking_version = _DEPRECATED[name]
+        stacklevel = 3 if sys.version_info >= (3, 7) else 4
+        rename_warning(new_name, name, breaking_version, stacklevel=stacklevel)
+        return value
+    else:
+        raise AttributeError("module '{}' has no attribute '{}'".format(__name__, name))
+
+
+def __dir__():
+    return sorted(list(__all__) + list(_DEPRECATED.keys()))
+
+from pep562 import pep562
+
+# Backports PEP 562, which allows for override of __getattr__ and __dir__, to this module. PEP 562
+# was introduced in Python 3.7, so the `pep562` call here is a no-op for 3.7+.
+# See:
+#  PEP 562: https://www.python.org/dev/peps/pep-0562/
+#  PEP 562 backport package: https://github.com/facelessuser/pep562
+pep562(__name__)
 
 __all__ = [
-    # DEPRECATIONS
-    "EventMetadataEntry",
-    "EventMetadata",
-    "TextMetadataEntryData",
-    "UrlMetadataEntryData",
-    "PathMetadataEntryData",
-    "JsonMetadataEntryData",
-    "MarkdownMetadataEntryData",
-    "PythonArtifactMetadataEntryData",
-    "FloatMetadataEntryData",
-    "IntMetadataEntryData",
-    "DagsterPipelineRunMetadataEntryData",
-    "DagsterAssetMetadataEntryData",
-    "TableMetadataEntryData",
-    "TableSchemaMetadataEntryData",
     # Definition
     "AssetGroup",
     "AssetKey",
