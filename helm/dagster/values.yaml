@@ -791,12 +791,18 @@ ingress:
 
   annotations: {}
 
+  # Specify the IngressClass used to implement this ingress.
+  #
+  # See https://kubernetes.io/blog/2020/04/02/improvements-to-the-ingress-api-in-kubernetes-1.18/#specifying-the-class-of-an-ingress
+  ingressClassName: ~
+
   dagit:
     # Ingress hostname for Dagit e.g. dagit.mycompany.com
     # This variable allows customizing the route pattern in the ingress. Some
     # ingress controllers may only support "/", whereas some may need "/*".
     # NOTE: Dagit doesn't yet support hosting on a path, e.g. mycompany.com/dagit.
     path: "/*"
+    pathType: ImplementationSpecific
     # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
     # See: https://github.com/dagster-io/dagster/issues/2073
     host: ""
@@ -810,6 +816,7 @@ ingress:
     #
     # precedingPaths:
     #   - path: "/*"
+    #     pathType: ImplementationSpecific
     #     serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
     precedingPaths: []
@@ -819,6 +826,7 @@ ingress:
     #
     # succeedingPaths:
     #   - path: "/*"
+    #     pathType: ImplementationSpecific
     #     serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
     succeedingPaths: []
@@ -829,6 +837,7 @@ ingress:
     # ingress controllers may only support "/", whereas some may need "/*".
     # NOTE: Dagit doesn't yet support hosting on a path, e.g. mycompany.com/dagit.
     path: "/*"
+    pathType: ImplementationSpecific
     # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
     # See: https://github.com/dagster-io/dagster/issues/2073
     host: ""
@@ -842,6 +851,7 @@ ingress:
     #
     # precedingPaths:
     #   - path: "/*"
+    #     pathType: ImplementationSpecific
     #     serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
     precedingPaths: []
@@ -851,6 +861,7 @@ ingress:
     #
     # succeedingPaths:
     #   - path: "/*"
+    #     pathType: ImplementationSpecific
     #     serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
     succeedingPaths: []
@@ -861,6 +872,7 @@ ingress:
     # if path is '/flower', Flower will be accessible at 'mycompany.com/flower'
     # NOTE: do NOT keep trailing slash. For root configuration, set as empty string
     path: ""
+    pathType: ImplementationSpecific
 
     tls:
       enabled: false
@@ -871,6 +883,7 @@ ingress:
     #
     # precedingPaths:
     #   - path: "/*"
+    #     pathType: ImplementationSpecific
     #     serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
     precedingPaths: []
@@ -880,6 +893,7 @@ ingress:
     #
     # succeedingPaths:
     #   - path: "/*"
+    #     pathType: ImplementationSpecific
     #     serviceName: "ssl-redirect"
     #     servicePort: "use-annotation"
     succeedingPaths: []

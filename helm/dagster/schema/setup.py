@@ -20,8 +20,8 @@ setup(
     install_requires=["click", "pydantic"],
     extras_require={
         "test": [
-            # remove pin once https://github.com/dagster-io/dagster/issues/6050 is resolved
-            "kubernetes<22.6.0",
+            # remove pin once minimum supported kubernetes version is 1.19
+            "kubernetes<22.6.0"
         ]
     },
     entry_points={
