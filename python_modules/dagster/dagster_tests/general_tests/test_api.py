@@ -11,6 +11,5 @@ def test_all():
         if (
             not exported.startswith("_")
             and not inspect.ismodule(getattr(dagster, exported))
-            and not exported in dagster._DEPRECATED
         ):
             assert exported in dagster.__all__

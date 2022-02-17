@@ -233,7 +233,7 @@ from dagster.core.types.python_set import Set
 from dagster.core.types.python_tuple import Tuple
 from dagster.utils import file_relative_path
 from dagster.utils.alert import make_email_on_run_failure_sensor
-from dagster.utils.backcompat import ExperimentalWarning, rename_warning
+from dagster.utils.backcompat import ExperimentalWarning
 from dagster.utils.log import get_dagster_logger
 from dagster.utils.partitions import (
     create_offset_partition_selector,
@@ -246,7 +246,6 @@ from dagster.utils.test import (
     execute_solid_within_pipeline,
     execute_solids_within_pipeline,
 )
-from pep562 import pep562
 
 from .version import __version__
 
