@@ -373,10 +373,9 @@ class EmrPySparkStepLauncher(StepLauncher):
         records = parse_hadoop_log4j_records(stderr_log)
         for record in records:
             if record.level:
-                log._log(  # pylint: disable=protected-access
-                    record.level,
-                    "".join(["Spark Driver stderr: ", record.logger, ": ", record.message]),
-                    {},
+                log.log(
+                    level=record.level,
+                    msg="".join(["Spark Driver stderr: ", record.logger, ": ", record.message]),
                 )
             else:
                 log.debug(f"Spark Driver stderr: {record.message}")
