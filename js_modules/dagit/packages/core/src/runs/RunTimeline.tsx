@@ -529,13 +529,11 @@ const RunTimelineRow = ({
   );
 };
 
-const NoRunsTimeline = ({top}: {top: number}) => {
-  return (
-    <Box flex={{justifyContent: 'center', alignItems: 'center'}} padding={24}>
-      No runs or upcoming runs found for this time window.
-    </Box>
-  );
-};
+const NoRunsTimeline = () => (
+  <Box flex={{justifyContent: 'center', alignItems: 'center'}} padding={24}>
+    No runs or upcoming runs found for this time window.
+  </Box>
+);
 
 const Timeline = styled.div<{$height: number}>`
   ${({$height}) => `height: ${$height}px;`}
