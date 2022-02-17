@@ -11,7 +11,7 @@ from dagster.core.definitions import (
     PipelineDefinition,
     SolidDefinition,
 )
-from dagster.core.definitions.event_metadata import EventMetadataEntry
+from dagster.core.definitions.metadata import MetadataEntry
 from dagster.serdes import whitelist_for_serdes
 from dagster.serdes.serdes import DefaultNamedTupleSerializer
 
@@ -35,7 +35,7 @@ class InputDefSnap(
             ("name", str),
             ("dagster_type_key", str),
             ("description", Optional[str]),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
         ],
     )
 ):
@@ -44,7 +44,7 @@ class InputDefSnap(
         name: str,
         dagster_type_key: str,
         description: Optional[str],
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
     ):
         return super(InputDefSnap, cls).__new__(
             cls,
@@ -52,7 +52,7 @@ class InputDefSnap(
             dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
             description=check.opt_str_param(description, "description"),
             metadata_entries=check.opt_list_param(
-                metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+                metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
         )
 
@@ -72,7 +72,7 @@ class OutputDefSnap(
             ("dagster_type_key", str),
             ("description", Optional[str]),
             ("is_required", bool),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
             ("is_dynamic", bool),
         ],
     )
@@ -83,7 +83,7 @@ class OutputDefSnap(
         dagster_type_key: str,
         description: Optional[str],
         is_required: bool,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
         is_dynamic: bool = False,
     ):
         return super(OutputDefSnap, cls).__new__(
@@ -93,7 +93,7 @@ class OutputDefSnap(
             description=check.opt_str_param(description, "description"),
             is_required=check.bool_param(is_required, "is_required"),
             metadata_entries=check.opt_list_param(
-                metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+                metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
             is_dynamic=check.bool_param(is_dynamic, "is_dynamic"),
         )

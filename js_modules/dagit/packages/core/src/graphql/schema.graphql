@@ -2052,107 +2052,6 @@ enum LocationStateChangeEventType {
   LOCATION_ERROR
 }
 
-type EventPipelineRunMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  runId: String!
-}
-
-type EventAssetMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  assetKey: AssetKey!
-}
-
-type EventTableSchemaMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  schema: TableSchema!
-}
-
-type TableSchema {
-  constraints: TableConstraints
-  columns: [TableColumn!]!
-}
-
-type TableConstraints {
-  other: [String!]!
-}
-
-type TableColumn {
-  name: String!
-  type: String!
-  description: String
-  constraints: TableColumnConstraints!
-}
-
-type TableColumnConstraints {
-  nullable: Boolean!
-  unique: Boolean!
-  other: [String!]!
-}
-
-type EventTableMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  table: Table!
-}
-
-type Table {
-  schema: TableSchema!
-  records: [String!]!
-}
-
-type EventFloatMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  floatValue: Float
-}
-
-type EventIntMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  intValue: Int
-  intRepr: String!
-}
-
-type EventJsonMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  jsonString: String!
-}
-
-type EventMarkdownMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  mdStr: String!
-}
-
-type EventPathMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  path: String!
-}
-
-type EventPythonArtifactMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  module: String!
-  name: String!
-}
-
-type EventTextMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  text: String!
-}
-
-type EventUrlMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  url: String!
-}
-
 type MissingRunIdErrorEvent {
   invalidRunId: String!
 }
@@ -2427,6 +2326,107 @@ input StepExecution {
 input StepOutputHandle {
   stepKey: String!
   outputName: String!
+}
+
+type EventTableSchemaMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  schema: TableSchema!
+}
+
+type TableSchema {
+  constraints: TableConstraints
+  columns: [TableColumn!]!
+}
+
+type TableConstraints {
+  other: [String!]!
+}
+
+type TableColumn {
+  name: String!
+  type: String!
+  description: String
+  constraints: TableColumnConstraints!
+}
+
+type TableColumnConstraints {
+  nullable: Boolean!
+  unique: Boolean!
+  other: [String!]!
+}
+
+type EventTableMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  table: Table!
+}
+
+type Table {
+  schema: TableSchema!
+  records: [String!]!
+}
+
+type EventFloatMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  floatValue: Float
+}
+
+type EventIntMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  intValue: Int
+  intRepr: String!
+}
+
+type EventJsonMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  jsonString: String!
+}
+
+type EventMarkdownMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  mdStr: String!
+}
+
+type EventPathMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  path: String!
+}
+
+type EventPythonArtifactMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  module: String!
+  name: String!
+}
+
+type EventTextMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  text: String!
+}
+
+type EventUrlMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  url: String!
+}
+
+type EventPipelineRunMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  runId: String!
+}
+
+type EventAssetMetadataEntry implements EventMetadataEntry {
+  label: String!
+  description: String
+  assetKey: AssetKey!
 }
 
 type RunGroups {

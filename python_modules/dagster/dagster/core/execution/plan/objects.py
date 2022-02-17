@@ -2,7 +2,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, List, NamedTuple, Optional
 
 from dagster import check
-from dagster.core.definitions.event_metadata import EventMetadataEntry
+from dagster.core.definitions.metadata import MetadataEntry
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.types import ExcInfo
@@ -19,7 +19,7 @@ class TypeCheckData(
             ("success", bool),
             ("label", str),
             ("description", Optional[str]),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
         ],
     )
 ):
@@ -30,7 +30,7 @@ class TypeCheckData(
             label=check.str_param(label, "label"),
             description=check.opt_str_param(description, "description"),
             metadata_entries=check.opt_list_param(
-                metadata_entries, metadata_entries, of_type=EventMetadataEntry
+                metadata_entries, metadata_entries, of_type=MetadataEntry
             ),
         )
 
@@ -42,7 +42,7 @@ class UserFailureData(
         [
             ("label", str),
             ("description", Optional[str]),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
         ],
     )
 ):
@@ -52,7 +52,7 @@ class UserFailureData(
             label=check.str_param(label, "label"),
             description=check.opt_str_param(description, "description"),
             metadata_entries=check.opt_list_param(
-                metadata_entries, metadata_entries, of_type=EventMetadataEntry
+                metadata_entries, metadata_entries, of_type=MetadataEntry
             ),
         )
 

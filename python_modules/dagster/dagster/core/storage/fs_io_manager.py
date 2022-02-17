@@ -4,8 +4,8 @@ import pickle
 from dagster import check
 from dagster.config import Field
 from dagster.config.source import StringSource
-from dagster.core.definitions.event_metadata import EventMetadataEntry
 from dagster.core.definitions.events import AssetKey, AssetMaterialization
+from dagster.core.definitions.metadata import MetadataEntry
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.context.input import InputContext
 from dagster.core.execution.context.output import OutputContext
@@ -192,7 +192,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
 
         return AssetMaterialization(
             asset_key=AssetKey([context.pipeline_name, context.step_key, context.name]),
-            metadata_entries=[EventMetadataEntry.fspath(os.path.abspath(filepath))],
+            metadata_entries=[MetadataEntry.fspath(os.path.abspath(filepath))],
         )
 
     def load_input(self, context):

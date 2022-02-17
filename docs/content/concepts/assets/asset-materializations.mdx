@@ -104,7 +104,7 @@ There are a variety of types of metadata that can be associated with a materiali
 #### Example: Op body
 
 ```python file=concepts/assets/materialization_ops.py startafter=start_materialization_ops_marker_2 endbefore=end_materialization_ops_marker_2
-from dagster import op, AssetMaterialization, Output, EventMetadata
+from dagster import op, AssetMaterialization, Output, MetadataValue
 
 
 @op
@@ -116,8 +116,8 @@ def my_metadata_materialization_op(context):
         description="Persisted result to storage",
         metadata={
             "text_metadata": "Text-based metadata for this event",
-            "path": EventMetadata.path(remote_storage_path),
-            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "path": MetadataValue.path(remote_storage_path),
+            "dashboard_url": MetadataValue.url("http://mycoolsite.com/url_for_my_data"),
             "size (bytes)": calculate_bytes(df),
         },
     )
@@ -220,8 +220,8 @@ class PandasCsvIOManagerWithOutputAsset(IOManager):
 
         obj.to_csv(file_path)
 
-        yield EventMetadataEntry.int(obj.shape[0], label="number of rows")
-        yield EventMetadataEntry.float(obj["some_column"].mean(), "some_column mean")
+        yield MetadataEntry.int(obj.shape[0], label="number of rows")
+        yield MetadataEntry.float(obj["some_column"].mean(), "some_column mean")
 
     def get_output_asset_key(self, context):
         file_path = os.path.join("my_base_dir", context.step_key, context.name)
@@ -249,8 +249,8 @@ class PandasCsvIOManagerWithOutputAssetPartitions(IOManager):
 
         obj.to_csv(file_path)
 
-        yield EventMetadataEntry.int(obj.shape[0], label="number of rows")
-        yield EventMetadataEntry.float(obj["some_column"].mean(), "some_column mean")
+        yield MetadataEntry.int(obj.shape[0], label="number of rows")
+        yield MetadataEntry.float(obj["some_column"].mean(), "some_column mean")
 
     def get_output_asset_key(self, context):
         file_path = os.path.join("my_base_dir", context.step_key, context.name)

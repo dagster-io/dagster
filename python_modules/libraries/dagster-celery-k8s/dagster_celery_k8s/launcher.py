@@ -1,7 +1,7 @@
 import sys
 
 import kubernetes
-from dagster import DagsterInvariantViolationError, EventMetadataEntry, check
+from dagster import DagsterInvariantViolationError, MetadataEntry, check
 from dagster.config.field import resolve_to_config_type
 from dagster.config.validate import process_config
 from dagster.core.events import EngineEventData
@@ -224,9 +224,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             run,
             EngineEventData(
                 [
-                    EventMetadataEntry.text(job_name, "Kubernetes Job name"),
-                    EventMetadataEntry.text(job_namespace, "Kubernetes Namespace"),
-                    EventMetadataEntry.text(run.run_id, "Run ID"),
+                    MetadataEntry.text(job_name, "Kubernetes Job name"),
+                    MetadataEntry.text(job_namespace, "Kubernetes Namespace"),
+                    MetadataEntry.text(run.run_id, "Run ID"),
                 ]
             ),
             cls=self.__class__,
@@ -238,9 +238,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             run,
             EngineEventData(
                 [
-                    EventMetadataEntry.text(job_name, "Kubernetes Job name"),
-                    EventMetadataEntry.text(job_namespace, "Kubernetes Namespace"),
-                    EventMetadataEntry.text(run.run_id, "Run ID"),
+                    MetadataEntry.text(job_name, "Kubernetes Job name"),
+                    MetadataEntry.text(job_namespace, "Kubernetes Namespace"),
+                    MetadataEntry.text(run.run_id, "Run ID"),
                 ]
             ),
             cls=self.__class__,

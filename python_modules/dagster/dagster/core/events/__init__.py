@@ -9,10 +9,10 @@ from dagster.core.definitions import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
-    EventMetadataEntry,
     ExpectationResult,
     HookDefinition,
     Materialization,
+    MetadataEntry,
     NodeHandle,
 )
 from dagster.core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
@@ -877,7 +877,7 @@ class DagsterEvent(
             resource_obj = resource_instances[resource_key]
             resource_time = resource_init_times[resource_key]
             metadata_entries.append(
-                EventMetadataEntry.python_artifact(
+                MetadataEntry.python_artifact(
                     resource_obj.__class__, resource_key, "Initialized in {}".format(resource_time)
                 )
             )
@@ -1022,7 +1022,7 @@ class DagsterEvent(
                 value_name=value_name,
                 address=object_store_operation_result.key,
                 metadata_entries=[
-                    EventMetadataEntry.path(object_store_operation_result.key, label="key")
+                    MetadataEntry.path(object_store_operation_result.key, label="key")
                 ],
                 version=object_store_operation_result.version,
                 mapping_key=object_store_operation_result.mapping_key,
@@ -1036,7 +1036,7 @@ class DagsterEvent(
         output_name: str,
         manager_key: str,
         message_override: Optional[str] = None,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
     ) -> "DagsterEvent":
         message = f'Handled output "{output_name}" using IO manager "{manager_key}"'
         return DagsterEvent.from_step(
@@ -1260,7 +1260,7 @@ class ObjectStoreOperationResultData(
         [
             ("op", ObjectStoreOperationType),
             ("value_name", Optional[str]),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
             ("address", Optional[str]),
             ("version", Optional[str]),
             ("mapping_key", Optional[str]),
@@ -1271,7 +1271,7 @@ class ObjectStoreOperationResultData(
         cls,
         op: ObjectStoreOperationType,
         value_name: Optional[str] = None,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
         address: Optional[str] = None,
         version: Optional[str] = None,
         mapping_key: Optional[str] = None,
@@ -1281,7 +1281,7 @@ class ObjectStoreOperationResultData(
             op=cast(ObjectStoreOperationType, check.str_param(op, "op")),
             value_name=check.opt_str_param(value_name, "value_name"),
             metadata_entries=check.opt_list_param(
-                metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+                metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
             address=check.opt_str_param(address, "address"),
             version=check.opt_str_param(version, "version"),
@@ -1294,7 +1294,7 @@ class EngineEventData(
     NamedTuple(
         "_EngineEventData",
         [
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
             ("error", Optional[SerializableErrorInfo]),
             ("marker_start", Optional[str]),
             ("marker_end", Optional[str]),
@@ -1307,7 +1307,7 @@ class EngineEventData(
     #
     def __new__(
         cls,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
         error: Optional[SerializableErrorInfo] = None,
         marker_start: Optional[str] = None,
         marker_end: Optional[str] = None,
@@ -1315,7 +1315,7 @@ class EngineEventData(
         return super(EngineEventData, cls).__new__(
             cls,
             metadata_entries=check.opt_list_param(
-                metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+                metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
             marker_start=check.opt_str_param(marker_start, "marker_start"),
@@ -1327,9 +1327,9 @@ class EngineEventData(
         pid: int, step_keys_to_execute: Optional[List[str]] = None, marker_end: Optional[str] = None
     ) -> "EngineEventData":
         return EngineEventData(
-            metadata_entries=[EventMetadataEntry.text(str(pid), "pid")]
+            metadata_entries=[MetadataEntry.text(str(pid), "pid")]
             + (
-                [EventMetadataEntry.text(str(step_keys_to_execute), "step_keys")]
+                [MetadataEntry.text(str(step_keys_to_execute), "step_keys")]
                 if step_keys_to_execute
                 else []
             ),
@@ -1341,9 +1341,9 @@ class EngineEventData(
         pid: int, step_keys_to_execute: Optional[List[str]] = None
     ) -> "EngineEventData":
         return EngineEventData(
-            metadata_entries=[EventMetadataEntry.text(str(pid), "pid")]
+            metadata_entries=[MetadataEntry.text(str(pid), "pid")]
             + (
-                [EventMetadataEntry.text(str(step_keys_to_execute), "step_keys")]
+                [MetadataEntry.text(str(step_keys_to_execute), "step_keys")]
                 if step_keys_to_execute
                 else []
             )
@@ -1352,7 +1352,7 @@ class EngineEventData(
     @staticmethod
     def interrupted(steps_interrupted: List[str]) -> "EngineEventData":
         return EngineEventData(
-            metadata_entries=[EventMetadataEntry.text(str(steps_interrupted), "steps_interrupted")]
+            metadata_entries=[MetadataEntry.text(str(steps_interrupted), "steps_interrupted")]
         )
 
     @staticmethod
@@ -1412,7 +1412,7 @@ class HandledOutputData(
         [
             ("output_name", str),
             ("manager_key", str),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
         ],
     )
 ):
@@ -1420,14 +1420,14 @@ class HandledOutputData(
         cls,
         output_name: str,
         manager_key: str,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
     ):
         return super(HandledOutputData, cls).__new__(
             cls,
             output_name=check.str_param(output_name, "output_name"),
             manager_key=check.str_param(manager_key, "manager_key"),
             metadata_entries=check.opt_list_param(
-                metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+                metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
         )
 

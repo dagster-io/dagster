@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, cast
 
 import pendulum
 from dagster import check
-from dagster.core.events import DagsterEvent, EngineEventData, EventMetadataEntry, log_step_event
+from dagster.core.events import DagsterEvent, EngineEventData, MetadataEntry, log_step_event
 from dagster.core.execution.context.system import PlanOrchestrationContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.plan.step import ExecutionStep
@@ -162,9 +162,7 @@ class StepDelegatingExecutor(Executor):
                             "run will be resumed",
                             EngineEventData(
                                 metadata_entries=[
-                                    EventMetadataEntry.text(
-                                        str(running_steps.keys()), "steps_in_flight"
-                                    )
+                                    MetadataEntry.text(str(running_steps.keys()), "steps_in_flight")
                                 ]
                             ),
                         )

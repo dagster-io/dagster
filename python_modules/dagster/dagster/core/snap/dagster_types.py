@@ -1,7 +1,7 @@
 from typing import Dict, List, NamedTuple, Optional, Set
 
 from dagster import check
-from dagster.core.definitions.event_metadata import EventMetadataEntry
+from dagster.core.definitions.metadata import MetadataEntry
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
@@ -75,7 +75,7 @@ class DagsterTypeSnap(
             ("type_param_keys", List[str]),
             ("loader_schema_key", Optional[str]),
             ("materializer_schema_key", Optional[str]),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
         ],
     )
 ):
@@ -106,6 +106,6 @@ class DagsterTypeSnap(
                 materializer_schema_key, "materializer_schema_key"
             ),
             metadata_entries=check.opt_list_param(
-                metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+                metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
         )

@@ -1,7 +1,7 @@
 import sys
 
 import kubernetes
-from dagster import EventMetadataEntry, Field, StringSource, check
+from dagster import Field, MetadataEntry, StringSource, check
 from dagster.cli.api import ExecuteRunArgs
 from dagster.core.events import EngineEventData
 from dagster.core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
@@ -260,9 +260,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             run,
             EngineEventData(
                 [
-                    EventMetadataEntry.text(job_name, "Kubernetes Job name"),
-                    EventMetadataEntry.text(self.job_namespace, "Kubernetes Namespace"),
-                    EventMetadataEntry.text(run.run_id, "Run ID"),
+                    MetadataEntry.text(job_name, "Kubernetes Job name"),
+                    MetadataEntry.text(self.job_namespace, "Kubernetes Namespace"),
+                    MetadataEntry.text(run.run_id, "Run ID"),
                 ]
             ),
             cls=self.__class__,
@@ -274,9 +274,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             run,
             EngineEventData(
                 [
-                    EventMetadataEntry.text(job_name, "Kubernetes Job name"),
-                    EventMetadataEntry.text(self.job_namespace, "Kubernetes Namespace"),
-                    EventMetadataEntry.text(run.run_id, "Run ID"),
+                    MetadataEntry.text(job_name, "Kubernetes Job name"),
+                    MetadataEntry.text(self.job_namespace, "Kubernetes Namespace"),
+                    MetadataEntry.text(run.run_id, "Run ID"),
                 ]
             ),
             cls=self.__class__,

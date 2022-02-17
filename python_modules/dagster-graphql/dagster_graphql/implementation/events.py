@@ -1,20 +1,20 @@
 from math import isnan
 
 from dagster import check, seven
-from dagster.core.definitions.event_metadata import (
-    DagsterAssetMetadataEntryData,
-    DagsterPipelineRunMetadataEntryData,
-    EventMetadataEntry,
-    FloatMetadataEntryData,
-    IntMetadataEntryData,
-    JsonMetadataEntryData,
-    MarkdownMetadataEntryData,
-    PathMetadataEntryData,
-    PythonArtifactMetadataEntryData,
-    TableMetadataEntryData,
-    TableSchemaMetadataEntryData,
-    TextMetadataEntryData,
-    UrlMetadataEntryData,
+from dagster.core.definitions.metadata import (
+    DagsterAssetMetadataValue,
+    DagsterPipelineRunMetadataValue,
+    FloatMetadataValue,
+    IntMetadataValue,
+    JsonMetadataValue,
+    MarkdownMetadataValue,
+    MetadataEntry,
+    PathMetadataValue,
+    PythonArtifactMetadataValue,
+    TableMetadataValue,
+    TableSchemaMetadataValue,
+    TextMetadataValue,
+    UrlMetadataValue,
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
@@ -26,7 +26,7 @@ MIN_INT = -2147483648
 
 
 def iterate_metadata_entries(metadata_entries):
-    from ..schema.logs.events import (
+    from ..schema.metadata import (
         GrapheneEventFloatMetadataEntry,
         GrapheneEventIntMetadataEntry,
         GrapheneEventJsonMetadataEntry,
@@ -41,46 +41,46 @@ def iterate_metadata_entries(metadata_entries):
         GrapheneEventTableSchemaMetadataEntry,
     )
 
-    check.list_param(metadata_entries, "metadata_entries", of_type=EventMetadataEntry)
+    check.list_param(metadata_entries, "metadata_entries", of_type=MetadataEntry)
     for metadata_entry in metadata_entries:
-        if isinstance(metadata_entry.entry_data, PathMetadataEntryData):
+        if isinstance(metadata_entry.entry_data, PathMetadataValue):
             yield GrapheneEventPathMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 path=metadata_entry.entry_data.path,
             )
-        elif isinstance(metadata_entry.entry_data, JsonMetadataEntryData):
+        elif isinstance(metadata_entry.entry_data, JsonMetadataValue):
             yield GrapheneEventJsonMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 jsonString=seven.json.dumps(metadata_entry.entry_data.data),
             )
-        elif isinstance(metadata_entry.entry_data, TextMetadataEntryData):
+        elif isinstance(metadata_entry.entry_data, TextMetadataValue):
             yield GrapheneEventTextMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 text=metadata_entry.entry_data.text,
             )
-        elif isinstance(metadata_entry.entry_data, UrlMetadataEntryData):
+        elif isinstance(metadata_entry.entry_data, UrlMetadataValue):
             yield GrapheneEventUrlMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 url=metadata_entry.entry_data.url,
             )
-        elif isinstance(metadata_entry.entry_data, MarkdownMetadataEntryData):
+        elif isinstance(metadata_entry.entry_data, MarkdownMetadataValue):
             yield GrapheneEventMarkdownMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 md_str=metadata_entry.entry_data.md_str,
             )
-        elif isinstance(metadata_entry.entry_data, PythonArtifactMetadataEntryData):
+        elif isinstance(metadata_entry.entry_data, PythonArtifactMetadataValue):
             yield GrapheneEventPythonArtifactMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 module=metadata_entry.entry_data.module,
                 name=metadata_entry.entry_data.name,
             )
-        elif isinstance(metadata_entry.entry_data, FloatMetadataEntryData):
+        elif isinstance(metadata_entry.entry_data, FloatMetadataValue):
             float_val = metadata_entry.entry_data.value
 
             # coerce NaN to null
@@ -92,7 +92,7 @@ def iterate_metadata_entries(metadata_entries):
                 description=metadata_entry.description,
                 floatValue=float_val,
             )
-        elif isinstance(metadata_entry.entry_data, IntMetadataEntryData):
+        elif isinstance(metadata_entry.entry_data, IntMetadataValue):
             # coerce > 32 bit ints to null
             int_val = None
             if MIN_INT <= metadata_entry.entry_data.value <= MAX_INT:
@@ -105,19 +105,19 @@ def iterate_metadata_entries(metadata_entries):
                 # make string representation available to allow for > 32bit int
                 intRepr=str(metadata_entry.entry_data.value),
             )
-        elif isinstance(metadata_entry.entry_data, DagsterPipelineRunMetadataEntryData):
+        elif isinstance(metadata_entry.entry_data, DagsterPipelineRunMetadataValue):
             yield GrapheneEventPipelineRunMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 runId=metadata_entry.entry_data.run_id,
             )
-        elif isinstance(metadata_entry.entry_data, DagsterAssetMetadataEntryData):
+        elif isinstance(metadata_entry.entry_data, DagsterAssetMetadataValue):
             yield GrapheneEventAssetMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 assetKey=metadata_entry.entry_data.asset_key,
             )
-        elif isinstance(metadata_entry.entry_data, TableMetadataEntryData):
+        elif isinstance(metadata_entry.entry_data, TableMetadataValue):
             yield GrapheneEventTableMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
@@ -129,7 +129,7 @@ def iterate_metadata_entries(metadata_entries):
                     ],
                 ),
             )
-        elif isinstance(metadata_entry.entry_data, TableSchemaMetadataEntryData):
+        elif isinstance(metadata_entry.entry_data, TableSchemaMetadataValue):
             yield GrapheneEventTableSchemaMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,

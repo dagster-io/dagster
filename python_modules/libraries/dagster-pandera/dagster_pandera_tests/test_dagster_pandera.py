@@ -4,8 +4,8 @@ import pandas as pd
 import pandera as pa
 import pytest
 from dagster import DagsterType, TypeCheck, check_dagster_type
-from dagster.core.definitions.event_metadata import TableSchemaMetadataEntryData
-from dagster.core.definitions.event_metadata.table import (
+from dagster.core.definitions.metadata import TableSchemaMetadataValue
+from dagster.core.definitions.metadata.table import (
     TableColumn,
     TableColumnConstraints,
     TableConstraints,
@@ -119,7 +119,7 @@ def test_pandera_schema_to_dagster_type(schema):
     assert isinstance(dagster_type, DagsterType)
     assert len(dagster_type.metadata_entries) == 1
     schema_entry = dagster_type.metadata_entries[0]
-    assert isinstance(schema_entry.entry_data, TableSchemaMetadataEntryData)
+    assert isinstance(schema_entry.entry_data, TableSchemaMetadataValue)
     assert schema_entry.entry_data.schema == TableSchema(
         constraints=TableConstraints(other=["sum(a) > sum(b)"]),
         columns=[

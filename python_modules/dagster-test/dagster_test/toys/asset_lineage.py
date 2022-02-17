@@ -8,10 +8,10 @@ import pandas as pd
 from dagster import (
     Array,
     AssetKey,
-    EventMetadata,
-    EventMetadataEntry,
     ExperimentalWarning,
     Field,
+    MetadataEntry,
+    MetadataValue,
     ModeDefinition,
     Output,
     OutputDefinition,
@@ -66,7 +66,7 @@ def metadata_for_actions(df):
     return {
         "min_score": int(df["score"].min()),
         "max_score": int(df["score"].max()),
-        "sample rows": EventMetadata.md(df[:5].to_markdown()),
+        "sample rows": MetadataValue.md(df[:5].to_markdown()),
     }
 
 
@@ -79,8 +79,8 @@ class MyDatabaseIOManager(PickledObjectFilesystemIOManager):
     def handle_output(self, context, obj):
         super().handle_output(context, obj)
         # can pretend this actually came from a library call
-        yield EventMetadataEntry(
-            label="num rows written to db", description=None, entry_data=EventMetadata.int(len(obj))
+        yield MetadataEntry(
+            label="num rows written to db", description=None, entry_data=MetadataValue.int(len(obj))
         )
 
     def get_output_asset_key(self, context):
@@ -159,7 +159,7 @@ def best_n_actions(n, action_type):
         df = df.nlargest(n, "score")
         return Output(
             df,
-            metadata={"data": EventMetadata.md(df.to_markdown())},
+            metadata={"data": MetadataValue.md(df.to_markdown())},
         )
 
     return _best_n_actions
@@ -179,7 +179,7 @@ top_10_comments = best_n_actions(10, "comments")
 )
 def daily_top_action(_, df1, df2):
     df = pd.concat([df1, df2]).nlargest(1, "score")
-    return Output(df, metadata={"data": EventMetadata.md(df.to_markdown())})
+    return Output(df, metadata={"data": MetadataValue.md(df.to_markdown())})
 
 
 @pipeline(mode_defs=[ModeDefinition(resource_defs={"my_db_io_manager": my_db_io_manager})])
