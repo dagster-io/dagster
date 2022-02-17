@@ -142,6 +142,9 @@ def load_assets_from_dbt_project(
     """
     Loads a set of DBT models from a DBT project into Dagster assets.
 
+    Creates one Dagster asset for each dbt model. All assets will be re-materialized using a single
+    `dbt run` command.
+
     Args:
         project_dir (Optional[str]): The directory containing the DBT project to load.
         profiles_dir (Optional[str]): The profiles directory to use for loading the DBT project.
@@ -198,7 +201,8 @@ def load_assets_from_dbt_manifest(
     """
     Loads a set of dbt models, described in a manifest.json, into Dagster assets.
 
-    Creates one Dagster asset for each dbt model.
+    Creates one Dagster asset for each dbt model. All assets will be re-materialized using a single
+    `dbt run` command.
 
     Args:
         manifest_json (Optional[Mapping[str, Any]]): The contents of a DBT manifest.json, which contains
