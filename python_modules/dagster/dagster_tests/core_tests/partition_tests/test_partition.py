@@ -4,6 +4,7 @@ from typing import Callable, List, Optional
 import pendulum
 import pytest
 from dagster import (
+    DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
     DynamicPartitionsDefinition,
     HourlyPartitionsDefinition,
@@ -43,6 +44,11 @@ def test_static_partitions(partition_keys: List[str]):
         (p, p) for p in partition_keys
     ]
     assert static_partitions.get_partition_keys() == partition_keys
+
+
+def test_invalid_partition_key():
+    with pytest.raises(DagsterInvalidDefinitionError, match="'...'"):
+        StaticPartitionsDefinition(["foo", "foo...bar"])
 
 
 @pytest.mark.parametrize(
