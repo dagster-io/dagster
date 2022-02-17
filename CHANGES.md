@@ -26,7 +26,7 @@
 - Dagster Types can now have attached metadata. This allows `TableSchema` objects to be attached to Dagster Types via `TableSchemaMetadata.` A Dagster Type with a `TableSchema` will have the schema rendered in Dagit.
 - Dagster has a new integration library `dagster-pandera.` [Pandera](https://pandera.readthedocs.io/) is a dataframe validation library. `dagster-pandera` wraps Pandera dataframe schemas in Dagster types. This provides two main benefits: (1) Pandera’s rich schema validation can be used for runtime data validation of Pandas dataframes in Dagster ops/assets; (2) Pandera schema information is displayed in Dagit using a new `TableSchema` API for representing arbitrary table schemas.
 - Dagster allows for various user events to be yielded within the body of an op, such as `AssetMaterialization`, `ExpectationResult`, and `AssetObservation` (API docs [here](https://docs.dagster.io/_apidocs/solids#event-types)). Previously, these events were yielded from the body of the op in order to show up in the event log. This caused lint errors for many users, and also forced usage of the `Output` API.
-- Now, user events can be logged via the context of an op using the `[OpExecutionContext.log_event](https://docs.dagster.io/_apidocs/execution#dagster.OpExecutionContext.log_event)` method. Separately, output metadata can also be logged using the `[OpExecutionContext.add_output_metadata](https://docs.dagster.io/_apidocs/execution#dagster.OpExecutionContext.add_output_metadata)` method.
+- Now, user events can be logged via the context of an op using the [OpExecutionContext.log_event](https://docs.dagster.io/_apidocs/execution#dagster.OpExecutionContext.log_event) method. Separately, output metadata can also be logged using the [OpExecutionContext.add_output_metadata](https://docs.dagster.io/_apidocs/execution#dagster.OpExecutionContext.add_output_metadata) method.
   ```python
   from dagster import op, AssetMaterialization
 
@@ -103,7 +103,7 @@
         asset_group = AssetGroup(assets=[asset1, asset2], resource_defs={"foo": ...})
         return [asset_group, asset_group.build_job(selection="asset1-")]
       ```
-    - `AssetGroup.build_job` supports a selection syntax similar to that found in op selection: https://docs.dagster.io/concepts/ops-jobs-graphs/job-execution#op-selection-syntax
+    - `AssetGroup.build_job` supports a [selection syntax](https://docs.dagster.io/concepts/ops-jobs-graphs/job-execution#op-selection-syntax) similar to that found in op selection
 - Asset Observations:
     - You can now yield `AssetObservations` to log metadata about a particular asset from beyond its materialization site. `AssetObservations` appear on the asset details page alongside materializations and numerical metadata is graphed. For assets with software-defined partitions, materialized and observed metadata about each partition is rolled up and presented together.
     - Added an `asset_observations_for_node` method to `ExecuteInProcessResult` for fetching the `AssetObservation`s from an in-process execution.
