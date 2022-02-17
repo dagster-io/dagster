@@ -254,6 +254,7 @@ from dagster.utils.test import (
     execute_solid_within_pipeline,
     execute_solids_within_pipeline,
 )
+from pep562 import pep562
 
 from .version import __version__
 
@@ -335,7 +336,6 @@ def __getattr__(name):
 def __dir__():
     return sorted(list(__all__) + list(_DEPRECATED.keys()))
 
-from pep562 import pep562
 
 # Backports PEP 562, which allows for override of __getattr__ and __dir__, to this module. PEP 562
 # was introduced in Python 3.7, so the `pep562` call here is a no-op for 3.7+.

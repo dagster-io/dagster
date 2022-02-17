@@ -4,6 +4,7 @@ import re
 import dagster
 import pytest
 
+
 def test_all():
     dagster_dir = dir(dagster)
     for each in dagster.__all__:
@@ -18,6 +19,6 @@ def test_all():
 
 
 def test_deprecated_imports():
-    with pytest.warns(DeprecationWarning, match=re.escape('"Foo" is deprecated')):
+    with pytest.warns(DeprecationWarning, match=re.escape('"EventMetadataEntry" is deprecated')):
         from dagster import EventMetadataEntry, MetadataEntry
     assert EventMetadataEntry is MetadataEntry
