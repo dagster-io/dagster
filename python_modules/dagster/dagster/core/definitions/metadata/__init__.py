@@ -1,10 +1,11 @@
+import functools
 import os
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidMetadata
 from dagster.serdes import whitelist_for_serdes
-from dagster.utils.backcompat import experimental, experimental_class_warning
+from dagster.utils.backcompat import deprecation_warning, experimental, experimental_class_warning
 
 from .table import TableColumn, TableColumnConstraints, TableConstraints, TableRecord, TableSchema
 
@@ -42,6 +43,12 @@ def normalize_metadata(
         )
 
     if metadata_entries:
+        deprecation_warning(
+            'Argument "metadata_entries"',
+            "0.15.0",
+            additional_warn_txt="Use argument `metadata` instead. The `MetadataEntry` `description` attribute is also deprecated-- argument `metadata` takes a label: value dictionary.",
+            stacklevel=4,  # to get the caller of `normalize_metadata`
+        )
         return check.list_param(
             metadata_entries, "metadata_entries", (MetadataEntry, PartitionMetadataEntry)
         )
@@ -49,14 +56,19 @@ def normalize_metadata(
     # This is a stopgap measure to deal with unsupported metadata values, which occur when we try
     # to convert arbitrary metadata (on e.g. OutputDefinition) to a MetadataValue, which is required
     # for serialization. This will cause unsupported values to be silently replaced with a
-    # string placeholder-- eventually we should probably standardize the metadata system across
-    # dagster.
+    # string placeholder.
     elif allow_invalid:
         metadata_entries = []
         for k, v in metadata.items():
             try:
                 metadata_entries.append(package_metadata_value(k, v))
             except DagsterInvalidMetadata:
+                deprecation_warning(
+                    "Support for arbitrary metadata values",
+                    "0.15.0",
+                    additional_warn_txt=f"In the future, all user-supplied metadata values must be one of {RawMetadataValue}",
+                    stacklevel=4,  # to get the caller of `normalize_metadata`
+                )
                 metadata_entries.append(
                     MetadataEntry.text(f"[{v.__class__.__name__}] (unserializable)", k)
                 )
@@ -74,8 +86,7 @@ def package_metadata_value(label: str, value: RawMetadataValue) -> "MetadataEntr
     if isinstance(value, (MetadataEntry, PartitionMetadataEntry)):
         raise DagsterInvalidMetadata(
             f"Expected a metadata value, found an instance of {value.__class__.__name__}. Consider "
-            "instead using a MetadataValue wrapper for the value, or using the `metadata_entries` "
-            "parameter to pass in a List[MetadataEntry|PartitionMetadataEntry]."
+            "instead using a MetadataValue wrapper for the value."
         )
 
     if isinstance(value, MetadataValue):
@@ -701,6 +712,20 @@ class TableSchemaMetadataValue(
 # ##### METADATA ENTRY
 # ########################
 
+
+def deprecated_metadata_entry_constructor(fn):
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        deprecation_warning(
+            f"Function `MetadataEntry.{fn.__name__}`",
+            "0.15.0",
+            additional_warn_txt="In the future, construct `MetadataEntry` by calling the constructor directly and passing a `MetadataValue`.",
+        )
+        return fn(*args, **kwargs)
+
+    return wrapper
+
+
 # NOTE: This would better be implemented as a generic with `MetadataValue` set as a
 # typevar, but as of 2022-01-25 mypy does not support generics on NamedTuple.
 @whitelist_for_serdes(storage_name="EventMetadataEntry")
@@ -731,6 +756,11 @@ class MetadataEntry(
     """
 
     def __new__(cls, label: str, description: Optional[str], entry_data: "MetadataValue"):
+        if description is not None:
+            deprecation_warning(
+                'The "description" attribute on "MetadataEntry"',
+                "0.15.0",
+            )
         return super(MetadataEntry, cls).__new__(
             cls,
             check.str_param(label, "label"),
@@ -739,6 +769,7 @@ class MetadataEntry(
         )
 
     @staticmethod
+    @deprecated_metadata_entry_constructor
     def text(text: Optional[str], label: str, description: Optional[str] = None) -> "MetadataEntry":
         """Static constructor for a metadata entry containing text as
         :py:class:`TextMetadataValue`. For example:
@@ -762,6 +793,7 @@ class MetadataEntry(
         return MetadataEntry(label, description, TextMetadataValue(text))
 
     @staticmethod
+    @deprecated_metadata_entry_constructor
     def url(url: Optional[str], label: str, description: Optional[str] = None) -> "MetadataEntry":
         """Static constructor for a metadata entry containing a URL as
         :py:class:`UrlMetadataValue`. For example:
@@ -787,6 +819,7 @@ class MetadataEntry(
         return MetadataEntry(label, description, UrlMetadataValue(url))
 
     @staticmethod
+    @deprecated_metadata_entry_constructor
     def path(path: Optional[str], label: str, description: Optional[str] = None) -> "MetadataEntry":
         """Static constructor for a metadata entry containing a path as
         :py:class:`PathMetadataValue`. For example:
@@ -808,6 +841,7 @@ class MetadataEntry(
         return MetadataEntry(label, description, PathMetadataValue(path))
 
     @staticmethod
+    @deprecated_metadata_entry_constructor
     def fspath(
         path: Optional[str], label: Optional[str] = None, description: Optional[str] = None
     ) -> "MetadataEntry":
@@ -836,6 +870,7 @@ class MetadataEntry(
         return MetadataEntry.path(path, label, description)
 
     @staticmethod
+    @deprecated_metadata_entry_constructor
     def json(
         data: Optional[Dict[str, Any]],
         label: str,
@@ -866,6 +901,7 @@ class MetadataEntry(
         return MetadataEntry(label, description, JsonMetadataValue(data))
 
     @staticmethod
+    @deprecated_metadata_entry_constructor
     def md(md_str: Optional[str], label: str, description: Optional[str] = None) -> "MetadataEntry":
         """Static constructor for a metadata entry containing markdown data as
         :py:class:`MarkdownMetadataValue`. For example:
@@ -887,6 +923,7 @@ class MetadataEntry(
         return MetadataEntry(label, description, MarkdownMetadataValue(md_str))
 
     @staticmethod
+    @deprecated_metadata_entry_constructor
     def python_artifact(
         python_artifact: Callable[..., Any], label: str, description: Optional[str] = None
     ) -> "MetadataEntry":
@@ -898,6 +935,7 @@ class MetadataEntry(
         )
 
     @staticmethod
+    @deprecated_metadata_entry_constructor
     def float(
         value: Optional[float], label: str, description: Optional[str] = None
     ) -> "MetadataEntry":
@@ -922,6 +960,7 @@ class MetadataEntry(
         return MetadataEntry(label, description, FloatMetadataValue(value))
 
     @staticmethod
+    @deprecated_metadata_entry_constructor
     def int(value: Optional[int], label: str, description: Optional[str] = None) -> "MetadataEntry":
         """Static constructor for a metadata entry containing int as
         :py:class:`IntMetadataValue`. For example:
@@ -944,11 +983,13 @@ class MetadataEntry(
         return MetadataEntry(label, description, IntMetadataValue(value))
 
     @staticmethod
+    @deprecated_metadata_entry_constructor
     def pipeline_run(run_id: str, label: str, description: Optional[str] = None) -> "MetadataEntry":
         check.str_param(run_id, "run_id")
         return MetadataEntry(label, description, DagsterPipelineRunMetadataValue(run_id))
 
     @staticmethod
+    @deprecated_metadata_entry_constructor
     def asset(
         asset_key: "AssetKey", label: str, description: Optional[str] = None
     ) -> "MetadataEntry":
@@ -979,6 +1020,7 @@ class MetadataEntry(
         return MetadataEntry(label, description, DagsterAssetMetadataValue(asset_key))
 
     @staticmethod
+    @deprecated_metadata_entry_constructor
     @experimental
     def table(
         records: List[TableRecord],
@@ -1040,6 +1082,7 @@ class MetadataEntry(
         return MetadataEntry(label, description, TableMetadataValue(records, schema))
 
     @staticmethod
+    @deprecated_metadata_entry_constructor
     @experimental
     def table_schema(
         schema: TableSchema, label: str, description: Optional[str] = None

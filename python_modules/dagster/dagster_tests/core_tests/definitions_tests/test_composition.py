@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 from dagster import (
     DependencyDefinition,
@@ -548,15 +550,15 @@ def test_alias_not_invoked():
 
 def test_tag_invoked():
 
-    with pytest.warns(None) as record:
+    # See: https://docs.pytest.org/en/7.0.x/how-to/capture-warnings.html#additional-use-cases-of-warnings-in-tests
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=UserWarning)
 
         @pipeline
         def _my_pipeline():
             single_input_solid.tag({})()
 
         execute_pipeline(_my_pipeline)
-
-    assert len(record) == 0
 
 
 def test_tag_not_invoked():
@@ -576,7 +578,10 @@ def test_tag_not_invoked():
 
         execute_pipeline(_my_pipeline)
 
-    assert len(record) == 1  # We should only raise one warning because solids have same name.
+    user_warnings = [warning for warning in record if isinstance(warning.message, UserWarning)]
+    assert (
+        len(user_warnings) == 1
+    )  # We should only raise one warning because solids have same name.
 
     with pytest.warns(
         UserWarning,
@@ -595,15 +600,14 @@ def test_tag_not_invoked():
 
 def test_with_hooks_invoked():
 
-    with pytest.warns(None) as record:
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", category=UserWarning)
 
         @pipeline
         def _my_pipeline():
             single_input_solid.with_hooks(set())()
 
         execute_pipeline(_my_pipeline)
-
-    assert len(record) == 0
 
 
 @event_list_hook(required_resource_keys=set())
@@ -628,7 +632,10 @@ def test_with_hooks_not_invoked():
         execute_pipeline(_my_pipeline)
 
     # Note not returning out of the pipe causes warning count to go up to 2
-    assert len(record) == 1  # We should only raise one warning because solids have same name.
+    user_warnings = [warning for warning in record if isinstance(warning.message, UserWarning)]
+    assert (
+        len(user_warnings) == 1
+    )  # We should only raise one warning because solids have same name.
 
     with pytest.warns(
         UserWarning,
