@@ -769,7 +769,7 @@ class TestAssetAwareEventLog(
         result = get_response_by_step(result.data["repositoryOrError"]["latestRunByStep"])
         assert result["asset_1"]["jobNames"] == ["failure_assets_job"]
         # A job containing asset 1 was run 6 times, since latest materialization
-        assert result["asset_1"]["count"] == 6
+        assert result["asset_1"]["count"] == 5
         assert result["asset_1"]["sinceLatestMaterialization"] == True
         # A job containing asset 2 was run 6 times, asset 2 was never materialized
         assert result["asset_2"]["count"] == 6
