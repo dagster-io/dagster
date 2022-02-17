@@ -13,6 +13,7 @@ import {RepoAddress} from '../workspace/types';
 
 import {TypeList, TYPE_LIST_FRAGMENT} from './TypeList';
 import {TypeListContainerQuery} from './types/TypeListContainerQuery';
+import {Box, NonIdealState} from '../../../ui/src';
 
 interface ITypeListContainerProps {
   explorerPath: ExplorerPath;
@@ -29,7 +30,9 @@ export const TypeListContainer: React.FunctionComponent<ITypeListContainerProps>
   const pipelineSelector = React.useMemo(() => {
     if (!repoAddress) {
       const reposWithMatch = findRepoContainingPipeline(options, pipelineName, snapshotId);
-      return buildPipelineSelector(optionToRepoAddress(reposWithMatch[0]), pipelineName);
+      return reposWithMatch.length
+        ? buildPipelineSelector(optionToRepoAddress(reposWithMatch[0]), pipelineName)
+        : null;
     }
     return buildPipelineSelector(repoAddress, pipelineName);
   }, [options, pipelineName, repoAddress, snapshotId]);
@@ -37,7 +40,16 @@ export const TypeListContainer: React.FunctionComponent<ITypeListContainerProps>
   const queryResult = useQuery<TypeListContainerQuery>(TYPE_LIST_CONTAINER_QUERY, {
     fetchPolicy: 'cache-and-network',
     variables: {pipelineSelector},
+    skip: !pipelineSelector,
   });
+
+  if (!pipelineSelector) {
+    return (
+      <Box margin={48}>
+        <NonIdealState icon="error" title="Could not fetch types for snapshot" />
+      </Box>
+    );
+  }
 
   return (
     <Loading queryResult={queryResult}>
