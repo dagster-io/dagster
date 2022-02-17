@@ -5,7 +5,12 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optiona
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidMetadata
 from dagster.serdes import whitelist_for_serdes
-from dagster.utils.backcompat import deprecation_warning, experimental, experimental_class_warning
+from dagster.utils.backcompat import (
+    canonicalize_backcompat_args,
+    deprecation_warning,
+    experimental,
+    experimental_class_warning,
+)
 
 from .table import TableColumn, TableColumnConstraints, TableConstraints, TableRecord, TableSchema
 
@@ -735,7 +740,7 @@ class MetadataEntry(
         [
             ("label", str),
             ("description", Optional[str]),
-            ("entry_data", MetadataValue),
+            ("value", MetadataValue),
         ],
     ),
 ):
@@ -751,21 +756,38 @@ class MetadataEntry(
     Args:
         label (str): Short display label for this metadata entry.
         description (Optional[str]): A human-readable description of this metadata entry.
-        entry_data (MetadataValue): Typed metadata entry data. The different types allow
+        value (MetadataValue): Typed metadata entry data. The different types allow
             for customized display in tools like dagit.
     """
 
-    def __new__(cls, label: str, description: Optional[str], entry_data: "MetadataValue"):
+    def __new__(
+        cls,
+        label: str,
+        description: Optional[str],
+        value: Optional["MetadataValue"] = None,
+        entry_data: Optional["MetadataValue"] = None,
+    ):
         if description is not None:
             deprecation_warning(
                 'The "description" attribute on "MetadataEntry"',
                 "0.15.0",
             )
+        value = cast(
+            MetadataValue,
+            canonicalize_backcompat_args(
+                new_val=value,
+                new_arg="value",
+                old_val=entry_data,
+                old_arg="entry_data",
+                breaking_version="0.15.0",
+            ),
+        )
+
         return super(MetadataEntry, cls).__new__(
             cls,
             check.str_param(label, "label"),
             check.opt_str_param(description, "description"),
-            check.inst_param(entry_data, "entry_data", MetadataValue),
+            check.inst_param(value, "value", MetadataValue),
         )
 
     @staticmethod
