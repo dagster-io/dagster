@@ -1,5 +1,6 @@
-import pytest
 import warnings
+
+import pytest
 from dagster import (
     DependencyDefinition,
     InputDefinition,
@@ -578,7 +579,9 @@ def test_tag_not_invoked():
         execute_pipeline(_my_pipeline)
 
     user_warnings = [warning for warning in record if isinstance(warning.message, UserWarning)]
-    assert len(user_warnings) == 1  # We should only raise one warning because solids have same name.
+    assert (
+        len(user_warnings) == 1
+    )  # We should only raise one warning because solids have same name.
 
     with pytest.warns(
         UserWarning,
@@ -606,6 +609,7 @@ def test_with_hooks_invoked():
 
         execute_pipeline(_my_pipeline)
 
+
 @event_list_hook(required_resource_keys=set())
 def a_hook(_context, _):
     return HookExecutionResult("a_hook")
@@ -629,7 +633,9 @@ def test_with_hooks_not_invoked():
 
     # Note not returning out of the pipe causes warning count to go up to 2
     user_warnings = [warning for warning in record if isinstance(warning.message, UserWarning)]
-    assert len(user_warnings) == 1  # We should only raise one warning because solids have same name.
+    assert (
+        len(user_warnings) == 1
+    )  # We should only raise one warning because solids have same name.
 
     with pytest.warns(
         UserWarning,
