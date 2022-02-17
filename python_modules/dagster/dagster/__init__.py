@@ -1,3 +1,5 @@
+import sys
+
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
 from dagster.config.config_schema import ConfigSchema
@@ -231,7 +233,7 @@ from dagster.core.types.python_set import Set
 from dagster.core.types.python_tuple import Tuple
 from dagster.utils import file_relative_path
 from dagster.utils.alert import make_email_on_run_failure_sensor
-from dagster.utils.backcompat import ExperimentalWarning
+from dagster.utils.backcompat import ExperimentalWarning, rename_warning
 from dagster.utils.log import get_dagster_logger
 from dagster.utils.partitions import (
     create_offset_partition_selector,
@@ -244,10 +246,66 @@ from dagster.utils.test import (
     execute_solid_within_pipeline,
     execute_solids_within_pipeline,
 )
+from pep562 import pep562
 
 from .version import __version__
 
 from dagster.config.source import BoolSource, StringSource, IntSource  # isort:skip
+
+_DEPRECATED = {
+    "EventMetadataEntry": ("MetadataEntry", MetadataEntry, "0.15.0"),
+    "EventMetadata": ("MetadataValue", MetadataValue, "0.15.0"),
+    "TextMetadataEntryData": ("TextMetadataValue", TextMetadataValue, "0.15.0"),
+    "UrlMetadataEntryData": ("UrlMetadataValue", UrlMetadataValue, "0.15.0"),
+    "PathMetadataEntryData": ("PathMetadataValue", PathMetadataValue, "0.15.0"),
+    "JsonMetadataEntryData": ("JsonMetadataValue", JsonMetadataValue, "0.15.0"),
+    "MarkdownMetadataEntryData": ("MarkdownMetadataValue", MarkdownMetadataValue, "0.15.0"),
+    "PythonArtifactMetadataEntryData": (
+        "PythonArtifactMetadataValue",
+        PythonArtifactMetadataValue,
+        "0.15.0",
+    ),
+    "FloatMetadataEntryData": ("FloatMetadataValue", FloatMetadataValue, "0.15.0"),
+    "IntMetadataEntryData": ("IntMetadataValue", IntMetadataValue, "0.15.0"),
+    "DagsterPipelineRunMetadataEntryData": (
+        "DagsterPipelineRunMetadataValue",
+        DagsterPipelineRunMetadataValue,
+        "0.15.0",
+    ),
+    "DagsterAssetMetadataEntryData": (
+        "DagsterAssetMetadataValue",
+        DagsterAssetMetadataValue,
+        "0.15.0",
+    ),
+    "TableMetadataEntryData": ("TableMetadataValue", TableMetadataValue, "0.15.0"),
+    "TableSchemaMetadataEntryData": (
+        "TableSchemaMetadataValue",
+        TableSchemaMetadataValue,
+        "0.15.0",
+    ),
+}
+
+
+def __getattr__(name):
+    if name in _DEPRECATED:
+        new_name, value, breaking_version = _DEPRECATED[name]
+        stacklevel = 3 if sys.version_info >= (3, 7) else 4
+        rename_warning(new_name, name, breaking_version, stacklevel=stacklevel)
+        return value
+    else:
+        raise AttributeError("module '{}' has no attribute '{}'".format(__name__, name))
+
+
+def __dir__():
+    return sorted(list(__all__) + list(_DEPRECATED.keys()))
+
+
+# Backports PEP 562, which allows for override of __getattr__ and __dir__, to this module. PEP 562
+# was introduced in Python 3.7, so the `pep562` call here is a no-op for 3.7+.
+# See:
+#  PEP 562: https://www.python.org/dev/peps/pep-0562/
+#  PEP 562 backport package: https://github.com/facelessuser/pep562
+pep562(__name__)
 
 __all__ = [
     # Definition

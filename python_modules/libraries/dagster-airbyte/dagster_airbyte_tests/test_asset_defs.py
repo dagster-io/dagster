@@ -1,5 +1,5 @@
 import responses
-from dagster import EventMetadataEntry, build_assets_job, build_init_resource_context
+from dagster import MetadataEntry, build_assets_job, build_init_resource_context
 from dagster_airbyte import AirbyteState, airbyte_resource, build_airbyte_assets
 
 
@@ -127,14 +127,14 @@ def test_assets():
     ]
     assert len(materializations) == 3
     assert (
-        EventMetadataEntry.text("a,b", "columns")
+        MetadataEntry.text("a,b", "columns")
         in materializations[0].event_specific_data.materialization.metadata_entries
     )
     assert (
-        EventMetadataEntry.int(1234, "bytesEmitted")
+        MetadataEntry.int(1234, "bytesEmitted")
         in materializations[0].event_specific_data.materialization.metadata_entries
     )
     assert (
-        EventMetadataEntry.int(4321, "recordsCommitted")
+        MetadataEntry.int(4321, "recordsCommitted")
         in materializations[0].event_specific_data.materialization.metadata_entries
     )
