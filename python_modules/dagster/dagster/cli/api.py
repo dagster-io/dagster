@@ -8,6 +8,7 @@ from dagster.cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
 )
+from dagster.core.errors import DagsterExecutionInterruptedError
 from dagster.core.events import DagsterEventType, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.run_cancellation_thread import start_run_cancellation_thread
@@ -22,6 +23,7 @@ from dagster.grpc.impl import core_execute_run
 from dagster.grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
 from dagster.serdes import deserialize_as, serialize_dagster_namedtuple
 from dagster.seven import nullcontext
+from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin
 from dagster.utils.interrupts import capture_interrupts
 from dagster.utils.log import configure_loggers
@@ -299,50 +301,80 @@ def execute_step_command(input_json):
             else DagsterInstance.get()
         ) as instance:
             pipeline_run = instance.get_run_by_id(args.pipeline_run_id)
-            check.inst(
-                pipeline_run,
-                PipelineRun,
-                "Pipeline run with id '{}' not found for step execution".format(
-                    args.pipeline_run_id
-                ),
-            )
-
-            if args.should_verify_step:
-                success = verify_step(
-                    instance,
-                    pipeline_run,
-                    args.known_state.get_retry_state(),
-                    args.step_keys_to_execute,
-                )
-                if not success:
-                    return
-
-            recon_pipeline = recon_pipeline_from_origin(
-                args.pipeline_origin
-            ).subset_for_execution_from_existing_pipeline(pipeline_run.solids_to_execute)
-
-            execution_plan = create_execution_plan(
-                recon_pipeline,
-                run_config=pipeline_run.run_config,
-                step_keys_to_execute=args.step_keys_to_execute,
-                mode=pipeline_run.mode,
-                known_state=args.known_state,
-            )
 
             buff = []
 
-            for event in execute_plan_iterator(
-                execution_plan,
-                recon_pipeline,
-                pipeline_run,
+            for event in _execute_step_command_body(
+                args,
                 instance,
-                run_config=pipeline_run.run_config,
-                retry_mode=args.retry_mode,
+                pipeline_run,
             ):
                 buff.append(serialize_dagster_namedtuple(event))
 
             for line in buff:
                 click.echo(line)
+
+
+def _execute_step_command_body(
+    args: ExecuteStepArgs, instance: DagsterInstance, pipeline_run: PipelineRun
+):
+    single_step_key = (
+        args.step_keys_to_execute[0]
+        if args.step_keys_to_execute and len(args.step_keys_to_execute) == 1
+        else None
+    )
+    try:
+        check.inst(
+            pipeline_run,
+            PipelineRun,
+            "Pipeline run with id '{}' not found for step execution".format(args.pipeline_run_id),
+        )
+
+        if args.should_verify_step:
+            success = verify_step(
+                instance,
+                pipeline_run,
+                args.known_state.get_retry_state(),
+                args.step_keys_to_execute,
+            )
+            if not success:
+                return
+
+        recon_pipeline = recon_pipeline_from_origin(
+            args.pipeline_origin
+        ).subset_for_execution_from_existing_pipeline(pipeline_run.solids_to_execute)
+
+        execution_plan = create_execution_plan(
+            recon_pipeline,
+            run_config=pipeline_run.run_config,
+            step_keys_to_execute=args.step_keys_to_execute,
+            mode=pipeline_run.mode,
+            known_state=args.known_state,
+        )
+
+        yield from execute_plan_iterator(
+            execution_plan,
+            recon_pipeline,
+            pipeline_run,
+            instance,
+            run_config=pipeline_run.run_config,
+            retry_mode=args.retry_mode,
+        )
+    except (KeyboardInterrupt, DagsterExecutionInterruptedError):
+        yield instance.report_engine_event(
+            message="Step execution terminated by interrupt",
+            pipeline_run=pipeline_run,
+            step_key=single_step_key,
+        )
+        raise
+    except Exception:
+        yield instance.report_engine_event(
+            "An exception was thrown during step execution that is likely a framework error, rather than an error in user code.",
+            pipeline_run,
+            EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
+            step_key=single_step_key,
+        )
+        raise
 
 
 @api_cli.command(name="grpc", help="Serve the Dagster inter-process API over GRPC")
