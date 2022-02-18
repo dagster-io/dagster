@@ -41,6 +41,43 @@ class AssetGroup(
         ],
     )
 ):
+    """Defines a group of assets, along with environment information in the form of resources and an executor.
+
+    An AssetGroup can be provided to a :py:class:`RepositoryDefinition`. When provided to a repository, the constituent assets can be materialized from Dagit. The AssetGroup also provides an interface for creating jobs from subselections of assets, which can then be provided to a :py:class:`ScheduleDefinition` or :py:class:`SensorDefinition`.
+
+    There can only be one AssetGroup per repository.
+
+    Args:
+        assets (Sequence[AssetsDefinition]): The set of software-defined assets to group.
+        source_assets (Optional[Sequence[SourceAsset]]): The set of source assets that the software-defined may depend on.
+        resource_defs (Optional[Mapping[str, ResourceDefinition]]): A dictionary of resource definitions. When the AssetGroup is constructed, if there are any unsatisfied resource requirements from the assets, it will result in an error. Note that the `root_manager` key is a reserved resource key, and will result in an error if provided by the user.
+        executor_def (Optional[ExecutorDefinition]): The executor definition to use when re-materializing assets in this group.
+
+    Examples:
+
+        .. code-block:: python
+
+            from dagster import AssetGroup, asset, AssetIn, AssetKey, SourceAsset, resource
+
+            source_asset = SourceAsset("source")
+
+            @asset(required_resource_keys={"foo"})
+            def start_asset(context, source):
+                ...
+
+            @asset
+            def next_asset(start_asset):
+                ...
+
+            @resource
+            def foo_resource():
+                ...
+
+            asset_group = AssetGroup(assets=[start_asset, next_asset], source_assets=[source_asset], resource_defs={"foo": foo_resource})
+            ...
+
+    """
+
     def __new__(
         cls,
         assets: Sequence[AssetsDefinition],
