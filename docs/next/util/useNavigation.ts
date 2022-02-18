@@ -56,8 +56,8 @@ export const allPaths = () => {
 
   paths = [...flattenedMasterNavigation, ...paths];
 
-  // Always enable versioning when on Vercel
-  if (process.env.VERCEL || !__VERSIONING_DISABLED__) {
+  // enable versioning when on Vercel production or explicitly asked to
+  if (process.env.VERCEL_ENV === "production" || __VERSIONING_ENABLED__) {
     for (const [key, value] of Object.entries(versionedNavigation)) {
       const flattenedVersionNavigation = flatten(value)
         .filter((n: { path: any }) => n.path)
