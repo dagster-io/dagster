@@ -1,4 +1,5 @@
 import importlib
+import os
 import sys
 import typing
 
@@ -273,8 +274,21 @@ if typing.TYPE_CHECKING:
     )
 
 _LAZY_LOAD = {
-    'dagster.core.storage.event_log': ('EventLogEntry', 'EventLogRecord', 'EventRecordsFilter', 'RunShardedEventsCursor')
+    "dagster.core.storage.event_log": (
+        "EventLogEntry",
+        "EventLogRecord",
+        "EventRecordsFilter",
+        "RunShardedEventsCursor",
+    )
 }
+
+if os.getenv("DAGSTER_NO_LAZY_LOAD") == "1":
+    from dagster.core.storage.event_log import (
+        EventLogEntry,
+        EventLogRecord,
+        EventRecordsFilter,
+        RunShardedEventsCursor,
+    )
 
 # ########################
 # ##### DEPRECATED ALIASES
@@ -336,7 +350,8 @@ _DEPRECATED = {
 # ##### DYNAMIC ATTRIBUTE RESOLUTION
 # ########################
 
-_lazy_load_name_map = { name: mod for mod, names in _LAZY_LOAD.items() for name in names }
+_lazy_load_name_map = {name: mod for mod, names in _LAZY_LOAD.items() for name in names}
+
 
 def __getattr__(name):
     if name in _DEPRECATED:
