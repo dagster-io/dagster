@@ -21,7 +21,7 @@ if __name__ == "__main__":
             "full": [
                 "seaborn",
                 "scikit-learn",
-                "moto==1.3.16",
+                "moto",
                 "pandera",
             ]
         },
