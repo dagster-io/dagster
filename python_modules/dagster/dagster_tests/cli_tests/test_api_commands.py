@@ -123,6 +123,40 @@ def test_execute_run_fail_pipeline():
             assert result.exit_code != 0, str(result.stdout)
 
 
+def test_execute_run_cannot_load():
+    with get_foo_pipeline_handle() as pipeline_handle:
+        runner = CliRunner()
+
+        with instance_for_test(
+            overrides={
+                "compute_logs": {
+                    "module": "dagster.core.storage.noop_compute_log_manager",
+                    "class": "NoOpComputeLogManager",
+                }
+            }
+        ) as instance:
+            instance = DagsterInstance.get()
+
+            input_json = serialize_dagster_namedtuple(
+                ExecuteRunArgs(
+                    pipeline_origin=pipeline_handle.get_python_origin(),
+                    pipeline_run_id="FOOBAR",
+                    instance_ref=instance.get_ref(),
+                )
+            )
+
+            result = runner.invoke(
+                api.execute_run_command,
+                [input_json],
+            )
+
+            assert result.exit_code != 0
+
+            assert "Pipeline run with id 'FOOBAR' not found for run execution" in str(
+                result.exception
+            ), "no match, result: {}".format(result.stdout)
+
+
 def runner_execute_step(runner, cli_args):
     result = runner.invoke(api.execute_step_command, cli_args)
     if result.exit_code != 0:
