@@ -18,10 +18,10 @@ update_doc_snapshot:
 # reading gitignore. `extend-exclude` is layered on top of gitignore. See:
 #   https://black.readthedocs.io/en/stable/usage_and_configuration/file_collection_and_discovery.html#gitignore 
 black:
-	-black --fast \
+	black --fast \
 		--extend-exclude="examples/docs_snippets|snapshots" \
 		examples integration_tests helm python_modules .buildkite
-	-black --fast \
+	black --fast \
 		examples/docs_snippets
 
 check_black:
