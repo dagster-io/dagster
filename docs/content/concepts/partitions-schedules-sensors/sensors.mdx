@@ -24,7 +24,8 @@ Sensors allow you to instigate runs based on any external state change.
 | <PyObject object="RunStatusSensorDefinition" />       | Class for run status sensors. You almost never want to initialize this class directly. Instead, you should use the <PyObject object="run_status_sensor" decorator /> or <PyObject object="run_failure_sensor" decorator />                                            |
 | <PyObject object="RunStatusSensorContext" />          | The context object passed to a run status sensor evaluation.                                                                                                                                                                                                          |
 | <PyObject object="build_run_status_sensor_context" /> | A function that constructs an instance of <PyObject object="RunStatusSensorContext" />. This is intended to be used to test a run status sensor.                                                                                                                      |
-| ## Overview                                           |                                                                                                                                                                                                                                                                       |
+
+ ## Overview
 
 Sensors are definitions in Dagster that allow you to instigate runs based on some external state change. For example, you can:
 
@@ -497,7 +498,7 @@ run_status_sensor_context = build_run_status_sensor_context(
 my_email_sensor(run_status_sensor_context)
 ```
 
-We have provided convenience functions for retrieving `DagsterRunStatus.SUCCESS` and `DagsterRunStatus.FAILURE` events. If you have a run status sensor triggered on another status, you can retrieve all events from `result` and filter based on your event type.
+We have provided convenience functions <PyObject object="ExecuteInProcessResult" method="get_job_success_event" /> and <PyObject object="ExecuteInProcessResult" method="get_job_failure_event" /> for retrieving `DagsterRunStatus.SUCCESS` and `DagsterRunStatus.FAILURE` events, respectively. If you have a run status sensor triggered on another status, you can retrieve all events from `result` and filter based on your event type.
 
 We can use the same pattern to build the context for <PyObject object="run_failure_sensor" />. If we wanted to test this run failure sensor
 
@@ -553,7 +554,7 @@ run_failure_sensor_context = build_run_status_sensor_context(
 my_email_failure_sensor(run_failure_sensor_context)
 ```
 
-Note the additional function call `for_run_failure()` after creating the `context`. The `context` provided by <PyObject object="run_failure_sensor" /> is a subclass of the context provided by <PyObject object="run_status_sensor" /> and can be built using this additional call.
+Note the additional function call <PyObject object="RunStatusSensorContext" method="for_run_failure" /> after creating the `context`. The `context` provided by <PyObject object="run_failure_sensor" /> is a subclass of the context provided by <PyObject object="run_status_sensor" /> and can be built using this additional call.
 
 ## Examples
 

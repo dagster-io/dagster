@@ -114,6 +114,8 @@ class RunStatusSensorContext(
         )
 
     def for_run_failure(self):
+        """Converts RunStatusSensorContext to RunFailureSensorContext.
+        """
         return RunFailureSensorContext(
             sensor_name=self.sensor_name,
             dagster_run=self.dagster_run,
@@ -176,6 +178,23 @@ def build_run_status_sensor_context(
             triggers the run_status_sensor
         dagster_instance (DagsterInstance): The dagster instance configured for the context.
         dagster_run (DagsterRun): DagsterRun object from running a job
+
+    Examples:
+        .. code-block:: python
+
+            instance = DagsterInstance.ephemeral()
+            result = my_job.execute_in_process(instance=instance)
+
+            dagster_run = result.dagster_run
+            dagster_event = result.get_job_success_event() # or get_job_failure_event()
+
+            context = build_run_status_sensor_context(
+                sensor_name="run_status_sensor_to_invoke",
+                dagster_instance=instance,
+                dagster_run=dagster_run,
+                dagster_event=dagster_event,
+            )
+            run_status_sensor_to_invoke(context)
     """
 
     return RunStatusSensorContext(

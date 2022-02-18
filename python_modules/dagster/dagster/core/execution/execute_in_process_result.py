@@ -160,7 +160,9 @@ class ExecuteInProcessResult:
         )
 
     def get_job_success_event(self):
-        """Returns a DagsterEvent with type PIPELINE_SUCCESS if it ocurred during execution"""
+        """Returns a DagsterEvent with type DagsterEventType.PIPELINE_SUCCESS if it ocurred during
+        execution
+        """
         events = list(
             filter(
                 lambda event: event.event_type == DagsterEventType.PIPELINE_SUCCESS, self.all_events
@@ -173,7 +175,9 @@ class ExecuteInProcessResult:
         return events[0]
 
     def get_job_failure_event(self):
-        """Returns a DagsterEvent with type PIPELINE_FAILURE if it ocurred during execution"""
+        """Returns a DagsterEvent with type DagsterEventType.PIPELINE_FAILURE if it ocurred during
+        execution
+        """
         events = list(
             filter(
                 lambda event: event.event_type == DagsterEventType.PIPELINE_FAILURE, self.all_events
