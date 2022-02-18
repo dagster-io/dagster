@@ -110,6 +110,7 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks {
   __typename: "InstigationTick";
   id: string;
+  cursor: string | null;
   status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;
@@ -238,6 +239,7 @@ export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_Instiga
 export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks {
   __typename: "InstigationTick";
   id: string;
+  cursor: string | null;
   status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;

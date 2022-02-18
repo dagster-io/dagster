@@ -55,6 +55,7 @@ export const INSTIGATION_STATE_FRAGMENT = gql`
     status
     ticks(limit: 1) {
       id
+      cursor
       ...TickTagFragment
     }
     runningCount
