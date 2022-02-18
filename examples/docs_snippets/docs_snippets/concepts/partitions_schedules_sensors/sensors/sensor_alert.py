@@ -63,7 +63,7 @@ instance = DagsterInstance.ephemeral()
 result = my_job_fails.execute_in_process(instance=instance, raise_on_error=False)
 
 # retrieve the DagsterRun
-dagster_run = result.run
+dagster_run = result.dagster_run
 
 # retrieve a failure event from the completed job execution
 dagster_event = result.get_job_failure_event()
@@ -152,7 +152,7 @@ instance = DagsterInstance.ephemeral()
 result = my_job_succeeds.execute_in_process(instance=instance)
 
 # retrieve the DagsterRun
-dagster_run = result.run
+dagster_run = result.dagster_run
 
 # retrieve a success event from the completed execution
 dagster_event = result.get_job_success_event()

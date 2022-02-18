@@ -117,12 +117,8 @@ def test_run_status_sensor():
     instance = DagsterInstance.ephemeral()
     result = my_job_2.execute_in_process(instance=instance, raise_on_error=False)
 
-    dagster_run = result.run
-    dagster_event = list(
-        filter(
-            lambda event: event.event_type == DagsterEventType.PIPELINE_SUCCESS, result.all_events
-        )
-    )[0]
+    dagster_run = result.dagster_run
+    dagster_event = result.get_job_success_event()
 
     context = build_run_status_sensor_context(
         sensor_name="status_sensor",
@@ -150,12 +146,8 @@ def test_run_failure_sensor():
     instance = DagsterInstance.ephemeral()
     result = my_job.execute_in_process(instance=instance, raise_on_error=False)
 
-    dagster_run = instance.get_run_by_id(result.run_id)
-    dagster_event = list(
-        filter(
-            lambda event: event.event_type == DagsterEventType.PIPELINE_FAILURE, result.all_events
-        )
-    )[0]
+    dagster_run = result.dagster_run
+    dagster_event = result.get_job_failure_event()
 
     context = build_run_status_sensor_context(
         sensor_name="failure_sensor",

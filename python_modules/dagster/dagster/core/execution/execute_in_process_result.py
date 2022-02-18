@@ -4,7 +4,7 @@ from dagster import check
 from dagster.core.definitions import NodeDefinition, NodeHandle
 from dagster.core.definitions.events import AssetMaterialization, AssetObservation, Materialization
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.errors import DagsterError, DagsterInvariantViolationError
 from dagster.core.events import (
     AssetObservationData,
     DagsterEvent,
@@ -63,7 +63,7 @@ class ExecuteInProcessResult:
         return self._dagster_run.run_id
 
     @property
-    def run(self) -> DagsterRun:
+    def dagster_run(self) -> DagsterRun:
         """DagsterRun: the DagsterRun object for the completed execution."""
         return self._dagster_run
 
@@ -160,26 +160,28 @@ class ExecuteInProcessResult:
         )
 
     def get_job_success_event(self):
-        """Returns a DagsterEvent with type PIPELINE_SUCCESS if it ocurred during execution
-        """
-        events = list(filter(
-            lambda event: event.event_type == DagsterEventType.PIPELINE_SUCCESS, self.all_events
-        ))
+        """Returns a DagsterEvent with type PIPELINE_SUCCESS if it ocurred during execution"""
+        events = list(
+            filter(
+                lambda event: event.event_type == DagsterEventType.PIPELINE_SUCCESS, self.all_events
+            )
+        )
 
         if len(events) == 0:
-            raise Exception("No success event")
+            raise DagsterError("No event of type DagsterEventType.PIPELINE_SUCCESS found.")
 
         return events[0]
 
     def get_job_failure_event(self):
-        """Returns a DagsterEvent with type PIPELINE_FAILURE if it ocurred during execution
-        """
-        events = list(filter(
-            lambda event: event.event_type == DagsterEventType.PIPELINE_FAILURE, self.all_events
-        ))
+        """Returns a DagsterEvent with type PIPELINE_FAILURE if it ocurred during execution"""
+        events = list(
+            filter(
+                lambda event: event.event_type == DagsterEventType.PIPELINE_FAILURE, self.all_events
+            )
+        )
 
         if len(events) == 0:
-            raise Exception("No failure event")
+            raise DagsterError("No event of type DagsterEventType.PIPELINE_FAILURE found.")
 
         return events[0]
 

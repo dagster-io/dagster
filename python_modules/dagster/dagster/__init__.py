@@ -213,9 +213,9 @@ from dagster.core.storage.mem_io_manager import mem_io_manager
 from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
 from dagster.core.storage.pipeline_run import (
     DagsterRun,
+    DagsterRunStatus,
     PipelineRun,
     PipelineRunStatus,
-    DagsterRunStatus
 )
 from dagster.core.storage.root_input_manager import (
     RootInputManager,
