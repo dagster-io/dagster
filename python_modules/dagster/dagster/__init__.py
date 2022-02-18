@@ -264,30 +264,25 @@ from dagster.config.source import BoolSource, StringSource, IntSource  # isort:s
 # ##### DEPRECATED ALIASES
 # ########################
 
-# NOTE: Unfortunately we have to declare deprecated aliases twice-- the top
-# level declaration informs pylint that the module contains the attribute (this
-# prevents generating noisy lint errors for users), but the entry in
-# `_DEPRECATED` is required  for us to generate the deprecation warning. Note
-# that the typing.Annotated functionality introduced in Python 3.9 (or
-# available through the `typing-extensions` package) would allow us to avoid
-# the double declaration, e.g.:
-#
-# EventMetadataEntry: Annotated[Type[MetadataEntry], MetadataEntry, "0.15.0"]
+# NOTE: Unfortunately we have to declare deprecated aliases twice-- the
+# TYPE_CHECKING declaration satisfies linters and type checkers, but the entry
+# in `_DEPRECATED` is required  for us to generate the deprecation warning.
 
-EventMetadataEntry: typing.Type[MetadataEntry]
-EventMetadata: typing.Type[MetadataValue]
-TextMetadataEntryData: typing.Type[TextMetadataValue]
-UrlMetadataEntryData: typing.Type[UrlMetadataValue]
-PathMetadataEntryData: typing.Type[PathMetadataValue]
-JsonMetadataEntryData: typing.Type[JsonMetadataValue]
-MarkdownMetadataEntryData: typing.Type[MarkdownMetadataValue]
-PythonArtifactMetadataEntryData: typing.Type[PythonArtifactMetadataValue]
-FloatMetadataEntryData: typing.Type[FloatMetadataValue]
-IntMetadataEntryData: typing.Type[IntMetadataValue]
-DagsterPipelineRunMetadataEntryData: typing.Type[DagsterPipelineRunMetadataValue]
-DagsterAssetMetadataEntryData: typing.Type[DagsterAssetMetadataValue]
-TableMetadataEntryData: typing.Type[TableMetadataValue]
-TableSchemaMetadataEntryData: typing.Type[TableSchemaMetadataValue]
+if typing.TYPE_CHECKING:
+    from dagster.core.definitions import MetadataEntry as EventMetadataEntry
+    from dagster.core.definitions import MetadataValue as EventMetadata
+    from dagster.core.definitions import TextMetadataValue as TextMetadataEntryData
+    from dagster.core.definitions import UrlMetadataValue as UrlMetadataEntryData
+    from dagster.core.definitions import PathMetadataValue as PathMetadataEntryData
+    from dagster.core.definitions import JsonMetadataValue as JsonMetadataEntryData
+    from dagster.core.definitions import MarkdownMetadataValue as MarkdownMetadataEntryData
+    from dagster.core.definitions import PythonArtifactMetadataValue as PythonArtifactMetadataEntryData
+    from dagster.core.definitions import FloatMetadataValue as FloatMetadataEntryData
+    from dagster.core.definitions import IntMetadataValue as IntMetadataEntryData
+    from dagster.core.definitions import DagsterPipelineRunMetadataValue as DagsterPipelineRunMetadataEntryData
+    from dagster.core.definitions import DagsterAssetMetadataValue as DagsterAssetMetadataEntryData
+    from dagster.core.definitions import TableMetadataValue as TableMetadataEntryData
+    from dagster.core.definitions import TableSchemaMetadataValue as TableSchemaMetadataEntryData
 
 _DEPRECATED = {
     "EventMetadataEntry": ("MetadataEntry", MetadataEntry, "0.15.0"),
