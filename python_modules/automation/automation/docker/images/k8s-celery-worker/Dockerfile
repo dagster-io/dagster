@@ -3,9 +3,6 @@ FROM "${BASE_IMAGE}"
 
 ARG DAGSTER_VERSION
 
-RUN apt-get update -yqq && \
-    apt-get install -yqq --no-install-recommends cron
-
 RUN pip install \
     dagster==${DAGSTER_VERSION} \
     dagster-postgres==${DAGSTER_VERSION} \
