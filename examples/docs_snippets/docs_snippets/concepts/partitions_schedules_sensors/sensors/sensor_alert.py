@@ -65,14 +65,12 @@ result = my_job_fails.execute_in_process(instance=instance, raise_on_error=False
 # retrieve the DagsterRun
 dagster_run = result.run
 
-# retrieve an event with the same PipelineRunStatus as the one that triggers your run status sensor
-dagster_event = list(
-    filter(lambda event: event.event_type == DagsterEventType.PIPELINE_FAILURE, result.all_events)
-)[0]
+# retrieve a failure event from the completed job execution
+dagster_event = result.get_job_failure_event()
 
 # create the context
 run_failure_sensor_context = build_run_status_sensor_context(
-    sensor_name="my_slack_on_run_failure",
+    sensor_name="my_email_failure_sensor",
     dagster_instance=instance,
     dagster_run=dagster_run,
     dagster_event=dagster_event,
@@ -106,10 +104,10 @@ email_on_run_failure = make_email_on_run_failure_sensor(
 # end_email_marker
 
 # start_success_sensor_marker
-from dagster import run_status_sensor, RunStatusSensorContext, PipelineRunStatus
+from dagster import run_status_sensor, RunStatusSensorContext, DagsterRunStatus
 
 
-@run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
+@run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
 def my_slack_on_run_success(context: RunStatusSensorContext):
     slack_client = WebClient(token=os.environ["SLACK_DAGSTER_ETL_BOT_TOKEN"])
 
@@ -124,7 +122,7 @@ def my_slack_on_run_success(context: RunStatusSensorContext):
 # start_simple_success_sensor
 
 
-@run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
+@run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
 def my_email_sensor(context: RunStatusSensorContext):
     message = f'Job "{context.pipeline_run.pipeline_name}" succeeded.'
     email_alert(message)
@@ -156,14 +154,12 @@ result = my_job_succeeds.execute_in_process(instance=instance)
 # retrieve the DagsterRun
 dagster_run = result.run
 
-# retrieve an event with the same PipelineRunStatus as the one that triggers your run status sensor
-dagster_event = list(
-    filter(lambda event: event.event_type == DagsterEventType.PIPELINE_SUCCESS, result.all_events)
-)[0]
+# retrieve a success event from the completed execution
+dagster_event = result.get_job_success_event()
 
 # create the context
 run_status_sensor_context = build_run_status_sensor_context(
-    sensor_name="my_slack_on_run_success",
+    sensor_name="my_email_sensor",
     dagster_instance=instance,
     dagster_run=dagster_run,
     dagster_event=dagster_event,
