@@ -32,8 +32,18 @@ check_black:
 		examples/docs_snippets
 
 isort:
-	isort `git ls-files '*.py' ':!:examples/docs_snippets/docs_snippets/intro_tutorial'`
-	isort -l 78 `git ls-files 'examples/docs_snippets/docs_snippets/intro_tutorial/*.py'`
+	isort \
+	  --skip=examples/docs_snippets --skip=snapshots \
+		examples integration_tests helm python_modules .buildkite
+	isort \
+		examples/docs_snippets
+
+check_isort:
+	-isort --check \
+		--skip=examples/docs_snippets --skip=snapshots \
+		examples integration_tests helm python_modules .buildkite
+	-isort --check \
+		examples/docs_snippets
 
 yamllint:
 	yamllint -c .yamllint.yaml --strict `git ls-files 'helm/**/*.yml' 'helm/**/*.yaml' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'`

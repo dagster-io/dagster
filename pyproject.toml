@@ -2,3 +2,11 @@
 line-length = 100
 required-version = "22.1.0"
 target_version = ['py36', 'py37', 'py38', 'py39', 'py310']
+
+[tool.isort]
+profile = "black"
+case_sensitive=true
+skip_gitignore=true
+
+# profile=black just sets defaults, it won't read overrides in black's config
+line_length=100

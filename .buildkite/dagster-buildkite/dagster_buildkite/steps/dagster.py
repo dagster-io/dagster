@@ -637,12 +637,8 @@ def dagster_steps():
 
     steps += pylint_steps()
     steps += [
-        StepBuilder(":isort:")
-        .run(
-            "pip install isort>=4.3.21",
-            "make isort",
-            "git diff --exit-code",
-        )
+        StepBuilder(":python-isort:")
+        .run("pip install -e python_modules/dagster[test]", "make check_isort")
         .on_integration_image(SupportedPython.V3_7)
         .build(),
         StepBuilder(":python-black:")
