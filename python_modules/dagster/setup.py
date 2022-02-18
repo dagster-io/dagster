@@ -62,6 +62,7 @@ if __name__ == "__main__":
             "contextvars; python_version < '3.7'",
             # https://github.com/dagster-io/dagster/issues/4167
             "Jinja2<3.0",
+            "markupsafe<=2.0.1",
             "PyYAML>=5.1",
             # core (not explicitly expressed atm)
             # alembic 1.6.3 broke our migrations: https://github.com/sqlalchemy/alembic/issues/848
