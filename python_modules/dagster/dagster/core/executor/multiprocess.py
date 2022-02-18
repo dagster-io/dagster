@@ -104,7 +104,7 @@ class MultiprocessExecutor(Executor):
         valid_starts = multiprocessing.get_all_start_methods()
 
         if start_method is None:
-            start_method = "forkserver" if "forkserver" in valid_starts else "spawn"
+            start_method = "spawn"
 
         if start_method not in valid_starts:
             raise DagsterUnmetExecutorRequirementsError(
