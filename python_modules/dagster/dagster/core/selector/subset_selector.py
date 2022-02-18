@@ -45,6 +45,28 @@ class OpSelectionData(
         )
 
 
+def generate_asset_dep_graph(asset_defs):
+    graph = {"upstream": {}, "downstream": {}}
+
+    for asset_def in asset_defs:
+        for asset_key in asset_def.asset_keys:
+            # FIXME: this is not a great way to name things?
+            item_name = ".".join(asset_key.path)
+            upstream_assets = asset_def.upstream_assets(asset_key)
+            graph["upstream"][item_name] = set()
+
+            # make sure all upstream assets include this as a downstream asset
+            for upstream_asset_key in upstream_assets:
+                upstream_item_name = ".".join(upstream_asset_key.path)
+                graph["upstream"][item_name].add(upstream_item_name)
+                graph["downstream"][upstream_item_name] = graph["downstream"].get(
+                    upstream_item_name, set()
+                )
+                graph["downstream"][upstream_item_name].add(item_name)
+
+    return graph
+
+
 def generate_dep_graph(pipeline_def):
     """'pipeline to dependency graph. It currently only supports top-level solids.
 
@@ -232,6 +254,33 @@ def parse_op_selection(job_def: "JobDefinition", op_selection: List[str]) -> Dic
         top_level_op: LeafNodeSelection
         for top_level_op in parse_solid_selection(job_def, op_selection)
     }
+
+
+def parse_asset_selection(asset_defs, asset_selection):
+    if len(asset_selection) == 1 and asset_selection[0] == "*":
+        ret = set()
+        for asset_def in asset_defs:
+            ret.update(asset_def.asset_keys)
+        return ret
+
+    graph = generate_asset_dep_graph(asset_defs)
+    assets_set = set()
+
+    # loop over clauses
+    for clause in asset_selection:
+        subset = clause_to_subset(graph, clause)
+        if len(subset) == 0:
+            raise DagsterInvalidSubsetError(
+                "No qualified {node_type} to execute found for {selection_type}={requested}".format(
+                    requested=asset_selection, node_type="assets", selection_type="asset_selection"
+                )
+            )
+        assets_set.update(subset)
+
+    from dagster import AssetKey
+
+    print(assets_set)
+    return frozenset((AssetKey(name.split(".")) for name in assets_set))
 
 
 def parse_solid_selection(pipeline_def, solid_selection):

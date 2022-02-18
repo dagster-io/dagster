@@ -237,6 +237,7 @@ def multi_asset(
     required_resource_keys: Optional[Set[str]] = None,
     compute_kind: Optional[str] = None,
     internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
+    can_subset: bool = False,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -284,11 +285,11 @@ def multi_asset(
                 out=asset_outs,
                 required_resource_keys=required_resource_keys,
                 tags={"kind": compute_kind} if compute_kind else None,
+                config_schema=None
+                if not can_subset
+                else {"selected_assets": Field(list, is_required=False)},
             )(fn)
 
-        # NOTE: we can `cast` below because we know the Ins returned by `build_asset_ins` always
-        # have a plain AssetKey asset key. Dynamic asset keys will be deprecated in 0.15.0, when
-        # they are gone we can remove this cast.
         return AssetsDefinition(
             input_names_by_asset_key={
                 cast(AssetKey, in_def.asset_key): input_name
@@ -298,6 +299,7 @@ def multi_asset(
                 cast(AssetKey, out_def.asset_key): output_name for output_name, out_def in asset_outs.items()  # type: ignore
             },
             op=op,
+            can_subset=can_subset,
         )
 
     return inner

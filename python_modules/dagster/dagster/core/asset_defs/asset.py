@@ -16,8 +16,12 @@ class AssetsDefinition:
         op: OpDefinition,
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]] = None,
+        can_subset: bool = False,
+        subset=None,
     ):
         self._op = op
+        self._a = input_names_by_asset_key
+        self._b = output_names_by_asset_key
         self._input_defs_by_asset_key = {
             asset_key: op.input_dict[input_name]
             for asset_key, input_name in input_names_by_asset_key.items()
@@ -29,6 +33,12 @@ class AssetsDefinition:
         }
         self._partitions_def = partitions_def
         self._partition_mappings = partition_mappings or {}
+        self._can_subset = can_subset
+        self._subset = subset
+
+    @property
+    def can_subset(self) -> bool:
+        return self._can_subset
 
     def __call__(self, *args, **kwargs):
         return self._op(*args, **kwargs)
@@ -39,7 +49,9 @@ class AssetsDefinition:
 
     @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
-        return self._output_defs_by_asset_key.keys()
+        if self._subset is None:
+            return self._output_defs_by_asset_key.keys()
+        return self._subset
 
     @property
     def output_defs_by_asset_key(self):
@@ -52,6 +64,37 @@ class AssetsDefinition:
     @property
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         return self._partitions_def
+
+    def subset(self, asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
+        if not self.can_subset:
+            raise "TODO"
+        assert asset_keys <= self.asset_keys
+        # gross
+        import copy
+        import hashlib
+
+        nn = hashlib.md5(str(sorted(asset_keys)).encode()).hexdigest()[:5]
+
+        new_op = copy.copy(self.op)
+        new_op._name = f"{new_op.name}_{nn}"
+        new_op._output_defs = [self.output_defs_by_asset_key[ak] for ak in asset_keys]
+        return AssetsDefinition(
+            self._a,
+            self._b,
+            new_op,
+            self.partitions_def,
+            self._partition_mappings,
+            self.can_subset,
+            asset_keys,
+        )
+
+    def upstream_assets(self, asset_key) -> AbstractSet[AssetKey]:
+        output_def = self.output_defs_by_asset_key[asset_key]
+        asset_deps = (output_def.metadata or {}).get(".dagster/asset_deps")
+        if asset_deps is not None:
+            return asset_deps
+        # if no deps specified, assume depends on all inputs and no outputs
+        return set(self.input_defs_by_asset_key.keys())
 
     def get_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
         if self._partitions_def is None:

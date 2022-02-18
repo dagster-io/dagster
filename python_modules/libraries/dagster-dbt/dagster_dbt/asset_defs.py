@@ -97,6 +97,7 @@ def _dbt_nodes_to_assets(
             description=description,
             io_manager_key=io_manager_key,
             metadata=_columns_to_metadata(node_info["columns"]),
+            is_required=False,
         )
         out_name_to_node_info[node_name] = node_info
         internal_asset_deps[node_name] = asset_deps
@@ -108,9 +109,14 @@ def _dbt_nodes_to_assets(
         required_resource_keys={"dbt"},
         compute_kind="dbt",
         internal_asset_deps=internal_asset_deps,
+        can_subset=True,
     )
     def _dbt_project_multi_assset(context):
-        dbt_output = context.resources.dbt.run(select=select)
+        selected_asset_keys = context.op_config.get("selected_assets")
+        if selected_asset_keys is None:
+            dbt_output = context.resources.dbt.run(select=select)
+        else:
+            dbt_output = context.resources.dbt.run(select=" ".join(selected_asset_keys))
         # yield an Output for each materialization generated in the run
         for materialization in generate_materializations(dbt_output):
             output_name = materialization.asset_key.path[-1]
