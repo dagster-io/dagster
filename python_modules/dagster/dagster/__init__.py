@@ -265,7 +265,7 @@ from dagster.config.source import BoolSource, StringSource, IntSource  # isort:s
 # ##### LAZY LOAD
 # ########################
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING or os.getenv("DAGSTER_NO_LAZY_LOAD") == "1":
     from dagster.core.storage.event_log import (
         EventLogEntry
         EventLogRecord
@@ -281,14 +281,6 @@ _LAZY_LOAD = {
         "RunShardedEventsCursor",
     )
 }
-
-if os.getenv("DAGSTER_NO_LAZY_LOAD") == "1":
-    from dagster.core.storage.event_log import (
-        EventLogEntry,
-        EventLogRecord,
-        EventRecordsFilter,
-        RunShardedEventsCursor,
-    )
 
 # ########################
 # ##### DEPRECATED ALIASES
