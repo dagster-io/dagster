@@ -501,5 +501,10 @@
     "source": "/concepts/modes-resources",
     "destination": "/concepts/resources",
     "permanent": true
+  },
+  {
+    "source": "/deployment/guides/ecs",
+    "destination": "/deployment/guides/aws#deploying-in-ecs",
+    "permanent": true
   }
 ]
