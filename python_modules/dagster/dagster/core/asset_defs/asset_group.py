@@ -135,6 +135,39 @@ class AssetGroup(
         tags: Optional[Dict[str, Any]] = None,
         description: Optional[str] = None,
     ) -> JobDefinition:
+        """Defines an executable job from the provided assets, resources, and executor.
+
+        Args:
+            name (str): The name to give the job.
+            selection (Union[str, List[str]]): A single selection query or list of selection queries to execute. For example:
+                * ``['some_asset_key']``: selects ``some_asset_key`` itself.
+                * ``['*some_asset_key']``: select ``some_asset_key`` and all its ancestors (upstream dependencies).
+                * ``['*some_asset_key+++']``: select ``some_asset_key``, all its ancestors, and its descendants
+                (downstream dependencies) within 3 levels down.
+                * ``['*some_asset_key', 'other_asset_key_a', 'other_asset_key_b+']``: select ``some_asset_key`` and all its
+                ancestors, ``other_asset_key_a`` itself, and ``other_asset_key_b`` and its direct child asset keys. When subselecting into a multi-asset, all of the asset keys in that multi-asset must be selected.
+            executor_def (Optional[ExecutorDefinition]): The executor definition to use when executing the job. Defaults to the executor on the AssetGroup. If no executor was provided on the AssetGroup, then it defaults to :py:class:`multi_or_in_process_executor`.
+            tags (Optional[Dict[str, Any]]): Arbitrary metadata for any execution of the Job.
+                Values that are not strings will be json encoded and must meet the criteria that
+                `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
+                values provided at invocation time.
+            description (Optional[str]): A description of the job.
+
+        Examples:
+
+            .. code-block:: python
+
+                from dagster import AssetGroup
+
+                the_asset_group = AssetGroup(...)
+
+                job_with_all_assets = the_asset_group.build_job()
+
+                job_with_one_selection = the_asset_group.build_job(selection="some_asset")
+
+                job_with_multiple_selections = the_asset_group.build_job(selection=["*some_asset", "other_asset++"])
+        """
+
         from dagster.core.selector.subset_selector import parse_op_selection
 
         check.str_param(name, "name")
