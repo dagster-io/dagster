@@ -257,9 +257,9 @@ from .version import __version__
 
 from dagster.config.source import BoolSource, StringSource, IntSource  # isort:skip
 
-# NOTE: Unfortunately we have to declare deprecated aliases twice-- the TYPE_CHECKING declaration
-# satisfies linters and type checkers, but an entry in a richer data structure is required to
-# provide the information needed to dynamically resolve the attribute.
+# NOTE: Unfortunately we have to declare dynamically resolved attributes twice-- the TYPE_CHECKING
+# declaration satisfies linters and type checkers, but an entry in a richer data structure is
+# required to provide the information needed to dynamically resolve the attribute.
 
 # ########################
 # ##### LAZY LOAD
@@ -267,10 +267,10 @@ from dagster.config.source import BoolSource, StringSource, IntSource  # isort:s
 
 if typing.TYPE_CHECKING or os.getenv("DAGSTER_NO_LAZY_LOAD") == "1":
     from dagster.core.storage.event_log import (
-        EventLogEntry
-        EventLogRecord
-        EventRecordsFilter
-        RunShardedEventsCursor
+        EventLogEntry,
+        EventLogRecord,
+        EventRecordsFilter,
+        RunShardedEventsCursor,
     )
 
 _LAZY_LOAD = {
