@@ -56,7 +56,7 @@ def my_job_fails():
 # end_failure_sensor_testing_with_context_setup
 
 # start_alert_sensor_testing_with_context_marker
-from dagster import DagsterEventType, DagsterInstance, build_run_status_sensor_context
+from dagster import DagsterInstance, build_run_status_sensor_context
 
 # execute the job
 instance = DagsterInstance.ephemeral()

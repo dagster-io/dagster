@@ -480,7 +480,7 @@ instance = DagsterInstance.ephemeral()
 result = my_job_succeeds.execute_in_process(instance=instance)
 
 # retrieve the DagsterRun
-dagster_run = result.run
+dagster_run = result.dagster_run
 
 # retrieve a success event from the completed execution
 dagster_event = result.get_job_success_event()
@@ -529,14 +529,14 @@ def my_job_fails():
 Then we can execute the job and create our context
 
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_alert_sensor_testing_with_context_marker endbefore=end_alert_sensor_testing_with_context_marker
-from dagster import DagsterEventType, DagsterInstance, build_run_status_sensor_context
+from dagster import DagsterInstance, build_run_status_sensor_context
 
 # execute the job
 instance = DagsterInstance.ephemeral()
 result = my_job_fails.execute_in_process(instance=instance, raise_on_error=False)
 
 # retrieve the DagsterRun
-dagster_run = result.run
+dagster_run = result.dagster_run
 
 # retrieve a failure event from the completed job execution
 dagster_event = result.get_job_failure_event()
