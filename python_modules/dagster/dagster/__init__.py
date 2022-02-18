@@ -269,20 +269,24 @@ from dagster.config.source import BoolSource, StringSource, IntSource  # isort:s
 # in `_DEPRECATED` is required  for us to generate the deprecation warning.
 
 if typing.TYPE_CHECKING:
-    from dagster.core.definitions import MetadataEntry as EventMetadataEntry
-    from dagster.core.definitions import MetadataValue as EventMetadata
-    from dagster.core.definitions import TextMetadataValue as TextMetadataEntryData
-    from dagster.core.definitions import UrlMetadataValue as UrlMetadataEntryData
-    from dagster.core.definitions import PathMetadataValue as PathMetadataEntryData
-    from dagster.core.definitions import JsonMetadataValue as JsonMetadataEntryData
-    from dagster.core.definitions import MarkdownMetadataValue as MarkdownMetadataEntryData
-    from dagster.core.definitions import PythonArtifactMetadataValue as PythonArtifactMetadataEntryData
-    from dagster.core.definitions import FloatMetadataValue as FloatMetadataEntryData
-    from dagster.core.definitions import IntMetadataValue as IntMetadataEntryData
-    from dagster.core.definitions import DagsterPipelineRunMetadataValue as DagsterPipelineRunMetadataEntryData
-    from dagster.core.definitions import DagsterAssetMetadataValue as DagsterAssetMetadataEntryData
-    from dagster.core.definitions import TableMetadataValue as TableMetadataEntryData
-    from dagster.core.definitions import TableSchemaMetadataValue as TableSchemaMetadataEntryData
+    # pylint:disable=reimported
+    from dagster.core.definitions import (
+        MetadataEntry as EventMetadataEntry,
+        MetadataValue as EventMetadata,
+        TextMetadataValue as TextMetadataEntryData,
+        UrlMetadataValue as UrlMetadataEntryData,
+        PathMetadataValue as PathMetadataEntryData,
+        JsonMetadataValue as JsonMetadataEntryData,
+        MarkdownMetadataValue as MarkdownMetadataEntryData,
+        PythonArtifactMetadataValue as PythonArtifactMetadataEntryData,
+        FloatMetadataValue as FloatMetadataEntryData,
+        IntMetadataValue as IntMetadataEntryData,
+        DagsterPipelineRunMetadataValue as DagsterPipelineRunMetadataEntryData,
+        DagsterAssetMetadataValue as DagsterAssetMetadataEntryData,
+        TableMetadataValue as TableMetadataEntryData,
+        TableSchemaMetadataValue as TableSchemaMetadataEntryData,
+    )
+    # pylint:enable=reimported
 
 _DEPRECATED = {
     "EventMetadataEntry": ("MetadataEntry", MetadataEntry, "0.15.0"),
