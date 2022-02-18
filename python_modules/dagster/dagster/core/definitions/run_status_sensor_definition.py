@@ -114,8 +114,7 @@ class RunStatusSensorContext(
         )
 
     def for_run_failure(self):
-        """Converts RunStatusSensorContext to RunFailureSensorContext.
-        """
+        """Converts RunStatusSensorContext to RunFailureSensorContext."""
         return RunFailureSensorContext(
             sensor_name=self.sensor_name,
             dagster_run=self.dagster_run,
