@@ -136,19 +136,20 @@ export const LiveTickTimeline: React.FC<{
               return '';
             }
             const tick = ticks[tooltipItem.dataIndex];
+            const cursorLabel = tick.cursor ? `Cursor: ${tick.cursor}\n` : '';
             if (tick.status === InstigationTickStatus.SKIPPED && tick.skipReason) {
-              return tick.skipReason;
+              return cursorLabel ? [tick.skipReason, cursorLabel] : tick.skipReason;
             }
             if (tick.status === InstigationTickStatus.SUCCESS && tick.runIds.length) {
-              return tick.runIds;
+              return cursorLabel ? [...tick.runIds, cursorLabel] : tick.runIds;
             }
             if (tick.status === InstigationTickStatus.SUCCESS && tick.originRunIds) {
-              return tick.originRunIds;
+              return cursorLabel ? [...tick.originRunIds, cursorLabel] : tick.originRunIds;
             }
             if (tick.status === InstigationTickStatus.FAILURE && tick.error?.message) {
-              return tick.error.message;
+              return cursorLabel ? [tick.error.message, cursorLabel] : tick.error.message;
             }
-            return '';
+            return cursorLabel;
           },
         },
       },

@@ -111,6 +111,7 @@ export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection
 export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks {
   __typename: "InstigationTick";
   id: string;
+  cursor: string | null;
   status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;
@@ -234,6 +235,7 @@ export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_Insti
 export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks {
   __typename: "InstigationTick";
   id: string;
+  cursor: string | null;
   status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;
