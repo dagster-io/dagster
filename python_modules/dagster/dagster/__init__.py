@@ -1,3 +1,4 @@
+import importlib
 import sys
 import typing
 
@@ -203,12 +204,6 @@ from dagster.core.executor.init import InitExecutorContext
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import DefaultRunLauncher
 from dagster.core.log_manager import DagsterLogManager
-from dagster.core.storage.event_log import (
-    EventLogEntry,
-    EventLogRecord,
-    EventRecordsFilter,
-    RunShardedEventsCursor,
-)
 from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
@@ -261,13 +256,29 @@ from .version import __version__
 
 from dagster.config.source import BoolSource, StringSource, IntSource  # isort:skip
 
+# NOTE: Unfortunately we have to declare deprecated aliases twice-- the TYPE_CHECKING declaration
+# satisfies linters and type checkers, but an entry in a richer data structure is required to
+# provide the information needed to dynamically resolve the attribute.
+
+# ########################
+# ##### LAZY LOAD
+# ########################
+
+if typing.TYPE_CHECKING:
+    from dagster.core.storage.event_log import (
+        EventLogEntry
+        EventLogRecord
+        EventRecordsFilter
+        RunShardedEventsCursor
+    )
+
+_LAZY_LOAD = {
+    'dagster.core.storage.event_log': ('EventLogEntry', 'EventLogRecord', 'EventRecordsFilter', 'RunShardedEventsCursor')
+}
+
 # ########################
 # ##### DEPRECATED ALIASES
 # ########################
-
-# NOTE: Unfortunately we have to declare deprecated aliases twice-- the
-# TYPE_CHECKING declaration satisfies linters and type checkers, but the entry
-# in `_DEPRECATED` is required  for us to generate the deprecation warning.
 
 if typing.TYPE_CHECKING:
     # pylint:disable=reimported
@@ -321,6 +332,11 @@ _DEPRECATED = {
     ),
 }
 
+# ########################
+# ##### DYNAMIC ATTRIBUTE RESOLUTION
+# ########################
+
+_lazy_load_name_map = { name: mod for mod, names in _LAZY_LOAD.items() for name in names }
 
 def __getattr__(name):
     if name in _DEPRECATED:
@@ -328,6 +344,8 @@ def __getattr__(name):
         stacklevel = 3 if sys.version_info >= (3, 7) else 4
         rename_warning(value.__name__, name, breaking_version, stacklevel=stacklevel)
         return value
+    elif name in _lazy_load_name_map:
+        return importlib.import_module(_lazy_load_name_map[name]).__dict__[name]
     else:
         raise AttributeError("module '{}' has no attribute '{}'".format(__name__, name))
 
@@ -342,6 +360,10 @@ def __dir__():
 #  PEP 562: https://www.python.org/dev/peps/pep-0562/
 #  PEP 562 backport package: https://github.com/facelessuser/pep562
 pep562(__name__)
+
+# ########################
+# ##### EXPORTS
+# ########################
 
 __all__ = [
     # Definition
