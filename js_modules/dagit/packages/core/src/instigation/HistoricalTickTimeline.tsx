@@ -193,6 +193,10 @@ export const HistoricalTickTimeline: React.FC<{
               return '';
             }
             const cursorLabel = hoveredTick.cursor ? `Cursor: ${hoveredTick.cursor}\n` : '';
+
+            // returning an array of strings ensures that each string is displayed on its own line
+            // in the tooltip
+
             if (hoveredTick.status === InstigationTickStatus.SKIPPED && hoveredTick.skipReason) {
               return cursorLabel
                 ? [snippet(hoveredTick.skipReason), cursorLabel]

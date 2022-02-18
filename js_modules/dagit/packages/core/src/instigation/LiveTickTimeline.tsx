@@ -137,6 +137,10 @@ export const LiveTickTimeline: React.FC<{
             }
             const tick = ticks[tooltipItem.dataIndex];
             const cursorLabel = tick.cursor ? `Cursor: ${tick.cursor}\n` : '';
+
+            // returning an array of strings ensures that each string is displayed on its own line
+            // in the tooltip
+
             if (tick.status === InstigationTickStatus.SKIPPED && tick.skipReason) {
               return cursorLabel ? [tick.skipReason, cursorLabel] : tick.skipReason;
             }
