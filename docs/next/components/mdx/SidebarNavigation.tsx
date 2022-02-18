@@ -108,7 +108,7 @@ const renderItems = (items, activeId, depth) => {
   return (
     <ol>
       {items.map((item) => {
-        return (
+        return item.url ? (
           <li key={item.url} className={cx(MARGINS[depth], "mt-3 list-inside")}>
             <a
               href={item.url}
@@ -125,6 +125,8 @@ const renderItems = (items, activeId, depth) => {
             </a>
             {item.items && renderItems(item.items, activeId, depth + 1)}
           </li>
+        ) : (
+          renderItems(item.items, activeId, depth)
         );
       })}
     </ol>

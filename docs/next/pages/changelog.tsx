@@ -113,6 +113,8 @@ function MDXRenderer({ data }: { data: MDXData }) {
     },
   });
 
+  const navigationItems = tableOfContents.items.filter((item) => item?.items);
+
   return (
     <>
       <NextSeo
@@ -140,8 +142,8 @@ function MDXRenderer({ data }: { data: MDXData }) {
                 On this page
               </div>
               <div className="mt-6 ">
-                {tableOfContents.items[0].items && (
-                  <SidebarNavigation items={tableOfContents.items[0].items} />
+                {navigationItems && (
+                  <SidebarNavigation items={navigationItems} />
                 )}
               </div>
             </div>
