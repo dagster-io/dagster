@@ -58,6 +58,7 @@ export interface InstigationStateFragment_ticks_error {
 export interface InstigationStateFragment_ticks {
   __typename: "InstigationTick";
   id: string;
+  cursor: string | null;
   status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;
