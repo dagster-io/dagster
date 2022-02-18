@@ -11,3 +11,10 @@ Jobs are created by calling :py:meth:`GraphDefinition.to_job` on a graph instanc
 
 .. autoclass:: JobDefinition
     :members:
+
+Reconstructable jobs
+-------------------------
+.. autoclass:: reconstructable
+   :noindex:
+
+.. autofunction:: build_reconstructable_job
