@@ -1,4 +1,4 @@
 [tool.black]
-line-length = 100
+line-length = 88
 required-version = "22.1.0"
 target_version = ['py36', 'py37', 'py38', 'py39', 'py310']
