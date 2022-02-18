@@ -2,6 +2,45 @@
 
 When new releases include breaking changes or deprecations, this document describes how to migrate.
 
+## Migrating to 0.14.0
+
+If migrating from below 0.13.17, you can run
+```
+dagster instance migrate
+```
+This optional migration makes performance improvements to the runs page in Dagit.
+
+### Breaking Changes
+- The Dagster Daemon now uses the same workspace.yaml file as Dagit to locate your Dagster code. You should ensure that if you make any changes to your workspace.yaml file, they are included in both Dagit’s copy and the Dagster Daemon’s copy. When you make changes to the workspace.yaml file, you don’t need to restart either Dagit or the Dagster Daemon - in Dagit, you can reload the workspace from the Workspace tab, and the Dagster Daemon will periodically check the workspace.yaml file for changes every 60 seconds. If you are using the Dagster Helm chart, no changes are required to include the workspace in the Dagster Daemon.
+- Dagster’s metadata API has undergone a signficant overhaul. Changes include:
+    - To reflect the fact that metadata can be specified on definitions in addition to events, the following names are changing. The old names are deprecated, and will function as aliases for the new names until 0.15.0:
+        - `EventMetadata` > `MetadataValue`
+        - `EventMetadataEntry` > `MetadataEntry`
+        - `XMetadataEntryData` > `XMetadataValue` (e.g. `TextMetadataEntryData` > `TextMetadataValue`)
+    - The `metadata_entries` keyword argument to events and Dagster types is deprecated. Instead, users should use the metadata keyword argument, which takes a dictionary mapping string labels to `MetadataValue`s.
+    - Arbitrary metadata on In/InputDefinition and Out/OutputDefinition is deprecated. In 0.15.0, metadata passed for these classes will need to be resolvable to MetadataValue (i.e. function like metadata everywhere else in Dagster).
+    - The description attribute of `EventMetadataEntry` is deprecated.
+    - The static API of `EventMetadataEntry` (e.g. `EventMetadataEntry.text`) is deprecated. In 0.15.0, users should avoid constructing `EventMetadataEntry` objects directly, instead utilizing the metadata dictionary keyword argument, which maps string labels to `MetadataValues`.
+- In previous releases, it was possible to supply either an AssetKey, or a function that produced an AssetKey from an OutputContext as the asset_key argument to an Out/OutputDefinition. The latter behavior makes it impossible to gain information about these relationships without running a job, and has been deprecated. However, we still support supplying a static AssetKey as an argument.
+- We have renamed many of the core APIs that interact with ScheduleStorage, which keeps track of sensor/schedule state and ticks.  The old term for the generic schedule/sensor “job” has been replaced by the term “instigator” in order to avoid confusion with the execution API introduced in 0.12.0.  If you have implemented your own schedule storage, you may need to change your method signatures appropriately.
+- Dagit is now powered by Starlette instead of Flask. If you have implemented a custom run coordinator, you may need to make the following change:
+  ```python
+  from flask import has_request_context, request
+
+  def submit_run(self, context: SubmitRunContext) -> PipelineRun:
+      jwt_claims_header = (
+          request.headers.get("X-Amzn-Oidc-Data", None) if has_request_context() else None
+      )
+  ```
+  Should be replaced by:
+  ```python
+  def submit_run(self, context: SubmitRunContext) -> PipelineRun:
+      jwt_claims_header = context.get_request_header("X-Amzn-Oidc-Data")
+  ```
+- The Dagster Daemon now requires a workspace.yaml file, much like Dagit.
+- Ellipsis (“...”) is now an invalid substring of a partition key. This is because Dagit accepts an ellipsis to specify partition ranges.
+- [Helm] The Dagster Helm chart now only supported Kubernetes clusters above version 1.18.
+
 ## Migrating to 0.13.0
 
 Jobs, ops, and graphs have replaced pipelines, solids, modes, and presets as the stable core of the
