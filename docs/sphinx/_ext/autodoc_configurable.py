@@ -132,9 +132,25 @@ class ConfigurableDocumenter(DataDocumenter):
         super().add_content(more_content, no_docstring)
 
 
+class DagsterClassDocumenter(ClassDocumenter):
+    """Overrides the default autodoc ClassDocumenter to adds some extra options."""
+    objtype = "class"
+
+    option_spec = ClassDocumenter.option_spec.copy()
+    option_spec["deprecated_aliases"] = lambda str: [s.strip() for s in str.split(",")]
+
+    def add_content(self, *args, **kwargs):
+        super().add_content(*args, **kwargs)
+        source_name = self.get_sourcename()
+        for alias in self.options["deprecated_aliases"]:
+            self.add_line(f"ALIAS: {alias}", source_name)
+
+
 def setup(app):
     app.setup_extension("sphinx.ext.autodoc")  # Require autodoc extension
     app.add_autodocumenter(ConfigurableDocumenter)
+    # override allows `.. autoclass::` to invoke DagsterClassDocumenter instead of default
+    app.add_autodocumenter(DagsterClassDocumenter, override=True)
 
     return {
         "version": "0.1",
