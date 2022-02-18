@@ -17,8 +17,6 @@ from dagster import (
     AssetObservation,
     Bool,
     DagsterInstance,
-    DefaultScheduleStatus,
-    DefaultSensorStatus,
     DynamicOutput,
     DynamicOutputDefinition,
     Enum,
@@ -1081,15 +1079,6 @@ def define_schedules():
         return {}
 
     @daily_schedule(
-        pipeline_name="no_config_pipeline",
-        start_date=today_at_midnight().subtract(days=1),
-        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
-        default_status=DefaultScheduleStatus.RUNNING,
-    )
-    def running_in_code_schedule(_date):
-        return {}
-
-    @daily_schedule(
         pipeline_name="multi_mode_with_loggers",
         start_date=today_at_midnight().subtract(days=1),
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
@@ -1205,7 +1194,6 @@ def define_schedules():
         tags_error_schedule,
         timezone_schedule,
         invalid_config_schedule,
-        running_in_code_schedule,
     ]
 
 
@@ -1272,24 +1260,12 @@ def define_sensors():
             tags={"test": "1234"},
         )
 
-    @sensor(
-        pipeline_name="no_config_pipeline",
-        mode="default",
-        default_status=DefaultSensorStatus.RUNNING,
-    )
-    def running_in_code_sensor(_):
-        return RunRequest(
-            run_key=None,
-            tags={"test": "1234"},
-        )
-
     return [
         always_no_config_sensor,
         once_no_config_sensor,
         never_no_config_sensor,
         multi_no_config_sensor,
         custom_interval_sensor,
-        running_in_code_sensor,
     ]
 
 
