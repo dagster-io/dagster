@@ -142,7 +142,7 @@ class DagsterClassDocumenter(ClassDocumenter):
     def add_content(self, *args, **kwargs):
         super().add_content(*args, **kwargs)
         source_name = self.get_sourcename()
-        for alias in self.options["deprecated_aliases"]:
+        for alias in self.options.get('deprecated_aliases', []):
             self.add_line(f"ALIAS: {alias}", source_name)
 
 
