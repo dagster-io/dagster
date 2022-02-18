@@ -80,6 +80,7 @@ export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_tic
 export interface SensorsRootQuery_sensorsOrError_Sensors_results_sensorState_ticks {
   __typename: "InstigationTick";
   id: string;
+  cursor: string | null;
   status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;
@@ -186,6 +187,7 @@ export interface SensorsRootQuery_unloadableInstigationStatesOrError_Instigation
 export interface SensorsRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks {
   __typename: "InstigationTick";
   id: string;
+  cursor: string | null;
   status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;

@@ -67,6 +67,7 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks_error {
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks {
   __typename: "InstigationTick";
   id: string;
+  cursor: string | null;
   status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;

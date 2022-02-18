@@ -96,6 +96,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
     runIds = non_null_list(graphene.String)
     error = graphene.Field(GraphenePythonError)
     skipReason = graphene.String()
+    cursor = graphene.String()
     runs = non_null_list("dagster_graphql.schema.pipelines.pipeline.GrapheneRun")
     originRunIds = non_null_list(graphene.String)
 
@@ -112,6 +113,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
             error=tick.error,
             skipReason=tick.skip_reason,
             originRunIds=tick.origin_run_ids,
+            cursor=tick.cursor,
         )
 
     def resolve_id(self, _):

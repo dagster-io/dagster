@@ -64,6 +64,7 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks {
   __typename: "InstigationTick";
   id: string;
+  cursor: string | null;
   status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;
