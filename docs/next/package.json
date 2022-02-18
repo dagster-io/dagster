@@ -26,6 +26,7 @@
     "@tailwindcss/typography": "^0.4.0",
     "add": "^2.0.6",
     "autoprefixer": "^10.1.0",
+    "axios": "^0.26.0",
     "classnames": "^2.2.6",
     "dotenv": "^8.2.0",
     "fast-glob": "^3.2.5",
