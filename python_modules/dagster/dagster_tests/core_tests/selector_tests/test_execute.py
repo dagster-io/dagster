@@ -65,7 +65,7 @@ def test_execute_pipeline_with_solid_selection_multi_clauses():
 
     with pytest.raises(
         DagsterInvalidSubsetError,
-        match=re.escape("No qualified solids to execute found for solid_selection"),
+        match=re.escape("No qualified ops to execute found for ops_selection"),
     ):
         execute_pipeline(foo_pipeline, solid_selection=["a", "*add_nums"])
 
@@ -76,7 +76,7 @@ def test_execute_pipeline_with_solid_selection_invalid():
     with pytest.raises(
         DagsterInvalidSubsetError,
         match=re.escape(
-            "No qualified solids to execute found for solid_selection={input}".format(
+            "No qualified ops to execute found for ops_selection={input}".format(
                 input=invalid_input
             )
         ),

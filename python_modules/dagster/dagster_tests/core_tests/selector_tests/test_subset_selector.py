@@ -47,7 +47,7 @@ def foo_pipeline():
 
 
 def test_generate_dep_graph():
-    graph = generate_dep_graph(foo_pipeline)
+    graph = generate_dep_graph(foo_pipeline.get_pipeline_snapshot())
     assert graph == {
         "upstream": {
             "return_one": set(),
@@ -67,7 +67,7 @@ def test_generate_dep_graph():
 
 
 def test_traverser():
-    graph = generate_dep_graph(foo_pipeline)
+    graph = generate_dep_graph(foo_pipeline.get_pipeline_snapshot())
     traverser = Traverser(graph)
 
     assert traverser.fetch_upstream(item_name="return_one", depth=1) == set()
@@ -82,7 +82,7 @@ def test_traverser():
 
 
 def test_traverser_invalid():
-    graph = generate_dep_graph(foo_pipeline)
+    graph = generate_dep_graph(foo_pipeline.get_pipeline_snapshot())
     traverser = Traverser(graph)
 
     assert traverser.fetch_upstream(item_name="some_solid", depth=1) == set()
@@ -101,46 +101,52 @@ def test_parse_clause_invalid():
 
 
 def test_parse_solid_selection_single():
-    solid_selection_single = parse_solid_selection(foo_pipeline, ["add_nums"])
+    solid_selection_single = parse_solid_selection(
+        foo_pipeline.get_pipeline_snapshot(), ["add_nums"]
+    )
     assert len(solid_selection_single) == 1
     assert solid_selection_single == {"add_nums"}
 
-    solid_selection_star = parse_solid_selection(foo_pipeline, ["add_nums*"])
+    solid_selection_star = parse_solid_selection(
+        foo_pipeline.get_pipeline_snapshot(), ["add_nums*"]
+    )
     assert len(solid_selection_star) == 3
     assert set(solid_selection_star) == {"add_nums", "multiply_two", "add_one"}
 
-    solid_selection_both = parse_solid_selection(foo_pipeline, ["*add_nums+"])
+    solid_selection_both = parse_solid_selection(
+        foo_pipeline.get_pipeline_snapshot(), ["*add_nums+"]
+    )
     assert len(solid_selection_both) == 4
     assert set(solid_selection_both) == {"return_one", "return_two", "add_nums", "multiply_two"}
 
 
 def test_parse_solid_selection_multi():
     solid_selection_multi_disjoint = parse_solid_selection(
-        foo_pipeline, ["return_one", "add_nums+"]
+        foo_pipeline.get_pipeline_snapshot(), ["return_one", "add_nums+"]
     )
     assert len(solid_selection_multi_disjoint) == 3
     assert set(solid_selection_multi_disjoint) == {"return_one", "add_nums", "multiply_two"}
 
     solid_selection_multi_overlap = parse_solid_selection(
-        foo_pipeline, ["*add_nums", "return_one+"]
+        foo_pipeline.get_pipeline_snapshot(), ["*add_nums", "return_one+"]
     )
     assert len(solid_selection_multi_overlap) == 3
     assert set(solid_selection_multi_overlap) == {"return_one", "return_two", "add_nums"}
 
     with pytest.raises(
         DagsterInvalidSubsetError,
-        match="No qualified solids to execute found for solid_selection",
+        match="No qualified ops to execute found for ops_selection",
     ):
-        parse_solid_selection(foo_pipeline, ["*add_nums", "a"])
+        parse_solid_selection(foo_pipeline.get_pipeline_snapshot(), ["*add_nums", "a"])
 
 
 def test_parse_solid_selection_invalid():
 
     with pytest.raises(
         DagsterInvalidSubsetError,
-        match="No qualified solids to execute found for solid_selection",
+        match="No qualified ops to execute found for ops_selection",
     ):
-        parse_solid_selection(foo_pipeline, ["some,solid"])
+        parse_solid_selection(foo_pipeline.get_pipeline_snapshot(), ["some,solid"])
 
 
 step_deps = {

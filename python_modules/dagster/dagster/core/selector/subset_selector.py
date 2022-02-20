@@ -3,7 +3,6 @@ import sys
 from collections import defaultdict
 from typing import TYPE_CHECKING, AbstractSet, Dict, List, NamedTuple
 
-from dagster.core.definitions.dependency import DependencyStructure
 from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
 from dagster.utils import check
 
@@ -45,11 +44,11 @@ class OpSelectionData(
         )
 
 
-def generate_dep_graph(pipeline_def):
+def generate_dep_graph(pipeline_snapshot):
     """'pipeline to dependency graph. It currently only supports top-level solids.
 
     Args:
-        pipeline (PipelineDefinition): The pipeline to execute.
+        pipeline_snapshot (PipelineSnapshot): The pipeline to execute.
 
     Returns:
         graph (Dict[str, Dict[str, Set[str]]]): the input and output dependency graph. e.g.
@@ -70,22 +69,23 @@ def generate_dep_graph(pipeline_def):
             }
             ```
     """
-    dependency_structure = check.inst_param(
-        pipeline_def.dependency_structure, "dependency_structure", DependencyStructure
-    )
-    item_names = [i.name for i in pipeline_def.solids]
+    from dagster.core.snap.dep_snapshot import DependencyStructureIndex
+
+    item_names = pipeline_snapshot.solid_names_in_topological_order
+
+    dep_structure_index = DependencyStructureIndex(pipeline_snapshot.dep_structure_snapshot)
 
     # defaultdict isn't appropriate because we also want to include items without dependencies
     graph = {"upstream": {}, "downstream": {}}
     for item_name in item_names:
         graph["upstream"][item_name] = set()
-        upstream_dep = dependency_structure.input_to_upstream_outputs_for_solid(item_name)
+        upstream_dep = dep_structure_index.input_to_upstream_outputs_for_solid(item_name)
         for upstreams in upstream_dep.values():
             for up in upstreams:
                 graph["upstream"][item_name].add(up.solid_name)
 
         graph["downstream"][item_name] = set()
-        downstream_dep = dependency_structure.output_to_downstream_inputs_for_solid(item_name)
+        downstream_dep = dep_structure_index.output_to_downstream_inputs_for_solid(item_name)
         for downstreams in downstream_dep.values():
             for down in downstreams:
                 graph["downstream"][item_name].add(down.solid_name)
@@ -210,7 +210,7 @@ def convert_dot_seperated_string_to_dict(tree, splits):
     return tree
 
 
-def parse_op_selection(job_def: "JobDefinition", op_selection: List[str]) -> Dict:
+def parse_op_selection(pipeline_snapshot: "PipelineSnapshot", op_selection: List[str]) -> Dict:
     """
     Examples:
         ["subgraph.return_one", "subgraph.adder", "subgraph.add_one", "add_one"]
@@ -230,11 +230,11 @@ def parse_op_selection(job_def: "JobDefinition", op_selection: List[str]) -> Dic
 
     return {
         top_level_op: LeafNodeSelection
-        for top_level_op in parse_solid_selection(job_def, op_selection)
+        for top_level_op in parse_solid_selection(pipeline_snapshot, op_selection)
     }
 
 
-def parse_solid_selection(pipeline_def, solid_selection):
+def parse_solid_selection(pipeline_snapshot, solid_selection):
     """Take pipeline definition and a list of solid selection queries (inlcuding names of solid
         invocations. See syntax examples below) and return a set of the qualified solid names.
 
@@ -253,7 +253,7 @@ def parse_solid_selection(pipeline_def, solid_selection):
         ones.
 
     Args:
-        pipeline_def (PipelineDefinition): the pipeline to execute.
+        pipeline_snapshot (PipelineSnapshot): the pipeline to execute.
         solid_selection (List[str]): a list of the solid selection queries (including single solid
             names) to execute.
 
@@ -265,9 +265,9 @@ def parse_solid_selection(pipeline_def, solid_selection):
 
     # special case: select all
     if len(solid_selection) == 1 and solid_selection[0] == "*":
-        return frozenset(pipeline_def.graph.node_names())
+        return frozenset(pipeline_snapshot.solid_names)
 
-    graph = generate_dep_graph(pipeline_def)
+    graph = generate_dep_graph(pipeline_snapshot)
     solids_set = set()
 
     # loop over clauses
@@ -275,10 +275,8 @@ def parse_solid_selection(pipeline_def, solid_selection):
         subset = clause_to_subset(graph, clause)
         if len(subset) == 0:
             raise DagsterInvalidSubsetError(
-                "No qualified {node_type} to execute found for {selection_type}={requested}".format(
+                "No qualified ops to execute found for ops_selection={requested}".format(
                     requested=solid_selection,
-                    node_type="ops" if pipeline_def.is_job else "solids",
-                    selection_type="op_selection" if pipeline_def.is_job else "solid_selection",
                 )
             )
         solids_set.update(subset)

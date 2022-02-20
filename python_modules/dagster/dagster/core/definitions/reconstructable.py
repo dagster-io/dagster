@@ -201,7 +201,9 @@ class ReconstructablePipeline(
             #   e.g. ['foo_solid+'] to {'foo_solid', 'bar_solid'}
             if solid_selection and solids_to_execute is None:
                 # when post-resolution query is unavailable, resolve the query
-                solids_to_execute = parse_solid_selection(pipeline_def, solid_selection)
+                solids_to_execute = parse_solid_selection(
+                    pipeline_def.get_pipeline_snapshot(), solid_selection
+                )
             return ReconstructablePipeline(
                 repository=self.repository,
                 pipeline_name=self.pipeline_name,

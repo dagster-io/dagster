@@ -191,7 +191,9 @@ class AssetGroup(
             # asset key selection, but this has disadvantages. Eventually we
             # will want to decouple these implementations.
             # https://github.com/dagster-io/dagster/issues/6647.
-            resolved_op_selection_dict = parse_op_selection(mega_job_def, op_selection)
+            resolved_op_selection_dict = parse_op_selection(
+                mega_job_def.get_pipeline_snapshot(), op_selection
+            )
 
             included_assets = []
             excluded_assets: List[Union[AssetsDefinition, SourceAsset]] = list(self.source_assets)

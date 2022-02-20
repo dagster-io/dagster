@@ -648,7 +648,7 @@ def test_execute_subset_pipeline_invalid():
             ],
         )
         assert result.exit_code == 1
-        assert "No qualified solids to execute found for solid_selection" in str(result.exception)
+        assert "No qualified ops to execute found for ops_selection" in str(result.exception)
 
 
 def test_empty_working_directory():

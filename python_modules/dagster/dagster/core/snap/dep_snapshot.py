@@ -122,6 +122,13 @@ class DependencyStructureIndex:
     def has_invocation(self, solid_name):
         return solid_name in self._invocations_dict
 
+    def input_to_upstream_outputs_for_solid(self, solid_name):
+        check.str_param(solid_name, "solid_name")
+        outputs = {}
+        for input_dep_snap in self.get_invocation(solid_name).input_dep_snaps:
+            outputs[input_dep_snap.input_name] = input_dep_snap.upstream_output_snaps
+        return outputs
+
     def get_upstream_outputs(self, solid_name, input_name):
         check.str_param(solid_name, "solid_name")
         check.str_param(input_name, "input_name")
@@ -144,6 +151,10 @@ class DependencyStructureIndex:
         outputs = self.get_upstream_outputs(solid_name, input_name)
         check.invariant(len(outputs) == 1)
         return outputs[0]
+
+    def output_to_downstream_inputs_for_solid(self, solid_name):
+        check.str_param(solid_name, "solid_name")
+        return self._output_to_upstream_index[solid_name]
 
     def get_downstream_inputs(self, solid_name, output_name):
         check.str_param(solid_name, "solid_name")

@@ -169,9 +169,7 @@ def test_launch_subset_pipeline_invalid_value(gen_pipeline_args):
                 ],
             )
             assert result.exit_code == 1
-            assert "No qualified solids to execute found for solid_selection" in str(
-                result.exception
-            )
+            assert "No qualified ops to execute found for ops_selection" in str(result.exception)
 
 
 @pytest.mark.parametrize(
