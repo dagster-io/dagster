@@ -182,7 +182,8 @@ def test_pyspark_databricks(
             for record in instance.get_event_records()
             if record.event_log_entry.step_key == "do_nothing_solid"
         ]
-
+    config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
+    config.pop("local_pipeline_package_path")
     result = execute_pipeline(
         pipeline=reconstructable(define_do_nothing_pipe),
         mode="test",
@@ -190,8 +191,15 @@ def test_pyspark_databricks(
             "resources": {
                 "pyspark_step_launcher": {
                     "config": deep_merge_dicts(
-                        BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG,
-                        {"databricks_host": "", "databricks_token": "", "poll_interval_sec": 0.1},
+                        config,
+                        {
+                            "databricks_host": "",
+                            "databricks_token": "",
+                            "poll_interval_sec": 0.1,
+                            "local_dagster_job_package_path": os.path.abspath(
+                                os.path.dirname(__file__)
+                            ),
+                        },
                     ),
                 },
             },
