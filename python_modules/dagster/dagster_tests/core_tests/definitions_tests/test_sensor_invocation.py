@@ -17,7 +17,6 @@ from dagster import (
     sensor,
 )
 from dagster.core.errors import DagsterInvalidInvocationError
-from dagster.core.events import DagsterEventType
 from dagster.core.test_utils import instance_for_test
 
 

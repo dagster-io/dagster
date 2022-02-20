@@ -1133,7 +1133,7 @@ class DagsterInstance:
         )
 
     @traced
-    def all_logs(self, run_id, of_type: "DagsterEventType" = None):
+    def all_logs(self, run_id, of_type: Union["DagsterEventType", Set["DagsterEventType"]] = None):
         return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
 
     def watch_event_logs(self, run_id, cursor, cb):
