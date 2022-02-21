@@ -114,7 +114,7 @@ def opt_callable_param(
 def is_callable(obj: object, desc: str = None) -> Callable:
     if not callable(obj):
         raise CheckError(f"Must be callable. Got {obj}.{desc and f' Description: {desc}.' or ''}")
-    return obj  # type: ignore
+    return obj
 
 
 # ########################
@@ -212,8 +212,9 @@ def opt_dict_param(
     return _check_key_value_types(obj, key_type, value_type)
 
 
+# pyright understands this overload but not mypy
 @overload
-def opt_nullable_dict_param(
+def opt_nullable_dict_param(   # type: ignore
     obj: None,
     param_name: str,
     key_type: Optional[TypeOrTupleOfTypes] = ...,
@@ -573,23 +574,6 @@ def opt_inst(
 
 
 # ########################
-# ##### NOT NONE
-# ########################
-
-
-def not_none_param(obj: Optional[T], param_name: str) -> T:
-    if obj is None:
-        raise _param_invariant_exception(param_name, f"Param {param_name} cannot be none")
-    return obj
-
-
-def not_none(value: Optional[T], desc: str = None) -> T:
-    if value is None:
-        raise ValueError(f"Expected non-None value: {desc}")
-    return value
-
-
-# ########################
 # ##### LIST
 # ########################
 
@@ -625,9 +609,9 @@ def opt_list_param(obj: object, param_name: str, of_type: TypeOrTupleOfTypes = N
 
     return _check_list_items(obj, of_type)
 
-
+# pyright understands this overload but not mypy
 @overload
-def opt_nullable_list_param(
+def opt_nullable_list_param(  # type: ignore
     obj: None,
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = ...,
@@ -740,6 +724,23 @@ def _check_list_items(obj_list: List, of_type: TypeOrTupleOfTypes) -> List:
             )
 
     return obj_list
+
+
+# ########################
+# ##### NOT NONE
+# ########################
+
+
+def not_none_param(obj: Optional[T], param_name: str) -> T:
+    if obj is None:
+        raise _param_invariant_exception(param_name, f"Param {param_name} cannot be none")
+    return obj
+
+
+def not_none(value: Optional[T], desc: str = None) -> T:
+    if value is None:
+        raise ValueError(f"Expected non-None value: {desc}")
+    return value
 
 
 # ########################
@@ -1057,7 +1058,7 @@ def assert_never(value: NoReturn) -> NoReturn:
     failed(f"Unhandled value: {value} ({type(value).__name__})")
 
 
-def failed(desc: str) -> NoReturn:  # type: ignore[misc]
+def failed(desc: str) -> NoReturn:
     if not isinstance(desc, str):
         raise CheckError("desc argument must be a string")
 
