@@ -15,7 +15,7 @@ from typing import (
     overload,
 )
 
-Type = Union[type, Tuple[type, ...]]
+TypeOrTupleOfTypes = Union[type, Tuple[type, ...]]
 Numeric = Union[int, float]
 T = TypeVar("T")
 
@@ -55,13 +55,16 @@ def bool_param(obj: object, param_name: str) -> bool:
         raise _param_type_mismatch_exception(obj, bool, param_name)
     return obj
 
+
 @overload
 def opt_bool_param(obj: object, param_name: str, default: bool) -> bool:
     ...
 
+
 @overload
 def opt_bool_param(obj: object, param_name: str) -> Optional[bool]:
     ...
+
 
 def opt_bool_param(obj: object, param_name: str, default: Optional[bool] = None) -> Optional[bool]:
     if obj is not None and not isinstance(obj, bool):
@@ -89,15 +92,20 @@ def callable_param(obj: object, param_name: str) -> Callable:
         raise _param_not_callable_exception(obj, param_name)
     return obj
 
+
 @overload
 def opt_callable_param(obj: object, param_name: str, default: Callable) -> Callable:
     ...
+
 
 @overload
 def opt_callable_param(obj: object, param_name: str) -> Optional[Callable]:
     ...
 
-def opt_callable_param(obj: object, param_name: str, default: Optional[Callable] = None) -> Optional[Callable]:
+
+def opt_callable_param(
+    obj: object, param_name: str, default: Optional[Callable] = None
+) -> Optional[Callable]:
     if obj is not None and not callable(obj):
         raise _param_not_callable_exception(obj, param_name)
     return default if obj is None else obj
@@ -106,12 +114,13 @@ def opt_callable_param(obj: object, param_name: str, default: Optional[Callable]
 def is_callable(obj: object, desc: str = None) -> Callable:
     if not callable(obj):
         raise CheckError(f"Must be callable. Got {obj}.{desc and f' Description: {desc}.' or ''}")
-    return obj   # type: ignore
+    return obj  # type: ignore
 
 
 # ########################
 # ##### CLASS
 # ########################
+
 
 def class_param(obj: object, param_name: str, superclass: Optional[type] = None) -> type:
     if not isinstance(obj, type):
@@ -122,15 +131,24 @@ def class_param(obj: object, param_name: str, superclass: Optional[type] = None)
 
     return obj
 
-@overload
-def opt_class_param(obj: object, param_name: str, default: type, superclass: Optional[type] = None) -> type:
-    ...
 
 @overload
-def opt_class_param(obj: object, param_name: str, default: None = ..., superclass: Optional[type] = None) -> Optional[type]:
+def opt_class_param(
+    obj: object, param_name: str, default: type, superclass: Optional[type] = None
+) -> type:
     ...
 
-def opt_class_param(obj: object, param_name: str, default: Optional[type] = None, superclass: Optional[type] = None) -> Optional[type]:
+
+@overload
+def opt_class_param(
+    obj: object, param_name: str, default: None = ..., superclass: Optional[type] = None
+) -> Optional[type]:
+    ...
+
+
+def opt_class_param(
+    obj: object, param_name: str, default: Optional[type] = None, superclass: Optional[type] = None
+) -> Optional[type]:
     if obj is not None and not isinstance(obj, type):
         raise _param_class_mismatch_exception(obj, param_name, superclass, True)
 
@@ -151,8 +169,8 @@ def opt_class_param(obj: object, param_name: str, default: Optional[type] = None
 def dict_param(
     obj: object,
     param_name: str,
-    key_type: Optional[Type] = None,
-    value_type: Optional[Type] = None,
+    key_type: Optional[TypeOrTupleOfTypes] = None,
+    value_type: Optional[TypeOrTupleOfTypes] = None,
     additional_message: Optional[str] = None,
 ) -> Dict:
     """Ensures argument obj is a native Python dictionary, raises an exception if not, and otherwise
@@ -174,9 +192,9 @@ def dict_param(
 def opt_dict_param(
     obj: object,
     param_name: str,
-    key_type: Optional[Type] = None,
-    value_type: Optional[Type] = None,
-    value_class: Optional[Type] = None,
+    key_type: Optional[TypeOrTupleOfTypes] = None,
+    value_type: Optional[TypeOrTupleOfTypes] = None,
+    value_class: Optional[TypeOrTupleOfTypes] = None,
 ) -> Dict:
     """Ensures argument obj is either a dictionary or None; if the latter, instantiates an empty
     dictionary.
@@ -193,32 +211,35 @@ def opt_dict_param(
         return _check_key_value_types(obj, key_type, value_type=value_class, value_check=issubclass)
     return _check_key_value_types(obj, key_type, value_type)
 
+
 @overload
 def opt_nullable_dict_param(
     obj: None,
     param_name: str,
-    key_type: Optional[Type] = ...,
-    value_type: Optional[Type] = ...,
-    value_class: Optional[Type] = ...,
+    key_type: Optional[TypeOrTupleOfTypes] = ...,
+    value_type: Optional[TypeOrTupleOfTypes] = ...,
+    value_class: Optional[TypeOrTupleOfTypes] = ...,
 ) -> None:
     ...
+
 
 @overload
 def opt_nullable_dict_param(
     obj: object,
     param_name: str,
-    key_type: Optional[Type] = ...,
-    value_type: Optional[Type] = ...,
-    value_class: Optional[Type] = ...,
+    key_type: Optional[TypeOrTupleOfTypes] = ...,
+    value_type: Optional[TypeOrTupleOfTypes] = ...,
+    value_class: Optional[TypeOrTupleOfTypes] = ...,
 ) -> Dict:
     ...
+
 
 def opt_nullable_dict_param(
     obj: object,
     param_name: str,
-    key_type: Optional[Type] = None,
-    value_type: Optional[Type] = None,
-    value_class: Optional[Type] = None,
+    key_type: Optional[TypeOrTupleOfTypes] = None,
+    value_type: Optional[TypeOrTupleOfTypes] = None,
+    value_class: Optional[TypeOrTupleOfTypes] = None,
 ) -> Optional[Dict]:
     """Ensures argument obj is either a dictionary or None."""
     from dagster.utils import frozendict
@@ -235,7 +256,10 @@ def opt_nullable_dict_param(
 
 
 def two_dim_dict_param(
-    obj: object, param_name: str, key_type: Type = str, value_type: Optional[Type] = None
+    obj: object,
+    param_name: str,
+    key_type: TypeOrTupleOfTypes = str,
+    value_type: Optional[TypeOrTupleOfTypes] = None,
 ) -> Dict:
     if not isinstance(obj, dict):
         raise _param_type_mismatch_exception(obj, dict, param_name)
@@ -244,7 +268,10 @@ def two_dim_dict_param(
 
 
 def opt_two_dim_dict_param(
-    obj: object, param_name: str, key_type: Type = str, value_type: Optional[Type] = None
+    obj: object,
+    param_name: str,
+    key_type: TypeOrTupleOfTypes = str,
+    value_type: Optional[TypeOrTupleOfTypes] = None,
 ) -> Dict:
     if obj is not None and not isinstance(obj, dict):
         raise _param_type_mismatch_exception(obj, dict, param_name)
@@ -287,7 +314,12 @@ def opt_dict_elem(ddict: Dict, key: str) -> Dict:
     return value
 
 
-def is_dict(obj: object, key_type: Type = None, value_type: Type = None, desc: str = None) -> Dict:
+def is_dict(
+    obj: object,
+    key_type: TypeOrTupleOfTypes = None,
+    value_type: TypeOrTupleOfTypes = None,
+    desc: str = None,
+) -> Dict:
     from dagster.utils import frozendict
 
     if not isinstance(obj, (frozendict, dict)):
@@ -301,8 +333,8 @@ def is_dict(obj: object, key_type: Type = None, value_type: Type = None, desc: s
 
 def _check_key_value_types(
     obj_dict: Dict,
-    key_type: Type = None,
-    value_type: Type = None,
+    key_type: TypeOrTupleOfTypes = None,
+    value_type: TypeOrTupleOfTypes = None,
     key_check: Callable = isinstance,
     value_check: Callable = isinstance,
 ) -> Dict:
@@ -328,7 +360,10 @@ def _check_key_value_types(
 
 
 def _check_two_dim_key_value_types(
-    obj_dict: Dict, key_type: Type = None, _param_name: str = None, value_type: Type = None
+    obj_dict: Dict,
+    key_type: TypeOrTupleOfTypes = None,
+    _param_name: str = None,
+    value_type: TypeOrTupleOfTypes = None,
 ) -> Dict:
     _check_key_value_types(obj_dict, key_type, dict)  # check level one
 
@@ -353,11 +388,15 @@ def float_param(obj: object, param_name: str) -> float:
 def opt_float_param(obj: object, param_name: str, default: float) -> float:
     ...
 
+
 @overload
 def opt_float_param(obj: object, param_name: str) -> Optional[float]:
     ...
 
-def opt_float_param(obj: object, param_name: str, default: Optional[float] = None) -> Optional[float]:
+
+def opt_float_param(
+    obj: object, param_name: str, default: Optional[float] = None
+) -> Optional[float]:
     if obj is not None and not isinstance(obj, float):
         raise _param_type_mismatch_exception(obj, float, param_name)
     return default if obj is None else obj
@@ -439,9 +478,11 @@ def int_param(obj: object, param_name: str) -> int:
 def opt_int_param(obj: object, param_name: str, default: int) -> int:
     ...
 
+
 @overload
 def opt_int_param(obj: object, param_name: str) -> Optional[int]:
     ...
+
 
 def opt_int_param(obj: object, param_name: str, default: Optional[int] = None) -> Optional[int]:
     if obj is not None and not isinstance(obj, int):
@@ -489,7 +530,9 @@ def opt_int_elem(ddict: Dict, key: str) -> Optional[int]:
 # this runtime validation check.
 
 
-def inst_param(obj: T, param_name: str, ttype: Type, additional_message: str = None) -> T:
+def inst_param(
+    obj: T, param_name: str, ttype: TypeOrTupleOfTypes, additional_message: str = None
+) -> T:
     if not isinstance(obj, ttype):
         raise _param_type_mismatch_exception(
             obj, ttype, param_name, additional_message=additional_message
@@ -498,28 +541,32 @@ def inst_param(obj: T, param_name: str, ttype: Type, additional_message: str = N
 
 
 @overload
-def opt_inst_param(obj: Optional[T], param_name: str, ttype: Type, default: T) -> T:
+def opt_inst_param(obj: Optional[T], param_name: str, ttype: TypeOrTupleOfTypes, default: T) -> T:
     ...
 
 
 @overload
-def opt_inst_param(obj: T, param_name: str, ttype: Type) -> T:
+def opt_inst_param(obj: T, param_name: str, ttype: TypeOrTupleOfTypes) -> T:
     ...
 
 
-def opt_inst_param(obj: T, param_name: str, ttype: Type, default: T = None) -> Optional[T]:
+def opt_inst_param(
+    obj: T, param_name: str, ttype: TypeOrTupleOfTypes, default: T = None
+) -> Optional[T]:
     if obj is not None and not isinstance(obj, ttype):
         raise _param_type_mismatch_exception(obj, ttype, param_name)
     return default if obj is None else obj
 
 
-def inst(obj: T, ttype: Type, desc: str = None) -> T:
+def inst(obj: T, ttype: TypeOrTupleOfTypes, desc: str = None) -> T:
     if not isinstance(obj, ttype):
         raise _type_mismatch_error(obj, ttype, desc)
     return obj
 
 
-def opt_inst(obj: T, ttype: Type, desc: str = None, default: Optional[T] = None) -> Optional[T]:
+def opt_inst(
+    obj: T, ttype: TypeOrTupleOfTypes, desc: str = None, default: Optional[T] = None
+) -> Optional[T]:
     if obj is not None and not isinstance(obj, ttype):
         raise _type_mismatch_error(obj, ttype, desc)
     return default if obj is None else obj
@@ -547,7 +594,7 @@ def not_none(value: Optional[T], desc: str = None) -> T:
 # ########################
 
 
-def list_param(obj: object, param_name: str, of_type: Type = None) -> List:
+def list_param(obj: object, param_name: str, of_type: TypeOrTupleOfTypes = None) -> List:
     from dagster.utils import frozenlist
 
     if not isinstance(obj, (frozenlist, list)):
@@ -559,7 +606,7 @@ def list_param(obj: object, param_name: str, of_type: Type = None) -> List:
     return _check_list_items(obj, of_type)
 
 
-def opt_list_param(obj: object, param_name: str, of_type: Type = None) -> List:
+def opt_list_param(obj: object, param_name: str, of_type: TypeOrTupleOfTypes = None) -> List:
     """Ensures argument obj is a list or None; in the latter case, instantiates an empty list
     and returns it.
 
@@ -578,23 +625,28 @@ def opt_list_param(obj: object, param_name: str, of_type: Type = None) -> List:
 
     return _check_list_items(obj, of_type)
 
+
 @overload
 def opt_nullable_list_param(
     obj: None,
     param_name: str,
-    of_type: Optional[Type] = ...,
+    of_type: Optional[TypeOrTupleOfTypes] = ...,
 ) -> None:
     ...
+
 
 @overload
 def opt_nullable_list_param(
     obj: object,
     param_name: str,
-    of_type: Optional[Type] = ...,
+    of_type: Optional[TypeOrTupleOfTypes] = ...,
 ) -> List:
     ...
 
-def opt_nullable_list_param(obj: object, param_name: str, of_type: Optional[Type] = None) -> Optional[List]:
+
+def opt_nullable_list_param(
+    obj: object, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
+) -> Optional[List]:
     """Ensures argument obj is a list or None. Returns None if input is None.
 
     If the of_type argument is provided, also ensures that list items conform to the type specified
@@ -613,7 +665,9 @@ def opt_nullable_list_param(obj: object, param_name: str, of_type: Optional[Type
     return _check_list_items(obj, of_type)
 
 
-def two_dim_list_param(obj: object, param_name: str, of_type: Optional[Type] = None) -> List[List]:
+def two_dim_list_param(
+    obj: object, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
+) -> List[List]:
     obj = list_param(obj, param_name, of_type=list)
     if not obj:
         raise CheckError("You must pass a list of lists. Received an empty list.")
@@ -624,7 +678,7 @@ def two_dim_list_param(obj: object, param_name: str, of_type: Optional[Type] = N
     return obj
 
 
-def list_elem(ddict: Dict, key: str, of_type: Optional[Type] = None) -> List:
+def list_elem(ddict: Dict, key: str, of_type: Optional[TypeOrTupleOfTypes] = None) -> List:
     dict_param(ddict, "ddict")
     str_param(key, "key")
     opt_class_param(of_type, "of_type")
@@ -640,7 +694,7 @@ def list_elem(ddict: Dict, key: str, of_type: Optional[Type] = None) -> List:
     raise _element_check_error(key, value, ddict, list)
 
 
-def opt_list_elem(ddict: Dict, key: str, of_type: Optional[Type] = None) -> List:
+def opt_list_elem(ddict: Dict, key: str, of_type: Optional[TypeOrTupleOfTypes] = None) -> List:
     dict_param(ddict, "ddict")
     str_param(key, "key")
     opt_class_param(of_type, "of_type")
@@ -659,7 +713,9 @@ def opt_list_elem(ddict: Dict, key: str, of_type: Optional[Type] = None) -> List
     return _check_list_items(value, of_type)
 
 
-def is_list(obj: object, of_type: Optional[Type] = None, desc: Optional[str] = None) -> List:
+def is_list(
+    obj: object, of_type: Optional[TypeOrTupleOfTypes] = None, desc: Optional[str] = None
+) -> List:
     if not isinstance(obj, list):
         raise _type_mismatch_error(obj, list, desc)
 
@@ -669,7 +725,7 @@ def is_list(obj: object, of_type: Optional[Type] = None, desc: Optional[str] = N
     return _check_list_items(obj, of_type)
 
 
-def _check_list_items(obj_list: List, of_type: Type) -> List:
+def _check_list_items(obj_list: List, of_type: TypeOrTupleOfTypes) -> List:
     for obj in obj_list:
         if not isinstance(obj, of_type):
             if isinstance(obj, type):
@@ -690,20 +746,26 @@ def _check_list_items(obj_list: List, of_type: Type) -> List:
 # ##### NUMERIC
 # ########################
 
+
 def numeric_param(obj: object, param_name: str) -> Numeric:
     if not isinstance(obj, (int, float)):
         raise _param_type_mismatch_exception(obj, (int, float), param_name)
     return obj
 
+
 @overload
 def opt_numeric_param(obj: object, param_name: str, default: Numeric) -> Numeric:
     ...
+
 
 @overload
 def opt_numeric_param(obj: object, param_name: str) -> Optional[Numeric]:
     ...
 
-def opt_numeric_param(obj: object, param_name: str, default: Optional[Numeric] = None) -> Optional[Numeric]:
+
+def opt_numeric_param(
+    obj: object, param_name: str, default: Optional[Numeric] = None
+) -> Optional[Numeric]:
     if obj is not None and not isinstance(obj, (int, float)):
         raise _param_type_mismatch_exception(obj, (int, float), param_name)
     return default if obj is None else obj
@@ -714,7 +776,7 @@ def opt_numeric_param(obj: object, param_name: str, default: Optional[Numeric] =
 # ########################
 
 
-def set_param(obj: object, param_name: str, of_type: Type = None) -> AbstractSet:
+def set_param(obj: object, param_name: str, of_type: TypeOrTupleOfTypes = None) -> AbstractSet:
     if not isinstance(obj, (frozenset, set)):
         raise _param_type_mismatch_exception(obj, (frozenset, set), param_name)
 
@@ -724,7 +786,7 @@ def set_param(obj: object, param_name: str, of_type: Type = None) -> AbstractSet
     return _check_set_items(obj, of_type)
 
 
-def opt_set_param(obj: object, param_name: str, of_type: Type = None) -> AbstractSet:
+def opt_set_param(obj: object, param_name: str, of_type: TypeOrTupleOfTypes = None) -> AbstractSet:
     """Ensures argument obj is a set or None; in the latter case, instantiates an empty set
     and returns it.
 
@@ -741,7 +803,7 @@ def opt_set_param(obj: object, param_name: str, of_type: Type = None) -> Abstrac
     return _check_set_items(obj, of_type)
 
 
-def _check_set_items(obj_set: AbstractSet, of_type: Type) -> AbstractSet:
+def _check_set_items(obj_set: AbstractSet, of_type: TypeOrTupleOfTypes) -> AbstractSet:
     for obj in obj_set:
 
         if not isinstance(obj, of_type):
@@ -786,7 +848,9 @@ def opt_str_param(obj: object, param_name: str, default: Optional[str] = None) -
     return default if obj is None else obj
 
 
-def opt_nonempty_str_param(obj: object, param_name: str, default: Optional[str] = None) -> Optional[str]:
+def opt_nonempty_str_param(
+    obj: object, param_name: str, default: Optional[str] = None
+) -> Optional[str]:
     if obj is not None and not isinstance(obj, str):
         raise _param_type_mismatch_exception(obj, str, param_name)
     return default if obj is None or obj == "" else obj
@@ -820,7 +884,10 @@ def opt_str_elem(ddict: Dict, key: str) -> Optional[str]:
 
 
 def tuple_param(
-    obj: object, param_name: str, of_type: Type = None, of_shape: Optional[Tuple[Type, ...]] = None
+    obj: object,
+    param_name: str,
+    of_type: TypeOrTupleOfTypes = None,
+    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
 ) -> Tuple:
     """Ensure param is a tuple and is of a specified type. `of_type` defines a variadic tuple type--
     `obj` may be of any length, but each element must match the `of_type` argmument. `of_shape`
@@ -843,8 +910,8 @@ def opt_tuple_param(
     obj: object,
     param_name: str,
     default: Tuple = None,
-    of_type: Type = None,
-    of_shape: Optional[Tuple[Type, ...]] = None,
+    of_type: TypeOrTupleOfTypes = None,
+    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
 ) -> Optional[Tuple]:
     """Ensure optional param is a tuple and is of a specified type. `default` is returned if `obj`
     is None. `of_type` defines a variadic tuple type-- `obj` may be of any length, but each element
@@ -869,8 +936,8 @@ def opt_tuple_param(
 
 def is_tuple(
     obj: object,
-    of_type: Type = None,
-    of_shape: Optional[Tuple[Type, ...]] = None,
+    of_type: TypeOrTupleOfTypes = None,
+    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
     desc: str = None,
 ) -> Tuple:
     """Ensure target is a tuple and is of a specified type. `of_type` defines a variadic tuple
@@ -891,15 +958,16 @@ def is_tuple(
 
 
 def _check_tuple_items(
-    obj_tuple: Tuple, of_type: Optional[Type] = None, of_shape: Optional[Tuple[Type, ...]] = None
+    obj_tuple: Tuple,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
+    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
 ) -> Tuple:
     if of_shape is not None:
         len_tuple = len(obj_tuple)
         len_type = len(of_shape)
         if not len_tuple == len_type:
             raise CheckError(
-                f"Tuple mismatches type: tuple had {len_tuple} members but type had "
-                f"{len_type}"
+                f"Tuple mismatches type: tuple had {len_tuple} members but type had " f"{len_type}"
             )
 
         for (i, obj) in enumerate(obj_tuple):
@@ -1024,16 +1092,18 @@ class NotImplementedCheckError(CheckError):
     pass
 
 
-def _element_check_error(key: object, value: object, ddict: Dict, ttype: Type) -> ElementCheckError:
+def _element_check_error(
+    key: object, value: object, ddict: Dict, ttype: TypeOrTupleOfTypes
+) -> ElementCheckError:
     return ElementCheckError(
         f"Value {repr(value)} from key {key} is not a {repr(ttype)}. Dict: {repr(ddict)}"
     )
 
 
 def _param_type_mismatch_exception(
-    obj: object, ttype: Type, param_name: str, additional_message: str = None
+    obj: object, ttype: TypeOrTupleOfTypes, param_name: str, additional_message: str = None
 ) -> ParameterCheckError:
-    additional_message=" " + additional_message if additional_message else ""
+    additional_message = " " + additional_message if additional_message else ""
     if isinstance(ttype, tuple):
         type_names = sorted([t.__name__ for t in ttype])
         return ParameterCheckError(
@@ -1048,16 +1118,19 @@ def _param_type_mismatch_exception(
 
 
 def _param_class_mismatch_exception(
-        obj: object, param_name: str, superclass: Optional[type], optional: bool,
+    obj: object,
+    param_name: str,
+    superclass: Optional[type],
+    optional: bool,
 ) -> ParameterCheckError:
     opt_clause = optional and "be None or" or ""
-    subclass_clause = superclass and f'that inherits from {superclass.__name__}' or ''
+    subclass_clause = superclass and f"that inherits from {superclass.__name__}" or ""
     return ParameterCheckError(
         f'Param "{param_name}" must {opt_clause}be a class{subclass_clause}. Got {repr(obj)} of type {type(obj)}.'
     )
 
 
-def _type_mismatch_error(obj: object, ttype: Type, desc: str = None) -> CheckError:
+def _type_mismatch_error(obj: object, ttype: TypeOrTupleOfTypes, desc: str = None) -> CheckError:
     type_message = (
         f"not one of {sorted([t.__name__ for t in ttype])}"
         if isinstance(ttype, tuple)
