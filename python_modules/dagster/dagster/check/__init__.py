@@ -580,6 +580,17 @@ def opt_nullable_list_param(obj: object, param_name: str, of_type: Optional[Type
     return _check_list_items(obj, of_type)
 
 
+def two_dim_list_param(obj: object, param_name: str, of_type: Optional[Type] = None) -> List[List]:
+    obj = list_param(obj, param_name, of_type=list)
+    if not obj:
+        raise CheckError("You must pass a list of lists. Received an empty list.")
+    for sublist in obj:
+        sublist = list_param(sublist, "sublist_{}".format(param_name), of_type=of_type)
+        if len(sublist) != len(obj[0]):
+            raise CheckError("All sublists in obj must have the same length")
+    return obj
+
+
 def list_elem(ddict: Dict, key: str, of_type: Optional[Type] = None) -> List:
     dict_param(ddict, "ddict")
     str_param(key, "key")
@@ -645,22 +656,6 @@ def _check_list_items(obj_list: List, of_type: Type) -> List:
             )
 
     return obj_list
-
-
-# ########################
-# ##### MATRIX
-# ########################
-
-
-def matrix_param(matrix: object, param_name: str, of_type: Optional[Type] = None) -> List[List]:
-    matrix = list_param(matrix, param_name, of_type=list)
-    if not matrix:
-        raise CheckError("You must pass a list of lists. Received an empty list.")
-    for sublist in matrix:
-        sublist = list_param(sublist, "sublist_{}".format(param_name), of_type=of_type)
-        if len(sublist) != len(matrix[0]):
-            raise CheckError("All sublists in matrix must have the same length")
-    return matrix
 
 
 # ########################
