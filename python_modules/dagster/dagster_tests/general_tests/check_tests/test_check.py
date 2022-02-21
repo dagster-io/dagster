@@ -928,26 +928,26 @@ def test_tuple_param():
         check.is_tuple((3, 4), of_shape=(int, int), of_type=int)
 
 
-def test_matrix_param():
-    assert check.matrix_param([[1, 2], [2, 3]], "something")
+def test_two_dim_list_param():
+    assert check.two_dim_list_param([[1, 2], [2, 3]], "something")
 
     with pytest.raises(CheckError):
-        assert check.matrix_param(None, "something")
+        assert check.two_dim_list_param(None, "something")
 
     with pytest.raises(CheckError):
-        assert check.matrix_param([1, 2, 4], "something")
+        assert check.two_dim_list_param([1, 2, 4], "something")
 
     with pytest.raises(CheckError):
-        assert check.matrix_param([], "something")
+        assert check.two_dim_list_param([], "something")
 
     with pytest.raises(CheckError):
-        assert check.matrix_param([[1, 2], 3], "soemthing")
+        assert check.two_dim_list_param([[1, 2], 3], "soemthing")
 
     with pytest.raises(CheckError):
-        assert check.matrix_param([[1, 2], [3.0, 4.1]], "something", of_type=int)
+        assert check.two_dim_list_param([[1, 2], [3.0, 4.1]], "something", of_type=int)
 
     with pytest.raises(CheckError):
-        assert check.matrix_param([[1, 2], [2, 3, 4]], "something")
+        assert check.two_dim_list_param([[1, 2], [2, 3, 4]], "something")
 
 
 def test_opt_tuple_param():
@@ -992,53 +992,51 @@ def test_opt_tuple_param():
         check.is_tuple((3, 4), of_shape=(int, int), of_type=int)
 
 
-def test_opt_type_param():
+def test_opt_class_param():
     class Foo:
         pass
 
-    assert check.opt_type_param(int, "foo")
-    assert check.opt_type_param(Foo, "foo")
+    assert check.opt_class_param(int, "foo")
+    assert check.opt_class_param(Foo, "foo")
 
-    assert check.opt_type_param(None, "foo") is None
-    assert check.opt_type_param(None, "foo", Foo) is Foo
-
-    with pytest.raises(CheckError):
-        check.opt_type_param(check, "foo")
+    assert check.opt_class_param(None, "foo") is None
+    assert check.opt_class_param(None, "foo", Foo) is Foo
 
     with pytest.raises(CheckError):
-        check.opt_type_param(234, "foo")
+        check.opt_class_param(check, "foo")
 
     with pytest.raises(CheckError):
-        check.opt_type_param("bar", "foo")
+        check.opt_class_param(234, "foo")
 
     with pytest.raises(CheckError):
-        check.opt_type_param(Foo(), "foo")
+        check.opt_class_param("bar", "foo")
+
+    with pytest.raises(CheckError):
+        check.opt_class_param(Foo(), "foo")
 
 
-def test_type_param():
+def test_class_param():
     class Bar:
         pass
 
-    assert check.type_param(int, "foo")
-    assert check.type_param(Bar, "foo")
+    assert check.class_param(int, "foo")
+    assert check.class_param(Bar, "foo")
 
     with pytest.raises(CheckError):
-        check.type_param(None, "foo")
+        check.class_param(None, "foo")
 
     with pytest.raises(CheckError):
-        check.type_param(check, "foo")
+        check.class_param(check, "foo")
 
     with pytest.raises(CheckError):
-        check.type_param(234, "foo")
+        check.class_param(234, "foo")
 
     with pytest.raises(CheckError):
-        check.type_param("bar", "foo")
+        check.class_param("bar", "foo")
 
     with pytest.raises(CheckError):
-        check.type_param(Bar(), "foo")
+        check.class_param(Bar(), "foo")
 
-
-def test_subclass_param():
     class Super:
         pass
 
@@ -1048,22 +1046,22 @@ def test_subclass_param():
     class Alone:
         pass
 
-    assert check.subclass_param(Sub, "foo", Super)
+    assert check.class_param(Sub, "foo", superclass=Super)
 
     with pytest.raises(CheckError):
-        assert check.subclass_param(Alone, "foo", Super)
+        assert check.class_param(Alone, "foo", superclass=Super)
 
     with pytest.raises(CheckError):
-        assert check.subclass_param("value", "foo", Super)
+        assert check.class_param("value", "foo", superclass=Super)
 
-    assert check.opt_subclass_param(Sub, "foo", Super)
-    assert check.opt_subclass_param(None, "foo", Super) is None
-
-    with pytest.raises(CheckError):
-        assert check.opt_subclass_param(Alone, "foo", Super)
+    assert check.opt_class_param(Sub, "foo", superclass=Super)
+    assert check.opt_class_param(None, "foo", superclass=Super) is None
 
     with pytest.raises(CheckError):
-        assert check.opt_subclass_param("value", "foo", Super)
+        assert check.opt_class_param(Alone, "foo", superclass=Super)
+
+    with pytest.raises(CheckError):
+        assert check.opt_class_param("value", "foo", superclass=Super)
 
 
 @contextmanager

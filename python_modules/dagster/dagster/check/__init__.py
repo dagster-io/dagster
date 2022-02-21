@@ -86,7 +86,7 @@ def bool_elem(ddict: Dict, key: str) -> bool:
 
 def callable_param(obj: object, param_name: str) -> Callable:
     if not callable(obj):
-        raise _not_callable_exception(obj, param_name)
+        raise _param_not_callable_exception(obj, param_name)
     return obj
 
 @overload
@@ -99,13 +99,13 @@ def opt_callable_param(obj: object, param_name: str) -> Optional[Callable]:
 
 def opt_callable_param(obj: object, param_name: str, default: Optional[Callable] = None) -> Optional[Callable]:
     if obj is not None and not callable(obj):
-        raise _not_callable_exception(obj, param_name)
+        raise _param_not_callable_exception(obj, param_name)
     return default if obj is None else obj
 
 
 def is_callable(obj: object, desc: str = None) -> Callable:
     if not callable(obj):
-        f"Must be callable. Got {obj}.{desc and f' Description: {desc}.' or ''}"
+        raise CheckError(f"Must be callable. Got {obj}.{desc and f' Description: {desc}.' or ''}")
     return obj   # type: ignore
 
 
@@ -309,20 +309,19 @@ def _check_key_value_types(
     """Ensures argument obj_dict is a dictionary, and enforces that the keys/values conform to the types
     specified by key_type, value_type.
     """
+    if not isinstance(obj_dict, dict):
+        raise _type_mismatch_error(obj_dict, dict, "obj_dict")
+
     for key, value in obj_dict.items():
         if key_type and not key_check(key, key_type):
             raise CheckError(
-                "Key in dictionary mismatches type. Expected {key_type}. Got {obj_dict_repr}".format(
-                    key_type=repr(key_type), obj_dict_repr=repr(key)
-                )
+                f"Key in dictionary mismatches type. Expected {repr(key_type)}. Got {repr(key)}"
             )
 
         if value_type and not value_check(value, value_type):
             raise CheckError(
-                "Value in dictionary mismatches expected type for key {key}. Expected value "
-                "of type {vtype}. Got value {value} of type {obj_dict_type}.".format(
-                    vtype=repr(value_type), obj_dict_type=type(value), key=key, value=value
-                )
+                f"Value in dictionary mismatches expected type for key {key}. Expected value "
+                f"of type {repr(value_type)}. Got value {value} of type {type(value)}."
             )
 
     return obj_dict
@@ -539,7 +538,7 @@ def not_none_param(obj: Optional[T], param_name: str) -> T:
 
 def not_none(value: Optional[T], desc: str = None) -> T:
     if value is None:
-        raise ValueError("Expected non-None value: {desc}".format(desc=desc))
+        raise ValueError(f"Expected non-None value: {desc}")
     return value
 
 
@@ -619,7 +618,7 @@ def two_dim_list_param(obj: object, param_name: str, of_type: Optional[Type] = N
     if not obj:
         raise CheckError("You must pass a list of lists. Received an empty list.")
     for sublist in obj:
-        sublist = list_param(sublist, "sublist_{}".format(param_name), of_type=of_type)
+        sublist = list_param(sublist, f"sublist_{param_name}", of_type=of_type)
         if len(sublist) != len(obj[0]):
             raise CheckError("All sublists in obj must have the same length")
     return obj
@@ -680,13 +679,8 @@ def _check_list_items(obj_list: List, of_type: Type) -> List:
             else:
                 additional_message = ""
             raise CheckError(
-                "Member of list mismatches type. Expected {of_type}. Got {obj_repr} of type "
-                "{obj_type}.{additional_message}".format(
-                    of_type=of_type,
-                    obj_repr=repr(obj),
-                    obj_type=type(obj),
-                    additional_message=additional_message,
-                )
+                f"Member of list mismatches type. Expected {of_type}. Got {repr(obj)} of type "
+                f"{type(obj)}.{additional_message}"
             )
 
     return obj_list
@@ -748,23 +742,18 @@ def opt_set_param(obj: object, param_name: str, of_type: Type = None) -> Abstrac
 
 
 def _check_set_items(obj_set: AbstractSet, of_type: Type) -> AbstractSet:
-    for obj_set in obj_set:
+    for obj in obj_set:
 
-        if not isinstance(obj_set, of_type):
-            if isinstance(obj_set, type):
+        if not isinstance(obj, of_type):
+            if isinstance(obj, type):
                 additional_message = (
                     " Did you pass a class where you were expecting an instance of the class?"
                 )
             else:
                 additional_message = ""
             raise CheckError(
-                "Member of set mismatches type. Expected {of_type}. Got {obj_set_repr} of type "
-                "{obj_set_type}.{additional_message}".format(
-                    of_type=of_type,
-                    obj_set_repr=repr(obj_set),
-                    obj_set_type=type(obj_set),
-                    additional_message=additional_message,
-                )
+                f"Member of set mismatches type. Expected {of_type}. Got {repr(obj)} of type "
+                f"{type(obj)}.{additional_message}"
             )
 
     return obj_set
@@ -791,7 +780,7 @@ def opt_str_param(obj: object, param_name: str) -> Optional[str]:
     ...
 
 
-def opt_str_param(obj: object, param_name: str, default = Optional[str]) -> Optional[str]:
+def opt_str_param(obj: object, param_name: str, default: Optional[str] = None) -> Optional[str]:
     if obj is not None and not isinstance(obj, str):
         raise _param_type_mismatch_exception(obj, str, param_name)
     return default if obj is None else obj
@@ -902,18 +891,18 @@ def is_tuple(
 
 
 def _check_tuple_items(
-    obj: Tuple, of_type: Optional[Type] = None, of_shape: Optional[Tuple[Type, ...]] = None
+    obj_tuple: Tuple, of_type: Optional[Type] = None, of_shape: Optional[Tuple[Type, ...]] = None
 ) -> Tuple:
     if of_shape is not None:
-        len_tuple = len(obj)
+        len_tuple = len(obj_tuple)
         len_type = len(of_shape)
         if not len_tuple == len_type:
             raise CheckError(
-                "Tuple mismatches type: tuple had {len_tuple} members but type had "
-                "{len_type}".format(len_tuple=len_tuple, len_type=len_type)
+                f"Tuple mismatches type: tuple had {len_tuple} members but type had "
+                f"{len_type}"
             )
 
-        for (i, obj) in enumerate(obj):
+        for (i, obj) in enumerate(obj_tuple):
             of_shape_i = of_shape[i]
             if not isinstance(obj, of_shape_i):
                 if isinstance(obj, type):
@@ -923,18 +912,12 @@ def _check_tuple_items(
                 else:
                     additional_message = ""
                 raise CheckError(
-                    "Member of tuple mismatches type at index {index}. Expected {of_type}. Got "
-                    "{obj_repr} of type {obj_type}.{additional_message}".format(
-                        index=i,
-                        of_type=of_shape_i,
-                        obj_repr=repr(obj),
-                        obj_type=type(obj),
-                        additional_message=additional_message,
-                    )
+                    f"Member of tuple mismatches type at index {i}. Expected {of_shape_i}. Got "
+                    f"{repr(obj)} of type {type(obj)}.{additional_message}"
                 )
 
     elif of_type is not None:
-        for (i, obj) in enumerate(obj):
+        for (i, obj) in enumerate(obj_tuple):
             if not isinstance(obj, of_type):
                 if isinstance(obj, type):
                     additional_message = (
@@ -943,17 +926,11 @@ def _check_tuple_items(
                 else:
                     additional_message = ""
                 raise CheckError(
-                    "Member of tuple mismatches type at index {index}. Expected {of_type}. Got "
-                    "{obj_repr} of type {obj_type}.{additional_message}".format(
-                        index=i,
-                        of_type=of_type,
-                        obj_repr=repr(obj),
-                        obj_type=type(obj),
-                        additional_message=additional_message,
-                    )
+                    f"Member of tuple mismatches type at index {i}. Expected {of_type}. Got "
+                    f"{repr(obj)} of type {type(obj)}.{additional_message}"
                 )
 
-    return obj
+    return obj_tuple
 
 
 # ########################
@@ -1016,7 +993,7 @@ def failed(desc: str) -> NoReturn:  # type: ignore[misc]
     if not isinstance(desc, str):
         raise CheckError("desc argument must be a string")
 
-    raise CheckError("Failure condition: {desc}".format(desc=desc))
+    raise CheckError(f"Failure condition: {desc}")
 
 
 def not_implemented(desc: str) -> NoReturn:
@@ -1049,37 +1026,24 @@ class NotImplementedCheckError(CheckError):
 
 def _element_check_error(key: object, value: object, ddict: Dict, ttype: Type) -> ElementCheckError:
     return ElementCheckError(
-        "Value {value} from key {key} is not a {ttype}. Dict: {ddict}".format(
-            key=key, value=repr(value), ddict=repr(ddict), ttype=repr(ttype)
-        )
+        f"Value {repr(value)} from key {key} is not a {repr(ttype)}. Dict: {repr(ddict)}"
     )
 
 
 def _param_type_mismatch_exception(
     obj: object, ttype: Type, param_name: str, additional_message: str = None
 ) -> ParameterCheckError:
+    additional_message=" " + additional_message if additional_message else ""
     if isinstance(ttype, tuple):
         type_names = sorted([t.__name__ for t in ttype])
         return ParameterCheckError(
-            'Param "{name}" is not one of {type_names}. Got {obj} which is type {obj_type}.'
-            "{additional_message}".format(
-                name=param_name,
-                obj=repr(obj),
-                type_names=type_names,
-                obj_type=type(obj),
-                additional_message=" " + additional_message if additional_message else "",
-            )
+            f'Param "{param_name}" is not one of {type_names}. Got {repr(obj)} which is type {type(obj)}.'
+            f"{additional_message}"
         )
     else:
         return ParameterCheckError(
-            'Param "{name}" is not a {type}. Got {obj} which is type {obj_type}.'
-            "{additional_message}".format(
-                name=param_name,
-                obj=repr(obj),
-                type=ttype.__name__,
-                obj_type=type(obj),
-                additional_message=" " + additional_message if additional_message else "",
-            )
+            f'Param "{param_name}" is not a {ttype.__name__}. Got {repr(obj)} which is type {type(obj)}.'
+            f"{additional_message}"
         )
 
 
@@ -1089,7 +1053,7 @@ def _param_class_mismatch_exception(
     opt_clause = optional and "be None or" or ""
     subclass_clause = superclass and f'that inherits from {superclass.__name__}' or ''
     return ParameterCheckError(
-        f'Param "{param_name}" must {opt_clause}be a class{subclass_clause}. Got {obj} of type {type(obj)}.'
+        f'Param "{param_name}" must {opt_clause}be a class{subclass_clause}. Got {repr(obj)} of type {type(obj)}.'
     )
 
 
@@ -1106,17 +1070,13 @@ def _type_mismatch_error(obj: object, ttype: Type, desc: str = None) -> CheckErr
     )
 
 
-def _not_callable_exception(obj: Any, param_name: str) -> ParameterCheckError:
+def _param_not_callable_exception(obj: Any, param_name: str) -> ParameterCheckError:
     return ParameterCheckError(
-        'Param "{name}" is not callable. Got {obj} with type {obj_type}.'.format(
-            name=param_name, obj=repr(obj), obj_type=type(obj)
-        )
+        f'Param "{param_name}" is not callable. Got {repr(obj)} with type {type(obj)}.'
     )
 
 
 def _param_invariant_exception(param_name: str, desc: str = None) -> ParameterCheckError:
     return ParameterCheckError(
-        "Invariant violation for parameter {param_name}. Description: {desc}".format(
-            param_name=param_name, desc=desc
-        )
+        f"Invariant violation for parameter {param_name}. Description: {desc}"
     )
