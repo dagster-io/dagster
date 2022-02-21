@@ -29,8 +29,9 @@ class TableRecord(NamedTuple("TableRecord", [("data", Dict[str, Union[str, int, 
     """
 
     def __new__(cls, **data):
-        check.is_dict(
+        check.dict_param(
             data,
+            "data",
             value_type=(str, float, int, bool, type(None)),
             desc="Record fields must be one of types: (str, float, int, bool)",
         )

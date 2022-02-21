@@ -1316,7 +1316,7 @@ records = instance.get_event_records(
         from dagster.core.events import EngineEventData, DagsterEvent, DagsterEventType
         from dagster.core.events.log import EventLogEntry
 
-        check.class_param(cls, "cls")
+        check.type_param(cls, "cls")
         check.str_param(message, "message")
         check.opt_inst_param(pipeline_run, "pipeline_run", PipelineRun)
         check.opt_str_param(run_id, "run_id")
