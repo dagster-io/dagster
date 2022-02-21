@@ -448,7 +448,7 @@ class EventGenerationManager(Generic[GeneratedContext]):
         require_object: Optional[bool] = True,
     ):
         self.generator = check.generator(generator)
-        self.object_cls: Type[GeneratedContext] = check.type_param(object_cls, "object_cls")
+        self.object_cls: Type[GeneratedContext] = check.class_param(object_cls, "object_cls")
         self.require_object = check.bool_param(require_object, "require_object")
         self.object: Optional[GeneratedContext] = None
         self.did_setup = False

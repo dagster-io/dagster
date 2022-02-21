@@ -66,7 +66,7 @@ class RedshiftResource(_BaseRedshiftResource):
         """
         check.str_param(query, "query")
         check.bool_param(fetch_results, "fetch_results")
-        check.opt_subclass_param(cursor_factory, "cursor_factory", psycopg2.extensions.cursor)
+        check.opt_class_param(cursor_factory, "cursor_factory", superclass=psycopg2.extensions.cursor)
         check.opt_callable_param(error_callback, "error_callback")
 
         with self._get_conn() as conn:
@@ -124,7 +124,7 @@ class RedshiftResource(_BaseRedshiftResource):
         """
         check.list_param(queries, "queries", of_type=str)
         check.bool_param(fetch_results, "fetch_results")
-        check.opt_subclass_param(cursor_factory, "cursor_factory", psycopg2.extensions.cursor)
+        check.opt_class_param(cursor_factory, "cursor_factory", superclass=psycopg2.extensions.cursor)
         check.opt_callable_param(error_callback, "error_callback")
 
         results = []
@@ -174,7 +174,7 @@ class RedshiftResource(_BaseRedshiftResource):
 
     @contextmanager
     def _get_cursor(self, conn, cursor_factory=None):
-        check.opt_subclass_param(cursor_factory, "cursor_factory", psycopg2.extensions.cursor)
+        check.opt_class_param(cursor_factory, "cursor_factory", superclass=psycopg2.extensions.cursor)
 
         # Could be none, in which case we should respect the connection default. Otherwise
         # explicitly set to true/false.
@@ -217,7 +217,7 @@ class FakeRedshiftResource(_BaseRedshiftResource):
         """
         check.str_param(query, "query")
         check.bool_param(fetch_results, "fetch_results")
-        check.opt_subclass_param(cursor_factory, "cursor_factory", psycopg2.extensions.cursor)
+        check.opt_class_param(cursor_factory, "cursor_factory", superclass=psycopg2.extensions.cursor)
         check.opt_callable_param(error_callback, "error_callback")
 
         self.log.info("Executing query '{query}'".format(query=query))
@@ -248,7 +248,7 @@ class FakeRedshiftResource(_BaseRedshiftResource):
         """
         check.list_param(queries, "queries", of_type=str)
         check.bool_param(fetch_results, "fetch_results")
-        check.opt_subclass_param(cursor_factory, "cursor_factory", psycopg2.extensions.cursor)
+        check.opt_class_param(cursor_factory, "cursor_factory", superclass=psycopg2.extensions.cursor)
         check.opt_callable_param(error_callback, "error_callback")
 
         for query in queries:

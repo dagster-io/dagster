@@ -155,10 +155,10 @@ def whitelist_for_serdes(
         "storage_name can only be used with DefaultNamedTupleSerializer",
     )
     if __cls is not None:  # decorator invoked directly on class
-        check.type_param(__cls, "__cls")
+        check.class_param(__cls, "__cls")
         return _whitelist_for_serdes(whitelist_map=_WHITELIST_MAP)(__cls)
     else:  # decorator passed params
-        check.opt_subclass_param(serializer, "serializer", Serializer)
+        check.opt_class_param(serializer, "serializer", superclass=Serializer)
         serializer = cast(Type[Serializer], serializer)
         return _whitelist_for_serdes(
             whitelist_map=_WHITELIST_MAP, serializer=serializer, storage_name=storage_name

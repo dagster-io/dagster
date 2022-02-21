@@ -110,6 +110,40 @@ def is_callable(obj: object, desc: str = None) -> Callable:
 
 
 # ########################
+# ##### CLASS
+# ########################
+
+def class_param(obj: object, param_name: str, superclass: Optional[type] = None) -> type:
+    if not isinstance(obj, type):
+        raise _param_class_mismatch_exception(obj, param_name, superclass, optional=False)
+
+    if superclass and not issubclass(obj, superclass):
+        raise _param_class_mismatch_exception(obj, param_name, superclass, optional=False)
+
+    return obj
+
+@overload
+def opt_class_param(obj: object, param_name: str, default: type, superclass: Optional[type] = None) -> type:
+    ...
+
+@overload
+def opt_class_param(obj: object, param_name: str, default: None = ..., superclass: Optional[type] = None) -> Optional[type]:
+    ...
+
+def opt_class_param(obj: object, param_name: str, default: Optional[type] = None, superclass: Optional[type] = None) -> Optional[type]:
+    if obj is not None and not isinstance(obj, type):
+        raise _param_class_mismatch_exception(obj, param_name, superclass, True)
+
+    if obj is None:
+        return default
+
+    if superclass and not issubclass(obj, superclass):
+        raise _param_class_mismatch_exception(obj, param_name, superclass, True)
+
+    return obj
+
+
+# ########################
 # ##### DICT
 # ########################
 
@@ -594,7 +628,7 @@ def two_dim_list_param(obj: object, param_name: str, of_type: Optional[Type] = N
 def list_elem(ddict: Dict, key: str, of_type: Optional[Type] = None) -> List:
     dict_param(ddict, "ddict")
     str_param(key, "key")
-    opt_type_param(of_type, "of_type")
+    opt_class_param(of_type, "of_type")
 
     value = ddict.get(key)
 
@@ -610,7 +644,7 @@ def list_elem(ddict: Dict, key: str, of_type: Optional[Type] = None) -> List:
 def opt_list_elem(ddict: Dict, key: str, of_type: Optional[Type] = None) -> List:
     dict_param(ddict, "ddict")
     str_param(key, "key")
-    opt_type_param(of_type, "of_type")
+    opt_class_param(of_type, "of_type")
 
     value = ddict.get(key)
 
@@ -789,35 +823,6 @@ def opt_str_elem(ddict: Dict, key: str) -> Optional[str]:
     if not isinstance(value, str):
         raise _element_check_error(key, value, ddict, str)
     return value
-
-
-# ########################
-# ##### SUBCLASS
-# ########################
-
-
-def subclass_param(obj: object, param_name: str, superclass: type) -> type:
-    obj = type_param(obj, param_name)
-    if not issubclass(obj, superclass):
-        raise _param_subclass_mismatch_exception(obj, superclass, param_name)
-
-    return obj
-
-
-def opt_subclass_param(obj: object, param_name: str, superclass: type) -> Optional[type]:
-    obj= opt_type_param(obj, param_name)
-    if obj is not None and not issubclass(obj, superclass):
-        raise _param_subclass_mismatch_exception(obj, superclass, param_name)
-
-    return obj
-
-
-def subclass(obj: object, superclass: Type, desc: str = None) -> Any:
-    obj = type_param(obj, param_name)
-    if not issubclass(obj, superclass):
-        raise _type_mismatch_error(obj, superclass, desc)
-
-    return obj
 
 
 # ########################
@@ -1078,21 +1083,13 @@ def _param_type_mismatch_exception(
         )
 
 
-def _not_type_param_subclass_mismatch_exception(obj: object, param_name: str) -> ParameterCheckError:
-    return ParameterCheckError(
-        'Param "{name}" was supposed to be a type. Got {obj} of type {obj_type}'.format(
-            name=param_name, obj=repr(obj), obj_type=type(obj)
-        )
-    )
-
-
-def _param_subclass_mismatch_exception(
-    obj: object, superclass: Type, param_name: str
+def _param_class_mismatch_exception(
+        obj: object, param_name: str, superclass: Optional[type], optional: bool,
 ) -> ParameterCheckError:
+    opt_clause = optional and "be None or" or ""
+    subclass_clause = superclass and f'that inherits from {superclass.__name__}' or ''
     return ParameterCheckError(
-        'Param "{name}" is a type but not a subclass of {superclass}. Got {obj} instead'.format(
-            name=param_name, superclass=superclass, obj=obj
-        )
+        f'Param "{param_name}" must {opt_clause}be a class{subclass_clause}. Got {obj} of type {type(obj)}.'
     )
 
 
