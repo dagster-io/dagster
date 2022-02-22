@@ -2,6 +2,7 @@ import {ApolloQueryResult, gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {PipelineSelector} from '../types/globalTypes';
 
 import {REPOSITORY_INFO_FRAGMENT} from './RepositoryInformation';
@@ -126,18 +127,6 @@ const ROOT_WORKSPACE_QUERY = gql`
   ${REPOSITORY_INFO_FRAGMENT}
 `;
 
-const hiddenKeysFromLocalStorage = () => {
-  const keys = window.localStorage.getItem(HIDDEN_REPO_KEYS);
-  if (keys) {
-    const parsed = JSON.parse(keys);
-    if (Array.isArray(parsed)) {
-      return parsed;
-    }
-  }
-
-  return [];
-};
-
 /**
  * A hook that supplies the current workspace state of Dagit, including the current
  * "active" repo based on the URL or localStorage, all fetched repositories available
@@ -197,26 +186,32 @@ const useWorkspaceState = (): WorkspaceState => {
  * selection into localStorage so that the default selection in new browser windows
  * is the repo currently active in your session.
  */
+const validateHiddenKeys = (parsed: unknown) => (Array.isArray(parsed) ? parsed : []);
+
 const useVisibleRepos = (
   allRepos: DagsterRepoOption[],
 ): [DagsterRepoOption[], WorkspaceState['toggleVisible']] => {
-  // Initialize local state with an empty Set.
-  const [hiddenKeys, setHiddenKeys] = React.useState(hiddenKeysFromLocalStorage());
+  const [hiddenKeys, setHiddenKeys] = useStateWithStorage<string[]>(
+    HIDDEN_REPO_KEYS,
+    validateHiddenKeys,
+  );
 
-  const toggleVisible = React.useCallback((repoAddress: RepoAddress) => {
-    const key = `${repoAddress.name}:${repoAddress.location}`;
+  const toggleVisible = React.useCallback(
+    (repoAddress: RepoAddress) => {
+      const key = `${repoAddress.name}:${repoAddress.location}`;
 
-    setHiddenKeys((current) => {
-      let nextHiddenKeys = [...(current || [])];
-      if (nextHiddenKeys.includes(key)) {
-        nextHiddenKeys = nextHiddenKeys.filter((k) => k !== key);
-      } else {
-        nextHiddenKeys = [...nextHiddenKeys, key];
-      }
-      window.localStorage.setItem(HIDDEN_REPO_KEYS, JSON.stringify(nextHiddenKeys));
-      return nextHiddenKeys;
-    });
-  }, []);
+      setHiddenKeys((current) => {
+        let nextHiddenKeys = [...(current || [])];
+        if (nextHiddenKeys.includes(key)) {
+          nextHiddenKeys = nextHiddenKeys.filter((k) => k !== key);
+        } else {
+          nextHiddenKeys = [...nextHiddenKeys, key];
+        }
+        return nextHiddenKeys;
+      });
+    },
+    [setHiddenKeys],
+  );
 
   const visibleOptions = React.useMemo(() => {
     // If there's only one repo, skip the local storage check -- we have to show this one.

@@ -2,7 +2,11 @@ import qs from 'qs';
 import * as React from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
-import {IExecutionSession, applyCreateSession, useStorage} from '../app/LocalStorage';
+import {
+  IExecutionSession,
+  applyCreateSession,
+  useExecutionSessionStorage,
+} from '../app/ExecutionSessionStorage';
 import {usePermissions} from '../app/Permissions';
 import {explorerPathFromString} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
@@ -37,7 +41,7 @@ const LaunchpadSetupAllowedRoot: React.FC<Props> = (props) => {
 
   useJobTitle(explorerPath, isJob);
 
-  const [data, onSave] = useStorage(repoAddress.name, pipelineName);
+  const [data, onSave] = useExecutionSessionStorage(repoAddress.name, pipelineName);
   const queryString = qs.parse(window.location.search, {ignoreQueryPrefix: true});
 
   React.useEffect(() => {

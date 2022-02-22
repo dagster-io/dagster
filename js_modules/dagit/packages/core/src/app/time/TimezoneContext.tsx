@@ -1,22 +1,18 @@
 import * as React from 'react';
 
+import {useStateWithStorage} from '../../hooks/useStateWithStorage';
+
 const TimezoneStorageKey = 'TimezonePreference';
 
-type Value = [string, (next: string) => void];
+export const TimezoneContext = React.createContext<
+  [string, React.Dispatch<React.SetStateAction<string | undefined>>]
+>(['UTC', () => '']);
 
-export const TimezoneContext = React.createContext<Value>(['UTC', () => {}]);
+const validateTimezone = (saved: string | undefined) =>
+  typeof saved === 'string' ? saved : 'Automatic';
 
 export const TimezoneProvider: React.FC = (props) => {
-  const [value, setValue] = React.useState(
-    () => window.localStorage.getItem(TimezoneStorageKey) || 'Automatic',
-  );
+  const state = useStateWithStorage(TimezoneStorageKey, validateTimezone);
 
-  const onChange = React.useCallback((tz: string) => {
-    window.localStorage.setItem(TimezoneStorageKey, tz);
-    setValue(tz);
-  }, []);
-
-  const provided: Value = React.useMemo(() => [value, onChange], [value, onChange]);
-
-  return <TimezoneContext.Provider value={provided}>{props.children}</TimezoneContext.Provider>;
+  return <TimezoneContext.Provider value={state}>{props.children}</TimezoneContext.Provider>;
 };
