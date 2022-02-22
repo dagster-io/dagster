@@ -1002,38 +1002,6 @@ def _check_tuple_items(
     return obj_tuple
 
 
-# ########################
-# ##### TYPE
-# ########################
-
-
-def type_param(obj: Any, param_name: str) -> type:
-    if not isinstance(obj, type):
-        raise _not_type_param_subclass_mismatch_exception(obj, param_name)
-    return obj
-
-
-def opt_type_param(obj: Any, param_name: str, default: type = None) -> Optional[type]:
-    if obj is not None and not isinstance(obj, type):
-        raise _not_type_param_subclass_mismatch_exception(obj, param_name)
-    return obj if obj is not None else default
-
-
-def class_param(obj: Any, param_name: str) -> Union["ParameterCheckError", type]:
-    if not inspect.isclass(obj):
-        return ParameterCheckError(
-            f'Param "{param_name}" is not a class. Got {repr(obj)} which is type {type(obj)}.'
-    return obj
-
-
-def is_type(obj: object, desc: Optional[str] = None) -> type:
-    if not isinstance(obj, type):
-        raise CheckError(
-            f"Must be a class. Got {obj}.{desc and f' Description: {desc}.' or ''}"
-        )
-    return obj
-
-
 # ###################################################################################################
 # ##### OTHER CHECKS
 # ###################################################################################################
