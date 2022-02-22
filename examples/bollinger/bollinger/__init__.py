@@ -1,21 +1,21 @@
 import warnings
 
-from dagster import ExperimentalWarning, repository
+from bollinger.resources.csv_io_manager import local_csv_io_manager
+from dagster import AssetGroup, ExperimentalWarning, repository
 
 from . import lib
-from .jobs import bollinger_analysis
 
 warnings.filterwarnings("ignore", category=ExperimentalWarning)
 
 
-@repository(name="bollinger")
-def repo():
+@repository
+def bollinger():
     return [
-        bollinger_analysis,
+        AssetGroup.from_package_name(__name__, resource_defs={"io_manager": local_csv_io_manager})
     ]
 
 
 __all__ = [
-    "repo",
+    "bollinger",
     "lib",
 ]
