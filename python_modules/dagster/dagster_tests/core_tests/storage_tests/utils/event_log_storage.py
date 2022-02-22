@@ -673,6 +673,16 @@ class TestEventLogStorage:
             storage.get_logs_for_run(result.run_id, of_type=DagsterEventType.STEP_SUCCESS)
         ) == [DagsterEventType.STEP_SUCCESS]
 
+        assert (
+            _event_types(
+                storage.get_logs_for_run(
+                    result.run_id,
+                    of_type={DagsterEventType.STEP_SUCCESS, DagsterEventType.PIPELINE_SUCCESS},
+                )
+            )
+            == [DagsterEventType.STEP_SUCCESS, DagsterEventType.PIPELINE_SUCCESS]
+        )
+
     def test_basic_get_logs_for_run_cursor(self, storage):
         @solid
         def return_one(_):

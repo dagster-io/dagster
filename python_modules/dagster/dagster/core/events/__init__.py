@@ -190,6 +190,11 @@ EVENT_TYPE_TO_PIPELINE_RUN_STATUS = {
 
 PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN_STATUS.items()}
 
+ASSET_EVENTS = {
+    DagsterEventType.ASSET_MATERIALIZATION,
+    DagsterEventType.ASSET_OBSERVATION,
+}
+
 
 def _assert_type(
     method: str, expected_type: DagsterEventType, actual_type: DagsterEventType
