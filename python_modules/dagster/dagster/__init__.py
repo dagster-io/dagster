@@ -286,6 +286,7 @@ if typing.TYPE_CHECKING:
         TableMetadataValue as TableMetadataEntryData,
         TableSchemaMetadataValue as TableSchemaMetadataEntryData,
     )
+
     # pylint:enable=reimported
 
 _DEPRECATED = {
