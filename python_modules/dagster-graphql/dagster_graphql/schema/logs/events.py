@@ -9,7 +9,7 @@ from ...implementation.fetch_runs import get_run_by_id, get_step_stats
 from ...implementation.loader import BatchRunLoader
 from ..asset_key import GrapheneAssetKey, GrapheneAssetLineageInfo
 from ..errors import GraphenePythonError, GrapheneRunNotFoundError
-from ..metadata import GrapheneEventMetadataEntry
+from ..metadata import GrapheneMetadataEntry
 from ..runs import GrapheneStepEventStatus
 from ..util import non_null_list
 from .log_level import GrapheneLogLevel
@@ -31,7 +31,7 @@ class GrapheneMessageEvent(graphene.Interface):
 class GrapheneDisplayableEvent(graphene.Interface):
     label = graphene.NonNull(graphene.String)
     description = graphene.String()
-    metadataEntries = non_null_list(GrapheneEventMetadataEntry)
+    metadataEntries = non_null_list(GrapheneMetadataEntry)
 
     class Meta:
         name = "DisplayableEvent"

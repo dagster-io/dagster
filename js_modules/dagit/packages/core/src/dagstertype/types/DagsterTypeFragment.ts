@@ -7,156 +7,156 @@
 // GraphQL fragment: DagsterTypeFragment
 // ====================================================
 
-export interface DagsterTypeFragment_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface DagsterTypeFragment_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface DagsterTypeFragment_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface DagsterTypeFragment_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface DagsterTypeFragment_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface DagsterTypeFragment_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface DagsterTypeFragment_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface DagsterTypeFragment_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface DagsterTypeFragment_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface DagsterTypeFragment_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface DagsterTypeFragment_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface DagsterTypeFragment_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: DagsterTypeFragment_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: DagsterTypeFragment_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface DagsterTypeFragment_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface DagsterTypeFragment_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: DagsterTypeFragment_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: DagsterTypeFragment_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface DagsterTypeFragment_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface DagsterTypeFragment_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: DagsterTypeFragment_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: DagsterTypeFragment_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: DagsterTypeFragment_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: DagsterTypeFragment_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventTableMetadataEntry_table {
+export interface DagsterTypeFragment_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: DagsterTypeFragment_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: DagsterTypeFragment_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface DagsterTypeFragment_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: DagsterTypeFragment_metadataEntries_EventTableMetadataEntry_table;
+  table: DagsterTypeFragment_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: DagsterTypeFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: DagsterTypeFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: DagsterTypeFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface DagsterTypeFragment_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: DagsterTypeFragment_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type DagsterTypeFragment_metadataEntries = DagsterTypeFragment_metadataEntries_EventPathMetadataEntry | DagsterTypeFragment_metadataEntries_EventJsonMetadataEntry | DagsterTypeFragment_metadataEntries_EventUrlMetadataEntry | DagsterTypeFragment_metadataEntries_EventTextMetadataEntry | DagsterTypeFragment_metadataEntries_EventMarkdownMetadataEntry | DagsterTypeFragment_metadataEntries_EventPythonArtifactMetadataEntry | DagsterTypeFragment_metadataEntries_EventFloatMetadataEntry | DagsterTypeFragment_metadataEntries_EventIntMetadataEntry | DagsterTypeFragment_metadataEntries_EventPipelineRunMetadataEntry | DagsterTypeFragment_metadataEntries_EventAssetMetadataEntry | DagsterTypeFragment_metadataEntries_EventTableMetadataEntry | DagsterTypeFragment_metadataEntries_EventTableSchemaMetadataEntry;
+export type DagsterTypeFragment_metadataEntries = DagsterTypeFragment_metadataEntries_PathMetadataEntry | DagsterTypeFragment_metadataEntries_JsonMetadataEntry | DagsterTypeFragment_metadataEntries_UrlMetadataEntry | DagsterTypeFragment_metadataEntries_TextMetadataEntry | DagsterTypeFragment_metadataEntries_MarkdownMetadataEntry | DagsterTypeFragment_metadataEntries_PythonArtifactMetadataEntry | DagsterTypeFragment_metadataEntries_FloatMetadataEntry | DagsterTypeFragment_metadataEntries_IntMetadataEntry | DagsterTypeFragment_metadataEntries_PipelineRunMetadataEntry | DagsterTypeFragment_metadataEntries_AssetMetadataEntry | DagsterTypeFragment_metadataEntries_TableMetadataEntry | DagsterTypeFragment_metadataEntries_TableSchemaMetadataEntry;
 
 export interface DagsterTypeFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -1066,156 +1066,156 @@ export interface DagsterTypeFragment_outputSchemaType_MapConfigType {
 
 export type DagsterTypeFragment_outputSchemaType = DagsterTypeFragment_outputSchemaType_ArrayConfigType | DagsterTypeFragment_outputSchemaType_EnumConfigType | DagsterTypeFragment_outputSchemaType_RegularConfigType | DagsterTypeFragment_outputSchemaType_CompositeConfigType | DagsterTypeFragment_outputSchemaType_ScalarUnionConfigType | DagsterTypeFragment_outputSchemaType_MapConfigType;
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface DagsterTypeFragment_innerTypes_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface DagsterTypeFragment_innerTypes_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface DagsterTypeFragment_innerTypes_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface DagsterTypeFragment_innerTypes_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface DagsterTypeFragment_innerTypes_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface DagsterTypeFragment_innerTypes_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface DagsterTypeFragment_innerTypes_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface DagsterTypeFragment_innerTypes_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface DagsterTypeFragment_innerTypes_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface DagsterTypeFragment_innerTypes_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface DagsterTypeFragment_innerTypes_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: DagsterTypeFragment_innerTypes_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: DagsterTypeFragment_innerTypes_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface DagsterTypeFragment_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface DagsterTypeFragment_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: DagsterTypeFragment_innerTypes_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: DagsterTypeFragment_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface DagsterTypeFragment_innerTypes_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface DagsterTypeFragment_innerTypes_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: DagsterTypeFragment_innerTypes_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: DagsterTypeFragment_innerTypes_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: DagsterTypeFragment_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: DagsterTypeFragment_innerTypes_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventTableMetadataEntry_table {
+export interface DagsterTypeFragment_innerTypes_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: DagsterTypeFragment_innerTypes_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: DagsterTypeFragment_innerTypes_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface DagsterTypeFragment_innerTypes_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: DagsterTypeFragment_innerTypes_metadataEntries_EventTableMetadataEntry_table;
+  table: DagsterTypeFragment_innerTypes_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: DagsterTypeFragment_innerTypes_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: DagsterTypeFragment_innerTypes_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: DagsterTypeFragment_innerTypes_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface DagsterTypeFragment_innerTypes_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: DagsterTypeFragment_innerTypes_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type DagsterTypeFragment_innerTypes_metadataEntries = DagsterTypeFragment_innerTypes_metadataEntries_EventPathMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_EventJsonMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_EventUrlMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_EventTextMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_EventMarkdownMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_EventPythonArtifactMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_EventFloatMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_EventIntMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_EventPipelineRunMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_EventAssetMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_EventTableMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_EventTableSchemaMetadataEntry;
+export type DagsterTypeFragment_innerTypes_metadataEntries = DagsterTypeFragment_innerTypes_metadataEntries_PathMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_JsonMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_UrlMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_TextMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_MarkdownMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_PythonArtifactMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_FloatMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_IntMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_PipelineRunMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_AssetMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_TableMetadataEntry | DagsterTypeFragment_innerTypes_metadataEntries_TableSchemaMetadataEntry;
 
 export interface DagsterTypeFragment_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";

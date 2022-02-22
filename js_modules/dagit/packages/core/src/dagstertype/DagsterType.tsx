@@ -14,7 +14,7 @@ import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {DagsterTypeFragment} from './types/DagsterTypeFragment';
 
 export const dagsterTypeKind = (type: {metadataEntries: MetadataEntryFragment[]}) => {
-  const tableSchema = type.metadataEntries.find(gqlTypePredicate('EventTableSchemaMetadataEntry'));
+  const tableSchema = type.metadataEntries.find(gqlTypePredicate('TableSchemaMetadataEntry'));
   if (tableSchema) {
     return 'table';
   } else {
@@ -47,9 +47,7 @@ export const DagsterTypeSummary: React.FC<{
   horizontalPadding?: Spacing;
 }> = ({type, horizontalPadding}) => {
   horizontalPadding = horizontalPadding || 0;
-  const tableSchemaEntry = type.metadataEntries.find(
-    gqlTypePredicate('EventTableSchemaMetadataEntry'),
-  );
+  const tableSchemaEntry = type.metadataEntries.find(gqlTypePredicate('TableSchemaMetadataEntry'));
   return (
     <Box
       flex={{direction: 'column', gap: 8}}
