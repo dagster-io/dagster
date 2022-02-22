@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, Optional, Set, Union
+from typing import AbstractSet, Any, Dict, Optional, Set, Union
 
 from dagster import check
 
@@ -116,7 +116,7 @@ class HookContext:
         return self._step_execution_context.mode_def
 
     @property
-    def required_resource_keys(self) -> Set[str]:
+    def required_resource_keys(self) -> AbstractSet[str]:
         return self._required_resource_keys
 
     @property
@@ -360,7 +360,7 @@ class BoundHookContext(HookContext):
         return self._mode_def
 
     @property
-    def required_resource_keys(self) -> Set[str]:
+    def required_resource_keys(self) -> AbstractSet[str]:
         return self._hook_def.required_resource_keys
 
     @property

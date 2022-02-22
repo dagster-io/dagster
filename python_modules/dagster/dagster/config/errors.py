@@ -1,6 +1,5 @@
-from collections import namedtuple
 from enum import Enum
-from typing import Dict, List, NamedTuple
+from typing import Dict, List, NamedTuple, Union
 
 from dagster import check
 from dagster.utils.error import SerializableErrorInfo
@@ -99,7 +98,7 @@ class SelectorTypeErrorData(
         )
 
 
-ERROR_DATA_TYPES = (
+ERROR_DATA_UNION = Union[
     FieldNotDefinedErrorData,
     FieldsNotDefinedErrorData,
     MissingFieldErrorData,
@@ -108,11 +107,29 @@ ERROR_DATA_TYPES = (
     SelectorTypeErrorData,
     SerializableErrorInfo,
     FieldAliasCollisionErrorData,
-)
+]
+
+ERROR_DATA_TYPES = ERROR_DATA_UNION.__args__  # type: ignore
 
 
-class EvaluationError(namedtuple("_EvaluationError", "stack reason message error_data")):
-    def __new__(cls, stack, reason, message, error_data):
+class EvaluationError(
+    NamedTuple(
+        "_EvaluationError",
+        [
+            ("stack", EvaluationStack),
+            ("reason", DagsterEvaluationErrorReason),
+            ("message", str),
+            ("error_data", ERROR_DATA_UNION),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        stack: EvaluationStack,
+        reason: DagsterEvaluationErrorReason,
+        message: str,
+        error_data: ERROR_DATA_UNION,
+    ):
         return super(EvaluationError, cls).__new__(
             cls,
             check.inst_param(stack, "stack", EvaluationStack),

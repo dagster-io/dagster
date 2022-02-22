@@ -1,5 +1,4 @@
-from collections import namedtuple
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, NamedTuple, Optional
 
 from dagster import check
 
@@ -12,7 +11,15 @@ if TYPE_CHECKING:
 
 
 class HookDefinition(
-    namedtuple("_HookDefinition", "name hook_fn required_resource_keys decorated_fn")
+    NamedTuple(
+        "_HookDefinition",
+        [
+            ("name", str),
+            ("hook_fn", Callable),
+            ("required_resource_keys", AbstractSet[str]),
+            ("decorated_fn", Callable),
+        ],
+    )
 ):
     """Define a hook which can be triggered during a op execution (e.g. a callback on the step
     execution failure event during a op execution).
@@ -38,7 +45,7 @@ class HookDefinition(
             required_resource_keys=frozenset(
                 check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
             ),
-            decorated_fn=check.opt_callable_param(decorated_fn, "decorated_fn"),
+            decorated_fn=check.callable_param(decorated_fn, "decorated_fn"),
         )
 
     def __call__(self, *args, **kwargs):
