@@ -147,13 +147,13 @@ class SensorDefinition:
     """Define a sensor that initiates a set of runs based on some external state
 
     Args:
-        name (str): The name of the sensor to create.
         evaluation_fn (Callable[[SensorEvaluationContext]]): The core evaluation function for the
             sensor, which is run at an interval to determine whether a run should be launched or
             not. Takes a :py:class:`~dagster.SensorEvaluationContext`.
 
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
+        name (Optioanl[str]): The name of the sensor to create. Defaults to name of evaluation_fn
         pipeline_name (Optional[str]): (legacy) The name of the pipeline to execute when the sensor
             fires. Cannot be used in conjunction with `job` or `jobs` parameters.
         solid_selection (Optional[List[str]]): (legacy) A list of solid subselection (including single
@@ -173,11 +173,11 @@ class SensorDefinition:
 
     def __init__(
         self,
-        name: str,
         evaluation_fn: Callable[
             ["SensorEvaluationContext"],
             Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
         ],
+        name: Optional[str] = None,
         pipeline_name: Optional[str] = None,
         solid_selection: Optional[List[Any]] = None,
         mode: Optional[str] = None,
@@ -233,7 +233,11 @@ class SensorDefinition:
         elif jobs:
             targets = [DirectTarget(job) for job in jobs]
 
-        self._name = check_valid_name(name)
+        if name:
+            self._name = check_valid_name(name)
+        else:
+            self._name = evaluation_fn.__name__
+
         self._raw_fn = check.callable_param(evaluation_fn, "evaluation_fn")
         self._evaluation_fn: Callable[
             [SensorEvaluationContext], Generator[Union[RunRequest, SkipReason], None, None]
