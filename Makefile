@@ -19,31 +19,31 @@ update_doc_snapshot:
 #   https://black.readthedocs.io/en/stable/usage_and_configuration/file_collection_and_discovery.html#gitignore 
 black:
 	black --fast \
-		--extend-exclude="examples/docs_snippets|snapshots" \
-		examples integration_tests helm python_modules .buildkite
+    --extend-exclude="examples/docs_snippets|snapshots" \
+    examples integration_tests helm python_modules .buildkite
 	black --fast \
-		examples/docs_snippets
+    examples/docs_snippets
 
 check_black:
 	-black --check --fast \
-		--extend-exclude="examples/docs_snippets|snapshots" \
-		examples integration_tests helm python_modules .buildkite
+    --extend-exclude="examples/docs_snippets|snapshots" \
+    examples integration_tests helm python_modules .buildkite
 	-black --check --fast \
-		examples/docs_snippets
+    examples/docs_snippets
 
 isort:
 	isort \
 	  --skip=examples/docs_snippets --skip=snapshots \
-		examples integration_tests helm python_modules .buildkite
+    examples integration_tests helm python_modules .buildkite
 	isort \
-		examples/docs_snippets
+    examples/docs_snippets
 
 check_isort:
 	-isort --check \
-		--skip=examples/docs_snippets --skip=snapshots \
-		examples integration_tests helm python_modules .buildkite
+    --skip=examples/docs_snippets --skip=snapshots \
+    examples integration_tests helm python_modules .buildkite
 	-isort --check \
-		examples/docs_snippets
+    examples/docs_snippets
 
 yamllint:
 	yamllint -c .yamllint.yaml --strict `git ls-files 'helm/**/*.yml' 'helm/**/*.yaml' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'`

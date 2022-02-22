@@ -29,9 +29,7 @@ def email_alert(_):
 
 @run_failure_sensor
 def my_email_failure_sensor(context: RunFailureSensorContext):
-    message = (
-        f'Job "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}'
-    )
+    message = f'Job "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}'
     email_alert(message)
 
 
