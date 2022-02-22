@@ -256,7 +256,7 @@ def test_infer_input_dagster_type():
     assert my_asset.op.input_defs[0].dagster_type.display_name == "String"
 
 
-def test_running_asset():
+def test_invoking_simple_assets():
     @asset
     def no_input_asset():
         return [1, 2, 3]
@@ -281,6 +281,9 @@ def test_running_asset():
     out = arg_kwarg_asset(([1, 2, 3]))
     assert out == [1, 2, 3]
 
+
+def test_invoking_asset_with_deps():
+
     @asset
     def upstream():
         return [1]
@@ -296,6 +299,9 @@ def test_running_asset():
     out = downstream([3])
     assert out == [3, 2, 3]
 
+
+def test_invoking_asset_with_context():
+
     @asset
     def asset_with_context(context, arg1):
         assert isinstance(context, OpExecutionContext)
@@ -304,5 +310,3 @@ def test_running_asset():
     ctx = build_op_context()
     out = asset_with_context(ctx, 1)
     assert out == 1
-
-    assert False
