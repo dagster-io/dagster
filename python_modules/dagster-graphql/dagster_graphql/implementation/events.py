@@ -28,18 +28,18 @@ MIN_INT = -2147483648
 
 def iterate_metadata_entries(metadata_entries):
     from ..schema.metadata import (
+        GrapheneAssetMetadataEntry,
         GrapheneFloatMetadataEntry,
         GrapheneIntMetadataEntry,
         GrapheneJsonMetadataEntry,
         GrapheneMarkdownMetadataEntry,
         GraphenePathMetadataEntry,
-        GraphenePythonArtifactMetadataEntry,
-        GrapheneTextMetadataEntry,
-        GrapheneUrlMetadataEntry,
         GraphenePipelineRunMetadataEntry,
-        GrapheneAssetMetadataEntry,
+        GraphenePythonArtifactMetadataEntry,
         GrapheneTableMetadataEntry,
         GrapheneTableSchemaMetadataEntry,
+        GrapheneTextMetadataEntry,
+        GrapheneUrlMetadataEntry,
     )
 
     check.list_param(metadata_entries, "metadata_entries", of_type=MetadataEntry)

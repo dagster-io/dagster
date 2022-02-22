@@ -511,9 +511,7 @@ We can use the same pattern to build the context for <PyObject object="run_failu
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_simple_fail_sensor endbefore=end_simple_fail_sensor
 @run_failure_sensor
 def my_email_failure_sensor(context: RunFailureSensorContext):
-    message = (
-        f'Job "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}'
-    )
+    message = f'Job "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}'
     email_alert(message)
 ```
 

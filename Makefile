@@ -33,7 +33,7 @@ check_black:
 
 isort:
 	isort \
-	  --skip=examples/docs_snippets --skip=snapshots \
+    --skip=examples/docs_snippets --skip=snapshots \
     examples integration_tests helm python_modules .buildkite
 	isort \
     examples/docs_snippets
