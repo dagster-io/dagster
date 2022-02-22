@@ -65,4 +65,4 @@ def core_execute_in_process(
         )
         event_list = list(_execute_run_iterable)
 
-    return ExecuteInProcessResult(node, event_list, pipeline_run.run_id, output_capture)
+    return ExecuteInProcessResult(node, event_list, pipeline_run, output_capture)

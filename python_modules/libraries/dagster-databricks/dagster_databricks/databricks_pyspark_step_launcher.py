@@ -142,7 +142,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             "Missing config: need to provide either 'local_dagster_job_package_path' or 'local_pipeline_package_path' config entry",
         )
         check.invariant(
-            local_dagster_job_package_path is None or local_pipeline_package_path,
+            local_dagster_job_package_path is None or local_pipeline_package_path is None,
             "Error in config: Provided both 'local_dagster_job_package_path' and 'local_pipeline_package_path' entries. Need to specify one or the other.",
         )
         self.local_dagster_job_package_path = check.str_param(

@@ -105,6 +105,7 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
 export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks {
   __typename: "InstigationTick";
   id: string;
+  cursor: string | null;
   status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;

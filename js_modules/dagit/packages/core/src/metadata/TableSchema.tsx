@@ -5,14 +5,14 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {
-  MetadataEntryFragment_EventTableSchemaMetadataEntry,
-  MetadataEntryFragment_EventTableSchemaMetadataEntry_schema,
-  MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_columns_constraints,
+  MetadataEntryFragment_TableSchemaMetadataEntry,
+  MetadataEntryFragment_TableSchemaMetadataEntry_schema,
+  MetadataEntryFragment_TableSchemaMetadataEntry_schema_columns_constraints,
 } from './types/MetadataEntryFragment';
 
-export type ITableSchemaMetadataEntry = MetadataEntryFragment_EventTableSchemaMetadataEntry;
-export type ITableSchema = MetadataEntryFragment_EventTableSchemaMetadataEntry_schema;
-type ColumnConstraints = MetadataEntryFragment_EventTableSchemaMetadataEntry_schema_columns_constraints;
+export type ITableSchemaMetadataEntry = MetadataEntryFragment_TableSchemaMetadataEntry;
+export type ITableSchema = MetadataEntryFragment_TableSchemaMetadataEntry_schema;
+type ColumnConstraints = MetadataEntryFragment_TableSchemaMetadataEntry_schema_columns_constraints;
 
 const MAX_CONSTRAINT_TAG_CHARS = 30;
 

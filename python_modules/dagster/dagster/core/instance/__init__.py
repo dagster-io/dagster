@@ -1133,7 +1133,7 @@ class DagsterInstance:
         )
 
     @traced
-    def all_logs(self, run_id, of_type: "DagsterEventType" = None):
+    def all_logs(self, run_id, of_type: Union["DagsterEventType", Set["DagsterEventType"]] = None):
         return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
 
     def watch_event_logs(self, run_id, cursor, cb):
@@ -1693,12 +1693,14 @@ records = instance.get_event_records(
         )
         from dagster.core.definitions.run_request import InstigatorType
 
-        check.invariant(
-            not external_sensor.default_status,
-            "Can only manually start a sensor that does not have its status set in code",
-        )
-
         state = self.get_instigator_state(external_sensor.get_external_origin_id())
+
+        if external_sensor.get_current_instigator_state(state).is_running:
+            raise Exception(
+                "You have attempted to start sensor {name}, but it is already running".format(
+                    name=external_sensor.name
+                )
+            )
 
         if not state:
             return self.add_instigator_state(

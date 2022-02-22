@@ -607,22 +607,3 @@ def traced(func=None):
         return func(*args, **kwargs)
 
     return inner
-
-
-_MP_CTX = None
-
-
-def get_dagster_multiproc_ctx():
-    """
-    Get the multiprocessing context for performing dagster related work in a subprocess.
-    Defaults to a shared forkserver with dagster preloaded, falls back to spawn.
-    """
-    global _MP_CTX  # pylint: disable=global-statement
-    if _MP_CTX is None:
-        if "forkserver" in multiprocessing.get_all_start_methods():
-            _MP_CTX = multiprocessing.get_context("forkserver")
-            _MP_CTX.set_forkserver_preload(["dagster"])
-        else:
-            _MP_CTX = multiprocessing.get_context("spawn")
-
-    return _MP_CTX

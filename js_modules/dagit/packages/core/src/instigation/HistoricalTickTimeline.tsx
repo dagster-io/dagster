@@ -192,19 +192,28 @@ export const HistoricalTickTimeline: React.FC<{
             if (!hoveredTick) {
               return '';
             }
+            const cursorLabel = hoveredTick.cursor ? `Cursor: ${hoveredTick.cursor}\n` : '';
+
+            // returning an array of strings ensures that each string is displayed on its own line
+            // in the tooltip
+
             if (hoveredTick.status === InstigationTickStatus.SKIPPED && hoveredTick.skipReason) {
-              return snippet(hoveredTick.skipReason);
+              return cursorLabel
+                ? [snippet(hoveredTick.skipReason), cursorLabel]
+                : snippet(hoveredTick.skipReason);
             }
             if (hoveredTick.status === InstigationTickStatus.SUCCESS && hoveredTick.runIds.length) {
-              return hoveredTick.runIds;
+              return cursorLabel ? [...hoveredTick.runIds, cursorLabel] : hoveredTick.runIds;
             }
             if (
               hoveredTick.status === InstigationTickStatus.FAILURE &&
               hoveredTick.error?.message
             ) {
-              return snippet(hoveredTick.error.message);
+              return cursorLabel
+                ? [snippet(hoveredTick.error.message), cursorLabel]
+                : snippet(hoveredTick.error.message);
             }
-            return '';
+            return cursorLabel;
           },
         },
       },

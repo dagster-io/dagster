@@ -482,7 +482,7 @@ const extractNumericData = (datapoints: AssetEventGroup[], xAxis: 'time' | 'part
   const numericMetadataLabels = uniq(
     flatMap(datapoints, (e) =>
       (e.latest?.metadataEntries || [])
-        .filter((k) => ['EventIntMetadataEntry', 'EventFloatMetadataEntry'].includes(k.__typename))
+        .filter((k) => ['IntMetadataEntry', 'FloatMetadataEntry'].includes(k.__typename))
         .map((k) => k.label),
     ),
   );
@@ -526,7 +526,7 @@ const extractNumericData = (datapoints: AssetEventGroup[], xAxis: 'time' | 'part
       }
 
       let y = NaN;
-      if (entry.__typename === 'EventIntMetadataEntry') {
+      if (entry.__typename === 'IntMetadataEntry') {
         if (entry.intValue !== null) {
           y = entry.intValue;
         } else {
@@ -534,7 +534,7 @@ const extractNumericData = (datapoints: AssetEventGroup[], xAxis: 'time' | 'part
           y = parseInt(entry.intRepr);
         }
       }
-      if (entry.__typename === 'EventFloatMetadataEntry' && entry.floatValue !== null) {
+      if (entry.__typename === 'FloatMetadataEntry' && entry.floatValue !== null) {
         y = entry.floatValue;
       }
 

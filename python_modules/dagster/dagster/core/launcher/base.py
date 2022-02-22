@@ -6,6 +6,7 @@ from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.workspace.workspace import IWorkspace
+from dagster.serdes import whitelist_for_serdes
 
 
 class LaunchRunContext(NamedTuple):
@@ -35,6 +36,7 @@ class ResumeRunContext(NamedTuple):
         return self.pipeline_run.pipeline_code_origin
 
 
+@whitelist_for_serdes
 class WorkerStatus(Enum):
     RUNNING = "RUNNING"
     NOT_FOUND = "NOT_FOUND"

@@ -101,6 +101,7 @@ from dagster.core.definitions import (
     WeeklyPartitionsDefinition,
     asset_sensor,
     build_init_logger_context,
+    build_reconstructable_job,
     build_schedule_from_partitioned_job,
     composite_solid,
     config_mapping,
@@ -141,6 +142,7 @@ from dagster.core.definitions import (
 )
 from dagster.core.definitions.configurable import configured
 from dagster.core.definitions.policy import Backoff, Jitter, RetryPolicy
+from dagster.core.definitions.run_status_sensor_definition import build_run_status_sensor_context
 from dagster.core.definitions.schedule_definition import build_schedule_context
 from dagster.core.definitions.sensor_definition import build_sensor_context
 from dagster.core.definitions.utils import (
@@ -210,7 +212,12 @@ from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_
 from dagster.core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
 from dagster.core.storage.mem_io_manager import mem_io_manager
 from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
-from dagster.core.storage.pipeline_run import DagsterRun, PipelineRun, PipelineRunStatus
+from dagster.core.storage.pipeline_run import (
+    DagsterRun,
+    DagsterRunStatus,
+    PipelineRun,
+    PipelineRunStatus,
+)
 from dagster.core.storage.root_input_manager import (
     RootInputManager,
     RootInputManagerDefinition,
@@ -410,6 +417,7 @@ __all__ = [
     "PipelineRun",
     "DagsterRun",
     "PipelineRunStatus",
+    "DagsterRunStatus",
     "default_executors",
     "execute_pipeline_iterator",
     "execute_pipeline",
@@ -418,6 +426,7 @@ __all__ = [
     "in_process_executor",
     "multiprocess_executor",
     "multiple_process_executor_requirements",
+    "build_reconstructable_job",
     "reconstructable",
     "reexecute_pipeline_iterator",
     "reexecute_pipeline",
@@ -532,6 +541,7 @@ __all__ = [
     "PipelineFailureSensorContext",
     "RunStatusSensorContext",
     "build_sensor_context",
+    "build_run_status_sensor_context",
     "SkipReason",
     "daily_schedule",
     "hourly_schedule",

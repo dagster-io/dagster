@@ -19,44 +19,44 @@ fragment errorFragment on PythonError {
 STEP_EVENT_FRAGMENTS = (
     ERROR_FRAGMENT
     + """
-fragment metadataEntryFragment on EventMetadataEntry {
+fragment metadataEntryFragment on MetadataEntry {
   __typename
   label
   description
-  ... on EventFloatMetadataEntry {
+  ... on FloatMetadataEntry {
     floatValue
   }
-  ... on EventIntMetadataEntry {
+  ... on IntMetadataEntry {
     intRepr
   }
-  ... on EventJsonMetadataEntry {
+  ... on JsonMetadataEntry {
     jsonString
   }
-  ... on EventMarkdownMetadataEntry {
+  ... on MarkdownMetadataEntry {
     mdStr
   }
-  ... on EventPathMetadataEntry {
+  ... on PathMetadataEntry {
     path
   }
-  ... on EventPythonArtifactMetadataEntry {
+  ... on PythonArtifactMetadataEntry {
     module
     name
   }
-  ... on EventTextMetadataEntry {
+  ... on TextMetadataEntry {
     text
   }
-  ... on EventUrlMetadataEntry {
+  ... on UrlMetadataEntry {
     url
   }
-  ... on EventPipelineRunMetadataEntry  {
+  ... on PipelineRunMetadataEntry  {
     runId
   }
-  ... on EventAssetMetadataEntry  {
+  ... on AssetMetadataEntry  {
     assetKey {
       path
     }
   }
-  ... on EventTableMetadataEntry  {
+  ... on TableMetadataEntry  {
     table {
       records
       schema {
@@ -69,7 +69,7 @@ fragment metadataEntryFragment on EventMetadataEntry {
       }
     }
   }
-  ... on EventTableSchemaMetadataEntry  {
+  ... on TableSchemaMetadataEntry  {
     schema {
       constraints { other }
       columns {

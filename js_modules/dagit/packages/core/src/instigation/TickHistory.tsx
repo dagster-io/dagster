@@ -263,6 +263,7 @@ const JOB_TICK_HISTORY_QUERY = gql`
           id
           status
           timestamp
+          cursor
           skipReason
           runIds
           originRunIds
