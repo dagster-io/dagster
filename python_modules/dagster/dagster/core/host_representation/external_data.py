@@ -504,7 +504,9 @@ class ExternalAssetDependency(
     def __new__(cls, upstream_asset_key: AssetKey, input_name: str = None, output_name: str = None):
         check.invariant(
             (input_name is None) ^ (output_name is None),
-            "Exactly one of `input_name` and `output_name` should be supplied",
+            "When constructing ExternalAssetDependency, exactly one of `input_name` and "
+            f"`output_name` should be supplied. AssetKey `{upstream_asset_key}` is associated with "
+            f"input `{input_name}` and output `{output_name}`.",
         )
         return super(ExternalAssetDependency, cls).__new__(
             cls,
@@ -529,7 +531,9 @@ class ExternalAssetDependedBy(
     ):
         check.invariant(
             (input_name is None) ^ (output_name is None),
-            "Exactly one of `input_name` and `output_name` should be supplied",
+            "When constructing ExternalAssetDependedBy, exactly one of `input_name` and "
+            f"`output_name` should be supplied. AssetKey `{downstream_asset_key}` is associated with "
+            f"input `{input_name}` and output `{output_name}`.",
         )
         return super(ExternalAssetDependedBy, cls).__new__(
             cls,
