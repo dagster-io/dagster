@@ -187,6 +187,10 @@ class SensorDefinition:
         jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
+        if pipeline_name is None and jobs is None and job is None:
+            raise DagsterInvalidDefinitionError(
+                "One of pipeline_name, job, or jobs must be provided to SensorDefinition."
+            )
 
         if job and jobs:
             raise DagsterInvalidDefinitionError(
@@ -387,8 +391,9 @@ class SensorDefinition:
         if run_requests and not self._targets:
             raise Exception(
                 f"Error in sensor {self._name}: Sensor evaluation function returned a RunRequest "
-                "for a sensor without a specified target. Targets can be specified by providing "
-                "a job or pipeline_name."
+                "for a sensor without a specified target (pipeline_name, job, or jobs). Targets "
+                "can be specified by providing job, jobs, or pipeline_name to the @sensor "
+                "decorator."
             )
 
         for run_request in run_requests:
