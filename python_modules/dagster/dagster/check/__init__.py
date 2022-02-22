@@ -214,7 +214,7 @@ def opt_dict_param(
 
 # pyright understands this overload but not mypy
 @overload
-def opt_nullable_dict_param(   # type: ignore
+def opt_nullable_dict_param(  # type: ignore
     obj: None,
     param_name: str,
     key_type: Optional[TypeOrTupleOfTypes] = ...,
@@ -608,6 +608,7 @@ def opt_list_param(obj: object, param_name: str, of_type: TypeOrTupleOfTypes = N
         return obj
 
     return _check_list_items(obj, of_type)
+
 
 # pyright understands this overload but not mypy
 @overload

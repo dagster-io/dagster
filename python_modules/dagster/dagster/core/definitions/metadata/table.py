@@ -33,7 +33,7 @@ class TableRecord(NamedTuple("TableRecord", [("data", Dict[str, Union[str, int, 
             data,
             "data",
             value_type=(str, float, int, bool, type(None)),
-            desc="Record fields must be one of types: (str, float, int, bool)",
+            additional_message="Record fields must be one of types: (str, float, int, bool)",
         )
         return super(TableRecord, cls).__new__(cls, data=data)
 
