@@ -1,6 +1,6 @@
 import contextlib
 import os
-from typing import Any, Callable, NamedTuple, Optional
+from typing import Callable, NamedTuple, Optional
 
 import yaml
 from dagster import check
