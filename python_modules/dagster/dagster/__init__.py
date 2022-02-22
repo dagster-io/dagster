@@ -205,9 +205,7 @@ if typing.TYPE_CHECKING or os.getenv("DAGSTER_NO_LAZY_LOAD") == "1":
     from dagster.core.execution.validate_run_config import validate_run_config
     from dagster.core.executor.base import Executor
     from dagster.core.executor.init import InitExecutorContext
-from dagster.core.instance import DagsterInstance
-
-if typing.TYPE_CHECKING or os.getenv("DAGSTER_NO_LAZY_LOAD") == "1":
+    from dagster.core.instance import DagsterInstance
     from dagster.core.launcher import DefaultRunLauncher
     from dagster.core.log_manager import DagsterLogManager
     from dagster.core.storage.event_log import (
@@ -338,7 +336,7 @@ def __getattr__(name):
         rename_warning(value.__name__, name, breaking_version, stacklevel=stacklevel)
         return value
     elif name in _lazy_load_name_map:
-        return importlib.import_module(_lazy_load_name_map[name]).__dict__[name]
+        return getattr(importlib.import_module(_lazy_load_name_map[name]), name)
     else:
         raise AttributeError("module '{}' has no attribute '{}'".format(__name__, name))
 

@@ -20,7 +20,7 @@ import traceback
 from contextlib import contextmanager
 
 import dagster.check as check
-from dagster.utils.interrupts import raise_interrupts_as
+# from dagster.utils.interrupts import raise_interrupts_as
 
 
 class DagsterExecutionInterruptedError(BaseException):
@@ -148,6 +148,7 @@ class DagsterStepOutputNotFoundError(DagsterError):
 
 @contextmanager
 def raise_execution_interrupts():
+    from dagster.utils.interrupts import raise_interrupts_as
     with raise_interrupts_as(DagsterExecutionInterruptedError):
         yield
 
