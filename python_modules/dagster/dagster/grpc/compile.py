@@ -126,7 +126,6 @@ def protoc():
             "isort",
             "--settings-path",
             ISORT_SETTINGS_PATH,
-            "-y",
             GENERATED_PB2_PATH,
             GENERATED_GRPC_PATH,
         ]
