@@ -72,7 +72,7 @@ export const MetadataEntry: React.FC<{
   expandSmallValues?: boolean;
 }> = ({entry, expandSmallValues}) => {
   switch (entry.__typename) {
-    case 'EventPathMetadataEntry':
+    case 'PathMetadataEntry':
       return (
         <Group direction="row" spacing={8} alignItems="center">
           <MetadataEntryAction title="Copy to clipboard" onClick={(e) => copyValue(e, entry.path)}>
@@ -84,7 +84,7 @@ export const MetadataEntry: React.FC<{
         </Group>
       );
 
-    case 'EventJsonMetadataEntry':
+    case 'JsonMetadataEntry':
       return expandSmallValues && entry.jsonString.length < 1000 ? (
         <div style={{whiteSpace: 'pre-wrap'}}>
           {JSON.stringify(JSON.parse(entry.jsonString), null, 2)}
@@ -109,7 +109,7 @@ export const MetadataEntry: React.FC<{
         </MetadataEntryModalAction>
       );
 
-    case 'EventUrlMetadataEntry':
+    case 'UrlMetadataEntry':
       return (
         <Group direction="row" spacing={8} alignItems="center">
           <MetadataEntryAction href={entry.url} title="Open in a new tab" target="_blank">
@@ -120,9 +120,9 @@ export const MetadataEntry: React.FC<{
           </a>
         </Group>
       );
-    case 'EventTextMetadataEntry':
+    case 'TextMetadataEntry':
       return <>{entry.text}</>;
-    case 'EventMarkdownMetadataEntry':
+    case 'MarkdownMetadataEntry':
       return expandSmallValues && entry.mdStr.length < 1000 ? (
         <Markdown>{entry.mdStr}</Markdown>
       ) : (
@@ -138,7 +138,7 @@ export const MetadataEntry: React.FC<{
           [Show Markdown]
         </MetadataEntryModalAction>
       );
-    case 'EventPythonArtifactMetadataEntry':
+    case 'PythonArtifactMetadataEntry':
       return (
         <PythonArtifactLink
           name={entry.name}
@@ -146,15 +146,15 @@ export const MetadataEntry: React.FC<{
           description={entry.description || ''}
         />
       );
-    case 'EventFloatMetadataEntry':
+    case 'FloatMetadataEntry':
       return <>{entry.floatValue}</>;
-    case 'EventIntMetadataEntry':
+    case 'IntMetadataEntry':
       return <>{entry.intValue !== null ? entry.intValue : entry.intRepr}</>;
-    case 'EventPipelineRunMetadataEntry':
+    case 'PipelineRunMetadataEntry':
       return (
         <MetadataEntryLink to={`/instance/runs/${entry.runId}`}>{entry.runId}</MetadataEntryLink>
       );
-    case 'EventAssetMetadataEntry':
+    case 'AssetMetadataEntry':
       return (
         <MetadataEntryLink
           to={`/instance/assets/${entry.assetKey.path.map(encodeURIComponent).join('/')}`}
@@ -162,9 +162,9 @@ export const MetadataEntry: React.FC<{
           {displayNameForAssetKey(entry.assetKey)}
         </MetadataEntryLink>
       );
-    case 'EventTableMetadataEntry':
+    case 'TableMetadataEntry':
       return null;
-    case 'EventTableSchemaMetadataEntry':
+    case 'TableSchemaMetadataEntry':
       return <TableSchema schema={entry.schema} />;
     default:
       return assertUnreachable(entry);
@@ -172,45 +172,45 @@ export const MetadataEntry: React.FC<{
 };
 
 export const METADATA_ENTRY_FRAGMENT = gql`
-  fragment MetadataEntryFragment on EventMetadataEntry {
+  fragment MetadataEntryFragment on MetadataEntry {
     __typename
     label
     description
-    ... on EventPathMetadataEntry {
+    ... on PathMetadataEntry {
       path
     }
-    ... on EventJsonMetadataEntry {
+    ... on JsonMetadataEntry {
       jsonString
     }
-    ... on EventUrlMetadataEntry {
+    ... on UrlMetadataEntry {
       url
     }
-    ... on EventTextMetadataEntry {
+    ... on TextMetadataEntry {
       text
     }
-    ... on EventMarkdownMetadataEntry {
+    ... on MarkdownMetadataEntry {
       mdStr
     }
-    ... on EventPythonArtifactMetadataEntry {
+    ... on PythonArtifactMetadataEntry {
       module
       name
     }
-    ... on EventFloatMetadataEntry {
+    ... on FloatMetadataEntry {
       floatValue
     }
-    ... on EventIntMetadataEntry {
+    ... on IntMetadataEntry {
       intValue
       intRepr
     }
-    ... on EventPipelineRunMetadataEntry {
+    ... on PipelineRunMetadataEntry {
       runId
     }
-    ... on EventAssetMetadataEntry {
+    ... on AssetMetadataEntry {
       assetKey {
         path
       }
     }
-    ... on EventTableMetadataEntry {
+    ... on TableMetadataEntry {
       table {
         records
         schema {
@@ -218,7 +218,7 @@ export const METADATA_ENTRY_FRAGMENT = gql`
         }
       }
     }
-    ... on EventTableSchemaMetadataEntry {
+    ... on TableSchemaMetadataEntry {
       schema {
         ...TableSchemaFragment
       }

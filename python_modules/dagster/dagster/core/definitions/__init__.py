@@ -105,6 +105,7 @@ from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .reconstructable import (
     ReconstructablePipeline,
+    build_reconstructable_job,
     build_reconstructable_pipeline,
     reconstructable,
 )

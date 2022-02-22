@@ -118,9 +118,9 @@ export function colorHash(str: string) {
 // Useful for generating predicates to retain type information when
 // find/filtering GraphQL results. Example:
 //
-// const textMetadata = metadataEntries.filter(gqlTypePredicate('EventTextMetadataEntry'));
+// const textMetadata = metadataEntries.filter(gqlTypePredicate('TextMetadataEntry'));
 //
-// `textMetadata` will be of type `EventTextMetadataEntry[]`.
+// `textMetadata` will be of type `TextMetadataEntry[]`.
 export const gqlTypePredicate = <T extends string>(typename: T) => <N extends {__typename: string}>(
   node: N,
 ): node is Extract<N, {__typename: T}> => {

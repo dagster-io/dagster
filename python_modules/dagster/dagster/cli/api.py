@@ -83,6 +83,12 @@ def _execute_run_command_body(
 
     pipeline_run = instance.get_run_by_id(pipeline_run_id)
 
+    check.inst(
+        pipeline_run,
+        PipelineRun,
+        "Pipeline run with id '{}' not found for run execution.".format(pipeline_run_id),
+    )
+
     pid = os.getpid()
     instance.report_engine_event(
         "Started process for run (pid: {pid}).".format(pid=pid),
@@ -169,6 +175,11 @@ def _resume_run_command_body(
             instance, pipeline_run_id
         )
     pipeline_run = instance.get_run_by_id(pipeline_run_id)
+    check.inst(
+        pipeline_run,
+        PipelineRun,
+        "Pipeline run with id '{}' not found for run execution.".format(pipeline_run_id),
+    )
 
     pid = os.getpid()
     instance.report_engine_event(
