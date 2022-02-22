@@ -228,10 +228,10 @@ class SensorDefinition:
                     ),
                 )
             ]
-        elif job:
-            targets = [DirectTarget(job)]
+            self._jobs = None
         elif jobs:
             targets = [DirectTarget(job) for job in jobs]
+            self._jobs = jobs
 
         if name:
             self._name = check_valid_name(name)
@@ -307,6 +307,10 @@ class SensorDefinition:
     @property
     def targets(self) -> Optional[List[Union[DirectTarget, RepoRelativeTarget]]]:
         return self._targets
+
+    @property
+    def jobs(self) -> Optional[Sequence[Union[GraphDefinition, JobDefinition]]]:
+        return self._jobs
 
     def evaluate_tick(self, context: "SensorEvaluationContext") -> "SensorExecutionData":
         """Evaluate sensor using the provided context.

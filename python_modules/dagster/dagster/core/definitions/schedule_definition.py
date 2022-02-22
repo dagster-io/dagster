@@ -215,6 +215,7 @@ class ScheduleDefinition:
 
         if job is not None:
             self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
+            self._job = job
         else:
             self._target = RepoRelativeTarget(
                 pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
@@ -223,6 +224,7 @@ class ScheduleDefinition:
                     solid_selection, "solid_selection", of_type=str
                 ),
             )
+            self._job = None
 
         if name:
             self._name = check_valid_name(name)
@@ -414,6 +416,10 @@ class ScheduleDefinition:
     @property
     def execution_timezone(self) -> Optional[str]:
         return self._execution_timezone
+
+    @property
+    def job(self) -> Optional[Union[GraphDefinition, PipelineDefinition]]:
+        self._job
 
     def evaluate_tick(self, context: "ScheduleEvaluationContext") -> ScheduleExecutionData:
         """Evaluate schedule using the provided context.
