@@ -1,5 +1,4 @@
 from abc import ABC, abstractmethod
-from collections import namedtuple
 from typing import TYPE_CHECKING, Dict, NamedTuple, Optional
 
 from dagster import check
@@ -22,7 +21,7 @@ class StepRunRef(
             ("step_key", str),
             ("recon_pipeline", ReconstructablePipeline),
             ("prior_attempts_count", int),
-            ("known_state", Optional[KnownExecutionState]),
+            ("known_state", Optional["KnownExecutionState"]),
             ("parent_run", Optional[PipelineRun]),
         ],
     )
@@ -41,7 +40,7 @@ class StepRunRef(
         step_key: str,
         recon_pipeline: ReconstructablePipeline,
         prior_attempts_count: int,
-        known_state: Optional[KnownExecutionState],
+        known_state: Optional["KnownExecutionState"],
         parent_run: Optional[PipelineRun],
     ):
         from dagster.core.execution.plan.state import KnownExecutionState

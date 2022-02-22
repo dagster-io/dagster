@@ -1,7 +1,6 @@
 import os
 import sys
 from abc import ABC, abstractmethod
-from collections import namedtuple
 from contextlib import contextmanager
 from inspect import Parameter
 from typing import (
