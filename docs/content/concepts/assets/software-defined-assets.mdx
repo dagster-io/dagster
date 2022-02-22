@@ -295,6 +295,47 @@ Multiple jobs within the same repository can target overlapping sets of assets.
 
 Like regular jobs, asset jobs can be placed on [schedules](/concepts/partitions-schedules-sensors/schedules) and [sensors](/concepts/partitions-schedules-sensors/sensors).
 
+## Testing
+
+Since a function decorated with <PyObject object="asset" /> acts as the op for a software defined asset. You can write unit tests for this function in the same way you would a standard [op](/concepts/testing#testing-ops).
+
+```python file=/concepts/assets/asset_testing.py startafter=start_no_context endbefore=end_no_context
+@asset
+def simple_asset():
+    return [1, 2, 3]
+
+
+def test_simple_asset():
+    result = simple_asset()
+    assert result == [1, 2, 3]
+
+
+@asset
+def more_complex_asset(simple_asset):
+    return simple_asset + [4, 5, 6]
+
+
+def test_more_complex_asset():
+    result = more_complex_asset([0])
+    assert result == [0, 4, 5, 6]
+```
+
+Notice how you can pass any value to `more_complex_asset` when you directly invoke it in the unit test. This allows you to test assets in isolation from one another.
+
+If you use a context object in your function, you can mock it with <PyObject object="build_op_context" />
+
+```python file=/concepts/assets/asset_testing.py startafter=start_with_context endbefore=end_with_context
+@asset
+def uses_context(context):
+    return context.resources.foo
+
+
+def test_uses_context():
+    context = build_op_context(resources={"foo": "bar"})
+    result = uses_context(context)
+    assert result == "bar"
+```
+
 ## Examples
 
 ### Multi-component asset keys
