@@ -54,9 +54,7 @@ def fetch_stories():
     for article in tree[0].findall("item"):
         all_articles.append(article)
 
-        if [
-            category for category in article.findall("category") if category.text == "New York City"
-        ]:
+        if any(category.text == "New York City" for category in article.findall("category")):
             nyc_articles.append(article)
 
     yield Output(all_articles, "all_articles")
@@ -97,10 +95,8 @@ def send_slack_msg(context, articles):
     context.resources.slack.chat_postMessage(channel="my-news-channel", text=formatted_str)
 
 
-@job(
-    resource_defs={"slack": mock_slack_resource},
-)
-def conditional_branching():
+@job(resource_defs={"slack": mock_slack_resource})
+def process_nyt_feed():
     all_articles, nyc_articles = fetch_stories()
     write_to_csv.alias("nyc_csv")(parse_xml(nyc_articles))
     write_to_csv.alias("all_csv")(parse_xml(all_articles))

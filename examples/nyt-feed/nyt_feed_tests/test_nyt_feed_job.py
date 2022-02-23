@@ -4,16 +4,13 @@ import tempfile
 import pandas as pd
 from dagster import build_init_resource_context, build_input_context, build_output_context
 from dagster.core.test_utils import instance_for_test
-from dagster_conditional_branching.conditional_branching_job import (
-    conditional_branching,
-    df_to_csv_io_manager,
-)
+from nyt_feed.nyt_feed_job import df_to_csv_io_manager, process_nyt_feed
 
 
-def test_conditional_branching():
+def test_nyt_feed_job():
     with tempfile.TemporaryDirectory() as tmp_dir:
         with instance_for_test(temp_dir=tmp_dir) as instance:
-            assert conditional_branching.execute_in_process(
+            assert process_nyt_feed.execute_in_process(
                 instance=instance,
                 run_config={
                     "ops": {
