@@ -99,7 +99,7 @@ class PandasCsvIOManager(IOManager):
 
 ### Attaching Metadata to an AssetMaterialization
 
-There are a variety of types of metadata that can be associated with a materialization event, all through the <PyObject module="dagster" object="EventMetadataEntry" /> class. Each materialization event optionally takes a list of metadata entries that are then displayed in the event log and the [Asset Catalog](/concepts/dagit/dagit#assets).
+There are a variety of types of metadata that can be associated with a materialization event, all through the <PyObject module="dagster" object="MetadataEntry" /> class. Each materialization event optionally takes a list of metadata entries that are then displayed in the event log and the [Asset Catalog](/concepts/dagit/dagit#assets).
 
 #### Example: Op body
 
@@ -147,7 +147,7 @@ class PandasCsvIOManagerWithAsset(IOManager):
         )
 ```
 
-Check our API docs for <PyObject module="dagster" object="EventMetadataEntry" /> for more details on they types of event metadata available.
+Check our API docs for <PyObject module="dagster" object="MetadataEntry" /> for more details on they types of event metadata available.
 
 ### Specifying a partition for an AssetMaterialization
 
@@ -228,7 +228,7 @@ class PandasCsvIOManagerWithOutputAsset(IOManager):
         return AssetKey(file_path)
 ```
 
-When an output is linked to an asset in this way, the generated <PyObject object="AssetMaterialization" /> event will contain any <PyObject object="EventMetadataEntry" /> information yielded from the `handle_output` function (in addiition to all of the `metadata` specified on the corresponding <PyObject object="Output" /> event).
+When an output is linked to an asset in this way, the generated <PyObject object="AssetMaterialization" /> event will contain any <PyObject object="MetadataEntry" /> information yielded from the `handle_output` function (in addiition to all of the `metadata` specified on the corresponding <PyObject object="Output" /> event).
 
 See the [IOManager docs](/concepts/io-management/io-managers#yielding-metadata-from-an-iomanager) for more information on yielding these entries from an IOManager.
 
