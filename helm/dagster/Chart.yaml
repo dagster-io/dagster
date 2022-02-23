@@ -30,8 +30,8 @@ dependencies:
     repository: https://charts.bitnami.com/bitnami
     condition: redis.internal
 maintainers:
-  - name: Rex Ledesma
-    email: rex@elementl.com
-    url: https://dagster.io
-icon: https://dagster.io/images/logo.png
+  - name: Elementl
+    email: support@elementl.com
+    url: https://elementl.com
+icon: https://elementl.com/icons/social/dagster.jpg
 appVersion: dev
