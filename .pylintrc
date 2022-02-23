@@ -12,7 +12,8 @@
 
 # TODO: why master??
 [MASTER]
-ignore=snapshots
+ignore=snapshots,helm
+py-version=3.6
 # load-plugins=dagster.utils.linter
 
 [MESSAGES CONTROL]
