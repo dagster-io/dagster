@@ -166,7 +166,8 @@ def test_bad_json_metadata_value():
         execute_pipeline(the_pipeline)
 
     assert str(exc_info.value) == (
-        'Could not resolve the metadata value for "bad" to a JSON serializable value. '
+        'Could not resolve the metadata value for "bad" to a known type. '
+        "Value is a dictionary but is not JSON serializable. "
         "Consider wrapping the value with the appropriate MetadataValue type."
     )
 
