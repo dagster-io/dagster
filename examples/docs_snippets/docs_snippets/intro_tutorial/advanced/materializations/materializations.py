@@ -1,8 +1,10 @@
 """isort:skip_file"""
+# pylint: disable=reimported
 import csv
 import os
 
 import requests
+from dagster import op, get_dagster_logger
 
 
 @op

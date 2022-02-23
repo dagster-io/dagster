@@ -13,7 +13,8 @@ Dagster ops can describe their persistent artifacts to the system by logging or 
 
 Suppose that we rewrite our `sort_calories` op so that it saves the newly sorted data frame to disk.
 
-```python file=/intro_tutorial/advanced/materializations/materializations.py lines=17-34
+```python file=/intro_tutorial/advanced/materializations/materializations.py lines=18-38
+# start_materializations_marker_0
 from dagster import (
     AssetMaterialization,
     MetadataValue,
@@ -32,6 +33,7 @@ def sort_by_calories(context, cereals):
 
     logger = get_dagster_logger()
     logger.info(f"Least caloric cereal: {least_caloric}")
+    logger.info(f"Most caloric cereal: {most_caloric}")
 ```
 
 We've taken the basic precaution of ensuring that the saved csv file has a different filename for each run of the job. But there's no way for Dagit to know about this persistent artifact. So we'll add the following lines:
