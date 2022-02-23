@@ -4,8 +4,16 @@
 #   exit status. Prefix the command with "-" to instruct make to continue to the next command
 #   regardless of the preceding command's exit status.
 
+uname := $(shell uname -s)
+is_darwin := $(filter Darwin,$(uname))
+
+# NOTE: Pylint parallelism is controlled by the `-j` option ("jobs"). Setting `-j 0` will make
+# pylint use many jobs. As of 2022-02-22, certain custom plugins, including our Dagster pylint
+# plugin `dagster.utils.linter`,  cannot be used with multiple jobs on macOS (i.e. Darwin). See:
+#   https://pylint.pycqa.org/en/latest/user_guide/run.html#parallel-execution
+#   https://github.com/PyCQA/pylint/issues/4874
 pylint:
-	pylint -j 0 `git ls-files '*.py'` --rcfile=.pylintrc
+	pylint -j $(if $(is_darwin),1,0) `git ls-files '*.py'` --rcfile=.pylintrc
 
 # NOTE: See pyproject.toml [tool.black] for majority of black config. Only include/exclude options
 # and format targets should be specified here. Note there are separate pyproject.toml for the root
