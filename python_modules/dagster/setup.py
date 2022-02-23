@@ -93,17 +93,13 @@ if __name__ == "__main__":
             "docker": ["docker"],
             "test": [
                 "astroid>=2.3.3,<2.5",
-                "black==22.1.0",
                 "coverage==5.3",
                 "docker",
-                "flake8>=3.7.8",
                 "freezegun>=0.3.15",
                 "grpcio-tools==1.32.0",
-                "isort==5.10.1",
                 "mock==3.0.5",
                 "objgraph",
                 "protobuf==3.13.0",  # without this, pip will install the most up-to-date protobuf
-                "pylint==2.6.0",
                 "pytest-cov==2.10.1",
                 "pytest-dependency==0.5.1",
                 "pytest-mock==3.3.1",
@@ -118,8 +114,12 @@ if __name__ == "__main__":
                 "tqdm==4.48.0",  # pylint crash 48.1+
                 "yamllint",
             ],
-            "mypy": [
+            "lint": [
+                "black==22.1.0",
+                "flake8>=3.7.8",
+                "isort==5.10.1",
                 "mypy==0.931",
+                "pylint==2.6.0",
                 "types-croniter",  # version will be resolved against croniter
                 "types-mock",  # version will be resolved against mock
                 "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)
