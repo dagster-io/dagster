@@ -2,14 +2,14 @@ import pytest
 from dagster import (
     AssetKey,
     DagsterInvalidDefinitionError,
+    OpExecutionContext,
     Out,
     Output,
     String,
-    check,
-    OpExecutionContext,
     build_op_context,
+    check,
 )
-from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, multi_asset, build_assets_job
+from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 
 

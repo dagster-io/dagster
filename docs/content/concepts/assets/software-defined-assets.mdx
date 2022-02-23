@@ -67,7 +67,7 @@ The [explicit dependencies](#explicit-dependencies) example covers an alternativ
 
 ### Using context in assets
 
-Since a Software-defined asset contains an op, all of the typical functionality of an op (like the use of resources) is available to an asset
+Since a software-defined asset contains an op, all of the typical functionality of an op (like the use of resources) is available to an asset.
 
 ```python file=/concepts/assets/asset_w_context.py startafter=start_w_context endbefore=end_w_context
 @asset(required_resource_keys={"alerter"})
@@ -309,43 +309,53 @@ Like regular jobs, asset jobs can be placed on [schedules](/concepts/partitions-
 
 ## Testing
 
-Since a function decorated with <PyObject object="asset" /> acts as the op for a software defined asset, you can write unit tests for this function in the same way you would write unit tests for a standard op. See this section on [op testing](/concepts/testing#testing-ops) for some background information.
+Since a function decorated with `@asset` acts as the op for a software-defined asset, you can write unit tests for this function in the same way you would write unit tests for a standard op. See this section on [op testing](/concepts/testing#testing-ops) for some background information.
 
-Similar to the `@op` decorator, the `@asset` decorator can slightly modify the call signiture of the decorated function. However, the new signiture closely mirrors the signature of the decorated function, and in some cases, they match exactly.
+Consider a simple asset with no upstream dependencies:
 
-For instance, if you have a simple asset that does not need a context object, a unit test can directly invoke the asset using the same call signature as the decorated function.
-
-```python file=/concepts/assets/asset_testing.py startafter=start_no_context endbefore=end_no_context
+```python file=/concepts/assets/asset_testing.py startafter=start_simple_asset endbefore=end_simple_asset
 @asset
 def my_simple_asset():
     return [1, 2, 3]
+```
 
+When writing a unit test, you can directly invoke the decorated function.
 
+```python file=/concepts/assets/asset_testing.py startafter=start_test_simple_asset endbefore=end_test_simple_asset
 def test_my_simple_asset():
     result = my_simple_asset()
     assert result == [1, 2, 3]
+```
 
+If you have an asset with upstream dependencies:
 
+```python file=/concepts/assets/asset_testing.py startafter=start_more_complex_asset endbefore=end_more_complex_asset
 @asset
 def more_complex_asset(my_simple_asset):
     return my_simple_asset + [4, 5, 6]
+```
 
+You can manually provide values for those dependencies in your unit test. This allows you to test assets in isolation from one another.
 
+```python file=/concepts/assets/asset_testing.py startafter=start_test_more_complex_asset endbefore=end_test_more_complex_asset
 def test_more_complex_asset():
     result = more_complex_asset([0])
     assert result == [0, 4, 5, 6]
 ```
 
-Notice how you can pass any value to `more_complex_asset` when you directly invoke it in the unit test. This allows you to test assets in isolation from one another.
+If you use a context object in your function, `@asset` will provide the correct context during execution. When writing a unit test, you can mock it with <PyObject object="build_op_context" />. You can use <PyObject object="build_op_context" /> to generate the `context` object because under the hood the function decorated by `@asset` is an op.
 
-If you use a context object in your function, `@asset` will provide the correct context during execution. But when writing a unit test, you can mock it with <PyObject object="build_op_context" />. We can use <PyObject object="build_op_context" /> because under the hood the function decorated by `@asset` is an op.
+Consider this asset that uses a resource:
 
-```python file=/concepts/assets/asset_testing.py startafter=start_with_context endbefore=end_with_context
+```python file=/concepts/assets/asset_testing.py startafter=start_with_context_asset endbefore=end_with_context_asset
 @asset
 def uses_context(context):
     return context.resources.foo
+```
 
+When writing a unit test, use <PyObject object="build_op_context" /> to mock the `context` and provide values for testing.
 
+```python file=/concepts/assets/asset_testing.py startafter=start_test_with_context_asset endbefore=end_test_with_context_asset
 def test_uses_context():
     context = build_op_context(resources={"foo": "bar"})
     result = uses_context(context)
