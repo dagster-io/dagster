@@ -1352,8 +1352,7 @@ records = instance.get_event_records(
             step_key=step_key,
         )
         event_record = EventLogEntry(
-            message=message,
-            user_message=message,
+            user_message="",
             level=log_level,
             pipeline_name=pipeline_name,
             run_id=run_id,
@@ -1384,7 +1383,6 @@ records = instance.get_event_records(
         )
 
         event_record = EventLogEntry(
-            message=message,
             user_message="",
             level=logging.INFO,
             pipeline_name=run.pipeline_name,
@@ -1418,8 +1416,7 @@ records = instance.get_event_records(
             message=message,
         )
         event_record = EventLogEntry(
-            message=message,
-            user_message=message,
+            user_message="",
             level=logging.ERROR,
             pipeline_name=pipeline_run.pipeline_name,
             run_id=pipeline_run.run_id,
@@ -1449,8 +1446,7 @@ records = instance.get_event_records(
             message=message,
         )
         event_record = EventLogEntry(
-            message=message,
-            user_message=message,
+            user_message="",
             level=logging.ERROR,
             pipeline_name=pipeline_run.pipeline_name,
             run_id=pipeline_run.run_id,
@@ -1559,7 +1555,6 @@ records = instance.get_event_records(
         )
 
         event_record = EventLogEntry(
-            message="",
             user_message="",
             level=logging.INFO,
             pipeline_name=run.pipeline_name,
