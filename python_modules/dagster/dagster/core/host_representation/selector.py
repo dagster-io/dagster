@@ -4,13 +4,27 @@ from dagster import check
 
 
 class PipelineSelector(
-    NamedTuple("_PipelineSelector", [("location_name", str), ("repository_name", str), ("pipeline_name", str), ("solid_selection", Optional[List[str]])])
+    NamedTuple(
+        "_PipelineSelector",
+        [
+            ("location_name", str),
+            ("repository_name", str),
+            ("pipeline_name", str),
+            ("solid_selection", Optional[List[str]]),
+        ],
+    )
 ):
     """
     The information needed to resolve a pipeline within a host process.
     """
 
-    def __new__(cls, location_name: str, repository_name: str, pipeline_name: str, solid_selection: Optional[List[str]]):
+    def __new__(
+        cls,
+        location_name: str,
+        repository_name: str,
+        pipeline_name: str,
+        solid_selection: Optional[List[str]],
+    ):
         return super(PipelineSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
@@ -39,7 +53,9 @@ class PipelineSelector(
         )
 
 
-class RepositorySelector(NamedTuple("_RepositorySelector", [("location_name", str), ("repository_name", str)])):
+class RepositorySelector(
+    NamedTuple("_RepositorySelector", [("location_name", str), ("repository_name", str)])
+):
     def __new__(cls, location_name: str, repository_name: str):
         return super(RepositorySelector, cls).__new__(
             cls,
@@ -62,7 +78,10 @@ class RepositorySelector(NamedTuple("_RepositorySelector", [("location_name", st
 
 
 class ScheduleSelector(
-    NamedTuple("_ScheduleSelector", [("location_name", str), ("repository_name", str), ("schedule_name", str)])
+    NamedTuple(
+        "_ScheduleSelector",
+        [("location_name", str), ("repository_name", str), ("schedule_name", str)],
+    )
 ):
     def __new__(cls, location_name: str, repository_name: str, schedule_name: str):
         return super(ScheduleSelector, cls).__new__(
@@ -88,7 +107,11 @@ class ScheduleSelector(
         )
 
 
-class SensorSelector(NamedTuple("_SensorSelector", [("location_name", str), ("repository_name", str), ("sensor_name", str)])):
+class SensorSelector(
+    NamedTuple(
+        "_SensorSelector", [("location_name", str), ("repository_name", str), ("sensor_name", str)]
+    )
+):
     def __new__(cls, location_name: str, repository_name: str, sensor_name: str):
         return super(SensorSelector, cls).__new__(
             cls,
@@ -113,7 +136,11 @@ class SensorSelector(NamedTuple("_SensorSelector", [("location_name", str), ("re
         )
 
 
-class InstigationSelector(NamedTuple("_InstigationSelector", [("location_name", str), ("repository_name", str), ("name", str)])):
+class InstigationSelector(
+    NamedTuple(
+        "_InstigationSelector", [("location_name", str), ("repository_name", str), ("name", str)]
+    )
+):
     def __new__(cls, location_name: str, repository_name: str, name: str):
         return super(InstigationSelector, cls).__new__(
             cls,
@@ -138,7 +165,11 @@ class InstigationSelector(NamedTuple("_InstigationSelector", [("location_name", 
         )
 
 
-class GraphSelector(NamedTuple("_GraphSelector", [("location_name", str), ("repository_name", str), ("graph_name", str)])):
+class GraphSelector(
+    NamedTuple(
+        "_GraphSelector", [("location_name", str), ("repository_name", str), ("graph_name", str)]
+    )
+):
     """
     The information needed to resolve a graph within a host process.
     """

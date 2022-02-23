@@ -196,9 +196,25 @@ class ExternalPipelineData(
 
 @whitelist_for_serdes
 class ExternalPresetData(
-    NamedTuple("_ExternalPresetData", [("name", str), ("run_config", Dict[str, Any]), ("solid_selection", Optional[List[str]]), ("mode", str), ("tags", Dict[str, str])])
+    NamedTuple(
+        "_ExternalPresetData",
+        [
+            ("name", str),
+            ("run_config", Dict[str, Any]),
+            ("solid_selection", Optional[List[str]]),
+            ("mode", str),
+            ("tags", Dict[str, str]),
+        ],
+    )
 ):
-    def __new__(cls, name: str, run_config: Dict[str, Any], solid_selection: Optional[List[str]], mode: str, tags: Dict[str, str]):
+    def __new__(
+        cls,
+        name: str,
+        run_config: Dict[str, Any],
+        solid_selection: Optional[List[str]],
+        mode: str,
+        tags: Dict[str, str],
+    ):
         return super(ExternalPresetData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -279,7 +295,10 @@ class ExternalScheduleExecutionErrorData(
 
 @whitelist_for_serdes
 class ExternalTargetData(
-    NamedTuple("_ExternalTargetData", [("pipeline_name", str), ("mode", str), ("solid_selection", Optional[List[str]])])
+    NamedTuple(
+        "_ExternalTargetData",
+        [("pipeline_name", str), ("mode", str), ("solid_selection", Optional[List[str]])],
+    )
 ):
     def __new__(cls, pipeline_name: str, mode: str, solid_selection: Optional[List[str]]):
         return super(ExternalTargetData, cls).__new__(

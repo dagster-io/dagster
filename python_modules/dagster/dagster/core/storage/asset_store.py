@@ -5,7 +5,9 @@ from dagster.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
-class AssetStoreHandle(NamedTuple("_AssetStoreHandle", [("asset_store_key", str), ("metadata", Dict[str, object])])):
+class AssetStoreHandle(
+    NamedTuple("_AssetStoreHandle", [("asset_store_key", str), ("metadata", Dict[str, object])])
+):
     def __new__(cls, asset_store_key: str, metadata: Dict[str, object] = None):
         return super(AssetStoreHandle, cls).__new__(
             cls,

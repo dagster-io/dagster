@@ -17,10 +17,23 @@ class ComputeIOType(Enum):
     STDERR = "stderr"
 
 
-class ComputeLogFileData(NamedTuple("ComputeLogFileData", [("path", str), ("data", Optional[str]), ("cursor", int), ("size", int), ("download_url", Optional[str])])):
+class ComputeLogFileData(
+    NamedTuple(
+        "ComputeLogFileData",
+        [
+            ("path", str),
+            ("data", Optional[str]),
+            ("cursor", int),
+            ("size", int),
+            ("download_url", Optional[str]),
+        ],
+    )
+):
     """Representation of a chunk of compute execution log data"""
 
-    def __new__(cls, path: str, data: Optional[str], cursor: int, size: int, download_url: Optional[str]):
+    def __new__(
+        cls, path: str, data: Optional[str], cursor: int, size: int, download_url: Optional[str]
+    ):
         return super(ComputeLogFileData, cls).__new__(
             cls,
             path=check.str_param(path, "path"),

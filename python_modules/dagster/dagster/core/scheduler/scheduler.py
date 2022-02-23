@@ -28,9 +28,23 @@ class DagsterScheduleDoesNotExist(DagsterSchedulerError):
 
 
 class SchedulerDebugInfo(
-    NamedTuple("SchedulerDebugInfo", [("errors", List[str]), ("scheduler_config_info", str), ("scheduler_info", str), ("schedule_storage", List[str])])
+    NamedTuple(
+        "SchedulerDebugInfo",
+        [
+            ("errors", List[str]),
+            ("scheduler_config_info", str),
+            ("scheduler_info", str),
+            ("schedule_storage", List[str]),
+        ],
+    )
 ):
-    def __new__(cls, errors: List[str], scheduler_config_info: str, scheduler_info: str, schedule_storage: List[str]):
+    def __new__(
+        cls,
+        errors: List[str],
+        scheduler_config_info: str,
+        scheduler_info: str,
+        schedule_storage: List[str],
+    ):
         return super(SchedulerDebugInfo, cls).__new__(
             cls,
             errors=check.list_param(errors, "errors", of_type=str),

@@ -100,7 +100,9 @@ class ExecutionPlanSnapshot(
 
 
 @whitelist_for_serdes
-class ExecutionPlanSnapshotErrorData(NamedTuple("_ExecutionPlanSnapshotErrorData", [("error", Optional[SerializableErrorInfo])])):
+class ExecutionPlanSnapshotErrorData(
+    NamedTuple("_ExecutionPlanSnapshotErrorData", [("error", Optional[SerializableErrorInfo])])
+):
     def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExecutionPlanSnapshotErrorData, cls).__new__(
             cls,
@@ -110,9 +112,31 @@ class ExecutionPlanSnapshotErrorData(NamedTuple("_ExecutionPlanSnapshotErrorData
 
 @whitelist_for_serdes
 class ExecutionStepSnap(
-    NamedTuple("_ExecutionStepSnap", [("key", str), ("inputs", List["ExecutionStepInputSnap"]), ("outputs", List["ExecutionStepOutputSnap"]), ("solid_handle_id", str), ("kind", StepKind), ("metadata_items", List["ExecutionPlanMetadataItemSnap"]), ("tags", Optional[Dict[str, object]]), ("step_handle", Optional[StepHandleUnion])])
+    NamedTuple(
+        "_ExecutionStepSnap",
+        [
+            ("key", str),
+            ("inputs", List["ExecutionStepInputSnap"]),
+            ("outputs", List["ExecutionStepOutputSnap"]),
+            ("solid_handle_id", str),
+            ("kind", StepKind),
+            ("metadata_items", List["ExecutionPlanMetadataItemSnap"]),
+            ("tags", Optional[Dict[str, object]]),
+            ("step_handle", Optional[StepHandleUnion]),
+        ],
+    )
 ):
-    def __new__(cls, key: str, inputs: List["ExecutionStepInputSnap"], outputs: List["ExecutionStepOutputSnap"], solid_handle_id: str, kind: StepKind, metadata_items: List["ExecutionPlanMetadataItemSnap"], tags: Optional[Dict[str, object]] = None, step_handle: Optional[StepHandleUnion] = None):
+    def __new__(
+        cls,
+        key: str,
+        inputs: List["ExecutionStepInputSnap"],
+        outputs: List["ExecutionStepOutputSnap"],
+        solid_handle_id: str,
+        kind: StepKind,
+        metadata_items: List["ExecutionPlanMetadataItemSnap"],
+        tags: Optional[Dict[str, object]] = None,
+        step_handle: Optional[StepHandleUnion] = None,
+    ):
         return super(ExecutionStepSnap, cls).__new__(
             cls,
             key=check.str_param(key, "key"),
