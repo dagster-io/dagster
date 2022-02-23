@@ -17,14 +17,14 @@ An asset observation is an event that records metadata about a given asset. Unli
 ## Overview
 
 <PyObject object="AssetObservation" /> events are used record metadata in Dagster
-about a given asset. Asset observation events can be yielded at runtime within ops
+about a given asset. Asset observation events can be logged at runtime within ops
 and assets. An asset must be defined using the <PyObject
 object="asset"
 decorator
 /> decorator or have existing materializations in order for its observations to be
 displayed.
 
-## Yielding an AssetObservation from an Op
+## Logging an AssetObservation from an Op
 
 To make Dagster aware that we have recorded metadata about an asset, we can yield an <PyObject object="AssetObservation" /> event:
 
