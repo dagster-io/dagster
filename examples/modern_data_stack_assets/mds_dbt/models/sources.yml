@@ -1,0 +1,9 @@
+version: 2
+
+sources:
+  - name: postgres_replica
+    database: postgres_replica
+    schema: public
+    tables:
+      - name: users
+      - name: orders

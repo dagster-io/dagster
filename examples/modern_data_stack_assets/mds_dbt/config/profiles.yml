@@ -1,0 +1,13 @@
+mds_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: localhost
+      port: 5432
+      user: postgres
+      pass: password
+      dbname: postgres_replica
+      schema: mds_dbt
+      threads: 2
+      keepalives_idle: 0
