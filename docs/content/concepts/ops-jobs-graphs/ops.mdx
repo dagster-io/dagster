@@ -44,7 +44,7 @@ The op as computational unit enables many useful features for data orchestration
 
 To define an op, use the <PyObject object="op" decorator /> decorator. The decorated function is called the `compute_fn`.
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_op_marker endbefore=end_op_marker
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_op_marker endbefore=end_op_marker
 @op
 def my_op():
     return "hello"
@@ -66,7 +66,7 @@ Inputs are passed as arguments to an op's `compute_fn`. The value of an input ca
 
 The most common way to define inputs is just to add arguments to the decorated function:
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_input_op_marker endbefore=end_input_op_marker
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_input_op_marker endbefore=end_input_op_marker
 @op
 def my_input_op(abc, xyz):
     pass
@@ -79,7 +79,7 @@ An op only starts to execute once all of its inputs have been resolved. Inputs c
 
 You can use a [Dagster Type](/concepts/types) to provide a function that validates an op's input every time the op runs. In this case, you use a dictionary of <PyObject object="In" pluralize /> corresponding to the decorated function arguments.
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_typed_input_op_marker endbefore=end_typed_input_op_marker
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_typed_input_op_marker endbefore=end_typed_input_op_marker
 MyDagsterType = DagsterType(
     type_check_fn=lambda _, value: value % 2 == 0, name="MyDagsterType"
 )
@@ -96,7 +96,7 @@ Outputs are yielded from an op's `compute_fn`. By default, all ops have a single
 
 When you have one output, you can return the output value directly.
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_output_op_marker endbefore=end_output_op_marker
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_output_op_marker endbefore=end_output_op_marker
 @op
 def my_output_op():
     return 5
@@ -106,7 +106,7 @@ To define multiple outputs, or to use a different output name than "result", you
 
 When you have more than one output, you can return a tuple of values, one for each output.
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_multi_output_op_marker endbefore=end_multi_output_op_marker
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_multi_output_op_marker endbefore=end_multi_output_op_marker
 @op(out={"first_output": Out(), "second_output": Out()})
 def my_multi_output_op():
     return 5, 6
@@ -120,7 +120,7 @@ When writing an op, users can optionally provide a first parameter, `context`. W
 
 For example, to access the logger and log a info message:
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_op_context_marker endbefore=end_op_context_marker
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_op_context_marker endbefore=end_op_context_marker
 @op(config_schema={"name": str})
 def context_op(context):
     name = context.op_config["name"]
@@ -135,7 +135,7 @@ Op definitions can specify a `config_schema` for the op's configuration. The con
 
 For example, we can define an op where the API endpoint it queries is defined through its configuration:
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_configured_op_marker endbefore=end_configured_op_marker
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_configured_op_marker endbefore=end_configured_op_marker
 @op(config_schema={"api_endpoint": str})
 def my_configurable_op(context):
     api_endpoint = context.op_config["api_endpoint"]
@@ -155,7 +155,7 @@ You may find the need to create utilities that help generate ops. In most cases,
 
 To create an op factory, you define a function that returns an <PyObject object="OpDefinition"/>, either directly or by decorating a function with the op decorator.
 
-```python file=/concepts/solids_pipelines/solids.py startafter=start_op_factory_pattern_marker endbefore=end_op_factory_pattern_marker
+```python file=/concepts/ops_jobs_graphs/ops.py startafter=start_op_factory_pattern_marker endbefore=end_op_factory_pattern_marker
 def my_op_factory(
     name="default_name",
     ins=None,
