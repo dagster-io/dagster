@@ -108,7 +108,6 @@ def normalize_metadata_value(raw_value: RawMetadataValue):
             )
 
     raise DagsterInvalidMetadata(
-        "Could not resolve value to a known type. "
         f"Its type was {type(raw_value)}. Consider wrapping the value with the appropriate "
         "MetadataValue type."
     )
@@ -126,8 +125,8 @@ def package_metadata_value(label: str, raw_value: RawMetadataValue) -> "Metadata
         value = normalize_metadata_value(raw_value)
     except DagsterInvalidMetadata as e:
         raise DagsterInvalidMetadata(
-            f'Could not resolve the metadata value for "{label}" to a known type.'
-        ) from e
+            f'Could not resolve the metadata value for "{label}" to a known type. {e}'
+        ) from None
     return MetadataEntry(label=label, value=value)
 
 
