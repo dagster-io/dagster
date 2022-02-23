@@ -225,6 +225,9 @@ class SensorDefinition:
                 )
             ]
             self._jobs = None
+        elif job:
+            targets = [DirectTarget(job)]
+            self._jobs = [job]
         elif jobs:
             targets = [DirectTarget(job) for job in jobs]
             self._jobs = jobs
