@@ -1,12 +1,14 @@
 import json
 from unittest.mock import MagicMock
 
+import pytest
 from dagster import AssetKey, MetadataEntry, ResourceDefinition
 from dagster.core.asset_defs import build_assets_job
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 from dagster.utils import file_relative_path
 from dagster_dbt import dbt_cli_resource
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
+from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError
 from dagster_dbt.types import DbtOutput
 
 
@@ -146,6 +148,11 @@ def test_select_from_project(
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 2
+
+
+def test_dbt_ls_fail_fast():
+    with pytest.raises(DagsterDbtCliFatalRuntimeError):
+        load_assets_from_dbt_project("bad_project_dir", "bad_config_dir")
 
 
 def test_select_from_manifest(

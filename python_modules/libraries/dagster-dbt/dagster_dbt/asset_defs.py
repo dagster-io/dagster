@@ -8,10 +8,10 @@ from dagster import (
     Out,
     Output,
     SolidExecutionContext,
+    TableColumn,
+    TableSchema,
     check,
     get_dagster_logger,
-    TableSchema,
-    TableColumn,
 )
 from dagster.core.asset_defs import AssetsDefinition, multi_asset
 from dagster_dbt.cli.types import DbtCliOutput
@@ -35,7 +35,7 @@ def _load_manifest_for_project(
             "resource-type": "model",
             "output": "json",
         },
-        warn_error=False,
+        warn_error=True,
         ignore_handled_error=False,
         target_path=target_dir,
     )
