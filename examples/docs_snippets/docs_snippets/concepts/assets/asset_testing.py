@@ -4,18 +4,18 @@ from dagster import asset, build_op_context
 
 
 @asset
-def simple_asset():
+def my_simple_asset():
     return [1, 2, 3]
 
 
-def test_simple_asset():
-    result = simple_asset()
+def test_my_simple_asset():
+    result = my_simple_asset()
     assert result == [1, 2, 3]
 
 
 @asset
-def more_complex_asset(simple_asset):
-    return simple_asset + [4, 5, 6]
+def more_complex_asset(my_simple_asset):
+    return my_simple_asset + [4, 5, 6]
 
 
 def test_more_complex_asset():

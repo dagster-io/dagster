@@ -279,11 +279,10 @@ def test_invoking_simple_assets():
     assert out == [1, 2, 3, 3, 2, 1]
 
     out = arg_kwarg_asset(([1, 2, 3]))
-    assert out == [1, 2, 3]
+    assert out == [1, 2, 3, 0]
 
 
 def test_invoking_asset_with_deps():
-
     @asset
     def upstream():
         return [1]
@@ -301,7 +300,6 @@ def test_invoking_asset_with_deps():
 
 
 def test_invoking_asset_with_context():
-
     @asset
     def asset_with_context(context, arg1):
         assert isinstance(context, OpExecutionContext)

@@ -65,6 +65,18 @@ def downstream_asset(upstream_asset):
 
 The [explicit dependencies](#explicit-dependencies) example covers an alternative way to specify asset dependencies without needing to match argument names to upstream asset names.
 
+### Using context in assets
+
+Since a Software-defined asset contains an op, all of the typical functionality of an op (like the use of resources) is available to an asset
+
+```python file=/concepts/assets/asset_w_context.py startafter=start_w_context endbefore=end_w_context
+@asset(required_resource_keys={"alerter"})
+def my_asset(context):
+    # creates an asset and sends an alert to notify of its creation
+    context.resources.alerter.send_asset_create_alert("my_asset")
+    return [1, 2, 3]
+```
+
 ## Combining assets in groups
 
 To materialize assets or load them in Dagit, you first need to combine them into an <PyObject object="AssetGroup" />, which is a set of assets with no unsatisfied dependencies. For example:
@@ -297,22 +309,26 @@ Like regular jobs, asset jobs can be placed on [schedules](/concepts/partitions-
 
 ## Testing
 
-Since a function decorated with <PyObject object="asset" /> acts as the op for a software defined asset. You can write unit tests for this function in the same way you would a standard [op](/concepts/testing#testing-ops).
+Since a function decorated with <PyObject object="asset" /> acts as the op for a software defined asset, you can write unit tests for this function in the same way you would write unit tests for a standard op. See this section on [op testing](/concepts/testing#testing-ops) for some background information.
+
+Similar to the `@op` decorator, the `@asset` decorator can slightly modify the call signiture of the decorated function. However, the new signiture closely mirrors the signature of the decorated function, and in some cases, they match exactly.
+
+For instance, if you have a simple asset that does not need a context object, a unit test can directly invoke the asset using the same call signature as the decorated function.
 
 ```python file=/concepts/assets/asset_testing.py startafter=start_no_context endbefore=end_no_context
 @asset
-def simple_asset():
+def my_simple_asset():
     return [1, 2, 3]
 
 
-def test_simple_asset():
-    result = simple_asset()
+def test_my_simple_asset():
+    result = my_simple_asset()
     assert result == [1, 2, 3]
 
 
 @asset
-def more_complex_asset(simple_asset):
-    return simple_asset + [4, 5, 6]
+def more_complex_asset(my_simple_asset):
+    return my_simple_asset + [4, 5, 6]
 
 
 def test_more_complex_asset():
@@ -322,7 +338,7 @@ def test_more_complex_asset():
 
 Notice how you can pass any value to `more_complex_asset` when you directly invoke it in the unit test. This allows you to test assets in isolation from one another.
 
-If you use a context object in your function, you can mock it with <PyObject object="build_op_context" />
+If you use a context object in your function, `@asset` will provide the correct context during execution. But when writing a unit test, you can mock it with <PyObject object="build_op_context" />. We can use <PyObject object="build_op_context" /> because under the hood the function decorated by `@asset` is an op.
 
 ```python file=/concepts/assets/asset_testing.py startafter=start_with_context endbefore=end_with_context
 @asset
