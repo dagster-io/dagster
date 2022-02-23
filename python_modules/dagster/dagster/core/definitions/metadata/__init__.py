@@ -86,43 +86,49 @@ def normalize_metadata(
     ]
 
 
-def package_metadata_value(label: str, value: RawMetadataValue) -> "MetadataEntry":
-    check.str_param(label, "label")
+def normalize_metadata_value(raw_value: RawMetadataValue):
 
-    if isinstance(value, (MetadataEntry, PartitionMetadataEntry)):
-        raise DagsterInvalidMetadata(
-            f"Expected a metadata value, found an instance of {value.__class__.__name__}. Consider "
-            "instead using a MetadataValue wrapper for the value."
-        )
-
-    if isinstance(value, MetadataValue):
-        return MetadataEntry(label, None, value)
-
-    if isinstance(value, str):
-        return MetadataEntry.text(value, label)
-
-    if isinstance(value, float):
-        return MetadataEntry.float(value, label)
-
-    if isinstance(value, int):
-        return MetadataEntry.int(value, label)
-
-    if isinstance(value, dict):
+    if isinstance(raw_value, MetadataValue):
+        return raw_value
+    elif isinstance(raw_value, str):
+        return MetadataValue.text(raw_value)
+    elif isinstance(raw_value, float):
+        return MetadataValue.float(raw_value)
+    elif isinstance(raw_value, int):
+        return MetadataValue.int(raw_value)
+    elif isinstance(raw_value, dict):
         try:
             # check that the value is JSON serializable
-            seven.dumps(value)
-            return MetadataEntry.json(value, label)
+            seven.dumps(raw_value)
+            return MetadataValue.json(raw_value)
         except TypeError:
             raise DagsterInvalidMetadata(
-                f'Could not resolve the metadata value for "{label}" to a JSON serializable value. '
+                "Value is a dictionary but is not JSON serializable. "
                 "Consider wrapping the value with the appropriate MetadataValue type."
             )
 
     raise DagsterInvalidMetadata(
-        f'Could not resolve the metadata value for "{label}" to a known type. '
-        f"Its type was {type(value)}. Consider wrapping the value with the appropriate "
+        "Could not resolve value to a known type. "
+        f"Its type was {type(raw_value)}. Consider wrapping the value with the appropriate "
         "MetadataValue type."
     )
+
+
+def package_metadata_value(label: str, raw_value: RawMetadataValue) -> "MetadataEntry":
+    check.str_param(label, "label")
+
+    if isinstance(raw_value, (MetadataEntry, PartitionMetadataEntry)):
+        raise DagsterInvalidMetadata(
+            f"Expected a metadata value, found an instance of {raw_value.__class__.__name__}. Consider "
+            "instead using a MetadataValue wrapper for the value."
+        )
+    try:
+        value = normalize_metadata_value(raw_value)
+    except DagsterInvalidMetadata as e:
+        raise DagsterInvalidMetadata(
+            f'Could not resolve the metadata value for "{label}" to a known type.'
+        ) from e
+    return MetadataEntry(label=label, value=value)
 
 
 # ########################
@@ -725,13 +731,17 @@ def deprecated_metadata_entry_constructor(fn):
         deprecation_warning(
             f"Function `MetadataEntry.{fn.__name__}`",
             "0.15.0",
-            additional_warn_txt=re.sub(r'\n\s*', ' ', """
+            additional_warn_txt=re.sub(
+                r"\n\s*",
+                " ",
+                """
             As of 0.14.0, the recommended way to supply metadata is to pass a `Dict[str,
             MetadataValue]` to the `metadata` keyword argument (rather than a `List[MetadataEntry]`
             to `metadata_entries`. If you need to construct a `MetadataEntry` directly, you should
             do so using calling the constructor and passing a `MetadataValue`:
             `MetadataEntry(label="foo", value=MetadataValue.text("bar")",
-            """)
+            """,
+            ),
         )
         return fn(*args, **kwargs)
 
@@ -771,8 +781,8 @@ class MetadataEntry(
         cls,
         label: str,
         description: Optional[str] = None,
-        entry_data: Optional["MetadataValue"] = None,
-        value: Optional["MetadataValue"] = None,
+        entry_data: Optional["RawMetadataValue"] = None,
+        value: Optional["RawMetadataValue"] = None,
     ):
         if description is not None:
             deprecation_warning(
@@ -780,7 +790,7 @@ class MetadataEntry(
                 "0.15.0",
             )
         value = cast(
-            MetadataValue,
+            RawMetadataValue,
             canonicalize_backcompat_args(
                 new_val=value,
                 new_arg="value",
@@ -789,6 +799,7 @@ class MetadataEntry(
                 breaking_version="0.15.0",
             ),
         )
+        value = normalize_metadata_value(value)
 
         return super(MetadataEntry, cls).__new__(
             cls,
