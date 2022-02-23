@@ -385,8 +385,7 @@ class SensorDefinition:
         targets = []
         for target in self._targets:
             if isinstance(target, DirectTarget):
-                t: DirectTarget = target
-                targets.append(t.load())
+                targets.append(target.load())
         return targets
 
     def check_valid_run_requests(self, run_requests: List[RunRequest]):

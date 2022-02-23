@@ -1735,7 +1735,8 @@ def test_bad_run_request_untargeted():
                 None,
                 (
                     "Error in sensor bad_request_untargeted: Sensor evaluation function returned a "
-                    "RunRequest for a sensor without a specified target."
+                    "RunRequest for a sensor lacking a specified target (pipeline_name, job, or "
+                    "jobs)."
                 ),
             )
 
