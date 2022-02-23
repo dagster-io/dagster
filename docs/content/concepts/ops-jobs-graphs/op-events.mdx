@@ -26,13 +26,9 @@ It is also possible to raise Dagster-specific exceptions, which will indicate to
 
 ### Event Metadata
 
-Often, it may be useful to attach some arbitrary information to an event or exception that is not captured by its basic parameters. Through the <PyObject object="MetadataEntry"/> object, we provide a consistent interface for specifying this metadata on a variety of events. Depending on the type of the data, these entries will be rendered in Dagit in a more useful format than a simple unstructured string.
+Often, it may be useful to attach some arbitrary information to an event or exception that is not captured by its basic parameters. Through the <PyObject object="MetadataEntry"/> and <PyObject object="MetadataValue"/> classes, we provide a consistent interface for specifying this metadata as a set of "entries". Individual entries are instances of the `MetadataEntry` class, which is a simple container for a string `label` and a typed `value`. The available value types are accessible through a static API defined on `MetadataValue`. These include simple datatypes (`MetadataValue.float`, `MetadataValue.int`, `MetadataValue.text`), as well as more complex information such as markdown and json (`MetadataValue.md`, `MetadataValue.json`). Depending on the type of its `value`, a `MetadataEntry` will be rendered in Dagit in a more useful format than a simple unstructured string.
 
-The <PyObject object="AssetMaterialization" />, <PyObject object="AssetObservation" />, <PyObject object="ExpectationResult" />, and <PyObject object="Failure" /> objects each accept a `metadata` parameter, which maps string labels to structured values. <PyObject object="Output"/> also accepts this parameter, although this functionality is currently experimental may change in the future.
-
-We provide support for a wide variety of potentially useful metadata types, including simple datatypes (`MetadataEntry.float`, `MetadataEntry.int`, `MetadataEntry.text`), as well as more complex information such as markdown and json (`MetadataEntry.md`, `MetadataEntry.json`).
-
-Check out the API Docs for <PyObject object="MetadataEntry"/> for more details.
+Metadata is attached to events at construction time. There are currently two available metadata specification keyword arguments on all event constructors: (1) `metadata` takes a dictionary mapping string `labels` to `MetadataValue` objects. Under the hood, this is resolved to a list of `MetadataEntry` objects. (2) `metadata_entries` takes a list of `MetadataEntry` objects directly. The `metadata_entries` argument is deprecated-- new code should use the `metadata` dictionary form.
 
 ## Events
 
