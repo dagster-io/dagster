@@ -3,7 +3,16 @@ import os
 import textwrap
 from typing import AbstractSet, Any, Callable, Dict, Mapping, Optional, Sequence, Set, Tuple
 
-from dagster import AssetKey, Out, Output, SolidExecutionContext, check, get_dagster_logger
+from dagster import (
+    AssetKey,
+    Out,
+    Output,
+    SolidExecutionContext,
+    check,
+    get_dagster_logger,
+    TableSchema,
+    TableColumn,
+)
 from dagster.core.asset_defs import AssetsDefinition, multi_asset
 from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
@@ -46,7 +55,7 @@ def _get_node_asset_key(node_info):
 def _dbt_nodes_to_assets(
     dbt_nodes: Mapping[str, Any],
     select: str,
-    selected_unique_ids: AbstractSet[str] = None,
+    selected_unique_ids: AbstractSet[str],
     runtime_metadata_fn: Optional[
         Callable[[SolidExecutionContext, Mapping[str, Any]], Mapping[str, Any]]
     ] = None,
@@ -57,22 +66,24 @@ def _dbt_nodes_to_assets(
     sources: Set[AssetKey] = set()
     out_name_to_node_info: Dict[str, Mapping[str, Any]] = {}
     internal_asset_deps: Dict[str, Set[AssetKey]] = {}
-    for unique_id, node_info in dbt_nodes.items():
-        if unique_id not in selected_unique_ids:
-            continue
+    for unique_id in selected_unique_ids:
         asset_deps = set()
+        node_info = dbt_nodes[unique_id]
         for dep_name in node_info["depends_on"]["nodes"]:
             dep_type = dbt_nodes[dep_name]["resource_type"]
+            # ignore seeds/snapshots
+            if dep_type not in ["source", "model"]:
+                continue
             dep_asset_key = node_info_to_asset_key(dbt_nodes[dep_name])
+
+            # if it's a source, it will be used as an input to this multi-asset
             if dep_type == "source":
                 sources.add(dep_asset_key)
+            # regardless of type, list this as a dependency for the current asset
             asset_deps.add(dep_asset_key)
         code_block = textwrap.indent(node_info["raw_sql"], "    ")
         description_sections = [
             node_info["description"],
-            "#### Columns:\n" + _columns_to_markdown(node_info["columns"])
-            if len(node_info["columns"]) > 0
-            else None,
             f"#### Raw SQL:\n```\n{code_block}\n```",
         ]
         description = "\n\n".join(filter(None, description_sections))
@@ -83,6 +94,7 @@ def _dbt_nodes_to_assets(
             asset_key=node_info_to_asset_key(node_info),
             description=description,
             io_manager_key=io_manager_key,
+            metadata=_columns_to_metadata(node_info["columns"]),
         )
         out_name_to_node_info[node_name] = node_info
         internal_asset_deps[node_name] = asset_deps
@@ -116,15 +128,22 @@ def _dbt_nodes_to_assets(
     return _dbt_project_multi_assset
 
 
-def _columns_to_markdown(columns: Mapping[str, Any]) -> str:
+def _columns_to_metadata(columns: Mapping[str, Any]) -> Optional[Mapping[str, Any]]:
     return (
-        textwrap.dedent(
-            """
-        | Name | Description |
-        | - | - |
-    """
-        )
-        + "\n".join([f"| {name} | {metadata['description']}" for name, metadata in columns.items()])
+        {
+            "schema": TableSchema(
+                columns=[
+                    TableColumn(
+                        name=name,
+                        type=metadata.get("data_type") or "?",
+                        description=metadata.get("description"),
+                    )
+                    for name, metadata in columns.items()
+                ]
+            )
+        }
+        if len(columns) > 0
+        else None
     )
 
 
@@ -221,16 +240,20 @@ def load_assets_from_dbt_manifest(
     """
     check.dict_param(manifest_json, "manifest_json", key_type=str)
     dbt_nodes = {**manifest_json["nodes"], **manifest_json["sources"]}
+
+    def _unique_id_to_selector(uid):
+        # take the fully-qualified node name and use it to select the model
+        return ".".join(dbt_nodes[uid]["fqn"])
+
+    select = (
+        "*"
+        if selected_unique_ids is None
+        else " ".join(_unique_id_to_selector(uid) for uid in selected_unique_ids)
+    )
     selected_unique_ids = selected_unique_ids or set(
         unique_id
         for unique_id, node_info in dbt_nodes.items()
         if node_info["resource_type"] == "model"
-    )
-    # create a selection string by converting the unique ids to model names
-    select = (
-        "*"
-        if selected_unique_ids is None
-        else " ".join((uid.split(".")[-1] for uid in selected_unique_ids))
     )
     return [
         _dbt_nodes_to_assets(
