@@ -1,4 +1,5 @@
 from dagster import AssetKey, DagsterEventType, EventRecordsFilter, check, seven
+from dagster.core.events import ASSET_EVENTS
 
 from .utils import capture_error
 
@@ -54,7 +55,7 @@ def get_asset_nodes_by_asset_key(graphene_info):
     from ..schema.asset_graph import GrapheneAssetNode
 
     return {
-        external_asset_node.asset_key: GrapheneAssetNode(repository, external_asset_node)
+        external_asset_node.asset_key: GrapheneAssetNode(location, repository, external_asset_node)
         for location in graphene_info.context.repository_locations
         for repository in location.get_repositories().values()
         for external_asset_node in repository.get_external_asset_nodes()
@@ -65,7 +66,7 @@ def get_asset_nodes(graphene_info):
     from ..schema.asset_graph import GrapheneAssetNode
 
     return [
-        GrapheneAssetNode(repository, external_asset_node)
+        GrapheneAssetNode(location, repository, external_asset_node)
         for location in graphene_info.context.repository_locations
         for repository in location.get_repositories().values()
         for external_asset_node in repository.get_external_asset_nodes()
@@ -76,7 +77,7 @@ def get_asset_node(graphene_info, asset_key):
     from ..schema.errors import GrapheneAssetNotFoundError
 
     check.inst_param(asset_key, "asset_key", AssetKey)
-    node = next((n for n in get_asset_nodes(graphene_info) if n.assetKey == asset_key), None)
+    node = get_asset_nodes_by_asset_key(graphene_info).get(asset_key, None)
     if not node:
         return GrapheneAssetNotFoundError(asset_key=asset_key)
     return node
@@ -104,6 +105,7 @@ def get_asset_materializations(
     partitions=None,
     limit=None,
     before_timestamp=None,
+    after_timestamp=None,
 ):
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
@@ -115,6 +117,7 @@ def get_asset_materializations(
             asset_key=asset_key,
             asset_partitions=partitions,
             before_timestamp=before_timestamp,
+            after_timestamp=after_timestamp,
         ),
         limit=limit,
     )
@@ -127,10 +130,12 @@ def get_asset_observations(
     partitions=None,
     limit=None,
     before_timestamp=None,
+    after_timestamp=None,
 ):
     check.inst_param(asset_key, "asset_key", AssetKey)
     check.opt_int_param(limit, "limit")
     check.opt_float_param(before_timestamp, "before_timestamp")
+    check.opt_float_param(after_timestamp, "after_timestamp")
     instance = graphene_info.context.instance
     event_records = instance.get_event_records(
         EventRecordsFilter(
@@ -138,6 +143,7 @@ def get_asset_observations(
             asset_key=asset_key,
             asset_partitions=partitions,
             before_timestamp=before_timestamp,
+            after_timestamp=after_timestamp,
         ),
         limit=limit,
     )
@@ -155,7 +161,7 @@ def get_assets_for_run_id(graphene_info, run_id):
 
     check.str_param(run_id, "run_id")
 
-    records = graphene_info.context.instance.all_logs(run_id)
+    records = graphene_info.context.instance.all_logs(run_id, of_type=ASSET_EVENTS)
     asset_keys = [
         record.dagster_event.asset_key
         for record in records

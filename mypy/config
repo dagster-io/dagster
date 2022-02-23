@@ -14,3 +14,8 @@ ignore_errors = True
 # https://github.com/python/mypy/issues/4008
 [dagster.generate.new_project.setup]
 ignore_errors = True
+
+[mypy-azure.storage.*]
+# https://github.com/Azure/azure-sdk-for-python/issues/21223, should be resolved with 12.6.0
+ignore_errors = True
+follow_imports = skip

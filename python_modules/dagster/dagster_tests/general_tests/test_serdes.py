@@ -5,6 +5,7 @@ from enum import Enum
 from typing import NamedTuple, Set
 
 import pytest
+from dagster import seven
 from dagster.check import ParameterCheckError, inst_param, set_param
 from dagster.serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster.serdes.serdes import (
@@ -19,10 +20,11 @@ from dagster.serdes.serdes import (
     deserialize_value,
     pack_inner_value,
     register_serdes_enum_fallbacks,
+    register_serdes_tuple_fallbacks,
     serialize_value,
     unpack_inner_value,
 )
-from dagster.serdes.utils import hash_str
+from dagster.serdes.utils import create_snapshot_id, hash_str
 
 
 def test_deserialize_value_ok():
@@ -414,8 +416,10 @@ def test_from_storage_dict():
 
     new_map = WhitelistMap.create()
 
-    @_whitelist_for_serdes(whitelist_map=new_map, serializer=CompatSerializer)
-    class MyThing(NamedTuple):  # pylint: disable=function-redefined
+    @_whitelist_for_serdes(
+        whitelist_map=new_map, serializer=CompatSerializer
+    )  # pylint: disable=function-redefined
+    class MyThing(NamedTuple):
         new_name: str
 
     deser_old_val = _deserialize_json(serialized_old, whitelist_map=new_map)
@@ -470,8 +474,8 @@ def test_skip_when_empty():
 
     # Without setting skip_when_empty, the ID changes
 
-    @_whitelist_for_serdes(whitelist_map=test_map)
-    class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):  # pylint: disable=function-redefined
+    @_whitelist_for_serdes(whitelist_map=test_map)  # pylint: disable=function-redefined
+    class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):
         def __new__(cls, foo, bar=None):
             return super(SameSnapshotTuple, cls).__new__(  # pylint: disable=bad-super-call
                 cls, foo, bar
@@ -492,8 +496,10 @@ def test_skip_when_empty():
         def skip_when_empty(cls) -> Set[str]:
             return {"bar"}
 
-    @_whitelist_for_serdes(whitelist_map=test_map, serializer=SkipWhenEmptySerializer)
-    class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):  # pylint: disable=function-redefined
+    @_whitelist_for_serdes(
+        whitelist_map=test_map, serializer=SkipWhenEmptySerializer
+    )  # pylint: disable=function-redefined
+    class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):
         def __new__(cls, foo, bar=None):
             return super(SameSnapshotTuple, cls).__new__(  # pylint: disable=bad-super-call
                 cls, foo, bar
@@ -600,3 +606,116 @@ def test_enum_backcompat():
     result = _deserialize_json(enum_json, legacy_env)
     old_enum = OldEnum("color.red")
     assert old_enum == result
+
+
+def test_namedtuple_backcompat():
+    old_map = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=old_map)
+    class OldThing(NamedTuple):
+        old_name: str
+
+        def get_id(self):
+            json_rep = _serialize_dagster_namedtuple(self, whitelist_map=old_map)
+            return hash_str(json_rep)
+
+    # create the old things
+    old_thing = OldThing("thing")
+    old_thing_id = old_thing.get_id()
+    old_thing_serialized = _serialize_dagster_namedtuple(old_thing, old_map)
+
+    new_map = WhitelistMap.create()
+
+    class ThingSerializer(DefaultNamedTupleSerializer):
+        @classmethod
+        def value_from_storage_dict(
+            cls, storage_dict, klass, args_for_class, whitelist_map, descent_path
+        ):
+            raw_dict = {
+                key: unpack_inner_value(value, whitelist_map, f"{descent_path}.{key}")
+                for key, value in storage_dict.items()
+            }
+            # typical pattern is to use the same serialization format from an old field and passing
+            # it in as a new field
+            return klass(
+                **{key: value for key, value in raw_dict.items() if key in args_for_class},
+                new_name=raw_dict.get("old_name"),
+            )
+
+        @classmethod
+        def value_to_storage_dict(
+            cls,
+            value,
+            whitelist_map,
+            descent_path,
+        ):
+            storage = super().value_to_storage_dict(value, whitelist_map, descent_path)
+            name = storage.get("new_name") or storage.get("old_name")
+            if "new_name" in storage:
+                del storage["new_name"]
+            # typical pattern is to use the same serialization format
+            # it in as a new field
+            storage["old_name"] = name
+            storage["__class__"] = "OldThing"  # persist using old class name
+            return storage
+
+    @_whitelist_for_serdes(whitelist_map=new_map, serializer=ThingSerializer)
+    class NewThing(NamedTuple):
+        new_name: str
+
+        def get_id(self):
+            json_rep = _serialize_dagster_namedtuple(self, whitelist_map=new_map)
+            return hash_str(json_rep)
+
+    # exercising the old serialization format
+    register_serdes_tuple_fallbacks({"OldThing": NewThing}, whitelist_map=new_map)
+
+    new_thing = NewThing("thing")
+    new_thing_id = new_thing.get_id()
+    new_thing_serialized = _serialize_dagster_namedtuple(new_thing, new_map)
+
+    assert new_thing_id == old_thing_id
+    assert new_thing_serialized == old_thing_serialized
+
+    # ensure that the new serializer can correctly interpret old serialized data
+    old_thing_deserialized = _deserialize_json(old_thing_serialized, new_map)
+    assert isinstance(old_thing_deserialized, NewThing)
+    assert old_thing_deserialized.get_id() == new_thing_id
+
+    # ensure that the new things serialized can still be read by old code
+    new_thing_deserialized = _deserialize_json(new_thing_serialized, old_map)
+    assert isinstance(new_thing_deserialized, OldThing)
+    assert new_thing_deserialized.get_id() == old_thing_id
+
+
+def test_namedtuple_name_map():
+
+    wmap = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=wmap)
+    class Thing(NamedTuple):
+        name: str
+
+    wmap.register_serialized_name("Thing", "SerializedThing")
+    thing = Thing("foo")
+
+    thing_serialized = _serialize_dagster_namedtuple(thing, wmap)
+    assert seven.json.loads(thing_serialized)["__class__"] == "SerializedThing"
+
+    with pytest.raises(DeserializationError):
+        _deserialize_json(thing_serialized, wmap)
+
+    wmap.register_deserialized_name("SerializedThing", "Thing")
+    assert _deserialize_json(thing_serialized, wmap) == thing
+
+
+def test_whitelist_storage_name():
+
+    wmap = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=wmap, storage_name="SerializedThing")
+    class Thing(NamedTuple):
+        name: str
+
+    assert wmap.get_serialized_name("Thing") == "SerializedThing"
+    assert wmap.get_deserialized_name("SerializedThing") == "Thing"

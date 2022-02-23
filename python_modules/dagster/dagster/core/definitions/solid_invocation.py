@@ -341,6 +341,10 @@ def _type_check_output(
                 metadata_entries=type_check.metadata_entries,
                 dagster_type=dagster_type,
             )
+
+        context.observe_output(
+            output.output_name, output.mapping_key if isinstance(output, DynamicOutput) else None
+        )
         return output
     else:
         dagster_type = output_def.dagster_type

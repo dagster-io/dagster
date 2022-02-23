@@ -1,10 +1,9 @@
 # pylint: disable=redefined-outer-name
 import time
 
-from dagster import AssetKey, IOManager, IOManagerDefinition
-from dagster.core.asset_defs import ForeignAsset, asset, build_assets_job
+from dagster import AssetGroup, AssetKey, IOManager, IOManagerDefinition, SourceAsset, asset
 
-sfo_q2_weather_sample = ForeignAsset(key=AssetKey("sfo_q2_weather_sample"))
+sfo_q2_weather_sample = SourceAsset(key=AssetKey("sfo_q2_weather_sample"))
 
 
 class DataFrame:
@@ -37,8 +36,7 @@ def hottest_dates(daily_temperature_highs: DataFrame) -> DataFrame:
     return DataFrame()
 
 
-software_defined_assets_job = build_assets_job(
-    "weather",
+software_defined_assets = AssetGroup(
     assets=[daily_temperature_highs, hottest_dates],
     source_assets=[sfo_q2_weather_sample],
     resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager())},

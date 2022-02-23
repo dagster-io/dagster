@@ -1,19 +1,24 @@
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, cast
 
 from dagster import check
-from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.events import (
+    AssetKey,
+    AssetMaterialization,
+    AssetObservation,
+    Materialization,
+    MetadataEntry,
+    PartitionMetadataEntry,
+)
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.solid_definition import SolidDefinition
-from dagster.core.definitions.time_window_partitions import (
-    TimeWindow,
-    TimeWindowPartitionsDefinition,
-)
+from dagster.core.definitions.time_window_partitions import TimeWindow
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.utils import build_resources_for_manager
 
 if TYPE_CHECKING:
+    from dagster.core.events import DagsterEvent
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.types.dagster_type import DagsterType
     from dagster.core.definitions import PipelineDefinition
@@ -98,6 +103,10 @@ class OutputContext:
             self._resources = self._resources_cm.__enter__()  # pylint: disable=no-member
             self._resources_contain_cm = isinstance(self._resources, IContainsGenerator)
             self._cm_scope_entered = False
+
+        self._events: List["DagsterEvent"] = []
+        self._user_events: List[Union[AssetMaterialization, AssetObservation, Materialization]] = []
+        self._metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None
 
     def __enter__(self):
         if self._resources_cm:
@@ -263,7 +272,10 @@ class OutputContext:
 
     @property
     def has_asset_partitions(self) -> bool:
-        return self.step_context.has_asset_partitions_for_output(self.name)
+        if self._step_context is not None:
+            return self._step_context.has_asset_partitions_for_output(self.name)
+        else:
+            return False
 
     @property
     def asset_partition_key(self) -> str:
@@ -290,25 +302,7 @@ class OutputContext:
         - The output asset has no partitioning.
         - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
         """
-        partitions_def = self.solid_def.output_def_named(self.name).asset_partitions_def
-
-        if not partitions_def:
-            raise ValueError(
-                "Tried to get asset partitions for an output that does not correspond to a "
-                "partitioned asset."
-            )
-
-        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
-            raise ValueError(
-                "Tried to get asset partitions for an output that correponds to a partitioned "
-                "asset that is not partitioned with a TimeWindowPartitionsDefinition."
-            )
-
-        partition_key_range = self.asset_partition_key_range
-        return TimeWindow(
-            partitions_def.time_window_for_partition_key(partition_key_range.start).start,
-            partitions_def.time_window_for_partition_key(partition_key_range.end).end,
-        )
+        return self.step_context.asset_partitions_time_window_for_output(self.name)
 
     def get_run_scoped_output_identifier(self) -> List[str]:
         """Utility method to get a collection of identifiers that as a whole represent a unique
@@ -389,6 +383,123 @@ class OutputContext:
                 identifier.append(self.mapping_key)
 
         return identifier
+
+    def log_event(
+        self, event: Union[AssetObservation, AssetMaterialization, Materialization]
+    ) -> None:
+        """Log an AssetMaterialization or AssetObservation from within the body of an io manager's `handle_output` method.
+
+        Events logged with this method will appear in the event log.
+
+        Args:
+            event (Union[AssetMaterialization, Materialization, AssetObservation]): The event to log.
+
+        Examples:
+
+        .. code-block:: python
+
+            from dagster import IOManager, AssetMaterialization
+
+            class MyIOManager(IOManager):
+                def handle_output(self, context, obj):
+                    context.log_event(AssetMaterialization("foo"))
+        """
+        from dagster.core.events import DagsterEvent
+
+        if isinstance(event, (AssetMaterialization, Materialization)):
+            if self._step_context:
+                self._events.append(
+                    DagsterEvent.asset_materialization(
+                        self._step_context,
+                        event,
+                        self._step_context.get_input_lineage(),
+                    )
+                )
+            self._user_events.append(event)
+        elif isinstance(event, AssetObservation):
+            if self._step_context:
+                self._events.append(DagsterEvent.asset_observation(self._step_context, event))
+            self._user_events.append(event)
+        else:
+            check.failed("Unexpected event {event}".format(event=event))
+
+    def consume_events(self) -> Iterator["DagsterEvent"]:
+        """Pops and yields all user-generated events that have been recorded from this context.
+
+        If consume_events has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
+        """
+
+        events = self._events
+        self._events = []
+        yield from events
+
+    def get_logged_events(
+        self,
+    ) -> List[Union[AssetMaterialization, Materialization, AssetObservation]]:
+        """Retrieve the list of user-generated events that were logged via the context.
+
+
+        User-generated events that were yielded will not appear in this list.
+
+        **Examples:**
+
+        .. code-block:: python
+
+            from dagster import IOManager, build_output_context, AssetMaterialization
+
+            class MyIOManager(IOManager):
+                def handle_output(self, context, obj):
+                    ...
+
+            def test_handle_output():
+                mgr = MyIOManager()
+                context = build_output_context()
+                mgr.handle_output(context)
+                all_user_events = context.get_logged_events()
+                materializations = [event for event in all_user_events if isinstance(event, AssetMaterialization)]
+                ...
+        """
+
+        return self._user_events
+
+    def add_output_metadata(self, metadata: Dict[str, Any]) -> None:
+        """Add a dictionary of metadata to the handled output.
+
+        Metadata entries added will show up in the HANDLED_OUTPUT and ASSET_MATERIALIZATION events for the run.
+
+        Args:
+            metadata (Dict[str, Any]): A metadata dictionary to log
+
+        Examples:
+
+        .. code-block:: python
+
+            from dagster import IOManager
+
+            class MyIOManager(IOManager):
+                def handle_output(self, context, obj):
+                    context.add_output_metadata({"foo": "bar"})
+        """
+        from dagster.core.definitions.metadata import normalize_metadata
+
+        self._metadata_entries = normalize_metadata(metadata, [])
+
+    def get_logged_metadata_entries(
+        self,
+    ) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
+        """Get the list of metadata entries that have been logged for use with this output."""
+        return self._metadata_entries or []
+
+    def consume_logged_metadata_entries(
+        self,
+    ) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
+        """Pops and yields all user-generated metadata entries that have been recorded from this context.
+
+        If consume_logged_metadata_entries has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_logged_metadata_entries has been called, it will yield all events since the last time consume_logged_metadata_entries was called. Designed for internal use. Users should never need to invoke this method.
+        """
+        result = self._metadata_entries
+        self._metadata_entries = []
+        return result or []
 
 
 def get_output_context(

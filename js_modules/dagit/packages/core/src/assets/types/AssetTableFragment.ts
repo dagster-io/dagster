@@ -12,24 +12,17 @@ export interface AssetTableFragment_key {
   path: string[];
 }
 
-export interface AssetTableFragment_definition_jobs_repository_location {
+export interface AssetTableFragment_definition_repository_location {
   __typename: "RepositoryLocation";
   id: string;
   name: string;
 }
 
-export interface AssetTableFragment_definition_jobs_repository {
+export interface AssetTableFragment_definition_repository {
   __typename: "Repository";
   id: string;
   name: string;
-  location: AssetTableFragment_definition_jobs_repository_location;
-}
-
-export interface AssetTableFragment_definition_jobs {
-  __typename: "Pipeline";
-  id: string;
-  name: string;
-  repository: AssetTableFragment_definition_jobs_repository;
+  location: AssetTableFragment_definition_repository_location;
 }
 
 export interface AssetTableFragment_definition {
@@ -37,7 +30,7 @@ export interface AssetTableFragment_definition {
   id: string;
   opName: string | null;
   description: string | null;
-  jobs: AssetTableFragment_definition_jobs[];
+  repository: AssetTableFragment_definition_repository;
 }
 
 export interface AssetTableFragment {

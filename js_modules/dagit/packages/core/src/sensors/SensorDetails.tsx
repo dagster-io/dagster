@@ -137,13 +137,16 @@ export const SensorDetails: React.FC<{
             <td>Latest tick</td>
             <td>
               {latestTick ? (
-                <Box
-                  flex={{direction: 'row', gap: 8, alignItems: 'center'}}
-                  style={{marginTop: '-2px'}}
-                >
-                  <TimestampDisplay timestamp={latestTick.timestamp} />
-                  <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
-                </Box>
+                <>
+                  <Box
+                    flex={{direction: 'row', gap: 8, alignItems: 'center'}}
+                    style={{marginTop: '-2px'}}
+                  >
+                    <TimestampDisplay timestamp={latestTick.timestamp} />
+                    <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
+                  </Box>
+                  {latestTick.cursor ? <>Cursor: {latestTick.cursor}</> : null}
+                </>
               ) : (
                 'Sensor has never run'
               )}

@@ -4,9 +4,12 @@ import graphene
 from dagster import check
 from dagster.core.definitions import NodeHandle
 from dagster.core.host_representation import RepresentedPipeline
+from dagster.core.host_representation.historical import HistoricalPipeline
 from dagster.core.snap import CompositeSolidDefSnap, DependencyStructureIndex, SolidDefSnap
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.logs.events import GrapheneRunStepStats
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 
 from .config_types import GrapheneConfigTypeField
 from .dagster_types import GrapheneDagsterType, to_dagster_type
@@ -24,6 +27,7 @@ class GrapheneInputDefinition(graphene.ObjectType):
     name = graphene.NonNull(graphene.String)
     description = graphene.String()
     type = graphene.NonNull(GrapheneDagsterType)
+    metadata_entries = non_null_list(GrapheneMetadataEntry)
 
     class Meta:
         name = "InputDefinition"
@@ -51,6 +55,9 @@ class GrapheneInputDefinition(graphene.ObjectType):
             self._represented_pipeline, self._solid_def_snap.name  # pylint: disable=no-member
         )
 
+    def resolve_metadata_entries(self, _graphene_info):
+        return list(iterate_metadata_entries(self._input_def_snap.metadata_entries))
+
 
 class GrapheneOutputDefinition(graphene.ObjectType):
     solid_definition = graphene.NonNull(lambda: GrapheneSolidDefinition)
@@ -58,6 +65,7 @@ class GrapheneOutputDefinition(graphene.ObjectType):
     description = graphene.String()
     is_dynamic = graphene.Boolean()
     type = graphene.NonNull(GrapheneDagsterType)
+    metadata_entries = non_null_list(GrapheneMetadataEntry)
 
     class Meta:
         name = "OutputDefinition"
@@ -86,6 +94,9 @@ class GrapheneOutputDefinition(graphene.ObjectType):
 
     def resolve_solid_definition(self, _graphene_info):
         return build_solid_definition(self._represented_pipeline, self._solid_def_snap.name)
+
+    def resolve_metadata_entries(self, _graphene_info):
+        return list(iterate_metadata_entries(self._output_def_snap.metadata_entries))
 
 
 class GrapheneInput(graphene.ObjectType):
@@ -340,6 +351,7 @@ class GrapheneISolidDefinition(graphene.Interface):
     metadata = non_null_list(GrapheneMetadataItemDefinition)
     input_definitions = non_null_list(GrapheneInputDefinition)
     output_definitions = non_null_list(GrapheneOutputDefinition)
+    asset_nodes = non_null_list("dagster_graphql.schema.asset_graph.GrapheneAssetNode")
 
     class Meta:
         name = "ISolidDefinition"
@@ -381,6 +393,27 @@ class ISolidDefinitionMixin:
             )
             for output_def_snap in self._solid_def_snap.output_def_snaps
         ]
+
+    def resolve_asset_nodes(self, graphene_info):
+        # NOTE: This is a temporary hack. We really should prob be resolving solids against the repo
+        # rather than pipeline, that way we would not have to refetch the repo here here in order to
+        # access the asset nodes.
+        from .asset_graph import GrapheneAssetNode
+
+        # This is a workaround for the fact that asset info is not persisted in pipeline snapshots.
+        if isinstance(self._represented_pipeline, HistoricalPipeline):
+            return []
+        else:
+            repo_handle = self._represented_pipeline.repository_handle
+            origin = repo_handle.repository_location_origin
+            location = graphene_info.context.get_location(origin)
+            ext_repo = location.get_repository(repo_handle.repository_name)
+            nodes = [
+                node
+                for node in ext_repo.get_external_asset_nodes()
+                if node.op_name == self.solid_def_name
+            ]
+            return [GrapheneAssetNode(location, ext_repo, node) for node in nodes]
 
 
 class GrapheneSolidDefinition(graphene.ObjectType, ISolidDefinitionMixin):

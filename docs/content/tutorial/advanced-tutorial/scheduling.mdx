@@ -90,7 +90,7 @@ height={2184}
 
 ### Running the schedule
 
-Dagster's default scheduler requires you to launch a long-running `dagster-daemon` process in addition to Dagit.
+Scheduled runs are launched from a long-running [dagster-daemon process](/deployment/dagster-daemon). To start the `dagster-daemon` process, run the following command in the same folder as your `workspace.yaml` file:
 
 ```bash
 dagster-daemon run

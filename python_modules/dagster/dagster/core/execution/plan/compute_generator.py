@@ -108,8 +108,9 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
                 f"returned a tuple with {len(result)} elements"
             )
 
-        for output_defs, element in zip(output_defs, result):
-            yield Output(output_name=output_defs.name, value=element)
+        for output_def, element in zip(output_defs, result):
+            metadata = context.get_output_metadata(output_def.name)
+            yield Output(output_name=output_def.name, value=element, metadata=metadata)
     elif result is not None:
         if not output_defs:
             raise DagsterInvariantViolationError(

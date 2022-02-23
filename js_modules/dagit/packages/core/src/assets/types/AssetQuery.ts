@@ -36,12 +36,6 @@ export interface AssetQuery_assetOrError_Asset_definition_repository {
   location: AssetQuery_assetOrError_Asset_definition_repository_location;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_jobs {
-  __typename: "Pipeline";
-  id: string;
-  name: string;
-}
-
 export interface AssetQuery_assetOrError_Asset_definition_assetKey {
   __typename: "AssetKey";
   path: string[];
@@ -71,91 +65,156 @@ export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_
 
 export type AssetQuery_assetOrError_Asset_definition_assetMaterializations_runOrError = AssetQuery_assetOrError_Asset_definition_assetMaterializations_runOrError_RunNotFoundError | AssetQuery_assetOrError_Asset_definition_assetMaterializations_runOrError_Run;
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_stepStats {
-  __typename: "RunStepStats";
-  endTime: number | null;
-  startTime: number | null;
-  stepKey: string;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export type AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries = AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventPathMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventJsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventUrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTextMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventMarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventPythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventFloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventIntMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventPipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventAssetMetadataEntry;
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries = AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_PathMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_JsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_UrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TextMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_MarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_PythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_FloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_IntMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_PipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_AssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry;
 
 export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_assetLineage_assetKey {
   __typename: "AssetKey";
@@ -168,6 +227,13 @@ export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_
   partitions: string[];
 }
 
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_stepStats {
+  __typename: "RunStepStats";
+  stepKey: string;
+  startTime: number | null;
+  endTime: number | null;
+}
+
 export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
@@ -175,20 +241,2338 @@ export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations 
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: AssetQuery_assetOrError_Asset_definition_assetMaterializations_stepStats;
   metadataEntries: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries[];
   assetLineage: AssetQuery_assetOrError_Asset_definition_assetMaterializations_assetLineage[];
+  stepStats: AssetQuery_assetOrError_Asset_definition_assetMaterializations_stepStats;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_jobs {
-  __typename: "Pipeline";
-  id: string;
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
   name: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_AssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_AssetMetadataEntry_assetKey;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_PathMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_JsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_UrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TextMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_MarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_PythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_FloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_IntMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_PipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_AssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry_assetKey;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_PathMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_JsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_UrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TextMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_MarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_PythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_FloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_IntMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_PipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_fields[];
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType_recursiveConfigTypes[];
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_fields[];
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType_recursiveConfigTypes[];
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry_assetKey;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_PathMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_JsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_UrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TextMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_MarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_PythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_FloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_IntMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_PipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_fields[];
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType_recursiveConfigTypes[];
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_fields[];
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType_recursiveConfigTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType {
+  __typename: "ArrayConfigType" | "NullableConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType {
+  __typename: "EnumConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType {
+  __typename: "RegularConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  givenName: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields {
+  __typename: "ConfigTypeField";
+  name: string;
+  description: string | null;
+  isRequired: boolean;
+  configTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType {
+  __typename: "CompositeConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  fields: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType_fields[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType {
+  __typename: "ScalarUnionConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  scalarTypeKey: string;
+  nonScalarTypeKey: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType {
+  __typename: "MapConfigType";
+  key: string;
+  description: string | null;
+  isSelector: boolean;
+  typeParamKeys: string[];
+  keyLabelName: string | null;
+  recursiveConfigTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType_recursiveConfigTypes[];
+}
+
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType_MapConfigType;
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes {
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  key: string;
+  name: string | null;
+  displayName: string;
+  description: string | null;
+  isNullable: boolean;
+  isList: boolean;
+  isBuiltin: boolean;
+  isNothing: boolean;
+  metadataEntries: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries[];
+  inputSchemaType: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType | null;
+  outputSchemaType: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_outputSchemaType | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type {
+  __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
+  key: string;
+  name: string | null;
+  displayName: string;
+  description: string | null;
+  isNullable: boolean;
+  isList: boolean;
+  isBuiltin: boolean;
+  isNothing: boolean;
+  metadataEntries: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries[];
+  inputSchemaType: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType | null;
+  outputSchemaType: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType | null;
+  innerTypes: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions {
+  __typename: "OutputDefinition";
+  metadataEntries: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries[];
+  type: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_op {
+  __typename: "SolidDefinition";
+  outputDefinitions: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions[];
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetKey {
   __typename: "AssetKey";
   path: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository {
+  __typename: "Repository";
+  id: string;
+  name: string;
+  location: AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository_location;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_runOrError_RunNotFoundError {
@@ -215,91 +2599,156 @@ export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_ass
 
 export type AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_runOrError = AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_runOrError_RunNotFoundError | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_runOrError_Run;
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_stepStats {
-  __typename: "RunStepStats";
-  endTime: number | null;
-  startTime: number | null;
-  stepKey: string;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export type AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries = AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventPathMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventJsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventUrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTextMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventMarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventPythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventFloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventIntMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventPipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventAssetMetadataEntry;
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries = AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_PathMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_JsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_UrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TextMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_MarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_PythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_FloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_IntMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_PipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_AssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry;
 
 export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_assetLineage_assetKey {
   __typename: "AssetKey";
@@ -312,6 +2761,13 @@ export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_ass
   partitions: string[];
 }
 
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_stepStats {
+  __typename: "RunStepStats";
+  stepKey: string;
+  startTime: number | null;
+  endTime: number | null;
+}
+
 export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
@@ -319,19 +2775,20 @@ export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_ass
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_stepStats;
   metadataEntries: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries[];
   assetLineage: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_assetLineage[];
+  stepStats: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_stepStats;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
-  jobs: AssetQuery_assetOrError_Asset_definition_dependencies_asset_jobs[];
+  jobNames: string[];
   description: string | null;
   partitionDefinition: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetKey;
+  repository: AssetQuery_assetOrError_Asset_definition_dependencies_asset_repository;
   assetMaterializations: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations[];
 }
 
@@ -340,15 +2797,22 @@ export interface AssetQuery_assetOrError_Asset_definition_dependencies {
   asset: AssetQuery_assetOrError_Asset_definition_dependencies_asset;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_jobs {
-  __typename: "Pipeline";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository_location {
+  __typename: "RepositoryLocation";
   id: string;
   name: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetKey {
-  __typename: "AssetKey";
-  path: string[];
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository {
+  __typename: "Repository";
+  id: string;
+  name: string;
+  location: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository_location;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_runOrError_RunNotFoundError {
@@ -375,91 +2839,156 @@ export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_asset
 
 export type AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_runOrError = AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_runOrError_RunNotFoundError | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_runOrError_Run;
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_stepStats {
-  __typename: "RunStepStats";
-  endTime: number | null;
-  startTime: number | null;
-  stepKey: string;
-}
-
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export type AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries = AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventPathMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventJsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventUrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTextMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventMarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventPythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventFloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventIntMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventPipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventAssetMetadataEntry;
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries = AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_PathMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_JsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_UrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TextMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_MarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_PythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_FloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_IntMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_PipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_AssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry;
 
 export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_assetLineage_assetKey {
   __typename: "AssetKey";
@@ -472,6 +3001,13 @@ export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_asset
   partitions: string[];
 }
 
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_stepStats {
+  __typename: "RunStepStats";
+  stepKey: string;
+  startTime: number | null;
+  endTime: number | null;
+}
+
 export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
@@ -479,19 +3015,20 @@ export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_asset
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_stepStats;
   metadataEntries: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries[];
   assetLineage: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_assetLineage[];
+  stepStats: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_stepStats;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
-  jobs: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_jobs[];
+  jobNames: string[];
   description: string | null;
   partitionDefinition: string | null;
   assetKey: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetKey;
+  repository: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_repository;
   assetMaterializations: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations[];
 }
 
@@ -507,9 +3044,10 @@ export interface AssetQuery_assetOrError_Asset_definition {
   repository: AssetQuery_assetOrError_Asset_definition_repository;
   description: string | null;
   opName: string | null;
-  jobs: AssetQuery_assetOrError_Asset_definition_jobs[];
+  jobNames: string[];
   assetKey: AssetQuery_assetOrError_Asset_definition_assetKey;
   assetMaterializations: AssetQuery_assetOrError_Asset_definition_assetMaterializations[];
+  op: AssetQuery_assetOrError_Asset_definition_op | null;
   dependencies: AssetQuery_assetOrError_Asset_definition_dependencies[];
   dependedBy: AssetQuery_assetOrError_Asset_definition_dependedBy[];
 }

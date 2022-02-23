@@ -390,6 +390,46 @@ def test_startup_probe_enabled(template: HelmTemplate, enabled: bool):
     assert (container.startup_probe is not None) == enabled
 
 
+def test_readiness_probes(template: HelmTemplate):
+    deployment = create_simple_user_deployment("foo")
+    deployment.readinessProbe = kubernetes.ReadinessProbe.construct(timeout_seconds=3)
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert len(dagster_user_deployment.spec.template.spec.containers) == 1
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+
+    assert container.startup_probe is None
+    assert container.startup_probe is None
+    assert container.readiness_probe is not None
+
+
+def test_readiness_probes_subchart(subchart_template: HelmTemplate):
+    deployment = create_simple_user_deployment(
+        "foo",
+    )
+    deployment.readinessProbe = kubernetes.ReadinessProbe.construct(timeout_seconds=3)
+    helm_values = DagsterHelmValues.construct(
+        dagsterUserDeployments=UserDeployments.construct(deployments=[deployment])
+    )
+
+    dagster_user_deployment = subchart_template.render(helm_values)
+    assert len(dagster_user_deployment) == 1
+    dagster_user_deployment = dagster_user_deployment[0]
+
+    assert len(dagster_user_deployment.spec.template.spec.containers) == 1
+    container = dagster_user_deployment.spec.template.spec.containers[0]
+
+    assert container.startup_probe is None
+    assert container.startup_probe is None
+    assert container.readiness_probe is not None
+
+
 def test_startup_probe_exec(template: HelmTemplate):
     deployment = create_simple_user_deployment("foo")
     deployment.startupProbe = kubernetes.StartupProbe.construct(

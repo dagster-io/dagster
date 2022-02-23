@@ -1,56 +1,57 @@
 import {gql} from '@apollo/client';
-import {Box, ColorsWIP, IconWIP, Caption, Subheading} from '@dagster-io/ui';
+import {Box, ColorsWIP, IconWIP, Caption, Subheading, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {displayNameForAssetKey, tokenForAssetKey} from '../app/Util';
+import {DagsterTypeSummary} from '../dagstertype/DagsterType';
 import {Description} from '../pipelines/Description';
-import {explorerPathToString} from '../pipelines/PipelinePathUtils';
+import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
-import {LiveData} from '../workspace/asset-graph/Utils';
+import {LiveData, __ASSET_GROUP} from '../workspace/asset-graph/Utils';
+import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
-import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {AssetDefinedInMultipleReposNotice} from './AssetDefinedInMultipleReposNotice';
+import {
+  AssetMetadataTable,
+  ASSET_NODE_OP_METADATA_FRAGMENT,
+  metadataForAssetNode,
+} from './AssetMetadata';
 import {AssetNodeList} from './AssetNodeList';
-import {PartitionHealthSummary} from './PartitionHealthSummary';
+import {PartitionHealthSummary, usePartitionHealthData} from './PartitionHealthSummary';
 import {AssetNodeDefinitionFragment} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeDefinition: React.FC<{
-  repoAddress: RepoAddress;
   assetNode: AssetNodeDefinitionFragment;
   liveDataByNode: LiveData;
-}> = ({repoAddress, assetNode, liveDataByNode}) => {
+}> = ({assetNode, liveDataByNode}) => {
+  const partitionHealthData = usePartitionHealthData([assetNode.assetKey]);
+  const {assetMetadata, assetType} = metadataForAssetNode(assetNode);
+  const repoAddress = buildRepoAddress(
+    assetNode.repository.name,
+    assetNode.repository.location.name,
+  );
+
   return (
     <>
       <AssetDefinedInMultipleReposNotice assetId={assetNode.id} loadedFromRepo={repoAddress} />
-      <Box
-        flex={{direction: 'row'}}
-        border={{side: 'bottom', width: 4, color: ColorsWIP.KeylineGray}}
-      >
-        <Box style={{flex: 1}} flex={{direction: 'column'}}>
+      <Box flex={{direction: 'row'}}>
+        <Box
+          style={{flex: 1}}
+          flex={{direction: 'column'}}
+          border={{side: 'right', width: 1, color: ColorsWIP.KeylineGray}}
+        >
           <Box
             padding={{vertical: 16, horizontal: 24}}
             border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
             flex={{justifyContent: 'space-between', gap: 8}}
           >
-            <Subheading>Definition in Repository</Subheading>
-            <Box flex={{alignItems: 'baseline', gap: 8, wrap: 'wrap'}}>
-              {assetNode.jobs.map((job) => (
-                <PipelineReference
-                  key={job.id}
-                  isJob
-                  showIcon
-                  pipelineName={job.name}
-                  pipelineHrefContext={repoAddress}
-                />
-              ))}
-              {assetNode.jobs.length === 0 && !assetNode.opName && (
-                <Caption style={{marginTop: 2}}>Foreign Asset</Caption>
-              )}
-            </Box>
+            <Subheading>Description</Subheading>
+            <DefinitionLocation assetNode={assetNode} repoAddress={repoAddress} />
           </Box>
-          <Box padding={{top: 16, horizontal: 24, bottom: 4}} style={{flex: 1}}>
+          <Box padding={{vertical: 16, horizontal: 24}} style={{flex: 1, minHeight: 120}}>
             <Description
               description={assetNode.description || 'No description provided.'}
               maxHeight={260}
@@ -70,42 +71,59 @@ export const AssetNodeDefinition: React.FC<{
                 flex={{direction: 'column', gap: 16}}
               >
                 <p>{assetNode.partitionDefinition}</p>
-                <PartitionHealthSummary assetKey={assetNode.assetKey} />
+                <PartitionHealthSummary assetKey={assetNode.assetKey} data={partitionHealthData} />
               </Box>
             </>
           )}
-        </Box>
-        <Box
-          border={{side: 'left', width: 1, color: ColorsWIP.KeylineGray}}
-          style={{width: '40%', height: 330}}
-          flex={{direction: 'column'}}
-        >
+
           <Box
-            padding={{vertical: 16, left: 24, right: 12}}
-            flex={{justifyContent: 'space-between'}}
-            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+            padding={{vertical: 16, horizontal: 24}}
+            border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+            flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>Upstream Assets ({assetNode.dependencies.length})</Subheading>
             <JobGraphLink repoAddress={repoAddress} assetNode={assetNode} direction="upstream" />
           </Box>
-          <AssetNodeList
-            items={assetNode.dependencies}
-            liveDataByNode={liveDataByNode}
-            repoAddress={repoAddress}
-          />
+          <AssetNodeList items={assetNode.dependencies} liveDataByNode={liveDataByNode} />
+
           <Box
-            padding={{vertical: 16, left: 24, right: 12}}
-            flex={{justifyContent: 'space-between'}}
+            padding={{vertical: 16, horizontal: 24}}
             border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+            flex={{justifyContent: 'space-between', gap: 8}}
           >
             <Subheading>Downstream Assets ({assetNode.dependedBy.length})</Subheading>
             <JobGraphLink repoAddress={repoAddress} assetNode={assetNode} direction="downstream" />
           </Box>
-          <AssetNodeList
-            items={assetNode.dependedBy}
-            liveDataByNode={liveDataByNode}
-            repoAddress={repoAddress}
-          />
+          <AssetNodeList items={assetNode.dependedBy} liveDataByNode={liveDataByNode} />
+        </Box>
+        <Box style={{flex: 0.5}} flex={{direction: 'column'}}>
+          <Box
+            padding={{vertical: 16, horizontal: 24}}
+            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+          >
+            <Subheading>Type</Subheading>
+          </Box>
+          {assetType ? (
+            <DagsterTypeSummary type={assetType} />
+          ) : (
+            <Box padding={{vertical: 16, horizontal: 24}}>
+              <Description description="No type data provided." />
+            </Box>
+          )}
+          {assetMetadata.length > 0 && (
+            <>
+              <Box
+                padding={{vertical: 16, horizontal: 24}}
+                border={{side: 'horizontal', width: 1, color: ColorsWIP.KeylineGray}}
+                flex={{justifyContent: 'space-between', gap: 8}}
+              >
+                <Subheading>Metadata</Subheading>
+              </Box>
+              <Box style={{flex: 1}}>
+                <AssetMetadataTable assetMetadata={assetMetadata} />
+              </Box>
+            </>
+          )}
         </Box>
       </Box>
     </>
@@ -116,48 +134,87 @@ const JobGraphLink: React.FC<{
   repoAddress: RepoAddress;
   assetNode: AssetNodeDefinitionFragment;
   direction: 'upstream' | 'downstream';
-}> = ({direction, assetNode, repoAddress}) =>
-  assetNode.jobs.length > 0 &&
-  assetNode.opName &&
-  (direction === 'upstream' ? assetNode.dependencies : assetNode.dependedBy).length > 0 ? (
+}> = ({direction, assetNode}) => {
+  if (assetNode.jobNames.length === 0 || !assetNode.opName) {
+    return null;
+  }
+  const populated =
+    (direction === 'upstream' ? assetNode.dependencies : assetNode.dependedBy).length > 0;
+  if (!populated) {
+    return null;
+  }
+
+  const token = tokenForAssetKey(assetNode.assetKey);
+
+  return (
     <Link
-      to={workspacePathFromAddress(
-        repoAddress,
-        `/jobs/${explorerPathToString({
-          pipelineName: assetNode.jobs[0].name,
-          opNames: [assetNode.opName],
-          opsQuery: direction === 'upstream' ? `*${assetNode.opName}` : `${assetNode.opName}*`,
-        })}`,
-      )}
+      to={instanceAssetsExplorerPathToURL({
+        opNames: [token],
+        opsQuery: direction === 'upstream' ? `*${token}` : `${token}*`,
+      })}
     >
       <Box flex={{gap: 4, alignItems: 'center'}}>
         {direction === 'upstream' ? 'View upstream graph' : 'View downstream graph'}
         <IconWIP name="open_in_new" color={ColorsWIP.Link} />
       </Box>
     </Link>
-  ) : null;
+  );
+};
+
+const DefinitionLocation: React.FC<{
+  assetNode: AssetNodeDefinitionFragment;
+  repoAddress: RepoAddress;
+}> = ({assetNode, repoAddress}) => (
+  <Box flex={{alignItems: 'baseline', gap: 16, wrap: 'wrap'}} style={{lineHeight: 0}}>
+    {assetNode.jobNames
+      .filter((jobNames) => jobNames !== __ASSET_GROUP)
+      .map((jobName) => (
+        <Mono key={jobName}>
+          <PipelineReference
+            isJob
+            showIcon
+            pipelineName={jobName}
+            pipelineHrefContext={repoAddress}
+          />
+        </Mono>
+      ))}
+    {displayNameForAssetKey(assetNode.assetKey) !== assetNode.opName && (
+      <Box flex={{gap: 6, alignItems: 'center'}}>
+        <IconWIP name="op" size={16} />
+        <Mono>{assetNode.opName}</Mono>
+      </Box>
+    )}
+
+    {assetNode.jobNames.length === 0 && !assetNode.opName && (
+      <Caption style={{marginTop: 2}}>Foreign Asset</Caption>
+    )}
+  </Box>
+);
 
 export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   fragment AssetNodeDefinitionFragment on AssetNode {
     id
     description
     opName
-    jobs {
+    jobNames
+    repository {
       id
       name
+      location {
+        id
+        name
+      }
     }
 
     ...AssetNodeFragment
     ...AssetNodeLiveFragment
+    ...AssetNodeOpMetadataFragment
 
     dependencies {
       asset {
         id
         opName
-        jobs {
-          id
-          name
-        }
+        jobNames
         ...AssetNodeFragment
         ...AssetNodeLiveFragment
       }
@@ -166,10 +223,7 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
       asset {
         id
         opName
-        jobs {
-          id
-          name
-        }
+        jobNames
         ...AssetNodeFragment
         ...AssetNodeLiveFragment
       }
@@ -177,4 +231,5 @@ export const ASSET_NODE_DEFINITION_FRAGMENT = gql`
   }
   ${ASSET_NODE_FRAGMENT}
   ${ASSET_NODE_LIVE_FRAGMENT}
+  ${ASSET_NODE_OP_METADATA_FRAGMENT}
 `;

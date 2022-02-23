@@ -1,4 +1,5 @@
 import re
+from typing import NamedTuple
 
 import pytest
 from dagster.check import CheckError
@@ -37,9 +38,9 @@ def test_backcompat_new_flag():
 
 def test_backcompat_old_flag():
     with pytest.warns(
-        UserWarning,
+        DeprecationWarning,
         match=re.escape(
-            '"old_flag" is deprecated and will be removed in 0.9.0, use "new_flag" instead. Will '
+            '"old_flag" is deprecated and will be removed in 0.9.0. Use "new_flag" instead. Will '
             "remove at next release."
         ),
     ):
@@ -48,9 +49,9 @@ def test_backcompat_old_flag():
 
 def test_backcompat_no_additional_warn_text():
     with pytest.warns(
-        UserWarning,
+        DeprecationWarning,
         match=re.escape(
-            '"old_flag" is deprecated and will be removed in 0.9.0, use "new_flag" instead.'
+            '"old_flag" is deprecated and will be removed in 0.9.0. Use "new_flag" instead.'
         ),
     ):
         assert is_new(old_flag=False, include_additional_warn_txt=False) is True
@@ -166,3 +167,13 @@ def test_experimental_decorator_class():
         match='"goodbye" is an experimental function. It may break in future versions, even between dot releases.',
     ):
         assert experimental_class_with_experimental_function.goodbye("dagster") == "goodbye dagster"
+
+    @experimental
+    class ExperimentalNamedTupleClass(NamedTuple("_", [("salutation", str)])):
+        pass
+
+    with pytest.warns(
+        ExperimentalWarning,
+        match='"ExperimentalNamedTupleClass" is an experimental class. It may break in future versions, even between dot releases.',
+    ):
+        assert ExperimentalNamedTupleClass(salutation="howdy").salutation == "howdy"

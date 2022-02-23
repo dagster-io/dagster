@@ -2,11 +2,17 @@ from typing import Any, Dict, List, Optional, Union, cast
 
 from dagster import check
 from dagster.core.definitions import NodeDefinition, NodeHandle
-from dagster.core.definitions.events import AssetMaterialization, Materialization
+from dagster.core.definitions.events import AssetMaterialization, AssetObservation, Materialization
 from dagster.core.definitions.utils import DEFAULT_OUTPUT
-from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.events import DagsterEvent, DagsterEventType, StepMaterializationData
+from dagster.core.errors import DagsterError, DagsterInvariantViolationError
+from dagster.core.events import (
+    AssetObservationData,
+    DagsterEvent,
+    DagsterEventType,
+    StepMaterializationData,
+)
 from dagster.core.execution.plan.outputs import StepOutputHandle
+from dagster.core.storage.pipeline_run import DagsterRun
 
 
 class ExecuteInProcessResult:
@@ -14,7 +20,7 @@ class ExecuteInProcessResult:
         self,
         node_def: NodeDefinition,
         all_events: List[DagsterEvent],
-        run_id: str,
+        dagster_run: DagsterRun,
         output_capture: Optional[Dict[StepOutputHandle, Any]],
     ):
         self._node_def = node_def
@@ -22,7 +28,7 @@ class ExecuteInProcessResult:
         # If top-level result, no handle will be provided
         self._handle = NodeHandle(node_def.name, parent=None)
         self._event_list = all_events
-        self._run_id = run_id
+        self._dagster_run = dagster_run
 
         self._output_capture = check.opt_dict_param(
             output_capture, "output_capture", key_type=StepOutputHandle
@@ -46,9 +52,20 @@ class ExecuteInProcessResult:
         return step_events
 
     @property
+    def all_events(self) -> List[DagsterEvent]:
+        """List[DagsterEvent]: All dagster events emitted during in-process execution."""
+
+        return self._event_list
+
+    @property
     def run_id(self) -> str:
         """str: The run id for the executed run"""
-        return self._run_id
+        return self._dagster_run.run_id
+
+    @property
+    def dagster_run(self) -> DagsterRun:
+        """DagsterRun: the DagsterRun object for the completed execution."""
+        return self._dagster_run
 
     def events_for_node(self, node_name: str) -> List[DagsterEvent]:
         """Retrieves all dagster events for a specific node.
@@ -70,6 +87,13 @@ class ExecuteInProcessResult:
             cast(StepMaterializationData, event.event_specific_data).materialization
             for event in self.events_for_node(node_name)
             if event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION.value
+        ]
+
+    def asset_observations_for_node(self, node_name) -> List[AssetObservation]:
+        return [
+            cast(AssetObservationData, event.event_specific_data).asset_observation
+            for event in self.events_for_node(node_name)
+            if event.event_type_value == DagsterEventType.ASSET_OBSERVATION.value
         ]
 
     def output_value(self, output_name: str = DEFAULT_OUTPUT) -> Any:
@@ -134,6 +158,36 @@ class ExecuteInProcessResult:
         return _filter_outputs_by_handle(
             self._output_capture, origin_handle, origin_output_def.name
         )
+
+    def get_job_success_event(self):
+        """Returns a DagsterEvent with type DagsterEventType.PIPELINE_SUCCESS if it ocurred during
+        execution
+        """
+        events = list(
+            filter(
+                lambda event: event.event_type == DagsterEventType.PIPELINE_SUCCESS, self.all_events
+            )
+        )
+
+        if len(events) == 0:
+            raise DagsterError("No event of type DagsterEventType.PIPELINE_SUCCESS found.")
+
+        return events[0]
+
+    def get_job_failure_event(self):
+        """Returns a DagsterEvent with type DagsterEventType.PIPELINE_FAILURE if it ocurred during
+        execution
+        """
+        events = list(
+            filter(
+                lambda event: event.event_type == DagsterEventType.PIPELINE_FAILURE, self.all_events
+            )
+        )
+
+        if len(events) == 0:
+            raise DagsterError("No event of type DagsterEventType.PIPELINE_FAILURE found.")
+
+        return events[0]
 
 
 def _filter_events_by_handle(

@@ -1,5 +1,6 @@
 """Facilities for running arbitrary commands in child processes."""
 
+
 import os
 import queue
 import sys
@@ -8,7 +9,6 @@ from collections import namedtuple
 
 from dagster import check
 from dagster.core.errors import DagsterExecutionInterruptedError
-from dagster.seven import multiprocessing
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.interrupts import capture_interrupts
 
@@ -103,7 +103,7 @@ def _poll_for_event(process, event_queue):
     return None
 
 
-def execute_child_process_command(command):
+def execute_child_process_command(multiprocessing_ctx, command):
     """Execute a ChildProcessCommand in a new process.
 
     This function starts a new process whose execution target is a ChildProcessCommand wrapped by
@@ -124,6 +124,7 @@ def execute_child_process_command(command):
         * The actual values yielded by the child process command
 
     Args:
+        multiprocessing_ctx: The multiprocessing context to execute in (spawn, forkserver, fork)
         command (ChildProcessCommand): The command to execute in the child process.
 
     Warning: if the child process is in an infinite loop, this will
@@ -132,9 +133,9 @@ def execute_child_process_command(command):
 
     check.inst_param(command, "command", ChildProcessCommand)
 
-    event_queue = multiprocessing.Queue()
+    event_queue = multiprocessing_ctx.Queue()
     try:
-        process = multiprocessing.Process(
+        process = multiprocessing_ctx.Process(
             target=_execute_command_in_child_process, args=(event_queue, command)
         )
         process.start()

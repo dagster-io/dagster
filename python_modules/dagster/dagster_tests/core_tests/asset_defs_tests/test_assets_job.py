@@ -8,7 +8,7 @@ from dagster import (
     IOManager,
     io_manager,
 )
-from dagster.core.asset_defs import AssetIn, ForeignAsset, asset, build_assets_job
+from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
 from dagster.core.snap import DependencyStructureIndex
 from dagster.core.snap.dep_snapshot import (
     OutputHandleSnap,
@@ -150,21 +150,37 @@ def test_asset_key_and_inferred():
     assert result.output_for_node("asset_baz") == 7
 
 
-def test_asset_key_for_asset_with_namespace():
-    @asset(namespace="hello")
+def test_asset_key_for_asset_with_namespace_list():
+    @asset(namespace=["hell", "o"])
     def asset_foo():
         return "foo"
 
     @asset(
         ins={"foo": AssetIn(asset_key=AssetKey("asset_foo"))}
     )  # Should fail because asset_foo is defined with namespace, so has asset key ["hello", "asset_foo"]
-    def failing_asset(foo):
+    def failing_asset(foo):  # pylint: disable=unused-argument
         pass
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
     ):
         build_assets_job("lol", [asset_foo, failing_asset])
+
+    @asset(ins={"foo": AssetIn(asset_key=AssetKey(["hell", "o", "asset_foo"]))})
+    def success_asset(foo):
+        return foo
+
+    job = build_assets_job("lol", [asset_foo, success_asset])
+
+    result = job.execute_in_process()
+    assert result.success
+    assert result.output_for_node("success_asset") == "foo"
+
+
+def test_asset_key_for_asset_with_namespace_str():
+    @asset(namespace="hello")
+    def asset_foo():
+        return "foo"
 
     @asset(ins={"foo": AssetIn(asset_key=AssetKey(["hello", "asset_foo"]))})
     def success_asset(foo):
@@ -177,7 +193,7 @@ def test_asset_key_for_asset_with_namespace():
     assert result.output_for_node("success_asset") == "foo"
 
 
-def test_foreign_asset():
+def test_source_asset():
     @asset
     def asset1(source1):
         assert source1 == 5
@@ -197,7 +213,7 @@ def test_foreign_asset():
     job = build_assets_job(
         "a",
         [asset1],
-        source_assets=[ForeignAsset(AssetKey("source1"), io_manager_key="special_io_manager")],
+        source_assets=[SourceAsset(AssetKey("source1"), io_manager_key="special_io_manager")],
         resource_defs={"special_io_manager": my_io_manager},
     )
     assert job.graph.node_defs == [asset1.op]
@@ -257,7 +273,7 @@ def test_multiple_non_argument_deps():
     def foo():
         pass
 
-    @asset
+    @asset(namespace="namespace")
     def bar():
         pass
 
@@ -265,7 +281,7 @@ def test_multiple_non_argument_deps():
     def baz():
         return 1
 
-    @asset(non_argument_deps={AssetKey("foo"), AssetKey("bar")})
+    @asset(non_argument_deps={AssetKey("foo"), AssetKey(["namespace", "bar"])})
     def qux(baz):
         return baz
 
@@ -275,13 +291,15 @@ def test_multiple_non_argument_deps():
     index = DependencyStructureIndex(dep_structure_snapshot)
 
     assert index.get_invocation("foo")
-    assert index.get_invocation("bar")
+    assert index.get_invocation("namespace__bar")
     assert index.get_invocation("baz")
 
     assert index.get_upstream_outputs("qux", "foo") == [
         OutputHandleSnap("foo", "result"),
     ]
-    assert index.get_upstream_outputs("qux", "bar") == [OutputHandleSnap("bar", "result")]
+    assert index.get_upstream_outputs("qux", "namespace_bar") == [
+        OutputHandleSnap("namespace__bar", "result")
+    ]
     assert index.get_upstream_outputs("qux", "baz") == [OutputHandleSnap("baz", "result")]
 
     result = job.execute_in_process()

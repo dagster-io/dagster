@@ -68,6 +68,8 @@ class Daemon(BaseModel):
     env: Dict[str, str]
     envConfigMaps: List[kubernetes.ConfigMapEnvSource]
     envSecrets: List[kubernetes.SecretEnvSource]
+    deploymentLabels: Dict[str, str]
+    labels: Dict[str, str]
     nodeSelector: kubernetes.NodeSelector
     affinity: kubernetes.Affinity
     tolerations: kubernetes.Tolerations
@@ -75,6 +77,10 @@ class Daemon(BaseModel):
     securityContext: kubernetes.SecurityContext
     resources: kubernetes.Resources
     livenessProbe: kubernetes.LivenessProbe
+    readinessProbe: kubernetes.ReadinessProbe
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations
     runMonitoring: Dict[str, Any]
+
+    class Config:
+        extra = Extra.forbid

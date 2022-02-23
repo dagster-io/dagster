@@ -1,6 +1,6 @@
 import os
 
-from dagster import AssetKey, AssetMaterialization, EventMetadata, Field, Output, graph, op
+from dagster import AssetKey, AssetMaterialization, Field, MetadataValue, Output, graph, op
 
 
 @op(
@@ -19,7 +19,7 @@ def read_file(context):
         yield AssetMaterialization(
             asset_key=AssetKey(["log_file", relative_filename]),
             metadata={
-                "path": EventMetadata.path(filename),
+                "path": MetadataValue.path(filename),
                 "File status": {
                     "size": fstats.st_size,
                     "ctime": fstats.st_ctime,

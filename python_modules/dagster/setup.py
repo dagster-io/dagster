@@ -40,6 +40,7 @@ if __name__ == "__main__":
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",
             "Programming Language :: Python :: 3.8",
+            "Programming Language :: Python :: 3.9",
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
@@ -61,6 +62,7 @@ if __name__ == "__main__":
             "contextvars; python_version < '3.7'",
             # https://github.com/dagster-io/dagster/issues/4167
             "Jinja2<3.0",
+            "markupsafe<=2.0.1",
             "PyYAML>=5.1",
             # core (not explicitly expressed atm)
             # alembic 1.6.3 broke our migrations: https://github.com/sqlalchemy/alembic/issues/848
@@ -68,7 +70,7 @@ if __name__ == "__main__":
             "alembic>=1.2.1,!=1.6.3,<1.7.0",
             "croniter>=0.3.34",
             "grpcio>=1.32.0",  # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
-            "grpcio-health-checking>=1.32.0",
+            "grpcio-health-checking>=1.32.0,<1.44.0",
             "packaging>=20.9",
             "pendulum",
             "protobuf>=3.13.0",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)

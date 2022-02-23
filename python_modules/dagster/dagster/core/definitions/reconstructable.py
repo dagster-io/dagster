@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     from .repository_definition import RepositoryDefinition
     from .pipeline_definition import PipelineDefinition
     from .graph_definition import GraphDefinition
+    from dagster.core.asset_defs.asset_group import AssetGroup
 
 
 def get_ephemeral_repository_name(pipeline_name: str) -> str:
@@ -264,6 +265,14 @@ class ReconstructablePipeline(
     def get_python_origin_id(self):
         return self.get_python_origin().get_id()
 
+    def get_module(self) -> Optional[str]:
+        """Return the module the pipeline is found in, the origin is a module code pointer"""
+        pointer = self.get_python_origin().get_repo_pointer()
+        if isinstance(pointer, ModuleCodePointer):
+            return pointer.module
+
+        return None
+
 
 def reconstructable(target):
     """
@@ -298,8 +307,8 @@ def reconstructable(target):
     call), or in interactive environments such as the Python REPL or Jupyter notebooks.
 
     If you need to reconstruct objects constructed in these ways, you should use
-    :py:func:`~dagster.core.definitions.reconstructable.build_reconstructable_pipeline` instead,
-    which allows you to specify your own reconstruction strategy.
+    :py:func:`~dagster.reconstructable.build_reconstructable_job` instead, which allows you to
+    specify your own reconstruction strategy.
 
     Examples:
 
@@ -344,7 +353,7 @@ def reconstructable(target):
         raise DagsterInvariantViolationError(
             "Reconstructable target can not be a lambda. Use a function or "
             "decorated function defined at module scope instead, or use "
-            "build_reconstructable_target."
+            "build_reconstructable_job."
         )
 
     if seven.qualname_differs(target):
@@ -352,7 +361,7 @@ def reconstructable(target):
             'Reconstructable target "{target.__name__}" has a different '
             '__qualname__ "{target.__qualname__}" indicating it is not '
             "defined at module scope. Use a function or decorated function "
-            "defined at module scope instead, or use build_reconstructable_pipeline.".format(
+            "defined at module scope instead, or use build_reconstructable_job.".format(
                 target=target
             )
         )
@@ -370,10 +379,9 @@ def reconstructable(target):
     python_file = get_python_file_from_target(target)
     if not python_file:
         raise DagsterInvariantViolationError(
-            "reconstructable() can not reconstruct jobs or pipelines defined in interactive environments "
-            "like <stdin>, IPython, or Jupyter notebooks. "
-            "Use a pipeline defined in a module or file instead, or "
-            "use build_reconstructable_target."
+            "reconstructable() can not reconstruct jobs or pipelines defined in interactive "
+            "environments like <stdin>, IPython, or Jupyter notebooks. "
+            "Use a pipeline defined in a module or file instead, or use build_reconstructable_job."
         )
 
     pointer = FileCodePointer(
@@ -384,7 +392,7 @@ def reconstructable(target):
 
 
 @experimental
-def build_reconstructable_target(
+def build_reconstructable_job(
     reconstructor_module_name,
     reconstructor_function_name,
     reconstructable_args=None,
@@ -394,28 +402,28 @@ def build_reconstructable_target(
     """
     Create a :py:class:`dagster.core.definitions.reconstructable.ReconstructablePipeline`.
 
-    When your pipeline must cross process boundaries, e.g., for execution on multiple nodes or
-    in different systems (like ``dagstermill``), Dagster must know how to reconstruct the pipeline
+    When your job must cross process boundaries, e.g., for execution on multiple nodes or in
+    different systems (like ``dagstermill``), Dagster must know how to reconstruct the job
     on the other side of the process boundary.
 
-    This function allows you to use the strategy of your choice for reconstructing pipelines, so
-    that you can reconstruct certain kinds of pipelines that are not supported by
+    This function allows you to use the strategy of your choice for reconstructing jobs, so
+    that you can reconstruct certain kinds of jobs that are not supported by
     :py:func:`~dagster.reconstructable`, such as those defined by lambdas, in nested scopes (e.g.,
     dynamically within a method call), or in interactive environments such as the Python REPL or
     Jupyter notebooks.
 
-    If you need to reconstruct pipelines constructed in these ways, use this function instead of
+    If you need to reconstruct jobs constructed in these ways, use this function instead of
     :py:func:`~dagster.reconstructable`.
 
     Args:
         reconstructor_module_name (str): The name of the module containing the function to use to
-            reconstruct the pipeline.
+            reconstruct the job.
         reconstructor_function_name (str): The name of the function to use to reconstruct the
-            pipeline.
-        reconstructable_args (Tuple): Args to the function to use to reconstruct the pipeline.
+            job.
+        reconstructable_args (Tuple): Args to the function to use to reconstruct the job.
             Values of the tuple must be JSON serializable.
         reconstructable_kwargs (Dict[str, Any]): Kwargs to the function to use to reconstruct the
-            pipeline. Values of the dict must be JSON serializable.
+            job. Values of the dict must be JSON serializable.
 
     Examples:
 
@@ -423,34 +431,34 @@ def build_reconstructable_target(
 
         # module: mymodule
 
-        from dagster import PipelineDefinition, pipeline, build_reconstructable_pipeline
+        from dagster import JobDefinition, job, build_reconstructable_job
 
-        class PipelineFactory:
-            def make_pipeline(*args, **kwargs):
+        class JobFactory:
+            def make_job(*args, **kwargs):
 
-                @pipeline
-                def _pipeline(...):
+                @job
+                def _job(...):
                     ...
 
-                return _pipeline
+                return _job
 
-        def reconstruct_pipeline(*args):
-            factory = PipelineFactory()
-            return factory.make_pipeline(*args)
+        def reconstruct_job(*args):
+            factory = JobFactory()
+            return factory.make_job(*args)
 
-        factory = PipelineFactory()
+        factory = JobFactory()
 
-        foo_pipeline_args = (...,...)
+        foo_job_args = (...,...)
 
-        foo_pipeline_kwargs = {...:...}
+        foo_job_kwargs = {...:...}
 
-        foo_pipeline = factory.make_pipeline(*foo_pipeline_args, **foo_pipeline_kwargs)
+        foo_job = factory.make_job(*foo_job_args, **foo_job_kwargs)
 
-        reconstructable_foo_pipeline = build_reconstructable_pipeline(
+        reconstructable_foo_job = build_reconstructable_job(
             'mymodule',
-            'reconstruct_pipeline',
-            foo_pipeline_args,
-            foo_pipeline_kwargs,
+            'reconstruct_job',
+            foo_job_args,
+            foo_job_kwargs,
         )
     """
     check.str_param(reconstructor_module_name, "reconstructor_module_name")
@@ -485,7 +493,9 @@ def build_reconstructable_target(
     )
 
 
-build_reconstructable_pipeline = build_reconstructable_target
+# back compat, in case users have imported these directly
+build_reconstructable_pipeline = build_reconstructable_job
+build_reconstructable_target = build_reconstructable_job
 
 
 def bootstrap_standalone_recon_pipeline(pointer):
@@ -503,13 +513,16 @@ def _check_is_loadable(definition):
     from .pipeline_definition import PipelineDefinition
     from .repository_definition import RepositoryDefinition
     from .graph_definition import GraphDefinition
+    from dagster.core.asset_defs import AssetGroup
 
-    if not isinstance(definition, (PipelineDefinition, RepositoryDefinition, GraphDefinition)):
+    if not isinstance(
+        definition, (PipelineDefinition, RepositoryDefinition, GraphDefinition, AssetGroup)
+    ):
         raise DagsterInvariantViolationError(
             (
-                "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, or a "
-                "RepositoryDefinition. Got {definition}."
-            ).format(definition=repr(definition))
+                "Loadable attributes must be either a JobDefinition, GraphDefinition, "
+                f"PipelineDefinition, AssetGroup, or RepositoryDefinition. Got {repr(definition)}."
+            )
         )
     return definition
 
@@ -536,9 +549,10 @@ def def_from_pointer(
     from .pipeline_definition import PipelineDefinition
     from .repository_definition import RepositoryDefinition
     from .graph_definition import GraphDefinition
+    from dagster.core.asset_defs.asset_group import AssetGroup
 
     if isinstance(
-        target, (PipelineDefinition, RepositoryDefinition, GraphDefinition)
+        target, (PipelineDefinition, RepositoryDefinition, GraphDefinition, AssetGroup)
     ) or not callable(target):
         return _check_is_loadable(target)
 
@@ -573,7 +587,7 @@ def pipeline_def_from_pointer(pointer: CodePointer) -> "PipelineDefinition":
 @overload
 # NOTE: mypy can't handle these overloads but pyright can
 def repository_def_from_target_def(  # type: ignore
-    target: Union["RepositoryDefinition", "PipelineDefinition", "GraphDefinition"]
+    target: Union["RepositoryDefinition", "PipelineDefinition", "GraphDefinition", "AssetGroup"]
 ) -> "RepositoryDefinition":
     ...
 
@@ -587,6 +601,7 @@ def repository_def_from_target_def(target):
     from .pipeline_definition import PipelineDefinition
     from .graph_definition import GraphDefinition
     from .repository_definition import CachingRepositoryData, RepositoryDefinition
+    from dagster.core.asset_defs.asset_group import AssetGroup
 
     # special case - we can wrap a single pipeline in a repository
     if isinstance(target, (PipelineDefinition, GraphDefinition)):
@@ -594,6 +609,10 @@ def repository_def_from_target_def(target):
         return RepositoryDefinition(
             name=get_ephemeral_repository_name(target.name),
             repository_data=CachingRepositoryData.from_list([target]),
+        )
+    elif isinstance(target, AssetGroup):
+        return RepositoryDefinition(
+            name="__repository__", repository_data=CachingRepositoryData.from_list([target])
         )
     elif isinstance(target, RepositoryDefinition):
         return target

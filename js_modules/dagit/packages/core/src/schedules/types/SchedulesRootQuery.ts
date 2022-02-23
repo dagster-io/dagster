@@ -74,6 +74,7 @@ export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_sched
 export interface SchedulesRootQuery_repositoryOrError_Repository_schedules_scheduleState_ticks {
   __typename: "InstigationTick";
   id: string;
+  cursor: string | null;
   status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;
@@ -198,6 +199,7 @@ export interface SchedulesRootQuery_unloadableInstigationStatesOrError_Instigati
 export interface SchedulesRootQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks {
   __typename: "InstigationTick";
   id: string;
+  cursor: string | null;
   status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;

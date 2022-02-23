@@ -17,12 +17,13 @@ from dagster_test.graph_job_op_toys.log_asset import log_asset_job
 from dagster_test.graph_job_op_toys.log_file import log_file_job
 from dagster_test.graph_job_op_toys.log_s3 import log_s3_job
 from dagster_test.graph_job_op_toys.log_spew import log_spew
+from dagster_test.graph_job_op_toys.long_asset_keys import long_asset_keys_job
 from dagster_test.graph_job_op_toys.longitudinal import longitudinal_job
 from dagster_test.graph_job_op_toys.many_events import many_events, many_events_subset_job
 from dagster_test.graph_job_op_toys.notebooks import hello_world_notebook_pipeline
 from dagster_test.graph_job_op_toys.retries import retry_job
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
-from dagster_test.graph_job_op_toys.software_defined_assets import software_defined_assets_job
+from dagster_test.graph_job_op_toys.software_defined_assets import software_defined_assets
 from dagster_test.graph_job_op_toys.unreliable import unreliable_job
 
 from .schedules import get_toys_schedules
@@ -69,8 +70,9 @@ def toys_repository():
             asset_lineage_partition_set,
             model_job,
             hello_world_notebook_pipeline,
-            software_defined_assets_job,
             big_honkin_assets_job,
+            long_asset_keys_job,
+            software_defined_assets,
         ]
         + get_toys_schedules()
         + get_toys_sensors()

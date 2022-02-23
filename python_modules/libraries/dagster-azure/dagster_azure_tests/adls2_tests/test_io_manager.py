@@ -66,10 +66,8 @@ def define_inty_job():
     )
 
 
-nettest = pytest.mark.nettest
-
-
-@nettest
+@pytest.mark.nettest
+@pytest.mark.skip("https://github.com/dagster-io/dagster/issues/6607")
 def test_adls2_pickle_io_manager_execution(storage_account, file_system, credential):
     job = define_inty_job()
 

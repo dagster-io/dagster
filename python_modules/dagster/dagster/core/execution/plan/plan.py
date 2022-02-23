@@ -243,7 +243,7 @@ class _PlanBuilder:
                 )
             if self._instance_ref is None:
                 raise DagsterInvariantViolationError(
-                    "Attempted to build memoized execution plan without providing a persistent"
+                    "Attempted to build memoized execution plan without providing a persistent "
                     "DagsterInstance to create_execution_plan."
                 )
             instance = DagsterInstance.from_ref(self._instance_ref)

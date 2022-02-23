@@ -22,16 +22,22 @@ import {workspacePathFromAddress} from '../workspace/workspacePath';
 
 import {ReloadRepositoryLocationButton} from './ReloadRepositoryLocationButton';
 
-export type RepoDetails = {
-  repoAddress: RepoAddress;
-  metadata: {key: string; value: string}[];
-};
+export interface RepoSelectorOption {
+  repositoryLocation: {name: string};
+  repository: {
+    name: string;
+    displayMetadata: {
+      key: string;
+      value: string;
+    }[];
+  };
+}
 
 interface Props {
   onBrowse: () => void;
-  onToggle: (repoDetails: RepoDetails) => void;
-  options: RepoDetails[];
-  selected: Set<RepoDetails>;
+  onToggle: (repoAddress: RepoAddress) => void;
+  options: RepoSelectorOption[];
+  selected: RepoSelectorOption[];
 }
 
 export const RepoSelector: React.FC<Props> = (props) => {
@@ -42,9 +48,12 @@ export const RepoSelector: React.FC<Props> = (props) => {
     <Table>
       <tbody>
         {options.map((option) => {
-          const {repoAddress, metadata} = option;
+          const checked = selected.includes(option);
+          const repoAddress = {
+            location: option.repositoryLocation.name,
+            name: option.repository.name,
+          };
           const addressString = repoAddressAsString(repoAddress);
-          const checked = selected.has(option);
           return (
             <tr key={addressString}>
               <td>
@@ -52,7 +61,7 @@ export const RepoSelector: React.FC<Props> = (props) => {
                   checked={checked}
                   onChange={(e) => {
                     if (e.target instanceof HTMLInputElement) {
-                      onToggle(option);
+                      onToggle(repoAddress);
                     }
                   }}
                   id={`switch-${addressString}`}
@@ -66,7 +75,7 @@ export const RepoSelector: React.FC<Props> = (props) => {
                       <RepoLocation>{`@${repoAddress.location}`}</RepoLocation>
                     </Box>
                     <Group direction="column" spacing={2}>
-                      {metadata.map(({key, value}) => (
+                      {option.repository.displayMetadata.map(({key, value}) => (
                         <Caption
                           style={{color: ColorsWIP.Gray400, fontFamily: FontFamily.monospace}}
                           key={key}

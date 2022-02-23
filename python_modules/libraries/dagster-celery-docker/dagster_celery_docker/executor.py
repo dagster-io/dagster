@@ -4,9 +4,9 @@ import os
 import docker.client
 from dagster import (
     DagsterInstance,
-    EventMetadataEntry,
     Executor,
     Field,
+    MetadataEntry,
     StringSource,
     check,
     executor,
@@ -255,9 +255,9 @@ def create_docker_task(celery_app, **task_kwargs):
             pipeline_run,
             EngineEventData(
                 [
-                    EventMetadataEntry.text(step_keys_str, "Step keys"),
-                    EventMetadataEntry.text(docker_image, "Image"),
-                    EventMetadataEntry.text(self.request.hostname, "Celery worker"),
+                    MetadataEntry.text(step_keys_str, "Step keys"),
+                    MetadataEntry.text(docker_image, "Image"),
+                    MetadataEntry.text(self.request.hostname, "Celery worker"),
                 ],
                 marker_end=DELEGATE_MARKER,
             ),
@@ -289,8 +289,8 @@ def create_docker_task(celery_app, **task_kwargs):
                 pipeline_run,
                 EngineEventData(
                     [
-                        EventMetadataEntry.text(docker_image, "Job image"),
-                        EventMetadataEntry.text(err.stderr, "Docker stderr"),
+                        MetadataEntry.text(docker_image, "Job image"),
+                        MetadataEntry.text(err.stderr, "Docker stderr"),
                     ],
                 ),
                 CeleryDockerExecutor,

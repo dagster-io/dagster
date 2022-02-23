@@ -38,6 +38,15 @@ const CodeIcon = (
   ></path>
 );
 
+const InfoCircleIcon = (
+  <path
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    strokeWidth="2"
+    d="M 12 2 C 6.4889971 2 2 6.4889971 2 12 C 2 17.511003 6.4889971 22 12 22 C 17.511003 22 22 17.511003 22 12 C 22 6.4889971 17.511003 2 12 2 z M 12 4 C 16.430123 4 20 7.5698774 20 12 C 20 16.430123 16.430123 20 12 20 C 7.5698774 20 4 16.430123 4 12 C 4 7.5698774 7.5698774 4 12 4 z M 11 7 L 11 9 L 13 9 L 13 7 L 11 7 z M 11 11 L 11 17 L 13 17 L 13 11 L 11 11 z">
+  </path>
+)
+
 const SearchIcon = (
   <path
     strokeLinecap="round"
@@ -92,6 +101,14 @@ const CloudIcon = (
   />
 );
 
+const WarningIcon = (
+  <path
+    fillRule="evenodd"
+    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+    clipRule="evenodd"
+  />
+);
+
 const Icons = {
   // This should be an append only list. Do not remove an icon here, since
   // an older version of the site coul dbe depending on it.
@@ -105,6 +122,8 @@ const Icons = {
   Users: UsersIcon,
   Sparkles: SparklesIcon,
   Cloud: CloudIcon,
+  InfoCircle: InfoCircleIcon,
+  Warning: WarningIcon,
 };
 
 export default Icons;

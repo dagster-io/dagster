@@ -1,116 +1,142 @@
 from math import isnan
 
 from dagster import check, seven
-from dagster.core.definitions.event_metadata import (
-    DagsterAssetMetadataEntryData,
-    DagsterPipelineRunMetadataEntryData,
-    EventMetadataEntry,
-    FloatMetadataEntryData,
-    IntMetadataEntryData,
-    JsonMetadataEntryData,
-    MarkdownMetadataEntryData,
-    PathMetadataEntryData,
-    PythonArtifactMetadataEntryData,
-    TextMetadataEntryData,
-    UrlMetadataEntryData,
+from dagster.core.definitions.metadata import (
+    DagsterAssetMetadataValue,
+    DagsterPipelineRunMetadataValue,
+    FloatMetadataValue,
+    IntMetadataValue,
+    JsonMetadataValue,
+    MarkdownMetadataValue,
+    MetadataEntry,
+    PathMetadataValue,
+    PythonArtifactMetadataValue,
+    TableMetadataValue,
+    TableSchemaMetadataValue,
+    TextMetadataValue,
+    UrlMetadataValue,
 )
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.plan.objects import StepFailureData
+from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
 
 MAX_INT = 2147483647
 MIN_INT = -2147483648
 
 
 def iterate_metadata_entries(metadata_entries):
-    from ..schema.logs.events import (
-        GrapheneEventFloatMetadataEntry,
-        GrapheneEventIntMetadataEntry,
-        GrapheneEventJsonMetadataEntry,
-        GrapheneEventMarkdownMetadataEntry,
-        GrapheneEventPathMetadataEntry,
-        GrapheneEventPythonArtifactMetadataEntry,
-        GrapheneEventTextMetadataEntry,
-        GrapheneEventUrlMetadataEntry,
-        GrapheneEventPipelineRunMetadataEntry,
-        GrapheneEventAssetMetadataEntry,
+    from ..schema.metadata import (
+        GrapheneFloatMetadataEntry,
+        GrapheneIntMetadataEntry,
+        GrapheneJsonMetadataEntry,
+        GrapheneMarkdownMetadataEntry,
+        GraphenePathMetadataEntry,
+        GraphenePythonArtifactMetadataEntry,
+        GrapheneTextMetadataEntry,
+        GrapheneUrlMetadataEntry,
+        GraphenePipelineRunMetadataEntry,
+        GrapheneAssetMetadataEntry,
+        GrapheneTableMetadataEntry,
+        GrapheneTableSchemaMetadataEntry,
     )
 
-    check.list_param(metadata_entries, "metadata_entries", of_type=EventMetadataEntry)
+    check.list_param(metadata_entries, "metadata_entries", of_type=MetadataEntry)
     for metadata_entry in metadata_entries:
-        if isinstance(metadata_entry.entry_data, PathMetadataEntryData):
-            yield GrapheneEventPathMetadataEntry(
+        if isinstance(metadata_entry.entry_data, PathMetadataValue):
+            yield GraphenePathMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 path=metadata_entry.entry_data.path,
             )
-        elif isinstance(metadata_entry.entry_data, JsonMetadataEntryData):
-            yield GrapheneEventJsonMetadataEntry(
+        elif isinstance(metadata_entry.entry_data, JsonMetadataValue):
+            yield GrapheneJsonMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 jsonString=seven.json.dumps(metadata_entry.entry_data.data),
             )
-        elif isinstance(metadata_entry.entry_data, TextMetadataEntryData):
-            yield GrapheneEventTextMetadataEntry(
+        elif isinstance(metadata_entry.entry_data, TextMetadataValue):
+            yield GrapheneTextMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 text=metadata_entry.entry_data.text,
             )
-        elif isinstance(metadata_entry.entry_data, UrlMetadataEntryData):
-            yield GrapheneEventUrlMetadataEntry(
+        elif isinstance(metadata_entry.entry_data, UrlMetadataValue):
+            yield GrapheneUrlMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 url=metadata_entry.entry_data.url,
             )
-        elif isinstance(metadata_entry.entry_data, MarkdownMetadataEntryData):
-            yield GrapheneEventMarkdownMetadataEntry(
+        elif isinstance(metadata_entry.entry_data, MarkdownMetadataValue):
+            yield GrapheneMarkdownMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 md_str=metadata_entry.entry_data.md_str,
             )
-        elif isinstance(metadata_entry.entry_data, PythonArtifactMetadataEntryData):
-            yield GrapheneEventPythonArtifactMetadataEntry(
+        elif isinstance(metadata_entry.entry_data, PythonArtifactMetadataValue):
+            yield GraphenePythonArtifactMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 module=metadata_entry.entry_data.module,
                 name=metadata_entry.entry_data.name,
             )
-        elif isinstance(metadata_entry.entry_data, FloatMetadataEntryData):
+        elif isinstance(metadata_entry.entry_data, FloatMetadataValue):
             float_val = metadata_entry.entry_data.value
 
             # coerce NaN to null
             if isnan(float_val):
                 float_val = None
 
-            yield GrapheneEventFloatMetadataEntry(
+            yield GrapheneFloatMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 floatValue=float_val,
             )
-        elif isinstance(metadata_entry.entry_data, IntMetadataEntryData):
+        elif isinstance(metadata_entry.entry_data, IntMetadataValue):
             # coerce > 32 bit ints to null
             int_val = None
             if MIN_INT <= metadata_entry.entry_data.value <= MAX_INT:
                 int_val = metadata_entry.entry_data.value
 
-            yield GrapheneEventIntMetadataEntry(
+            yield GrapheneIntMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 intValue=int_val,
                 # make string representation available to allow for > 32bit int
                 intRepr=str(metadata_entry.entry_data.value),
             )
-        elif isinstance(metadata_entry.entry_data, DagsterPipelineRunMetadataEntryData):
-            yield GrapheneEventPipelineRunMetadataEntry(
+        elif isinstance(metadata_entry.entry_data, DagsterPipelineRunMetadataValue):
+            yield GraphenePipelineRunMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 runId=metadata_entry.entry_data.run_id,
             )
-        elif isinstance(metadata_entry.entry_data, DagsterAssetMetadataEntryData):
-            yield GrapheneEventAssetMetadataEntry(
+        elif isinstance(metadata_entry.entry_data, DagsterAssetMetadataValue):
+            yield GrapheneAssetMetadataEntry(
                 label=metadata_entry.label,
                 description=metadata_entry.description,
                 assetKey=metadata_entry.entry_data.asset_key,
+            )
+        elif isinstance(metadata_entry.entry_data, TableMetadataValue):
+            yield GrapheneTableMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                table=GrapheneTable(
+                    schema=metadata_entry.entry_data.schema,
+                    records=[
+                        seven.json.dumps(record.data)
+                        for record in metadata_entry.entry_data.records
+                    ],
+                ),
+            )
+        elif isinstance(metadata_entry.entry_data, TableSchemaMetadataValue):
+            yield GrapheneTableSchemaMetadataEntry(
+                label=metadata_entry.label,
+                description=metadata_entry.description,
+                schema=GrapheneTableSchema(
+                    constraints=metadata_entry.entry_data.schema.constraints,
+                    columns=metadata_entry.entry_data.schema.columns,
+                ),
             )
         else:
             # skip rest for now

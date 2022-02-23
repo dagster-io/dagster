@@ -4,10 +4,10 @@ import faker from 'faker';
 import * as React from 'react';
 
 import {StorybookProvider} from '../testing/StorybookProvider';
-import {buildRepoAddress} from '../workspace/buildRepoAddress';
+import {RepoAddress} from '../workspace/types';
 
 import {RepoNavItem} from './RepoNavItem';
-import {RepoDetails} from './RepoSelector';
+import {RepoSelectorOption} from './RepoSelector';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -15,110 +15,133 @@ export default {
   component: RepoNavItem,
 } as Meta;
 
-const OPTIONS = [
+const OPTIONS: RepoSelectorOption[] = [
   {
-    repoAddress: buildRepoAddress(
-      faker.random.word().toLowerCase(),
-      faker.random.words(2).toLowerCase().replace(/ /g, '-'),
-    ),
-    metadata: [
-      {key: 'host', value: faker.random.word().toLowerCase()},
-      {key: 'port', value: faker.random.number(9999).toString()},
-    ],
+    repositoryLocation: {
+      name: faker.random.words(2).toLowerCase().replace(/ /g, '-'),
+    },
+    repository: {
+      name: faker.random.word().toLowerCase(),
+      displayMetadata: [
+        {key: 'host', value: faker.random.word().toLowerCase()},
+        {key: 'port', value: faker.random.number(9999).toString()},
+      ],
+    },
   },
   {
-    repoAddress: buildRepoAddress(
-      faker.random.word().toLowerCase(),
-      faker.random.words(4).toLowerCase().replace(/ /g, '-'),
-    ),
-    metadata: [
-      {key: 'host', value: faker.random.word().toLowerCase()},
-      {key: 'port', value: faker.random.number(9999).toString()},
-    ],
+    repositoryLocation: {
+      name: faker.random.words(4).toLowerCase().replace(/ /g, '-'),
+    },
+    repository: {
+      name: faker.random.word().toLowerCase(),
+      displayMetadata: [
+        {key: 'host', value: faker.random.word().toLowerCase()},
+        {key: 'port', value: faker.random.number(9999).toString()},
+      ],
+    },
   },
   {
-    repoAddress: buildRepoAddress(
-      faker.random.word().toLowerCase(),
-      faker.random.words(2).toLowerCase().replace(/ /g, '-'),
-    ),
-    metadata: [
-      {key: 'host', value: faker.random.word().toLowerCase()},
-      {key: 'port', value: faker.random.number(9999).toString()},
-    ],
+    repositoryLocation: {
+      name: faker.random.words(2).toLowerCase().replace(/ /g, '-'),
+    },
+    repository: {
+      name: faker.random.word().toLowerCase(),
+      displayMetadata: [
+        {key: 'host', value: faker.random.word().toLowerCase()},
+        {key: 'port', value: faker.random.number(9999).toString()},
+      ],
+    },
   },
   {
-    repoAddress: buildRepoAddress(
-      faker.random.word().toLowerCase(),
-      faker.random.words(5).toLowerCase().replace(/ /g, '-'),
-    ),
-    metadata: [
-      {key: 'host', value: faker.random.word().toLowerCase()},
-      {key: 'port', value: faker.random.number(9999).toString()},
-    ],
+    repositoryLocation: {
+      name: faker.random.words(5).toLowerCase().replace(/ /g, '-'),
+    },
+    repository: {
+      name: faker.random.word().toLowerCase(),
+      displayMetadata: [
+        {key: 'host', value: faker.random.word().toLowerCase()},
+        {key: 'port', value: faker.random.number(9999).toString()},
+      ],
+    },
   },
   {
-    repoAddress: buildRepoAddress(
-      faker.random.word().toLowerCase(),
-      faker.random.words(2).toLowerCase().replace(/ /g, '-'),
-    ),
-    metadata: [
-      {key: 'host', value: faker.random.word().toLowerCase()},
-      {key: 'port', value: faker.random.number(9999).toString()},
-    ],
+    repositoryLocation: {
+      name: faker.random.words(2).toLowerCase().replace(/ /g, '-'),
+    },
+    repository: {
+      name: faker.random.word().toLowerCase(),
+      displayMetadata: [
+        {key: 'host', value: faker.random.word().toLowerCase()},
+        {key: 'port', value: faker.random.number(9999).toString()},
+      ],
+    },
   },
   {
-    repoAddress: buildRepoAddress(
-      faker.random.word().toLowerCase(),
-      faker.random.words(6).toLowerCase().replace(/ /g, '-'),
-    ),
-    metadata: [
-      {key: 'host', value: faker.random.word().toLowerCase()},
-      {key: 'port', value: faker.random.number(9999).toString()},
-    ],
+    repositoryLocation: {
+      name: faker.random.words(6).toLowerCase().replace(/ /g, '-'),
+    },
+    repository: {
+      name: faker.random.word().toLowerCase(),
+      displayMetadata: [
+        {key: 'host', value: faker.random.word().toLowerCase()},
+        {key: 'port', value: faker.random.number(9999).toString()},
+      ],
+    },
   },
   {
-    repoAddress: buildRepoAddress(
-      faker.random.word().toLowerCase(),
-      faker.random.words(2).toLowerCase().replace(/ /g, '-'),
-    ),
-    metadata: [
-      {key: 'host', value: faker.random.word().toLowerCase()},
-      {key: 'port', value: faker.random.number(9999).toString()},
-    ],
+    repositoryLocation: {
+      name: faker.random.words(2).toLowerCase().replace(/ /g, '-'),
+    },
+    repository: {
+      name: faker.random.word().toLowerCase(),
+      displayMetadata: [
+        {key: 'host', value: faker.random.word().toLowerCase()},
+        {key: 'port', value: faker.random.number(9999).toString()},
+      ],
+    },
   },
   {
-    repoAddress: buildRepoAddress(
-      faker.random.words(5).toLowerCase().replace(/ /g, '-'),
-      faker.random.words(2).toLowerCase().replace(/ /g, '-'),
-    ),
-    metadata: [
-      {key: 'host', value: faker.random.word().toLowerCase()},
-      {key: 'port', value: faker.random.number(9999).toString()},
-    ],
+    repositoryLocation: {
+      name: faker.random.words(5).toLowerCase().replace(/ /g, '-'),
+    },
+    repository: {
+      name: faker.random.words(2).toLowerCase(),
+      displayMetadata: [
+        {key: 'host', value: faker.random.word().toLowerCase()},
+        {key: 'port', value: faker.random.number(9999).toString()},
+      ],
+    },
   },
   {
-    repoAddress: buildRepoAddress(
-      faker.random.word().toLowerCase(),
-      faker.random.words(2).toLowerCase().replace(/ /g, '-'),
-    ),
-    metadata: [
-      {key: 'host', value: faker.random.word().toLowerCase()},
-      {key: 'port', value: faker.random.number(9999).toString()},
-    ],
+    repositoryLocation: {
+      name: faker.random.words(1).toLowerCase().replace(/ /g, '-'),
+    },
+    repository: {
+      name: faker.random.words(2).toLowerCase(),
+      displayMetadata: [
+        {key: 'host', value: faker.random.word().toLowerCase()},
+        {key: 'port', value: faker.random.number(9999).toString()},
+      ],
+    },
   },
 ];
+
 export const ManyRepos = () => {
-  const [selected, setSelected] = React.useState<Set<RepoDetails>>(() => new Set());
+  const [selected, setSelected] = React.useState<RepoSelectorOption[]>([]);
 
   const onToggle = React.useCallback(
-    (repoDetails: RepoDetails) => {
-      const copy = new Set(selected);
-      if (selected.has(repoDetails)) {
-        copy.delete(repoDetails);
-      } else {
-        copy.add(repoDetails);
+    (address: RepoAddress) => {
+      const option = OPTIONS.find(
+        (r) => r.repository.name === address.name && r.repositoryLocation.name === address.location,
+      );
+      if (!option) {
+        return;
       }
-      setSelected(copy);
+      if (selected.includes(option)) {
+        setSelected(selected.filter((o) => o !== option));
+      } else {
+        setSelected([...selected, option]);
+      }
     },
     [selected],
   );
@@ -137,17 +160,21 @@ export const ManyRepos = () => {
 const ONE_REPO = [OPTIONS[0]];
 
 export const OneRepo = () => {
-  const [selected, setSelected] = React.useState<Set<RepoDetails>>(() => new Set(ONE_REPO));
+  const [selected, setSelected] = React.useState<RepoSelectorOption[]>(ONE_REPO);
 
   const onToggle = React.useCallback(
-    (repoDetails: RepoDetails) => {
-      const copy = new Set(selected);
-      if (selected.has(repoDetails)) {
-        copy.delete(repoDetails);
-      } else {
-        copy.add(repoDetails);
+    (address: RepoAddress) => {
+      const option = OPTIONS.find(
+        (r) => r.repository.name === address.name && r.repositoryLocation.name === address.location,
+      );
+      if (!option) {
+        return;
       }
-      setSelected(copy);
+      if (selected.includes(option)) {
+        setSelected(selected.filter((o) => o !== option));
+      } else {
+        setSelected([...selected, option]);
+      }
     },
     [selected],
   );

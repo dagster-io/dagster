@@ -13,6 +13,7 @@ Within the body of an op, it is possible to communicate with the Dagster framewo
 | ------------------------------------------ | ------------------------------------------------------------- |
 | <PyObject object="Output"  />              | Dagster event used to yield an output from an op              |
 | <PyObject object="AssetMaterialization" /> | Dagster event indicating that an op has materialized an asset |
+| <PyObject object="AssetObservation" />     | Dagster event indicating that an op has observed an asset     |
 | <PyObject object="ExpectationResult" />    | Dagster event representing the result of a data quality check |
 | <PyObject object="Failure"  />             | Dagster exception indicating that a failure has occurred      |
 | <PyObject object="RetryRequested"  />      | Dagster exception requesting the step to be retried           |
@@ -27,7 +28,7 @@ It is also possible to raise Dagster-specific exceptions, which will indicate to
 
 Often, it may be useful to attach some arbitrary information to an event or exception that is not captured by its basic parameters. Through the <PyObject object="EventMetadataEntry"/> object, we provide a consistent interface for specifying this metadata on a variety of events. Depending on the type of the data, these entries will be rendered in Dagit in a more useful format than a simple unstructured string.
 
-The <PyObject object="AssetMaterialization" />, <PyObject object="ExpectationResult" />, and <PyObject object="Failure" /> objects each accept a `metadata` parameter, which maps string labels to structured values. <PyObject object="Output"/> also accepts this parameter, although this functionality is currently experimental may change in the future.
+The <PyObject object="AssetMaterialization" />, <PyObject object="AssetObservation" />, <PyObject object="ExpectationResult" />, and <PyObject object="Failure" /> objects each accept a `metadata` parameter, which maps string labels to structured values. <PyObject object="Output"/> also accepts this parameter, although this functionality is currently experimental may change in the future.
 
 We provide support for a wide variety of potentially useful metadata types, including simple datatypes (`EventMetadataEntry.float`, `EventMetadataEntry.int`, `EventMetadataEntry.text`), as well as more complex information such as markdown and json (`EventMetadataEntry.md`, `EventMetadataEntry.json`).
 
@@ -83,7 +84,7 @@ def my_metadata_output(context):
         df,
         metadata={
             "text_metadata": "Text-based metadata for this event",
-            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "dashboard_url": MetadataValue.url("http://mycoolsite.com/url_for_my_data"),
             "raw_count": len(df),
             "size (bytes)": calculate_bytes(df),
         },
@@ -120,7 +121,7 @@ To learn more about assets and how they are surfaced once you send this event, c
 Attaching metadata to Asset Materializations is an important way of tracking aspects of a given asset over time. This functions essentially identically to other events which accept a `metadata` parameter, allowing you to attach a set of structured labels and values to display.
 
 ```python file=concepts/assets/materialization_ops.py startafter=start_materialization_ops_marker_2 endbefore=end_materialization_ops_marker_2
-from dagster import op, AssetMaterialization, Output, EventMetadata
+from dagster import op, AssetMaterialization, Output, MetadataValue
 
 
 @op
@@ -132,13 +133,36 @@ def my_metadata_materialization_op(context):
         description="Persisted result to storage",
         metadata={
             "text_metadata": "Text-based metadata for this event",
-            "path": EventMetadata.path(remote_storage_path),
-            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "path": MetadataValue.path(remote_storage_path),
+            "dashboard_url": MetadataValue.url("http://mycoolsite.com/url_for_my_data"),
             "size (bytes)": calculate_bytes(df),
         },
     )
     yield Output(remote_storage_path)
 ```
+
+### Asset Observations
+
+<PyObject object="AssetObservation" /> events record metadata about assets. Unlike
+asset materializations, asset observations do not signify that an asset has been
+mutated.
+
+Within ops and assets, you can yield <PyObject object="AssetObservation" /> events at runtime. Similar to attaching metadata to asset materializations, asset observations accept a `metadata` parameter, allowing you to track specific properties of an asset over time.
+
+```python file=/concepts/assets/observations.py startafter=start_observation_asset_marker_0 endbefore=end_observation_asset_marker_0
+from dagster import AssetObservation
+
+
+@op
+def observation_op():
+    df = read_df()
+    yield AssetObservation(asset_key="observation_asset", metadata={"num_rows": len(df)})
+    yield Output(5)
+```
+
+In the example above, an observation tracks the number of rows in an asset persisted to storage. This information can then be viewed on the [Asset Details](/concepts/dagit/dagit#asset-details) page.
+
+To learn more about asset observations, check out the [Asset Observation](/concepts/assets/asset-observations) documentation.
 
 ### Expectation Results
 
@@ -167,7 +191,7 @@ def my_metadata_expectation_op(context, df):
         description="ensure dataframe has rows",
         metadata={
             "text_metadata": "Text-based metadata for this event",
-            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "dashboard_url": MetadataValue.url("http://mycoolsite.com/url_for_my_data"),
             "raw_count": len(df),
             "size (bytes)": calculate_bytes(df),
         },
@@ -195,8 +219,8 @@ def my_failure_op():
         raise Failure(
             description="No files to process",
             metadata={
-                "filepath": EventMetadata.path(path),
-                "dashboard_url": EventMetadata.url("http://mycoolsite.com/failures"),
+                "filepath": MetadataValue.path(path),
+                "dashboard_url": MetadataValue.url("http://mycoolsite.com/failures"),
             },
         )
     return some_calculation(my_files)
@@ -215,8 +239,8 @@ def my_failure_metadata_op():
         raise Failure(
             description="No files to process",
             metadata={
-                "filepath": EventMetadata.path(path),
-                "dashboard_url": EventMetadata.url("http://mycoolsite.com/failures"),
+                "filepath": MetadataValue.path(path),
+                "dashboard_url": MetadataValue.url("http://mycoolsite.com/failures"),
             },
         )
     return some_calculation(my_files)
@@ -237,7 +261,7 @@ You can configure the number of retries to be attempted with the `max_retries` p
 def my_retry_op():
     try:
         result = flaky_operation()
-    except:
-        raise RetryRequested(max_retries=3)
+    except Exception as e:
+        raise RetryRequested(max_retries=3) from e
     return result
 ```

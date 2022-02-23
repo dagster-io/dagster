@@ -1,7 +1,7 @@
 import * as React from 'react';
 import {useHistory, useLocation, useParams} from 'react-router-dom';
 
-import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {buildPipelineSelector, isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
 
@@ -29,6 +29,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
   const explorerPath = explorerPathFromString(params['0']);
 
   const repo = useRepository(repoAddress);
+  const pipelineSelector = buildPipelineSelector(repoAddress, explorerPath.pipelineName);
   const isJob = isThisThingAJob(repo, explorerPath.pipelineName);
 
   useJobTitle(explorerPath, isJob);
@@ -50,9 +51,7 @@ export const PipelineOverviewRoot: React.FC<Props> = (props) => {
   return (
     <GraphExplorerJobContext.Provider
       value={{
-        sidebarTab: (
-          <SidebarPipelineOrJobOverview repoAddress={repoAddress} explorerPath={explorerPath} />
-        ),
+        sidebarTab: <SidebarPipelineOrJobOverview pipelineSelector={pipelineSelector} />,
       }}
     >
       <PipelineExplorerContainer

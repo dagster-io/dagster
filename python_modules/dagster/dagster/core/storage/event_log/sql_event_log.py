@@ -184,6 +184,9 @@ class SqlEventLogStorage(EventLogStorage):
             and event.dagster_event.is_step_materialization
             and event.dagster_event.asset_key
         ):
+            # Currently, only materializations are stored in the asset catalog.
+            # We will store observations after adding a column migration to
+            # store latest asset observation timestamp in the asset key table.
             self.store_asset(event)
 
     def get_logs_for_run_by_log_id(
@@ -199,16 +202,25 @@ class SqlEventLogStorage(EventLogStorage):
             cursor >= -1,
             "Don't know what to do with negative cursor {cursor}".format(cursor=cursor),
         )
-        check.opt_inst_param(dagster_event_type, "dagster_event_type", DagsterEventType)
+
+        dagster_event_types = (
+            {dagster_event_type}
+            if isinstance(dagster_event_type, DagsterEventType)
+            else check.opt_set_param(
+                dagster_event_type, "dagster_event_type", of_type=DagsterEventType
+            )
+        )
 
         query = (
             db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
             .where(SqlEventLogStorageTable.c.run_id == run_id)
             .order_by(SqlEventLogStorageTable.c.id.asc())
         )
-        if dagster_event_type:
-            query = query.where(
-                SqlEventLogStorageTable.c.dagster_event_type == dagster_event_type.value
+        if dagster_event_types:
+            query = query.filter(
+                SqlEventLogStorageTable.c.dagster_event_type.in_(
+                    [dagster_event_type.value for dagster_event_type in dagster_event_types]
+                )
             )
 
         # adjust 0 based index cursor to SQL offset
@@ -256,7 +268,12 @@ class SqlEventLogStorage(EventLogStorage):
             cursor >= -1,
             "Don't know what to do with negative cursor {cursor}".format(cursor=cursor),
         )
-        check.opt_inst_param(of_type, "of_type", DagsterEventType)
+
+        check.invariant(
+            not of_type
+            or isinstance(of_type, DagsterEventType)
+            or isinstance(of_type, (frozenset, set))
+        )
 
         events_by_id = self.get_logs_for_run_by_log_id(run_id, cursor, of_type, limit)
         return [event for id, event in sorted(events_by_id.items(), key=lambda x: x[0])]
@@ -631,13 +648,9 @@ class SqlEventLogStorage(EventLogStorage):
             query = query.limit(limit)
 
         if ascending:
-            query = query.order_by(
-                SqlEventLogStorageTable.c.timestamp.asc(), SqlEventLogStorageTable.c.id.asc()
-            )
+            query = query.order_by(SqlEventLogStorageTable.c.id.asc())
         else:
-            query = query.order_by(
-                SqlEventLogStorageTable.c.timestamp.desc(), SqlEventLogStorageTable.c.id.desc()
-            )
+            query = query.order_by(SqlEventLogStorageTable.c.id.desc())
 
         with self.index_connection() as conn:
             results = conn.execute(query).fetchall()
@@ -710,8 +723,12 @@ class SqlEventLogStorage(EventLogStorage):
                     ]
                 )
                 .where(
-                    SqlEventLogStorageTable.c.asset_key.in_(
-                        [asset_key.to_string() for asset_key in to_backcompat_fetch]
+                    db.and_(
+                        SqlEventLogStorageTable.c.asset_key.in_(
+                            [asset_key.to_string() for asset_key in to_backcompat_fetch]
+                        ),
+                        SqlEventLogStorageTable.c.dagster_event_type
+                        == DagsterEventType.ASSET_MATERIALIZATION.value,
                     )
                 )
                 .group_by(SqlEventLogStorageTable.c.asset_key)

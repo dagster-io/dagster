@@ -17,8 +17,8 @@ from dagster import (
     check,
     seven,
 )
-from dagster.core.definitions.event_metadata import EventMetadataEntry
 from dagster.core.definitions.events import AssetMaterialization, Failure, RetryRequested
+from dagster.core.definitions.metadata import MetadataEntry
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.execution.context.compute import SolidExecutionContext
@@ -256,7 +256,7 @@ def _dm_compute(
                         asset_key=(asset_key_prefix + [f"{name}_output_notebook"]),
                         description="Location of output notebook in file manager",
                         metadata_entries=[
-                            EventMetadataEntry.fspath(executed_notebook_materialization_path)
+                            MetadataEntry.fspath(executed_notebook_materialization_path)
                         ],
                     )
 

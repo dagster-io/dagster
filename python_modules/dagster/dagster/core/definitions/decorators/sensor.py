@@ -3,7 +3,12 @@ from functools import update_wrapper
 from typing import TYPE_CHECKING, Callable, Generator, List, Optional, Sequence, Union
 
 from dagster import check
-from dagster.core.definitions.sensor_definition import RunRequest, SensorDefinition, SkipReason
+from dagster.core.definitions.sensor_definition import (
+    DefaultSensorStatus,
+    RunRequest,
+    SensorDefinition,
+    SkipReason,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 
 from ...errors import DagsterInvariantViolationError
@@ -31,6 +36,7 @@ def sensor(
     description: Optional[str] = None,
     job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+    default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[
     [
         Callable[
@@ -69,6 +75,8 @@ def sensor(
         description (Optional[str]): A human-readable description of the sensor.
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job to be executed when the sensor fires.
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental) A list of jobs to be executed when the sensor fires.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
     check.opt_str_param(name, "name")
 
@@ -91,6 +99,7 @@ def sensor(
             description=description,
             job=job,
             jobs=jobs,
+            default_status=default_status,
         )
 
         update_wrapper(sensor_def, wrapped=fn)
@@ -110,6 +119,7 @@ def asset_sensor(
     description: Optional[str] = None,
     job: Optional[Union[GraphDefinition, JobDefinition]] = None,
     jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+    default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
 ) -> Callable[
     [
         Callable[
@@ -152,6 +162,8 @@ def asset_sensor(
         description (Optional[str]): A human-readable description of the sensor.
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job to be executed when the sensor fires.
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental) A list of jobs to be executed when the sensor fires.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     check.opt_str_param(name, "name")
@@ -197,6 +209,7 @@ def asset_sensor(
             description=description,
             job=job,
             jobs=jobs,
+            default_status=default_status,
         )
 
     return inner

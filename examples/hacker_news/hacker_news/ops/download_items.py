@@ -33,7 +33,6 @@ ACTION_FIELD_NAMES = [field.name for field in HN_ACTION_SCHEMA.fields]
         )
     },
     required_resource_keys={"hn_client"},
-    description="Downloads all of the items for the id range passed in as input and creates a DataFrame with all the entries.",
 )
 def download_items(context, id_range: Tuple[int, int]) -> Output:
     """

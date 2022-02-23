@@ -144,6 +144,11 @@ const CodeMirrorShimStyle = createGlobalStyle`
   .CodeMirror-lint-message.CodeMirror-lint-message-error {
     background: transparent;
   }
+
+  /* Ensure that hints aren't vertically cutoff*/
+  .CodeMirror-hint div {
+    max-height: none !important;
+  }
 `;
 
 const CodeMirrorWhitespaceStyle = createGlobalStyle`
@@ -231,7 +236,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
 
     // update the contextual help based on the runConfigSchema and content
     const {context} = expandAutocompletionContextAtCursor(this._editor);
-    this.props.onHelpContextChange(context ? {type: context.closestCompositeType} : null);
+    this.props.onHelpContextChange(context ? {type: context.closestMappingType} : null);
   }
 
   render() {
@@ -299,7 +304,7 @@ export class ConfigEditor extends React.Component<ConfigEditorProps> {
               this.props.onHelpContextChange(null);
             } else {
               const {context} = expandAutocompletionContextAtCursor(editor);
-              this.props.onHelpContextChange(context ? {type: context.closestCompositeType} : null);
+              this.props.onHelpContextChange(context ? {type: context.closestMappingType} : null);
             }
           }}
           onChange={(editor: any) => {

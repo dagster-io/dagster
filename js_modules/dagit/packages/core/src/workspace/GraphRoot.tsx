@@ -64,13 +64,12 @@ const GraphExplorerRoot: React.FC<Props> = (props) => {
   const history = useHistory();
   const [options, setOptions] = React.useState<GraphExplorerOptions>({
     explodeComposites: false,
+    preferAssetRendering: true,
   });
-
-  const selectedName = explorerPath.opNames[explorerPath.opNames.length - 1];
-  const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
 
   useDocumentTitle(`Graph: ${explorerPath.pipelineName}`);
 
+  const parentNames = explorerPath.opNames.slice(0, explorerPath.opNames.length - 1);
   const graphResult = useQuery<GraphExplorerRootQuery, GraphExplorerRootQueryVariables>(
     GRAPH_EXPLORER_ROOT_QUERY,
     {
@@ -102,7 +101,6 @@ const GraphExplorerRoot: React.FC<Props> = (props) => {
           ? explodeCompositesInHandleGraph(result.solidHandles)
           : result.solidHandles;
 
-        const selectedHandle = displayedHandles.find((h) => h.solid.name === selectedName);
         return (
           <GraphExplorer
             options={options}
@@ -123,7 +121,6 @@ const GraphExplorerRoot: React.FC<Props> = (props) => {
             repoAddress={repoAddress}
             handles={displayedHandles}
             parentHandle={parentHandle ? parentHandle : undefined}
-            selectedHandle={selectedHandle}
             isGraph={true}
             getInvocations={(definitionName) =>
               displayedHandles

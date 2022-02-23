@@ -15,22 +15,25 @@ export const App: React.FC = (props) => {
   return (
     <Container>
       <LeftNav />
-      <Main $navOpen={nav.isOpen} onClick={onClickMain}>
+      <Main $navCollapsible={nav.isCollapsible} onClick={onClickMain}>
         {props.children}
       </Main>
     </Container>
   );
 };
 
-const Main = styled.div<{$navOpen: boolean}>`
+const Main = styled.div<{$navCollapsible: boolean}>`
   height: 100%;
-  margin-left: ${LEFT_NAV_WIDTH}px;
-  width: calc(100% - ${LEFT_NAV_WIDTH}px);
 
-  @media (max-width: 1440px) {
+  ${(p) =>
+    p.$navCollapsible
+      ? `
     margin-left: 0;
-    width: 100%;
-  }
+    width: 100%;`
+      : `
+    margin-left: ${LEFT_NAV_WIDTH}px;
+    width: calc(100% - ${LEFT_NAV_WIDTH}px);
+`}
 `;
 
 const Container = styled.div`

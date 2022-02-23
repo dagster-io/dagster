@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Union, overload
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -23,7 +23,7 @@ class _Repository:
         self.description = check.opt_str_param(description, "description")
 
     def __call__(self, fn: Callable[[], Any]) -> RepositoryDefinition:
-        from dagster.core.asset_defs import ForeignAsset
+        from dagster.core.asset_defs import AssetGroup
 
         check.callable_param(fn, "fn")
 
@@ -52,7 +52,7 @@ class _Repository:
                     or isinstance(definition, ScheduleDefinition)
                     or isinstance(definition, SensorDefinition)
                     or isinstance(definition, GraphDefinition)
-                    or isinstance(definition, ForeignAsset)
+                    or isinstance(definition, AssetGroup)
                 ):
                     bad_definitions.append((i, type(definition)))
             if bad_definitions:
@@ -65,7 +65,7 @@ class _Repository:
                 raise DagsterInvalidDefinitionError(
                     "Bad return value from repository construction function: all elements of list "
                     "must be of type JobDefinition, GraphDefinition, PipelineDefinition, "
-                    "PartitionSetDefinition, ScheduleDefinition, SensorDefinition, or ForeignAsset. "
+                    "PartitionSetDefinition, ScheduleDefinition, or SensorDefinition. "
                     f"Got {bad_definitions_str}."
                 )
             repository_data = CachingRepositoryData.from_list(repository_definitions)
@@ -97,9 +97,19 @@ class _Repository:
         return repository_def
 
 
+@overload
+def repository(name: Callable[..., Any]) -> RepositoryDefinition:
+    ...
+
+
+@overload
+def repository(name: Optional[str] = ..., description: Optional[str] = ...) -> _Repository:
+    ...
+
+
 def repository(
     name: Union[Optional[str], Callable[..., Any]] = None, description: Optional[str] = None
-) -> Union[_Repository, RepositoryDefinition]:
+) -> Union[RepositoryDefinition, _Repository]:
     """Create a repository from the decorated function.
 
     The decorated function should take no arguments and its return value should one of:

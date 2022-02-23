@@ -4,7 +4,7 @@ from typing import List
 import docker
 from dagster import check, executor
 from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
-from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, EventMetadataEntry
+from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.retries import RetryMode, get_retries_config
 from dagster.core.executor.base import Executor
@@ -189,8 +189,8 @@ class DockerStepHandler(StepHandler):
                 message="Launching step in Docker container",
                 event_specific_data=EngineEventData(
                     [
-                        EventMetadataEntry.text(step_key, "Step key"),
-                        EventMetadataEntry.text(step_container.id, "Docker container id"),
+                        MetadataEntry.text(step_key, "Step key"),
+                        MetadataEntry.text(step_container.id, "Docker container id"),
                     ],
                 ),
             )

@@ -80,6 +80,17 @@ export interface PipelineGraphOpFragment_definition_SolidDefinition_metadata {
   value: string;
 }
 
+export interface PipelineGraphOpFragment_definition_SolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface PipelineGraphOpFragment_definition_SolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: PipelineGraphOpFragment_definition_SolidDefinition_assetNodes_assetKey;
+}
+
 export interface PipelineGraphOpFragment_definition_SolidDefinition_inputDefinitions_type {
   __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
@@ -104,7 +115,7 @@ export interface PipelineGraphOpFragment_definition_SolidDefinition_outputDefini
 }
 
 export interface PipelineGraphOpFragment_definition_SolidDefinition_configField_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType";
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
   description: string | null;
 }
@@ -119,6 +130,7 @@ export interface PipelineGraphOpFragment_definition_SolidDefinition {
   name: string;
   description: string | null;
   metadata: PipelineGraphOpFragment_definition_SolidDefinition_metadata[];
+  assetNodes: PipelineGraphOpFragment_definition_SolidDefinition_assetNodes[];
   inputDefinitions: PipelineGraphOpFragment_definition_SolidDefinition_inputDefinitions[];
   outputDefinitions: PipelineGraphOpFragment_definition_SolidDefinition_outputDefinitions[];
   configField: PipelineGraphOpFragment_definition_SolidDefinition_configField | null;
@@ -128,6 +140,17 @@ export interface PipelineGraphOpFragment_definition_CompositeSolidDefinition_met
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
+}
+
+export interface PipelineGraphOpFragment_definition_CompositeSolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface PipelineGraphOpFragment_definition_CompositeSolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: PipelineGraphOpFragment_definition_CompositeSolidDefinition_assetNodes_assetKey;
 }
 
 export interface PipelineGraphOpFragment_definition_CompositeSolidDefinition_inputDefinitions_type {
@@ -212,6 +235,7 @@ export interface PipelineGraphOpFragment_definition_CompositeSolidDefinition {
   name: string;
   description: string | null;
   metadata: PipelineGraphOpFragment_definition_CompositeSolidDefinition_metadata[];
+  assetNodes: PipelineGraphOpFragment_definition_CompositeSolidDefinition_assetNodes[];
   inputDefinitions: PipelineGraphOpFragment_definition_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: PipelineGraphOpFragment_definition_CompositeSolidDefinition_outputDefinitions[];
   id: string;

@@ -8,7 +8,7 @@ from dagster.cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
 )
-from dagster.core.events import EngineEventData
+from dagster.core.events import DagsterEventType, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.run_cancellation_thread import start_run_cancellation_thread
 from dagster.core.instance import DagsterInstance
@@ -58,24 +58,36 @@ def execute_run_command(input_json):
             def send_to_buffer(event):
                 buffer.append(serialize_dagster_namedtuple(event))
 
-            _execute_run_command_body(
+            return_code = _execute_run_command_body(
                 recon_pipeline,
                 args.pipeline_run_id,
                 instance,
                 send_to_buffer,
+                set_exit_code_on_failure=args.set_exit_code_on_failure or False,
             )
 
             for line in buffer:
                 click.echo(line)
 
+            if return_code != 0:
+                sys.exit(return_code)
 
-def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_stream_fn):
+
+def _execute_run_command_body(
+    recon_pipeline, pipeline_run_id, instance, write_stream_fn, set_exit_code_on_failure
+):
     if instance.should_start_background_run_thread:
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
             instance, pipeline_run_id
         )
 
     pipeline_run = instance.get_run_by_id(pipeline_run_id)
+
+    check.inst(
+        pipeline_run,
+        PipelineRun,
+        "Pipeline run with id '{}' not found for run execution.".format(pipeline_run_id),
+    )
 
     pid = os.getpid()
     instance.report_engine_event(
@@ -84,9 +96,20 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
         EngineEventData.in_process(pid, marker_end="cli_api_subprocess_init"),
     )
 
+    run_worker_failed = 0
+
     try:
-        for event in core_execute_run(recon_pipeline, pipeline_run, instance):
+        for event in core_execute_run(
+            recon_pipeline,
+            pipeline_run,
+            instance,
+        ):
             write_stream_fn(event)
+            if event.event_type == DagsterEventType.PIPELINE_FAILURE:
+                run_worker_failed = True
+    except:
+        # relies on core_execute_run writing failures to the event log before raising
+        run_worker_failed = True
     finally:
         if instance.should_start_background_run_thread:
             cancellation_thread_shutdown_event.set()
@@ -97,10 +120,13 @@ def _execute_run_command_body(recon_pipeline, pipeline_run_id, instance, write_s
                         "Cancellation thread did not shutdown gracefully",
                         pipeline_run,
                     )
+
         instance.report_engine_event(
             "Process for run exited (pid: {pid}).".format(pid=pid),
             pipeline_run,
         )
+
+    return 1 if (run_worker_failed and set_exit_code_on_failure) else 0
 
 
 @api_cli.command(
@@ -126,23 +152,34 @@ def resume_run_command(input_json):
             def send_to_buffer(event):
                 buffer.append(serialize_dagster_namedtuple(event))
 
-            _resume_run_command_body(
+            return_code = _resume_run_command_body(
                 recon_pipeline,
                 args.pipeline_run_id,
                 instance,
                 send_to_buffer,
+                set_exit_code_on_failure=args.set_exit_code_on_failure or False,
             )
 
             for line in buffer:
                 click.echo(line)
 
+            if return_code != 0:
+                sys.exit(return_code)
 
-def _resume_run_command_body(recon_pipeline, pipeline_run_id, instance, write_stream_fn):
+
+def _resume_run_command_body(
+    recon_pipeline, pipeline_run_id, instance, write_stream_fn, set_exit_code_on_failure
+):
     if instance.should_start_background_run_thread:
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
             instance, pipeline_run_id
         )
     pipeline_run = instance.get_run_by_id(pipeline_run_id)
+    check.inst(
+        pipeline_run,
+        PipelineRun,
+        "Pipeline run with id '{}' not found for run execution.".format(pipeline_run_id),
+    )
 
     pid = os.getpid()
     instance.report_engine_event(
@@ -151,11 +188,22 @@ def _resume_run_command_body(recon_pipeline, pipeline_run_id, instance, write_st
         EngineEventData.in_process(pid, marker_end="cli_api_subprocess_init"),
     )
 
+    run_worker_failed = False
+
     try:
         for event in core_execute_run(
-            recon_pipeline, pipeline_run, instance, resume_from_failure=True
+            recon_pipeline,
+            pipeline_run,
+            instance,
+            resume_from_failure=True,
         ):
             write_stream_fn(event)
+            if event.event_type == DagsterEventType.PIPELINE_FAILURE:
+                run_worker_failed = True
+
+    except:
+        # relies on core_execute_run writing failures to the event log before raising
+        run_worker_failed = True
     finally:
         if instance.should_start_background_run_thread:
             cancellation_thread_shutdown_event.set()
@@ -170,6 +218,8 @@ def _resume_run_command_body(recon_pipeline, pipeline_run_id, instance, write_st
             "Process for pipeline exited (pid: {pid}).".format(pid=pid),
             pipeline_run,
         )
+
+    return 1 if (run_worker_failed and set_exit_code_on_failure) else 0
 
 
 def get_step_stats_by_key(instance, pipeline_run, step_keys_to_execute):

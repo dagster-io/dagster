@@ -100,35 +100,23 @@ deployments:
     podSecurityContext: {}
     securityContext: {}
     resources: {}
-    replicaCount: 1
     labels: {}
-    # Liveness Probe and Startup Probe are optional. For more configuration docs, see:
+    # Readiness probe detects when the pod is ready to serve requests.
     # https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes
-    # Note that Startup Probe is only available as a kubernetes v1.16+ feature.
-    livenessProbe:
-      # If `livenessProbe` has no `exec` field, then the following default will be used:
+    readinessProbe:
+      # If `readinessProbe` has no `exec` field, then the following default will be used:
       # exec:
       #   command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
-      # initialDelaySeconds: 60
       periodSeconds: 20
       timeoutSeconds: 3
       successThreshold: 1
       failureThreshold: 3
 
-    # Startup probe (available in kubernetes v1.16+) is used at pod startup. Once it has succeeded,
-    # then liveness probe takes over.
-    # If on kubernetes < v1.16, then disable `startupProbe` and comment in
-    # `initialDelaySeconds: 60` under `livenessProbe`
+    # As of 0.14.0, liveness probes are disabled by default. If you want to enable them, it's recommended to also
+    # enable startup probes.
+    livenessProbe: {}
     startupProbe:
-      enabled: true
-      # If `startupProbe` has no `exec` field, then the following default will be used:
-      # exec:
-      #   command: ["dagster", "api", "grpc-health-check", "-p", "{{ $deployment.port }}"]
-      initialDelaySeconds: 0
-      periodSeconds: 10
-      timeoutSeconds: 3
-      successThreshold: 1
-      failureThreshold: 3
+      enabled: false
 
     service:
       annotations: {}

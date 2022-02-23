@@ -1,4 +1,4 @@
-from dagster import EventMetadataEntry, ExpectationResult, Field, FileHandle, Output, solid
+from dagster import ExpectationResult, Field, FileHandle, MetadataEntry, Output, solid
 from dagster.utils.temp_file import get_temp_file_name
 from dagster_aws.s3 import S3Coordinate
 
@@ -59,8 +59,6 @@ def cache_file_from_s3(context, s3_coordinate: S3Coordinate) -> FileHandle:
     yield ExpectationResult(
         success=file_cache.has_file_object(target_key),
         label="file_handle_exists",
-        metadata_entries=[
-            EventMetadataEntry.path(path=target_file_handle.path_desc, label=target_key)
-        ],
+        metadata_entries=[MetadataEntry.path(path=target_file_handle.path_desc, label=target_key)],
     )
     yield Output(target_file_handle)

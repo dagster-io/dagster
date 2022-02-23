@@ -1,5 +1,5 @@
 import numpy as np
-from dagster.core.asset_defs import asset
+from dagster import asset
 from hacker_news_assets.assets.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame
 from scipy.sparse import coo_matrix, csc_matrix, csr_matrix

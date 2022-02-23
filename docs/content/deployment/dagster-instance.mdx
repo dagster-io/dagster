@@ -39,7 +39,9 @@ All of the processes and services that make up your Dagster deployment should sh
   per-job basis rather than on the instance.
 </Warning>
 
-// This heading is referenced in a call ofDagsterUnmetExecutorRequirementsError, so be sure to update code link if this title changes.
+<!--
+  This heading is referenced in a call of DagsterUnmetExecutorRequirementsError, so be sure to update code link if this title changes.
+-->
 
 ## Default local behavior
 
@@ -604,9 +606,9 @@ run_coordinator:
 
 #### QueuedRunCoordinator
 
-The <PyObject module="dagster.core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executing at once. Note that this requires a daemon process to be active to actually launch the runs.
+The <PyObject module="dagster.core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executing at once. Note that this requires a [dagster-daemon process](/deployment/dagster-daemon) to be active to actually launch the runs.
 
-This option has several configuration possibilities which allow for both limit the overall number of concurrent runs and more specific limits based on run tags - for example, you can configure a limit on the number of runs that interact with a particular cloud service that can run concurrently to avoid being throttled.
+This run coordinator has several configuration options, which allow for both limiting the overall number of concurrent runs as well as more specific limits based on run tags - for example, you can configure a limit on the number of runs that interact with a particular cloud service that can run concurrently to avoid being throttled.
 
 For more information, see the <Link href="/deployment/run-coordinator#queuedruncoordinator">Run Coordinator</Link> docs.
 

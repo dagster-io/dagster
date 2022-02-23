@@ -1,0 +1,99 @@
+---
+title: Asset Observations | Dagster
+description: Dagster provides functionality to record metadata about assets.
+---
+
+# Asset Observations
+
+An asset observation is an event that records metadata about a given asset. Unlike asset materializations, asset observations do not signify that an asset has been mutated.
+
+## Relevant APIs
+
+| Name                                   | Description                                                          |
+| -------------------------------------- | -------------------------------------------------------------------- |
+| <PyObject object="AssetObservation" /> | Dagster event indicating that an asset's metadata has been recorded. |
+| <PyObject object="AssetKey" />         | A unique identifier for a particular external asset.                 |
+
+## Overview
+
+<PyObject object="AssetObservation" /> events are used record metadata in Dagster
+about a given asset. Asset observation events can be yielded at runtime within ops
+and assets. An asset must be defined using the <PyObject
+object="asset"
+decorator
+/> decorator or have existing materializations in order for its observations to be
+displayed.
+
+## Yielding an AssetObservation from an Op
+
+To make Dagster aware that we have recorded metadata about an asset, we can yield an <PyObject object="AssetObservation" /> event:
+
+```python file=/concepts/assets/observations.py startafter=start_observation_asset_marker_0 endbefore=end_observation_asset_marker_0
+from dagster import AssetObservation
+
+
+@op
+def observation_op():
+    df = read_df()
+    yield AssetObservation(asset_key="observation_asset", metadata={"num_rows": len(df)})
+    yield Output(5)
+```
+
+We should now see an observation event in the event log when we execute this asset.
+
+<Image
+alt="asset-observation"
+src="/images/concepts/assets/observation.png"
+width={1417}
+height={917}
+/>
+
+### Attaching Metadata to an AssetObservation
+
+There are a variety of types of metadata that can be associated with an observation event, all through the <PyObject object="EventMetadataEntry" /> class. Each observation event optionally takes a dictionary of metadata entries that are then displayed in the event log and the [Asset Details](/concepts/dagit/dagit#asset-details) page. Check our API docs for <PyObject object="EventMetadataEntry" /> for more details on the types of event metadata available.
+
+```python file=concepts/assets/observations.py startafter=start_observation_asset_marker_2 endbefore=end_observation_asset_marker_2
+from dagster import op, AssetObservation, Output, EventMetadata
+
+
+@op
+def observes_dataset_op():
+    df = read_df()
+    remote_storage_path = persist_to_storage(df)
+    yield AssetObservation(
+        asset_key="my_dataset",
+        metadata={
+            "text_metadata": "Text-based metadata for this event",
+            "path": EventMetadata.path(remote_storage_path),
+            "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+            "size (bytes)": calculate_bytes(df),
+        },
+    )
+    yield AssetMaterialization(asset_key="my_dataset")
+    yield Output(remote_storage_path)
+```
+
+In the [Asset Details](/concepts/dagit/dagit#asset-details) page, we can see observations in the Asset Activity table.
+
+<Image
+alt="asset-activity-observation"
+src="/images/concepts/assets/asset-activity-observation.png"
+width={1758}
+height={1146}
+/>
+
+### Specifying a partition for an AssetObservation
+
+If you are observing a single slice of an asset (e.g. a single day's worth of data on a larger table), rather than mutating or creating it entirely, you can indicate this to Dagster by including the `partition` argument on the object.
+
+```python file=/concepts/assets/observations.py startafter=start_partitioned_asset_observation endbefore=end_partitioned_asset_observation
+from dagster import op, AssetMaterialization, Output
+
+
+@op(config_schema={"date": str})
+def partitioned_dataset_op(context):
+    partition_date = context.op_config["date"]
+    df = read_df_for_date(partition_date)
+    yield AssetObservation(asset_key="my_partitioned_dataset", partition=partition_date)
+    yield Output(df)
+```

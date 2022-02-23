@@ -6,10 +6,7 @@ import {
   ButtonGroup,
   ColorsWIP,
   IconWIP,
-  MenuItemWIP,
-  MenuWIP,
   PageHeader,
-  Popover,
   Spinner,
   Table,
   TagWIP,
@@ -19,9 +16,7 @@ import {
   FontFamily,
 } from '@dagster-io/ui';
 import * as React from 'react';
-import {Redirect} from 'react-router-dom';
 
-import {useFeatureFlags} from '../app/Flags';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {ScheduleOrSensorTag} from '../nav/JobMetadata';
@@ -35,14 +30,14 @@ import {
   queuedStatuses,
   successStatuses,
 } from '../runs/RunStatuses';
-import {RunTimelineContainer, TimelineJob, makeJobKey} from '../runs/RunTimeline';
+import {RunTimelineContainer, TimelineJob, makeJobKey, HourWindow} from '../runs/RunTimeline';
 import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 import {RunTimeFragment} from '../runs/types/RunTimeFragment';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {RunStatus} from '../types/globalTypes';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
-import {useRepositoryOptions} from '../workspace/WorkspaceContext';
+import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -51,6 +46,7 @@ import {workspacePipelinePath} from '../workspace/workspacePath';
 import {InstanceTabs} from './InstanceTabs';
 import {JobMenu} from './JobMenu';
 import {NextTick, SCHEDULE_FUTURE_TICKS_FRAGMENT} from './NextTick';
+import {RepoFilterButton} from './RepoFilterButton';
 import {StepSummaryForRun} from './StepSummaryForRun';
 import {
   InstanceOverviewInitialQuery,
@@ -59,16 +55,6 @@ import {
 } from './types/InstanceOverviewInitialQuery';
 import {LastTenRunsPerJobQuery} from './types/LastTenRunsPerJobQuery';
 import {OverviewJobFragment} from './types/OverviewJobFragment';
-
-export const InstanceOverviewPage = () => {
-  const {flagInstanceOverview} = useFeatureFlags();
-
-  if (!flagInstanceOverview) {
-    return <Redirect to="/instance" />;
-  }
-
-  return <OverviewContent />;
-};
 
 const intent = (status: RunStatus) => {
   switch (status) {
@@ -95,19 +81,13 @@ type JobItemWithRuns = JobItem & {
 };
 
 type State = {
-  hiddenRepos: Set<RepoAddress>;
   searchValue: string;
 };
 
-type Action = {type: 'toggle-repo'; repo: RepoAddress} | {type: 'search'; value: string};
+type Action = {type: 'search'; value: string};
 
 const reducer = (state: State, action: Action) => {
   switch (action.type) {
-    case 'toggle-repo': {
-      const copy = new Set(Array.from(state.hiddenRepos));
-      copy.has(action.repo) ? copy.delete(action.repo) : copy.add(action.repo);
-      return {...state, hiddenRepos: copy};
-    }
     case 'search': {
       return {...state, searchValue: action.value};
     }
@@ -117,15 +97,14 @@ const reducer = (state: State, action: Action) => {
 };
 
 const initialState: State = {
-  hiddenRepos: new Set(),
   searchValue: '',
 };
 
 const POLL_INTERVAL = 15 * 1000;
 
-const OverviewContent = () => {
+export const InstanceOverviewPage = () => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
-  const {options} = useRepositoryOptions();
+  const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
 
   const queryResult = useQuery<InstanceOverviewInitialQuery>(INSTANCE_OVERVIEW_INITIAL_QUERY, {
     fetchPolicy: 'network-only',
@@ -139,21 +118,11 @@ const OverviewContent = () => {
     {fetchPolicy: 'network-only', pollInterval: POLL_INTERVAL},
   );
 
-  const {hiddenRepos, searchValue} = state;
+  const {searchValue} = state;
 
   React.useEffect(() => {
     retrieveLastTenRuns();
   }, [retrieveLastTenRuns]);
-
-  const optionAddresses = React.useMemo(() => {
-    if (!options) {
-      return [];
-    }
-    return options.map((option) => {
-      const {repository, repositoryLocation} = option;
-      return buildRepoAddress(repository.name, repositoryLocation.name);
-    });
-  }, [options]);
 
   const bucketed = React.useMemo(() => {
     const failed = [];
@@ -232,11 +201,12 @@ const OverviewContent = () => {
 
   const filteredJobs = React.useMemo(() => {
     const searchToLower = searchValue.toLocaleLowerCase();
-    const filterJobs = (item: JobItem) => {
-      const {job, repoAddress} = item;
-      const {name} = job;
-      return !hiddenRepos.has(repoAddress) && name.toLocaleLowerCase().includes(searchToLower);
-    };
+    const filterJobs = ({job, repoAddress}: JobItem) =>
+      visibleRepos.some(
+        (r) =>
+          r.repository.name === repoAddress.name &&
+          r.repositoryLocation.name === repoAddress.location,
+      ) && job.name.toLocaleLowerCase().includes(searchToLower);
 
     const {failed, inProgress, queued, succeeded, neverRan} = bucketed;
     return {
@@ -246,7 +216,7 @@ const OverviewContent = () => {
       succeeded: succeeded.filter(filterJobs),
       neverRan: neverRan.filter(filterJobs),
     };
-  }, [bucketed, hiddenRepos, searchValue]);
+  }, [bucketed, visibleRepos, searchValue]);
 
   const lastTenRunsFlattened = React.useMemo(() => {
     if (!lastTenRunsData) {
@@ -308,45 +278,6 @@ const OverviewContent = () => {
     );
   }
 
-  const repoSelector = () => {
-    if (optionAddresses.length > 1) {
-      const numVisible = optionAddresses.length - hiddenRepos.size;
-      return (
-        <Popover
-          content={
-            <MenuWIP>
-              {optionAddresses.map((repoAddress) => {
-                const repoString = repoAddressAsString(repoAddress);
-                const checked = !state.hiddenRepos.has(repoAddress);
-                return (
-                  <MenuItemWIP
-                    icon={
-                      <IconWIP
-                        name="check_circle"
-                        color={checked ? ColorsWIP.Blue500 : ColorsWIP.Gray200}
-                      />
-                    }
-                    shouldDismissPopover={false}
-                    key={repoString}
-                    text={repoString}
-                    onClick={() => dispatch({type: 'toggle-repo', repo: repoAddress})}
-                  />
-                );
-              })}
-            </MenuWIP>
-          }
-          position="bottom-left"
-        >
-          <ButtonWIP
-            icon={<IconWIP name="folder" />}
-            rightIcon={<IconWIP name="expand_more" />}
-          >{`${numVisible} of ${optionAddresses.length} repositories`}</ButtonWIP>
-        </Popover>
-      );
-    }
-    return null;
-  };
-
   const {failed, inProgress, queued, succeeded, neverRan} = filteredJobsWithRuns;
 
   return (
@@ -360,7 +291,7 @@ const OverviewContent = () => {
         padding={{horizontal: 24, top: 16}}
         flex={{direction: 'row', alignItems: 'center', gap: 12, grow: 0}}
       >
-        {repoSelector()}
+        {allRepos.length > 1 && <RepoFilterButton />}
         <TextInput
           icon="search"
           value={searchValue}
@@ -415,7 +346,6 @@ const OverviewContent = () => {
 
 const LOOKAHEAD_HOURS = 1;
 const ONE_HOUR = 60 * 60 * 1000;
-type HourWindow = '1' | '6' | '12' | '24';
 
 const RunTimelineSection = ({jobs, loading}: {jobs: JobItem[]; loading: boolean}) => {
   const [shown, setShown] = React.useState(true);
@@ -485,7 +415,9 @@ const RunTimelineSection = ({jobs, loading}: {jobs: JobItem[]; loading: boolean}
           </ButtonWIP>
         </Box>
       </Box>
-      {shown ? <RunTimelineContainer range={[start, end]} jobs={timelineJobs} /> : null}
+      {shown ? (
+        <RunTimelineContainer range={[start, end]} jobs={timelineJobs} hourWindow={hourWindow} />
+      ) : null}
     </>
   );
 };

@@ -4,7 +4,7 @@ import os
 import requests
 from dagster import (
     AssetMaterialization,
-    EventMetadata,
+    MetadataValue,
     Output,
     get_dagster_logger,
     job,
@@ -48,7 +48,7 @@ def sort_by_calories(context, cereals):
         asset_key="sorted_cereals_csv",
         description="Cereals data frame sorted by caloric content",
         metadata={
-            "sorted_cereals_csv_path": EventMetadata.path(
+            "sorted_cereals_csv_path": MetadataValue.path(
                 sorted_cereals_csv_path
             )
         },

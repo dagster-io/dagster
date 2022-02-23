@@ -1,108 +1,352 @@
 # Changelog
 
+# 0.14.1
+
+### New
+
+- [dagit] The sensor tick timeline now shows cursor values in the tick tooltip if they exist.
+
+### Bugfixes
+
+- Pinned dependency on `markupsafe` to function with existing `Jinja2` pin.
+- Sensors that have a default status can now be manually started. Previously, this would fail with an invariant exception.
+
+# 0.14.0 “Never Felt Like This Before”
+
+### Major Changes
+
+- Software-defined assets, which offer a declarative approach to data orchestration on top of Dagster’s core job/op/graph APIs, have matured significantly. Improvements include partitioned assets, a revamped asset details page in Dagit, a cross-repository asset graph view in Dagit, Dagster types on assets, structured metadata on assets, and the ability to materialize ad-hoc selections of assets without defining jobs. Users can expect the APIs to only undergo minor changes before being declared fully stable in Dagster’s next major release. For more information, view the software-defined assets concepts page [here](https://docs.dagster.io/concepts/assets/software-defined-assets).
+- We’ve made it easier to define a set of [software-defined assets](https://docs.dagster.io/_apidocs/libraries/dagster-dbt#assets) where each Dagster asset maps to a dbt model. All of the dependency information between the dbt models will be reflected in the Dagster asset graph, while still running your dbt project in a single step.
+- Dagit has a new homepage, dubbed the “factory floor” view, that provides an overview of recent runs of all the jobs. From it, you can monitor the status of each job’s latest run or quickly re-execute a job. The new timeline view reports the status of all recent runs in a convenient gantt chart.
+- You can now write schedules and sensors that default to running as soon as they are loaded in your workspace, without needing to be started manually in Dagit. For example, you can create a sensor like this:
+
+  ```python
+  from dagster import sensor, DefaultSensorStatus
+
+  @sensor(job=my_job, default_status=DefaultSensorStatus.RUNNING)
+  def my_running_sensor():
+      ...
+  ```
+
+  or a schedule like this:
+
+  ```python
+  from dagster import schedule, DefaultScheduleStatus, ScheduleEvaluationContext
+
+  @schedule(job=my_job, cron_schedule="0 0 * * *", default_status=DefaultScheduleStatus.RUNNING)
+  def my_running_schedule(context: ScheduleEvaluationContext):
+      ...
+  ```
+
+  As soon as schedules or sensors with the default_status field set to `RUNNING` are included in the workspace loaded by your Dagster Daemon, they will begin creating ticks and submitting runs.
+
+- Op selection now supports selecting ops inside subgraphs. For example, to select an op my_op inside a subgraph my_graph, you can now specify the query as `my_graph.my_op`. This is supported in both Dagit and Python APIs.
+- Dagster Types can now have attached metadata. This allows TableSchema objects to be attached to Dagster Types via TableSchemaMetadata. A Dagster Type with a TableSchema will have the schema rendered in Dagit.
+- A new [Pandera](https://pandera.readthedocs.io/) integration (dagster-pandera) allows you to use Pandera’s dataframe validation library to wrap dataframe schemas in Dagster types. This provides two main benefits: (1) Pandera’s rich schema validation can be used for runtime data validation of Pandas dataframes in Dagster ops/assets; (2) Pandera schema information is displayed in Dagit using a new TableSchema API for representing arbitrary table schemas.
+- The new [AssetObservation event](https://docs.dagster.io/_apidocs/solids#event-types) enables recording metadata about an asset without indicating that the asset has been updated.
+- `AssetMaterializations`, `ExpectationResults`, and `AssetObservations` can be logged via the context of an op using the [OpExecutionContext.log_event](https://docs.dagster.io/_apidocs/execution#dagster.OpExecutionContext.log_event) method. Output metadata can also be logged using the [OpExecutionContext.add_output_metadata](https://docs.dagster.io/_apidocs/execution#dagster.OpExecutionContext.add_output_metadata) method. Previously, Dagster expected these events to be yielded within the body of an op, which caused lint errors for many users, made it difficult to add mypy types to ops, and also forced usage of the verbose Output API. Here’s an example of the new invocations:
+
+  ```python
+  from dagster import op, AssetMaterialization
+
+  @op
+  def the_op(context):
+      context.log_event(AssetMaterialization(...))
+      context.add_output_metadata({"foo": "bar"})
+      ...
+  ```
+
+- A new Airbyte integration [(dagster-airbyte)](https://docs.dagster.io/_apidocs/libraries/dagster-airbyte#airbyte-dagster-airbyte) allows you to kick off and monitor [Airbyte](https://airbyte.com/) syncs from within Dagster. The original contribution from @airbytehq’s own @marcosmarxm includes a [resource implementation](https://docs.dagster.io/_apidocs/libraries/dagster-airbyte#resources) as well as a [pre-built op](https://docs.dagster.io/_apidocs/libraries/dagster-airbyte#ops) for this purpose, and we’ve extended this library to support [software-defined asset](https://docs.dagster.io/_apidocs/libraries/dagster-airbyte#assets) use cases as well. Regardless of which interface you use, Dagster will automatically capture the Airbyte log output (in the compute logs for the relevant steps) and track the created tables over time (via AssetMaterializations).
+- The [ECSRunLauncher](https://docs.dagster.io/deployment/guides/ecs) (introduced in Dagster 0.11.15) is no longer considered experimental. You can bootstrap your own Dagster deployment on ECS using our [docker compose example](https://github.com/dagster-io/dagster/tree/master/examples/deploy_ecs) or you can use it in conjunction with a [managed Dagster Cloud deployment](https://docs.dagster.cloud/agents/ecs/setup). Since its introduction, we’ve added the ability to customize Fargate container memory and CPU, mount secrets from AWS SecretsManager, and run with a variety of AWS networking configurations. Join us in [#dagster-ecs](https://dagster.slack.com/archives/C014UDS8LAV) in Slack!
+- [Helm] The default liveness and startup probes for Dagit and user deployments have been replaced with readiness probes. The liveness and startup probe for the Daemon has been removed. We observed and heard from users that under load, Dagit could fail the liveness probe which would result in the pod restarting. With the new readiness probe, the pod will not restart but will stop serving new traffic until it recovers. If you experience issues with any of the probe changes, you can revert to the old behavior by specifying liveness and startup probes in your Helm values (and reach out via an issue or Slack).
+
+### Breaking Changes and Deprecations
+
+- The Dagster Daemon now uses the same workspace.yaml file as Dagit to locate your Dagster code. You should ensure that if you make any changes to your workspace.yaml file, they are included in both Dagit’s copy and the Dagster Daemon’s copy. When you make changes to the workspace.yaml file, you don’t need to restart either Dagit or the Dagster Daemon - in Dagit, you can reload the workspace from the Workspace tab, and the Dagster Daemon will periodically check the workspace.yaml file for changes every 60 seconds. If you are using the Dagster Helm chart, no changes are required to include the workspace in the Dagster Daemon.
+- Dagster’s metadata API has undergone a signficant overhaul. Changes include:
+  - To reflect the fact that metadata can be specified on definitions in addition to events, the following names are changing. The old names are deprecated, and will function as aliases for the new names until 0.15.0:
+    - `EventMetadata` > `MetadataValue`
+    - `EventMetadataEntry` > `MetadataEntry`
+    - `XMetadataEntryData` > `XMetadataValue` (e.g. `TextMetadataEntryData` > `TextMetadataValue`)
+  - The `metadata_entries` keyword argument to events and Dagster types is deprecated. Instead, users should use the metadata keyword argument, which takes a dictionary mapping string labels to `MetadataValue`s.
+  - Arbitrary metadata on In/InputDefinition and Out/OutputDefinition is deprecated. In 0.15.0, metadata passed for these classes will need to be resolvable to MetadataValue (i.e. function like metadata everywhere else in Dagster).
+  - The description attribute of `EventMetadataEntry` is deprecated.
+  - The static API of `EventMetadataEntry` (e.g. `EventMetadataEntry.text`) is deprecated. In 0.15.0, users should avoid constructing `EventMetadataEntry` objects directly, instead utilizing the metadata dictionary keyword argument, which maps string labels to `MetadataValues`.
+- In previous releases, it was possible to supply either an AssetKey, or a function that produced an AssetKey from an OutputContext as the asset_key argument to an Out/OutputDefinition. The latter behavior makes it impossible to gain information about these relationships without running a job, and has been deprecated. However, we still support supplying a static AssetKey as an argument.
+- We have renamed many of the core APIs that interact with ScheduleStorage, which keeps track of sensor/schedule state and ticks. The old term for the generic schedule/sensor “job” has been replaced by the term “instigator” in order to avoid confusion with the execution API introduced in 0.12.0. If you have implemented your own schedule storage, you may need to change your method signatures appropriately.
+- Dagit is now powered by Starlette instead of Flask. If you have implemented a custom run coordinator, you may need to make the following change:
+
+  ```python
+  from flask import has_request_context, request
+
+  def submit_run(self, context: SubmitRunContext) -> PipelineRun:
+      jwt_claims_header = (
+          request.headers.get("X-Amzn-Oidc-Data", None) if has_request_context() else None
+      )
+  ```
+
+  Should be replaced by:
+
+  ```python
+  def submit_run(self, context: SubmitRunContext) -> PipelineRun:
+      jwt_claims_header = context.get_request_header("X-Amzn-Oidc-Data")
+  ```
+
+- Dagit
+  - Dagit no longer allows non-software-defined asset materializations to be be graphed or grouped by partition. This feature could render in incorrect / incomplete ways because no partition space was defined for the asset.
+  - Dagit’s “Jobs” sidebar now collapses by default on Instance, Job, and Asset pages. To show the left sidebar, click the “hamburger” icon in the upper left.
+  - “Step Execution Time” is no longer graphed on the asset details page in Dagit, which significantly improves page load time. To view this graph, go to the asset graph for the job, uncheck “View as Asset Graph” and click the step to view its details.
+  - The “experimental asset UI” feature flag has been removed from Dagit, this feature is shipped in 0.14.0!
+- The Dagster Daemon now requires a workspace.yaml file, much like Dagit.
+- Ellipsis (“...”) is now an invalid substring of a partition key. This is because Dagit accepts an ellipsis to specify partition ranges.
+- [Helm] The Dagster Helm chart now only supported Kubernetes clusters above version 1.18.
+
+### New since 0.13.19
+
+- Software Defined Assets:
+
+  - In Dagit, the Asset Catalog now offers a third display mode - a global graph of your software-defined assets.
+  - The Asset Catalog now allows you to filter by repository to see a subset of your assets, and offers a “View in Asset Graph” button for quickly seeing software-defined assets in context.
+  - The Asset page in Dagit has been split into two tabs, “Activity” and “Definition”.
+  - Dagit now displays a warning on the Asset page if the most recent run including the asset’s step key failed without yielding a materialization, making it easier to jump to error logs.
+  - Dagit now gives you the option to view jobs with software-defined assets as an Asset Graph (default) or as an Op Graph, and displays asset <-> op relationships more prominently when a single op yields multiple assets.
+  - You can now include your assets in a repository with the use of an AssetGroup. Each repository can only have one AssetGroup, and it can provide a jumping off point for creating the jobs you plan on using from your assets.
+
+    ```python
+    from dagster import AssetGroup, repository, asset
+
+    @asset(required_resource_keys={"foo"})
+    def asset1():
+        ...
+
+    @asset
+    def asset2():
+        ...
+
+    @repository
+    def the_repo():
+        asset_group = AssetGroup(assets=[asset1, asset2], resource_defs={"foo": ...})
+        return [asset_group, asset_group.build_job(selection="asset1-")]
+    ```
+
+  - `AssetGroup.build_job` supports a [selection syntax](https://docs.dagster.io/concepts/ops-jobs-graphs/job-execution#op-selection-syntax) similar to that found in op selection.
+
+- Asset Observations:
+  - You can now yield AssetObservations to log metadata about a particular asset from beyond its materialization site. AssetObservations appear on the asset details page alongside materializations and numerical metadata is graphed. For assets with software-defined partitions, materialized and observed metadata about each partition is rolled up and presented together. For more information, view the [docs page here](https://docs.dagster.io/concepts/assets/asset-observations).
+  - Added an `asset_observations_for_node` method to `ExecuteInProcessResult` for fetching the AssetObservations from an in-process execution.
+- Dagster Types with an attached TableSchemaMetadataValue now render the schema in Dagit UI.
+- [dagster-pandera] New integration library dagster-pandera provides runtime validation from the [Pandera](https://pandera.readthedocs.io/en/latest/dataframe_schemas.html) dataframe validation library and renders table schema information in Dagit.
+- `OpExecutionContext.log_event` provides a way to log AssetMaterializations, ExpectationResults, and AssetObservations from the body of an op without having to yield anything. Likewise, you can use `OpExecutionContext.add_output_metadata` to attach metadata to an output without having to explicitly use the Output object.
+- `OutputContext.log_event` provides a way to log AssetMaterializations from within the handle_output method of an IO manager without yielding. Likewise, output metadata can be added using `OutputContext.add_output_metadata`.
+- [dagster-dbt] The load_assets_from_dbt_project function now returns a set of assets that map to a single dbt run command (rather than compiling each dbt model into a separate step). It also supports a new node_info_to_asset_key argument which allows you to customize the asset key that will be used for each dbt node.
+- [dagster-airbyte] The dagster-airbyte integration now collects the Airbyte log output for each run as compute logs, and generates AssetMaterializations for each table that Airbyte updates or creates.
+- [dagster-airbyte] The dagster-airbyte integration now supports the creation of software-defined assets, with the build_airbyte_assets function.
+- [dagster-fivetran] The dagster-fivetran integration now supports the creation of software-defined assets with the build_fivetran_assets function.
+- The multiprocess executor now supports choosing between spawn or forkserver for how its subprocesses are created. When using forkserver we attempt to intelligently preload modules to reduce the per-op overhead.
+- [Helm] Labels can now be set on the Dagit and daemon deployments.
+- [Helm] The default liveness and startup probes for Dagit and user deployments have been replaced with readiness probes. The liveness and startup probe for the Daemon has been removed. We observed and heard from users that under load, Dagit could fail the liveness probe which would result in the pod restarting. With the new readiness probe, the pod will not restart but will stop serving new traffic until it recovers. If you experience issues with any of the probe changes, you can revert to the old behavior by specifying liveness and startup probes in your Helm values (and reach out via an issue or Slack).
+- [Helm] The Ingress v1 is now supported.
+
+### Community Contributions
+
+- Typo fix from @jiafi, thank you!
+
+### Bugfixes
+
+- Fixed an issue where long job names were truncated prematurely in the Jobs page in Dagit.
+- Fixed an issue where loading the sensor timeline would sometimes load slowly or fail with a timeout error.
+- Fixed an issue where the first time a run_status_sensor executed, it would sometimes run very slowly or time out.
+- Fixed an issue where Launchpad mistakenly defaulted with invalid subset error in Dagit.
+- Multi-component asset keys can now be used in the asset graph filter bar.
+- Increased the storage query statement timeout to better handle more complex batch queries.
+- Added fallback support for older versions of sqlite to service top-level repository views in Dagit (e.g. the top-level jobs, schedule, and sensor pages).
+
+### Documentation
+
+- Images in the documentation now enlarge when clicked.
+- New example in examples/bollinger demonstrates dagster-pandera and TableSchema , and software-defined assets in the context of analyzing stock price data.
+
+# 0.13.19
+
+### New
+
+- [dagit] Various performance improvements for asset graph views.
+- [dagster-aws] The `EcsRunLauncher` can now override the `secrets_tag` parameter to None, which will cause it to not look for any secrets to be included in the tasks for the run. This can be useful in situations where the run launcher does not have permissions to query AWS Secretsmanager.
+
+### Bugfixes
+
+- [dagster-mysql] For instances using MySQL for their run storage, runs created using dagster versions `0.13.17` / `0.13.18` might display an incorrect timestamp for its start time on the Runs page. Running the `dagster instance migrate` CLI command should resolve the issue.
+
+# 0.13.18
+
+### New
+
+- Op selection now supports selecting ops inside subgraphs. For example, to select an op `my_op` inside a subgraph `my_graph`, you can now specify the query as `"my_graph.my_op"`.
+- The error message raised on failed Dagster type check on an output now includes the description provided on the TypeCheck object.
+- The `dagster asset wipe` CLI command now takes a `--noprompt` option.
+- Added the new `Map` config type, used to represent mappings between arbitrary scalar keys and typed values. For more information, see the [Map ConfigType docs](https://docs.dagster.io/_apidocs/types#dagster.Map).
+- [`build_resources`](https://docs.dagster.io/master/concepts/resources#initializing-resources-outside-of-execution) has been added to the top level API. It provides a way to initialize resources outside of execution. This provides a way to use resources within the body of a sensor or schedule: https://github.com/dagster-io/dagster/issues/3794
+- The `dagster-daemon` process now creates fewer log entries when no actions are taken (for example, if the run queue is empty)
+- [dagster-k8s] When upgrading the Dagster helm chart, the old `dagster-daemon` pod will now spin down completely before the new `dagster-daemon` pod is started.
+- [dagster-k8s] A flag can now be set in the Dagster helm chart to control whether the Kubernetes Jobs and Pods created by the `K8sRunLauncher` should fail if the Dagster run fails. To enable this flag, set the ``failPodOnRunFailure` key to true in the run launcher portion of the Helm chart.
+- [dagster-dbt] Fixed compatibility issues with dbt 1.0. The `schema` and `data` arguments on the `DbtCliResource.test` function no longer need to be set to False to avoid errors, and the dbt output will be no longer be displayed in json format in the event logs.
+- Dagster Types can now have metadata entries attached to them.
+- `DagsterGraphQLClient` now supports submitting runs with op/solid sub-selections.
+- [dagit] The Asset Catalog view will now include information from both AssetMaterializations and AssetObservation events for each asset.
+- [dagit] [software-defined-assets] A warning will now be displayed if you attempt to backfill partitions of an asset whose upstream dependencies are missing.
+
+### Bugfixes
+
+- When Dagit fails to load a list of ops, the error message used the legacy term “solids”. Now it uses “ops”.
+- Runs created using dagster versions `0.13.15` / `0.13.16` / `0.13.17` might display an incorrect timestamp for its start time on the Runs page. This would only happen if you had run a schema migration (using one of those versions) with the `dagster instance migrate` CLI command. Running the `dagster instance reindex` command should run a data migration that resolves this issue.
+- When attempting to invoke run status sensors or run failure sensors, it will now incur an error. Run status/failure sensor invocation is not yet supported.
+- [dagster-k8s] Fixed a bug in the sanitization of K8s label values with uppercase characters and underscores
+
+### Community Contributions
+
+- [software-defined-assets] Language in dagit has been updated from “refreshing” to “rematerializing” assets (thanks @Sync271!)
+- [docs] The changelog page is now mobile friendly (thanks @keyz!)
+- [docs] The loading shimmer for text on docs pages now has correct padding (also @keyz!)
+
+### Experimental
+
+- [software-defined-assets] The `namespace` argument of the `@asset` decorator now accepts a list of strings in addition to a single string.
+- [memoization] Added a missing space to the error thrown when trying to use memoization without a persistent Dagster instance.
+- [metadata] Two new metadata types, `TableSchemaMetadataEntryData` and `TableMetadataEntryData` allow you to emit metadata representing the schema / contents of a table, to be displayed in Dagit.
+
+# 0.13.17
+
+### New
+
+- When a user-generated context.log call fails while writing to the event log, it will now log a system error in the event log instead of failing the run.
+- [dagit] Made performance improvements to the Runs page, which can be realized after running an optional storage schema migration using dagster instance migrate.
+- When a job is created from a graph, it will now use the graph’s description if a description is not explicitly provided to override it. (Thanks [@AndreaGiardini](https://github.com/AndreaGiardini)!)
+- [dagit] Log job names are now truncated in Dagit.
+- [dagit] The execution timezone is shown beside schedule cron strings, since their timezone may be UTC or a custom value.
+- [dagit] Graph filter inputs now default to using quoted strings, and this syntax matches ops, steps, or assets via an exact string match. "build_table"+ will select that asset and it's downstream children without selecting another containing that string, such as build_table_result. Removing the quotes provides the old string matching behavior
+- [dagster-aws] When using the emr_pyspark_step_launcher to run Dagster ops in an Amazon EMR cluster, the raw stdout output of the Spark driver is now written to stdout and will appear in the compute logs for the op in dagit, rather than being written to the Dagster event log.
+- [dagit] Improved performance loading the Asset entry page in Dagit.
+
+### Bugfixes
+
+- [dagster-mysql] Added a schema migration script that was mistakenly omitted from 0.13.16. Migrating instance storage using dagster instance migrate should now complete without error.
+- [dagster-airbyte] Fixed a packaging dependency issue with dagster-airbyte. (Thanks [bollwyvl](https://github.com/bollwyvl)!)
+- Fixed a bug where config provided to the config arg on to_job required environment variables to exist at definition time.
+- [dagit] The asset graph view now supports ops that yield multiple assets and renders long asset key paths correctly.
+- [dagit] The asset graph’s filter input now allows you to filter on assets with multi-component key paths.
+- [dagit] The asset graph properly displays downstream asset links to other asset jobs in your workspace.
+
+### Experimental
+
+- [dagster-celery-k8s] Experimental run monitoring is now supported with the CeleryK8sRunLauncher. This will detect when a run worker K8s Job has failed (due to an OOM, a Node shutting down, etc.) and mark the run as failed so that it doesn’t hang in STARTED. To enable this feature, set dagsterDaemon.runMonitoring.enabled to true in your Helm values.
+
+### Documentation
+
+- [dagster-snowflake] Fixed some example code in the API doc for snowflake_resource, which incorrectly constructed a Dagster job using the snowflake resource.
+
 # 0.13.16
 
 ### New
 
-* Added an integration with Airbyte, under the dagster-airbyte package (thanks Marcos Marx).
-* An op that has a config schema is no longer required to have a context argument.
+- Added an integration with Airbyte, under the dagster-airbyte package (thanks Marcos Marx).
+- An op that has a config schema is no longer required to have a context argument.
 
 ### Bugfixes
 
-* Fixed an issue introduced in 0.13.13 where jobs with DynamicOutputs would fail when using the `k8s_job_executor` due to a label validation error when creating the step pod.
-* In Dagit, when searching for asset keys on the Assets page, string matches beyond a certain character threshold on deeply nested key paths were ignored. This has been fixed, and all keys in the asset path are now searchable.
-* In Dagit, links to Partitions views were broken in several places due to recent URL querystring changes, resulting in page crashes due to JS errors. These links have been fixed.
-* The “Download Debug File” menu link is fixed on the Runs page in Dagit.
-* In the “Launch Backfill” dialog on the Partitions page in Dagit, the range input sometimes discarded user input due to page updates. This has been fixed. Additionally, pressing the return key now commits changes to the input.
-* When using a mouse wheel or touchpad gestures to zoom on a DAG view for a job or graph in Dagit, the zoom behavior sometimes was applied to the entire browser instead of just the DAG. This has been fixed.
-* Dagit fonts now load correctly when using the `--path-prefix` option.
-* Date strings in tool tips on time-based charts no longer duplicate the meridiem indicator.
+- Fixed an issue introduced in 0.13.13 where jobs with DynamicOutputs would fail when using the `k8s_job_executor` due to a label validation error when creating the step pod.
+- In Dagit, when searching for asset keys on the Assets page, string matches beyond a certain character threshold on deeply nested key paths were ignored. This has been fixed, and all keys in the asset path are now searchable.
+- In Dagit, links to Partitions views were broken in several places due to recent URL querystring changes, resulting in page crashes due to JS errors. These links have been fixed.
+- The “Download Debug File” menu link is fixed on the Runs page in Dagit.
+- In the “Launch Backfill” dialog on the Partitions page in Dagit, the range input sometimes discarded user input due to page updates. This has been fixed. Additionally, pressing the return key now commits changes to the input.
+- When using a mouse wheel or touchpad gestures to zoom on a DAG view for a job or graph in Dagit, the zoom behavior sometimes was applied to the entire browser instead of just the DAG. This has been fixed.
+- Dagit fonts now load correctly when using the `--path-prefix` option.
+- Date strings in tool tips on time-based charts no longer duplicate the meridiem indicator.
 
 ### Experimental
 
-* Software-defined assets can now be partitioned. The `@asset` decorator has a `partitions_def` argument, which accepts a `PartitionsDefinition` value. The asset details page in Dagit now represents which partitions are filled in.
+- Software-defined assets can now be partitioned. The `@asset` decorator has a `partitions_def` argument, which accepts a `PartitionsDefinition` value. The asset details page in Dagit now represents which partitions are filled in.
 
 ### Documentation
 
-* Fixed the documented return type for the `sync_and_poll` method of the dagster-fivetran resource (thanks Marcos Marx).
-* Fixed a typo in the Ops concepts page (thanks Oluwashina Aladejubelo).
+- Fixed the documented return type for the `sync_and_poll` method of the dagster-fivetran resource (thanks Marcos Marx).
+- Fixed a typo in the Ops concepts page (thanks Oluwashina Aladejubelo).
 
 # 0.13.14
 
 ### New
 
-* When you produce a PartitionedConfig object using a decorator like daily_partitioned_config or static_partitioned_config, you can now directly invoke that object to invoke the decorated function.
-* The end_offset argument to PartitionedConfig can now be negative. This allows you to define a schedule that fills in partitions further in the past than the current partition (for example, you could define a daily schedule that fills in the partition from two days ago by setting end_offset to -1.
-* The runConfigData argument to the launchRun GraphQL mutation can now be either a JSON-serialized string or a JSON object , instead of being required to be passed in as a JSON object. This makes it easier to use the mutation in typed languages where passing in unserialized JSON objects as arguments can be cumbersome.
-* Dagster now always uses the local working directory when resolving local imports in job code, in all workspaces. In the case where you want to use a different base folder to resolve local imports in your code, the working_directory argument can now always be specified (before, it was only available when using the python_file key in your workspace). See the Workspace docs (https://docs.dagster.io/concepts/repositories-workspaces/workspaces#loading-relative-imports) for more information.
+- When you produce a PartitionedConfig object using a decorator like daily_partitioned_config or static_partitioned_config, you can now directly invoke that object to invoke the decorated function.
+- The end_offset argument to PartitionedConfig can now be negative. This allows you to define a schedule that fills in partitions further in the past than the current partition (for example, you could define a daily schedule that fills in the partition from two days ago by setting end_offset to -1.
+- The runConfigData argument to the launchRun GraphQL mutation can now be either a JSON-serialized string or a JSON object , instead of being required to be passed in as a JSON object. This makes it easier to use the mutation in typed languages where passing in unserialized JSON objects as arguments can be cumbersome.
+- Dagster now always uses the local working directory when resolving local imports in job code, in all workspaces. In the case where you want to use a different base folder to resolve local imports in your code, the working_directory argument can now always be specified (before, it was only available when using the python_file key in your workspace). See the Workspace docs (https://docs.dagster.io/concepts/repositories-workspaces/workspaces#loading-relative-imports) for more information.
 
 ### Bugfixes
 
-* In Dagit, when viewing an in-progress run, the logic used to render the “Terminate” button was backward: it would appear for a completed run, but not for an in-progress run. This bug was introduced in 0.13.13, and is now fixed.
-* Previously, errors in the instance’s configured compute log manager would cause runs to fail.  Now, these errors are logged but do not affect job execution.
-* The full set of DynamicOutputs returned by a op are no longer retained in memory if there is no hook to receive the values. This allows for DynamicOutput to be used for breaking up a large data set that can not fit in memory.
+- In Dagit, when viewing an in-progress run, the logic used to render the “Terminate” button was backward: it would appear for a completed run, but not for an in-progress run. This bug was introduced in 0.13.13, and is now fixed.
+- Previously, errors in the instance’s configured compute log manager would cause runs to fail. Now, these errors are logged but do not affect job execution.
+- The full set of DynamicOutputs returned by a op are no longer retained in memory if there is no hook to receive the values. This allows for DynamicOutput to be used for breaking up a large data set that can not fit in memory.
 
 ### Breaking Changes
 
-* When running your own gRPC server to serve Dagster code, jobs that launch in a container using code from that server will now default to using dagster as the entry point. Previously, the jobs would run using PYTHON_EXECUTABLE -m dagster, where PYTHON_EXECUTABLE was the value of sys.executable on the gRPC server. For the vast majority of Dagster jobs, these entry points will be equivalent. To keep the old behavior (for example, if you have multiple Python virtualenvs in your image and want to ensure that runs also launch in a certain virtualenv), you can launch the gRPC server using the new ----use-python-environment-entry-point command-line arg.
+- When running your own gRPC server to serve Dagster code, jobs that launch in a container using code from that server will now default to using dagster as the entry point. Previously, the jobs would run using PYTHON_EXECUTABLE -m dagster, where PYTHON_EXECUTABLE was the value of sys.executable on the gRPC server. For the vast majority of Dagster jobs, these entry points will be equivalent. To keep the old behavior (for example, if you have multiple Python virtualenvs in your image and want to ensure that runs also launch in a certain virtualenv), you can launch the gRPC server using the new ----use-python-environment-entry-point command-line arg.
 
 ### Community Contributions
 
-* [bugfix] Fixed an issue where log levels on handlers defined in dagster.yaml would be ignored (thanks @lambdaTW!)
+- [bugfix] Fixed an issue where log levels on handlers defined in dagster.yaml would be ignored (thanks @lambdaTW!)
 
 ### Documentation
 
-* Typo fix in the jobs page (thanks kmiku7 (https://github.com/kmiku7))!
-* Added docs  on how to modify k8s job TTL
+- Typo fix in the jobs page (thanks kmiku7 (https://github.com/kmiku7))!
+- Added docs on how to modify k8s job TTL
 
 ### UI
 
-* When re-launching a run, the log/step filters are now preserved in the new run’s page.
-* Step execution times/recent runs now appear in the job/graph sidebar.
+- When re-launching a run, the log/step filters are now preserved in the new run’s page.
+- Step execution times/recent runs now appear in the job/graph sidebar.
 
 # 0.13.13
 
 ### New
 
-* [dagster-dbt] dbt rpc resources now surface dbt log messages in the Dagster event log.
-* [dagster-databricks] The `databricks_pyspark_step_launcher` now streams Dagster logs back from Databricks rather than waiting for the step to completely finish before exporting all events. Fixed an issue where all events from the external step would share the same timestamp. Immediately after execution, stdout and stderr logs captured from the Databricks worker will be automatically surfaced to the event log, removing the need to set the `wait_for_logs` option in most scenarios.
-* [dagster-databricks] The `databricks_pyspark_step_launcher` now supports dynamically mapped steps.
-* If the scheduler is unable to reach a code server when executing a schedule tick, it will now wait until the code server is reachable again before continuing, instead of marking the schedule tick as failed.
-* The scheduler will now check every 5 seconds for new schedules to run, instead of every 30 seconds.
-* The run viewer and workspace pages of Dagit are significantly more performant.
-* Dagit loads large (100+ node) asset graphs faster and retrieves information about the assets being rendered only.
-* When viewing an asset graph in Dagit, you can now rematerialize the entire graph by clicking a single “Refresh” button, or select assets to rematerialize them individually. You can also launch a job to rebuild an asset directly from the asset details page.
-* When viewing a software-defined asset, Dagit displays its upstream and downstream assets in two lists instead of a mini-graph for easier scrolling and navigation. The statuses of these assets are updated in real-time. This new UI also resolves a bug where only one downstream asset would appear.
+- [dagster-dbt] dbt rpc resources now surface dbt log messages in the Dagster event log.
+- [dagster-databricks] The `databricks_pyspark_step_launcher` now streams Dagster logs back from Databricks rather than waiting for the step to completely finish before exporting all events. Fixed an issue where all events from the external step would share the same timestamp. Immediately after execution, stdout and stderr logs captured from the Databricks worker will be automatically surfaced to the event log, removing the need to set the `wait_for_logs` option in most scenarios.
+- [dagster-databricks] The `databricks_pyspark_step_launcher` now supports dynamically mapped steps.
+- If the scheduler is unable to reach a code server when executing a schedule tick, it will now wait until the code server is reachable again before continuing, instead of marking the schedule tick as failed.
+- The scheduler will now check every 5 seconds for new schedules to run, instead of every 30 seconds.
+- The run viewer and workspace pages of Dagit are significantly more performant.
+- Dagit loads large (100+ node) asset graphs faster and retrieves information about the assets being rendered only.
+- When viewing an asset graph in Dagit, you can now rematerialize the entire graph by clicking a single “Refresh” button, or select assets to rematerialize them individually. You can also launch a job to rebuild an asset directly from the asset details page.
+- When viewing a software-defined asset, Dagit displays its upstream and downstream assets in two lists instead of a mini-graph for easier scrolling and navigation. The statuses of these assets are updated in real-time. This new UI also resolves a bug where only one downstream asset would appear.
 
 ### Bugfixes
 
-* Fixed bug where `execute_in_process` would not work for graphs with nothing inputs.
-* In the Launchpad in Dagit, the `Ctrl+A` command did not correctly allow select-all behavior in the editor for non-Mac users, this has now been fixed.
-* When viewing a DAG in Dagit and hovering on a specific input or output for an op, the connections between the highlighted inputs and outputs were too subtle to see. These are now a bright blue color.
-* In Dagit, when viewing an in-progress run, a caching bug prevented the page from updating in real time in some cases. For instance, runs might appear to be stuck in a queued state long after being dequeued. This has been fixed.
-* Fixed a bug in the `k8s_job_executor` where the same step could start twice in rare cases.
-* Enabled faster queries for the asset catalog by migrating asset database entries to store extra materialization data.
-* [dagster-aws] Viewing the compute logs for in-progress ops for instances configured with the `S3ComputeLogManager` would cause errors in Dagit.  This is now fixed.
-* [dagster-pandas] Fixed bug where Pandas categorical dtype did not work by default with dagster-pandas `categorical_column` constraint.
-* Fixed an issue where schedules that yielded a `SkipReason` from the schedule function did not display the skip reason in the tick timeline in Dagit, or output the skip message in the dagster-daemon log output.
-* Fixed an issue where the snapshot link of a finished run in Dagit would sometimes fail to load with a GraphQL error.
-* Dagit now supports software-defined assets that are defined in multiple jobs within a repo, and displays a warning when assets in two repos share the same name.
+- Fixed bug where `execute_in_process` would not work for graphs with nothing inputs.
+- In the Launchpad in Dagit, the `Ctrl+A` command did not correctly allow select-all behavior in the editor for non-Mac users, this has now been fixed.
+- When viewing a DAG in Dagit and hovering on a specific input or output for an op, the connections between the highlighted inputs and outputs were too subtle to see. These are now a bright blue color.
+- In Dagit, when viewing an in-progress run, a caching bug prevented the page from updating in real time in some cases. For instance, runs might appear to be stuck in a queued state long after being dequeued. This has been fixed.
+- Fixed a bug in the `k8s_job_executor` where the same step could start twice in rare cases.
+- Enabled faster queries for the asset catalog by migrating asset database entries to store extra materialization data.
+- [dagster-aws] Viewing the compute logs for in-progress ops for instances configured with the `S3ComputeLogManager` would cause errors in Dagit. This is now fixed.
+- [dagster-pandas] Fixed bug where Pandas categorical dtype did not work by default with dagster-pandas `categorical_column` constraint.
+- Fixed an issue where schedules that yielded a `SkipReason` from the schedule function did not display the skip reason in the tick timeline in Dagit, or output the skip message in the dagster-daemon log output.
+- Fixed an issue where the snapshot link of a finished run in Dagit would sometimes fail to load with a GraphQL error.
+- Dagit now supports software-defined assets that are defined in multiple jobs within a repo, and displays a warning when assets in two repos share the same name.
 
 ### Breaking Changes
 
-* We previously allowed schedules to be defined with cron strings like `@daily` rather than `0 0 * * *`.  However, these schedules would fail to actually run successfully in the daemon and would also cause errors when viewing certain pages in Dagit.  We now raise an `DagsterInvalidDefinitionError` for schedules that do not have a cron expression consisting of a 5 space-separated fields.
+- We previously allowed schedules to be defined with cron strings like `@daily` rather than `0 0 * * *`. However, these schedules would fail to actually run successfully in the daemon and would also cause errors when viewing certain pages in Dagit. We now raise an `DagsterInvalidDefinitionError` for schedules that do not have a cron expression consisting of a 5 space-separated fields.
 
 ### Community Contributions
 
-* In dagster-dask, a schema can now be conditionally specified for ops materializing outputs to parquet files, thank you [@kudryk](https://github.com/kudryk)!
-* Dagster-gcp change from [@AndreaGiardini](https://github.com/AndreaGiardini) that replaces `get_bucket()` calls with `bucket()`, to avoid unnecessary bucket metadata fetches, thanks!
-* Typo fix from [@sebastianbertoli](https://github.com/sebastianbertoli), thank you!
-* [dagster-k8s] Kubernetes jobs and pods created by Dagster now have labels identifying the name of the Dagster job or op they are running. Thanks [@skirino](https://github.com/skirino)!
+- In dagster-dask, a schema can now be conditionally specified for ops materializing outputs to parquet files, thank you [@kudryk](https://github.com/kudryk)!
+- Dagster-gcp change from [@AndreaGiardini](https://github.com/AndreaGiardini) that replaces `get_bucket()` calls with `bucket()`, to avoid unnecessary bucket metadata fetches, thanks!
+- Typo fix from [@sebastianbertoli](https://github.com/sebastianbertoli), thank you!
+- [dagster-k8s] Kubernetes jobs and pods created by Dagster now have labels identifying the name of the Dagster job or op they are running. Thanks [@skirino](https://github.com/skirino)!
 
 ### Experimental
 
-* [dagit] Made performance improvements for loading the asset graph.
-* [dagit] The debug console logging output now tracks calls to fetch data from the database, to help track inefficient queries.
+- [dagit] Made performance improvements for loading the asset graph.
+- [dagit] The debug console logging output now tracks calls to fetch data from the database, to help track inefficient queries.
 
 # 0.13.12
 

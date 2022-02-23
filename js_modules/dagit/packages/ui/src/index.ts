@@ -40,5 +40,6 @@ export * from './components/Toaster';
 export * from './components/TokenizingField';
 export * from './components/Tooltip';
 export * from './components/Trace';
+export * from './components/Warning';
 export * from './components/styles';
 export * from './components/useSuggestionsForString';

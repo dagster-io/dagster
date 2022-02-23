@@ -1,11 +1,12 @@
 import {gql, useQuery} from '@apollo/client';
-import {ColorsWIP, Popover} from '@dagster-io/ui';
+import {Box, ColorsWIP, Popover} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
 import {ShortcutHandler} from '../app/ShortcutHandler';
-import {OP_NODE_INVOCATION_FRAGMENT} from '../graph/OpNode';
+import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
+import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
@@ -19,19 +20,24 @@ interface IOpSelectorProps {
   value: string[] | null;
   query: string | null;
   onChange: (value: string[] | null, query: string | null) => void;
+  flattenGraphs: boolean;
+  onFlattenGraphsChange: (v: boolean) => void;
   repoAddress: RepoAddress;
 }
 
 const SOLID_SELECTOR_QUERY = gql`
-  query OpSelectorQuery($selector: PipelineSelector!) {
+  query OpSelectorQuery($selector: PipelineSelector!, $requestScopeHandleID: String) {
     pipelineOrError(params: $selector) {
       __typename
       ... on Pipeline {
         id
         name
-        solids {
-          name
-          ...OpNodeInvocationFragment
+        solidHandles(parentHandleID: $requestScopeHandleID) {
+          handleID
+          solid {
+            name
+          }
+          ...GraphExplorerSolidHandleFragment
         }
       }
       ... on PipelineNotFoundError {
@@ -45,25 +51,41 @@ const SOLID_SELECTOR_QUERY = gql`
       }
     }
   }
-  ${OP_NODE_INVOCATION_FRAGMENT}
+  ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
 `;
 
 export const OpSelector = (props: IOpSelectorProps) => {
-  const {serverProvidedSubsetError, onChange, pipelineName, repoAddress} = props;
+  const {
+    serverProvidedSubsetError,
+    onChange,
+    pipelineName,
+    repoAddress,
+    onFlattenGraphsChange,
+  } = props;
   const [focused, setFocused] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
+  const flattenGraphs = props.flattenGraphs || false;
   const selector = {...repoAddressToSelector(repoAddress), pipelineName};
   const repo = useRepository(repoAddress);
   const isJob = isThisThingAJob(repo, pipelineName);
-
   const {data, loading} = useQuery<OpSelectorQuery>(SOLID_SELECTOR_QUERY, {
-    variables: {selector},
+    variables: {selector: selector, requestScopeHandleID: flattenGraphs ? undefined : ''},
     fetchPolicy: 'cache-and-network',
   });
 
   const query = props.query || '*';
-  const ops = data?.pipelineOrError.__typename === 'Pipeline' ? data.pipelineOrError.solids : [];
+
+  const opHandles =
+    data?.pipelineOrError.__typename === 'Pipeline'
+      ? flattenGraphs
+        ? explodeCompositesInHandleGraph(data.pipelineOrError.solidHandles)
+        : data.pipelineOrError.solidHandles
+      : [];
+  const ops = opHandles.map((h) => h.solid);
+  const flattenGraphsEnabled =
+    flattenGraphs || ops.some((f) => f.definition.__typename === 'CompositeSolidDefinition');
+
   const opsFetchError =
     (data?.pipelineOrError.__typename !== 'Pipeline' && data?.pipelineOrError.message) || null;
 
@@ -101,7 +123,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
   }
 
   return (
-    <div>
+    <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
       <Popover
         isOpen={focused && !!errorMessage}
         position="bottom-left"
@@ -113,7 +135,7 @@ export const OpSelector = (props: IOpSelectorProps) => {
           onShortcut={() => inputRef.current?.focus()}
         >
           <GraphQueryInput
-            width={(query !== '*' && query !== '') || focused ? 350 : 90}
+            width={(query !== '*' && query !== '') || focused || flattenGraphsEnabled ? 350 : 90}
             intent={errorMessage ? 'danger' : 'none'}
             items={ops}
             ref={inputRef}
@@ -128,10 +150,15 @@ export const OpSelector = (props: IOpSelectorProps) => {
               pipelineName: pipelineName,
               isJob,
             }}
+            flattenGraphsEnabled={flattenGraphsEnabled}
+            flattenGraphs={flattenGraphs}
+            setFlattenGraphs={() => {
+              onFlattenGraphsChange(!flattenGraphs);
+            }}
           />
         </ShortcutHandler>
       </Popover>
-    </div>
+    </Box>
   );
 };
 

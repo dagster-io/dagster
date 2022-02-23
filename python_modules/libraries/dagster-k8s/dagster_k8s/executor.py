@@ -2,7 +2,7 @@ import kubernetes
 from dagster import Field, StringSource, check, executor
 from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
-from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, EventMetadataEntry
+from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.retries import RetryMode, get_retries_config
 from dagster.core.executor.base import Executor
@@ -204,8 +204,8 @@ class K8sStepHandler(StepHandler):
                 message=f"Executing step {step_key} in Kubernetes job {job_name}",
                 event_specific_data=EngineEventData(
                     [
-                        EventMetadataEntry.text(step_key, "Step key"),
-                        EventMetadataEntry.text(job_name, "Kubernetes Job name"),
+                        MetadataEntry.text(step_key, "Step key"),
+                        MetadataEntry.text(job_name, "Kubernetes Job name"),
                     ],
                 ),
             )

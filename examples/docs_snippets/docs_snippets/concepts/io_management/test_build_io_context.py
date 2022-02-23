@@ -1,7 +1,14 @@
 import re
 
 import pytest
-from dagster import InputContext, OutputContext, build_input_context, build_output_context, resource
+from dagster import (
+    AssetMaterialization,
+    InputContext,
+    OutputContext,
+    build_input_context,
+    build_output_context,
+    resource,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 
 
@@ -89,3 +96,19 @@ def test_build_output_context_with_cm_resource():
         assert context.resources.cm_resource == "foo"
 
     assert entered == ["yes", "yes"]
+
+
+def test_context_logging_user_events():
+    context = build_output_context()
+
+    context.log_event(AssetMaterialization("first"))
+    context.log_event(AssetMaterialization("second"))
+    assert [event.label for event in context.get_logged_events()] == ["first", "second"]
+
+
+def test_context_logging_metadata():
+    context = build_output_context()
+
+    context.add_output_metadata({"foo": "bar"})
+
+    assert [entry.label for entry in context.get_logged_metadata_entries()] == ["foo"]

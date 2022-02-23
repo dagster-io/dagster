@@ -2,14 +2,14 @@ import * as React from 'react';
 
 const ASSET_VIEW_KEY = 'AssetViewPreference';
 
-type View = 'flat' | 'directory';
+type View = 'flat' | 'directory' | 'graph';
 
 type Output = [View, (update: View) => void];
 
 export const useAssetView = () => {
   const [view, setView] = React.useState<View>(() => {
     const storedValue = window.localStorage.getItem(ASSET_VIEW_KEY);
-    if (storedValue === 'flat' || storedValue === 'directory') {
+    if (storedValue === 'flat' || storedValue === 'directory' || storedValue === 'graph') {
       return storedValue;
     }
     return 'flat';

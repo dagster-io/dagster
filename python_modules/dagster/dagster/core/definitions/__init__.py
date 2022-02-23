@@ -30,18 +30,6 @@ from .dependency import (
     SolidInvocation,
     SolidOutputHandle,
 )
-from .event_metadata import (
-    EventMetadata,
-    EventMetadataEntry,
-    FloatMetadataEntryData,
-    IntMetadataEntryData,
-    JsonMetadataEntryData,
-    MarkdownMetadataEntryData,
-    PathMetadataEntryData,
-    PythonArtifactMetadataEntryData,
-    TextMetadataEntryData,
-    UrlMetadataEntryData,
-)
 from .events import (
     AssetKey,
     AssetMaterialization,
@@ -69,6 +57,27 @@ from .hook_definition import HookDefinition
 from .input import GraphIn, In, InputDefinition, InputMapping
 from .job_definition import JobDefinition
 from .logger_definition import LoggerDefinition, build_init_logger_context, logger
+from .metadata import (
+    DagsterAssetMetadataValue,
+    DagsterPipelineRunMetadataValue,
+    FloatMetadataValue,
+    IntMetadataValue,
+    JsonMetadataValue,
+    MarkdownMetadataValue,
+    MetadataEntry,
+    MetadataValue,
+    PathMetadataValue,
+    PythonArtifactMetadataValue,
+    TableColumn,
+    TableColumnConstraints,
+    TableConstraints,
+    TableMetadataValue,
+    TableRecord,
+    TableSchema,
+    TableSchemaMetadataValue,
+    TextMetadataValue,
+    UrlMetadataValue,
+)
 from .mode import ModeDefinition
 from .op_definition import OpDefinition
 from .output import (
@@ -96,6 +105,7 @@ from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .reconstructable import (
     ReconstructablePipeline,
+    build_reconstructable_job,
     build_reconstructable_pipeline,
     reconstructable,
 )
@@ -113,12 +123,14 @@ from .run_status_sensor_definition import (
     run_status_sensor,
 )
 from .schedule_definition import (
+    DefaultScheduleStatus,
     ScheduleDefinition,
     ScheduleEvaluationContext,
     ScheduleExecutionContext,
 )
 from .sensor_definition import (
     AssetSensorDefinition,
+    DefaultSensorStatus,
     SensorDefinition,
     SensorEvaluationContext,
     SensorExecutionContext,

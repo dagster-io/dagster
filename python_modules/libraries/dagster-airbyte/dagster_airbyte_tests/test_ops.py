@@ -35,11 +35,13 @@ def test_airbyte_sync_op():
 
     with responses.RequestsMock() as rsps:
 
+        rsps.add(rsps.POST, f"{ab_url}/connections/get", json={"name": "some_connection"})
         rsps.add(rsps.POST, f"{ab_url}/connections/sync", json={"job": {"id": 1}})
         rsps.add(rsps.POST, f"{ab_url}/jobs/get", json={"job": {"id": 1, "status": "running"}})
         rsps.add(rsps.POST, f"{ab_url}/jobs/get", json={"job": {"id": 1, "status": "succeeded"}})
 
         result = airbyte_sync_job.execute_in_process()
         assert result.output_for_node("airbyte_sync_op") == AirbyteOutput(
-            job_details={"id": 1, "status": "succeeded"},
+            job_details={"job": {"id": 1, "status": "succeeded"}},
+            connection_details={"name": "some_connection"},
         )

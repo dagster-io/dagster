@@ -13,6 +13,17 @@ def create_sqlite_run_storage():
 
 
 @contextmanager
+def create_non_bucket_sqlite_run_storage():
+    with tempfile.TemporaryDirectory() as tempdir:
+        yield NonBucketQuerySqliteRunStorage.from_local(tempdir)
+
+
+class NonBucketQuerySqliteRunStorage(SqliteRunStorage):
+    def supports_bucket_query(self):
+        return False
+
+
+@contextmanager
 def create_in_memory_storage():
     yield InMemoryRunStorage()
 
@@ -26,6 +37,15 @@ class TestSqliteImplementation(TestRunStorage):
             yield s
 
 
+class TestNonBucketQuerySqliteImplementation(TestRunStorage):
+    __test__ = True
+
+    @pytest.fixture(name="storage", params=[create_non_bucket_sqlite_run_storage])
+    def run_storage(self, request):
+        with request.param() as s:
+            yield s
+
+
 class TestInMemoryImplementation(TestRunStorage):
     __test__ = True
 
@@ -33,3 +53,6 @@ class TestInMemoryImplementation(TestRunStorage):
     def run_storage(self, request):
         with request.param() as s:
             yield s
+
+    def test_storage_telemetry(self, storage):
+        pass

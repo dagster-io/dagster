@@ -10,6 +10,7 @@ import {
   Tooltip,
   FontFamily,
   MenuLink,
+  Box,
 } from '@dagster-io/ui';
 import {isEqual} from 'lodash';
 import qs from 'qs';
@@ -21,14 +22,14 @@ import {displayNameForAssetKey} from '../../app/Util';
 import {LATEST_MATERIALIZATION_METADATA_FRAGMENT} from '../../assets/LastMaterializationMetadata';
 import {NodeHighlightColors} from '../../graph/OpNode';
 import {OpTags} from '../../graph/OpTags';
-import {METADATA_ENTRY_FRAGMENT} from '../../runs/MetadataEntry';
+import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntry';
 import {titleForRun} from '../../runs/RunUtils';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
-import {RepoAddress} from '../types';
+import {buildRepoAddress} from '../buildRepoAddress';
 import {workspacePath, workspacePipelinePathGuessRepo} from '../workspacePath';
 
-import {LiveDataForNode} from './Utils';
+import {LiveDataForNode, __ASSET_GROUP} from './Utils';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
 import {useLaunchSingleAssetJob} from './useLaunchSingleAssetJob';
 
@@ -38,83 +39,84 @@ export const AssetNode: React.FC<{
   metadata: {key: string; value: string}[];
   selected: boolean;
   jobName: string;
-  repoAddress: RepoAddress;
   inAssetCatalog?: boolean;
-}> = React.memo(
-  ({definition, metadata, selected, liveData, repoAddress, jobName, inAssetCatalog}) => {
-    const launch = useLaunchSingleAssetJob();
+}> = React.memo(({definition, metadata, selected, liveData, jobName, inAssetCatalog}) => {
+  const launch = useLaunchSingleAssetJob();
 
-    const {runOrError} = liveData?.lastMaterialization || {};
-    const event = liveData?.lastMaterialization;
-    const kind = metadata.find((m) => m.key === 'kind')?.value;
+  const event = liveData?.lastMaterialization;
+  const runOrError = event?.runOrError;
+  const kind = metadata.find((m) => m.key === 'kind')?.value;
+  const repoAddress = buildRepoAddress(
+    definition.repository.name,
+    definition.repository.location.name,
+  );
 
-    return (
-      <ContextMenu
-        content={
-          <MenuWIP>
-            <MenuItemWIP
-              icon="open_in_new"
-              onClick={(e) => {
-                launch(repoAddress, jobName, definition.opName);
-                e.stopPropagation();
-              }}
-              text={
-                <span>
-                  {event ? 'Rematerialize ' : 'Materialize '}
-                  <span style={{fontFamily: 'monospace', fontWeight: 600}}>
-                    {displayNameForAssetKey(definition.assetKey)}
-                  </span>
-                </span>
-              }
-            />
-            {!inAssetCatalog && (
-              <MenuLink
-                icon="link"
-                to={`/instance/assets/${definition.assetKey.path.join('/')}`}
-                onClick={(e) => e.stopPropagation()}
-                text="View in Asset Catalog"
-              />
-            )}
-          </MenuWIP>
-        }
-      >
-        <AssetNodeContainer $selected={selected}>
-          <AssetNodeBox>
-            <Name>
-              <span style={{marginTop: 1}}>
-                <IconWIP name="asset" />
+  const displayName = displayNameForAssetKey(definition.assetKey);
+
+  return (
+    <ContextMenu
+      content={
+        <MenuWIP>
+          <MenuItemWIP
+            icon="materialization"
+            onClick={(e) => {
+              launch(repoAddress, jobName, definition.opName);
+              e.stopPropagation();
+            }}
+            text={
+              <span>
+                {event ? 'Rematerialize ' : 'Materialize '}
+                <span style={{fontFamily: 'monospace', fontWeight: 600}}>{displayName}</span>
               </span>
-              <div style={{overflow: 'hidden', textOverflow: 'ellipsis', marginTop: -1}}>
-                {displayNameForAssetKey(definition.assetKey)}
-              </div>
-              <div style={{flex: 1}} />
-              {liveData && liveData.inProgressRunIds.length > 0 ? (
-                <Tooltip content="A run is currently refreshing this asset.">
-                  <Spinner purpose="body-text" />
-                </Tooltip>
-              ) : liveData && liveData.unstartedRunIds.length > 0 ? (
-                <Tooltip content="A run has started that will refresh this asset soon.">
-                  <Spinner purpose="body-text" stopped />
-                </Tooltip>
-              ) : undefined}
+            }
+          />
+          {!inAssetCatalog && (
+            <MenuLink
+              icon="link"
+              to={`/instance/assets/${definition.assetKey.path.join('/')}`}
+              onClick={(e) => e.stopPropagation()}
+              text="View in Asset Catalog"
+            />
+          )}
+        </MenuWIP>
+      }
+    >
+      <AssetNodeContainer $selected={selected}>
+        <AssetNodeBox>
+          <Name>
+            <span style={{marginTop: 1}}>
+              <IconWIP name="asset" />
+            </span>
+            <div style={{overflow: 'hidden', textOverflow: 'ellipsis', marginTop: -1}}>
+              {displayName}
+            </div>
+            <div style={{flex: 1}} />
+            {liveData && liveData.inProgressRunIds.length > 0 ? (
+              <Tooltip content="A run is currently rematerializing this asset.">
+                <Spinner purpose="body-text" />
+              </Tooltip>
+            ) : liveData && liveData.unstartedRunIds.length > 0 ? (
+              <Tooltip content="A run has started that will rematerialize this asset soon.">
+                <Spinner purpose="body-text" stopped />
+              </Tooltip>
+            ) : undefined}
 
-              {liveData?.computeStatus === 'old' && (
-                <UpstreamNotice>
-                  upstream
-                  <br />
-                  changed
-                </UpstreamNotice>
-              )}
-            </Name>
-            {definition.description && !inAssetCatalog && (
-              <Description>
-                {markdownToPlaintext(definition.description).split('\n')[0]}
-              </Description>
+            {liveData?.computeStatus === 'old' && (
+              <UpstreamNotice>
+                upstream
+                <br />
+                changed
+              </UpstreamNotice>
             )}
-            {event ? (
-              <Stats>
-                {runOrError?.__typename === 'Run' && (
-                  <StatsRow>
+          </Name>
+          {definition.description && !inAssetCatalog && (
+            <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
+          )}
+          <Stats>
+            {runOrError?.__typename === 'Run' && event ? (
+              <>
+                <StatsRow>
+                  {runOrError.pipelineName !== __ASSET_GROUP ? (
                     <Link
                       data-tooltip={runOrError.pipelineName}
                       data-tooltip-style={RunLinkTooltipStyle}
@@ -133,21 +135,22 @@ export const AssetNode: React.FC<{
                     >
                       {runOrError.pipelineName}
                     </Link>
-                    <Link
-                      style={{fontFamily: FontFamily.monospace, fontSize: 14}}
-                      to={`/instance/runs/${runOrError.runId}?${qs.stringify({
-                        timestamp: event.stepStats.endTime,
-                        selection: event.stepStats.stepKey,
-                        logs: `step:${event.stepStats.stepKey}`,
-                      })}`}
-                      onClick={(e) => e.stopPropagation()}
-                      target="_blank"
-                    >
-                      {titleForRun({runId: runOrError.runId})}
-                    </Link>
-                  </StatsRow>
-                )}
-
+                  ) : (
+                    <span />
+                  )}
+                  <Link
+                    style={{fontFamily: FontFamily.monospace, fontSize: 14}}
+                    to={`/instance/runs/${runOrError.runId}?${qs.stringify({
+                      timestamp: event.stepStats.endTime,
+                      selection: event.stepStats.stepKey,
+                      logs: `step:${event.stepStats.stepKey}`,
+                    })}`}
+                    onClick={(e) => e.stopPropagation()}
+                    target="_blank"
+                  >
+                    {titleForRun({runId: runOrError.runId})}
+                  </Link>
+                </StatsRow>
                 <StatsRow>
                   {event.stepStats.endTime ? (
                     <TimestampDisplay
@@ -162,9 +165,9 @@ export const AssetNode: React.FC<{
                     endUnix={event.stepStats.endTime}
                   />
                 </StatsRow>
-              </Stats>
+              </>
             ) : (
-              <Stats>
+              <>
                 <StatsRow style={{opacity: 0.5}}>
                   <span>No materializations</span>
                   <span>—</span>
@@ -173,37 +176,46 @@ export const AssetNode: React.FC<{
                   <span>—</span>
                   <span>—</span>
                 </StatsRow>
-              </Stats>
+              </>
             )}
-            {kind && (
-              <OpTags
-                minified={false}
-                style={{right: -2, paddingTop: 5}}
-                tags={[
-                  {
-                    label: kind,
-                    onClick: () => {
-                      window.requestAnimationFrame(() =>
-                        document.dispatchEvent(new Event('show-kind-info')),
-                      );
-                    },
+            {definition.opName && displayName !== definition.opName && (
+              <StatsRow>
+                <Box flex={{gap: 4, alignItems: 'flex-end'}} style={{marginLeft: -2}}>
+                  <IconWIP name="op" size={16} />
+                  {definition.opName}
+                </Box>
+              </StatsRow>
+            )}
+          </Stats>
+          {kind && (
+            <OpTags
+              minified={false}
+              style={{right: -2, paddingTop: 5}}
+              tags={[
+                {
+                  label: kind,
+                  onClick: () => {
+                    window.requestAnimationFrame(() =>
+                      document.dispatchEvent(new Event('show-kind-info')),
+                    );
                   },
-                ]}
-              />
-            )}
-          </AssetNodeBox>
-        </AssetNodeContainer>
-      </ContextMenu>
-    );
-  },
-  isEqual,
-);
+                },
+              ]}
+            />
+          )}
+        </AssetNodeBox>
+      </AssetNodeContainer>
+    </ContextMenu>
+  );
+}, isEqual);
 
 export const ASSET_NODE_LIVE_FRAGMENT = gql`
   fragment AssetNodeLiveFragment on AssetNode {
     id
     opName
-
+    assetKey {
+      path
+    }
     assetMaterializations(limit: 1) {
       ...LatestMaterializationMetadataFragment
 
@@ -226,8 +238,8 @@ export const ASSET_NODE_LIVE_FRAGMENT = gql`
     }
   }
 
-  ${LATEST_MATERIALIZATION_METADATA_FRAGMENT}
   ${METADATA_ENTRY_FRAGMENT}
+  ${LATEST_MATERIALIZATION_METADATA_FRAGMENT}
 `;
 
 export const ASSET_NODE_FRAGMENT = gql`
@@ -239,18 +251,31 @@ export const ASSET_NODE_FRAGMENT = gql`
     assetKey {
       path
     }
+    repository {
+      id
+      name
+      location {
+        id
+        name
+      }
+    }
   }
 `;
 
 export const getNodeDimensions = (def: {
   assetKey: {path: string[]};
+  opName: string | null;
   description?: string | null;
 }) => {
   let height = 95;
   if (def.description) {
     height += 25;
   }
-  return {width: Math.max(250, displayNameForAssetKey(def.assetKey).length * 9.5) + 25, height};
+  const displayName = displayNameForAssetKey(def.assetKey);
+  if (def.opName && displayName !== def.opName) {
+    height += 25;
+  }
+  return {width: Math.max(250, displayName.length * 9.5) + 25, height};
 };
 
 const BoxColors = {

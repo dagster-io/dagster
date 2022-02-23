@@ -20,6 +20,8 @@ def to_config_type(config_schema_snapshot, config_type_key):
         return GrapheneCompositeConfigType(config_schema_snapshot, config_type_snap)
     elif kind == ConfigTypeKind.ARRAY:
         return GrapheneArrayConfigType(config_schema_snapshot, config_type_snap)
+    elif kind == ConfigTypeKind.MAP:
+        return GrapheneMapConfigType(config_schema_snapshot, config_type_snap)
     elif kind == ConfigTypeKind.NONEABLE:
         return GrapheneNullableConfigType(config_schema_snapshot, config_type_snap)
     elif kind == ConfigTypeKind.ANY or kind == ConfigTypeKind.SCALAR:
@@ -104,6 +106,32 @@ class GrapheneRegularConfigType(ConfigTypeMixin, graphene.ObjectType):
     given_name = graphene.NonNull(graphene.String)
 
     def resolve_given_name(self, _):
+        return self._config_type_snap.given_name
+
+
+class GrapheneMapConfigType(ConfigTypeMixin, graphene.ObjectType):
+
+    key_type = graphene.Field(graphene.NonNull(GrapheneConfigType))
+    value_type = graphene.Field(graphene.NonNull(GrapheneConfigType))
+    key_label_name = graphene.Field(graphene.String)
+
+    class Meta:
+        interfaces = (GrapheneConfigType,)
+        name = "MapConfigType"
+
+    def resolve_key_type(self, _graphene_info):
+        return to_config_type(
+            self._config_schema_snapshot,
+            self._config_type_snap.key_type_key,
+        )
+
+    def resolve_value_type(self, _graphene_info):
+        return to_config_type(
+            self._config_schema_snapshot,
+            self._config_type_snap.inner_type_key,
+        )
+
+    def resolve_key_label_name(self, _graphene_info):
         return self._config_type_snap.given_name
 
 
@@ -249,4 +277,5 @@ types = [
     GrapheneRegularConfigType,
     GrapheneScalarUnionConfigType,
     GrapheneWrappingConfigType,
+    GrapheneMapConfigType,
 ]

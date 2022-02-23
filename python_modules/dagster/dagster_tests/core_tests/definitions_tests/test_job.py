@@ -1,13 +1,15 @@
 import pytest
 from dagster import (
     DagsterInvariantViolationError,
+    Field,
+    StringSource,
     execute_pipeline,
     graph,
     job,
     op,
     reconstructable,
 )
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import environ, instance_for_test
 
 
 def define_the_job():
@@ -104,3 +106,22 @@ def test_job_top_level_input():
     result = my_job_with_input.execute_in_process(run_config={"inputs": {"x": {"value": 2}}})
     assert result.success
     assert result.output_for_node("my_op") == 2
+
+
+def test_job_post_process_config():
+    @op(config_schema={"foo": Field(StringSource)})
+    def the_op(context):
+        return context.op_config["foo"]
+
+    @graph
+    def basic():
+        the_op()
+
+    with environ({"SOME_ENV_VAR": None}):
+        # Ensure that the env var not existing will not throw an error, since resolution happens in post-processing.
+        the_job = basic.to_job(
+            config={"ops": {"the_op": {"config": {"foo": {"env": "SOME_ENV_VAR"}}}}}
+        )
+
+    with environ({"SOME_ENV_VAR": "blah"}):
+        assert the_job.execute_in_process().success

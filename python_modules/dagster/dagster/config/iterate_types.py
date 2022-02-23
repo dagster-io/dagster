@@ -12,6 +12,10 @@ def iterate_config_types(config_type: ConfigType) -> Generator[ConfigType, None,
 
     # type-ignore comments below are because static type checkers don't
     # understand the `ConfigTypeKind` system.
+    if config_type.kind == ConfigTypeKind.MAP:
+        yield from iterate_config_types(config_type.key_type)  # type: ignore
+        yield from iterate_config_types(config_type.inner_type)  # type: ignore
+
     if config_type.kind == ConfigTypeKind.ARRAY or config_type.kind == ConfigTypeKind.NONEABLE:
         yield from iterate_config_types(config_type.inner_type)  # type: ignore
 

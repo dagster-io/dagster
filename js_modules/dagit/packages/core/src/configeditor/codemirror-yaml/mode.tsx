@@ -6,7 +6,11 @@ import 'codemirror/addon/dialog/dialog';
 import 'codemirror/addon/dialog/dialog.css';
 import * as yaml from 'yaml';
 
-import {ConfigEditorRunConfigSchemaFragment} from '../types/ConfigEditorRunConfigSchemaFragment';
+import {
+  ConfigEditorRunConfigSchemaFragment,
+  ConfigEditorRunConfigSchemaFragment_allConfigTypes_CompositeConfigType as CompositeConfigType,
+  ConfigEditorRunConfigSchemaFragment_allConfigTypes_MapConfigType as MapConfigType,
+} from '../types/ConfigEditorRunConfigSchemaFragment';
 
 // Example YAML for testing this parser:
 // https://gist.github.com/bengotow/0b700e7d0367750cb31eaf697f865d70
@@ -367,7 +371,11 @@ CodeMirror.registerHelper(
       if (!type) {
         return false;
       }
-      return type.__typename === 'ArrayConfigType' || type.__typename === 'CompositeConfigType';
+      return (
+        type.__typename === 'ArrayConfigType' ||
+        type.__typename === 'CompositeConfigType' ||
+        type.__typename === 'MapConfigType'
+      );
     };
 
     const formatReplacement = (
@@ -529,28 +537,40 @@ function findAutocompletionContext(
     return;
   }
 
+  // We only provide autocompletion if the root type is a Map or a composite (Shape)
   let type = schema.allConfigTypes.find((t) => t.key === schema.rootConfigType.key);
-  if (!type || type.__typename !== 'CompositeConfigType') {
+  if (!type || (type.__typename !== 'CompositeConfigType' && type.__typename !== 'MapConfigType')) {
     return null;
   }
 
-  let available = type.fields;
-  let closestCompositeType = type;
+  let available = type.__typename === 'CompositeConfigType' ? type.fields : [];
+
+  // Tracks the nearest mapping type (Shape, Map, etc.) in the hierarchy to the cursor
+  // This is what's rendered in the schema sidebar
+  let closestMappingType: MapConfigType | CompositeConfigType = type;
   let inArray = false;
 
-  if (available && parents.length > 0) {
+  // Tracks the type key to be used for the next depth level
+  // Used for Map config types, which specify the type key for their values, otherwise is null
+  let nextTypeKey: string | null =
+    type.__typename === 'MapConfigType' ? type.typeParamKeys[1] : null;
+
+  if ((available || type.__typename === 'MapConfigType') && parents.length > 0) {
     for (const parent of parents) {
+      // In order to provide completion, we must either have type information on hand (parentTypeDef)
+      // for the current key that we are in, or we must have the type info provided by an enclosing Map (nextTypeKey)
       const parentTypeDef = available.find(({name}) => parent.key === name);
-      if (!parentTypeDef) {
+      if (!parentTypeDef && !nextTypeKey) {
         return null;
       }
 
       // The current composite type's available "fields" each only have a configType key.
       // The rest of the configType's information is in the top level schema.allConfigTypes
       // to avoid superlinear GraphQL response size.
-      const parentConfigType = schema.allConfigTypes.find(
-        (t) => t.key === parentTypeDef.configTypeKey,
-      )!;
+      const typeKey = nextTypeKey ? nextTypeKey : parentTypeDef?.configTypeKey;
+      nextTypeKey = null;
+
+      const parentConfigType = schema.allConfigTypes.find((t) => t.key === typeKey)!;
       let childTypeKey = parentConfigType.key;
       let childEntriesUnique = true;
 
@@ -558,6 +578,15 @@ function findAutocompletionContext(
       if (inArray) {
         childTypeKey = parentConfigType.typeParamKeys[0];
         childEntriesUnique = false;
+      }
+
+      // Maps provide no direct autocompletions, but they do act as the closestMappingType,
+      // meaning they show up in the schema sidebar
+      if (parentConfigType.__typename === 'MapConfigType') {
+        nextTypeKey = parentConfigType.typeParamKeys[1];
+        closestMappingType = parentConfigType;
+        available = [];
+        continue;
       }
 
       type = schema.allConfigTypes.find((t) => t.key === childTypeKey);
@@ -573,7 +602,7 @@ function findAutocompletionContext(
           available = nonScalarType.fields;
         }
       } else if (type.__typename === 'CompositeConfigType') {
-        closestCompositeType = type;
+        closestMappingType = type;
         available = type.fields;
 
         if (parent === immediateParent && childEntriesUnique) {
@@ -587,7 +616,7 @@ function findAutocompletionContext(
     }
   }
 
-  return {type, closestCompositeType, availableFields: available, inArray};
+  return {type, closestMappingType, availableFields: available, inArray};
 }
 
 // Find context for a fully- or partially- typed key or value in the YAML document

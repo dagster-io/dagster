@@ -127,55 +127,70 @@ Event types
 
 -------
 
-Event metadata
+Metadata
 ^^^^^^^^^^^^^^
 
-Dagster uses event metadata to communicate arbitrary user-specified metadata about structured
+Dagster uses metadata to communicate arbitrary user-specified metadata about structured
 events.
 
-.. autoclass:: EventMetadata
+.. autoclass:: MetadataValue
     :noindex:
     :members:
 
-.. autoclass:: EventMetadataEntry
+.. autoclass:: MetadataEntry
     :noindex:
     :members:
 
 Metadata types
 ^^^^^^^^^^^^^^
 
-The type alias for the union of the structured event metadata types is `EventMetadataEntryData`.
-This consists of the following data types:
+All metadata types inherit from `MetadataValue`. The following types are defined:
 
-.. autoclass:: JsonMetadataEntryData
+.. autoclass:: DagsterAssetMetadataValue
     :noindex:
     :members:
 
-.. autoclass:: MarkdownMetadataEntryData
+.. autoclass:: DagsterPipelineRunMetadataValue
     :noindex:
     :members:
 
-.. autoclass:: PathMetadataEntryData
+.. autoclass:: FloatMetadataValue
     :noindex:
     :members:
 
-.. autoclass:: TextMetadataEntryData
+.. autoclass:: IntMetadataValue
     :noindex:
     :members:
 
-.. autoclass:: UrlMetadataEntryData
+.. autoclass:: JsonMetadataValue
     :noindex:
     :members:
 
-.. autoclass:: FloatMetadataEntryData
+.. autoclass:: MarkdownMetadataValue
     :noindex:
     :members:
 
-.. autoclass:: IntMetadataEntryData
+.. autoclass:: PathMetadataValue
     :noindex:
     :members:
 
-.. autoclass:: PythonArtifactMetadataEntryData
+.. autoclass:: PythonArtifactMetadataValue
+    :noindex:
+    :members:
+
+.. autoclass:: TableMetadataValue
+    :noindex:
+    :members:
+
+.. autoclass:: TableSchemaMetadataValue
+    :noindex:
+    :members:
+
+.. autoclass:: TextMetadataValue
+    :noindex:
+    :members:
+
+.. autoclass:: UrlMetadataValue
     :noindex:
     :members:
 

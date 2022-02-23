@@ -1,9 +1,9 @@
 import logging
 import os
-import sys
 from typing import Optional
 
 import click
+import uvicorn
 from dagster import check
 from dagster.cli.utils import get_instance_for_service
 from dagster.cli.workspace import (
@@ -16,25 +16,23 @@ from dagster.core.telemetry_upload import uploading_logging_thread
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster.utils.log import configure_loggers
-from gevent import pywsgi
-from geventwebsocket.handler import WebSocketHandler
 
 from .app import create_app_from_workspace_process_context
 from .version import __version__
 
 
 def create_dagit_cli():
-    return ui  # pylint: disable=no-value-for-parameter
+    return dagit  # pylint: disable=no-value-for-parameter
 
 
 DEFAULT_DAGIT_HOST = "127.0.0.1"
 DEFAULT_DAGIT_PORT = 3000
 
-DEFAULT_DB_STATEMENT_TIMEOUT = 5000  # 5 sec
+DEFAULT_DB_STATEMENT_TIMEOUT = 15000  # 15 sec
 
 
 @click.command(
-    name="ui",
+    name="dagit",
     help=(
         "Run dagit. Loads a repository or pipeline/job.\n\n{warning}".format(
             warning=WORKSPACE_TARGET_WARNING
@@ -67,7 +65,9 @@ DEFAULT_DB_STATEMENT_TIMEOUT = 5000  # 5 sec
     "--port",
     "-p",
     type=click.INT,
-    help="Port to run server on, default is {default_port}".format(default_port=DEFAULT_DAGIT_PORT),
+    help="Port to run server on.",
+    default=DEFAULT_DAGIT_PORT,
+    show_default=True,
 )
 @click.option(
     "--path-prefix",
@@ -97,38 +97,7 @@ DEFAULT_DB_STATEMENT_TIMEOUT = 5000  # 5 sec
     is_flag=True,
 )
 @click.version_option(version=__version__, prog_name="dagit")
-def ui(host, port, path_prefix, db_statement_timeout, read_only, suppress_warnings, **kwargs):
-    # add the path for the cwd so imports in dynamically loaded code work correctly
-    sys.path.append(os.getcwd())
-
-    if port is None:
-        port_lookup = True
-        port = DEFAULT_DAGIT_PORT
-    else:
-        port_lookup = False
-
-    host_dagit_ui(
-        host,
-        port,
-        path_prefix,
-        db_statement_timeout,
-        port_lookup,
-        read_only,
-        suppress_warnings,
-        **kwargs,
-    )
-
-
-def host_dagit_ui(
-    host,
-    port,
-    path_prefix,
-    db_statement_timeout,
-    port_lookup=True,
-    read_only=False,
-    suppress_warnings=False,
-    **kwargs,
-):
+def dagit(host, port, path_prefix, db_statement_timeout, read_only, suppress_warnings, **kwargs):
     if suppress_warnings:
         os.environ["PYTHONWARNINGS"] = "ignore"
 
@@ -143,7 +112,10 @@ def host_dagit_ui(
             kwargs=kwargs,
         ) as workspace_process_context:
             host_dagit_ui_with_workspace_process_context(
-                workspace_process_context, host, port, path_prefix, port_lookup
+                workspace_process_context,
+                host,
+                port,
+                path_prefix,
             )
 
 
@@ -152,7 +124,6 @@ def host_dagit_ui_with_workspace_process_context(
     host: Optional[str],
     port: int,
     path_prefix: str,
-    port_lookup: bool = True,
 ):
     check.inst_param(
         workspace_process_context, "workspace_process_context", WorkspaceProcessContext
@@ -160,60 +131,26 @@ def host_dagit_ui_with_workspace_process_context(
     check.opt_str_param(host, "host")
     check.int_param(port, "port")
     check.str_param(path_prefix, "path_prefix")
-    check.bool_param(port_lookup, "port_lookup")
-
-    app = create_app_from_workspace_process_context(workspace_process_context, path_prefix)
-
-    start_server(workspace_process_context.instance, host, port, path_prefix, app, port_lookup)
-
-
-def start_server(instance, host, port, path_prefix, app, port_lookup, port_lookup_attempts=0):
-    server = pywsgi.WSGIServer((host, port), app, handler_class=WebSocketHandler)
 
     configure_loggers()
     logger = logging.getLogger("dagit")
+
+    app = create_app_from_workspace_process_context(workspace_process_context, path_prefix)
 
     logger.info(
         "Serving dagit on http://{host}:{port}{path_prefix} in process {pid}".format(
             host=host, port=port, path_prefix=path_prefix, pid=os.getpid()
         )
     )
-
-    log_action(instance, START_DAGIT_WEBSERVER)
+    log_action(workspace_process_context.instance, START_DAGIT_WEBSERVER)
     with uploading_logging_thread():
-        try:
-            server.serve_forever()
-        except OSError as os_error:
-            if "Address already in use" in str(os_error):
-                if port_lookup and (
-                    port_lookup_attempts > 0
-                    or click.confirm(
-                        (
-                            "Another process on your machine is already listening on port {port}. "
-                            "Would you like to run the app at another port instead?"
-                        ).format(port=port)
-                    )
-                ):
-                    port_lookup_attempts += 1
-                    start_server(
-                        instance,
-                        host,
-                        port + port_lookup_attempts,
-                        path_prefix,
-                        app,
-                        True,
-                        port_lookup_attempts,
-                    )
-                else:
-                    raise Exception(
-                        f"Another process on your machine is already listening on port {port}. "
-                        "It is possible that you have another instance of dagit "
-                        "running somewhere using the same port. Or it could be another "
-                        "random process. Either kill that process or use the -p option to "
-                        "select another port."
-                    ) from os_error
-            else:
-                raise os_error
+        uvicorn.run(
+            app,
+            host=host,
+            port=port,
+            access_log=False,
+            log_level="warning",
+        )
 
 
 cli = create_dagit_cli()

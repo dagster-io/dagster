@@ -1,5 +1,17 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Optional, Tuple, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from dagster import check
 from dagster.core.definitions.composition import MappedInputPlaceholder
@@ -21,6 +33,7 @@ from dagster.core.selector.subset_selector import (
     OpSelectionData,
     parse_op_selection,
 )
+from dagster.core.storage.tags import PARTITION_NAME_TAG
 from dagster.core.utils import str_format_set
 
 from .executor_definition import ExecutorDefinition
@@ -85,6 +98,10 @@ class JobDefinition(PipelineDefinition):
     @property
     def executor_def(self) -> ExecutorDefinition:
         return self.mode_definitions[0].executor_defs[0]
+
+    @property
+    def resource_defs(self) -> Mapping[str, ResourceDefinition]:
+        return self.mode_definitions[0].resource_defs
 
     def execute_in_process(
         self,
@@ -175,7 +192,7 @@ class JobDefinition(PipelineDefinition):
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
-            run_tags={"partition": partition_key} if partition_key else None,
+            run_tags={PARTITION_NAME_TAG: partition_key} if partition_key else None,
         )
 
     @property
@@ -193,7 +210,7 @@ class JobDefinition(PipelineDefinition):
 
         resolved_op_selection_dict = parse_op_selection(self, op_selection)
 
-        sub_graph = _get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
+        sub_graph = get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
 
         return JobDefinition(
             name=self.name,
@@ -293,7 +310,7 @@ def _dep_key_of(node: Node) -> NodeInvocation:
     )
 
 
-def _get_subselected_graph_definition(
+def get_subselected_graph_definition(
     graph: GraphDefinition,
     resolved_op_selection_dict: Dict,
     parent_handle: Optional[NodeHandle] = None,
@@ -313,7 +330,7 @@ def _get_subselected_graph_definition(
 
         # rebuild graph if any nodes inside the graph are selected
         if node.is_graph and resolved_op_selection_dict[node.name] is not LeafNodeSelection:
-            definition = _get_subselected_graph_definition(
+            definition = get_subselected_graph_definition(
                 node.definition,
                 resolved_op_selection_dict[node.name],
                 parent_handle=node_handle,

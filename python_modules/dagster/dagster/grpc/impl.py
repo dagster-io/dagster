@@ -82,8 +82,7 @@ def core_execute_run(recon_pipeline, pipeline_run, instance, resume_from_failure
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
         )
         yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
-        return
-
+        raise
     try:
         yield from execute_run_iterator(
             recon_pipeline, pipeline_run, instance, resume_from_failure=resume_from_failure
@@ -94,6 +93,7 @@ def core_execute_run(recon_pipeline, pipeline_run, instance, resume_from_failure
             message="Run execution terminated by interrupt",
             pipeline_run=pipeline_run,
         )
+        raise
     except Exception:
         yield instance.report_engine_event(
             "An exception was thrown during execution that is likely a framework error, "
@@ -102,6 +102,7 @@ def core_execute_run(recon_pipeline, pipeline_run, instance, resume_from_failure
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
         )
         yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
+        raise
 
 
 def _run_in_subprocess(
@@ -165,6 +166,9 @@ def _run_in_subprocess(
     except GeneratorExit:
         closed = True
         raise
+    except:
+        # Relies on core_execute_run logging all exceptions to the event log before raising
+        pass
     finally:
         if not closed:
             run_event_handler(

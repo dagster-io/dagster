@@ -28,6 +28,22 @@ snapshots['test_query_all_solids 1'] = {
             {
                 '__typename': 'UsedSolid',
                 'definition': {
+                    'name': 'a_solid_with_map_config'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'config_with_map'
+                        },
+                        'solidHandle': {
+                            'handleID': 'a_solid_with_map_config'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
                     'name': 'a_solid_with_multilayered_config'
                 },
                 'invocations': [
@@ -229,6 +245,54 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'apply_to_three'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'asset_1'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'failure_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'asset_1'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'asset_2'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'failure_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'asset_2'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'asset_3'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'failure_assets_job'
+                        },
+                        'solidHandle': {
+                            'handleID': 'asset_3'
                         }
                     }
                 ]
@@ -809,6 +873,14 @@ snapshots['test_query_all_solids 1'] = {
                     },
                     {
                         'pipeline': {
+                            'name': 'config_with_map'
+                        },
+                        'solidHandle': {
+                            'handleID': 'noop_solid'
+                        }
+                    },
+                    {
+                        'pipeline': {
                             'name': 'more_complicated_config'
                         },
                         'solidHandle': {
@@ -1269,6 +1341,22 @@ snapshots['test_query_all_solids 1'] = {
                         },
                         'solidHandle': {
                             'handleID': 'solid_that_gets_tags'
+                        }
+                    }
+                ]
+            },
+            {
+                '__typename': 'UsedSolid',
+                'definition': {
+                    'name': 'solid_with_input_output_metadata'
+                },
+                'invocations': [
+                    {
+                        'pipeline': {
+                            'name': 'pipeline_with_input_output_metadata'
+                        },
+                        'solidHandle': {
+                            'handleID': 'solid_with_input_output_metadata'
                         }
                     }
                 ]

@@ -1,4 +1,5 @@
 import math
+import multiprocessing
 import os
 import queue
 import sys
@@ -13,10 +14,7 @@ from time import sleep
 import grpc
 from dagster import check, seven
 from dagster.core.code_pointer import CodePointer
-from dagster.core.definitions.reconstructable import (
-    ReconstructableRepository,
-    repository_def_from_target_def,
-)
+from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.host_representation.external_data import external_repository_data_from_def
 from dagster.core.host_representation.origin import ExternalPipelineOrigin, ExternalRepositoryOrigin
@@ -29,7 +27,6 @@ from dagster.serdes import (
     whitelist_for_serdes,
 )
 from dagster.serdes.ipc import IPCErrorMessage, ipc_write_stream, open_ipc_subprocess
-from dagster.seven import multiprocessing
 from dagster.utils import find_free_port, frozenlist, safe_tempfile_path_unmanaged
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
@@ -82,19 +79,44 @@ class CouldNotBindGrpcServerToAddress(Exception):
     pass
 
 
-class RepositorySymbolsAndCodePointers:
-    def __init__(self, loadable_target_origin):
+class LoadedRepositories:
+    def __init__(self, loadable_target_origin, entry_point):
         self._loadable_target_origin = loadable_target_origin
-        self._loadable_repository_symbols = None
-        self._code_pointers_by_repo_name = None
 
-    def load(self):
-        self._loadable_repository_symbols = load_loadable_repository_symbols(
-            self._loadable_target_origin
+        self._code_pointers_by_repo_name = {}
+        self._recon_repos_by_name = {}
+        self._loadable_repository_symbols = []
+
+        if not loadable_target_origin:
+            return
+
+        loadable_targets = get_loadable_targets(
+            loadable_target_origin.python_file,
+            loadable_target_origin.module_name,
+            loadable_target_origin.package_name,
+            loadable_target_origin.working_directory,
+            loadable_target_origin.attribute,
         )
-        self._code_pointers_by_repo_name = build_code_pointers_by_repo_name(
-            self._loadable_target_origin, self._loadable_repository_symbols
-        )
+        for loadable_target in loadable_targets:
+            pointer = _get_code_pointer(loadable_target_origin, loadable_target)
+            recon_repo = ReconstructableRepository(
+                pointer,
+                _get_current_image(),
+                sys.executable,
+                entry_point=entry_point,
+            )
+            repo_def = recon_repo.get_definition()
+            # force load of all lazy constructed jobs/pipelines
+            repo_def.get_all_pipelines()
+
+            self._code_pointers_by_repo_name[repo_def.name] = pointer
+            self._recon_repos_by_name[repo_def.name] = recon_repo
+            self._loadable_repository_symbols.append(
+                LoadableRepositorySymbol(
+                    attribute=loadable_target.attribute,
+                    repository_name=repo_def.name,
+                )
+            )
 
     @property
     def loadable_repository_symbols(self):
@@ -104,58 +126,29 @@ class RepositorySymbolsAndCodePointers:
     def code_pointers_by_repo_name(self):
         return self._code_pointers_by_repo_name
 
+    def get_recon_repo(self, name: str) -> ReconstructableRepository:
+        return self._recon_repos_by_name[name]
 
-def load_loadable_repository_symbols(loadable_target_origin):
-    if loadable_target_origin:
-        loadable_targets = get_loadable_targets(
+
+def _get_code_pointer(loadable_target_origin, loadable_repository_symbol):
+    if loadable_target_origin.python_file:
+        return CodePointer.from_python_file(
             loadable_target_origin.python_file,
-            loadable_target_origin.module_name,
-            loadable_target_origin.package_name,
+            loadable_repository_symbol.attribute,
             loadable_target_origin.working_directory,
-            loadable_target_origin.attribute,
         )
-        return [
-            LoadableRepositorySymbol(
-                attribute=loadable_target.attribute,
-                repository_name=repository_def_from_target_def(
-                    loadable_target.target_definition
-                ).name,
-            )
-            for loadable_target in loadable_targets
-        ]
+    elif loadable_target_origin.package_name:
+        return CodePointer.from_python_package(
+            loadable_target_origin.package_name,
+            loadable_repository_symbol.attribute,
+            loadable_target_origin.working_directory,
+        )
     else:
-        return []
-
-
-def build_code_pointers_by_repo_name(loadable_target_origin, loadable_repository_symbols):
-    repository_code_pointer_dict = {}
-    for loadable_repository_symbol in loadable_repository_symbols:
-        if loadable_target_origin.python_file:
-            repository_code_pointer_dict[
-                loadable_repository_symbol.repository_name
-            ] = CodePointer.from_python_file(
-                loadable_target_origin.python_file,
-                loadable_repository_symbol.attribute,
-                loadable_target_origin.working_directory,
-            )
-        elif loadable_target_origin.package_name:
-            repository_code_pointer_dict[
-                loadable_repository_symbol.repository_name
-            ] = CodePointer.from_python_package(
-                loadable_target_origin.package_name,
-                loadable_repository_symbol.attribute,
-                loadable_target_origin.working_directory,
-            )
-        else:
-            repository_code_pointer_dict[
-                loadable_repository_symbol.repository_name
-            ] = CodePointer.from_module(
-                loadable_target_origin.module_name,
-                loadable_repository_symbol.attribute,
-                loadable_target_origin.working_directory,
-            )
-
-    return repository_code_pointer_dict
+        return CodePointer.from_module(
+            loadable_target_origin.module_name,
+            loadable_repository_symbol.attribute,
+            loadable_target_origin.working_directory,
+        )
 
 
 class DagsterApiServer(DagsterApiServicer):
@@ -185,6 +178,8 @@ class DagsterApiServer(DagsterApiServicer):
             loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin
         )
 
+        self._mp_ctx = multiprocessing.get_context("spawn")
+
         # Each server is initialized with a unique UUID. This UUID is used by clients to track when
         # servers are replaced and is used for cache invalidation and reloading.
         self._server_id = check.opt_str_param(fixed_server_id, "fixed_server_id", str(uuid.uuid4()))
@@ -209,14 +204,14 @@ class DagsterApiServer(DagsterApiServicer):
             else DEFAULT_DAGSTER_ENTRY_POINT
         )
 
-        self._repository_symbols_and_code_pointers = RepositorySymbolsAndCodePointers(
-            loadable_target_origin
-        )
         try:
-            self._repository_symbols_and_code_pointers.load()
+            self._loaded_repositories = LoadedRepositories(
+                loadable_target_origin, self._entry_point
+            )
         except Exception:
             if not lazy_load_user_code:
                 raise
+            self._loaded_repositories = None
             self._serializable_load_error = serializable_error_info_from_exc_info(sys.exc_info())
 
         self.__last_heartbeat_time = time.time()
@@ -297,26 +292,13 @@ class DagsterApiServer(DagsterApiServicer):
         if run_id in self._termination_times:
             del self._termination_times[run_id]
 
-    def _recon_repository_from_origin(self, external_repository_origin):
-        check.inst_param(
-            external_repository_origin,
-            "external_repository_origin",
-            ExternalRepositoryOrigin,
-        )
+    def _recon_repository_from_origin(
+        self, external_repository_origin: ExternalRepositoryOrigin
+    ) -> ReconstructableRepository:
+        # could assert against external_repository_origin.repository_location_origin
+        return self._loaded_repositories.get_recon_repo(external_repository_origin.repository_name)
 
-        return ReconstructableRepository(
-            self._repository_symbols_and_code_pointers.code_pointers_by_repo_name[
-                external_repository_origin.repository_name
-            ],
-            self._get_current_image(),
-            sys.executable,
-            entry_point=self._entry_point,
-        )
-
-    def _recon_pipeline_from_origin(self, external_pipeline_origin):
-        check.inst_param(
-            external_pipeline_origin, "external_pipeline_origin", ExternalPipelineOrigin
-        )
+    def _recon_pipeline_from_origin(self, external_pipeline_origin: ExternalPipelineOrigin):
         recon_repo = self._recon_repository_from_origin(
             external_pipeline_origin.external_repository_origin
         )
@@ -365,13 +347,11 @@ class DagsterApiServer(DagsterApiServicer):
             )
 
         response = ListRepositoriesResponse(
-            self._repository_symbols_and_code_pointers.loadable_repository_symbols,
+            self._loaded_repositories.loadable_repository_symbols,
             executable_path=self._loadable_target_origin.executable_path
             if self._loadable_target_origin
             else None,
-            repository_code_pointer_dict=(
-                self._repository_symbols_and_code_pointers.code_pointers_by_repo_name
-            ),
+            repository_code_pointer_dict=self._loaded_repositories.code_pointers_by_repo_name,
             entry_point=self._entry_point,
         )
 
@@ -667,9 +647,9 @@ class DagsterApiServer(DagsterApiServicer):
                 )
             )
 
-        event_queue = multiprocessing.Queue()
-        termination_event = multiprocessing.Event()
-        execution_process = multiprocessing.Process(
+        event_queue = self._mp_ctx.Queue()
+        termination_event = self._mp_ctx.Event()
+        execution_process = self._mp_ctx.Process(
             target=start_run_in_subprocess,
             args=[
                 request.serialized_execute_run_args,
@@ -741,17 +721,18 @@ class DagsterApiServer(DagsterApiServicer):
             )
         )
 
-    def _get_current_image(self):
-        return os.getenv("DAGSTER_CURRENT_IMAGE")
-
     def GetCurrentImage(self, request, _context):
         return api_pb2.GetCurrentImageReply(
             serialized_current_image=serialize_dagster_namedtuple(
                 GetCurrentImageResult(
-                    current_image=self._get_current_image(), serializable_error_info=None
+                    current_image=_get_current_image(), serializable_error_info=None
                 )
             )
         )
+
+
+def _get_current_image():
+    return os.getenv("DAGSTER_CURRENT_IMAGE")
 
 
 @whitelist_for_serdes

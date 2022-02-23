@@ -2,7 +2,7 @@ import warnings
 from collections import namedtuple
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, NamedTuple, Optional, Type
+from typing import Any, Dict, List, NamedTuple, Optional, Type
 
 from dagster import check
 from dagster.core.origin import PipelinePythonOrigin
@@ -476,6 +476,17 @@ class PipelineRunsFilter(
     @staticmethod
     def for_backfill(backfill_id):
         return PipelineRunsFilter(tags=PipelineRun.tags_for_backfill_id(backfill_id))
+
+
+class JobBucket(NamedTuple):
+    job_names: List[str]
+    bucket_limit: Optional[int]
+
+
+class TagBucket(NamedTuple):
+    tag_key: str
+    tag_values: List[str]
+    bucket_limit: Optional[int]
 
 
 class RunRecord(

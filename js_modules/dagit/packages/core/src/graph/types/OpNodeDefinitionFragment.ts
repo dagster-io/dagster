@@ -13,6 +13,17 @@ export interface OpNodeDefinitionFragment_SolidDefinition_metadata {
   value: string;
 }
 
+export interface OpNodeDefinitionFragment_SolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface OpNodeDefinitionFragment_SolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: OpNodeDefinitionFragment_SolidDefinition_assetNodes_assetKey;
+}
+
 export interface OpNodeDefinitionFragment_SolidDefinition_inputDefinitions_type {
   __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
@@ -37,7 +48,7 @@ export interface OpNodeDefinitionFragment_SolidDefinition_outputDefinitions {
 }
 
 export interface OpNodeDefinitionFragment_SolidDefinition_configField_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType";
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
   description: string | null;
 }
@@ -52,6 +63,7 @@ export interface OpNodeDefinitionFragment_SolidDefinition {
   name: string;
   description: string | null;
   metadata: OpNodeDefinitionFragment_SolidDefinition_metadata[];
+  assetNodes: OpNodeDefinitionFragment_SolidDefinition_assetNodes[];
   inputDefinitions: OpNodeDefinitionFragment_SolidDefinition_inputDefinitions[];
   outputDefinitions: OpNodeDefinitionFragment_SolidDefinition_outputDefinitions[];
   configField: OpNodeDefinitionFragment_SolidDefinition_configField | null;
@@ -61,6 +73,17 @@ export interface OpNodeDefinitionFragment_CompositeSolidDefinition_metadata {
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
+}
+
+export interface OpNodeDefinitionFragment_CompositeSolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface OpNodeDefinitionFragment_CompositeSolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: OpNodeDefinitionFragment_CompositeSolidDefinition_assetNodes_assetKey;
 }
 
 export interface OpNodeDefinitionFragment_CompositeSolidDefinition_inputDefinitions_type {
@@ -145,6 +168,7 @@ export interface OpNodeDefinitionFragment_CompositeSolidDefinition {
   name: string;
   description: string | null;
   metadata: OpNodeDefinitionFragment_CompositeSolidDefinition_metadata[];
+  assetNodes: OpNodeDefinitionFragment_CompositeSolidDefinition_assetNodes[];
   inputDefinitions: OpNodeDefinitionFragment_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: OpNodeDefinitionFragment_CompositeSolidDefinition_outputDefinitions[];
   id: string;

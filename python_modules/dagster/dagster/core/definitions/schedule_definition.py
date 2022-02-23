@@ -1,6 +1,7 @@
 import copy
 from contextlib import ExitStack
 from datetime import datetime
+from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 import pendulum
@@ -25,12 +26,18 @@ from ..storage.tags import check_tags
 from .graph_definition import GraphDefinition
 from .mode import DEFAULT_MODE_NAME
 from .pipeline_definition import PipelineDefinition
-from .run_request import InstigatorType, RunRequest, SkipReason
+from .run_request import RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from .decorators.schedule import DecoratedScheduleFunction
+
+
+@whitelist_for_serdes
+class DefaultScheduleStatus(Enum):
+    RUNNING = "RUNNING"
+    STOPPED = "STOPPED"
 
 
 class ScheduleEvaluationContext:
@@ -171,6 +178,8 @@ class ScheduleDefinition:
         description (Optional[str]): A human-readable description of the schedule.
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job that should execute when this
             schedule runs.
+        default_status (DefaultScheduleStatus): Whether the schedule starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     def __init__(
@@ -192,6 +201,7 @@ class ScheduleDefinition:
         ] = None,
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, PipelineDefinition]] = None,
+        default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     ):
         from .decorators.schedule import DecoratedScheduleFunction
 
@@ -310,13 +320,17 @@ class ScheduleDefinition:
         if self._execution_timezone:
             try:
                 # Verify that the timezone can be loaded
-                pendulum.timezone(self._execution_timezone)
+                pendulum.timezone(self._execution_timezone)  # type: ignore
             except Exception:
                 raise DagsterInvalidDefinitionError(
                     "Invalid execution timezone {timezone} for {schedule_name}".format(
                         schedule_name=name, timezone=self._execution_timezone
                     )
                 )
+
+        self._default_status = check.inst_param(
+            default_status, "default_status", DefaultScheduleStatus
+        )
 
     def __call__(self, *args, **kwargs):
         from .decorators.schedule import DecoratedScheduleFunction
@@ -376,10 +390,6 @@ class ScheduleDefinition:
     @property
     def pipeline_name(self) -> str:
         return self._target.pipeline_name
-
-    @property
-    def job_type(self) -> InstigatorType:
-        return InstigatorType.SCHEDULE
 
     @property
     def solid_selection(self) -> Optional[List[Any]]:
@@ -467,6 +477,10 @@ class ScheduleDefinition:
             return self._target.load()
 
         check.failed("Target is not loadable")
+
+    @property
+    def default_status(self) -> DefaultScheduleStatus:
+        return self._default_status
 
 
 def is_context_provided(params: List[funcsigs.Parameter]) -> bool:

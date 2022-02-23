@@ -13,6 +13,17 @@ export interface OpCardSolidDefinitionFragment_SolidDefinition_metadata {
   value: string;
 }
 
+export interface OpCardSolidDefinitionFragment_SolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface OpCardSolidDefinitionFragment_SolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: OpCardSolidDefinitionFragment_SolidDefinition_assetNodes_assetKey;
+}
+
 export interface OpCardSolidDefinitionFragment_SolidDefinition_inputDefinitions_type {
   __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
@@ -37,7 +48,7 @@ export interface OpCardSolidDefinitionFragment_SolidDefinition_outputDefinitions
 }
 
 export interface OpCardSolidDefinitionFragment_SolidDefinition_configField_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType";
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
   description: string | null;
 }
@@ -52,6 +63,7 @@ export interface OpCardSolidDefinitionFragment_SolidDefinition {
   name: string;
   description: string | null;
   metadata: OpCardSolidDefinitionFragment_SolidDefinition_metadata[];
+  assetNodes: OpCardSolidDefinitionFragment_SolidDefinition_assetNodes[];
   inputDefinitions: OpCardSolidDefinitionFragment_SolidDefinition_inputDefinitions[];
   outputDefinitions: OpCardSolidDefinitionFragment_SolidDefinition_outputDefinitions[];
   configField: OpCardSolidDefinitionFragment_SolidDefinition_configField | null;
@@ -61,6 +73,17 @@ export interface OpCardSolidDefinitionFragment_CompositeSolidDefinition_metadata
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
+}
+
+export interface OpCardSolidDefinitionFragment_CompositeSolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface OpCardSolidDefinitionFragment_CompositeSolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: OpCardSolidDefinitionFragment_CompositeSolidDefinition_assetNodes_assetKey;
 }
 
 export interface OpCardSolidDefinitionFragment_CompositeSolidDefinition_inputDefinitions_type {
@@ -145,6 +168,7 @@ export interface OpCardSolidDefinitionFragment_CompositeSolidDefinition {
   name: string;
   description: string | null;
   metadata: OpCardSolidDefinitionFragment_CompositeSolidDefinition_metadata[];
+  assetNodes: OpCardSolidDefinitionFragment_CompositeSolidDefinition_assetNodes[];
   inputDefinitions: OpCardSolidDefinitionFragment_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: OpCardSolidDefinitionFragment_CompositeSolidDefinition_outputDefinitions[];
   id: string;

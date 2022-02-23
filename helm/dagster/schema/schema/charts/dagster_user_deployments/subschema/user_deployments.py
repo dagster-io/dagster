@@ -10,7 +10,6 @@ class UserDeployment(BaseModel):
     image: kubernetes.Image
     dagsterApiGrpcArgs: List[str]
     port: int
-    replicaCount: Optional[int] = 1
     env: Optional[Dict[str, str]]
     envConfigMaps: Optional[List[kubernetes.ConfigMapEnvSource]]
     envSecrets: Optional[List[kubernetes.SecretEnvSource]]
@@ -22,6 +21,7 @@ class UserDeployment(BaseModel):
     securityContext: Optional[kubernetes.SecurityContext]
     resources: Optional[kubernetes.Resources]
     livenessProbe: Optional[kubernetes.LivenessProbe]
+    readinessProbe: Optional[kubernetes.ReadinessProbe]
     startupProbe: Optional[kubernetes.StartupProbe]
     labels: Optional[Dict[str, str]]
     volumeMounts: Optional[List[kubernetes.VolumeMount]]

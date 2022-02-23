@@ -4,6 +4,7 @@ import datetime
 import errno
 import functools
 import inspect
+import multiprocessing
 import os
 import re
 import signal
@@ -24,7 +25,7 @@ import _thread as thread
 import yaml
 from dagster import check, seven
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster.seven import IS_WINDOWS, multiprocessing
+from dagster.seven import IS_WINDOWS
 from dagster.seven.abc import Mapping
 
 from .merger import merge_dicts

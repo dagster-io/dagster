@@ -3,7 +3,7 @@ from typing import Union
 
 import pandas
 import pyspark
-from dagster import AssetKey, EventMetadataEntry, Field, IOManager, OutputContext, check, io_manager
+from dagster import AssetKey, Field, IOManager, MetadataEntry, OutputContext, check, io_manager
 from dagster.seven.temp_dir import get_system_temp_directory
 
 
@@ -34,8 +34,8 @@ class PartitionedParquetIOManager(IOManager):
             obj.write.parquet(path=path, mode="overwrite")
         else:
             raise Exception(f"Outputs of type {type(obj)} not supported.")
-        yield EventMetadataEntry.int(value=row_count, label="row_count")
-        yield EventMetadataEntry.path(path=path, label="path")
+        yield MetadataEntry.int(value=row_count, label="row_count")
+        yield MetadataEntry.path(path=path, label="path")
 
     def load_input(self, context) -> Union[pyspark.sql.DataFrame, str]:
         # In this load_input function, we vary the behavior based on the type of the downstream input
@@ -43,12 +43,10 @@ class PartitionedParquetIOManager(IOManager):
         if context.dagster_type.typing_type == pyspark.sql.DataFrame:
             # return pyspark dataframe
             return context.resources.pyspark.spark_session.read.parquet(path)
-        elif context.dagster_type.typing_type == str:
-            # return path to parquet files
-            return path
+
         return check.failed(
             f"Inputs of type {context.dagster_type} not supported. Please specify a valid type "
-            "for this input either in the solid signature or on the corresponding InputDefinition."
+            "for this input either in the op signature or on the corresponding In."
         )
 
     def _get_path(self, context: OutputContext):

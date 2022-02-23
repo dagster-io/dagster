@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from dagster import file_relative_path
 from dagster.core.test_utils import instance_for_test
@@ -26,8 +28,8 @@ def foo_example_workspace_fixture(instance):
         PythonFileTarget(
             python_file=file_relative_path(__file__, "repo.py"),
             attribute=None,
-            working_directory=None,
-            location_name="example_repo_location",
+            working_directory=os.path.dirname(__file__),
+            location_name=None,
         ),
     ) as workspace_process_context:
         yield workspace_process_context.create_request_context()
@@ -35,6 +37,4 @@ def foo_example_workspace_fixture(instance):
 
 @pytest.fixture
 def foo_example_repo(foo_example_workspace):
-    return foo_example_workspace.get_repository_location("example_repo_location").get_repository(
-        "example_repo"
-    )
+    return foo_example_workspace.repository_locations[0].get_repository("example_repo")

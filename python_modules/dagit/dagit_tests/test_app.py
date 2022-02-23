@@ -5,13 +5,14 @@ from unittest import mock
 import pytest
 from click.testing import CliRunner
 from dagit.app import create_app_from_workspace_process_context
-from dagit.cli import host_dagit_ui_with_workspace_process_context, ui
+from dagit.cli import dagit, host_dagit_ui_with_workspace_process_context
 from dagster import seven
 from dagster.core.instance import DagsterInstance
 from dagster.core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
 from dagster.core.test_utils import instance_for_test
 from dagster.core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster.utils import file_relative_path
+from starlette.testclient import TestClient
 
 
 def test_create_app_with_workspace():
@@ -57,74 +58,75 @@ def test_notebook_view():
     with load_workspace_process_context_from_yaml_paths(
         DagsterInstance.ephemeral(), [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace_process_context:
-        with create_app_from_workspace_process_context(
-            workspace_process_context,
-        ).test_client() as client:
-            res = client.get(f"/dagit/notebook?path={notebook_path}&repoLocName=load_from_file")
+        client = TestClient(
+            create_app_from_workspace_process_context(
+                workspace_process_context,
+            )
+        )
+        res = client.get(f"/dagit/notebook?path={notebook_path}&repoLocName=load_from_file")
 
         assert res.status_code == 200
         # This magic guid is hardcoded in the notebook
-        assert b"6cac0c38-2c97-49ca-887c-4ac43f141213" in res.data
+        assert b"6cac0c38-2c97-49ca-887c-4ac43f141213" in res.content
 
 
 def test_index_view():
     with load_workspace_process_context_from_yaml_paths(
         DagsterInstance.ephemeral(), [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace_process_context:
-        with create_app_from_workspace_process_context(
-            workspace_process_context
-        ).test_client() as client:
-            res = client.get("/")
+        client = TestClient(create_app_from_workspace_process_context(workspace_process_context))
+        res = client.get("/")
 
-        assert res.status_code == 200, res.data
-        assert b"You need to enable JavaScript to run this app" in res.data
+        assert res.status_code == 200, res.content
+        assert b"You need to enable JavaScript to run this app" in res.content
 
 
 def test_index_view_at_path_prefix():
     with load_workspace_process_context_from_yaml_paths(
         DagsterInstance.ephemeral(), [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace_process_context:
-        with create_app_from_workspace_process_context(
-            workspace_process_context, "/dagster-path"
-        ).test_client() as client:
-            # / redirects to prefixed path
-            res = client.get("/")
-            assert res.status_code == 200
+        client = TestClient(
+            create_app_from_workspace_process_context(workspace_process_context, "/dagster-path"),
+        )
+        # / redirects to prefixed path
+        res = client.get("/")
+        assert res.status_code == 200
 
-            # index contains the path meta tag
-            res = client.get("/dagster-path/")
-            assert res.status_code == 200
-            assert b"You need to enable JavaScript to run this app" in res.data
-            assert b'"pathPrefix": "/dagster-path"' in res.data
-            assert (
-                b'"telemetryEnabled": false' in res.data or b'"telemetryEnabled": true' in res.data
-            )
+        # index contains the path meta tag
+        res = client.get("/dagster-path/")
+        assert res.status_code == 200
+
+        assert b"You need to enable JavaScript to run this app" in res.content
+        assert b'{"pathPrefix": "/dagster-path"' in res.content
 
 
 def test_graphql_view():
     with load_workspace_process_context_from_yaml_paths(
         DagsterInstance.ephemeral(), [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace_process_context:
-        with create_app_from_workspace_process_context(
-            workspace_process_context,
-        ).test_client() as client:
-            res = client.get("/graphql")
-        assert b"Must provide query string" in res.data
+        client = TestClient(
+            create_app_from_workspace_process_context(
+                workspace_process_context,
+            )
+        )
+        res = client.get("/graphql")
+        assert b"No GraphQL query found in the request" in res.content
 
 
 def test_graphql_view_at_path_prefix():
     with load_workspace_process_context_from_yaml_paths(
         DagsterInstance.ephemeral(), [file_relative_path(__file__, "./workspace.yaml")]
     ) as workspace_process_context:
-        with create_app_from_workspace_process_context(
-            workspace_process_context, "/dagster-path"
-        ).test_client() as client:
-            res = client.get("/dagster-path/graphql")
-            assert b"Must provide query string" in res.data
+        client = TestClient(
+            create_app_from_workspace_process_context(workspace_process_context, "/dagster-path"),
+        )
+
+        res = client.get("/dagster-path/graphql")
+        assert b"No GraphQL query found in the request" in res.content
 
 
 def test_successful_host_dagit_ui_from_workspace():
-    with mock.patch("gevent.pywsgi.WSGIServer"), tempfile.TemporaryDirectory() as temp_dir:
+    with mock.patch("uvicorn.run"), tempfile.TemporaryDirectory() as temp_dir:
 
         instance = DagsterInstance.local_temp(temp_dir)
 
@@ -140,7 +142,7 @@ def test_successful_host_dagit_ui_from_workspace():
 
 
 def test_successful_host_dagit_ui_from_multiple_workspace_files():
-    with mock.patch("gevent.pywsgi.WSGIServer"), tempfile.TemporaryDirectory() as temp_dir:
+    with mock.patch("uvicorn.run"), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
 
         with load_workspace_process_context_from_yaml_paths(
@@ -159,7 +161,7 @@ def test_successful_host_dagit_ui_from_multiple_workspace_files():
 
 
 def test_successful_host_dagit_ui_from_legacy_repository():
-    with mock.patch("gevent.pywsgi.WSGIServer"), tempfile.TemporaryDirectory() as temp_dir:
+    with mock.patch("uvicorn.run"), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
         with load_workspace_process_context_from_yaml_paths(
             instance, [file_relative_path(__file__, "./workspace.yaml")]
@@ -172,65 +174,8 @@ def test_successful_host_dagit_ui_from_legacy_repository():
             )
 
 
-def _define_mock_server(fn):
-    class _Server:
-        def __init__(self, *args, **kwargs):
-            pass
-
-        def serve_forever(self):
-            fn()
-
-    return _Server
-
-
-def test_unknown_error():
-    class AnException(Exception):
-        pass
-
-    def _raise_custom_error():
-        raise AnException("foobar")
-
-    with mock.patch(
-        "gevent.pywsgi.WSGIServer", new=_define_mock_server(_raise_custom_error)
-    ), tempfile.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
-        with load_workspace_process_context_from_yaml_paths(
-            instance, [file_relative_path(__file__, "./workspace.yaml")]
-        ) as workspace_process_context:
-            with pytest.raises(AnException):
-                host_dagit_ui_with_workspace_process_context(
-                    workspace_process_context=workspace_process_context,
-                    host=None,
-                    port=2343,
-                    path_prefix="",
-                )
-
-
-def test_port_collision():
-    def _raise_os_error():
-        raise OSError("Address already in use")
-
-    with mock.patch(
-        "gevent.pywsgi.WSGIServer", new=_define_mock_server(_raise_os_error)
-    ), tempfile.TemporaryDirectory() as temp_dir:
-        instance = DagsterInstance.local_temp(temp_dir)
-        with load_workspace_process_context_from_yaml_paths(
-            instance, [file_relative_path(__file__, "./workspace.yaml")]
-        ) as workspace_process_context:
-            with pytest.raises(Exception) as exc_info:
-                host_dagit_ui_with_workspace_process_context(
-                    workspace_process_context=workspace_process_context,
-                    host=None,
-                    port=2343,
-                    port_lookup=False,
-                    path_prefix="",
-                )
-
-            assert "another instance of dagit " in str(exc_info.value)
-
-
 def test_invalid_path_prefix():
-    with mock.patch("gevent.pywsgi.WSGIServer"), tempfile.TemporaryDirectory() as temp_dir:
+    with mock.patch("uvicorn.run"), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
 
         with load_workspace_process_context_from_yaml_paths(
@@ -241,7 +186,6 @@ def test_invalid_path_prefix():
                     workspace_process_context=workspace_process_context,
                     host=None,
                     port=2343,
-                    port_lookup=False,
                     path_prefix="no-leading-slash",
                 )
             assert "path prefix should begin with a leading" in str(exc_info.value)
@@ -251,14 +195,13 @@ def test_invalid_path_prefix():
                     workspace_process_context=workspace_process_context,
                     host=None,
                     port=2343,
-                    port_lookup=False,
                     path_prefix="/extra-trailing-slash/",
                 )
             assert "path prefix should not include a trailing" in str(exc_info.value)
 
 
 def test_valid_path_prefix():
-    with mock.patch("gevent.pywsgi.WSGIServer"), tempfile.TemporaryDirectory() as temp_dir:
+    with mock.patch("uvicorn.run"), tempfile.TemporaryDirectory() as temp_dir:
         instance = DagsterInstance.local_temp(temp_dir)
 
         with load_workspace_process_context_from_yaml_paths(
@@ -268,22 +211,18 @@ def test_valid_path_prefix():
                 workspace_process_context=workspace_process_context,
                 host=None,
                 port=2343,
-                port_lookup=False,
                 path_prefix="/dagster-path",
             )
 
 
-@mock.patch("gevent.pywsgi.WSGIServer.serve_forever")
-def test_dagit_logs(
-    server_mock,
-    caplog,
-):
+@mock.patch("uvicorn.run")
+def test_dagit_logs(_, caplog):
     with tempfile.TemporaryDirectory() as temp_dir:
         with instance_for_test(temp_dir=temp_dir, overrides={"telemetry": {"enabled": True}}):
             runner = CliRunner(env={"DAGSTER_HOME": temp_dir})
             workspace_path = file_relative_path(__file__, "telemetry_repository.yaml")
             result = runner.invoke(
-                ui,
+                dagit,
                 ["-w", workspace_path],
             )
             assert result.exit_code == 0, str(result.exception)
@@ -304,12 +243,13 @@ def test_dagit_logs(
 
                 actions.add(message.get("action"))
                 if message.get("action") == UPDATE_REPO_STATS:
-                    assert message.get("pipeline_name_hash") == ""
-                    repo_hash = message.get("repo_hash")
+                    metadata = message.get("metadata")
+                    assert metadata.get("pipeline_name_hash") == ""
+                    repo_hash = metadata.get("repo_hash")
 
                     assert repo_hash in expected_repo_stats
                     expected_num_pipelines_in_repo = expected_repo_stats.get(repo_hash)
-                    assert message.get("num_pipelines_in_repo") == str(
+                    assert metadata.get("num_pipelines_in_repo") == str(
                         expected_num_pipelines_in_repo
                     )
 
@@ -320,10 +260,8 @@ def test_dagit_logs(
                         "elapsed_time",
                         "event_id",
                         "instance_id",
-                        "pipeline_name_hash",
-                        "num_pipelines_in_repo",
-                        "repo_hash",
                         "python_version",
+                        "run_storage_id",
                         "metadata",
                         "version",
                         "dagster_version",
@@ -334,4 +272,3 @@ def test_dagit_logs(
 
             assert actions == set([START_DAGIT_WEBSERVER, UPDATE_REPO_STATS])
             assert len(records) == 3
-            assert server_mock.call_args_list == [mock.call()]

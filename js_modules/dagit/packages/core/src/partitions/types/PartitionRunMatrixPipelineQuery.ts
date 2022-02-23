@@ -19,6 +19,17 @@ export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_Pipelin
   value: string;
 }
 
+export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_assetNodes_assetKey;
+}
+
 export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_inputDefinitions_type {
   __typename: "RegularDagsterType" | "ListDagsterType" | "NullableDagsterType";
   displayName: string;
@@ -43,7 +54,7 @@ export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_Pipelin
 }
 
 export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_configField_configType {
-  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType";
+  __typename: "EnumConfigType" | "CompositeConfigType" | "RegularConfigType" | "ArrayConfigType" | "NullableConfigType" | "ScalarUnionConfigType" | "MapConfigType";
   key: string;
   description: string | null;
 }
@@ -58,6 +69,7 @@ export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_Pipelin
   name: string;
   description: string | null;
   metadata: PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_metadata[];
+  assetNodes: PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_assetNodes[];
   inputDefinitions: PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_inputDefinitions[];
   outputDefinitions: PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_outputDefinitions[];
   configField: PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_SolidDefinition_configField | null;
@@ -67,6 +79,17 @@ export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_Pipelin
   __typename: "MetadataItemDefinition";
   key: string;
   value: string;
+}
+
+export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_assetNodes_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_assetNodes {
+  __typename: "AssetNode";
+  id: string;
+  assetKey: PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_assetNodes_assetKey;
 }
 
 export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions_type {
@@ -151,6 +174,7 @@ export interface PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_Pipelin
   name: string;
   description: string | null;
   metadata: PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_metadata[];
+  assetNodes: PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_assetNodes[];
   inputDefinitions: PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_inputDefinitions[];
   outputDefinitions: PartitionRunMatrixPipelineQuery_pipelineSnapshotOrError_PipelineSnapshot_solidHandles_solid_definition_CompositeSolidDefinition_outputDefinitions[];
   id: string;

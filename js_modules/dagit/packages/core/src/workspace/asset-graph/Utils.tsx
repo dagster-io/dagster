@@ -6,16 +6,18 @@ import {AssetNodeDefinitionFragment} from '../../assets/types/AssetNodeDefinitio
 
 import {getNodeDimensions} from './AssetNode';
 import {getForeignNodeDimensions} from './ForeignNode';
-import {AssetGraphLiveQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations} from './types/AssetGraphLiveQuery';
+import {AssetGraphLiveQuery_assetNodes_assetMaterializations} from './types/AssetGraphLiveQuery';
 import {
-  AssetGraphQuery_pipelineOrError_Pipeline_assetNodes,
-  AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey,
+  AssetGraphQuery_assetNodes,
+  AssetGraphQuery_assetNodes_assetKey,
 } from './types/AssetGraphQuery';
 import {AssetNodeLiveFragment} from './types/AssetNodeLiveFragment';
 import {InProgressRunsFragment} from './types/InProgressRunsFragment';
 
-type AssetNode = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
-type AssetKey = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey;
+type AssetNode = AssetGraphQuery_assetNodes;
+type AssetKey = AssetGraphQuery_assetNodes_assetKey;
+
+export const __ASSET_GROUP = '__ASSET_GROUP';
 
 export interface Node {
   id: string;
@@ -250,7 +252,7 @@ export interface LiveDataForNode {
   computeStatus: Status;
   unstartedRunIds: string[]; // run in progress and step not started
   inProgressRunIds: string[]; // run in progress and step in progress
-  lastMaterialization: AssetGraphLiveQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations | null;
+  lastMaterialization: AssetGraphLiveQuery_assetNodes_assetMaterializations | null;
   lastStepStart: number;
 }
 export interface LiveData {
@@ -265,7 +267,8 @@ export const buildLiveData = (
   const data: LiveData = {};
 
   for (const liveNode of nodes) {
-    const graphNode = graph.nodes[liveNode.id];
+    const graphNodeKey = JSON.stringify(liveNode.assetKey.path);
+    const graphNode = graph.nodes[graphNodeKey];
     if (!graphNode) {
       continue;
     }
@@ -277,7 +280,7 @@ export const buildLiveData = (
 
     const runs = inProgressRunsByStep.find((r) => r.stepKey === liveNode.opName);
 
-    data[liveNode.id] = {
+    data[graphNodeKey] = {
       lastStepStart,
       lastMaterialization,
       inProgressRunIds: runs?.inProgressRuns.map((r) => r.id) || [],

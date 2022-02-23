@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import {PipelineTable, PIPELINE_TABLE_FRAGMENT} from '../pipelines/PipelineTable';
 
+import {__ASSET_GROUP} from './asset-graph/Utils';
 import {repoAddressAsString} from './repoAddressAsString';
 import {repoAddressToSelector} from './repoAddressToSelector';
 import {RepoAddress} from './types';
@@ -51,6 +52,7 @@ export const RepositoryPipelinesList: React.FC<Props> = (props) => {
       return null;
     }
     return repo.pipelines
+      .filter((pipelineOrJob) => pipelineOrJob.name !== __ASSET_GROUP)
       .map((pipelineOrJob) => ({
         pipelineOrJob,
         repoAddress,

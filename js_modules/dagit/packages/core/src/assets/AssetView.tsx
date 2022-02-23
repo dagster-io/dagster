@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Alert, Box, ButtonLink, ColorsWIP, Spinner} from '@dagster-io/ui';
+import {Alert, Box, ButtonLink, ColorsWIP, NonIdealState, Spinner, Tab, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {QueryCountdown} from '../app/QueryCountdown';
@@ -17,7 +17,7 @@ import {
 } from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
-import {AssetMaterializations} from './AssetMaterializations';
+import {AssetEvents} from './AssetEvents';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetKey} from './types';
@@ -32,6 +32,7 @@ interface Props {
 }
 
 export interface AssetViewParams {
+  view?: 'activity' | 'definition';
   partition?: string;
   time?: string;
   asOf?: string;
@@ -72,7 +73,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       },
     },
     notifyOnNetworkStatusChange: true,
-    pollInterval: 5 * 1000,
+    pollInterval: 15 * 1000,
   });
 
   let liveDataByNode: LiveData = {};
@@ -104,17 +105,32 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       <AssetPageHeader
         assetKey={assetKey}
         repoAddress={repoAddress}
+        tabs={
+          <Tabs size="large" selectedTabId={params.view || 'activity'}>
+            <Tab
+              id="activity"
+              title="Activity"
+              onClick={() => setParams({...params, view: 'activity'})}
+            />
+            <Tab
+              id="definition"
+              title="Definition"
+              onClick={() => setParams({...params, view: 'definition'})}
+              disabled={!definition}
+            />
+          </Tabs>
+        }
         right={
           <Box style={{margin: '-4px 0'}} flex={{gap: 8, alignItems: 'baseline'}}>
             <Box margin={{top: 4}}>
               <QueryCountdown pollInterval={5 * 1000} queryResult={queryResult} />
             </Box>
-            {definition && definition.jobs.length > 0 && repoAddress && (
+            {definition && definition.jobNames.length > 0 && repoAddress && (
               <LaunchAssetExecutionButton
                 assets={[definition]}
-                assetJobName={definition.jobs[0].name}
+                upstreamAssetKeys={definition.dependencies.map((d) => d.asset.assetKey)}
+                preferredJobName={definition.jobNames[0]}
                 title={lastMaterializedAt ? 'Rematerialize' : 'Materialize'}
-                repoAddress={repoAddress}
               />
             )}
           </Box>
@@ -140,25 +156,41 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               hasDefinition={!!definition}
             />
           </Box>
-        ) : definition && repoAddress ? (
-          <AssetNodeDefinition
-            repoAddress={repoAddress}
-            assetNode={definition}
-            liveDataByNode={liveDataByNode}
-          />
         ) : undefined}
       </div>
-      {isDefinitionLoaded && (
-        <AssetMaterializations
-          assetKey={assetKey}
-          assetLastMaterializedAt={lastMaterializedAt}
-          assetHasDefinedPartitions={!!definition?.partitionDefinition}
-          params={params}
-          paramsTimeWindowOnly={!!params.asOf}
-          setParams={setParams}
-          liveData={definition ? liveDataByNode[definition.id] : undefined}
-        />
-      )}
+      {isDefinitionLoaded &&
+        (params.view === 'definition' ? (
+          definition ? (
+            <AssetNodeDefinition assetNode={definition} liveDataByNode={liveDataByNode} />
+          ) : (
+            <Box padding={{vertical: 32}}>
+              <NonIdealState
+                title="No definition"
+                description="This asset doesn't have a software definition in any of your loaded repositories."
+                icon="materialization"
+              />
+            </Box>
+          )
+        ) : (
+          <AssetEvents
+            assetKey={assetKey}
+            assetLastMaterializedAt={lastMaterializedAt}
+            assetHasDefinedPartitions={!!definition?.partitionDefinition}
+            params={params}
+            paramsTimeWindowOnly={!!params.asOf}
+            setParams={setParams}
+            liveData={definition ? liveDataByNode[definition.id] : undefined}
+            repository={
+              definition?.repository
+                ? {
+                    repositoryLocationName: definition?.repository.location.name,
+                    repositoryName: definition.repository.name,
+                  }
+                : undefined
+            }
+            opName={definition?.opName}
+          />
+        ))}
     </div>
   );
 };
