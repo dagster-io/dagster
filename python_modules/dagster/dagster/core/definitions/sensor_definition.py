@@ -153,7 +153,7 @@ class SensorDefinition:
 
             This function must return a generator, which must yield either a single SkipReason
             or one or more RunRequest objects.
-        name (Optioanl[str]): The name of the sensor to create. Defaults to name of evaluation_fn
+        name (Optional[str]): The name of the sensor to create. Defaults to name of evaluation_fn
         pipeline_name (Optional[str]): (legacy) The name of the pipeline to execute when the sensor
             fires. Cannot be used in conjunction with `job` or `jobs` parameters.
         solid_selection (Optional[List[str]]): (legacy) A list of solid subselection (including single
@@ -187,10 +187,6 @@ class SensorDefinition:
         jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
-        if pipeline_name is None and jobs is None and job is None:
-            raise DagsterInvalidDefinitionError(
-                "One of pipeline_name, job, or jobs must be provided to SensorDefinition."
-            )
 
         if job and jobs:
             raise DagsterInvalidDefinitionError(
@@ -241,7 +237,7 @@ class SensorDefinition:
         self._raw_fn = check.callable_param(evaluation_fn, "evaluation_fn")
         self._evaluation_fn: Callable[
             [SensorEvaluationContext], Generator[Union[RunRequest, SkipReason], None, None]
-        ] = wrap_sensor_evaluation(name, evaluation_fn)
+        ] = wrap_sensor_evaluation(self._name, evaluation_fn)
         self._min_interval = check.opt_int_param(
             minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
         )
@@ -389,7 +385,8 @@ class SensorDefinition:
         targets = []
         for target in self._targets:
             if isinstance(target, DirectTarget):
-                targets.append(target.load())
+                t: DirectTarget = target
+                targets.append(t.load())
         return targets
 
     def check_valid_run_requests(self, run_requests: List[RunRequest]):
@@ -399,7 +396,7 @@ class SensorDefinition:
         if run_requests and not self._targets:
             raise Exception(
                 f"Error in sensor {self._name}: Sensor evaluation function returned a RunRequest "
-                "for a sensor without a specified target (pipeline_name, job, or jobs). Targets "
+                "for a sensor lacking a specified target (pipeline_name, job, or jobs). Targets "
                 "can be specified by providing job, jobs, or pipeline_name to the @sensor "
                 "decorator."
             )

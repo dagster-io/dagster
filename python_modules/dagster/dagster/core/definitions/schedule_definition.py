@@ -213,6 +213,7 @@ class ScheduleDefinition:
                 "Dagster recognizes cron expressions consisting of 5 space-separated fields."
             )
 
+        self._job: Optional[Union[GraphDefinition, PipelineDefinition]] = None
         if job is not None:
             self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
             self._job = job
@@ -419,7 +420,7 @@ class ScheduleDefinition:
 
     @property
     def job(self) -> Optional[Union[GraphDefinition, PipelineDefinition]]:
-        self._job
+        return self._job
 
     def evaluate_tick(self, context: "ScheduleEvaluationContext") -> ScheduleExecutionData:
         """Evaluate schedule using the provided context.
