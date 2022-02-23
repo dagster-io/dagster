@@ -4,6 +4,7 @@ from bollinger.assets.bollinger_analysis import (
     sp500_prices,
 )
 from bollinger.resources.csv_io_manager import local_csv_io_manager
+
 from dagster import AssetGroup
 
 
