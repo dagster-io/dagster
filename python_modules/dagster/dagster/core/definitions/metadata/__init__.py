@@ -1,5 +1,6 @@
 import functools
 import os
+import re
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 from dagster import check, seven
@@ -724,7 +725,13 @@ def deprecated_metadata_entry_constructor(fn):
         deprecation_warning(
             f"Function `MetadataEntry.{fn.__name__}`",
             "0.15.0",
-            additional_warn_txt="In the future, construct `MetadataEntry` by calling the constructor directly and passing a `MetadataValue`.",
+            additional_warn_txt=re.sub(r'\n\s*', ' ', """
+            As of 0.14.0, the recommended way to supply metadata is to pass a `Dict[str,
+            MetadataValue]` to the `metadata` keyword argument (rather than a `List[MetadataEntry]`
+            to `metadata_entries`. If you need to construct a `MetadataEntry` directly, you should
+            do so using calling the constructor and passing a `MetadataValue`:
+            `MetadataEntry(label="foo", value=MetadataValue.text("bar")",
+            """)
         )
         return fn(*args, **kwargs)
 
@@ -763,7 +770,7 @@ class MetadataEntry(
     def __new__(
         cls,
         label: str,
-        description: Optional[str],
+        description: Optional[str] = None,
         entry_data: Optional["MetadataValue"] = None,
         value: Optional["MetadataValue"] = None,
     ):
