@@ -35,7 +35,7 @@ def _load_manifest_for_project(
             "resource-type": "model",
             "output": "json",
         },
-        warn_error=True,
+        warn_error=False,
         ignore_handled_error=False,
         target_path=target_dir,
     )
