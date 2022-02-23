@@ -2,6 +2,7 @@ import datetime
 import os
 import sys
 import time
+from typing import cast
 
 import pendulum
 from dagster import check
@@ -245,21 +246,22 @@ def launch_scheduled_runs_for_schedule(
     external_schedule: ExternalSchedule,
     schedule_state: InstigatorState,
     workspace,
-    end_datetime_utc,
+    end_datetime_utc: datetime.datetime,
     max_catchup_runs,
     max_tick_retries,
     debug_crash_flags=None,
     log_verbose_checks=True,
 ):
-    check.inst_param(instance, "instance", DagsterInstance)
-    check.opt_inst_param(schedule_state, "schedule_state", InstigatorState)
-    check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
+    instance = check.inst_param(instance, "instance", DagsterInstance)
+    schedule_state = check.opt_inst_param(schedule_state, "schedule_state", InstigatorState)
+    end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
 
     instigator_origin_id = external_schedule.get_external_origin_id()
     ticks = instance.get_ticks(instigator_origin_id, limit=1)
     latest_tick = ticks[0] if ticks else None
 
-    start_timestamp_utc = schedule_state.instigator_data.start_timestamp if schedule_state else None
+    instigator_data = cast(ScheduleInstigatorData, schedule_state.instigator_data)
+    start_timestamp_utc = instigator_data.start_timestamp if schedule_state else None
 
     if latest_tick:
         if latest_tick.status == TickStatus.STARTED or (
@@ -279,7 +281,7 @@ def launch_scheduled_runs_for_schedule(
                 else latest_tick.timestamp + 1
             )
     else:
-        start_timestamp_utc = schedule_state.instigator_data.start_timestamp
+        start_timestamp_utc = instigator_data.start_timestamp
 
     schedule_name = external_schedule.name
 

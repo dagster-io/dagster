@@ -433,22 +433,9 @@ register_serdes_tuple_fallbacks({"PipelineRun": DagsterRun})
 
 @whitelist_for_serdes
 class PipelineRunsFilter(
-    namedtuple(
-        "_PipelineRunsFilter",
-        "run_ids pipeline_name statuses tags snapshot_id updated_after mode created_before",
-    )
+    NamedTuple("_PipelineRunsFilter", [("run_ids", List[str]), ("pipeline_name", Optional[str]), ("statuses", List[PipelineRunStatus]), ("tags", Dict[str, str]), ("snapshot_id", Optional[str]), ("updated_after", Optional[datetime]), ("mode", Optional[str]), ("created_before", Optional[datetime])])
 ):
-    def __new__(
-        cls,
-        run_ids=None,
-        pipeline_name=None,
-        statuses=None,
-        tags=None,
-        snapshot_id=None,
-        updated_after=None,
-        mode=None,
-        created_before=None,
-    ):
+    def __new__(cls, run_ids: List[str] = None, pipeline_name: Optional[str] = None, statuses: List[PipelineRunStatus] = None, tags: Dict[str, str] = None, snapshot_id: Optional[str] = None, updated_after: Optional[datetime] = None, mode: Optional[str] = None, created_before: Optional[datetime] = None):
         return super(PipelineRunsFilter, cls).__new__(
             cls,
             run_ids=check.opt_list_param(run_ids, "run_ids", of_type=str),
@@ -544,12 +531,12 @@ class RunRecord(
 
 
 @whitelist_for_serdes
-class ExecutionSelector(namedtuple("_ExecutionSelector", "name solid_subset")):
+class ExecutionSelector(NamedTuple("_ExecutionSelector", [("name", str), ("solid_subset", Optional[List[str]])])):
     """
     Kept here to maintain loading of PipelineRuns from when it was still alive.
     """
 
-    def __new__(cls, name, solid_subset=None):
+    def __new__(cls, name: str, solid_subset: Optional[List[str]] = None):
         return super(ExecutionSelector, cls).__new__(
             cls,
             name=check.str_param(name, "name"),

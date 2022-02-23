@@ -1,12 +1,12 @@
-from collections import namedtuple
+from typing import Dict, NamedTuple
 
 from dagster import check
 from dagster.serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes
-class AssetStoreHandle(namedtuple("_AssetStoreHandle", "asset_store_key metadata")):
-    def __new__(cls, asset_store_key, metadata=None):
+class AssetStoreHandle(NamedTuple("_AssetStoreHandle", [("asset_store_key", str), ("metadata", Dict[str, object])])):
+    def __new__(cls, asset_store_key: str, metadata: Dict[str, object] = None):
         return super(AssetStoreHandle, cls).__new__(
             cls,
             asset_store_key=check.str_param(asset_store_key, "asset_store_key"),

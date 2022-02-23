@@ -1,6 +1,6 @@
 import abc
 import os
-from collections import namedtuple
+from typing import List, NamedTuple
 
 from dagster import check
 from dagster.config import Field
@@ -28,9 +28,9 @@ class DagsterScheduleDoesNotExist(DagsterSchedulerError):
 
 
 class SchedulerDebugInfo(
-    namedtuple("SchedulerDebugInfo", "errors scheduler_config_info scheduler_info schedule_storage")
+    NamedTuple("SchedulerDebugInfo", [("errors", List[str]), ("scheduler_config_info", str), ("scheduler_info", str), ("schedule_storage", List[str])])
 ):
-    def __new__(cls, errors, scheduler_config_info, scheduler_info, schedule_storage):
+    def __new__(cls, errors: List[str], scheduler_config_info: str, scheduler_info: str, schedule_storage: List[str]):
         return super(SchedulerDebugInfo, cls).__new__(
             cls,
             errors=check.list_param(errors, "errors", of_type=str),

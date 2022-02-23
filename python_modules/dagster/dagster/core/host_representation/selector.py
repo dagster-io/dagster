@@ -1,22 +1,16 @@
-from collections import namedtuple
+from typing import List, NamedTuple, Optional
 
 from dagster import check
 
 
 class PipelineSelector(
-    namedtuple("_PipelineSelector", "location_name repository_name pipeline_name solid_selection")
+    NamedTuple("_PipelineSelector", [("location_name", str), ("repository_name", str), ("pipeline_name", str), ("solid_selection", Optional[List[str]])])
 ):
     """
     The information needed to resolve a pipeline within a host process.
     """
 
-    def __new__(
-        cls,
-        location_name,
-        repository_name,
-        pipeline_name,
-        solid_selection,
-    ):
+    def __new__(cls, location_name: str, repository_name: str, pipeline_name: str, solid_selection: Optional[List[str]]):
         return super(PipelineSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
@@ -45,8 +39,8 @@ class PipelineSelector(
         )
 
 
-class RepositorySelector(namedtuple("_RepositorySelector", "location_name repository_name")):
-    def __new__(cls, location_name, repository_name):
+class RepositorySelector(NamedTuple("_RepositorySelector", [("location_name", str), ("repository_name", str)])):
+    def __new__(cls, location_name: str, repository_name: str):
         return super(RepositorySelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
@@ -68,9 +62,9 @@ class RepositorySelector(namedtuple("_RepositorySelector", "location_name reposi
 
 
 class ScheduleSelector(
-    namedtuple("_ScheduleSelector", "location_name repository_name schedule_name")
+    NamedTuple("_ScheduleSelector", [("location_name", str), ("repository_name", str), ("schedule_name", str)])
 ):
-    def __new__(cls, location_name, repository_name, schedule_name):
+    def __new__(cls, location_name: str, repository_name: str, schedule_name: str):
         return super(ScheduleSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
@@ -94,8 +88,8 @@ class ScheduleSelector(
         )
 
 
-class SensorSelector(namedtuple("_SensorSelector", "location_name repository_name sensor_name")):
-    def __new__(cls, location_name, repository_name, sensor_name):
+class SensorSelector(NamedTuple("_SensorSelector", [("location_name", str), ("repository_name", str), ("sensor_name", str)])):
+    def __new__(cls, location_name: str, repository_name: str, sensor_name: str):
         return super(SensorSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
@@ -119,8 +113,8 @@ class SensorSelector(namedtuple("_SensorSelector", "location_name repository_nam
         )
 
 
-class InstigationSelector(namedtuple("_InstigationSelector", "location_name repository_name name")):
-    def __new__(cls, location_name, repository_name, name):
+class InstigationSelector(NamedTuple("_InstigationSelector", [("location_name", str), ("repository_name", str), ("name", str)])):
+    def __new__(cls, location_name: str, repository_name: str, name: str):
         return super(InstigationSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
@@ -144,17 +138,12 @@ class InstigationSelector(namedtuple("_InstigationSelector", "location_name repo
         )
 
 
-class GraphSelector(namedtuple("_GraphSelector", "location_name repository_name graph_name")):
+class GraphSelector(NamedTuple("_GraphSelector", [("location_name", str), ("repository_name", str), ("graph_name", str)])):
     """
     The information needed to resolve a graph within a host process.
     """
 
-    def __new__(
-        cls,
-        location_name,
-        repository_name,
-        graph_name,
-    ):
+    def __new__(cls, location_name: str, repository_name: str, graph_name: str):
         return super(GraphSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),

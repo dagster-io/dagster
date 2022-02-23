@@ -1,7 +1,7 @@
 from collections import namedtuple
 from enum import Enum
 from inspect import Parameter
-from typing import Any, Dict, Mapping, NamedTuple, Type
+from typing import Any, Dict, Mapping, NamedTuple, Optional, Type, Union
 
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
@@ -37,9 +37,9 @@ JobStatus = InstigatorStatus
 
 @whitelist_for_serdes
 class SensorInstigatorData(
-    namedtuple("_SensorInstigatorData", "last_tick_timestamp last_run_key min_interval cursor")
+    NamedTuple("_SensorInstigatorData", [("last_tick_timestamp", Optional[float]), ("last_run_key", Optional[str]), ("min_interval", Optional[int]), ("cursor", Optional[str])])
 ):
-    def __new__(cls, last_tick_timestamp=None, last_run_key=None, min_interval=None, cursor=None):
+    def __new__(cls, last_tick_timestamp: Optional[float] = None, last_run_key: Optional[str] = None, min_interval: Optional[int] = None, cursor: Optional[str] = None):
         return super(SensorInstigatorData, cls).__new__(
             cls,
             check.opt_float_param(last_tick_timestamp, "last_tick_timestamp"),
@@ -56,10 +56,10 @@ SensorJobData = SensorInstigatorData
 
 @whitelist_for_serdes
 class ScheduleInstigatorData(
-    namedtuple("_ScheduleInstigatorData", "cron_schedule start_timestamp")
+    NamedTuple("_ScheduleInstigatorData", [("cron_schedule", str), ("start_timestamp", Optional[float])])
 ):
     # removed scheduler, 1/5/2022 (0.13.13)
-    def __new__(cls, cron_schedule, start_timestamp=None):
+    def __new__(cls, cron_schedule: str, start_timestamp: Optional[float] = None):
         return super(ScheduleInstigatorData, cls).__new__(
             cls,
             check.str_param(cron_schedule, "cron_schedule"),
@@ -75,7 +75,7 @@ register_serdes_tuple_fallbacks({"ScheduleJobData": ScheduleInstigatorData})
 ScheduleJobData = ScheduleInstigatorData
 
 
-def check_instigator_data(instigator_type, instigator_data):
+def check_instigator_data(instigator_type: InstigatorType, instigator_data: Optional[Union[ScheduleInstigatorData, SensorInstigatorData]]):
     if instigator_type == InstigatorType.SCHEDULE:
         check.inst_param(instigator_data, "instigator_data", ScheduleInstigatorData)
     elif instigator_type == InstigatorType.SENSOR:
@@ -138,9 +138,9 @@ class InstigatorStateSerializer(DefaultNamedTupleSerializer):
 
 @whitelist_for_serdes(serializer=InstigatorStateSerializer)
 class InstigatorState(
-    namedtuple("_InstigationState", "origin instigator_type status instigator_data")
+    NamedTuple("_InstigationState", [("origin", ExternalInstigatorOrigin), ("instigator_type", InstigatorType), ("status", InstigatorStatus), ("instigator_data", Optional[Union[ScheduleInstigatorData, SensorInstigatorData]])])
 ):
-    def __new__(cls, origin, instigator_type, status, instigator_data=None):
+    def __new__(cls, origin: ExternalInstigatorOrigin, instigator_type: InstigatorType, status: InstigatorStatus, instigator_data: Optional[Union[ScheduleInstigatorData, SensorInstigatorData]] = None):
         return super(InstigatorState, cls).__new__(
             cls,
             check.inst_param(origin, "origin", ExternalInstigatorOrigin),
@@ -250,8 +250,8 @@ class TickSerializer(DefaultNamedTupleSerializer):
 
 
 @whitelist_for_serdes(serializer=TickSerializer)
-class InstigatorTick(namedtuple("_InstigatorTick", "tick_id tick_data")):
-    def __new__(cls, tick_id, tick_data):
+class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_data", "TickData")])):
+    def __new__(cls, tick_id: int, tick_data: "TickData"):
         return super(InstigatorTick, cls).__new__(
             cls,
             check.int_param(tick_id, "tick_id"),

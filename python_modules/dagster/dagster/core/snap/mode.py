@@ -1,5 +1,5 @@
 # Contains mode, resources, loggers
-from collections import namedtuple
+from typing import List, NamedTuple, Optional
 
 from dagster import check
 from dagster.config.snap import ConfigFieldSnap, snap_from_field
@@ -28,19 +28,9 @@ def build_mode_def_snap(mode_def, root_config_key):
 
 @whitelist_for_serdes
 class ModeDefSnap(
-    namedtuple(
-        "_ModeDefSnap", "name description resource_def_snaps logger_def_snaps root_config_key"
-    )
+    NamedTuple("_ModeDefSnap", [("name", str), ("description", Optional[str]), ("resource_def_snaps", List["ResourceDefSnap"]), ("logger_def_snaps", List["LoggerDefSnap"]), ("root_config_key", Optional[str])])
 ):
-    def __new__(
-        cls,
-        name,
-        description,
-        resource_def_snaps,
-        logger_def_snaps,
-        # root_config_key was added after pipeline snapshots started getting persisted
-        root_config_key=None,
-    ):
+    def __new__(cls, name: str, description: Optional[str], resource_def_snaps: List["ResourceDefSnap"], logger_def_snaps: List["LoggerDefSnap"], root_config_key: Optional[str] = None):
         return super(ModeDefSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -68,8 +58,8 @@ def build_resource_def_snap(name, resource_def):
 
 
 @whitelist_for_serdes
-class ResourceDefSnap(namedtuple("_ResourceDefSnap", "name description config_field_snap")):
-    def __new__(cls, name, description, config_field_snap):
+class ResourceDefSnap(NamedTuple("_ResourceDefSnap", [("name", str), ("description", Optional[str]), ("config_field_snap", Optional[ConfigFieldSnap])])):
+    def __new__(cls, name: str, description: Optional[str], config_field_snap: Optional[ConfigFieldSnap]):
         return super(ResourceDefSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -93,8 +83,8 @@ def build_logger_def_snap(name, logger_def):
 
 
 @whitelist_for_serdes
-class LoggerDefSnap(namedtuple("_LoggerDefSnap", "name description config_field_snap")):
-    def __new__(cls, name, description, config_field_snap):
+class LoggerDefSnap(NamedTuple("_LoggerDefSnap", [("name", str), ("description", Optional[str]), ("config_field_snap", Optional[ConfigFieldSnap])])):
+    def __new__(cls, name: str, description: Optional[str], config_field_snap: Optional[ConfigFieldSnap]):
         return super(LoggerDefSnap, cls).__new__(
             cls,
             name=check.str_param(name, "name"),

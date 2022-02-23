@@ -7,7 +7,7 @@ for that.
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from datetime import datetime
-from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple
 
 from dagster import StaticPartitionsDefinition, check
 from dagster.core.asset_defs import SourceAsset
@@ -196,18 +196,18 @@ class ExternalPipelineData(
 
 @whitelist_for_serdes
 class ExternalPresetData(
-    namedtuple("_ExternalPresetData", "name run_config solid_selection mode tags")
+    NamedTuple("_ExternalPresetData", [("name", str), ("run_config", Dict[str, Any]), ("solid_selection", Optional[List[str]]), ("mode", str), ("tags", Dict[str, str])])
 ):
-    def __new__(cls, name, run_config, solid_selection, mode, tags):
+    def __new__(cls, name: str, run_config: Dict[str, Any], solid_selection: Optional[List[str]], mode: str, tags: Dict[str, str]):
         return super(ExternalPresetData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            run_config=check.opt_dict_param(run_config, "run_config"),
+            run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
             solid_selection=check.opt_nullable_list_param(
                 solid_selection, "solid_selection", of_type=str
             ),
             mode=check.str_param(mode, "mode"),
-            tags=check.opt_dict_param(tags, "tags"),
+            tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
         )
 
 
@@ -268,9 +268,9 @@ class ExternalScheduleData(
 
 @whitelist_for_serdes
 class ExternalScheduleExecutionErrorData(
-    namedtuple("_ExternalScheduleExecutionErrorData", "error")
+    NamedTuple("_ExternalScheduleExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
 ):
-    def __new__(cls, error):
+    def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExternalScheduleExecutionErrorData, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -279,17 +279,9 @@ class ExternalScheduleExecutionErrorData(
 
 @whitelist_for_serdes
 class ExternalTargetData(
-    namedtuple(
-        "_ExternalTargetData",
-        "pipeline_name mode solid_selection",
-    )
+    NamedTuple("_ExternalTargetData", [("pipeline_name", str), ("mode", str), ("solid_selection", Optional[List[str]])])
 ):
-    def __new__(
-        cls,
-        pipeline_name,
-        mode,
-        solid_selection,
-    ):
+    def __new__(cls, pipeline_name: str, mode: str, solid_selection: Optional[List[str]]):
         return super(ExternalTargetData, cls).__new__(
             cls,
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),

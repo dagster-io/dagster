@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
-from collections import namedtuple
 from contextlib import contextmanager
 from enum import Enum
+from typing import NamedTuple, Optional
 
 from dagster import check
 from dagster.core.instance import MayHaveInstanceWeakref
@@ -17,10 +17,10 @@ class ComputeIOType(Enum):
     STDERR = "stderr"
 
 
-class ComputeLogFileData(namedtuple("ComputeLogFileData", "path data cursor size download_url")):
+class ComputeLogFileData(NamedTuple("ComputeLogFileData", [("path", str), ("data", Optional[str]), ("cursor", int), ("size", int), ("download_url", Optional[str])])):
     """Representation of a chunk of compute execution log data"""
 
-    def __new__(cls, path, data, cursor, size, download_url):
+    def __new__(cls, path: str, data: Optional[str], cursor: int, size: int, download_url: Optional[str]):
         return super(ComputeLogFileData, cls).__new__(
             cls,
             path=check.str_param(path, "path"),
