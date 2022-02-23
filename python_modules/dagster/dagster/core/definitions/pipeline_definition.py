@@ -943,6 +943,7 @@ def _checked_input_resource_reqs_for_mode(
                     not input_def.dagster_type.loader
                     and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
                     and not input_def.root_manager_key
+                    and not input_def.has_default_value
                 ):
                     raise DagsterInvalidDefinitionError(
                         "Input '{input_name}' in {described_node} is not connected to "
