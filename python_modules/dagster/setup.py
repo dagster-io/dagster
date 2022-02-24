@@ -99,7 +99,7 @@ if __name__ == "__main__":
                 "flake8>=3.7.8",
                 "freezegun>=0.3.15",
                 "grpcio-tools==1.32.0",
-                "isort>=4.3.21,<5",
+                "isort>=5",
                 "mock==3.0.5",
                 "objgraph",
                 "protobuf==3.13.0",  # without this, pip will install the most up-to-date protobuf
