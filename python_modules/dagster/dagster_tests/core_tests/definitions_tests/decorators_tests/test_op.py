@@ -737,3 +737,13 @@ def test_log_metadata_asset_materialization():
     assert len(materialization.metadata_entries) == 1
     assert materialization.metadata_entries[0].label == "bar"
     assert materialization.metadata_entries[0].entry_data.text == "baz"
+
+
+def test_implicit_op_output_with_asset_key():
+    @op(out=Out(asset_key=AssetKey("my_dataset")))
+    def my_constant_asset_op():
+        return 5
+
+    result = execute_op_in_graph(my_constant_asset_op)
+    assert result.success
+    assert len(result.asset_materializations_for_node(my_constant_asset_op.name)) == 1

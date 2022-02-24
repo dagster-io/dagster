@@ -2,6 +2,7 @@ import pytest
 from dagster import Failure, graph
 from docs_snippets.concepts.solids_pipelines.op_events import (
     my_asset_op,
+    my_expectation_op,
     my_failure_metadata_op,
     my_failure_op,
     my_metadata_expectation_op,
@@ -46,6 +47,7 @@ def test_ops_compile_and_execute():
         my_metadata_expectation_op,
         my_retry_op,
         my_asset_op,
+        my_expectation_op,
     ]
 
     for op in ops:
