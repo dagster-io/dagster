@@ -125,8 +125,15 @@ const Header: React.FC<{assetKey: AssetKey; opName?: string}> = ({assetKey, opNa
 
   return (
     <Box flex={{gap: 4, direction: 'column'}} margin={{left: 24, right: 12, vertical: 16}}>
-      <SidebarTitle style={{marginBottom: 0, display: 'flex', justifyContent: 'space-between'}}>
-        {displayName}
+      <SidebarTitle
+        style={{
+          marginBottom: 0,
+          display: 'flex',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+        }}
+      >
+        <Box>{displayName}</Box>
         {displayName !== opName ? (
           <Box style={{opacity: 0.5}} flex={{gap: 6, alignItems: 'center'}}>
             <IconWIP name="op" size={16} />

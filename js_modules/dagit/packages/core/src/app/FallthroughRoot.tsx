@@ -3,6 +3,7 @@ import * as React from 'react';
 import {Redirect, Route, Switch, useLocation} from 'react-router-dom';
 
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
 const InstanceRedirect = () => {
@@ -49,10 +50,12 @@ const FinalRedirectOrLoadingRoot = () => {
   }
 
   // If we have exactly one job, route to the job's overview / graph tab
-  const reposWithJob = allRepos.filter((r) => r.repository.pipelines.length > 0);
+  const reposWithJob = allRepos.filter((r) =>
+    r.repository.pipelines.some((p) => p.name !== __ASSET_GROUP),
+  );
   if (reposWithJob.length === 1) {
     const repo = reposWithJob[0];
-    const job = repo.repository.pipelines[0];
+    const job = repo.repository.pipelines.filter((p) => p.name !== __ASSET_GROUP)[0];
     return (
       <Redirect
         to={workspacePipelinePath({

@@ -91,7 +91,7 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
           ).filter(
             (a) =>
               !searchSeparatorAgnostic ||
-              tokenForAssetKey(a.key).toLowerCase().startsWith(searchSeparatorAgnostic),
+              tokenForAssetKey(a.key).toLowerCase().includes(searchSeparatorAgnostic),
           );
 
           const {displayPathForAsset, displayed, nextCursor, prevCursor} =
