@@ -131,8 +131,10 @@ def _step_output_error_checked_user_event_sequence(
 
         yield output
 
+    print(step.step_outputs)
     for step_output in step.step_outputs:
         step_output_def = step_context.solid_def.output_def_named(step_output.name)
+        print("HERE!@!!!!!!!!!!!!!!!!")
         if not step_context.has_seen_output(step_output_def.name) and not step_output_def.optional:
             if step_output_def.dagster_type.kind == DagsterTypeKind.NOTHING:
                 step_context.log.info(
@@ -148,6 +150,7 @@ def _step_output_error_checked_user_event_sequence(
                     step_key=step.key,
                     output_name=step_output_def.name,
                 )
+        print("THERE!")
 
 
 def do_type_check(context: TypeCheckContext, dagster_type: DagsterType, value: Any) -> TypeCheck:

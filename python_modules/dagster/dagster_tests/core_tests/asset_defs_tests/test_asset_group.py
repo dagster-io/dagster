@@ -9,6 +9,7 @@ from dagster import (
     Out,
     fs_asset_io_manager,
     graph,
+    Output,
     in_process_executor,
     io_manager,
     mem_io_manager,
@@ -208,6 +209,62 @@ def asset_aware_io_manager():
         return io_manager_obj
 
     return io_manager_obj, _asset_aware
+
+
+def test_asset_group_build_sliced_subset_job():
+    @asset
+    def start_asset():
+        return "foo"
+
+    @multi_asset(
+        outs={"a": Out(), "b": Out(), "c": Out()},
+        internal_asset_deps={
+            "a": {AssetKey("start_asset")},
+            "b": set(),
+            "c": {AssetKey("b")},
+        },
+        can_subset=True,
+    )
+    def middle_asset(context, start_asset):
+        selected_assets = context.op_config.get("selected_assets", ["a", "b", "c"])
+        for a in selected_assets:
+            yield Output(a, a)
+
+    @asset
+    def final_asset(a):
+        return "foo"
+
+    def _asset_keys_for_node(result, node_name):
+        return set((am.asset_key for am in result.asset_materializations_for_node(node_name)))
+
+    _, io_manager_def = asset_aware_io_manager()
+    group = AssetGroup(
+        [start_asset, middle_asset, final_asset],
+        resource_defs={"io_manager": io_manager_def},
+    )
+
+    full_job = group.build_job("full", selection="*")
+    result = full_job.execute_in_process()
+
+    assert result.success
+    assert _asset_keys_for_node(result, "start_asset") == {AssetKey("start_asset")}
+    assert _asset_keys_for_node(result, "middle_asset") == {
+        AssetKey("a"),
+        AssetKey("b"),
+        AssetKey("c"),
+    }
+    assert _asset_keys_for_node(result, "final_asset") == {AssetKey("final_asset")}
+
+    slice_job = group.build_job("full", selection="start_asset*")
+    result = slice_job.execute_in_process()
+    assert result.success
+    assert _asset_keys_for_node(result, "start_asset") == {AssetKey("start_asset")}
+    assert _asset_keys_for_node(result, "middle_asset") == {AssetKey("a")}
+    assert _asset_keys_for_node(result, "final_asset") == {AssetKey("final_asset")}
+
+    slice_job = group.build_job("full", selection="*final_asset")
+    result = slice_job.execute_in_process()
+    assert result.success
 
 
 def test_asset_group_build_subset_job():

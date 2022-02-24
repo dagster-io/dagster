@@ -285,69 +285,19 @@ class AssetGroup(
                 excluded_assets.add(asset)
             # subset selected
             else:
-                for asset_key in asset.asset_keys:
-                    asset_key_as_str = ".".join([piece for piece in asset_key.path])
-                    source_asset_keys.add(asset_key_as_str)
-
-        op_selection = []
-
-        for clause in selection:
-            token_matching = re.compile(r"^(\*?\+*)?([.\w\d\[\]?_-]+)(\+*\*?)?$").search(
-                clause.strip()
-            )
-            parts = token_matching.groups() if token_matching is not None else None
-            if parts is None:
-                raise DagsterInvalidDefinitionError(
-                    f"When attempting to create job '{job_name}', the clause "
-                    f"{clause} within the asset key selection was invalid. Please "
-                    "review the selection syntax here: "
-                    "https://docs.dagster.io/concepts/ops-jobs-graphs/job-execution#op-selection-syntax."
-                )
-            upstream_part, key_str, downstream_part = parts
-
-            # Error if you express a clause in terms of a source asset key.
-            # Eventually we will want to support selection over source asset
-            # keys as a means of running downstream ops.
-            # https://github.com/dagster-io/dagster/issues/6647
-            if key_str in source_asset_keys:
-                raise DagsterInvalidDefinitionError(
-                    f"When attempting to create job '{job_name}', the clause '"
-                    f"{clause}' selects asset_key '{key_str}', which comes from "
-                    "a source asset. Source assets can't be materialized, and "
-                    "therefore can't be subsetted into a job. Please choose a "
-                    "subset on asset keys that are materializable - that is, "
-                    f"included on assets within the group. Valid assets: {list(asset_keys_to_ops.keys())}"
-                )
-            if key_str not in asset_keys_to_ops:
-                raise DagsterInvalidDefinitionError(
-                    f"When attempting to create job '{job_name}', the clause "
-                    f"'{clause}' within the asset key selection did not match "
-                    f"any asset keys. Present asset keys: {list(asset_keys_to_ops.keys())}"
-                )
-
-            seen_asset_keys.add(key_str)
-
-            for op in asset_keys_to_ops[key_str]:
-
-                op_clause = f"{upstream_part}{op.name}{downstream_part}"
-                op_selection.append(op_clause)
-
-        # Verify that for each selected asset key, the corresponding op had all
-        # asset keys selected. Eventually, we will want to have specific syntax
-        # that allows for selecting all asset keys for a given multi-asset
-        # https://github.com/dagster-io/dagster/issues/6647.
-        for op_name, asset_key_set in op_names_to_asset_keys.items():
-            are_keys_in_set = [key in seen_asset_keys for key in asset_key_set]
-            if any(are_keys_in_set) and not all(are_keys_in_set):
-                raise DagsterInvalidDefinitionError(
-                    f"When building job '{job_name}', the asset '{op_name}' "
-                    f"contains asset keys {sorted(list(asset_key_set))}, but "
-                    f"attempted to select only {sorted(list(asset_key_set.intersection(seen_asset_keys)))}. "
-                    "Selecting only some of the asset keys for a particular "
-                    "asset is not yet supported behavior. Please select all "
-                    "asset keys produced by a given asset when subsetting."
-                )
-        return op_selection
+                if asset.can_subset:
+                    print("DOING SUBSET")
+                    x = asset.subset(selected_subset)
+                    print("...")
+                    print(x)
+                    print(x._op)
+                    print(x._op.output_defs)
+                    print("...")
+                    included_assets.add(x)
+                else:
+                    # TODO: warn
+                    included_assets.add(asset)
+        return list(included_assets), list(excluded_assets)
 
     @staticmethod
     def from_package_module(

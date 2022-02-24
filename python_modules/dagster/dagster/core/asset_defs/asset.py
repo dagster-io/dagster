@@ -71,16 +71,19 @@ class AssetsDefinition:
         assert asset_keys <= self.asset_keys
         # gross
         import copy
-        import hashlib
-
-        nn = hashlib.md5(str(sorted(asset_keys)).encode()).hexdigest()[:5]
+        from dagster.core.definitions.dependency import Node
 
         new_op = copy.copy(self.op)
-        new_op._name = f"{new_op.name}_{nn}"
+        print(new_op.output_defs)
         new_op._output_defs = [self.output_defs_by_asset_key[ak] for ak in asset_keys]
+        print(self.input_defs_by_asset_key)
+        print(self.output_defs_by_asset_key)
+        print(asset_keys)
+        print("[[[[[[[[[[[[[[[[[[[[[")
+        print(new_op.output_defs)
         return AssetsDefinition(
             self._a,
-            self._b,
+            {ak: self.output_defs_by_asset_key[ak].name for ak in asset_keys},
             new_op,
             self.partitions_def,
             self._partition_mappings,
