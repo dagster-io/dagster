@@ -6,6 +6,7 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterRunStatus,
     RunRequest,
+    SensorDefinition,
     SensorEvaluationContext,
     SensorExecutionContext,
     build_run_status_sensor_context,
@@ -16,7 +17,7 @@ from dagster import (
     run_status_sensor,
     sensor,
 )
-from dagster.core.errors import DagsterInvalidInvocationError
+from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
 from dagster.core.test_utils import instance_for_test
 
 
@@ -98,6 +99,34 @@ def test_instance_access_built_sensor():
 def test_instance_access_with_mock():
     mock_instance = mock.MagicMock(spec=DagsterInstance)
     assert build_sensor_context(instance=mock_instance).instance == mock_instance
+
+
+def test_sensor_w_no_job():
+    @sensor()
+    def no_job_sensor():
+        pass
+
+    with pytest.raises(
+        Exception,
+        match=r".* Sensor evaluation function returned a RunRequest for a sensor lacking a "
+        r"specified target .*",
+    ):
+        no_job_sensor.check_valid_run_requests(
+            [
+                RunRequest(
+                    run_key=None,
+                    run_config=None,
+                    tags=None,
+                )
+            ]
+        )
+
+
+def test_direct_sensor_definition_instantiation():
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Must provide evaluation_fn to SensorDefinition."
+    ):
+        SensorDefinition()
 
 
 def test_run_status_sensor():

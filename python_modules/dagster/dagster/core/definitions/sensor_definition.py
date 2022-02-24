@@ -173,11 +173,13 @@ class SensorDefinition:
 
     def __init__(
         self,
-        evaluation_fn: Callable[
-            ["SensorEvaluationContext"],
-            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
-        ],
         name: Optional[str] = None,
+        evaluation_fn: Optional[
+            Callable[
+                ["SensorEvaluationContext"],
+                Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+            ]
+        ] = None,
         pipeline_name: Optional[str] = None,
         solid_selection: Optional[List[Any]] = None,
         mode: Optional[str] = None,
@@ -187,6 +189,8 @@ class SensorDefinition:
         jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
+        if evaluation_fn is None:
+            raise DagsterInvalidDefinitionError("Must provide evaluation_fn to SensorDefinition.")
 
         if job and jobs:
             raise DagsterInvalidDefinitionError(
