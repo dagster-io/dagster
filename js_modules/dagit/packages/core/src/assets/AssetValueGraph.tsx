@@ -20,6 +20,7 @@ export interface AssetValueGraphData {
 export const AssetValueGraph: React.FC<{
   label: string;
   width: string;
+  yAxisLabel?: string;
   data: AssetValueGraphData;
   xHover: string | number | null;
   onHoverX: (value: string | number | null) => void;
@@ -86,7 +87,7 @@ export const AssetValueGraph: React.FC<{
               },
             }),
       },
-      y: {id: 'y', display: true, title: {display: true, text: 'Value'}},
+      y: {id: 'y', display: true, title: {display: true, text: props.yAxisLabel || 'Value'}},
     },
     plugins: {
       legend: {
