@@ -3,6 +3,8 @@ import {ColorsWIP, IconWIP, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
+
 interface ISidebarSectionProps {
   title: string;
   collapsedByDefault?: boolean;
@@ -10,22 +12,13 @@ interface ISidebarSectionProps {
 
 export const SidebarSection: React.FC<ISidebarSectionProps> = (props) => {
   const {title, collapsedByDefault, children} = props;
-  const storageKey = `sidebar-${title}`;
-
-  const [open, setOpen] = React.useState(() => {
-    const stored = window.localStorage.getItem(storageKey);
-    if (stored === 'true' || stored === 'false') {
-      return stored === 'true';
-    }
-    return !collapsedByDefault;
-  });
+  const [open, setOpen] = useStateWithStorage<boolean>(`sidebar-${title}`, (storedValue) =>
+    storedValue === true || storedValue === false ? storedValue : !collapsedByDefault,
+  );
 
   const onToggle = React.useCallback(() => {
-    setOpen((current) => {
-      window.localStorage.setItem(storageKey, `${!current}`);
-      return !current;
-    });
-  }, [storageKey]);
+    setOpen((o) => !o);
+  }, [setOpen]);
 
   return (
     <>

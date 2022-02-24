@@ -1,5 +1,7 @@
 import * as React from 'react';
 
+import {getJSONForKey} from '../hooks/useStateWithStorage';
+
 // Internal LocalStorage data format and mutation helpers
 
 export interface IStorageData {
@@ -114,18 +116,6 @@ function getKey(namespace: string) {
   return `dagit.v2.${namespace}`;
 }
 
-export function getJSONForKey(key: string) {
-  try {
-    const jsonString = window.localStorage.getItem(key);
-    if (jsonString) {
-      return JSON.parse(jsonString);
-    }
-  } catch (err) {
-    // noop
-  }
-  return undefined;
-}
-
 function getStorageDataForNamespace(namespace: string, initial: Partial<IExecutionSession> = {}) {
   if (_data && _dataNamespace === namespace) {
     return _data;
@@ -163,7 +153,7 @@ current localStorage namespace in memory (in _data above) and React keeps a simp
 version flag it can use to trigger a re-render after changes are saved, so changing
 namespaces changes the returned data immediately.
 */
-export function useStorage(
+export function useExecutionSessionStorage(
   repositoryName: string,
   pipelineName: string,
   initial: Partial<IExecutionSession> = {},

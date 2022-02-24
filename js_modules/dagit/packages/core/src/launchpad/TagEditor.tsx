@@ -13,7 +13,7 @@ import {
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {PipelineRunTag} from '../app/LocalStorage';
+import {PipelineRunTag} from '../app/ExecutionSessionStorage';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {RunTag} from '../runs/RunTag';
 
