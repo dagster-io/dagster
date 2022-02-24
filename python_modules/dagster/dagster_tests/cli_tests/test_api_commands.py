@@ -2,6 +2,7 @@ import mock
 from click.testing import CliRunner
 from dagster.cli import api
 from dagster.cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
+from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.retries import RetryState
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot
 from dagster.core.host_representation import PipelineHandle
@@ -298,3 +299,58 @@ def test_execute_step_verify_step():
             # # Check that verify fails for step that has already run (case 1)
             retries = RetryState()
             assert not verify_step(instance, run, retries, step_keys_to_execute=["do_something"])
+
+
+@mock.patch("dagster.cli.api.verify_step")
+def test_execute_step_verify_step_framework_error(mock_verify_step):
+    with get_foo_pipeline_handle() as pipeline_handle:
+        runner = CliRunner()
+
+        mock_verify_step.side_effect = Exception("Unexpected framework error text")
+
+        with instance_for_test(
+            overrides={
+                "compute_logs": {
+                    "module": "dagster.core.storage.noop_compute_log_manager",
+                    "class": "NoOpComputeLogManager",
+                }
+            }
+        ) as instance:
+            run = create_run_for_test(
+                instance,
+                pipeline_name="foo",
+                run_id="new_run",
+            )
+
+            input_json = serialize_dagster_namedtuple(
+                ExecuteStepArgs(
+                    pipeline_origin=pipeline_handle.get_python_origin(),
+                    pipeline_run_id=run.run_id,
+                    step_keys_to_execute=["fake_step"],
+                    instance_ref=instance.get_ref(),
+                    should_verify_step=True,
+                    known_state=KnownExecutionState(
+                        {},
+                        {
+                            "blah": {"result": ["0", "1", "2"]},
+                        },
+                    ),
+                )
+            )
+            result = runner.invoke(api.execute_step_command, [input_json])
+
+            assert result.exit_code != 0
+
+            # Framework error logged to event log
+            logs = instance.all_logs(run.run_id)
+
+            log_entry = logs[0]
+            assert (
+                log_entry.message
+                == "An exception was thrown during step execution that is likely a framework error, rather than an error in user code."
+            )
+            assert log_entry.step_key == "fake_step"
+
+            assert "Unexpected framework error text" in str(
+                log_entry.dagster_event.event_specific_data.error
+            )
