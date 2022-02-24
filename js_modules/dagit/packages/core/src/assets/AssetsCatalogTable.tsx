@@ -3,7 +3,13 @@ import * as React from 'react';
 import {Redirect, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {Box, CursorPaginationControls, CursorPaginationProps, TextInput} from '../../../ui/src';
+import {
+  Box,
+  Checkbox,
+  CursorPaginationControls,
+  CursorPaginationProps,
+  TextInput,
+} from '../../../ui/src';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {QueryCountdown} from '../app/QueryCountdown';
 import {tokenForAssetKey} from '../app/Util';
@@ -29,9 +35,13 @@ const PAGE_SIZE = 50;
 type Asset = AssetCatalogTableQuery_assetsOrError_AssetConnection_nodes;
 
 export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPath = []}) => {
-  const {visibleRepos, allRepos} = React.useContext(WorkspaceContext);
+  const {visibleRepos} = React.useContext(WorkspaceContext);
   const [cursor, setCursor] = useQueryPersistedState<string | undefined>({queryKey: 'cursor'});
   const [search, setSearch] = useQueryPersistedState<string | undefined>({queryKey: 'q'});
+  const [showNonSDAs = true, setShowNonSDAs] = useQueryPersistedState<boolean | undefined>({
+    queryKey: 'materializations',
+  });
+
   const [view, _setView] = useAssetView();
   const history = useHistory();
 
@@ -79,14 +89,10 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
             .toLowerCase()
             .trim();
 
-          const filtered = (visibleRepos.length === allRepos.length
-            ? assets
-            : filterAssetsToRepos(assets, visibleRepos)
-          ).filter(
-            (a) =>
-              !searchSeparatorAgnostic ||
-              tokenForAssetKey(a.key).toLowerCase().startsWith(searchSeparatorAgnostic),
-          );
+          const filtered = filterAssetsToRepos(assets, visibleRepos, showNonSDAs).filter((a) => {
+            const token = tokenForAssetKey(a.key).toLowerCase();
+            return !searchSeparatorAgnostic || token.includes(searchSeparatorAgnostic);
+          });
 
           const {displayPathForAsset, displayed, nextCursor, prevCursor} =
             view === 'flat'
@@ -111,13 +117,20 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
                   <>
                     <AssetViewModeSwitch view={view} setView={setView} />
                     <RepoFilterButton />
+                    <Checkbox
+                      label="Include materializations without definitions"
+                      checked={showNonSDAs}
+                      onChange={(e) => setShowNonSDAs(e.target.checked)}
+                    />
+
+                    <div style={{flex: 1}} />
+                    <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={assetsQuery} />
                     <TextInput
                       value={search}
                       style={{width: '30vw', minWidth: 150, maxWidth: 400}}
                       placeholder="Search all asset_keys..."
                       onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
                     />
-                    <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={assetsQuery} />
                   </>
                 }
                 prefixPath={prefixPath || []}
@@ -224,15 +237,19 @@ const filterAssetsByNamespace = (assets: Asset[], paths: string[][]) => {
   );
 };
 
-const filterAssetsToRepos = (assets: Asset[], visibleRepos: DagsterRepoOption[]) => {
+const filterAssetsToRepos = (
+  assets: Asset[],
+  visibleRepos: DagsterRepoOption[],
+  showNonSDAs: boolean,
+) => {
   const visibleRepoHashes = visibleRepos.map((v) =>
     buildRepoPath(v.repository.name, v.repositoryLocation.name),
   );
-  return assets.filter(
-    (a) =>
-      a.definition &&
-      visibleRepoHashes.includes(
-        buildRepoPath(a.definition.repository.name, a.definition.repository.location.name),
-      ),
+  return assets.filter((a) =>
+    a.definition
+      ? visibleRepoHashes.includes(
+          buildRepoPath(a.definition.repository.name, a.definition.repository.location.name),
+        )
+      : showNonSDAs,
   );
 };

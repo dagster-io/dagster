@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, Heading, PageHeader} from '@dagster-io/ui';
+import {Box, Checkbox, ColorsWIP, Heading, PageHeader} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router';
 import {useHistory} from 'react-router-dom';
@@ -43,7 +43,7 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
         background={ColorsWIP.White}
         padding={{horizontal: 24, vertical: 8}}
         border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
-        flex={{direction: 'row', gap: 12}}
+        flex={{direction: 'row', gap: 12, alignItems: 'center'}}
       >
         <AssetViewModeSwitch
           view="graph"
@@ -55,6 +55,12 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
           }}
         />
         <RepoFilterButton />
+        <Checkbox
+          disabled
+          label="Include materializations without definitions"
+          checked={false}
+          onChange={() => {}}
+        />
       </Box>
       <AssetGraphExplorer
         options={{preferAssetRendering: true, explodeComposites: true}}

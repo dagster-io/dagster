@@ -69,7 +69,6 @@ export const AssetTable = ({
     <Box flex={{direction: 'column'}}>
       <Box flex={{alignItems: 'center', gap: 12}} padding={{vertical: 8, left: 24, right: 12}}>
         {actionBarComponents}
-        <div style={{flex: 1}} />
         <AssetBulkActions
           selected={Array.from(checkedAssets)}
           clearSelection={() => onToggleAll(false)}

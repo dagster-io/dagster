@@ -35,7 +35,6 @@ import {AssetLinks} from './AssetLinks';
 import {AssetNode, ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from './AssetNode';
 import {ForeignNode} from './ForeignNode';
 import {LaunchAssetExecutionButton} from './LaunchAssetExecutionButton';
-import {OmittedAssetsNotice} from './OmittedAssetsNotice';
 import {SidebarAssetInfo} from './SidebarAssetInfo';
 import {
   buildGraphData,
@@ -410,7 +409,6 @@ const AssetGraphExplorerWithData: React.FC<
                 )}
               />
             </Box>
-            {!props.pipelineSelector && <OmittedAssetsNotice assetKeys={props.assetKeys} />}
           </Box>
           <QueryOverlay>
             <GraphQueryInput

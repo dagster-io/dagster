@@ -7,6 +7,7 @@ type QueryPersistedDataType =
   | {[key: string]: any}
   | Array<any>
   | (string | undefined | number)
+  | boolean
   | null;
 
 let currentQueryString: {[key: string]: any} = {};
