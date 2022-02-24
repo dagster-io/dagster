@@ -85,6 +85,7 @@ type Repository {
   schedules: [Schedule!]!
   sensors: [Sensor!]!
   assetNodes: [AssetNode!]!
+  assetGroupJob: Job
   displayMetadata: [RepositoryMetadata!]!
   inProgressRunsByStep: [InProgressRunsByStep!]!
   latestRunByStep: [RunStatsByStep!]!

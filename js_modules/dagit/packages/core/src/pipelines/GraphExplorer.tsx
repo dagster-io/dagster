@@ -34,7 +34,8 @@ interface GraphExplorerProps {
   options: GraphExplorerOptions;
   setOptions: (options: GraphExplorerOptions) => void;
   pipelineOrGraph: GraphExplorerFragment;
-  repoAddress?: RepoAddress;
+  repoAddress: RepoAddress | undefined;
+  repoAddressForHandle?: (handle: GraphExplorerSolidHandleFragment) => RepoAddress | undefined;
   handles: GraphExplorerSolidHandleFragment[];
   parentHandle?: GraphExplorerSolidHandleFragment;
   getInvocations?: (definitionName: string) => {handleID: string}[];
@@ -52,6 +53,7 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
     parentHandle,
     setOptions,
     repoAddress,
+    repoAddressForHandle,
     isGraph,
   } = props;
   const [nameMatch, setNameMatch] = React.useState('');
@@ -273,7 +275,11 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
                 getInvocations={getInvocations}
                 onEnterSubgraph={handleEnterCompositeSolid}
                 onClickOp={handleClickOp}
-                repoAddress={repoAddress}
+                repoAddress={
+                  selectedHandle && repoAddressForHandle
+                    ? repoAddressForHandle(selectedHandle)
+                    : repoAddress
+                }
                 isGraph={isGraph}
                 {...qs.parse(location.search || '', {ignoreQueryPrefix: true})}
               />

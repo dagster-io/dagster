@@ -14,6 +14,7 @@ import {AssetGraphQuery_assetNodes} from '../workspace/asset-graph/types/AssetGr
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 
 import {AssetViewModeSwitch} from './AssetViewModeSwitch';
+import {InstanceAssetOpGraphExplorer} from './InstanceAssetOpGraphExplorer';
 import {useAssetView} from './useAssetView';
 
 export const InstanceAssetGraphExplorer: React.FC = () => {
@@ -32,6 +33,8 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
         buildRepoPath(node.repository.name, node.repository.location.name),
       );
   }, [visibleRepos]);
+
+  const [assetRendering, setAssetRendering] = React.useState(true);
 
   return (
     <Box
@@ -56,14 +59,26 @@ export const InstanceAssetGraphExplorer: React.FC = () => {
         />
         <RepoFilterButton />
       </Box>
-      <AssetGraphExplorer
-        options={{preferAssetRendering: true, explodeComposites: true}}
-        filterNodes={filterNodes}
-        explorerPath={explorerPath}
-        onChangeExplorerPath={(path, mode) => {
-          history[mode](instanceAssetsExplorerPathToURL(path));
-        }}
-      />
+      {assetRendering ? (
+        <AssetGraphExplorer
+          options={{preferAssetRendering: assetRendering, explodeComposites: false}}
+          filterNodes={filterNodes}
+          explorerPath={explorerPath}
+          setOptions={(o) => setAssetRendering(o.preferAssetRendering)}
+          onChangeExplorerPath={(path, mode) => {
+            history[mode](instanceAssetsExplorerPathToURL(path));
+          }}
+        />
+      ) : (
+        <InstanceAssetOpGraphExplorer
+          options={{preferAssetRendering: assetRendering, explodeComposites: false}}
+          explorerPath={explorerPath}
+          setOptions={(o) => setAssetRendering(o.preferAssetRendering)}
+          onChangeExplorerPath={(path, mode) => {
+            history[mode](instanceAssetsExplorerPathToURL(path));
+          }}
+        />
+      )}
     </Box>
   );
 };

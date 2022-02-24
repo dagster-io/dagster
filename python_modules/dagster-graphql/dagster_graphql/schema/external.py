@@ -1,5 +1,6 @@
 import graphene
 from dagster import DagsterInstance, check
+from dagster.core.asset_defs.asset_group import AssetGroup
 from dagster.core.host_representation import (
     ExternalRepository,
     GrpcServerRepositoryLocation,
@@ -166,6 +167,7 @@ class GrapheneRepository(graphene.ObjectType):
     schedules = non_null_list(GrapheneSchedule)
     sensors = non_null_list(GrapheneSensor)
     assetNodes = non_null_list(GrapheneAssetNode)
+    assetGroupJob = graphene.Field(GrapheneJob)
     displayMetadata = non_null_list(GrapheneRepositoryMetadata)
     inProgressRunsByStep = non_null_list(GrapheneInProgressRunsByStep)
     latestRunByStep = non_null_list(GrapheneRunStatsByStep)
@@ -234,6 +236,12 @@ class GrapheneRepository(graphene.ObjectType):
             )
             if pipeline.is_job
         ]
+
+    def resolve_assetGroupJob(self, _graphene_info):
+        if self._repository.has_pipeline("__ASSET_GROUP"):
+            job = self._repository.get_full_external_pipeline("__ASSET_GROUP")
+            return GrapheneJob(job, self._batch_loader)
+        return None
 
     def resolve_usedSolid(self, _graphene_info, name):
         return get_solid(self._repository, name)
