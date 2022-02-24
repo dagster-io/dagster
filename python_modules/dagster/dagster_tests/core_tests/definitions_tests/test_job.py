@@ -146,7 +146,7 @@ def test_job_run_request():
         my_op()
 
     for partition_key in ["a", "b", "c", "d"]:
-        run_request = my_job.run_request_for_partition(run_key=None, partition_key=partition_key)
+        run_request = my_job.run_request_for_partition(partition_key=partition_key, run_key=None)
         assert run_request.run_config == partition_fn(partition_key)
         assert run_request.tags
         assert run_request.tags.get(PARTITION_NAME_TAG) == partition_key

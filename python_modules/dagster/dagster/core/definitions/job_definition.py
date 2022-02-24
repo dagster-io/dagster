@@ -252,7 +252,7 @@ class JobDefinition(PipelineDefinition):
 
         return self._cached_partition_set
 
-    def run_request_for_partition(self, run_key: Optional[str], partition_key: str) -> RunRequest:
+    def run_request_for_partition(self, partition_key: str, run_key: Optional[str]) -> RunRequest:
         partition_set = self.get_partition_set_def()
         if not partition_set:
             check.failed("Called run_request_for_partition on a non-partitioned job")
