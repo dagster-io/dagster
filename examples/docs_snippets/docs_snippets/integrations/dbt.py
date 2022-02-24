@@ -3,17 +3,19 @@
 
 def scope_dbt_asset_mats():
     # start_marker_dbt_asset_mats
-    from dagster import op, Output
+    from dagster import op
     from dagster_dbt.utils import generate_materializations
 
     @op(required_resource_keys={"dbt"})
     def dbt_run_with_custom_assets(context):
         dbt_result = context.resources.dbt.run()
         for materialization in generate_materializations(dbt_result):
-            yield materialization._replace(
-                metadata_entries=[...]  # insert whatever metadata you want here
+            context.log_event(
+                materialization._replace(
+                    metadata_entries=[...]  # insert whatever metadata you want here
+                )
             )
-        yield Output(dbt_result)
+        return dbt_result
 
     # end_marker_dbt_asset_mats
 

@@ -1,15 +1,10 @@
+"""isort:skip_file"""
+# pylint: disable=reimported
 import csv
 import os
 
 import requests
-from dagster import (
-    AssetMaterialization,
-    MetadataValue,
-    Output,
-    get_dagster_logger,
-    job,
-    op,
-)
+from dagster import op, get_dagster_logger
 
 
 @op
@@ -21,6 +16,14 @@ def download_csv():
 
 
 # start_materializations_marker_0
+from dagster import (
+    AssetMaterialization,
+    MetadataValue,
+    get_dagster_logger,
+    op,
+)
+
+
 @op
 def sort_by_calories(context, cereals):
     sorted_cereals = sorted(
@@ -44,19 +47,21 @@ def sort_by_calories(context, cereals):
         writer.writeheader()
         writer.writerows(sorted_cereals)
 
-    yield AssetMaterialization(
-        asset_key="sorted_cereals_csv",
-        description="Cereals data frame sorted by caloric content",
-        metadata={
-            "sorted_cereals_csv_path": MetadataValue.path(
-                sorted_cereals_csv_path
-            )
-        },
+    context.log_event(
+        AssetMaterialization(
+            asset_key="sorted_cereals_csv",
+            description="Cereals data frame sorted by caloric content",
+            metadata={
+                "sorted_cereals_csv_path": MetadataValue.path(
+                    sorted_cereals_csv_path
+                )
+            },
+        )
     )
-    yield Output(None)
 
 
 # end_materializations_marker_0
+from dagster import job
 
 
 @job
