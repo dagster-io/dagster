@@ -48,6 +48,7 @@ def dbt_rpc_server(
     proc = subprocess.Popen(
         [
             "dbt-rpc",
+            "serve",
             "--host",
             TEST_HOSTNAME,
             "--port",
