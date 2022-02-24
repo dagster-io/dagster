@@ -3,6 +3,7 @@ import string
 import uuid
 import warnings
 from collections import OrderedDict
+from typing import Union
 
 import toposort as toposort_
 from dagster import check
@@ -27,7 +28,7 @@ PYTHON_LOGGING_LEVELS_NAMES = frozenset(
 )
 
 
-def coerce_valid_log_level(log_level):
+def coerce_valid_log_level(log_level: Union[str, int]) -> int:
 
     """Convert a log level into an integer for consumption by the low-level Python logging API."""
     if isinstance(log_level, int):
@@ -54,7 +55,7 @@ def toposort_flatten(data):
     return [item for level in toposort(data) for item in level]
 
 
-def make_new_run_id():
+def make_new_run_id() -> str:
     return str(uuid.uuid4())
 
 
