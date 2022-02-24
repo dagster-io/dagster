@@ -44,6 +44,7 @@ from .partition import PartitionSetDefinition
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .resource_definition import ResourceDefinition
+from .run_request import RunRequest
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
@@ -250,6 +251,16 @@ class JobDefinition(PipelineDefinition):
             )
 
         return self._cached_partition_set
+
+    def run_request_for_partition(self, run_key: Optional[str], partition_key: str) -> RunRequest:
+        partition_set = self.get_partition_set_def()
+        if not partition_set:
+            check.failed("Called run_request_for_partition on a non-partitioned job")
+
+        partition = partition_set.get_partition(partition_key)
+        run_config = partition_set.run_config_for_partition(partition)
+        tags = partition_set.tags_for_partition(partition)
+        return RunRequest(run_key=run_key, run_config=run_config, tags=tags)
 
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "JobDefinition":
         """Apply a set of hooks to all op instances within the job."""
