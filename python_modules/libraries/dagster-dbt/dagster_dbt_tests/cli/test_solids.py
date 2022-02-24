@@ -149,7 +149,7 @@ class TestDbtCliSolids:
         result = execute_solid(test_solid)
         assert result.success
         assert any(
-            "Log macro: <<test succeded!>>" in log["message"]
+            "Log macro: <<test succeded!>>" in log.get("message", log.get("msg", []))
             for log in result.output_value("dbt_cli_output").logs
         )
 
