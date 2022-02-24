@@ -230,7 +230,7 @@ const filterAssetsToRepos = (assets: Asset[], visibleRepos: DagsterRepoOption[])
   );
   return assets.filter(
     (a) =>
-      a.definition &&
+      !a.definition ||
       visibleRepoHashes.includes(
         buildRepoPath(a.definition.repository.name, a.definition.repository.location.name),
       ),
