@@ -393,7 +393,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           githubLink,
         },
       },
-      revalidate: 60, // In seconds; This enables Incremental Static Regeneration
+      revalidate: 600, // In seconds; This enables Incremental Static Regeneration
     };
   } catch (err) {
     console.error(err);
