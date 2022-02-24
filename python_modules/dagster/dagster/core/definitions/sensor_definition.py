@@ -214,6 +214,7 @@ class SensorDefinition:
             )
 
         targets: Optional[List[Union[RepoRelativeTarget, DirectTarget]]] = None
+        self._jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None
         if pipeline_name:
             targets = [
                 RepoRelativeTarget(
