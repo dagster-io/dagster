@@ -288,7 +288,7 @@ def test_my_io_manager_load_input():
 
 ## Yielding metadata from an IOManager <Experimental />
 
-Sometimes, you may want to record some metadata while handling an output in an IOManager. To do this, you can optionally yield <PyObject object="EventMetadataEntry"/> objects from within the body of the `handle_output` function. Using this, we can modify one of the [above examples](/concepts/io-management/io-managers#a-custom-io-manager-that-stores-pandas-dataframes-in-tables) to now include some helpful metadata in the log:
+Sometimes, you may want to record some metadata while handling an output in an IOManager. To do this, you can optionally yield <PyObject object="MetadataEntry"/> objects from within the body of the `handle_output` function. Using this, we can modify one of the [above examples](/concepts/io-management/io-managers#a-custom-io-manager-that-stores-pandas-dataframes-in-tables) to now include some helpful metadata in the log:
 
 ```python file=/concepts/io_management/custom_io_manager.py startafter=start_metadata_marker endbefore=end_metadata_marker
 class DataframeTableIOManagerWithMetadata(IOManager):

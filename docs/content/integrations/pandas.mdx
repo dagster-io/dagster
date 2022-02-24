@@ -72,7 +72,7 @@ If we rerun the above example with this dataframe, nothing should change. Howeve
 
 ## Dagster DataFrame Summary Statistics
 
-Aside from constraint validation, `create_dagster_pandas_dataframe_type` also takes in a summary statistics function that emits `EventMetadataEntry` objects which are surfaced during runs. Since data systems seldom control the quality of the data they receive, it becomes important to monitor data as it flows through your systems. In complex jobs, this can help debug and monitor data drift over time. Let's illustrate how this works in our example:
+Aside from constraint validation, `create_dagster_pandas_dataframe_type` also takes in a summary statistics function that emits `MetadataEntry` objects which are surfaced during runs. Since data systems seldom control the quality of the data they receive, it becomes important to monitor data as it flows through your systems. In complex jobs, this can help debug and monitor data drift over time. Let's illustrate how this works in our example:
 
 ```python file=/legacy/dagster_pandas_guide/summary_stats.py startafter=start_summary endbefore=end_summary
 def compute_trip_dataframe_summary_statistics(dataframe):
