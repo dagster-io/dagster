@@ -26,7 +26,10 @@ class TestDbtCliSolids:
             execute_solid(test_solid)
 
         failure: DagsterDbtCliFatalRuntimeError = exc.value
-        assert "Env var required but not provided:" in failure.metadata_entries[1].entry_data.text
+        assert (
+            "Env var required but not provided:" in failure.metadata_entries[0].entry_data.text
+            or "Env var required but not provided:" in failure.metadata_entries[1].entry_data.text
+        )
 
     def test_dbt_cli_run(
         self, dbt_seed, test_project_dir, dbt_config_dir
