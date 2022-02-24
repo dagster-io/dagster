@@ -45,6 +45,7 @@ if __name__ == "__main__":
                 # https://github.com/dagster-io/dagster/issues/4167
                 "Jinja2<3.0",
                 "dbt-core",
+                "dbt-rpc",
                 "dbt-postgres",
                 "matplotlib",
             ]
