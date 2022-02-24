@@ -1,5 +1,25 @@
 # Changelog
 
+# 0.14.2
+
+### New
+
+* Run status sensors can now be invoked in unit tests. Added `build_run_sensor_status_context` to help build context objects for run status sensors
+
+### Bugfixes
+
+* An issue preventing the use of `default_value` on inputs has been resolved. Previously, a defensive error that did not take `default_value` in to account was thrown.
+* [dagster-aws] Fixed issue where re-emitting log records from the pyspark_step_launcher would occasionally cause a failure.
+* [dagit] The asset catalog now displays entries for materialized assets when only a subset of repositories were selected.  Previously, it only showed the software-defined assets unless all repositories were selected in Dagit.
+
+### Community Contributions
+
+* Fixed an invariant check in the databricks step launcher that was causing failures when setting the `local_dagster_job_package_path` config option (Thanks Iswariya Manivannan!)
+
+### Documentation
+
+* Fixed the example code in the `reconstructable` API docs.
+
 # 0.14.1
 
 ### New
