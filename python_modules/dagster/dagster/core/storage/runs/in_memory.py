@@ -18,11 +18,11 @@ from dagster.core.snap import (
 from dagster.daemon.types import DaemonHeartbeat
 from dagster.utils import EPOCH, frozendict, merge_dicts
 
-from ..pipeline_run import JobBucket, PipelineRun, PipelineRunsFilter, RunRecord, TagBucket
+from ..pipeline_run import JobBucket, PipelineRun, RunRecord, RunsFilter, TagBucket
 from .base import RunStorage
 
 
-def build_run_filter(filters: Optional[PipelineRunsFilter]) -> Callable[[PipelineRun], bool]:
+def build_run_filter(filters: Optional[RunsFilter]) -> Callable[[PipelineRun], bool]:
     def _filter(run: PipelineRun) -> bool:
         if not filters:
             return True
@@ -113,12 +113,12 @@ class InMemoryRunStorage(RunStorage):
 
     def get_runs(
         self,
-        filters: PipelineRunsFilter = None,
+        filters: RunsFilter = None,
         cursor: str = None,
         limit: int = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[PipelineRun]:
-        check.opt_inst_param(filters, "filters", PipelineRunsFilter)
+        check.opt_inst_param(filters, "filters", RunsFilter)
         check.opt_str_param(cursor, "cursor")
         check.opt_int_param(limit, "limit")
         check.opt_inst_param(bucket_by, "bucket_by", (JobBucket, TagBucket))
@@ -143,8 +143,8 @@ class InMemoryRunStorage(RunStorage):
             results.append(run)
         return results
 
-    def get_runs_count(self, filters: PipelineRunsFilter = None) -> int:
-        check.opt_inst_param(filters, "filters", PipelineRunsFilter)
+    def get_runs_count(self, filters: RunsFilter = None) -> int:
+        check.opt_inst_param(filters, "filters", RunsFilter)
 
         return len(self.get_runs(filters))
 
@@ -178,14 +178,14 @@ class InMemoryRunStorage(RunStorage):
 
     def get_run_records(
         self,
-        filters: PipelineRunsFilter = None,
+        filters: RunsFilter = None,
         limit: int = None,
         order_by: str = None,
         ascending: bool = False,
         cursor: str = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
-        check.opt_inst_param(filters, "filters", PipelineRunsFilter)
+        check.opt_inst_param(filters, "filters", RunsFilter)
         check.opt_str_param(cursor, "cursor")
         check.opt_int_param(limit, "limit")
 
@@ -293,7 +293,7 @@ class InMemoryRunStorage(RunStorage):
         return (root_run.root_run_id, run_group)
 
     def get_run_groups(
-        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
+        self, filters: RunsFilter = None, cursor: str = None, limit: int = None
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         runs = self.get_runs(filters=filters, cursor=cursor, limit=limit)
         root_run_id_to_group: Dict[str, Dict[str, PipelineRun]] = defaultdict(dict)

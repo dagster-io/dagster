@@ -21,12 +21,7 @@ from dagster.core.errors import (
 )
 from dagster.core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import (
-    DagsterRun,
-    PipelineRun,
-    PipelineRunStatus,
-    PipelineRunsFilter,
-)
+from dagster.core.storage.pipeline_run import DagsterRun, PipelineRun, PipelineRunStatus, RunsFilter
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
@@ -426,7 +421,7 @@ class RunStatusSensorDefinition(SensorDefinition):
 
                 # get run info
                 run_records = context.instance.get_run_records(
-                    filters=PipelineRunsFilter(run_ids=[event_log_entry.run_id])
+                    filters=RunsFilter(run_ids=[event_log_entry.run_id])
                 )
 
                 # skip if we couldn't find the right run

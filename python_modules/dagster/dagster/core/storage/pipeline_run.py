@@ -430,6 +430,7 @@ class DagsterRun(PipelineRun):
 # Dagster, but is read back in as a DagsterRun.
 register_serdes_tuple_fallbacks({"PipelineRun": DagsterRun})
 
+
 class RunsFilterSerializer(DefaultNamedTupleSerializer):
     @classmethod
     def value_to_storage_dict(
@@ -445,7 +446,7 @@ class RunsFilterSerializer(DefaultNamedTupleSerializer):
         )
         # For backcompat, we store:
         # job_name as pipeline_name
-        return replace_storage_keys(storage, { "job_name": "pipeline_name" })
+        return replace_storage_keys(storage, {"job_name": "pipeline_name"})
 
 
 @whitelist_for_serdes(serializer=RunsFilterSerializer)
@@ -474,7 +475,7 @@ class RunsFilter(
         updated_after: Optional[datetime] = None,
         mode: Optional[str] = None,
         created_before: Optional[datetime] = None,
-        pipeline_name: Optional[str] = None, # for backcompat purposes
+        pipeline_name: Optional[str] = None,  # for backcompat purposes
     ):
         job_name = job_name or pipeline_name
         return super(RunsFilter, cls).__new__(
@@ -488,6 +489,7 @@ class RunsFilter(
             mode=check.opt_str_param(mode, "mode"),
             created_before=check.opt_inst_param(created_before, "created_before", datetime),
         )
+
     @property
     def pipeline_name(self):
         return self.job_name
@@ -507,6 +509,7 @@ class RunsFilter(
     @staticmethod
     def for_backfill(backfill_id):
         return RunsFilter(tags=PipelineRun.tags_for_backfill_id(backfill_id))
+
 
 register_serdes_tuple_fallbacks({"PipelineRunsFilter": RunsFilter})
 PipelineRunsFilter = RunsFilter

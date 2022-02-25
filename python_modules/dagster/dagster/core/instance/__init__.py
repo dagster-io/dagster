@@ -48,8 +48,8 @@ from dagster.core.storage.pipeline_run import (
     PipelineRun,
     PipelineRunStatsSnapshot,
     PipelineRunStatus,
-    PipelineRunsFilter,
     RunRecord,
+    RunsFilter,
     TagBucket,
 )
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
@@ -1061,7 +1061,7 @@ class DagsterInstance:
     @traced
     def get_runs(
         self,
-        filters: PipelineRunsFilter = None,
+        filters: RunsFilter = None,
         cursor: str = None,
         limit: int = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
@@ -1069,19 +1069,19 @@ class DagsterInstance:
         return self._run_storage.get_runs(filters, cursor, limit, bucket_by)
 
     @traced
-    def get_runs_count(self, filters: PipelineRunsFilter = None) -> int:
+    def get_runs_count(self, filters: RunsFilter = None) -> int:
         return self._run_storage.get_runs_count(filters)
 
     @traced
     def get_run_groups(
-        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
+        self, filters: RunsFilter = None, cursor: str = None, limit: int = None
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
 
     @traced
     def get_run_records(
         self,
-        filters: PipelineRunsFilter = None,
+        filters: RunsFilter = None,
         limit: int = None,
         order_by: str = None,
         ascending: bool = False,
@@ -1091,7 +1091,7 @@ class DagsterInstance:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
 
         Args:
-            filters (Optional[PipelineRunsFilter]): the filter by which to filter runs.
+            filters (Optional[RunsFilter]): the filter by which to filter runs.
             limit (Optional[int]): Number of results to get. Defaults to infinite.
             order_by (Optional[str]): Name of the column to sort by. Defaults to id.
             ascending (Optional[bool]): Sort the result in ascending order if True, descending

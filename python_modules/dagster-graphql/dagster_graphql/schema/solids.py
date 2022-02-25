@@ -10,7 +10,7 @@ from dagster.core.definitions import NodeHandle
 from dagster.core.host_representation import RepresentedPipeline
 from dagster.core.host_representation.historical import HistoricalPipeline
 from dagster.core.snap import CompositeSolidDefSnap, DependencyStructureIndex, SolidDefSnap
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.pipeline_run import RunsFilter
 
 from .config_types import GrapheneConfigTypeField
 from .dagster_types import GrapheneDagsterType, to_dagster_type
@@ -565,7 +565,7 @@ class GrapheneSolidHandle(graphene.ObjectType):
             )
 
         instance = _graphene_info.context.instance
-        runs_filter = PipelineRunsFilter(pipeline_name=self._solid.get_pipeline_name())
+        runs_filter = RunsFilter(pipeline_name=self._solid.get_pipeline_name())
         runs = instance.get_runs(runs_filter, limit=limit)
         nodes = []
         for run in runs:

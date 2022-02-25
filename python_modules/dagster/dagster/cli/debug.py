@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 from dagster import DagsterInstance, check
 from dagster.core.debug import DebugRunPayload
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 
@@ -13,9 +13,7 @@ def _recent_failed_runs_text(instance):
     lines = []
     runs = instance.get_runs(
         limit=5,
-        filters=PipelineRunsFilter(
-            statuses=[PipelineRunStatus.FAILURE, PipelineRunStatus.CANCELED]
-        ),
+        filters=RunsFilter(statuses=[PipelineRunStatus.FAILURE, PipelineRunStatus.CANCELED]),
     )
     if len(runs) <= 0:
         return ""

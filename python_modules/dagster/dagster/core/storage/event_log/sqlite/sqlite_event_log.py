@@ -20,7 +20,7 @@ from dagster.config.source import StringSource
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log.base import EventLogRecord, EventRecordsFilter
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -314,7 +314,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             else None
         )
         run_records = self._instance.get_run_records(
-            filters=PipelineRunsFilter(updated_after=run_updated_after),
+            filters=RunsFilter(updated_after=run_updated_after),
             order_by="update_timestamp",
             ascending=ascending,
         )

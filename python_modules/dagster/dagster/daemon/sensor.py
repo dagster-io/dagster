@@ -18,7 +18,7 @@ from dagster.core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, check_tags
 from dagster.core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster.core.workspace import IWorkspace
@@ -497,7 +497,7 @@ def _get_or_create_sensor_run(
         )
 
     existing_runs = instance.get_runs(
-        PipelineRunsFilter(
+        RunsFilter(
             tags=merge_dicts(
                 PipelineRun.tags_for_sensor(external_sensor),
                 {RUN_KEY_TAG: run_request.run_key},

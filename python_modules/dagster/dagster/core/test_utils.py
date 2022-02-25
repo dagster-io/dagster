@@ -20,7 +20,7 @@ from dagster.core.host_representation.origin import (
 from dagster.core.instance import DagsterInstance
 from dagster.core.launcher import RunLauncher
 from dagster.core.run_coordinator import RunCoordinator, SubmitRunContext
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import WorkspaceLoadTarget
 from dagster.daemon.controller import create_daemon_grpc_server_registry
@@ -217,7 +217,7 @@ def poll_for_finished_run(instance, run_id=None, timeout=20, run_tags=None):
     total_time = 0
     interval = 0.01
 
-    filters = PipelineRunsFilter(
+    filters = RunsFilter(
         run_ids=[run_id] if run_id else None,
         tags=run_tags,
         statuses=[PipelineRunStatus.SUCCESS, PipelineRunStatus.FAILURE, PipelineRunStatus.CANCELED],
