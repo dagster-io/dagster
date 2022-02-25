@@ -340,7 +340,7 @@ def _evaluate_sensor(
     sensor_origin = external_sensor.get_external_origin()
     repository_handle = external_sensor.handle.repository_handle
     repo_location = workspace.get_location(
-        sensor_origin.external_repository_origin.repository_location_origin
+        sensor_origin.external_repository_origin.repository_location_origin.location_name
     )
 
     sensor_runtime_data = repo_location.get_external_sensor_execution_data(

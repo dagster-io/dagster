@@ -66,7 +66,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
             )
 
         repository_location = context.workspace.get_location(
-            run.external_pipeline_origin.external_repository_origin.repository_location_origin
+            run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
         )
 
         check.inst(

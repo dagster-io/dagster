@@ -421,7 +421,7 @@ def _schedule_runs_at_time(
     )
 
     repo_location = workspace.get_location(
-        schedule_origin.external_repository_origin.repository_location_origin
+        schedule_origin.external_repository_origin.repository_location_origin.location_name
     )
 
     external_pipeline = repo_location.get_external_pipeline(pipeline_selector)

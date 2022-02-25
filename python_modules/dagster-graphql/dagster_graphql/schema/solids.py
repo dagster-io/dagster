@@ -407,7 +407,7 @@ class ISolidDefinitionMixin:
         else:
             repo_handle = self._represented_pipeline.repository_handle
             origin = repo_handle.repository_location_origin
-            location = graphene_info.context.get_location(origin)
+            location = graphene_info.context.get_location(origin.location_name)
             ext_repo = location.get_repository(repo_handle.repository_name)
             nodes = [
                 node
