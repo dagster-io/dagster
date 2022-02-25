@@ -65,18 +65,6 @@ def downstream_asset(upstream_asset):
 
 The [explicit dependencies](#explicit-dependencies) example covers an alternative way to specify asset dependencies without needing to match argument names to upstream asset names.
 
-### Using context in assets
-
-Since a software-defined asset contains an op, all of the typical functionality of an op (like the use of resources) is available to an asset.
-
-```python file=/concepts/assets/asset_w_context.py startafter=start_w_context endbefore=end_w_context
-@asset(required_resource_keys={"alerter"})
-def my_asset(context):
-    # creates an asset and sends an alert to notify of its creation
-    context.resources.alerter.send_asset_create_alert("my_asset")
-    return [1, 2, 3]
-```
-
 ## Combining assets in groups
 
 To materialize assets or load them in Dagit, you first need to combine them into an <PyObject object="AssetGroup" />, which is a set of assets with no unsatisfied dependencies. For example:
@@ -309,7 +297,7 @@ Like regular jobs, asset jobs can be placed on [schedules](/concepts/partitions-
 
 ## Testing
 
-Since a function decorated with `@asset` acts as the op for a software-defined asset, you can write unit tests for this function in the same way you would write unit tests for a standard op. See this section on [op testing](/concepts/testing#testing-ops) for some background information.
+When writing unit tests, you can treat the function decorated by `@asset` as a regular python function.
 
 Consider a simple asset with no upstream dependencies:
 
@@ -401,3 +389,14 @@ def downstream_asset(upstream):
 ```
 
 In this case, `ins={"upstream": AssetIn("upstream_asset")}` declares that the contents of the asset with the key `upstream_asset` will be provided to the function argument named `upstream`.
+
+### Using context in assets
+
+Since a software-defined asset contains an op, all of the typical functionality of an op (like the use of resources) is available to an asset.
+
+```python file=/concepts/assets/asset_w_context.py startafter=start_w_context endbefore=end_w_context
+@asset(required_resource_keys={"api"})
+def my_asset(context):
+    # fetches contents of an asset
+    return context.resources.api.fetch_table("my_asset")
+```
