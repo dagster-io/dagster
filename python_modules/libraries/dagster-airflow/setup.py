@@ -46,7 +46,7 @@ if __name__ == "__main__":
                 # Airflow should be provided by the end user, not us. For example, GCP Cloud
                 # Composer ships a fork of Airflow; we don't want to override it with our install.
                 # See https://github.com/dagster-io/dagster/issues/2701
-                "apache-airflow==1.10.10",
+                "apache-airflow<2",
                 # https://github.com/dagster-io/dagster/issues/3858
                 "sqlalchemy",
                 "marshmallow-sqlalchemy",
