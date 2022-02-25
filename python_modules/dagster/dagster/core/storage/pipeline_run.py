@@ -10,12 +10,14 @@ from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
 from dagster.serdes.serdes import (
     DefaultNamedTupleSerializer,
+    EnumSerializer,
+    WhitelistMap,
+    register_serdes_enum_fallbacks,
     register_serdes_tuple_fallbacks,
     replace_storage_keys,
     unpack_inner_value,
     whitelist_for_serdes,
 )
-from dagster.serdes.serdes import EnumSerializer, WhitelistMap, register_serdes_enum_fallbacks
 
 from .tags import (
     BACKFILL_ID_TAG,
