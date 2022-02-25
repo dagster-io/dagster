@@ -37,7 +37,7 @@ export default ({ setSnapshotStats }: CodeTransformerOptions) => async (
   };
 
   for (const [node] of codes) {
-    const meta = ((node.meta as string) || "").split(" ");
+    const meta = ((node["meta"] as string) || "").split(" ");
     const fileMeta = meta.find((m) => m.startsWith("file="));
     if (!fileMeta) {
       continue;
@@ -78,12 +78,12 @@ export default ({ setSnapshotStats }: CodeTransformerOptions) => async (
       }
 
       stats.totalSnapshots++;
-      if (node.value !== contentWithLimit) {
-        stats.updatedSnapshots.push(node.meta as string);
-        node.value = `${contentWithLimit}`;
+      if (node["value"] !== contentWithLimit) {
+        stats.updatedSnapshots.push(node["meta"] as string);
+        node["value"] = `${contentWithLimit}`;
       }
     } catch (err) {
-      node.value = err.message;
+      node["value"] = err.message;
     }
   }
 

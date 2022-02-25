@@ -97,13 +97,8 @@ function MDXRenderer({ data }: { data: MDXData }) {
   const { query } = useRouter();
   const { editMode } = query;
 
-  const {
-    mdxSource,
-    frontMatter,
-    searchIndex,
-    tableOfContents,
-    githubLink,
-  } = data;
+  const { mdxSource, frontMatter, searchIndex, tableOfContents, githubLink } =
+    data;
 
   const content = hydrate(mdxSource, {
     components,
@@ -222,10 +217,10 @@ function getItems(node, current) {
   } else if (node.type === `paragraph`) {
     visit(node, (item) => {
       if (item.type === `link`) {
-        current.url = item.url;
+        current.url = item["url"];
       }
       if (item.type === `text`) {
-        current.title = item.value;
+        current.title = item["value"];
       }
     });
     return current;

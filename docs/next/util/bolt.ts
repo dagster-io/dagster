@@ -92,7 +92,6 @@ export default function (receiver) {
         dryRun: event.text.includes("--skip-issue"),
       });
 
-      // @ts-expect-error
       await say({ text: `Created issue at: ${issue}`, thread_ts });
     }
   });
