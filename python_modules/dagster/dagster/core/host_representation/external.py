@@ -72,18 +72,16 @@ class ExternalRepository:
             for external_partition_set_data in external_repository_data.external_partition_set_datas
         )
 
-        _asset_jobs: OrderedDict[
-            str, List[ExternalAssetNode]
-        ] = OrderedDict()  # pylint: disable=unsubscriptable-object
+        # pylint: disable=unsubscriptable-object
+        _asset_jobs: OrderedDict[str, List[ExternalAssetNode]] = OrderedDict()
         for asset_node in external_repository_data.external_asset_graph_data:
             for job_name in asset_node.job_names:
                 if job_name not in _asset_jobs:
                     _asset_jobs[job_name] = [asset_node]
                 else:
                     _asset_jobs[job_name].append(asset_node)
-        self._asset_jobs: OrderedDict[str, Sequence[ExternalAssetNode]] = OrderedDict(
-            _asset_jobs
-        )  # pylint: disable=unsubscriptable-object
+        # pylint: disable=unsubscriptable-object
+        self._asset_jobs: OrderedDict[str, Sequence[ExternalAssetNode]] = OrderedDict(_asset_jobs)
 
     @property
     def name(self):
