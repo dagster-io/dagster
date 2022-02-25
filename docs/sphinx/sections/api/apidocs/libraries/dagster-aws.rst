@@ -82,3 +82,12 @@ CloudWatch
 
 .. autoconfigurable:: dagster_aws.cloudwatch.cloudwatch_logger
   :annotation: LoggerDefinition
+
+SecretsManager
+--
+
+.. autoconfigurable:: dagster_aws.secretsmanager.secretsmanager_resource
+  :annotation: ResourceDefinition
+
+.. autoconfigurable:: dagster_aws.secretsmanager.secretsmanager_secrets_resource
+  :annotation: ResourceDefinition
