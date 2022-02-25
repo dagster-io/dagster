@@ -91,7 +91,9 @@ To save you from needing to add each asset individually to the group, Dagster pr
 ```python file=/concepts/assets/from_package_name.py
 from dagster import AssetGroup
 
-asset_group = AssetGroup.from_package_name("docs_snippets.concepts.assets.package_with_assets")
+asset_group = AssetGroup.from_package_name(
+    "docs_snippets.concepts.assets.package_with_assets"
+)
 ```
 
 Once assets are bundled into an asset group, you can:
@@ -251,7 +253,8 @@ prod_asset_group = AssetGroup(
 )
 
 local_asset_group = AssetGroup(
-    [upstream_asset, downstream_asset], resource_defs={"io_manager": fs_asset_io_manager}
+    [upstream_asset, downstream_asset],
+    resource_defs={"io_manager": fs_asset_io_manager},
 )
 ```
 
@@ -288,7 +291,9 @@ downstream_assets = asset_group.build_job(
     name="my_asset_job", selection=["upstream", "downstream_1"]
 )
 
-upstream_and_downstream_1 = asset_group.build_job(name="my_asset_job", selection="*downstream_1")
+upstream_and_downstream_1 = asset_group.build_job(
+    name="my_asset_job", selection="*downstream_1"
+)
 ```
 
 Multiple jobs within the same repository can target overlapping sets of assets.

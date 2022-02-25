@@ -121,7 +121,9 @@ Dagster validates the `run_config` against the `config_schema`. If the values vi
 ```python file=/concepts/configuration/execute_with_config.py startafter=start_execute_with_bad_config endbefore=end_execute_with_bad_config
 result = nests_configurable.execute_in_process(
         run_config={
-            "ops": {"configurable_with_schema": {"config": {"nonexistent_config_value": 1}}}
+            "ops": {
+                "configurable_with_schema": {"config": {"nonexistent_config_value": 1}}
+            }
         }
     )
 ```
