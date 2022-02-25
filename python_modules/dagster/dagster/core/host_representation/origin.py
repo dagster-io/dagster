@@ -1,7 +1,6 @@
 import os
 import sys
 from abc import ABC, abstractmethod
-from collections import namedtuple
 from contextlib import contextmanager
 from inspect import Parameter
 from typing import (
@@ -320,13 +319,16 @@ class GrpcServerRepositoryLocationOrigin(
 
 @whitelist_for_serdes
 class ExternalRepositoryOrigin(
-    namedtuple("_ExternalRepositoryOrigin", "repository_location_origin repository_name")
+    NamedTuple(
+        "_ExternalRepositoryOrigin",
+        [("repository_location_origin", RepositoryLocationOrigin), ("repository_name", str)],
+    )
 ):
     """Serializable representation of an ExternalRepository that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, repository_location_origin, repository_name):
+    def __new__(cls, repository_location_origin: RepositoryLocationOrigin, repository_name: str):
         return super(ExternalRepositoryOrigin, cls).__new__(
             cls,
             check.inst_param(
@@ -350,13 +352,16 @@ class ExternalRepositoryOrigin(
 
 @whitelist_for_serdes
 class ExternalPipelineOrigin(
-    namedtuple("_ExternalPipelineOrigin", "external_repository_origin pipeline_name")
+    NamedTuple(
+        "_ExternalPipelineOrigin",
+        [("external_repository_origin", ExternalRepositoryOrigin), ("pipeline_name", str)],
+    )
 ):
     """Serializable representation of an ExternalPipeline that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, external_repository_origin, pipeline_name):
+    def __new__(cls, external_repository_origin: ExternalRepositoryOrigin, pipeline_name: str):
         return super(ExternalPipelineOrigin, cls).__new__(
             cls,
             check.inst_param(
@@ -420,13 +425,16 @@ class ExternalInstigatorOriginSerializer(DefaultNamedTupleSerializer):
 
 @whitelist_for_serdes(serializer=ExternalInstigatorOriginSerializer)
 class ExternalInstigatorOrigin(
-    namedtuple("_ExternalInstigatorOrigin", "external_repository_origin instigator_name")
+    NamedTuple(
+        "_ExternalInstigatorOrigin",
+        [("external_repository_origin", ExternalRepositoryOrigin), ("instigator_name", str)],
+    )
 ):
     """Serializable representation of an ExternalJob that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, external_repository_origin, instigator_name):
+    def __new__(cls, external_repository_origin: ExternalRepositoryOrigin, instigator_name: str):
         return super(ExternalInstigatorOrigin, cls).__new__(
             cls,
             check.inst_param(
@@ -451,13 +459,16 @@ register_serdes_tuple_fallbacks({"ExternalJobOrigin": ExternalInstigatorOrigin})
 
 @whitelist_for_serdes
 class ExternalPartitionSetOrigin(
-    namedtuple("_PartitionSetOrigin", "external_repository_origin partition_set_name")
+    NamedTuple(
+        "_PartitionSetOrigin",
+        [("external_repository_origin", ExternalRepositoryOrigin), ("partition_set_name", str)],
+    )
 ):
     """Serializable representation of an ExternalPartitionSet that can be used to
     uniquely it or reload it in across process boundaries.
     """
 
-    def __new__(cls, external_repository_origin, partition_set_name):
+    def __new__(cls, external_repository_origin: ExternalRepositoryOrigin, partition_set_name: str):
         return super(ExternalPartitionSetOrigin, cls).__new__(
             cls,
             check.inst_param(

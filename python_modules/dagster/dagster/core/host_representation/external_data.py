@@ -37,19 +37,26 @@ from dagster.utils.error import SerializableErrorInfo
 
 @whitelist_for_serdes
 class ExternalRepositoryData(
-    namedtuple(
+    NamedTuple(
         "_ExternalRepositoryData",
-        "name external_pipeline_datas external_schedule_datas external_partition_set_datas external_sensor_datas external_asset_graph_data",
+        [
+            ("name", str),
+            ("external_pipeline_datas", Sequence["ExternalPipelineData"]),
+            ("external_schedule_datas", Sequence["ExternalScheduleData"]),
+            ("external_partition_set_datas", Sequence["ExternalPartitionSetData"]),
+            ("external_sensor_datas", Sequence["ExternalSensorData"]),
+            ("external_asset_graph_data", Sequence["ExternalAssetNode"]),
+        ],
     )
 ):
     def __new__(
         cls,
-        name,
-        external_pipeline_datas,
-        external_schedule_datas,
-        external_partition_set_datas,
-        external_sensor_datas=None,
-        external_asset_graph_data=None,
+        name: str,
+        external_pipeline_datas: Sequence["ExternalPipelineData"],
+        external_schedule_datas: Sequence["ExternalScheduleData"],
+        external_partition_set_datas: Sequence["ExternalPartitionSetData"],
+        external_sensor_datas: Sequence["ExternalSensorData"] = None,
+        external_asset_graph_data: Sequence["ExternalAssetNode"] = None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
@@ -125,9 +132,21 @@ class ExternalRepositoryData(
 
 @whitelist_for_serdes
 class ExternalPipelineSubsetResult(
-    namedtuple("_ExternalPipelineSubsetResult", "success error external_pipeline_data")
+    NamedTuple(
+        "_ExternalPipelineSubsetResult",
+        [
+            ("success", bool),
+            ("error", Optional[SerializableErrorInfo]),
+            ("external_pipeline_data", Optional["ExternalPipelineData"]),
+        ],
+    )
 ):
-    def __new__(cls, success, error=None, external_pipeline_data=None):
+    def __new__(
+        cls,
+        success: bool,
+        error: Optional[SerializableErrorInfo] = None,
+        external_pipeline_data: Optional["ExternalPipelineData"] = None,
+    ):
         return super(ExternalPipelineSubsetResult, cls).__new__(
             cls,
             success=check.bool_param(success, "success"),
@@ -140,13 +159,24 @@ class ExternalPipelineSubsetResult(
 
 @whitelist_for_serdes
 class ExternalPipelineData(
-    namedtuple(
+    NamedTuple(
         "_ExternalPipelineData",
-        "name pipeline_snapshot active_presets parent_pipeline_snapshot is_job",
+        [
+            ("name", str),
+            ("pipeline_snapshot", PipelineSnapshot),
+            ("active_presets", Sequence["ExternalPresetData"]),
+            ("parent_pipeline_snapshot", Optional[PipelineSnapshot]),
+            ("is_job", bool),
+        ],
     )
 ):
     def __new__(
-        cls, name, pipeline_snapshot, active_presets, parent_pipeline_snapshot, is_job=False
+        cls,
+        name: str,
+        pipeline_snapshot: PipelineSnapshot,
+        active_presets: Sequence["ExternalPresetData"],
+        parent_pipeline_snapshot: Optional[PipelineSnapshot],
+        is_job: bool = False,
     ):
         return super(ExternalPipelineData, cls).__new__(
             cls,
@@ -581,7 +611,9 @@ class ExternalAssetNode(
         )
 
 
-def external_repository_data_from_def(repository_def):
+def external_repository_data_from_def(
+    repository_def: RepositoryDefinition,
+) -> ExternalRepositoryData:
     check.inst_param(repository_def, "repository_def", RepositoryDefinition)
 
     pipelines = repository_def.get_all_pipelines()
