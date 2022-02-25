@@ -242,7 +242,7 @@ def _dagster_event_sequence_for_step(step_context: StepExecutionContext) -> Iter
             prev_attempts = step_context.previous_attempt_count
             if prev_attempts >= retry_request.max_retries:
                 fail_err = SerializableErrorInfo(
-                    message="Exceeded max_retries of {}".format(retry_request.max_retries),
+                    message=f"Exceeded max_retries of {retry_request.max_retries}\n",
                     stack=retry_err_info.stack,
                     cls_name=retry_err_info.cls_name,
                     cause=retry_err_info.cause,
@@ -250,7 +250,12 @@ def _dagster_event_sequence_for_step(step_context: StepExecutionContext) -> Iter
                 step_context.capture_step_exception(retry_request)
                 yield DagsterEvent.step_failure_event(
                     step_context=step_context,
-                    step_failure_data=StepFailureData(error=fail_err, user_failure_data=None),
+                    step_failure_data=StepFailureData(
+                        error=fail_err,
+                        user_failure_data=None,
+                        # set the flag to omit the outer stack if we have a cause to show
+                        error_source=ErrorSource.USER_CODE_ERROR if fail_err.cause else None,
+                    ),
                 )
             else:
                 yield DagsterEvent.step_retry_event(
