@@ -205,8 +205,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         if filters.run_ids:
             query = query.where(RunsTable.c.run_id.in_(filters.run_ids))
 
-        if filters.pipeline_name:
-            query = query.where(RunsTable.c.pipeline_name == filters.pipeline_name)
+        if filters.job_name:
+            query = query.where(RunsTable.c.pipeline_name == filters.job_name)
 
         if filters.mode:
             query = query.where(RunsTable.c.mode == filters.mode)

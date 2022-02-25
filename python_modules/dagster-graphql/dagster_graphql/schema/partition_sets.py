@@ -135,7 +135,7 @@ class GraphenePartition(graphene.ObjectType):
             filters = filters.to_selector()
             runs_filter = RunsFilter(
                 run_ids=filters.run_ids,
-                pipeline_name=filters.pipeline_name,
+                pipeline_name=filters.job_name,
                 statuses=filters.statuses,
                 tags=merge_dicts(filters.tags, partition_tags),
             )

@@ -33,7 +33,7 @@ def build_run_filter(filters: Optional[RunsFilter]) -> Callable[[PipelineRun], b
         if filters.statuses and run.status not in filters.statuses:
             return False
 
-        if filters.pipeline_name and filters.pipeline_name != run.pipeline_name:
+        if filters.job_name and filters.job_name != run.pipeline_name:
             return False
 
         if filters.mode and filters.mode != run.mode:
