@@ -1,8 +1,10 @@
+from typing import Dict
+
 from dagster import Array, Field, Noneable, check, resource
-from typing import Optional, Dict
+from dagster.core.test_utils import environ
 from dagster.utils.merger import merge_dicts
+
 from .secrets import construct_secretsmanager_client, get_secrets_from_arns, get_tagged_secrets
-from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
 
 SECRETSMANAGER_SESSION_CONFIG = {
     "region_name": Field(
