@@ -78,6 +78,8 @@ If you don't need access to the context parameter, you can omit it from the deco
 
 ### A schedule from a partitioned job
 
+#### Time partitioned job
+
 When you have a [partitioned job](/concepts/partitions-schedules-sensors/partitions) that's partitioned by time, you can use the <PyObject object="build_schedule_from_partitioned_job"/> function to construct a schedule for it whose interval matches the spacing of partitions in your job.
 
 For example, if you have a daily partitioned job that fills in a date partition of a table each time it runs, you likely want to run that job every day.
@@ -104,15 +106,53 @@ However, you can use the `end_offset` parameter of <PyObject object="daily_parti
 
 You can use the `minute_of_hour`, `hour_of_day`, `day_of_week`, and `day_of_month` parameters of `build_schedule_from_partitioned_job` to control the timing of the schedule. For example, if you have a job that's partitioned by date, and you set `minute_of_hour` to `30` and `hour_of_day` to `1`, the schedule would submit the run for partition `2020-04-01` at 1:30 AM on `2020-04-02`.
 
+#### Static partitioned job
 
-You can also create a schedule for a static partition. The Partitioned Jobs concepts page also includes an [eample of how to define a static partitioned job](/concepts/partitions-schedules-sensors/partitions#defining-a-job-with-static-partitions). To define a schedule for a static partitioned job, we will contruct a schedule from scratch, rather than using a helper function like `build_schedule_from_partitioned_job` this will allow more flexibiility in determining which partitions should be run by the schedule.
+You can also create a schedule for a static partition. The Partitioned Jobs concepts page also includes an [example of how to define a static partitioned job](/concepts/partitions-schedules-sensors/partitions#defining-a-job-with-static-partitions). To define a schedule for a static partitioned job, we will contruct a schedule from scratch, rather than using a helper function like `build_schedule_from_partitioned_job` this will allow more flexibility in determining which partitions should be run by the schedule.
 
 For example, if we have the continents static partitioned job from the Partitioned Jobs concept page
+
 ```python file=/concepts/partitions_schedules_sensors/static_partitioned_job.py
+from dagster import job, op, static_partitioned_config
+
+CONTINENTS = ["Africa", "Antarctica", "Asia", "Europe", "North America", "Oceania", "South America"]
+
+
+@static_partitioned_config(partition_keys=CONTINENTS)
+def continent_config(partition_key: str):
+    return {"ops": {"continent_op": {"config": {"continent_name": partition_key}}}}
+
+
+@op(config_schema={"continent_name": str})
+def continent_op(context):
+    context.log.info(context.op_config["continent_name"])
+
+
+@job(config=continent_config)
+def continent_job():
+    continent_op()
 ```
 
 We can write a schedule that will run this partition
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_static_partition endbefore=end_static_partition
+from dagster import schedule
+
+
+@schedule(cron_schedule="0 0 * * *", job=continent_job)
+def continent_schedule():
+    for c in CONTINENTS:
+        request = continent_job.run_request_for_partition(partition_key=c, run_key=c)
+        yield request
 ```
+
+Or a schedule that will run a subselection of the partition
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_single_partition endbefore=end_single_partition
+@schedule(cron_schedule="0 0 * * *", job=continent_job)
+def antarctica_schedule():
+    request = continent_job.run_request_for_partition(partition_key="Antarctica", run_key=None)
+    yield request
 ```
 
 ### Timezones
