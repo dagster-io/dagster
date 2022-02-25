@@ -137,7 +137,7 @@ do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
 )
 ```
 
-Schedules can also be made from static partitioned jobs. If we wanted to make a schedule for the `continent_job` above that runs each partition, we could write:
+Schedules can also be made from static partitioned jobs. If you wanted to make a schedule for the `continent_job` above that runs each partition, you could write:
 
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_static_partition endbefore=end_static_partition
 from dagster import schedule
