@@ -57,7 +57,7 @@ class DaemonHeartbeat(
         [
             ("timestamp", float),
             ("daemon_type", str),
-            ("daemon_id", str),
+            ("daemon_id", Optional[str]),
             ("errors", Optional[List[SerializableErrorInfo]]),
         ],
     ),
@@ -75,7 +75,7 @@ class DaemonHeartbeat(
             cls,
             timestamp=check.float_param(timestamp, "timestamp"),
             daemon_type=check.str_param(daemon_type, "daemon_type"),
-            daemon_id=check.str_param(daemon_id, "daemon_id"),
+            daemon_id=check.opt_str_param(daemon_id, "daemon_id"),
             errors=errors,
         )
 
