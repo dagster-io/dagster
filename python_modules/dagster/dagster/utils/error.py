@@ -1,18 +1,27 @@
 import traceback
-from collections import namedtuple
 from types import TracebackType
-from typing import List, Optional, Tuple, Type, Union
+from typing import Any, List, NamedTuple, Optional, Tuple, Type, Union
 
 from dagster.serdes import whitelist_for_serdes
 
 
+# mypy does not support recursive types, so "cause" has to be typed `Any`
 @whitelist_for_serdes
-class SerializableErrorInfo(namedtuple("SerializableErrorInfo", "message stack cls_name cause")):
+class SerializableErrorInfo(
+    NamedTuple(
+        "SerializableErrorInfo",
+        [("message", str), ("stack", List[str]), ("cls_name", str), ("cause", Any)],
+    )
+):
     # serdes log
     # * added cause - default to None in constructor to allow loading old entries
     #
     def __new__(
-        cls, message: str, stack: List[str], cls_name: str, cause: "SerializableErrorInfo" = None
+        cls,
+        message: str,
+        stack: List[str],
+        cls_name: str,
+        cause: Optional["SerializableErrorInfo"] = None,
     ):
         return super().__new__(cls, message, stack, cls_name, cause)
 

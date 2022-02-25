@@ -804,9 +804,11 @@ class UnresolvedCollectStepInput(NamedTuple):
         return [self.source.get_step_output_handle_dep_with_placeholder()]
 
 
-StepInputSourceTypes = (
+StepInputSourceUnion = Union[
     StepInputSource,
     FromDynamicCollect,
     FromUnresolvedStepOutput,
     FromPendingDynamicStepOutput,
-)
+]
+
+StepInputSourceTypes = StepInputSourceUnion.__args__  # type: ignore

@@ -10,6 +10,7 @@ from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event as ThreadingEventType
 from time import sleep
+from typing import NamedTuple
 
 import grpc
 from dagster import check, seven
@@ -746,8 +747,10 @@ class GrpcServerFailedToBindEvent(namedtuple("GrpcServerStartedEvent", "")):
 
 
 @whitelist_for_serdes
-class GrpcServerLoadErrorEvent(namedtuple("GrpcServerLoadErrorEvent", "error_info")):
-    def __new__(cls, error_info):
+class GrpcServerLoadErrorEvent(
+    NamedTuple("GrpcServerLoadErrorEvent", [("error_info", SerializableErrorInfo)])
+):
+    def __new__(cls, error_info: SerializableErrorInfo):
         return super(GrpcServerLoadErrorEvent, cls).__new__(
             cls,
             check.inst_param(error_info, "error_info", SerializableErrorInfo),

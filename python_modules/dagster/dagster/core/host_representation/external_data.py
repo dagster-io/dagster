@@ -310,12 +310,15 @@ class ExternalTargetData(
 
 
 @whitelist_for_serdes
-class ExternalSensorMetadata(namedtuple("_ExternalSensorMetadata", "asset_keys")):
+class ExternalSensorMetadata(
+    NamedTuple("_ExternalSensorMetadata", [("asset_keys", Optional[List[AssetKey]])])
+):
     """Stores additional sensor metadata which is available on the Dagit frontend."""
 
-    def __new__(cls, asset_keys=None):
+    def __new__(cls, asset_keys: Optional[List[AssetKey]] = None):
         return super(ExternalSensorMetadata, cls).__new__(
-            cls, asset_keys=check.opt_nullable_list_param(asset_keys, "asset_keys")
+            cls,
+            asset_keys=check.opt_nullable_list_param(asset_keys, "asset_keys", of_type=AssetKey),
         )
 
 
@@ -327,22 +330,32 @@ class ExternalSensorDataSerializer(DefaultNamedTupleSerializer):
 
 @whitelist_for_serdes(serializer=ExternalSensorDataSerializer)
 class ExternalSensorData(
-    namedtuple(
+    NamedTuple(
         "_ExternalSensorData",
-        "name pipeline_name solid_selection mode min_interval description target_dict metadata default_status",
+        [
+            ("name", str),
+            ("pipeline_name", Optional[str]),
+            ("solid_selection", Optional[List[str]]),
+            ("mode", Optional[str]),
+            ("min_interval", Optional[int]),
+            ("description", Optional[str]),
+            ("target_dict", Dict[str, ExternalTargetData]),
+            ("metadata", Optional[ExternalSensorMetadata]),
+            ("default_status", Optional[DefaultSensorStatus]),
+        ],
     )
 ):
     def __new__(
         cls,
-        name,
-        pipeline_name=None,
-        solid_selection=None,
-        mode=None,
-        min_interval=None,
-        description=None,
-        target_dict=None,
-        metadata=None,
-        default_status=None,
+        name: str,
+        pipeline_name: Optional[str] = None,
+        solid_selection: Optional[List[str]] = None,
+        mode: Optional[str] = None,
+        min_interval: Optional[int] = None,
+        description: Optional[str] = None,
+        target_dict: Dict[str, ExternalTargetData] = None,
+        metadata: Optional[ExternalSensorMetadata] = None,
+        default_status: Optional[DefaultSensorStatus] = None,
     ):
         if pipeline_name and not target_dict:
             # handle the legacy case where the ExternalSensorData was constructed from an earlier
