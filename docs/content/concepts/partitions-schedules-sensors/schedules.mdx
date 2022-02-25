@@ -104,6 +104,17 @@ However, you can use the `end_offset` parameter of <PyObject object="daily_parti
 
 You can use the `minute_of_hour`, `hour_of_day`, `day_of_week`, and `day_of_month` parameters of `build_schedule_from_partitioned_job` to control the timing of the schedule. For example, if you have a job that's partitioned by date, and you set `minute_of_hour` to `30` and `hour_of_day` to `1`, the schedule would submit the run for partition `2020-04-01` at 1:30 AM on `2020-04-02`.
 
+
+You can also create a schedule for a static partition. The Partitioned Jobs concepts page also includes an [eample of how to define a static partitioned job](/concepts/partitions-schedules-sensors/partitions#defining-a-job-with-static-partitions). To define a schedule for a static partitioned job, we will contruct a schedule from scratch, rather than using a helper function like `build_schedule_from_partitioned_job` this will allow more flexibiility in determining which partitions should be run by the schedule.
+
+For example, if we have the continents static partitioned job from the Partitioned Jobs concept page
+```python file=/concepts/partitions_schedules_sensors/static_partitioned_job.py
+```
+
+We can write a schedule that will run this partition
+```
+```
+
 ### Timezones
 
 You can customize the timezone in which your schedule executes by setting the `execution_timezone` parameter on your schedule to any [tz timezone](https://en.wikipedia.org/wiki/List_of_tz_database_time_zones). Schedules with no timezone set run in UTC.
