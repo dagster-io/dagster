@@ -1,9 +1,14 @@
 import pytest
-
-from dagster import AssetGroup, AssetKey, DagsterInvariantViolationError, Out
+from dagster import AssetKey, DagsterInvariantViolationError, Out, repository
 from dagster.check import CheckError
-from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
-from dagster.core.definitions.metadata import MetadataEntry, MetadataValue
+from dagster.core.asset_defs import (
+    AssetIn,
+    SourceAsset,
+    asset,
+    build_assets_job,
+    multi_asset,
+    AssetGroup,
+)
 from dagster.core.host_representation.external_data import (
     ExternalAssetDependedBy,
     ExternalAssetDependency,
@@ -11,6 +16,7 @@ from dagster.core.host_representation.external_data import (
     ExternalSensorData,
     ExternalTargetData,
     external_asset_graph_from_defs,
+    external_repository_data_from_def,
 )
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
@@ -325,6 +331,40 @@ def test_basic_multi_asset():
         )
         for i in range(10)
     ]
+
+
+def test_sliced_asset_group_repo():
+    @multi_asset(
+        outs={"a": Out(), "b": Out(), "c": Out(), "d": Out()},
+        internal_asset_deps={"d": {AssetKey("c")}, "b": {AssetKey("a")}},
+    )
+    def foo():
+        pass
+
+    @multi_asset(
+        outs={"e": Out(), "f": Out(), "g": Out(), "h": Out()},
+        can_subset=True,
+    )
+    def bar(a, b, c, d):
+        pass
+
+    ag = AssetGroup([foo, bar])
+
+    @repository
+    def asset_slice_repo():
+        return [
+            ag.build_job("a1", "*"),
+            ag.build_job("a2", "a*"),
+            ag.build_job("a3", "b++"),
+            ag.build_job("a4", "c*"),
+            ag.build_job("a5", "+d"),
+            ag.build_job("a6", "e+"),
+            ag.build_job("a7", "f"),
+            ag.build_job("a8", "*g"),
+            ag.build_job("a9", "++h"),
+        ]
+
+    external_repository_data_from_def(asset_slice_repo)
 
 
 def test_inter_op_dependency():

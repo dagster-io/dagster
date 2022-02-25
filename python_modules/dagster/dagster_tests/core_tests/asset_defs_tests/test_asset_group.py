@@ -265,6 +265,25 @@ def test_asset_group_build_sliced_subset_job():
     slice_job = group.build_job("full", selection="*final_asset")
     result = slice_job.execute_in_process()
     assert result.success
+    assert _asset_keys_for_node(result, "start_asset") == {AssetKey("start_asset")}
+    assert _asset_keys_for_node(result, "middle_asset") == {AssetKey("a")}
+    assert _asset_keys_for_node(result, "final_asset") == {AssetKey("final_asset")}
+
+    slice_job = group.build_job("full", selection="b*")
+    result = slice_job.execute_in_process()
+    assert _asset_keys_for_node(result, "middle_asset") == {AssetKey("b"), AssetKey("c")}
+
+    slice_job = group.build_job("full", selection="a+")
+    result = slice_job.execute_in_process()
+    assert _asset_keys_for_node(result, "middle_asset") == {AssetKey("a")}
+    assert _asset_keys_for_node(result, "final_asset") == {AssetKey("final_asset")}
+
+    slice_job = group.build_job("full", selection="+a")
+    result = slice_job.execute_in_process()
+    assert _asset_keys_for_node(result, "start_asset") == {AssetKey("start_asset")}
+    assert _asset_keys_for_node(result, "middle_asset") == {AssetKey("a")}
+
+    assert False
 
 
 def test_asset_group_build_subset_job():

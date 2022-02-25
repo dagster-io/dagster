@@ -1,3 +1,4 @@
+import copy
 from typing import AbstractSet, Mapping, Optional
 
 from dagster import check
@@ -20,8 +21,6 @@ class AssetsDefinition:
         subset=None,
     ):
         self._op = op
-        self._a = input_names_by_asset_key
-        self._b = output_names_by_asset_key
         self._input_defs_by_asset_key = {
             asset_key: op.input_dict[input_name]
             for asset_key, input_name in input_names_by_asset_key.items()
@@ -69,20 +68,31 @@ class AssetsDefinition:
         if not self.can_subset:
             raise "TODO"
         assert asset_keys <= self.asset_keys
-        # gross
-        import copy
-        from dagster.core.definitions.dependency import Node
+        required_asset_keys = set()
+        for asset_key in asset_keys:
+            required_asset_keys.update(self.upstream_assets(asset_key))
+        required_input_asset_keys = set(self.input_defs_by_asset_key.keys()).intersection(
+            required_asset_keys - asset_keys
+        )
 
         new_op = copy.copy(self.op)
-        print(new_op.output_defs)
+        new_op._name = hex(
+            int(
+                "".join(
+                    (
+                        "1" if od.hardcoded_asset_key in asset_keys else "0"
+                        for od in self.op.output_defs
+                    )
+                ),
+                2,
+            )
+        )
+        new_op._input_defs = [self.input_defs_by_asset_key[ak] for ak in required_input_asset_keys]
+        new_op._input_dict = {id.name: id for id in new_op.input_defs}
         new_op._output_defs = [self.output_defs_by_asset_key[ak] for ak in asset_keys]
-        print(self.input_defs_by_asset_key)
-        print(self.output_defs_by_asset_key)
-        print(asset_keys)
-        print("[[[[[[[[[[[[[[[[[[[[[")
-        print(new_op.output_defs)
+        new_op._output_dict = {od.name: od for od in new_op.output_defs}
         return AssetsDefinition(
-            self._a,
+            {ak: self.input_defs_by_asset_key[ak].name for ak in required_input_asset_keys},
             {ak: self.output_defs_by_asset_key[ak].name for ak in asset_keys},
             new_op,
             self.partitions_def,

@@ -815,6 +815,10 @@ def external_asset_graph_from_defs(
                     asset_deps = node_upstream_asset_keys
 
                 for upstream_asset_key in asset_deps:
+                    input_name = input_name_by_asset_key.get(upstream_asset_key)
+                    output_name = output_name_by_asset_key.get(upstream_asset_key)
+                    if not (input_name or output_name):
+                        continue
                     deps[output_asset_key][upstream_asset_key] = ExternalAssetDependency(
                         upstream_asset_key=upstream_asset_key,
                         input_name=input_name_by_asset_key.get(upstream_asset_key),
