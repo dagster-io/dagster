@@ -1,5 +1,5 @@
 from collections import namedtuple
-from typing import List, NamedTuple, Optional
+from typing import Dict, List, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.definitions import NodeHandle
@@ -10,7 +10,7 @@ from dagster.core.execution.plan.inputs import (
     UnresolvedMappedStepInput,
 )
 from dagster.core.execution.plan.outputs import StepOutput, StepOutputHandle, StepOutputProperties
-from dagster.core.execution.plan.plan import ExecutionPlan, StepHandleTypes
+from dagster.core.execution.plan.plan import ExecutionPlan, StepHandleTypes, StepHandleUnion
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.plan.step import (
     ExecutionStep,
@@ -100,8 +100,10 @@ class ExecutionPlanSnapshot(
 
 
 @whitelist_for_serdes
-class ExecutionPlanSnapshotErrorData(namedtuple("_ExecutionPlanSnapshotErrorData", "error")):
-    def __new__(cls, error):
+class ExecutionPlanSnapshotErrorData(
+    NamedTuple("_ExecutionPlanSnapshotErrorData", [("error", Optional[SerializableErrorInfo])])
+):
+    def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExecutionPlanSnapshotErrorData, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -110,21 +112,30 @@ class ExecutionPlanSnapshotErrorData(namedtuple("_ExecutionPlanSnapshotErrorData
 
 @whitelist_for_serdes
 class ExecutionStepSnap(
-    namedtuple(
+    NamedTuple(
         "_ExecutionStepSnap",
-        "key inputs outputs solid_handle_id kind metadata_items tags step_handle",
+        [
+            ("key", str),
+            ("inputs", List["ExecutionStepInputSnap"]),
+            ("outputs", List["ExecutionStepOutputSnap"]),
+            ("solid_handle_id", str),
+            ("kind", StepKind),
+            ("metadata_items", List["ExecutionPlanMetadataItemSnap"]),
+            ("tags", Optional[Dict[str, object]]),
+            ("step_handle", Optional[StepHandleUnion]),
+        ],
     )
 ):
     def __new__(
         cls,
-        key,
-        inputs,
-        outputs,
-        solid_handle_id,
-        kind,
-        metadata_items,
-        tags=None,
-        step_handle=None,
+        key: str,
+        inputs: List["ExecutionStepInputSnap"],
+        outputs: List["ExecutionStepOutputSnap"],
+        solid_handle_id: str,
+        kind: StepKind,
+        metadata_items: List["ExecutionPlanMetadataItemSnap"],
+        tags: Optional[Dict[str, object]] = None,
+        step_handle: Optional[StepHandleUnion] = None,
     ):
         return super(ExecutionStepSnap, cls).__new__(
             cls,

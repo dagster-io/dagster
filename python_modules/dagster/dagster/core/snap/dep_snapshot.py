@@ -1,4 +1,5 @@
-from collections import defaultdict, namedtuple
+from collections import defaultdict
+from typing import Dict, List, NamedTuple
 
 from dagster import check
 from dagster.core.definitions import GraphDefinition
@@ -50,9 +51,11 @@ def build_dep_structure_snapshot_from_icontains_solids(icontains_solids):
 
 @whitelist_for_serdes
 class DependencyStructureSnapshot(
-    namedtuple("_DependencyStructureSnapshot", "solid_invocation_snaps")
+    NamedTuple(
+        "_DependencyStructureSnapshot", [("solid_invocation_snaps", List["SolidInvocationSnap"])]
+    )
 ):
-    def __new__(cls, solid_invocation_snaps):
+    def __new__(cls, solid_invocation_snaps: List["SolidInvocationSnap"]):
         return super(DependencyStructureSnapshot, cls).__new__(
             cls,
             sorted(
@@ -65,8 +68,10 @@ class DependencyStructureSnapshot(
 
 
 # Not actually serialized. Used within the dependency index
-class InputHandle(namedtuple("_InputHandle", "solid_def_name, solid_name input_name")):
-    def __new__(cls, solid_def_name, solid_name, input_name):
+class InputHandle(
+    NamedTuple("_InputHandle", [("solid_def_name", str), ("solid_name", str), ("input_name", str)])
+):
+    def __new__(cls, solid_def_name: str, solid_name: str, input_name: str):
         return super(InputHandle, cls).__new__(
             cls,
             solid_def_name=check.str_param(solid_def_name, "solid_def_name"),
@@ -152,8 +157,10 @@ class DependencyStructureIndex:
 
 
 @whitelist_for_serdes
-class OutputHandleSnap(namedtuple("_OutputHandleSnap", "solid_name output_name")):
-    def __new__(cls, solid_name, output_name):
+class OutputHandleSnap(
+    NamedTuple("_OutputHandleSnap", [("solid_name", str), ("output_name", str)])
+):
+    def __new__(cls, solid_name: str, output_name: str):
         return super(OutputHandleSnap, cls).__new__(
             cls,
             solid_name=check.str_param(solid_name, "solid_name"),
@@ -163,9 +170,21 @@ class OutputHandleSnap(namedtuple("_OutputHandleSnap", "solid_name output_name")
 
 @whitelist_for_serdes
 class InputDependencySnap(
-    namedtuple("_InputDependencySnap", "input_name upstream_output_snaps is_dynamic_collect")
+    NamedTuple(
+        "_InputDependencySnap",
+        [
+            ("input_name", str),
+            ("upstream_output_snaps", List[OutputHandleSnap]),
+            ("is_dynamic_collect", bool),
+        ],
+    )
 ):
-    def __new__(cls, input_name, upstream_output_snaps, is_dynamic_collect=False):
+    def __new__(
+        cls,
+        input_name: str,
+        upstream_output_snaps: List[OutputHandleSnap],
+        is_dynamic_collect: bool = False,
+    ):
         return super(InputDependencySnap, cls).__new__(
             cls,
             input_name=check.str_param(input_name, "input_name"),
@@ -180,11 +199,25 @@ class InputDependencySnap(
 
 @whitelist_for_serdes
 class SolidInvocationSnap(
-    namedtuple(
-        "_SolidInvocationSnap", "solid_name solid_def_name tags input_dep_snaps is_dynamic_mapped"
+    NamedTuple(
+        "_SolidInvocationSnap",
+        [
+            ("solid_name", str),
+            ("solid_def_name", str),
+            ("tags", Dict[object, object]),
+            ("input_dep_snaps", List[InputDependencySnap]),
+            ("is_dynamic_mapped", bool),
+        ],
     )
 ):
-    def __new__(cls, solid_name, solid_def_name, tags, input_dep_snaps, is_dynamic_mapped=False):
+    def __new__(
+        cls,
+        solid_name: str,
+        solid_def_name: str,
+        tags: Dict[object, object],
+        input_dep_snaps: List[InputDependencySnap],
+        is_dynamic_mapped: bool = False,
+    ):
         return super(SolidInvocationSnap, cls).__new__(
             cls,
             solid_name=check.str_param(solid_name, "solid_name"),
