@@ -11,7 +11,7 @@ import Link from "../components/Link";
 import { MdxRemote } from "next-mdx-remote/types";
 import { NextSeo } from "next-seo";
 import SidebarNavigation, { getItems } from "components/mdx/SidebarNavigation";
-import { allPaths } from "util/useNavigation";
+import { latestAllPaths } from "util/useNavigation";
 import { promises as fs } from "fs";
 import generateToc from "mdast-util-toc";
 import hydrate from "next-mdx-remote/hydrate";
@@ -393,7 +393,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           githubLink,
         },
       },
-      revalidate: 10, // In seconds
+      revalidate: 600, // In seconds; This enables Incremental Static Regeneration
     };
   } catch (err) {
     console.error(err);
@@ -405,7 +405,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
 export function getStaticPaths({}) {
   return {
-    paths: allPaths(),
+    paths: latestAllPaths(), // only generate pages of latest version at build time
     fallback: true,
   };
 }
