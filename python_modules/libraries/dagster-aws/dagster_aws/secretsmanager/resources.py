@@ -1,4 +1,4 @@
-from typing import Dict
+from contextlib import contextmanager
 
 from dagster import Array, Field, Noneable, check, resource
 from dagster.core.test_utils import environ
@@ -117,9 +117,10 @@ def secretsmanager_resource(context):
         },
     )
 )
-def secretsmanager_secrets_resource(context) -> Dict[str, None]:
+@contextmanager
+def secretsmanager_secrets_resource(context):
     """Resource that provides a dict which maps selected SecretsManager secrets to
-    their values. Also optionally sets chosen secrets as environment variables.
+    their string values. Also optionally sets chosen secrets as environment variables.
 
     Example:
 
