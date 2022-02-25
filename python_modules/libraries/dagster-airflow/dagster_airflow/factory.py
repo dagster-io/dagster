@@ -187,7 +187,7 @@ def _make_airflow_dag(
     dag_description = check.opt_str_param(
         dag_description, "dag_description", _make_dag_description(job_name)
     )
-    check.subclass_param(operator, "operator", BaseOperator)
+    check.class_param(operator, "operator", superclass=BaseOperator)
 
     dag_kwargs = dict(
         {"default_args": DEFAULT_ARGS},
@@ -361,7 +361,7 @@ def make_airflow_dag_for_operator(
         (airflow.models.DAG, List[airflow.models.BaseOperator]): The generated Airflow DAG, and a
         list of its constituent tasks.
     """
-    check.subclass_param(operator, "operator", BaseOperator)
+    check.class_param(operator, "operator", superclass=BaseOperator)
 
     job_name = canonicalize_backcompat_args(
         new_val=job_name,

@@ -394,7 +394,7 @@ ConfigFloatInstance = Float()
 ConfigIntInstance = Int()
 ConfigStringInstance = String()
 
-_CONFIG_MAP: Dict[check.Type, ConfigType] = {
+_CONFIG_MAP: Dict[check.TypeOrTupleOfTypes, ConfigType] = {
     BuiltinEnum.ANY: ConfigAnyInstance,
     BuiltinEnum.BOOL: ConfigBoolInstance,
     BuiltinEnum.FLOAT: ConfigFloatInstance,
