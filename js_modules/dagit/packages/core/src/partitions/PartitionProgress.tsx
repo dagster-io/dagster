@@ -6,7 +6,11 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {QueryCountdown} from '../app/QueryCountdown';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {RunStatusDot} from '../runs/RunStatusDots';
 import {
   doneStatuses,
@@ -17,7 +21,6 @@ import {
 } from '../runs/RunStatuses';
 import {DagsterTag} from '../runs/RunTag';
 import {TerminationDialog} from '../runs/TerminationDialog';
-import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
 import {RunStatus} from '../types/globalTypes';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -42,14 +45,16 @@ export const PartitionProgress = (props: Props) => {
 
   const queryResult = useQuery<PartitionProgressQuery>(PARTITION_PROGRESS_QUERY, {
     fetchPolicy: 'network-only',
-    pollInterval: shouldPoll ? POLL_INTERVAL : undefined,
     notifyOnNetworkStatusChange: true,
     variables: {
       backfillId,
       limit: 100000,
     },
   });
-
+  const refreshState = useQueryRefreshAtInterval(
+    queryResult,
+    shouldPoll ? FIFTEEN_SECONDS : 1000000,
+  );
   const {data, refetch} = queryResult;
 
   const results: PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill | null = React.useMemo(() => {
@@ -229,9 +234,7 @@ export const PartitionProgress = (props: Props) => {
           </>
         ) : null}
       </Group>
-      {shouldPoll && !isTerminating ? (
-        <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
-      ) : null}
+      {shouldPoll && !isTerminating ? <QueryRefreshCountdown refreshState={refreshState} /> : null}
     </Box>
   );
 };

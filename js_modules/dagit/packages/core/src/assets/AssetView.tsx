@@ -2,7 +2,11 @@ import {gql, useQuery} from '@apollo/client';
 import {Alert, Box, ButtonLink, ColorsWIP, NonIdealState, Spinner, Tab, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {QueryCountdown} from '../app/QueryCountdown';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {displayNameForAssetKey} from '../app/Util';
 import {Timestamp} from '../app/time/Timestamp';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
@@ -46,7 +50,6 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   const queryResult = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
     notifyOnNetworkStatusChange: true,
-    pollInterval: 5 * 1000,
   });
 
   // Refresh immediately when a run is launched from this page
@@ -73,8 +76,10 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       },
     },
     notifyOnNetworkStatusChange: true,
-    pollInterval: 15 * 1000,
   });
+
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  useQueryRefreshAtInterval(inProgressRunsQuery, FIFTEEN_SECONDS);
 
   let liveDataByNode: LiveData = {};
 
@@ -123,7 +128,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         right={
           <Box style={{margin: '-4px 0'}} flex={{gap: 8, alignItems: 'baseline'}}>
             <Box margin={{top: 4}}>
-              <QueryCountdown pollInterval={5 * 1000} queryResult={queryResult} />
+              <QueryRefreshCountdown refreshState={refreshState} />
             </Box>
             {definition && definition.jobNames.length > 0 && repoAddress && (
               <LaunchAssetExecutionButton

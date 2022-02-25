@@ -4,6 +4,7 @@ import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {REPOSITORY_SCHEDULES_FRAGMENT} from '../schedules/ScheduleUtils';
 import {SchedulerInfo} from '../schedules/SchedulerInfo';
@@ -11,14 +12,14 @@ import {SchedulesNextTicks} from '../schedules/SchedulesNextTicks';
 import {Loading} from '../ui/Loading';
 
 import {SchedulerInfoQuery} from './types/SchedulerInfoQuery';
-import {POLL_INTERVAL} from './useCursorPaginatedQuery';
 
 export const AllScheduledTicks = () => {
   const queryResult = useQuery<SchedulerInfoQuery>(SCHEDULER_INFO_QUERY, {
     fetchPolicy: 'cache-and-network',
-    pollInterval: POLL_INTERVAL,
     partialRefetch: true,
   });
+
+  useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   return (
     <Loading queryResult={queryResult}>

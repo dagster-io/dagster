@@ -5,12 +5,15 @@ import styled from 'styled-components/macro';
 
 import {Box, CursorPaginationControls, CursorPaginationProps, TextInput} from '../../../ui/src';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {QueryCountdown} from '../app/QueryCountdown';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {tokenForAssetKey} from '../app/Util';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RepoFilterButton} from '../instance/RepoFilterButton';
-import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
 import {Loading} from '../ui/Loading';
 import {DagsterRepoOption, WorkspaceContext} from '../workspace/WorkspaceContext';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
@@ -58,6 +61,8 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
     notifyOnNetworkStatusChange: true,
     skip: view === 'graph',
   });
+
+  const refreshState = useQueryRefreshAtInterval(assetsQuery, FIFTEEN_SECONDS);
 
   if (view === 'graph') {
     return <Redirect to="/instance/asset-graph" />;
@@ -123,7 +128,7 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
                       placeholder="Search all asset_keys..."
                       onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
                     />
-                    <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={assetsQuery} />
+                    <QueryRefreshCountdown refreshState={refreshState} />
                   </>
                 }
                 prefixPath={prefixPath || []}

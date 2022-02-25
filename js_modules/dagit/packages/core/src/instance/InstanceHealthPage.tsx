@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, ColorsWIP, PageHeader, Heading, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {POLL_INTERVAL} from '../runs/useCursorPaginatedQuery';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 
 import {DaemonList} from './DaemonList';
 import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
@@ -12,10 +12,9 @@ import {InstanceHealthQuery} from './types/InstanceHealthQuery';
 export const InstanceHealthPage = () => {
   const queryData = useQuery<InstanceHealthQuery>(INSTANCE_HEALTH_QUERY, {
     fetchPolicy: 'cache-and-network',
-    pollInterval: POLL_INTERVAL,
     notifyOnNetworkStatusChange: true,
   });
-
+  const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);
   const {loading, data} = queryData;
 
   const daemonContent = () => {
@@ -35,7 +34,7 @@ export const InstanceHealthPage = () => {
     <>
       <PageHeader
         title={<Heading>Instance status</Heading>}
-        tabs={<InstanceTabs tab="health" queryData={queryData} />}
+        tabs={<InstanceTabs tab="health" refreshState={refreshState} />}
       />
       <Box padding={{vertical: 16, horizontal: 24}}>
         <Subheading>Daemon statuses</Subheading>

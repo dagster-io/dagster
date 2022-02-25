@@ -2,13 +2,12 @@ import {QueryResult} from '@apollo/client';
 import {Box, Tab, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {QueryCountdown} from '../app/QueryCountdown';
+import {QueryRefreshCountdown, QueryRefreshState} from '../app/QueryRefresh';
 
 import {useCanSeeConfig} from './useCanSeeConfig';
 
-const POLL_INTERVAL = 15000;
-
 interface Props<TData> {
+  refreshState: QueryRefreshState;
   queryData?: QueryResult<TData, any>;
   tab: string;
 }
@@ -17,7 +16,7 @@ export const InstanceTabContext = React.createContext({healthTitle: 'Daemons'});
 
 export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TData>) => {
   const {healthTitle} = React.useContext(InstanceTabContext);
-  const {queryData, tab} = props;
+  const {refreshState, tab} = props;
   const canSeeConfig = useCanSeeConfig();
 
   return (
@@ -30,9 +29,9 @@ export const InstanceTabs = <TData extends Record<string, any>>(props: Props<TDa
         <Tab id="backfills" title="Backfills" to="/instance/backfills" />
         {canSeeConfig ? <Tab id="config" title="Configuration" to="/instance/config" /> : null}
       </Tabs>
-      {queryData ? (
+      {refreshState ? (
         <Box padding={{bottom: 8}}>
-          <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryData} />
+          <QueryRefreshCountdown refreshState={refreshState} />
         </Box>
       ) : null}
     </Box>
