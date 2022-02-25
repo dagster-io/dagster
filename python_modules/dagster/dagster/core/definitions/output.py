@@ -1,5 +1,4 @@
 import warnings
-from collections import namedtuple
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -309,8 +308,8 @@ class DynamicOutputDefinition(OutputDefinition):
         return True
 
 
-class OutputPointer(namedtuple("_OutputPointer", "solid_name output_name")):
-    def __new__(cls, solid_name, output_name=None):
+class OutputPointer(NamedTuple("_OutputPointer", [("solid_name", str), ("output_name", str)])):
+    def __new__(cls, solid_name: str, output_name: Optional[str] = None):
         return super(OutputPointer, cls).__new__(
             cls,
             check.str_param(solid_name, "solid_name"),
@@ -318,7 +317,9 @@ class OutputPointer(namedtuple("_OutputPointer", "solid_name output_name")):
         )
 
 
-class OutputMapping(namedtuple("_OutputMapping", "definition maps_from")):
+class OutputMapping(
+    NamedTuple("_OutputMapping", [("definition", OutputDefinition), ("maps_from", OutputPointer)])
+):
     """Defines an output mapping for a composite solid.
 
     Args:
@@ -327,7 +328,7 @@ class OutputMapping(namedtuple("_OutputMapping", "definition maps_from")):
         output_name (str): The name of the child solid's output from which to map the output.
     """
 
-    def __new__(cls, definition, maps_from):
+    def __new__(cls, definition: OutputDefinition, maps_from: OutputPointer):
         return super(OutputMapping, cls).__new__(
             cls,
             check.inst_param(definition, "definition", OutputDefinition),

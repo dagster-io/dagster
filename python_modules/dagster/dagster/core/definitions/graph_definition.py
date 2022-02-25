@@ -804,32 +804,25 @@ def _validate_in_mappings(
         solid_input_handle = SolidInputHandle(target_solid, target_input)
 
         if mapping.maps_to_fan_in:
+            maps_to = cast(FanInInputPointer, mapping.maps_to)
             if not dependency_structure.has_fan_in_deps(solid_input_handle):
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' input mapping target "
-                    '"{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}" (index {mapping.maps_to.fan_in_index} of fan-in) '
-                    "is not a MultiDependencyDefinition.".format(
-                        name=name, mapping=mapping, class_name=class_name
-                    )
+                    f"In {class_name} '{name}' input mapping target "
+                    f'"{maps_to.solid_name}.{maps_to.input_name}" (index {maps_to.fan_in_index} of fan-in) '
+                    f"is not a MultiDependencyDefinition."
                 )
             inner_deps = dependency_structure.get_fan_in_deps(solid_input_handle)
-            if (mapping.maps_to.fan_in_index >= len(inner_deps)) or (
-                inner_deps[mapping.maps_to.fan_in_index] is not MappedInputPlaceholder
+            if (maps_to.fan_in_index >= len(inner_deps)) or (
+                inner_deps[maps_to.fan_in_index] is not MappedInputPlaceholder
             ):
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' input mapping target "
-                    '"{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}" index {mapping.maps_to.fan_in_index} in '
-                    "the MultiDependencyDefinition is not a MappedInputPlaceholder".format(
-                        name=name, mapping=mapping, class_name=class_name
-                    )
+                    f"In {class_name} '{name}' input mapping target "
+                    f'"{maps_to.solid_name}.{maps_to.input_name}" index {maps_to.fan_in_index} in '
+                    f"the MultiDependencyDefinition is not a MappedInputPlaceholder"
                 )
-            mapping_keys.add(
-                "{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}.{mapping.maps_to.fan_in_index}".format(
-                    mapping=mapping
-                )
-            )
+            mapping_keys.add(f"{maps_to.solid_name}.{maps_to.input_name}.{maps_to.fan_in_index}")
             target_type = target_input.dagster_type.get_inner_type_for_fan_in()
-            fan_in_msg = " (index {} of fan-in)".format(mapping.maps_to.fan_in_index)
+            fan_in_msg = " (index {} of fan-in)".format(maps_to.fan_in_index)
         else:
             if dependency_structure.has_deps(solid_input_handle):
                 raise DagsterInvalidDefinitionError(
