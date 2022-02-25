@@ -113,10 +113,14 @@ if __name__ == "__main__":
                 "tox-pip-version==0.0.7",
                 "tqdm==4.48.0",  # pylint crash 48.1+
                 "yamllint",
-                "black==22.1.0",
                 "flake8>=3.7.8",
-                "isort==5.10.1",
                 "pylint==2.6.0",
+            ],
+            "black": [
+                "black==22.1.0",
+            ],
+            "isort": [
+                "isort==5.10.1",
             ],
             "mypy": [
                 "mypy==0.931",
