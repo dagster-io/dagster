@@ -1,6 +1,8 @@
 from collections import defaultdict
 from typing import Dict, List
 
+from graphql.execution.base import ResolveInfo
+
 from dagster import PipelineDefinition, PipelineRunStatus, check
 from dagster.config.validate import validate_config
 from dagster.core.definitions import create_run_config_schema
@@ -10,7 +12,6 @@ from dagster.core.host_representation import PipelineSelector
 from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 from dagster.utils import utc_datetime_from_timestamp
-from graphql.execution.base import ResolveInfo
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import UserFacingGraphQLError, capture_error
@@ -196,10 +197,7 @@ def get_asset_run_stats_by_step(graphene_info, asset_nodes):
 
 
 def get_latest_asset_run_by_step_key(graphene_info, asset_nodes):
-    from ..schema.pipelines.pipeline import (
-        GrapheneLatestRun,
-        GrapheneRun,
-    )
+    from ..schema.pipelines.pipeline import GrapheneLatestRun, GrapheneRun
 
     # This method returns the latest run that has occurred for a given step.
     # Because it is expensive to deserialize PipelineRun objects, we limit this

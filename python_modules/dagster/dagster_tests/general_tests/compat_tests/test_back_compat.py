@@ -7,6 +7,7 @@ from enum import Enum
 from gzip import GzipFile
 
 import pytest
+
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -347,8 +348,8 @@ def test_run_partition_migration():
 def test_run_partition_data_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_9_22_post_schema_pre_data_partition/sqlite")
     with copy_directory(src_dir) as test_dir:
-        from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
         from dagster.core.storage.runs.migration import RUN_PARTITIONS
+        from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
 
         # load db that has migrated schema, but not populated data for run partitions
         db_path = os.path.join(test_dir, "history", "runs.db")

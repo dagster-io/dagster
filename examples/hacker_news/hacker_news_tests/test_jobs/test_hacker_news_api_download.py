@@ -1,6 +1,5 @@
 import tempfile
 
-from dagster import fs_io_manager
 from hacker_news.jobs.hacker_news_api_download import (
     hacker_news_api_download,
     hourly_download_config,
@@ -9,6 +8,8 @@ from hacker_news.resources import configured_pyspark
 from hacker_news.resources.hn_resource import hn_snapshot_client
 from hacker_news.resources.parquet_io_manager import local_partitioned_parquet_io_manager
 from hacker_news.resources.partition_bounds import partition_bounds
+
+from dagster import fs_io_manager
 
 
 def test_download():

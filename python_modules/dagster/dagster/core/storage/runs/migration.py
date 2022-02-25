@@ -1,7 +1,8 @@
 from contextlib import ExitStack
 
-from dagster import check
 from tqdm import tqdm
+
+from dagster import check
 
 from ..pipeline_run import PipelineRunStatus
 from ..runs.base import RunStorage

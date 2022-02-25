@@ -1,6 +1,10 @@
 import datetime
 
 import great_expectations as ge
+from dagster_pandas import DataFrame
+from great_expectations.render.renderer import ValidationResultsPageRenderer
+from great_expectations.render.view import DefaultMarkdownPageView
+
 from dagster import (
     ExpectationResult,
     InputDefinition,
@@ -14,9 +18,6 @@ from dagster import (
     resource,
     solid,
 )
-from dagster_pandas import DataFrame
-from great_expectations.render.renderer import ValidationResultsPageRenderer
-from great_expectations.render.view import DefaultMarkdownPageView
 
 try:
     # ge < v0.13.0

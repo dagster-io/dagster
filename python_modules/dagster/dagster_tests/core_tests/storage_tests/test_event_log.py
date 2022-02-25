@@ -6,6 +6,7 @@ import traceback
 
 import pytest
 import sqlalchemy
+
 from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.storage.event_log import (
     ConsolidatedSqliteEventLogStorage,

@@ -12,10 +12,11 @@ import os
 from typing import Union
 
 import pandas as pd
-from dagster import AssetKey, IOManager, IOManagerDefinition, build_assets_job, check
 from pandas import DataFrame as PandasDF
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import SparkSession
+
+from dagster import AssetKey, IOManager, IOManagerDefinition, build_assets_job, check
 
 from .assets import daily_temperature_highs, hottest_dates, sfo_q2_weather_sample
 from .spark_asset import daily_temperature_high_diffs

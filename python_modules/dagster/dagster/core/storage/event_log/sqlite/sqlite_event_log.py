@@ -10,6 +10,11 @@ from contextlib import contextmanager
 from typing import Iterable, Optional
 
 import sqlalchemy as db
+from sqlalchemy.pool import NullPool
+from tqdm import tqdm
+from watchdog.events import PatternMatchingEventHandler
+from watchdog.observers import Observer
+
 from dagster import check, seven
 from dagster.config.source import StringSource
 from dagster.core.events import DagsterEventType
@@ -31,10 +36,6 @@ from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
 )
 from dagster.utils import mkdir_p
-from sqlalchemy.pool import NullPool
-from tqdm import tqdm
-from watchdog.events import PatternMatchingEventHandler
-from watchdog.observers import Observer
 
 from ..schema import SqlEventLogStorageMetadata, SqlEventLogStorageTable
 from ..sql_event_log import RunShardedEventsCursor, SqlEventLogStorage

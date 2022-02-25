@@ -5,14 +5,15 @@ from contextlib import contextmanager
 from unittest.mock import Mock
 
 import pytest
-from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
-from dagster.core.events.log import EventLogEntry
-from dagster.core.storage.event_log import SqlEventLogStorage
-from dagster.core.test_utils import instance_for_test
 from dagster_graphql.implementation.pipeline_run_storage import PipelineRunObservableSubscribe
 from dagster_tests.core_tests.storage_tests.test_polling_event_watcher import (
     SqlitePollingEventLogStorage,
 )
+
+from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
+from dagster.core.events.log import EventLogEntry
+from dagster.core.storage.event_log import SqlEventLogStorage
+from dagster.core.test_utils import instance_for_test
 
 
 @contextmanager

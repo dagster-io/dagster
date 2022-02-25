@@ -18,6 +18,9 @@ from dagster_dbt.cli.types import DbtCliOutput
 from dagster_dbt.cli.utils import execute_cli
 from dagster_dbt.utils import generate_materializations
 
+from dagster import AssetKey, Out, Output, SolidExecutionContext, check, get_dagster_logger
+from dagster.core.asset_defs import AssetsDefinition, multi_asset
+
 
 def _load_manifest_for_project(
     project_dir: str, profiles_dir: str, target_dir: str, select: str

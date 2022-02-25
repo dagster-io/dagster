@@ -6,6 +6,8 @@ from typing import Any, Dict, List, cast
 from urllib.parse import urljoin
 
 import requests
+from requests.exceptions import RequestException
+
 from dagster import (
     Failure,
     Field,
@@ -17,7 +19,6 @@ from dagster import (
     resource,
 )
 from dagster.utils.merger import deep_merge_dicts
-from requests.exceptions import RequestException
 
 from .types import DbtCloudOutput
 

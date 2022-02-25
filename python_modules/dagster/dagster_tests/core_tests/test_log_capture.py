@@ -1,6 +1,7 @@
 import sys
 
 import pytest
+
 from dagster.core.execution.compute_logs import (
     mirror_stream_to_file,
     should_disable_io_stream_redirect,

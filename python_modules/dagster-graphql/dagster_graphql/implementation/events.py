@@ -1,5 +1,7 @@
 from math import isnan
 
+from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
+
 from dagster import check, seven
 from dagster.core.definitions.metadata import (
     DagsterAssetMetadataValue,
@@ -19,7 +21,6 @@ from dagster.core.definitions.metadata import (
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.plan.objects import StepFailureData
-from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
 
 MAX_INT = 2147483647
 MIN_INT = -2147483648
@@ -152,6 +153,8 @@ def _to_metadata_entries(metadata_entries):
 def from_dagster_event_record(event_record, pipeline_name):
     from ..schema.errors import GraphenePythonError
     from ..schema.logs.events import (
+        GrapheneAlertStartEvent,
+        GrapheneAlertSuccessEvent,
         GrapheneEngineEvent,
         GrapheneExecutionStepFailureEvent,
         GrapheneExecutionStepInputEvent,
@@ -167,7 +170,9 @@ def from_dagster_event_record(event_record, pipeline_name):
         GrapheneHookSkippedEvent,
         GrapheneLoadedInputEvent,
         GrapheneLogsCapturedEvent,
+        GrapheneMaterializationEvent,
         GrapheneObjectStoreOperationEvent,
+        GrapheneObservationEvent,
         GrapheneRunCanceledEvent,
         GrapheneRunCancelingEvent,
         GrapheneRunDequeuedEvent,
@@ -177,10 +182,6 @@ def from_dagster_event_record(event_record, pipeline_name):
         GrapheneRunStartingEvent,
         GrapheneRunSuccessEvent,
         GrapheneStepExpectationResultEvent,
-        GrapheneMaterializationEvent,
-        GrapheneObservationEvent,
-        GrapheneAlertStartEvent,
-        GrapheneAlertSuccessEvent,
     )
 
     # Lots of event types. Pylint thinks there are too many branches

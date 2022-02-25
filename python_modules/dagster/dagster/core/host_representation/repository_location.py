@@ -62,6 +62,8 @@ from dagster.utils.hosted_user_process import external_repo_from_def
 from .selector import PipelineSelector
 
 if TYPE_CHECKING:
+    from dagster.core.definitions.schedule_definition import ScheduleExecutionData
+    from dagster.core.definitions.sensor_definition import SensorExecutionData
     from dagster.core.host_representation import (
         ExternalPartitionConfigData,
         ExternalPartitionExecutionErrorData,
@@ -70,11 +72,7 @@ if TYPE_CHECKING:
         ExternalPartitionTagsData,
         ExternalScheduleExecutionErrorData,
     )
-    from dagster.core.definitions.schedule_definition import ScheduleExecutionData
-    from dagster.core.definitions.sensor_definition import SensorExecutionData
-    from dagster.core.host_representation.external_data import (
-        ExternalSensorExecutionErrorData,
-    )
+    from dagster.core.host_representation.external_data import ExternalSensorExecutionErrorData
 
 
 class RepositoryLocation(AbstractContextManager):

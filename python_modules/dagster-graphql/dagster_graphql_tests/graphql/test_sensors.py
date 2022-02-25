@@ -1,10 +1,4 @@
 import pendulum
-from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus
-from dagster.core.test_utils import create_test_daemon_workspace
-from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.sensor import execute_sensor_iteration
-from dagster.utils import Counter, traced_counter
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_repository_selector,
@@ -12,6 +6,13 @@ from dagster_graphql.test.utils import (
     main_repo_location_name,
     main_repo_name,
 )
+
+from dagster.core.definitions.run_request import InstigatorType
+from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus
+from dagster.core.test_utils import create_test_daemon_workspace
+from dagster.daemon import get_default_daemon_logger
+from dagster.daemon.sensor import execute_sensor_iteration
+from dagster.utils import Counter, traced_counter
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,

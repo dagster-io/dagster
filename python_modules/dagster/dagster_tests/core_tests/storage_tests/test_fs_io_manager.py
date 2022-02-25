@@ -3,6 +3,7 @@ import pickle
 import tempfile
 
 import pytest
+
 from dagster import ModeDefinition, execute_pipeline, graph, op, pipeline, solid
 from dagster.core.definitions.version_strategy import VersionStrategy
 from dagster.core.errors import DagsterInvariantViolationError

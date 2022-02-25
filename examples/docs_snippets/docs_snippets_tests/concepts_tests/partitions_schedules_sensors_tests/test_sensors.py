@@ -1,4 +1,5 @@
 from dagster import job, op, repository
+
 from docs_snippets.concepts.partitions_schedules_sensors.sensors.sensor_alert import (
     email_on_run_failure,
     my_slack_on_run_failure,

@@ -1,4 +1,5 @@
 from dagster import build_op_context
+
 from docs_snippets.concepts.assets.observations import (
     observation_op,
     observes_dataset_op,

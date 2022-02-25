@@ -6,6 +6,7 @@ from contextlib import ExitStack
 import mock
 import pendulum
 import pytest
+
 from dagster import (
     AssetKey,
     AssetMaterialization,

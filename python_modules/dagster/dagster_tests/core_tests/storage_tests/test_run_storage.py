@@ -2,8 +2,9 @@ import tempfile
 from contextlib import contextmanager
 
 import pytest
-from dagster.core.storage.runs import InMemoryRunStorage, SqliteRunStorage
 from dagster_tests.core_tests.storage_tests.utils.run_storage import TestRunStorage
+
+from dagster.core.storage.runs import InMemoryRunStorage, SqliteRunStorage
 
 
 @contextmanager

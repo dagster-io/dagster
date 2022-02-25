@@ -1,6 +1,7 @@
 from collections import namedtuple
 
 import sqlalchemy
+
 from dagster import Field, IntSource, StringSource, resource
 
 # start_resources_marker_0

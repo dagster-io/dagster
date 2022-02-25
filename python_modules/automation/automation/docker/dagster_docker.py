@@ -3,6 +3,7 @@ import os
 from typing import Callable, NamedTuple, Optional
 
 import yaml
+
 from dagster import check
 
 from .ecr import ecr_image, get_aws_account_id, get_aws_region

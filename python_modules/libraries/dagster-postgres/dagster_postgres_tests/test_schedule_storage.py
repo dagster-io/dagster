@@ -1,6 +1,7 @@
 import pytest
-from dagster.utils.test.schedule_storage import TestScheduleStorage
 from dagster_postgres.schedule_storage import PostgresScheduleStorage
+
+from dagster.utils.test.schedule_storage import TestScheduleStorage
 
 
 class TestPostgresScheduleStorage(TestScheduleStorage):

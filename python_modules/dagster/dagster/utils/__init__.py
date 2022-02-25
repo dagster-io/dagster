@@ -1,3 +1,4 @@
+import _thread as thread
 import contextlib
 import contextvars
 import datetime
@@ -21,8 +22,8 @@ from typing import Mapping as TypingMapping
 from typing import Optional, Type, TypeVar, Union, cast, overload
 from warnings import warn
 
-import _thread as thread
 import yaml
+
 from dagster import check, seven
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
 from dagster.seven import IS_WINDOWS

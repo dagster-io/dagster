@@ -3,9 +3,9 @@ import inspect
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional
 
 if TYPE_CHECKING:
-    from .solid_definition import SolidDefinition
     from .op_definition import OpDefinition
     from .resource_definition import ResourceDefinition
+    from .solid_definition import SolidDefinition
 
 
 class OpVersionContext(NamedTuple):

@@ -14,8 +14,8 @@ from ..resource_definition import ResourceDefinition
 from ..version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
-    from ..partition import PartitionedConfig, PartitionsDefinition
     from ..executor_definition import ExecutorDefinition
+    from ..partition import PartitionedConfig, PartitionsDefinition
 
 
 class _Job:

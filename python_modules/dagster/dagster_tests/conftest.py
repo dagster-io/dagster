@@ -6,15 +6,16 @@ from contextlib import contextmanager
 
 import docker
 import pytest
+from dagster_test.dagster_core_docker_buildkite import (
+    build_and_tag_test_image,
+    get_test_project_docker_image,
+)
+
 from dagster import check, seven
 from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.seven import nullcontext
 from dagster.utils import file_relative_path
-from dagster_test.dagster_core_docker_buildkite import (
-    build_and_tag_test_image,
-    get_test_project_docker_image,
-)
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 HARDCODED_PORT = 8090

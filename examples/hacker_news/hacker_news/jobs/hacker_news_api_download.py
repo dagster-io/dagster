@@ -1,11 +1,12 @@
 from datetime import datetime
 
-from dagster import graph, hourly_partitioned_config, in_process_executor
 from hacker_news.ops.download_items import build_comments, build_stories, download_items
 from hacker_news.ops.id_range_for_time import id_range_for_time
 from hacker_news.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
 from hacker_news.resources.hn_resource import hn_api_subsample_client, hn_snapshot_client
 from hacker_news.resources.partition_bounds import partition_bounds
+
+from dagster import graph, hourly_partitioned_config, in_process_executor
 
 DOWNLOAD_TAGS = {
     "dagster-k8s/config": {

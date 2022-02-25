@@ -1,4 +1,5 @@
 import pytest
+
 from dagster import Field, resource
 from dagster.core.definitions.resource_definition import IContainsGenerator
 from dagster.core.errors import DagsterResourceFunctionError

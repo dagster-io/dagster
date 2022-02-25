@@ -1,5 +1,6 @@
 import pytest
 from dagster import DagsterTypeCheckDidNotPass
+
 from docs_snippets.concepts.types.types import test_dagster_type
 
 

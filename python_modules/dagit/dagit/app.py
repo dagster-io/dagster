@@ -1,9 +1,10 @@
+from starlette.applications import Starlette
+
 from dagster import DagsterInstance, check
 from dagster.cli.workspace.cli_target import get_workspace_process_context_from_kwargs
 from dagster.core.execution.compute_logs import warn_if_compute_logs_disabled
 from dagster.core.telemetry import log_workspace_stats
 from dagster.core.workspace.context import WorkspaceProcessContext
-from starlette.applications import Starlette
 
 from .version import __version__
 from .webserver import DagitWebserver

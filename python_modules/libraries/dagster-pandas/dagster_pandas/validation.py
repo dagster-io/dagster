@@ -1,4 +1,3 @@
-from dagster import DagsterInvariantViolationError, check
 from dagster_pandas.constraints import (
     CategoricalColumnConstraint,
     ColumnDTypeFnConstraint,
@@ -18,6 +17,8 @@ from pandas.core.dtypes.common import (
     is_numeric_dtype,
     is_string_dtype,
 )
+
+from dagster import DagsterInvariantViolationError, check
 
 PANDAS_NUMERIC_TYPES = {"int64", "float"}
 

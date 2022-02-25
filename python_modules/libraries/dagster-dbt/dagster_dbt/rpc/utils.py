@@ -3,10 +3,11 @@ from collections import defaultdict
 from enum import Enum
 from typing import Dict, List
 
-from dagster import Failure, MetadataEntry, RetryRequested
-from dagster.core.execution.context.compute import SolidExecutionContext
 from requests import Response
 from requests.exceptions import RequestException
+
+from dagster import Failure, MetadataEntry, RetryRequested
+from dagster.core.execution.context.compute import SolidExecutionContext
 
 
 def fmt_rpc_logs(logs: List[Dict]) -> Dict[int, str]:

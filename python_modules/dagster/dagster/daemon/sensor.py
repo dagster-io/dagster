@@ -4,6 +4,7 @@ import time
 from collections import namedtuple
 
 import pendulum
+
 from dagster import check, seven
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData

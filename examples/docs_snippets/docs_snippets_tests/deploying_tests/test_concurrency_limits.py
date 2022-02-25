@@ -2,6 +2,7 @@ import os
 
 from dagster.core.instance.ref import InstanceRef
 from dagster.core.run_coordinator import QueuedRunCoordinator
+
 from docs_snippets.deploying.concurrency_limits.concurrency_limits import (  # pylint: disable=import-error
     important_pipeline,
     less_important_schedule,

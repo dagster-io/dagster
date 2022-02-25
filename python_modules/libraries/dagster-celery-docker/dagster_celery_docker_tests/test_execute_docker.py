@@ -4,10 +4,6 @@
 import os
 from contextlib import contextmanager
 
-from dagster import execute_pipeline
-from dagster.utils import merge_dicts
-from dagster.utils.test.postgres_instance import postgres_instance_for_test
-from dagster.utils.yaml_utils import merge_yamls
 from dagster_test.test_project import (
     find_local_test_image,
     get_buildkite_registry_config,
@@ -15,6 +11,11 @@ from dagster_test.test_project import (
     get_test_project_environments_path,
     get_test_project_recon_pipeline,
 )
+
+from dagster import execute_pipeline
+from dagster.utils import merge_dicts
+from dagster.utils.test.postgres_instance import postgres_instance_for_test
+from dagster.utils.yaml_utils import merge_yamls
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

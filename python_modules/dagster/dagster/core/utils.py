@@ -6,6 +6,7 @@ from collections import OrderedDict
 from typing import Union
 
 import toposort as toposort_
+
 from dagster import check
 from dagster.utils import frozendict
 from dagster.version import __version__

@@ -2,6 +2,7 @@ from collections import namedtuple
 
 import boto3
 from botocore.exceptions import ClientError
+
 from dagster import Array, Field, Noneable, StringSource, check
 from dagster.core.events import EngineEventData, MetadataEntry
 from dagster.core.launcher.base import LaunchRunContext, RunLauncher

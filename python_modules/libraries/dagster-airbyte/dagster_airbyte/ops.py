@@ -1,7 +1,8 @@
-from dagster import Array, Bool, Field, In, Noneable, Nothing, Out, Output, op
 from dagster_airbyte.resources import DEFAULT_POLL_INTERVAL_SECONDS
 from dagster_airbyte.types import AirbyteOutput
 from dagster_airbyte.utils import generate_materializations
+
+from dagster import Array, Bool, Field, In, Noneable, Nothing, Out, Output, op
 
 
 @op(

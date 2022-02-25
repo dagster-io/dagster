@@ -1,5 +1,6 @@
-from dagster import io_manager
 from dagstermill.io_managers import OutputNotebookIOManager
+
+from dagster import io_manager
 
 from .fixed_s3_pickle_io_manager import s3_client
 

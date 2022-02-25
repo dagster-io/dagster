@@ -1,4 +1,5 @@
 import graphene
+
 from dagster import check
 from dagster.config.config_type import ConfigTypeKind
 from dagster.config.snap import get_recursive_type_keys

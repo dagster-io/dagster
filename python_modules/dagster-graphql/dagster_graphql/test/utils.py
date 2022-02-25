@@ -1,11 +1,12 @@
 from contextlib import contextmanager
 
+from dagster_graphql.schema import create_schema
+from graphql import graphql
+
 from dagster import check
 from dagster.core.instance import DagsterInstance
 from dagster.core.workspace import WorkspaceProcessContext
 from dagster.core.workspace.load_target import PythonFileTarget
-from dagster_graphql.schema import create_schema
-from graphql import graphql
 
 
 def main_repo_location_name():

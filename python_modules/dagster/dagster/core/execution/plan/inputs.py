@@ -21,11 +21,11 @@ from .outputs import StepOutputHandle, UnresolvedStepOutputHandle
 from .utils import build_resources_for_manager, solid_execution_error_boundary
 
 if TYPE_CHECKING:
-    from dagster.core.types.dagster_type import DagsterType
-    from dagster.core.storage.input_manager import InputManager
     from dagster.core.events import DagsterEvent
-    from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.execution.context.input import InputContext
+    from dagster.core.execution.context.system import StepExecutionContext
+    from dagster.core.storage.input_manager import InputManager
+    from dagster.core.types.dagster_type import DagsterType
 
 
 def _get_asset_lineage_from_fns(
@@ -166,7 +166,7 @@ class FromRootInputManager(
         )
 
     def compute_version(self, step_versions, pipeline_def, resolved_run_config) -> Optional[str]:
-        from ..resolve_versions import resolve_config_version, check_valid_version
+        from ..resolve_versions import check_valid_version, resolve_config_version
 
         solid = pipeline_def.get_solid(self.solid_handle)
         root_manager_key = solid.input_def_named(self.input_name).root_manager_key

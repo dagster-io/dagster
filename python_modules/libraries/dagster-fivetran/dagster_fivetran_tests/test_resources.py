@@ -2,8 +2,9 @@ import datetime
 
 import pytest
 import responses
-from dagster import Failure, build_init_resource_context
 from dagster_fivetran import FivetranOutput, fivetran_resource
+
+from dagster import Failure, build_init_resource_context
 
 from .utils import (
     DEFAULT_CONNECTOR_ID,

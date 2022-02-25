@@ -2,6 +2,7 @@ import sys
 from typing import Generator, Iterable, Iterator
 
 import pytest
+
 from dagster import (
     AssetKey,
     DynamicOutput,

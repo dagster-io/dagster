@@ -1,6 +1,7 @@
 import yaml
 from dagster import job
 from dagster.utils import file_relative_path
+
 from docs_snippets.concepts.solids_pipelines.composite_solids import (
     all_together_nested,
     subgraph_config_job,

@@ -39,11 +39,12 @@ from .workspace import IWorkspace, WorkspaceLocationEntry, WorkspaceLocationLoad
 
 if TYPE_CHECKING:
     from rx.subjects import Subject
+
     from dagster.core.host_representation import (
-        ExternalPartitionSetExecutionParamData,
+        ExternalPartitionConfigData,
         ExternalPartitionExecutionErrorData,
         ExternalPartitionNamesData,
-        ExternalPartitionConfigData,
+        ExternalPartitionSetExecutionParamData,
         ExternalPartitionTagsData,
     )
 

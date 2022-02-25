@@ -3,13 +3,14 @@ from tempfile import TemporaryDirectory
 import pytest
 import sqlalchemy as db
 import yaml
+from dagster_mysql import MySQLEventLogStorage, MySQLRunStorage, MySQLScheduleStorage
+from dagster_mysql.utils import get_conn
+from sqlalchemy.pool import NullPool
+
 from dagster.core.instance import DagsterInstance, InstanceRef
 from dagster.core.storage.sql import create_engine, get_alembic_config, stamp_alembic_rev
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
-from dagster_mysql import MySQLEventLogStorage, MySQLRunStorage, MySQLScheduleStorage
-from dagster_mysql.utils import get_conn
-from sqlalchemy.pool import NullPool
 
 
 def full_mysql_config(hostname):

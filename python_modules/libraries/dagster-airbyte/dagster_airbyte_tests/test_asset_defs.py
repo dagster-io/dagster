@@ -1,6 +1,7 @@
 import responses
-from dagster import MetadataEntry, build_assets_job, build_init_resource_context
 from dagster_airbyte import AirbyteState, airbyte_resource, build_airbyte_assets
+
+from dagster import MetadataEntry, build_assets_job, build_init_resource_context
 
 
 @responses.activate

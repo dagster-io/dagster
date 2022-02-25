@@ -6,6 +6,8 @@ import subprocess
 import tempfile
 
 import pytest
+from sqlalchemy import create_engine
+
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -21,7 +23,6 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster.utils import file_relative_path
-from sqlalchemy import create_engine
 
 
 def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):

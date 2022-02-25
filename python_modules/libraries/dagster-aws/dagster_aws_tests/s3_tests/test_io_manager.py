@@ -1,3 +1,6 @@
+from dagster_aws.s3.io_manager import s3_pickle_asset_io_manager, s3_pickle_io_manager
+from dagster_aws.s3.utils import construct_s3_client
+
 from dagster import (
     In,
     Int,
@@ -11,8 +14,6 @@ from dagster import (
     resource,
 )
 from dagster.core.test_utils import instance_for_test
-from dagster_aws.s3.io_manager import s3_pickle_asset_io_manager, s3_pickle_io_manager
-from dagster_aws.s3.utils import construct_s3_client
 
 
 @resource

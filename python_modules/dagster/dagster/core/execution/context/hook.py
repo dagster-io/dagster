@@ -197,8 +197,8 @@ class UnboundHookContext(HookContext):
         job_name: Optional[str],
         op_exception: Optional[Exception],
     ):  # pylint: disable=super-init-not-called
-        from ..context_creation_pipeline import initialize_console_manager
         from ..build_resources import build_resources
+        from ..context_creation_pipeline import initialize_console_manager
 
         self._mode_def = mode_def
 

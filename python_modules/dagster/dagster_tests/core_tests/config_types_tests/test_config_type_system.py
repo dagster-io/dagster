@@ -3,6 +3,7 @@ import string
 import typing
 
 import pytest
+
 from dagster import (
     Any,
     DagsterInvalidConfigDefinitionError,

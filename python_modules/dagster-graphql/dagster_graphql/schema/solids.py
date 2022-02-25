@@ -1,6 +1,9 @@
 from functools import lru_cache
 
 import graphene
+from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.schema.logs.events import GrapheneRunStepStats
+
 from dagster import check
 from dagster.core.definitions import NodeHandle
 from dagster.core.host_representation import RepresentedPipeline

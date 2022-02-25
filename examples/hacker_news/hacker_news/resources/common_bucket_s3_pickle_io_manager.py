@@ -1,5 +1,6 @@
-from dagster import build_init_resource_context, io_manager
 from dagster_aws.s3 import s3_pickle_io_manager
+
+from dagster import build_init_resource_context, io_manager
 
 
 @io_manager(required_resource_keys={"s3_bucket", "s3"})

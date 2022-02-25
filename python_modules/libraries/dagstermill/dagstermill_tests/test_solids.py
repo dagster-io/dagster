@@ -5,16 +5,17 @@ from contextlib import contextmanager
 
 import nbformat
 import pytest
+from dagstermill import DagstermillError, define_dagstermill_solid
+from dagstermill.compat import ExecutionError
+from jupyter_client.kernelspec import NoSuchKernel
+from nbconvert.preprocessors import ExecutePreprocessor
+
 from dagster import execute_pipeline, pipeline
 from dagster.check import CheckError
 from dagster.core.definitions.metadata import PathMetadataValue
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path, safe_tempfile_path
-from dagstermill import DagstermillError, define_dagstermill_solid
-from dagstermill.compat import ExecutionError
-from jupyter_client.kernelspec import NoSuchKernel
-from nbconvert.preprocessors import ExecutePreprocessor
 
 try:
     import dagster_pandas as _
@@ -539,6 +540,7 @@ def test_failure(capsys):
 @pytest.mark.notebook_test
 def test_hello_world_graph():
     from dagstermill.examples.repository import build_hello_world_job
+
     from dagster import reconstructable
 
     with instance_for_test() as instance:

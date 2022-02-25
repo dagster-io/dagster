@@ -2,6 +2,8 @@ import re
 
 import pytest
 import yaml
+from dagster_tests.api_tests.utils import get_bar_workspace
+
 from dagster import PipelineDefinition, check, execute_pipeline, pipeline, solid
 from dagster.check import CheckError
 from dagster.config import Field
@@ -22,7 +24,6 @@ from dagster.core.snap import (
 from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
 from dagster.serdes import ConfigurableClass
 from dagster.serdes.config_class import ConfigurableClassData
-from dagster_tests.api_tests.utils import get_bar_workspace
 
 
 def test_get_run_by_id():
@@ -136,10 +137,10 @@ def test_submit_run():
 
 def test_get_required_daemon_types():
     from dagster.daemon.daemon import (
-        SensorDaemon,
         BackfillDaemon,
-        SchedulerDaemon,
         MonitoringDaemon,
+        SchedulerDaemon,
+        SensorDaemon,
     )
 
     with instance_for_test() as instance:

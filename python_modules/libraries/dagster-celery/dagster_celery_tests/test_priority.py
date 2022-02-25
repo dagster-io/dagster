@@ -5,11 +5,12 @@ import threading
 import time
 from collections import OrderedDict
 
+from dagster_celery import celery_executor
+from dagster_celery.tags import DAGSTER_CELERY_RUN_PRIORITY_TAG
+
 from dagster import ModeDefinition, default_executors
 from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from dagster.core.test_utils import instance_for_test
-from dagster_celery import celery_executor
-from dagster_celery.tags import DAGSTER_CELERY_RUN_PRIORITY_TAG
 
 from .utils import execute_eagerly_on_celery, execute_on_thread, start_celery_worker
 

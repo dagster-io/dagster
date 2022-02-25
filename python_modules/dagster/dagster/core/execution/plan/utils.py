@@ -12,8 +12,8 @@ from dagster.core.errors import (
 )
 
 if TYPE_CHECKING:
-    from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.definitions.resource_definition import Resources
+    from dagster.core.execution.context.system import StepExecutionContext
 
 
 def build_resources_for_manager(

@@ -1,6 +1,14 @@
 import os
 
 import pendulum
+from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
+    infer_repository_selector,
+    infer_schedule_selector,
+    main_repo_location_name,
+    main_repo_name,
+)
+
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
@@ -14,13 +22,6 @@ from dagster.core.scheduler.instigation import (
 )
 from dagster.seven.compat.pendulum import create_pendulum_time
 from dagster.utils import Counter, traced_counter
-from dagster_graphql.test.utils import (
-    execute_dagster_graphql,
-    infer_repository_selector,
-    infer_schedule_selector,
-    main_repo_location_name,
-    main_repo_name,
-)
 
 GET_SCHEDULES_QUERY = """
 query SchedulesQuery($repositorySelector: RepositorySelector!) {

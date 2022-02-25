@@ -10,6 +10,13 @@ from contextlib import contextmanager
 from copy import deepcopy
 from typing import List
 
+from dagster_graphql.test.utils import (
+    define_out_of_process_context,
+    infer_pipeline_selector,
+    main_repo_location_name,
+    main_repo_name,
+)
+
 from dagster import (
     Any,
     AssetKey,
@@ -85,12 +92,6 @@ from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, segfault
-from dagster_graphql.test.utils import (
-    define_out_of_process_context,
-    infer_pipeline_selector,
-    main_repo_location_name,
-    main_repo_name,
-)
 
 LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 

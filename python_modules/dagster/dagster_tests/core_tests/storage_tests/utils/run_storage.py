@@ -4,6 +4,7 @@ from datetime import datetime
 
 import pendulum
 import pytest
+
 from dagster import job, op, seven
 from dagster.core.definitions import PipelineDefinition
 from dagster.core.errors import (
@@ -1163,8 +1164,8 @@ class TestRunStorage:
     def test_debug_snapshot_import(self, storage):
         from dagster.core.execution.api import create_execution_plan
         from dagster.core.snap import (
-            snapshot_from_execution_plan,
             create_execution_plan_snapshot_id,
+            snapshot_from_execution_plan,
         )
 
         run_id = make_new_run_id()

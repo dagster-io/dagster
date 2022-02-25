@@ -7,6 +7,7 @@ from collections import deque
 from contextlib import AbstractContextManager
 
 import pendulum
+
 from dagster import DagsterInstance, check
 from dagster.core.telemetry import DAEMON_ALIVE, log_action
 from dagster.core.workspace import IWorkspace

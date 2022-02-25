@@ -1,10 +1,11 @@
 import base64
 import time
 
-import dagster
 import requests.exceptions
-from dagster import check
 from databricks_api import DatabricksAPI
+
+import dagster
+from dagster import check
 
 from .types import (
     DATABRICKS_RUN_TERMINATED_STATES,

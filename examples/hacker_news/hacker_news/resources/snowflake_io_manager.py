@@ -3,7 +3,6 @@ import textwrap
 from contextlib import contextmanager
 from typing import Mapping, Optional, Sequence, Union
 
-from dagster import AssetKey, IOManager, InputContext, MetadataEntry, OutputContext, io_manager
 from pandas import DataFrame as PandasDataFrame
 from pandas import read_sql
 from pyspark.sql import DataFrame as SparkDataFrame
@@ -11,6 +10,8 @@ from pyspark.sql.types import StructField, StructType
 from snowflake.connector.pandas_tools import pd_writer
 from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
 from sqlalchemy import create_engine
+
+from dagster import AssetKey, IOManager, InputContext, MetadataEntry, OutputContext, io_manager
 
 
 def spark_field_to_snowflake_type(spark_field: StructField):

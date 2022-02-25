@@ -1,6 +1,9 @@
 import json
 from unittest import mock
 
+from dagster_k8s import K8sRunLauncher
+from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, UserDefinedDagsterK8sConfig
+
 from dagster import pipeline, reconstructable
 from dagster.core.host_representation import RepositoryHandle
 from dagster.core.launcher import LaunchRunContext
@@ -13,8 +16,6 @@ from dagster.core.test_utils import (
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.utils import merge_dicts
 from dagster.utils.hosted_user_process import external_pipeline_from_recon_pipeline
-from dagster_k8s import K8sRunLauncher
-from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, UserDefinedDagsterK8sConfig
 
 
 def test_launcher_from_config(kubeconfig_file):

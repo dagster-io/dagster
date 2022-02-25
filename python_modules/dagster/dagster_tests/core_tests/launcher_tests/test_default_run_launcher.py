@@ -7,6 +7,7 @@ import time
 from contextlib import contextmanager
 
 import pytest
+
 from dagster import (
     DefaultRunLauncher,
     ModeDefinition,

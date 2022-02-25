@@ -270,7 +270,7 @@ def scope_dbt_rpc_resource_example():
 def scope_dbt_run_disable_assets():
     # start_marker_dbt_rpc_config_disable_assets
     from dagster import job
-    from dagster_dbt import dbt_run_op, dbt_cli_resource
+    from dagster_dbt import dbt_cli_resource, dbt_run_op
 
     dbt_run_no_assets = dbt_run_op.configured(
         {"yield_materializations": False}, name="dbt_run_no_assets"
