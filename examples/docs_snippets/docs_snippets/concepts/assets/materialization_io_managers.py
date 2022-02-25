@@ -26,7 +26,8 @@ class PandasCsvIOManager(IOManager):
 
         context.log_event(
             AssetMaterialization(
-                asset_key=AssetKey(file_path), description="Persisted result to storage."
+                asset_key=AssetKey(file_path),
+                description="Persisted result to storage.",
             )
         )
 

@@ -113,13 +113,13 @@ if __name__ == "__main__":
                 "tox-pip-version==0.0.7",
                 "tqdm==4.48.0",  # pylint crash 48.1+
                 "yamllint",
-            ],
-            "lint": [
                 "black==22.1.0",
                 "flake8>=3.7.8",
                 "isort==5.10.1",
-                "mypy==0.931",
                 "pylint==2.6.0",
+            ],
+            "mypy": [
+                "mypy==0.931",
                 "types-croniter",  # version will be resolved against croniter
                 "types-mock",  # version will be resolved against mock
                 "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)

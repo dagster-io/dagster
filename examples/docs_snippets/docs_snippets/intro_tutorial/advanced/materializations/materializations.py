@@ -50,9 +50,7 @@ def sort_by_calories(context, cereals):
             asset_key="sorted_cereals_csv",
             description="Cereals data frame sorted by caloric content",
             metadata={
-                "sorted_cereals_csv_path": MetadataValue.path(
-                    sorted_cereals_csv_path
-                )
+                "sorted_cereals_csv_path": MetadataValue.path(sorted_cereals_csv_path)
             },
         )
     )
