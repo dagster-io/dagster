@@ -1,7 +1,9 @@
-from typing import Dict, Optional, List
-from dagster import check
+from typing import Dict, List, Optional
 
 import boto3
+
+from dagster import check
+
 from ..utils import construct_boto_client_retry_config
 
 
