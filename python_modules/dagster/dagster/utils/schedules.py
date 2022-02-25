@@ -33,8 +33,6 @@ def schedule_execution_time_iterator(
     # and matches the cron schedule
     next_date = date_iter.get_prev(datetime.datetime)
 
-    cron_parts = cron_schedule.split(" ")
-
     check.invariant(is_valid_cron_string(cron_schedule))
 
     cron_parts, _ = croniter.expand(cron_schedule)
@@ -61,7 +59,7 @@ def schedule_execution_time_iterator(
         should_hour_change = True
     else:
         delta_fn = None
-        should_hour_change = None
+        should_hour_change = False
 
     if delta_fn:
         # Use pendulums for intervals when possible
