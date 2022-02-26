@@ -42,3 +42,42 @@ case_sensitive=true
 
 # profile=black just sets defaults, it won't read our line-length override in black's config
 line_length=100
+
+# ########################
+# ##### PYLINT
+# ########################
+
+# Pylint has many options that are divvied up by category. Each [SECTION] below corresponds to a
+# section in this doc:
+#   https://pylint.pycqa.org/en/latest/technical_reference/features.html 
+
+# NOTE: Running pylint in parallel (i.e. -j/--jobs option != 1) currently will not work (with
+# Dagster's configuration) on some platforms (specifically macOS, maybe others). This is because of
+# the `dagster.utils.linter` plugin, which contains extensions that can't be properly pickled. There
+# are open issues discussing this problem but it looks like the situation is likely to persist for
+# some time:
+#   https://pylint.pycqa.org/en/latest/user_guide/run.html#parallel-execution
+#   https://github.com/PyCQA/pylint/issues/4874
+
+[tool.pylint.master]
+ignore = ['snapshots']
+py-version = 3.6
+# load-plugins=dagster.utils.linter
+
+[tool.pylint.messages-control]
+disable=[
+  'C',  # [category] convention-related checks
+  'R',  # [category] refactoring-related checks
+  'typecheck',  # [checker] redundant with mypy
+  'bad-option-value',
+  'bare-except',
+  'broad-except',
+  'duplicate-code',
+  'fixme',
+  'logging-format-interpolation',
+  'no-init',
+  'raise-missing-from',
+  'redefined-outer-name',
+  'unspecified-encoding'
+]
+>>>>>>> f6f381a25 (migrate pylint config to pyproject.toml)
