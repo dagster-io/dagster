@@ -102,12 +102,13 @@ def protoc(generated_dir: str):
                 for line in generated.readlines():
                     rewritten.write(line)
 
-
-    installed_pkgs = {pkg.key for pkg in pkg_resources.working_set}   # pylint: disable=not-an-iterable
+    installed_pkgs = {
+        pkg.key for pkg in pkg_resources.working_set
+    }  # pylint: disable=not-an-iterable
 
     # Run black if it's available. This is under a conditional because black may not be available in
     # a test environment.
-    if 'black' in installed_pkgs:
+    if "black" in installed_pkgs:
         _res = subprocess.check_output(
             [
                 sys.executable,
@@ -129,7 +130,7 @@ def protoc(generated_dir: str):
 
     # Run isort if it's available. This is under a conditional because isort may not be available in
     # a test environment.
-    if 'isort' in installed_pkgs:
+    if "isort" in installed_pkgs:
         _res = subprocess.check_output(
             [
                 "isort",
