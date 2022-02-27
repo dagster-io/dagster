@@ -87,6 +87,43 @@ def test_ins():
     assert my_op(1, "2") == 3
 
 
+def test_ins__with_class():
+    @op
+    class Upstream1:
+        def compute_fn():
+            return 5
+
+    @op
+    class Upstream2:
+        def compute_fn():
+            return "6"
+
+    @op
+    class MyOp:
+        ins = {"a": In(metadata={"x": 1}), "b": In(metadata={"y": 2})}
+
+        def compute_fn(a: int, b: str) -> int:
+            return a + int(b)
+
+    assert MyOp.ins == {
+        "a": In(metadata={"x": 1}, dagster_type=Int),
+        "b": In(metadata={"y": 2}, dagster_type=String),
+    }
+
+    @graph
+    def my_graph():
+        MyOp(a=Upstream1(), b=Upstream2())
+
+    result = my_graph.execute_in_process()
+    assert result.success
+
+    assert Upstream1() == 5
+
+    assert Upstream2() == "6"
+
+    assert MyOp(1, "2") == 3
+
+
 def test_out():
     @op(out=Out(metadata={"x": 1}))
     def my_op() -> int:
@@ -100,6 +137,24 @@ def test_out():
     assert my_op.output_defs[0].metadata == {"x": 1}
     assert my_op.output_defs[0].name == "result"
     assert my_op() == 1
+
+
+def test_out__with_class():
+    @op
+    class MyOp:
+        out = Out(metadata={"x": 1})
+
+        def compute_fn() -> int:
+            return 1
+
+    assert MyOp.outs == {
+        "result": Out(
+            metadata={"x": 1}, dagster_type=Int, is_required=True, io_manager_key="io_manager"
+        )
+    }
+    assert MyOp.output_defs[0].metadata == {"x": 1}
+    assert MyOp.output_defs[0].name == "result"
+    assert MyOp() == 1
 
 
 def test_multi_out():
@@ -255,6 +310,32 @@ def test_op_config():
         config={"ops": {"my_op": {"config": {"conf_str": "foo"}}}}
     ).execute_in_process()
     assert result.success
+
+def test_op_config__with_class():
+    @op
+    class MyOp:
+        config_schema={"conf_str": str}
+
+        def compute_fn(context):
+            assert context.op_config == {"conf_str": "foo"}
+
+    MyOp(build_op_context(config={"conf_str": "foo"}))
+
+    @graph
+    def basic():
+        MyOp()
+
+    result = basic.execute_in_process(
+        run_config={"ops": {"MyOp": {"config": {"conf_str": "foo"}}}}
+    )
+
+    assert result.success
+
+    result = basic.to_job(
+        config={"ops": {"MyOp": {"config": {"conf_str": "foo"}}}}
+    ).execute_in_process()
+    assert result.success
+
 
 
 even_type = DagsterType(

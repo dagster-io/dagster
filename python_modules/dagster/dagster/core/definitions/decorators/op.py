@@ -1,4 +1,5 @@
 from functools import update_wrapper
+from inspect import isclass
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -8,6 +9,7 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Type,
     Union,
     overload,
 )
@@ -30,6 +32,28 @@ from .solid import (
 
 if TYPE_CHECKING:
     from ..op_definition import OpDefinition
+
+WHITELISTED_INSTANCE_VARIABLES_FOR_OP_CLASS = [
+    "name",
+    "description",
+    "input_defs",
+    "output_defs",
+    "config_schema",
+    "required_resource_keys",
+    "tags",
+    "version",
+    "retry_policy",
+    "ins",
+    "out",
+]
+
+
+def extract_whitelisted_instance_variables_from_op_class(klass: Type) -> Dict[str, Any]:
+    return {
+        class_instance_variable: getattr(klass, class_instance_variable)
+        for class_instance_variable in WHITELISTED_INSTANCE_VARIABLES_FOR_OP_CLASS
+        if hasattr(klass, class_instance_variable)
+    }
 
 
 class _Op:
@@ -71,8 +95,42 @@ class _Op:
         self.ins = check.opt_nullable_dict_param(ins, "ins", key_type=str, value_type=In)
         self.out = out
 
-    def __call__(self, fn: Callable[..., Any]) -> "OpDefinition":
+    def __call__(self, fn_or_class: Union[Callable[..., Any], Type]) -> SolidDefinition:
         from ..op_definition import OpDefinition
+
+        if not callable(fn_or_class) and not isclass(fn_or_class):
+            raise DagsterInvariantViolationError(
+                "Expected a function or a class, but got {fn_or_class}".format(
+                    fn_or_class=fn_or_class
+                )
+            )
+
+        fn = fn_or_class
+
+        if isclass(fn_or_class):
+            # Extract the whitelisted instance variables from the class and set them on `self`
+            class_instance_variables = extract_whitelisted_instance_variables_from_op_class(
+                fn_or_class
+            )
+
+            for class_instance_variable in class_instance_variables:
+                if getattr(self, class_instance_variable):
+                    raise DagsterInvariantViolationError(
+                        (
+                            "Class {fn_or_class} has attribute {class_instance_variable}, "
+                            "but it was already specified as an argument on the @op decorator. "
+                            "Remove the attribute from the class or remove the argument from the @op decorator."
+                        ).format(
+                            fn_or_class=fn_or_class, class_instance_variable=class_instance_variable
+                        )
+                    )
+
+                setattr(
+                    self, class_instance_variable, class_instance_variables[class_instance_variable]
+                )
+
+            empty_compute_fn = lambda: None
+            fn = getattr(fn_or_class, "compute_fn", empty_compute_fn)
 
         if self.input_defs is not None and self.ins is not None:
             check.failed("Values cannot be provided for both the 'input_defs' and 'ins' arguments")
@@ -80,14 +138,14 @@ class _Op:
         if self.output_defs is not None and self.out is not None:
             check.failed("Values cannot be provided for both the 'output_defs' and 'out' arguments")
 
-        inferred_out = infer_output_props(fn)
-
         if self.ins is not None:
             input_defs = [inp.to_definition(name) for name, inp in self.ins.items()]
         else:
             input_defs = check.opt_list_param(
                 self.input_defs, "input_defs", of_type=InputDefinition
             )
+
+        inferred_out = infer_output_props(fn)
 
         output_defs_from_out = _resolve_output_defs_from_outs(
             inferred_out=inferred_out, out=self.out
@@ -97,8 +155,8 @@ class _Op:
         )
 
         if not self.name:
-            self.name = fn.__name__
-
+            self.name = fn_or_class.__name__ if isclass(fn_or_class) else fn.__name__
+            
         if resolved_output_defs is None:
             resolved_output_defs = [OutputDefinition.create_from_inferred(infer_output_props(fn))]
         elif len(resolved_output_defs) == 1:
@@ -286,7 +344,7 @@ def op(
     """
 
     # This case is for when decorator is used bare, without arguments. e.g. @op versus @op()
-    if callable(name):
+    if callable(name) or isclass(name):
         check.invariant(input_defs is None)
         check.invariant(output_defs is None)
         check.invariant(description is None)
@@ -294,8 +352,16 @@ def op(
         check.invariant(required_resource_keys is None)
         check.invariant(tags is None)
         check.invariant(version is None)
+        check.invariant(ins is None)
+        check.invariant(out is None)
+        check.invariant(retry_policy is None)
 
+    if callable(name):
         return _Op()(name)
+
+    if isclass(name):
+        class_instance_variables = extract_whitelisted_instance_variables_from_op_class(name)
+        return _Op(**class_instance_variables)(name)
 
     return _Op(
         name=name,
