@@ -5,8 +5,9 @@ import pytest
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import repository_def_from_pointer
-from dagster.core.errors import DagsterImportError
+from dagster.core.errors import DagsterImportError, DagsterInvalidDefinitionError
 from dagster.core.workspace.autodiscovery import (
+    EphemeralRepositoryTarget,
     loadable_targets_from_python_file,
     loadable_targets_from_python_module,
     loadable_targets_from_python_package,
@@ -53,15 +54,21 @@ def test_single_pipeline():
 
 def test_double_pipeline():
     double_pipeline_path = file_relative_path(__file__, "double_pipeline.py")
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        loadable_targets_from_python_file(double_pipeline_path)
+    loadable_targets = loadable_targets_from_python_file(double_pipeline_path)
 
-    assert str(exc_info.value) == (
-        'No repository and more than one pipeline found in "double_pipeline". '
-        "If you load a file or module directly it must have only one pipeline "
-        "in scope. Found pipelines defined in variables or decorated "
-        "functions: ['pipe_one', 'pipe_two']."
+    assert len(loadable_targets) == 1
+    assert isinstance(loadable_targets[0], EphemeralRepositoryTarget)
+
+    repo_def = repository_def_from_pointer(
+        CodePointer.from_python_file(double_pipeline_path, None, None)
     )
+
+    assert isinstance(repo_def, RepositoryDefinition)
+    assert repo_def.get_pipeline("pipe_one")
+    assert repo_def.get_pipeline("pipe_two")
+
+
+# TODO Add test with an EphemeralRepositoryTarget that has multiple jobs/schedules/sensors that all get picked up automatically
 
 
 def test_single_graph():
@@ -76,20 +83,19 @@ def test_single_graph():
         CodePointer.from_python_file(single_graph_path, symbol, None)
     )
 
-    isinstance(repo_def, RepositoryDefinition)
+    assert isinstance(repo_def, RepositoryDefinition)
     assert repo_def.get_pipeline("graph_one")
 
 
 def test_double_graph():
-    double_pipeline_path = file_relative_path(__file__, "double_graph.py")
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        loadable_targets_from_python_file(double_pipeline_path)
+    double_graph_path = file_relative_path(__file__, "double_graph.py")
 
-    assert str(exc_info.value) == (
-        'No repository, job, or pipeline, and more than one graph found in "double_graph". '
-        "If you load a file or module directly it must either have one repository, "
-        "one job, one pipeline, or one graph in scope. Found graphs defined in variables or decorated "
-        "functions: ['graph_one', 'graph_two']."
+    with pytest.raises(DagsterInvariantViolationError) as exc_info:
+        loadable_targets_from_python_file(double_graph_path)
+
+    assert (
+        str(exc_info.value)
+        == 'No jobs, pipelines, asset collections, or repositories found in "double_graph".'
     )
 
 
@@ -110,15 +116,16 @@ def test_single_asset_group():
 
 def test_double_asset_group():
     path = file_relative_path(__file__, "double_asset_group.py")
-    with pytest.raises(DagsterInvariantViolationError) as exc_info:
-        loadable_targets_from_python_file(path)
 
-    assert str(exc_info.value) == (
-        'More than one asset collection found in "double_asset_group". '
-        "If you load a file or module directly it must either have one repository, one "
-        "job, one pipeline, one graph, or one asset collection scope. Found asset "
-        "collections defined in variables: ['ac1', 'ac2']."
-    )
+    loadable_targets = loadable_targets_from_python_file(path)
+
+    assert len(loadable_targets) == 1
+    assert isinstance(loadable_targets[0], EphemeralRepositoryTarget)
+
+    with pytest.raises(
+        DagsterInvalidDefinitionError, match="Repository can only include one AssetGroup"
+    ) as exc_info:
+        repository_def_from_pointer(CodePointer.from_python_file(path, None, None))
 
 
 def test_no_loadable_targets():
@@ -127,7 +134,7 @@ def test_no_loadable_targets():
 
     assert (
         str(exc_info.value)
-        == 'No jobs, pipelines, graphs, asset collections, or repositories found in "nada".'
+        == 'No jobs, pipelines, asset collections, or repositories found in "nada".'
     )
 
 

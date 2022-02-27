@@ -566,6 +566,7 @@ class CachingRepositoryData(RepositoryData):
         schedules = {}
         sensors = {}
         source_assets = {}
+        asset_group = None
         for definition in repository_definitions:
             if isinstance(definition, PipelineDefinition):
                 if (
@@ -626,6 +627,11 @@ class CachingRepositoryData(RepositoryData):
                 pipelines_or_jobs[coerced.name] = coerced
 
             elif isinstance(definition, AssetGroup):
+                if asset_group:
+                    raise DagsterInvalidDefinitionError(
+                        "Repository can only include one AssetGroup"
+                    )
+
                 asset_group = definition
                 pipelines_or_jobs[asset_group.all_assets_job_name] = build_assets_job(
                     asset_group.all_assets_job_name,

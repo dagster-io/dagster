@@ -24,21 +24,21 @@ class CodePointer(ABC):
     @staticmethod
     def from_module(module_name, definition, working_directory):
         check.str_param(module_name, "module_name")
-        check.str_param(definition, "definition")
+        check.opt_str_param(definition, "definition")
         check.opt_str_param(working_directory, "working_directory")
         return ModuleCodePointer(module_name, definition, working_directory)
 
     @staticmethod
     def from_python_package(module_name, attribute, working_directory):
         check.str_param(module_name, "module_name")
-        check.str_param(attribute, "attribute")
+        check.opt_str_param(attribute, "attribute")
         check.opt_str_param(working_directory, "working_directory")
         return PackageCodePointer(module_name, attribute, working_directory)
 
     @staticmethod
     def from_python_file(python_file, definition, working_directory):
         check.str_param(python_file, "python_file")
-        check.str_param(definition, "definition")
+        check.opt_str_param(definition, "definition")
         check.opt_str_param(working_directory, "working_directory")
         return FileCodePointer(
             python_file=python_file, fn_name=definition, working_directory=working_directory
@@ -149,20 +149,28 @@ def load_python_module(module_name, working_directory, remove_from_path_fn=None)
 class FileCodePointer(
     NamedTuple(
         "_FileCodePointer",
-        [("python_file", str), ("fn_name", str), ("working_directory", Optional[str])],
+        [("python_file", str), ("fn_name", Optional[str]), ("working_directory", Optional[str])],
     ),
     CodePointer,
 ):
-    def __new__(cls, python_file: str, fn_name: str, working_directory: Optional[str] = None):
+    def __new__(
+        cls, python_file: str, fn_name: Optional[str], working_directory: Optional[str] = None
+    ):
         return super(FileCodePointer, cls).__new__(
             cls,
             check.str_param(python_file, "python_file"),
-            check.str_param(fn_name, "fn_name"),
+            check.opt_str_param(fn_name, "fn_name"),
             check.opt_str_param(working_directory, "working_directory"),
         )
 
     def load_target(self):
         module = load_python_file(self.python_file, self.working_directory)
+
+        from .workspace.autodiscovery import create_ephemeral_repository
+
+        if not self.fn_name:
+            return create_ephemeral_repository(module)
+
         if not hasattr(module, self.fn_name):
             raise DagsterInvariantViolationError(
                 "{name} not found at module scope in file {file}.".format(
@@ -173,32 +181,37 @@ class FileCodePointer(
         return getattr(module, self.fn_name)
 
     def describe(self):
-        if self.working_directory:
-            return "{self.python_file}::{self.fn_name} -- [dir {self.working_directory}]".format(
-                self=self
-            )
-        else:
-            return "{self.python_file}::{self.fn_name}".format(self=self)
+
+        file_str = f"{self.python_file}::{self.fn_name}" if self.fn_name else self.python_file
+
+        return (
+            f"{file_str} -- [dir {self.working_directory}]" if self.working_directory else file_str
+        )
 
 
 @whitelist_for_serdes
 class ModuleCodePointer(
     NamedTuple(
         "_ModuleCodePointer",
-        [("module", str), ("fn_name", str), ("working_directory", Optional[str])],
+        [("module", str), ("fn_name", Optional[str]), ("working_directory", Optional[str])],
     ),
     CodePointer,
 ):
-    def __new__(cls, module: str, fn_name: str, working_directory: Optional[str] = None):
+    def __new__(cls, module: str, fn_name: Optional[str], working_directory: Optional[str] = None):
         return super(ModuleCodePointer, cls).__new__(
             cls,
             check.str_param(module, "module"),
-            check.str_param(fn_name, "fn_name"),
+            check.opt_str_param(fn_name, "fn_name"),
             check.opt_str_param(working_directory, "working_directory"),
         )
 
     def load_target(self):
         module = load_python_module(self.module, self.working_directory)
+
+        from .workspace.autodiscovery import create_ephemeral_repository
+
+        if not self.fn_name:
+            return create_ephemeral_repository(module)
 
         if not hasattr(module, self.fn_name):
             raise DagsterInvariantViolationError(
@@ -209,27 +222,39 @@ class ModuleCodePointer(
         return getattr(module, self.fn_name)
 
     def describe(self):
-        return "from {self.module} import {self.fn_name}".format(self=self)
+        return (
+            "from {self.module} import {self.fn_name}".format(self=self)
+            if self.fn_name
+            else "import {self.module}"
+        )
 
 
 @whitelist_for_serdes
 class PackageCodePointer(
     NamedTuple(
         "_PackageCodePointer",
-        [("module", str), ("attribute", str), ("working_directory", Optional[str])],
+        [("module", str), ("attribute", Optional[str]), ("working_directory", Optional[str])],
     ),
     CodePointer,
 ):
-    def __new__(cls, module: str, attribute: str, working_directory: Optional[str] = None):
+    def __new__(
+        cls, module: str, attribute: Optional[str], working_directory: Optional[str] = None
+    ):
         return super(PackageCodePointer, cls).__new__(
             cls,
             check.str_param(module, "module"),
-            check.str_param(attribute, "attribute"),
+            check.opt_str_param(attribute, "attribute"),
             check.opt_str_param(working_directory, "working_directory"),
         )
 
     def load_target(self):
         module = load_python_module(self.module, self.working_directory)
+
+        from .workspace.autodiscovery import create_ephemeral_repository
+
+        if not self.attribute:
+            # Get all the members from the module
+            return create_ephemeral_repository(module)
 
         if not hasattr(module, self.attribute):
             raise DagsterInvariantViolationError(
@@ -240,7 +265,11 @@ class PackageCodePointer(
         return getattr(module, self.attribute)
 
     def describe(self):
-        return "from {self.module} import {self.attribute}".format(self=self)
+        return (
+            "from {self.module} import {self.attribute}".format(self=self)
+            if self.attribute
+            else "import {self.module}"
+        )
 
 
 def get_python_file_from_target(target):

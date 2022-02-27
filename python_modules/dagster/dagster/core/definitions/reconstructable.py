@@ -605,7 +605,6 @@ def repository_def_from_target_def(target):
 
     # special case - we can wrap a single pipeline in a repository
     if isinstance(target, (PipelineDefinition, GraphDefinition)):
-        # consider including pipeline name in generated repo name
         return RepositoryDefinition(
             name=get_ephemeral_repository_name(target.name),
             repository_data=CachingRepositoryData.from_list([target]),

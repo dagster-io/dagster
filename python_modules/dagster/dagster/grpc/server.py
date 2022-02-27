@@ -22,6 +22,7 @@ from dagster.core.host_representation.origin import ExternalPipelineOrigin, Exte
 from dagster.core.instance import DagsterInstance
 from dagster.core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster.core.workspace.autodiscovery import EphemeralRepositoryTarget
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
@@ -98,8 +99,17 @@ class LoadedRepositories:
             loadable_target_origin.working_directory,
             loadable_target_origin.attribute,
         )
+
         for loadable_target in loadable_targets:
-            pointer = _get_code_pointer(loadable_target_origin, loadable_target)
+            attribute = (
+                None
+                if isinstance(loadable_target, EphemeralRepositoryTarget)
+                else loadable_target.attribute
+            )
+            pointer = _get_code_pointer(
+                loadable_target_origin,
+                attribute,
+            )
             recon_repo = ReconstructableRepository(
                 pointer,
                 _get_current_image(),
@@ -114,7 +124,7 @@ class LoadedRepositories:
             self._recon_repos_by_name[repo_def.name] = recon_repo
             self._loadable_repository_symbols.append(
                 LoadableRepositorySymbol(
-                    attribute=loadable_target.attribute,
+                    attribute=attribute,
                     repository_name=repo_def.name,
                 )
             )
@@ -131,23 +141,23 @@ class LoadedRepositories:
         return self._recon_repos_by_name[name]
 
 
-def _get_code_pointer(loadable_target_origin, loadable_repository_symbol):
+def _get_code_pointer(loadable_target_origin, attribute):
     if loadable_target_origin.python_file:
         return CodePointer.from_python_file(
             loadable_target_origin.python_file,
-            loadable_repository_symbol.attribute,
+            attribute,
             loadable_target_origin.working_directory,
         )
     elif loadable_target_origin.package_name:
         return CodePointer.from_python_package(
             loadable_target_origin.package_name,
-            loadable_repository_symbol.attribute,
+            attribute,
             loadable_target_origin.working_directory,
         )
     else:
         return CodePointer.from_module(
             loadable_target_origin.module_name,
-            loadable_repository_symbol.attribute,
+            attribute,
             loadable_target_origin.working_directory,
         )
 

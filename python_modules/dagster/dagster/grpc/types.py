@@ -217,7 +217,7 @@ class LoadableRepositorySymbol(
         return super(LoadableRepositorySymbol, cls).__new__(
             cls,
             repository_name=check.str_param(repository_name, "repository_name"),
-            attribute=check.str_param(attribute, "attribute"),
+            attribute=check.opt_str_param(attribute, "attribute"),
         )
 
 
