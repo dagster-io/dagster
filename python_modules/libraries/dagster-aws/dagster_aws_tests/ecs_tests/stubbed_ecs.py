@@ -343,7 +343,7 @@ class StubbedEcs:
                     "clusterArn": self._cluster_arn(cluster),
                     "containers": containers,
                     "lastStatus": "RUNNING",
-                    "overrides": kwargs.get("overrides", {}),
+                    "overrides": overrides,
                     "taskArn": arn,
                     "taskDefinitionArn": task_definition["taskDefinitionArn"],
                     "cpu": task_definition["cpu"],
