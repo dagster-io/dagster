@@ -103,8 +103,9 @@ def protoc(generated_dir: str):
                     rewritten.write(line)
 
     installed_pkgs = {
+        # pylint: disable=not-an-iterable
         pkg.key for pkg in pkg_resources.working_set
-    }  # pylint: disable=not-an-iterable
+    }  
 
     # Run black if it's available. This is under a conditional because black may not be available in
     # a test environment.
