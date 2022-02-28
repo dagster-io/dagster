@@ -9,13 +9,6 @@ from dagster import (
     build_input_context,
     build_output_context,
     resource,
-    AssetKey,
-    IOManagerDefinition,
-    op,
-    Out,
-    In,
-    IOManager,
-    graph,
 )
 from dagster.core.errors import DagsterInvariantViolationError
 
@@ -120,38 +113,3 @@ def test_context_logging_metadata():
     context.add_output_metadata({"foo": "bar"})
 
     assert [entry.label for entry in context.get_logged_metadata_entries()] == ["foo"]
-
-
-def test_context_observe_metadata():
-    in_asset_key = AssetKey(["a", "b"])
-    out_asset_key = AssetKey(["c", "d"])
-
-    @op(out=Out(asset_key=out_asset_key))
-    def before():
-        pass
-
-    @op(ins={"a": In(asset_key=in_asset_key)}, out={})
-    def after(a):
-        pass
-
-    class MyIOManager(IOManager):
-        def load_input(self, context):
-            assert context.asset_key == in_asset_key
-            context.observe_metadata(metadata={"foo": "bar"})
-
-            observations = context.get_observations()
-            assert observations[0].asset_key == context.asset_key
-            assert observations[0].metadata_entries[0].label == "foo"
-            assert observations[0].metadata_entries[0].entry_data.text == "bar"
-
-        def handle_output(self, context, obj):
-            assert context.asset_key == out_asset_key
-
-    @graph
-    def my_graph():
-        after(before())
-
-    result = my_graph.to_job(
-        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())}
-    ).execute_in_process()
-    assert result.success

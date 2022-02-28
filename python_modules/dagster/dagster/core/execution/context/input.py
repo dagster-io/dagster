@@ -312,22 +312,19 @@ class InputContext:
         """
         from dagster.core.events import DagsterEvent
 
-        check.invariant(
-            self.asset_key != None,
-            "Can only call observe_metadata on inputs with an asset key",
-        )
-        check.opt_str_param(description, "description")
-        metadata = check.dict_param(metadata, "metadata", key_type=str)
+        if self.asset_key:
+            check.opt_str_param(description, "description")
+            metadata = check.dict_param(metadata, "metadata", key_type=str)
 
-        observation = AssetObservation(
-            asset_key=self.asset_key,
-            description=description,
-            partition=self.asset_partition_key if self.has_asset_partitions else None,
-            metadata=metadata,
-        )
-        self._observations.append(observation)
-        if self._step_context:
-            self._events.append(DagsterEvent.asset_observation(self._step_context, observation))
+            observation = AssetObservation(
+                asset_key=self.asset_key,
+                description=description,
+                partition=self.asset_partition_key if self.has_asset_partitions else None,
+                metadata=metadata,
+            )
+            self._observations.append(observation)
+            if self._step_context:
+                self._events.append(DagsterEvent.asset_observation(self._step_context, observation))
 
     def get_observations(
         self,

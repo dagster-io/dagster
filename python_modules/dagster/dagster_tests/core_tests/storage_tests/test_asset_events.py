@@ -1,22 +1,23 @@
 import pytest
 from dagster import (
-    asset,
-    build_assets_job,
     AssetKey,
     AssetObservation,
+    In,
     InputDefinition,
     ModeDefinition,
+    Out,
     Output,
     OutputDefinition,
+    StaticPartitionsDefinition,
+    asset,
+    build_assets_job,
+    build_input_context,
     execute_pipeline,
     io_manager,
     job,
     op,
     pipeline,
     solid,
-    Out,
-    In,
-    StaticPartitionsDefinition,
 )
 from dagster.check import CheckError
 from dagster.core.definitions.event_metadata import EventMetadataEntry, PartitionMetadataEntry
@@ -147,6 +148,11 @@ def test_io_manager_observe_metadata():
         def load_input(self, context):
             context.observe_metadata(metadata={"foo": "bar"})
             context.observe_metadata(metadata={"baz": "qux"})
+
+            observations = context.get_observations()
+            assert observations[0].asset_key == context.asset_key
+            assert observations[0].metadata_entries[0].label == "foo"
+            assert observations[1].metadata_entries[0].label == "baz"
             return 1
 
     @io_manager
@@ -225,6 +231,16 @@ def test_io_manager_single_partition_observe_metadata():
     assert get_observation(observations[0]) == AssetObservation(
         asset_key="asset_1", metadata={"foo": "bar"}, description="hello world", partition="a"
     )
+
+
+def test_context_error_observe_metadata():
+    @op
+    def my_op():
+        pass
+
+    context = build_input_context(op_def=my_op)
+    with pytest.raises(CheckError):
+        context.observe_metadata({"foo": "bar"})
 
 
 def test_io_manager_single_partition_materialization():
