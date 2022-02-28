@@ -290,33 +290,29 @@ if typing.TYPE_CHECKING:
     # pylint:enable=reimported
 
 _DEPRECATED = {
-    "EventMetadataEntry": ("MetadataEntry", MetadataEntry, "0.15.0"),
-    "EventMetadata": ("MetadataValue", MetadataValue, "0.15.0"),
-    "TextMetadataEntryData": ("TextMetadataValue", TextMetadataValue, "0.15.0"),
-    "UrlMetadataEntryData": ("UrlMetadataValue", UrlMetadataValue, "0.15.0"),
-    "PathMetadataEntryData": ("PathMetadataValue", PathMetadataValue, "0.15.0"),
-    "JsonMetadataEntryData": ("JsonMetadataValue", JsonMetadataValue, "0.15.0"),
-    "MarkdownMetadataEntryData": ("MarkdownMetadataValue", MarkdownMetadataValue, "0.15.0"),
+    "EventMetadataEntry": (MetadataEntry, "0.15.0"),
+    "EventMetadata": (MetadataValue, "0.15.0"),
+    "TextMetadataEntryData": (TextMetadataValue, "0.15.0"),
+    "UrlMetadataEntryData": (UrlMetadataValue, "0.15.0"),
+    "PathMetadataEntryData": (PathMetadataValue, "0.15.0"),
+    "JsonMetadataEntryData": (JsonMetadataValue, "0.15.0"),
+    "MarkdownMetadataEntryData": (MarkdownMetadataValue, "0.15.0"),
     "PythonArtifactMetadataEntryData": (
-        "PythonArtifactMetadataValue",
         PythonArtifactMetadataValue,
         "0.15.0",
     ),
-    "FloatMetadataEntryData": ("FloatMetadataValue", FloatMetadataValue, "0.15.0"),
-    "IntMetadataEntryData": ("IntMetadataValue", IntMetadataValue, "0.15.0"),
+    "FloatMetadataEntryData": (FloatMetadataValue, "0.15.0"),
+    "IntMetadataEntryData": (IntMetadataValue, "0.15.0"),
     "DagsterPipelineRunMetadataEntryData": (
-        "DagsterPipelineRunMetadataValue",
         DagsterPipelineRunMetadataValue,
         "0.15.0",
     ),
     "DagsterAssetMetadataEntryData": (
-        "DagsterAssetMetadataValue",
         DagsterAssetMetadataValue,
         "0.15.0",
     ),
-    "TableMetadataEntryData": ("TableMetadataValue", TableMetadataValue, "0.15.0"),
+    "TableMetadataEntryData": (TableMetadataValue, "0.15.0"),
     "TableSchemaMetadataEntryData": (
-        "TableSchemaMetadataValue",
         TableSchemaMetadataValue,
         "0.15.0",
     ),
@@ -325,9 +321,9 @@ _DEPRECATED = {
 
 def __getattr__(name):
     if name in _DEPRECATED:
-        new_name, value, breaking_version = _DEPRECATED[name]
+        value, breaking_version = _DEPRECATED[name]
         stacklevel = 3 if sys.version_info >= (3, 7) else 4
-        rename_warning(new_name, name, breaking_version, stacklevel=stacklevel)
+        rename_warning(value.__name__, name, breaking_version, stacklevel=stacklevel)
         return value
     else:
         raise AttributeError("module '{}' has no attribute '{}'".format(__name__, name))
