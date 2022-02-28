@@ -47,37 +47,65 @@ line_length=100
 # ##### PYLINT
 # ########################
 
-# Pylint has many options that are divvied up by category. Each [SECTION] below corresponds to a
-# section in this doc:
+# [Docs root]
+#   https://pylint.pycqa.org/en/latest/
+# [Rule/options reference]
 #   https://pylint.pycqa.org/en/latest/technical_reference/features.html 
 
-# NOTE: Running pylint in parallel (i.e. -j/--jobs option != 1) currently will not work (with
-# Dagster's configuration) on some platforms (specifically macOS, maybe others). This is because of
-# the `dagster.utils.linter` plugin, which contains extensions that can't be properly pickled. There
-# are open issues discussing this problem but it looks like the situation is likely to persist for
-# some time:
+# NOTE (2022-02-26): Pylint's docs are generally terrible, and googling often takes you on a wild
+# goose chase. The docs are frequently wrong, and stay wrong for years even when many people point
+# out the issue. If you encounter confusing behavior or want to figure out how something works, you
+# can't trust the most obvious source-- for instance, the "Configuration" page in the docs seems to
+# include a random set of info and doesn't even mention config files. For that, you have to look at
+# the "Running pylint" page. To get accurate info, you may have to look through one or more of the
+# following sources:
+#
+# [Features page] https://pylint.pycqa.org/en/latest/technical_reference/features.html
+#   This is a comprehensive reference of all Pylint checkers/rules and seems to be one of the only
+#   docs pages that's actually maintained.
+# [Changelog] https://pylint.pycqa.org/en/latest/whatsnew/index.html
+#   Often contains up-to-date info that corrects incorrect stuff in the older docs.
+# [Github issues] https://github.com/PyCQA/pylint/issues
+#   Best places to find workarounds or discussion/explanation of weird behavior.
+
+# NOTE (2022-02-26): Running pylint in parallel (i.e. -j/--jobs option != 1) currently will not work
+# (with Dagster's configuration) on some platforms (specifically macOS, maybe others). This is
+# because of the `dagster.utils.linter` plugin, which contains extensions that can't be properly
+# pickled. There are open issues discussing this problem but it looks like the situation is likely
+# to persist for some time:
 #   https://pylint.pycqa.org/en/latest/user_guide/run.html#parallel-execution
 #   https://github.com/PyCQA/pylint/issues/4874
 
+# Pylint has many options that are divvied up by category. Each [SECTION] below corresponds to a
+# section in this doc:
+
 [tool.pylint.master]
-ignore = ['snapshots']
+# ignore = ['snapshots', 'vendor']
+ignore-paths = ['snapshots', 'vendor']
 py-version = 3.6
-# load-plugins=dagster.utils.linter
+# load-plugins=['dagster.utils.linter']
 
 [tool.pylint.messages-control]
 disable=[
   'C',  # [category] convention-related checks
   'R',  # [category] refactoring-related checks
   'typecheck',  # [checker] redundant with mypy
-  'bad-option-value',
-  'bare-except',
-  'broad-except',
-  'duplicate-code',
+  # 'bare-except',
+  # 'broad-except',
+  # 'duplicate-code',
+
   'fixme',
+
+  # Pylint is by default very strict on logging string interpolations, but the
+  # (performance-motivated) rules do not make sense for infrequent log messages (like error reports)
+  # and make messages less readable.
+  'logging-fstring-interpolation',
   'logging-format-interpolation',
-  'no-init',
+  'logging-not-lazy',
+
+  # 'no-init',
   'raise-missing-from',
   'redefined-outer-name',
-  'unspecified-encoding'
+  # 'unspecified-encoding'
 ]
 >>>>>>> f6f381a25 (migrate pylint config to pyproject.toml)
