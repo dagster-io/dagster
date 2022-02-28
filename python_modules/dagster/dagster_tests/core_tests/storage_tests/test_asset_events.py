@@ -1,5 +1,7 @@
 import pytest
 from dagster import (
+    asset,
+    build_assets_job,
     AssetKey,
     AssetObservation,
     InputDefinition,
@@ -12,6 +14,9 @@ from dagster import (
     op,
     pipeline,
     solid,
+    Out,
+    In,
+    StaticPartitionsDefinition,
 )
 from dagster.check import CheckError
 from dagster.core.definitions.event_metadata import EventMetadataEntry, PartitionMetadataEntry
@@ -134,31 +139,34 @@ def test_output_definition_multiple_partition_materialization():
     )
 
 
-def test_io_manager_logs_observations():
+def test_io_manager_observe_metadata():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
-            context.log_event(AssetObservation(asset_key="my_asset", metadata={"foo": "bar"}))
+            pass
 
         def load_input(self, context):
-            context.log_event(AssetObservation(asset_key="my_asset", metadata={"hello": "world"}))
-            context.log_event(AssetObservation(asset_key="my_asset", metadata={"1": "2"}))
+            context.observe_metadata(metadata={"foo": "bar"})
+            context.observe_metadata(metadata={"baz": "qux"})
             return 1
 
     @io_manager
     def my_io_manager(_):
         return MyIOManager()
 
-    @op
-    def op1():
-        return
+    in_asset_key = AssetKey(["a", "b"])
+    out_asset_key = AssetKey(["c", "d"])
 
-    @op
-    def op2(_input1):
-        return
+    @op(out=Out(asset_key=out_asset_key))
+    def before():
+        pass
+
+    @op(ins={"a": In(asset_key=in_asset_key)}, out={})
+    def after(a):
+        pass
 
     @job(resource_defs={"io_manager": my_io_manager})
     def my_job():
-        op2(op1())
+        after(before())
 
     get_observation = lambda event: event.event_specific_data.asset_observation
 
@@ -167,27 +175,55 @@ def test_io_manager_logs_observations():
         event for event in result.all_node_events if event.event_type_value == "ASSET_OBSERVATION"
     ]
 
-    # op1 handle output
-    assert observations[0].step_key == "op1"
+    # first observation
+    assert observations[0].step_key == "after"
     assert get_observation(observations[0]) == AssetObservation(
-        asset_key="my_asset", metadata={"foo": "bar"}
+        asset_key=in_asset_key, metadata={"foo": "bar"}
     )
-
-    # op2 load input
-    assert observations[1].step_key == "op2"
+    # second observation
+    assert observations[1].step_key == "after"
     assert get_observation(observations[1]) == AssetObservation(
-        asset_key="my_asset", metadata={"hello": "world"}
-    )
-    # second observation in op2 load input
-    assert observations[2].step_key == "op2"
-    assert get_observation(observations[2]) == AssetObservation(
-        asset_key="my_asset", metadata={"1": "2"}
+        asset_key=in_asset_key, metadata={"baz": "qux"}
     )
 
-    # op2 handle output
-    assert observations[3].step_key == "op2"
-    assert get_observation(observations[3]) == AssetObservation(
-        asset_key="my_asset", metadata={"foo": "bar"}
+
+def test_io_manager_single_partition_observe_metadata():
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+    @asset(partitions_def=partitions_def)
+    def asset_1():
+        return 1
+
+    @asset(partitions_def=partitions_def)
+    def asset_2(asset_1):
+        return 2
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            context.observe_metadata(metadata={"foo": "bar"}, description="hello world")
+            return 1
+
+    @io_manager
+    def my_io_manager(_):
+        return MyIOManager()
+
+    assets_job = build_assets_job(
+        "assets_job", [asset_1, asset_2], resource_defs={"io_manager": my_io_manager}
+    )
+    result = assets_job.execute_in_process(partition_key="a")
+
+    get_observation = lambda event: event.event_specific_data.asset_observation
+
+    observations = [
+        event for event in result.all_node_events if event.event_type_value == "ASSET_OBSERVATION"
+    ]
+
+    assert observations[0].step_key == "asset_2"
+    assert get_observation(observations[0]) == AssetObservation(
+        asset_key="asset_1", metadata={"foo": "bar"}, description="hello world", partition="a"
     )
 
 

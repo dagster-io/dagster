@@ -87,7 +87,7 @@ class InputContext:
             self._cm_scope_entered = False
 
         self._events: List["DagsterEvent"] = []
-        self._user_events: List[Union[AssetObservation]] = []
+        self._observations: List[AssetObservation] = []
 
     def __enter__(self):
         if self._resources_cm:
@@ -290,49 +290,49 @@ class InputContext:
             partitions_def.time_window_for_partition_key(partition_key_range.end).end,
         )
 
-    def log_event(self, event: AssetObservation) -> None:
-        """Log an AssetObservation from within the body of an io manager's `load_input` method.
-
-        Events logged with this method will appear in the event log.
-
-        Args:
-            event (AssetObservation): The event to log.
-
-        Examples:
-
-        .. code-block:: python
-
-            from dagster import IOManager, AssetObservation
-
-            class MyIOManager(IOManager):
-                def load_input(self, context):
-                    context.log_event(AssetObservation(asset_key="my_asset", metadata={"hello": "world"}))
-                    return 1
-        """
-        from dagster.core.events import DagsterEvent
-
-        if isinstance(event, AssetObservation):
-            if self._step_context:
-                self._events.append(DagsterEvent.asset_observation(self._step_context, event))
-            self._user_events.append(event)
-        else:
-            check.failed("Unexpected event {event}".format(event=event))
-
     def consume_events(self) -> Iterator["DagsterEvent"]:
         """Pops and yields all user-generated events that have been recorded from this context.
 
-        If consume_events has not yet been called, this will yield all logged events since the call to `handle_output`. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
+        If consume_events has not yet been called, this will yield all logged events since the call to `handle_input`. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
         """
 
         events = self._events
         self._events = []
         yield from events
 
-    def get_logged_events(
+    def observe_metadata(
         self,
-    ) -> List[Union[AssetObservation]]:
-        """Retrieve the list of user-generated events that were logged via the context.
+        metadata: Dict[str, Any],
+        description: Optional[str] = None,
+    ) -> None:
+        """Accepts a dictionary of metadata and attaches it to an asset observation.
 
+        The asset observation will be yielded from the run and appear in the event log.
+        Only valid if the context has an asset key.
+        """
+        from dagster.core.events import DagsterEvent
+
+        check.invariant(
+            self.asset_key != None,
+            "Can only call observe_metadata on inputs with an asset key",
+        )
+        check.opt_str_param(description, "description")
+        metadata = check.dict_param(metadata, "metadata", key_type=str)
+
+        observation = AssetObservation(
+            asset_key=self.asset_key,
+            description=description,
+            partition=self.asset_partition_key if self.has_asset_partitions else None,
+            metadata=metadata,
+        )
+        self._observations.append(observation)
+        if self._step_context:
+            self._events.append(DagsterEvent.asset_observation(self._step_context, observation))
+
+    def get_observations(
+        self,
+    ) -> List[AssetObservation]:
+        """Retrieve the list of user-generated asset observations that were observed via the context.
 
         User-generated events that were yielded will not appear in this list.
 
@@ -340,7 +340,7 @@ class InputContext:
 
         .. code-block:: python
 
-            from dagster import IOManager, build_output_context, AssetObservation
+            from dagster import IOManager, build_input_context, AssetObservation
 
             class MyIOManager(IOManager):
                 def load_input(self, context, obj):
@@ -348,14 +348,12 @@ class InputContext:
 
             def test_load_input():
                 mgr = MyIOManager()
-                context = build_output_context()
+                context = build_input_context()
                 mgr.load_input(context)
-                all_user_events = context.get_logged_events()
-                materializations = [event for event in all_user_events if isinstance(event, AssetObservation)]
+                observations = context.get_observations()
                 ...
         """
-
-        return self._user_events
+        return self._observations
 
 
 def build_input_context(

@@ -511,7 +511,6 @@ def _store_output(
     output_context = step_context.get_output_context(step_output_handle)
 
     manager_materializations = []
-    manager_observations = []
     manager_metadata_entries: List[Union[PartitionMetadataEntry, EventMetadataEntry]] = []
 
     # output_manager.handle_output is either a generator function, or a normal function with or
@@ -553,8 +552,6 @@ def _store_output(
             yield elt
         elif isinstance(elt, AssetMaterialization):
             manager_materializations.append(elt)
-        elif isinstance(elt, AssetObservation):
-            manager_observations.append(elt)
         elif isinstance(elt, (EventMetadataEntry, PartitionMetadataEntry)):
             experimental_functionality_warning(
                 "Yielding metadata from an IOManager's handle_output() function"
@@ -569,9 +566,6 @@ def _store_output(
 
     for event in output_context.consume_events():
         yield event
-
-    for observation in manager_observations:
-        yield DagsterEvent.asset_observation(step_context, observation)
 
     manager_metadata_entries.extend(output_context.consume_logged_metadata_entries())
     # do not alter explicitly created AssetMaterializations
