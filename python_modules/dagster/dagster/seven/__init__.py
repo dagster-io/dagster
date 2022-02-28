@@ -10,7 +10,7 @@ import threading
 import time
 from contextlib import contextmanager
 from datetime import timezone
-from types import MethodType, ModuleType
+from types import ModuleType
 
 import pendulum
 
