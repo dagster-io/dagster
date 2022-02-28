@@ -101,7 +101,8 @@ def repo():
 if __name__ == "__main__":
     with open(
         file_relative_path(__file__, "prod_op_hooks.yaml"),
-        "r", encoding="utf8",
+        "r",
+        encoding="utf8",
     ) as fd:
         run_config = yaml.safe_load(fd.read())
     result = notif_all_dev.execute_in_process(

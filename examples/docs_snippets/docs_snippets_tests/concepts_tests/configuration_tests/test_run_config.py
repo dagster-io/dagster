@@ -18,7 +18,8 @@ def test_make_values_resource_config_schema():
             __file__,
             "../../../docs_snippets/concepts/configuration/make_values_resource_values.yaml",
         ),
-        "r", encoding="utf8",
+        "r",
+        encoding="utf8",
     ) as fd:
         run_config = yaml.safe_load(fd.read())
 

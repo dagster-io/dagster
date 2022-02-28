@@ -214,7 +214,7 @@ class CaptureHandler(logging.Handler):
 
     def emit(self, record):
         if self.output:
-            print(self.output + record.msg)   # pylint: disable=print-call
+            print(self.output + record.msg)  # pylint: disable=print-call
         self.captured.append(record)
 
 
@@ -250,7 +250,7 @@ def test_default_context_logging():
     @solid(input_defs=[], output_defs=[])
     def default_context_solid(context):
         called["yes"] = True
-        for logger in context.log._dagster_handler._loggers:   # pylint: disable=protected-access
+        for logger in context.log._dagster_handler._loggers:  # pylint: disable=protected-access
             assert logger.level == logging.DEBUG
 
     execute_solid(default_context_solid)

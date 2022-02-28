@@ -16,7 +16,9 @@ def get_image_version(image_name):
         "docker",
         "images",
     )
-    with open(os.path.join(root_images_path, image_name, "last_updated.yaml"), encoding='utf8') as f:
+    with open(
+        os.path.join(root_images_path, image_name, "last_updated.yaml"), encoding="utf8"
+    ) as f:
         versions = set(yaml.safe_load(f).values())
 
     # There should be only one image timestamp tag across all Python versions

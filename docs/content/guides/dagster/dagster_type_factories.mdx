@@ -26,7 +26,7 @@ from dagster import DagsterType, check_dagster_type
 
 set_containing_1 = DagsterType(
     name="set_containing_1",
-    description=f"A set containing the value 1. May contain any other values.",
+    description="A set containing the value 1. May contain any other values.",
     type_check_fn=lambda _context, obj: isinstance(obj, set) and 1 in obj,
 )
 
@@ -66,6 +66,7 @@ The first thing we want to do is visualize the distribution of trip lengths. We 
 
 ```python file=/guides/dagster/dagster_type_factories/job_1.py
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 from dagster import AssetMaterialization, job, op
@@ -114,7 +115,6 @@ generate_trip_distribution_plot.execute_in_process()
 Since our logic looks OK, the problem likely originates in an incorrect assumption about the source data. To investigate, we write a [Pandera schema](https://pandera.readthedocs.io/en/stable/dataframe_schemas.html). The schema defines a set of dataframe columns with corresponding datatypes. Pandera columns are by default required to exist and non-nullable, so there is also an implicit expectation that columns with the specified names exist, and that all values are defined (NOTE: this illustrates only a small slice of Pandera's functionality):
 
 ```python file=/guides/dagster/dagster_type_factories/schema.py
-import numpy as np
 import pandas as pd
 import pandera as pa
 

@@ -83,7 +83,8 @@ def test_using_file_system_for_subplan():
     assert get_step_output(return_one_step_events, "return_one")
     with open(
         os.path.join(instance.storage_directory(), pipeline_run.run_id, "return_one", "result"),
-        "rb", encoding="utf8",
+        "rb",
+        encoding="utf8",
     ) as read_obj:
         assert pickle.load(read_obj) == 1
 
@@ -99,7 +100,8 @@ def test_using_file_system_for_subplan():
     assert get_step_output(add_one_step_events, "add_one")
     with open(
         os.path.join(instance.storage_directory(), pipeline_run.run_id, "add_one", "result"),
-        "rb", encoding="utf8",
+        "rb",
+        encoding="utf8",
     ) as read_obj:
         assert pickle.load(read_obj) == 2
 
@@ -136,7 +138,8 @@ def test_using_file_system_for_subplan_multiprocessing():
         assert get_step_output(return_one_step_events, "return_one")
         with open(
             os.path.join(instance.storage_directory(), pipeline_run.run_id, "return_one", "result"),
-            "rb", encoding="utf8",
+            "rb",
+            encoding="utf8",
         ) as read_obj:
             assert pickle.load(read_obj) == 1
 
@@ -155,7 +158,8 @@ def test_using_file_system_for_subplan_multiprocessing():
         assert get_step_output(add_one_step_events, "add_one")
         with open(
             os.path.join(instance.storage_directory(), pipeline_run.run_id, "add_one", "result"),
-            "rb", encoding="utf8",
+            "rb",
+            encoding="utf8",
         ) as read_obj:
             assert pickle.load(read_obj) == 2
 

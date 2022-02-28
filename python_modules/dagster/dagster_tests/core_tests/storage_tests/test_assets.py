@@ -1,12 +1,6 @@
 import pytest
 
-from dagster import (
-    AssetKey,
-    AssetMaterialization,
-    Output,
-    job,
-    op,
-)
+from dagster import AssetKey, AssetMaterialization, Output, job, op
 from dagster.core.definitions.events import parse_asset_key_string, validate_asset_key_string
 from dagster.core.errors import DagsterInvalidAssetKey
 from dagster.core.events.log import EventLogEntry

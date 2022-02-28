@@ -5,7 +5,7 @@ import re
 import warnings
 from collections import defaultdict
 from importlib import import_module
-from types import ModuleType   # pylint: disable=no-name-in-module; (false positive)
+from types import ModuleType  # pylint: disable=no-name-in-module; (false positive)
 from typing import (
     Any,
     Dict,

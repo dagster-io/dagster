@@ -10,7 +10,9 @@ def test_preset_yaml_roundtrip():
     preset_def = pipeline.get_preset("add")
 
     with open(
-        file_relative_path(__file__, "../environments/multi_mode_with_resources/add_mode.yaml"), "r", encoding="utf8"
+        file_relative_path(__file__, "../environments/multi_mode_with_resources/add_mode.yaml"),
+        "r",
+        encoding="utf8",
     ) as fd:
         assert preset_def.get_environment_yaml() == fd.read()
 

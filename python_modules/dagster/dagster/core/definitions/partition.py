@@ -243,7 +243,7 @@ class ScheduleTimeBasedPartitionsDefinition(
         fmt: Optional[str] = None,
         timezone: Optional[str] = None,
         offset: Optional[int] = None,
-    ):  
+    ):
         if end is not None:
             check.invariant(
                 start <= end,

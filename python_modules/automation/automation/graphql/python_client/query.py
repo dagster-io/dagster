@@ -105,7 +105,9 @@ def snapshot():
             most_recent_query_filename = serialize_to_query_filename(
                 last_dagster_version, last_date.strftime(DATE_FORMAT_STRING)
             )
-            with open(os.path.join(query_dir, most_recent_query_filename), "r", encoding="utf8") as f:
+            with open(
+                os.path.join(query_dir, most_recent_query_filename), "r", encoding="utf8"
+            ) as f:
                 most_recent_query = f.read()
 
         # Create a new snapshot if it's the first one or the query is not compatible
