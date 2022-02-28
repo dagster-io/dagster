@@ -68,7 +68,7 @@ if __name__ == "__main__":
             # alembic 1.6.3 broke our migrations: https://github.com/sqlalchemy/alembic/issues/848
             # alembic 1.7.0 is a breaking change
             "alembic>=1.2.1,!=1.6.3,<1.7.0",
-            "croniter>=0.3.34",
+            "croniter>=1.0.12",
             "grpcio>=1.32.0",  # ensure version we require is >= that with which we generated the grpc code (set in dev-requirements)
             "grpcio-health-checking>=1.32.0,<1.44.0",
             "packaging>=20.9",

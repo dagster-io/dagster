@@ -210,7 +210,9 @@ class ScheduleDefinition:
 
         if not is_valid_cron_string(self._cron_schedule):
             raise DagsterInvalidDefinitionError(
-                f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''."
+                f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''. "
+                "Dagster recognizes standard cron expressions consisting of 5 fields, as well as "
+                "certain non-standard keyword expressions (e.g. `@hourly`, `@daily`, etc.)."
             )
 
         if job is not None:

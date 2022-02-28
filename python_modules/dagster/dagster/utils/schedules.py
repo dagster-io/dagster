@@ -8,8 +8,6 @@ from croniter import croniter
 from dagster import check
 from dagster.seven.compat.pendulum import to_timezone
 
-OPTIMIZED_KEYWORD_CRON_SCHEDULES = set(["@monthly", "@weekly", "@daily", "@hourly"])
-
 
 def is_valid_cron_string(cron_string: str) -> bool:
     # dagster only recognizes standard cron strings that contains 5 parts
