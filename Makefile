@@ -53,7 +53,8 @@ check_isort:
     `git ls-files 'examples/docs_snippets/*.py'`
 
 yamllint:
-	yamllint -c .yamllint.yaml --strict `git ls-files 'helm/**/*.yml' 'helm/**/*.yaml' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'`
+	yamllint -c .yamllint.yaml --strict \
+    `git ls-files 'helm/**/*.yml' 'helm/**/*.yaml' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'`
 
 install_dev_python_modules:
 	python scripts/install_dev_python_modules.py -qqq
