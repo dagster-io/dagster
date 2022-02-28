@@ -167,7 +167,9 @@ Or a schedule that will run a subselection of the partition
 ```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_single_partition endbefore=end_single_partition
 @schedule(cron_schedule="0 0 * * *", job=continent_job)
 def antarctica_schedule():
-    request = continent_job.run_request_for_partition(partition_key="Antarctica", run_key=None)
+    request = continent_job.run_request_for_partition(
+        partition_key="Antarctica", run_key=None
+    )
     yield request
 ```
 
