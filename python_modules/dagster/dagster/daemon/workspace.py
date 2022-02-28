@@ -3,7 +3,7 @@ import time
 from abc import abstractmethod
 from typing import Dict
 
-from dagster import check
+import dagster.check as check
 from dagster.core.errors import DagsterRepositoryLocationLoadError
 from dagster.core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster.core.host_representation.origin import RepositoryLocationOrigin

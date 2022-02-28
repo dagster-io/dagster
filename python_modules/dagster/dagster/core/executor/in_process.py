@@ -1,6 +1,6 @@
 import os
 
-from dagster import check
+import dagster.check as check
 from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.api import ExecuteRunWithPlanIterable
 from dagster.core.execution.context.system import PlanOrchestrationContext

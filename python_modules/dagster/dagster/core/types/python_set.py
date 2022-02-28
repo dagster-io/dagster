@@ -1,6 +1,6 @@
 import typing
 
-from dagster import check
+import dagster.check as check
 from dagster.config.config_type import Array
 from dagster.core.types.dagster_type import DagsterTypeKind
 

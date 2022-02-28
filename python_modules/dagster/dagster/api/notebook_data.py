@@ -1,4 +1,4 @@
-from dagster import check
+import dagster.check as check
 
 
 def sync_get_streaming_external_notebook_data_grpc(api_client, notebook_path):

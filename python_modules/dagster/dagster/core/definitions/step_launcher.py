@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Dict, NamedTuple, Optional
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.execution.retries import RetryMode
 from dagster.core.storage.pipeline_run import PipelineRun

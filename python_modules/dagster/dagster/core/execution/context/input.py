@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange

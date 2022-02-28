@@ -1,6 +1,6 @@
 from typing import NamedTuple, Optional
 
-from dagster import check
+import dagster.check as check
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, whitelist_for_serdes
 
 

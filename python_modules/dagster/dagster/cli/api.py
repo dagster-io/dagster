@@ -3,8 +3,8 @@ import os
 import sys
 
 import click
-
-from dagster import check, seven
+import dagster.check as check
+import dagster.seven as seven
 from dagster.cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,

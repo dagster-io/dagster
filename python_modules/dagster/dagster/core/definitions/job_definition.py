@@ -13,7 +13,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.composition import MappedInputPlaceholder
 from dagster.core.definitions.dependency import (
     DependencyDefinition,

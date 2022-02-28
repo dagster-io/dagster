@@ -1,6 +1,6 @@
 from typing import List, NamedTuple, Optional
 
-from dagster import check
+import dagster.check as check
 
 
 class PipelineSelector(

@@ -1,7 +1,7 @@
 import re
 from typing import NamedTuple, Optional, Union, cast
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.serdes import whitelist_for_serdes
 

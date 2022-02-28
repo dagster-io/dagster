@@ -20,7 +20,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.events import AssetKey, AssetLineageInfo
 from dagster.core.definitions.hook_definition import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition

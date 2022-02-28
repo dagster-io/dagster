@@ -1,6 +1,6 @@
 from typing import Dict, List, NamedTuple, Optional, Set
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.metadata import MetadataEntry
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind

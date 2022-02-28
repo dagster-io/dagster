@@ -5,8 +5,7 @@ from typing import TYPE_CHECKING, Dict, Generator, Iterable, List, Optional, Tup
 
 import click
 from click import UsageError
-
-from dagster import check
+import dagster.check as check
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import repository_def_from_target_def
 from dagster.core.host_representation.external import ExternalRepository

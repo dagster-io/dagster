@@ -5,8 +5,7 @@ import shutil
 import subprocess
 
 from automation.git import git_repo_root
-
-from dagster import check
+import dagster.check as check
 
 from .dagster_docker import DagsterDockerImage
 

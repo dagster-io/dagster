@@ -1,4 +1,4 @@
-from dagster import check
+import dagster.check as check
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 

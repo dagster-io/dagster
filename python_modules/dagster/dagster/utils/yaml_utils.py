@@ -2,8 +2,7 @@ import functools
 import glob
 
 import yaml
-
-from dagster import check
+import dagster.check as check
 
 from .merger import deep_merge_dicts
 

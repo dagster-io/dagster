@@ -1,6 +1,5 @@
 import pendulum
-
-from dagster import check
+import dagster.check as check
 from dagster.core.execution.backfill import (
     BulkActionStatus,
     PartitionBackfill,

@@ -1,8 +1,7 @@
 from abc import abstractmethod
 
 import sqlalchemy as db
-
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.scheduler.instigation import (

@@ -2,7 +2,7 @@ import inspect
 from collections import defaultdict
 from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions import (
     AssetKey,
     AssetMaterialization,

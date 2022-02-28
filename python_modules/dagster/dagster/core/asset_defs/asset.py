@@ -1,6 +1,6 @@
 from typing import AbstractSet, Mapping, Optional
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions import OpDefinition
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition

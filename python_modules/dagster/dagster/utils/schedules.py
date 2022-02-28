@@ -4,8 +4,7 @@ from typing import Iterator, Optional
 import pendulum
 import pytz
 from croniter import croniter
-
-from dagster import check
+import dagster.check as check
 from dagster.seven.compat.pendulum import to_timezone
 
 

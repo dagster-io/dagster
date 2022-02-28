@@ -16,7 +16,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin

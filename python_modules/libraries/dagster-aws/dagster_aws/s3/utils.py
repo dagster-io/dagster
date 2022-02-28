@@ -2,9 +2,8 @@ import boto3
 from botocore import __version__ as botocore_version
 from botocore.config import Config
 from botocore.handlers import disable_signing
+import dagster.check as check
 from packaging import version
-
-from dagster import check
 
 
 class S3Callback:

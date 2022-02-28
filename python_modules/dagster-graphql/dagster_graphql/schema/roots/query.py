@@ -1,6 +1,5 @@
 import graphene
-
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.execution.backfill import BulkActionStatus
 from dagster.core.host_representation import (

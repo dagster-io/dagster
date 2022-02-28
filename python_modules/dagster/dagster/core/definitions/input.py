@@ -1,7 +1,7 @@
 from collections import namedtuple
 from typing import NamedTuple, Optional, Set, Union
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.metadata import MetadataEntry, normalize_metadata
 from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError

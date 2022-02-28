@@ -5,6 +5,13 @@ from os import path
 from typing import List
 
 import nbformat
+from dagster import __version__ as dagster_version
+import dagster.check as check
+from dagster.core.debug import DebugRunPayload
+from dagster.core.storage.compute_log_manager import ComputeIOType
+from dagster.core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
+from dagster.seven import json
+from dagster.utils import Counter, traced_counter
 from dagster_graphql import __version__ as dagster_graphql_version
 from dagster_graphql.schema import create_schema
 from graphene import Schema
@@ -24,14 +31,6 @@ from starlette.responses import (
 from starlette.routing import Mount, Route, WebSocketRoute
 from starlette.staticfiles import StaticFiles
 from starlette.types import Message
-
-from dagster import __version__ as dagster_version
-from dagster import check
-from dagster.core.debug import DebugRunPayload
-from dagster.core.storage.compute_log_manager import ComputeIOType
-from dagster.core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext
-from dagster.seven import json
-from dagster.utils import Counter, traced_counter
 
 from .graphql import GraphQLServer
 from .version import __version__

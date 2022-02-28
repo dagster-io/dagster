@@ -5,8 +5,7 @@ import time
 from typing import cast
 
 import pendulum
-
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.host_representation import ExternalSchedule, PipelineSelector

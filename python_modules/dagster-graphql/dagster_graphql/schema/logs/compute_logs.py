@@ -1,6 +1,5 @@
 import graphene
-
-from dagster import check
+import dagster.check as check
 from dagster.core.storage.compute_log_manager import ComputeIOType, ComputeLogFileData
 
 

@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Set, Union, cast, overload
 
-from dagster import check
+import dagster.check as check
 from dagster.builtins import Nothing
 from dagster.config import Field
 from dagster.core.decorator_utils import get_function_params, get_valid_name_permutations

@@ -6,10 +6,9 @@ from enum import Enum
 from typing import Any, Callable, Dict, Generic, List, NamedTuple, Optional, TypeVar, Union, cast
 
 import pendulum
-from dateutil.relativedelta import relativedelta
-
-from dagster import check
+import dagster.check as check
 from dagster.serdes import whitelist_for_serdes
+from dateutil.relativedelta import relativedelta
 
 from ...seven.compat.pendulum import PendulumDateTime, to_timezone
 from ...utils import frozenlist, merge_dicts

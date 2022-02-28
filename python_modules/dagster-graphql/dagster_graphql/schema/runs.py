@@ -1,9 +1,8 @@
 import json
 
 import graphene
+import dagster.check as check
 from graphene.types.generic import GenericScalar
-
-from dagster import check
 
 from ..implementation.fetch_runs import get_runs, get_runs_count
 from .errors import (

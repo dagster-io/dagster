@@ -1,9 +1,7 @@
 import os
 
 import docker
-from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
-
-from dagster import check
+import dagster.check as check
 from dagster.core.launcher.base import (
     CheckRunHealthResult,
     LaunchRunContext,
@@ -15,6 +13,7 @@ from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.grpc.types import ExecuteRunArgs, ResumeRunArgs
 from dagster.serdes import ConfigurableClass
+from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
 
 DOCKER_CONTAINER_ID_TAG = "docker/container_id"
 

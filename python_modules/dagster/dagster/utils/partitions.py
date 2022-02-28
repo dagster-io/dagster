@@ -2,8 +2,7 @@ import datetime
 from typing import Callable, Union
 
 import pendulum
-
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.partition import Partition, PartitionSetDefinition
 from dagster.core.definitions.run_request import SkipReason
 from dagster.core.definitions.schedule_definition import ScheduleEvaluationContext

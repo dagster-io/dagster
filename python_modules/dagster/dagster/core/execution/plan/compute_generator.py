@@ -2,7 +2,7 @@ import inspect
 from functools import wraps
 from typing import Generator, cast
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions import (
     AssetMaterialization,
     ExpectationResult,

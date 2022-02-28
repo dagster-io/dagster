@@ -1,4 +1,4 @@
-from dagster import check
+import dagster.check as check
 from dagster.core.snap import (
     DependencyStructureIndex,
     PipelineSnapshot,

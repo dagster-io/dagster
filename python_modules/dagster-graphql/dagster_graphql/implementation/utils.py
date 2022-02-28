@@ -1,11 +1,10 @@
 import sys
 from collections import namedtuple
 
-from graphql.execution.base import ResolveInfo
-
-from dagster import check
+import dagster.check as check
 from dagster.core.host_representation import GraphSelector, PipelineSelector
 from dagster.utils.error import serializable_error_info_from_exc_info
+from graphql.execution.base import ResolveInfo
 
 
 def check_permission(permission):

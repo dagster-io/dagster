@@ -1,6 +1,6 @@
 from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.decorators.op import op
 from dagster.core.definitions.dependency import (

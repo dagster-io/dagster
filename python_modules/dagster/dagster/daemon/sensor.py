@@ -4,8 +4,8 @@ import time
 from collections import namedtuple
 
 import pendulum
-
-from dagster import check, seven
+import dagster.check as check
+import dagster.seven as seven
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
 from dagster.core.errors import DagsterError

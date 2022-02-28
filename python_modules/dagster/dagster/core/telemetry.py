@@ -24,8 +24,7 @@ from typing import Dict, NamedTuple, Optional
 
 import click
 import yaml
-
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
@@ -371,7 +370,10 @@ def hash_name(name):
 
 
 def log_external_repo_stats(instance, source, external_repo, external_pipeline=None):
-    from dagster.core.host_representation.external import ExternalPipeline, ExternalRepository
+    from dagster.core.host_representation.external import (
+        ExternalPipeline,
+        ExternalRepository,
+    )
 
     check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(source, "source")

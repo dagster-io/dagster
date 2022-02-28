@@ -11,10 +11,9 @@ import kubernetes
 import pytest
 import requests
 import yaml
-from dagster_k8s.utils import wait_for_pod
-
-from dagster import check
+import dagster.check as check
 from dagster.utils import find_free_port, git_repository_root, merge_dicts
+from dagster_k8s.utils import wait_for_pod
 
 from .integration_utils import IS_BUILDKITE, check_output, get_test_namespace, image_pull_policy
 

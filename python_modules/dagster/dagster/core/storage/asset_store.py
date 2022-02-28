@@ -1,6 +1,6 @@
 from typing import Dict, NamedTuple
 
-from dagster import check
+import dagster.check as check
 from dagster.serdes import whitelist_for_serdes
 
 

@@ -1,6 +1,5 @@
 import graphene
-
-from dagster import check
+import dagster.check as check
 from dagster.config.config_type import ConfigTypeKind
 from dagster.config.snap import get_recursive_type_keys
 from dagster.core.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap

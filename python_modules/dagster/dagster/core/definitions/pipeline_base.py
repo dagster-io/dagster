@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod, abstractproperty
 from typing import TYPE_CHECKING, FrozenSet, List, Optional
 
-from dagster import check
+import dagster.check as check
 from dagster.core.errors import DagsterInvalidSubsetError
 from dagster.core.selector import parse_solid_selection
 

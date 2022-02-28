@@ -1,11 +1,10 @@
-from graphql.execution.base import ResolveInfo
-from rx import Observable
-
-from dagster import check
+import dagster.check as check
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
+from graphql.execution.base import ResolveInfo
+from rx import Observable
 
 from ..external import ExternalPipeline, ensure_valid_config, get_external_pipeline_or_raise
 from ..fetch_runs import is_config_valid
@@ -44,8 +43,8 @@ def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.roots.mutation import (
         GrapheneTerminateRunFailure,
-        GrapheneTerminateRunPolicy,
         GrapheneTerminateRunSuccess,
+        GrapheneTerminateRunPolicy,
     )
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)

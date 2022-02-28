@@ -33,9 +33,8 @@ import sys
 from threading import Event
 from typing import Iterator, List, Optional
 
+import dagster.check as check
 from psycopg2.extensions import Notify
-
-from dagster import check
 
 from .utils import get_conn
 

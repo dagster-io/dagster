@@ -1,4 +1,4 @@
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 

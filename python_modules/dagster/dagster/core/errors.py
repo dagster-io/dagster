@@ -19,7 +19,7 @@ import sys
 import traceback
 from contextlib import contextmanager
 
-from dagster import check
+import dagster.check as check
 from dagster.utils.interrupts import raise_interrupts_as
 
 

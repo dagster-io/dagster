@@ -1,6 +1,6 @@
 import time
 
-from dagster import check
+import dagster.check as check
 
 
 def backoff_delay_generator():

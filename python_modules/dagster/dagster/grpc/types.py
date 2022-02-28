@@ -1,7 +1,7 @@
 from collections import namedtuple
 from typing import Dict, List, NamedTuple, Optional
 
-from dagster import check
+import dagster.check as check
 from dagster.core.code_pointer import CodePointer
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.retries import RetryMode

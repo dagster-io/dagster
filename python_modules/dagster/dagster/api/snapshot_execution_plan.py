@@ -1,4 +1,4 @@
-from dagster import check
+import dagster.check as check
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.host_representation.origin import ExternalPipelineOrigin

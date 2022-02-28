@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from typing import Any, Dict, Generator, Optional, cast
 
-from dagster import check
+import dagster.check as check
 from dagster.config.validate import process_config
 from dagster.core.definitions.resource_definition import (
     ResourceDefinition,

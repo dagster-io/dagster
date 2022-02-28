@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError

@@ -8,8 +8,8 @@ from pep562 import pep562
 
 from .version import __version__
 
-if typing.TYPE_CHECKING or os.getenv("DAGSTER_NO_LAZY_LOAD") == "1":
 
+if typing.TYPE_CHECKING or os.getenv("DAGSTER_NO_LAZY_LOAD") == "1":
     from dagster.builtins import Any, Bool, Float, Int, Nothing, String
     from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
     from dagster.config.config_schema import ConfigSchema
@@ -205,7 +205,9 @@ if typing.TYPE_CHECKING or os.getenv("DAGSTER_NO_LAZY_LOAD") == "1":
     from dagster.core.execution.validate_run_config import validate_run_config
     from dagster.core.executor.base import Executor
     from dagster.core.executor.init import InitExecutorContext
-    from dagster.core.instance import DagsterInstance
+from dagster.core.instance import DagsterInstance
+
+if typing.TYPE_CHECKING or os.getenv("DAGSTER_NO_LAZY_LOAD") == "1":
     from dagster.core.launcher import DefaultRunLauncher
     from dagster.core.log_manager import DagsterLogManager
     from dagster.core.storage.event_log import (
@@ -257,8 +259,6 @@ if typing.TYPE_CHECKING or os.getenv("DAGSTER_NO_LAZY_LOAD") == "1":
         execute_solids_within_pipeline,
     )
     from dagster.config.source import BoolSource, StringSource, IntSource  # isort:skip
-
-
 
 
 # NOTE: Unfortunately we have to declare dynamically resolved attributes twice-- the TYPE_CHECKING

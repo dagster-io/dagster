@@ -1,6 +1,6 @@
 from enum import Enum
 
-from dagster import check
+import dagster.check as check
 
 SYSTEM_TAG_PREFIX = "dagster/"
 HIDDEN_TAG_PREFIX = ".dagster/"

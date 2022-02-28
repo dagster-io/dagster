@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Callable, Dict, Generic, List, Optional, Type, TypeVar, Union, cast
 
-from dagster import check
+import dagster.check as check
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.utils import merge_dicts
 

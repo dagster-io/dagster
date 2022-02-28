@@ -6,8 +6,7 @@ from contextlib import AbstractContextManager
 from typing import Generic, NamedTuple, Optional, TypeVar, Union, cast
 
 import pendulum
-
-from dagster import check
+import dagster.check as check
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.origin import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,

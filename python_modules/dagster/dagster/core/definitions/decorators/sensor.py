@@ -2,7 +2,7 @@ import inspect
 from functools import update_wrapper
 from typing import TYPE_CHECKING, Callable, Generator, List, Optional, Sequence, Union
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.sensor_definition import (
     DefaultSensorStatus,
     RunRequest,

@@ -1,7 +1,7 @@
 from collections import namedtuple
 from typing import Dict, List, NamedTuple, Optional
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions import NodeHandle
 from dagster.core.execution.plan.inputs import (
     StepInput,

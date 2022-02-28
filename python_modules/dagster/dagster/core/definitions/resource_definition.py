@@ -15,7 +15,7 @@ from typing import (
     overload,
 )
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.configurable import AnonymousConfigurableDefinition
 from dagster.core.errors import (

@@ -9,8 +9,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 
 import pendulum
 import sqlalchemy as db
-
-from dagster import check
+import dagster.check as check
 from dagster.core.errors import (
     DagsterInvariantViolationError,
     DagsterRunAlreadyExists,

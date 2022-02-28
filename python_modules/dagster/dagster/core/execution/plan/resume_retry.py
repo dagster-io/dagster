@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import Dict, List, Optional, Tuple
 
-from dagster import check
+import dagster.check as check
 from dagster.core.errors import DagsterExecutionPlanSnapshotNotFoundError
 from dagster.core.events import DagsterEventType
 from dagster.core.execution.plan.handle import StepHandle, UnresolvedStepHandle

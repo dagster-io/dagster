@@ -1,7 +1,7 @@
 from abc import abstractmethod, abstractproperty
 from functools import update_wrapper
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.config import is_callable_valid_config_arg
 from dagster.core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,

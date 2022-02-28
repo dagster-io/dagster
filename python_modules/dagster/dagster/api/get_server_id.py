@@ -1,4 +1,4 @@
-from dagster import check
+import dagster.check as check
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.utils.error import SerializableErrorInfo
 

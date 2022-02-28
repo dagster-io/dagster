@@ -3,7 +3,7 @@ order to do metaprogramming and reflection on the built-in typing module"""
 
 import typing
 
-from dagster import check
+import dagster.check as check
 from dagster.seven.typing import get_args, get_origin
 
 

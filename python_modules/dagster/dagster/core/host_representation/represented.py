@@ -1,6 +1,6 @@
 from abc import ABC, abstractproperty
 
-from dagster import check
+import dagster.check as check
 
 from .pipeline_index import PipelineIndex
 

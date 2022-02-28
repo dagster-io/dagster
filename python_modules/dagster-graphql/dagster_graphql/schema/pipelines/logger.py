@@ -1,6 +1,5 @@
 import graphene
-
-from dagster import check
+import dagster.check as check
 from dagster.core.snap import ConfigSchemaSnapshot, LoggerDefSnap
 
 from ..config_types import GrapheneConfigTypeField

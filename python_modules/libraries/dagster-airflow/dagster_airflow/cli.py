@@ -3,8 +3,7 @@ from datetime import datetime, timedelta
 
 import click
 import yaml
-
-from dagster import check
+import dagster.check as check
 from dagster.cli.load_handle import recon_repo_for_cli_args
 from dagster.utils import load_yaml_from_glob_list
 from dagster.utils.backcompat import canonicalize_backcompat_args

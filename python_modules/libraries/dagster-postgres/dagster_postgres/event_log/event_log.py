@@ -4,8 +4,8 @@ from collections import defaultdict
 from typing import Callable, List, MutableMapping, Optional
 
 import sqlalchemy as db
-
-from dagster import check, seven
+import dagster.check as check
+import dagster.seven as seven
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log import (
     AssetKeyTable,

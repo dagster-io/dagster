@@ -2,7 +2,7 @@ import warnings
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Optional, Sequence
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.schedule_definition import DefaultScheduleStatus

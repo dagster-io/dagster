@@ -4,8 +4,7 @@ from typing import Optional
 
 import click
 import uvicorn
-
-from dagster import check
+import dagster.check as check
 from dagster.cli.utils import get_instance_for_service
 from dagster.cli.workspace import (
     get_workspace_process_context_from_kwargs,

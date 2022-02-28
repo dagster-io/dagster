@@ -1,7 +1,7 @@
 import threading
 from typing import Callable, List, MutableMapping, NamedTuple
 
-from dagster import check
+import dagster.check as check
 from dagster.core.events.log import EventLogEntry
 
 from .sql_event_log import SqlEventLogStorage

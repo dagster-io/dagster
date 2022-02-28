@@ -3,7 +3,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 
-from dagster import check
+import dagster.check as check
 
 
 def execute_docker_build(image, docker_args=None, cwd=None):

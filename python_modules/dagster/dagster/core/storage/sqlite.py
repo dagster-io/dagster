@@ -2,7 +2,7 @@ import os
 import sqlite3
 from functools import update_wrapper
 
-from dagster import check
+import dagster.check as check
 
 from .sql import run_migrations_offline as run_migrations_offline_
 from .sql import run_migrations_online as run_migrations_online_

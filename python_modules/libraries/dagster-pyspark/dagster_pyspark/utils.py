@@ -1,7 +1,7 @@
 import os
 import zipfile
 
-from dagster import check
+import dagster.check as check
 
 
 def build_pyspark_zip(zip_file, path):

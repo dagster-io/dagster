@@ -1,12 +1,11 @@
-from graphql.execution.base import ResolveInfo
-
-from dagster import check
+import dagster.check as check
 from dagster.core.execution.plan.resume_retry import get_retry_steps_from_parent_run
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.utils import make_new_run_id
 from dagster.utils import merge_dicts
+from graphql.execution.base import ResolveInfo
 
 from ...schema.errors import GrapheneNoModeProvidedError
 from ..external import ensure_valid_config, get_external_execution_plan_or_raise

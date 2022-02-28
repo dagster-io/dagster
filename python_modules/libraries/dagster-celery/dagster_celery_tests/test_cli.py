@@ -3,10 +3,9 @@
 import time
 
 from click.testing import CliRunner
-from dagster_celery.cli import main
-
-from dagster import check
+import dagster.check as check
 from dagster.utils import file_relative_path
+from dagster_celery.cli import main
 
 
 def start_worker(name, config_yaml=None, args=None, exit_code=0, exception_str=""):

@@ -3,8 +3,7 @@ from datetime import datetime
 from typing import Any, Callable, List, NamedTuple, Optional, Union, cast
 
 import pendulum
-
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions import GraphDefinition, PipelineDefinition
 from dagster.core.definitions.sensor_definition import (
     DefaultSensorStatus,
@@ -359,7 +358,7 @@ class RunStatusSensorDefinition(SensorDefinition):
         default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
 
-        from dagster.core.storage.event_log.base import EventRecordsFilter, RunShardedEventsCursor
+        from dagster.core.storage.event_log.base import RunShardedEventsCursor, EventRecordsFilter
 
         check.str_param(name, "name")
         check.inst_param(pipeline_run_status, "pipeline_run_status", PipelineRunStatus)

@@ -5,8 +5,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 import pendulum
-
-from dagster import check
+import dagster.check as check
 from dagster.seven import funcsigs
 
 from ...serdes import whitelist_for_serdes

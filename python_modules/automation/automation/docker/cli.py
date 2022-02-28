@@ -1,8 +1,7 @@
 from typing import List
 
 import click
-
-from dagster import check
+import dagster.check as check
 
 from .dagster_docker import DagsterDockerImage
 from .ecr import ensure_ecr_login

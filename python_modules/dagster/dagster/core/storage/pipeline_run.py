@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any, Dict, List, NamedTuple, Optional, Type
 
-from dagster import check
+import dagster.check as check
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id

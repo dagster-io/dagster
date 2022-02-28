@@ -2,7 +2,8 @@ import functools
 import os
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
-from dagster import check, seven
+import dagster.check as check
+import dagster.seven as seven
 from dagster.core.errors import DagsterInvalidMetadata
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils.backcompat import deprecation_warning, experimental, experimental_class_warning

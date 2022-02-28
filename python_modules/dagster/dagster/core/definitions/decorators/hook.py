@@ -1,7 +1,7 @@
 from functools import update_wrapper
 from typing import TYPE_CHECKING, AbstractSet, Any, Callable, List, Optional, Union, cast, overload
 
-from dagster import check
+import dagster.check as check
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 from ...decorator_utils import get_function_params, validate_expected_params

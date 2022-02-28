@@ -3,7 +3,8 @@ import warnings
 from enum import Enum
 from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
 
-from dagster import check, seven
+import dagster.check as check
+import dagster.seven as seven
 from dagster.core.errors import DagsterInvalidAssetKey
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster.utils.backcompat import experimental_class_param_warning

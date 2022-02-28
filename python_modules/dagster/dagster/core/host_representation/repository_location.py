@@ -5,7 +5,7 @@ from abc import abstractmethod
 from contextlib import AbstractContextManager
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
 
-from dagster import check
+import dagster.check as check
 from dagster.api.get_server_id import sync_get_server_id
 from dagster.api.list_repositories import sync_list_repositories_grpc
 from dagster.api.notebook_data import sync_get_streaming_external_notebook_data_grpc

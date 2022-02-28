@@ -4,8 +4,7 @@ from threading import Event, Thread
 from time import sleep
 
 import gevent
-
-from dagster import check
+import dagster.check as check
 
 
 class State(Enum):

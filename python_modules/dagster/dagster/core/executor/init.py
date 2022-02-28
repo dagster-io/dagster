@@ -1,6 +1,6 @@
 from typing import Dict, NamedTuple
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions import ExecutorDefinition, IPipeline
 from dagster.core.instance import DagsterInstance
 

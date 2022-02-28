@@ -9,7 +9,7 @@ These should only be invoked from contexts where we know this
 to be the case.
 """
 
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import ExternalPipeline, ExternalRepository
 from dagster.core.host_representation.external_data import (

@@ -17,7 +17,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+import dagster.check as check
 from dagster.utils import merge_dicts
 
 from ..definitions.executor_definition import ExecutorDefinition

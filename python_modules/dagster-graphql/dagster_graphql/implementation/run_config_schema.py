@@ -1,8 +1,7 @@
-from graphql.execution.base import ResolveInfo
-
-from dagster import check
+import dagster.check as check
 from dagster.config.validate import validate_config_from_snap
 from dagster.core.host_representation import RepresentedPipeline
+from graphql.execution.base import ResolveInfo
 
 from .external import get_external_pipeline_or_raise
 from .utils import PipelineSelector, UserFacingGraphQLError, capture_error
@@ -35,8 +34,8 @@ def resolve_run_config_schema_or_error(graphene_info, selector, mode):
 def resolve_is_run_config_valid(graphene_info, represented_pipeline, mode, run_config):
     from ..schema.pipelines.config import (
         GraphenePipelineConfigValidationError,
-        GraphenePipelineConfigValidationValid,
         GrapheneRunConfigValidationInvalid,
+        GraphenePipelineConfigValidationValid,
     )
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)

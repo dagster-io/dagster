@@ -1,7 +1,7 @@
 import time
 from typing import Callable, Dict, Iterator, List, Optional, Set, cast
 
-from dagster import check
+import dagster.check as check
 from dagster.core.errors import (
     DagsterExecutionInterruptedError,
     DagsterInvariantViolationError,

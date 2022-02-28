@@ -5,8 +5,7 @@ import sys
 from typing import List, Optional
 
 import pendulum
-
-from dagster import check
+import dagster.check as check
 from dagster.core.definitions import ScheduleEvaluationContext
 from dagster.core.definitions.reconstructable import (
     ReconstructablePipeline,
