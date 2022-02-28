@@ -229,9 +229,13 @@ def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
 
     assert task.get("memory") == task_definition.get("memory")
+    # taskOverrides expects cpu/memory as strings
     assert task.get("overrides").get("memory") == "1024"
+    # taskOverrides expects cpu/memory as integers
+    assert task.get("overrides").get("containerOverrides")[0].get("memory") == 1024
     assert task.get("cpu") == task_definition.get("cpu")
     assert not task.get("overrides").get("cpu")
+    assert not task.get("overrides").get("containerOverrides")[0].get("cpu")
 
     # Also override cpu
     existing_tasks = ecs.list_tasks()["taskArns"]
@@ -245,8 +249,10 @@ def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
 
     assert task.get("memory") == task_definition.get("memory")
     assert task.get("overrides").get("memory") == "1024"
+    assert task.get("overrides").get("containerOverrides")[0].get("memory") == 1024
     assert task.get("cpu") == task_definition.get("cpu")
     assert task.get("overrides").get("cpu") == "512"
+    assert task.get("overrides").get("containerOverrides")[0].get("cpu") == 512
 
     # Override with invalid constraints
     instance.add_run_tags(run.run_id, {"ecs/memory": "999"})
