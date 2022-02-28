@@ -272,6 +272,12 @@ def get_asset_runs_count_by_step(graphene_info, asset_nodes):
                 for job_name in job_names
             ]
         )
+
+        # If a materialization has occurred, we subtract one so that the runs count
+        # does not include the run that generated the materialization.
+        if event:
+            runs_count -= 1
+
         jobs_runs_count[step_key] = GrapheneJobRunsCount(
             step_key, job_names, runs_count, True if event else False
         )
