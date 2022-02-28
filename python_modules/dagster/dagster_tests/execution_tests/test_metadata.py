@@ -1,4 +1,5 @@
 import pytest
+
 from dagster import (
     AssetMaterialization,
     AssetObservation,

@@ -1,7 +1,8 @@
 import responses
-from dagster import AssetKey, job, op
 from dagster_fivetran import FivetranOutput, fivetran_resource, fivetran_sync_op
 from dagster_fivetran.resources import FIVETRAN_API_BASE, FIVETRAN_CONNECTOR_PATH
+
+from dagster import AssetKey, job, op
 
 from .utils import (
     DEFAULT_CONNECTOR_ID,

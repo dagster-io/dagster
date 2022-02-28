@@ -48,8 +48,8 @@ from .run_request import RunRequest
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
-    from dagster.core.instance import DagsterInstance
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+    from dagster.core.instance import DagsterInstance
     from dagster.core.snap import PipelineSnapshot
 
 
@@ -297,6 +297,7 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: Pipeline
     switching to in-memory when using execute_in_process.
     """
     from dagster.core.storage.mem_io_manager import mem_io_manager
+
     from .graph_definition import default_job_io_manager
 
     if (

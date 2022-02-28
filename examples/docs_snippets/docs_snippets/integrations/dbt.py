@@ -38,7 +38,9 @@ def scope_dbt_cli_run():
     from dagster import job
     from dagster_dbt import dbt_cli_resource, dbt_run_op
 
-    my_dbt_resource = dbt_cli_resource.configured({"project_dir": "path/to/dbt/project"})
+    my_dbt_resource = dbt_cli_resource.configured(
+        {"project_dir": "path/to/dbt/project"}
+    )
 
     @job(resource_defs={"dbt": my_dbt_resource})
     def my_dbt_job():
@@ -110,7 +112,9 @@ def scope_dbt_cli_run_after_another_op():
     from dagster import job
     from dagster_dbt import dbt_cli_resource, dbt_run_op, dbt_test_op
 
-    my_dbt_resource = dbt_cli_resource.configured({"project_dir": "path/to/dbt/project"})
+    my_dbt_resource = dbt_cli_resource.configured(
+        {"project_dir": "path/to/dbt/project"}
+    )
 
     @job(resource_defs={"dbt": my_dbt_resource})
     def my_dbt_job():
@@ -167,7 +171,9 @@ def scope_dbt_rpc_run_and_wait():
     from dagster import job, op
     from dagster_dbt import dbt_rpc_sync_resource
 
-    my_remote_sync_rpc = dbt_rpc_sync_resource.configured({"host": "80.80.80.80", "port": 8080})
+    my_remote_sync_rpc = dbt_rpc_sync_resource.configured(
+        {"host": "80.80.80.80", "port": 8080}
+    )
 
     @op(required_resource_keys={"dbt_sync"})
     def run_staging_models_and_wait(context):
@@ -264,7 +270,7 @@ def scope_dbt_rpc_resource_example():
 def scope_dbt_run_disable_assets():
     # start_marker_dbt_rpc_config_disable_assets
     from dagster import job
-    from dagster_dbt import dbt_run_op, dbt_cli_resource
+    from dagster_dbt import dbt_cli_resource, dbt_run_op
 
     dbt_run_no_assets = dbt_run_op.configured(
         {"yield_materializations": False}, name="dbt_run_no_assets"

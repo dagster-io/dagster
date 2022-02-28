@@ -1,8 +1,9 @@
-from dagster.core.test_utils import instance_for_test
 from dagster_test.test_project import (
     ReOriginatedExternalPipelineForTest,
     get_test_project_workspace_and_external_pipeline,
 )
+
+from dagster.core.test_utils import instance_for_test
 
 
 def test_reoriginated_external_pipeline():

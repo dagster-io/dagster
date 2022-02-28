@@ -1,7 +1,4 @@
-from ..connecting_solids.complex_pipeline import (
-    diamond,
-    find_highest_calorie_cereal,
-)
+from ..connecting_solids.complex_pipeline import diamond, find_highest_calorie_cereal
 
 
 # start_op_test

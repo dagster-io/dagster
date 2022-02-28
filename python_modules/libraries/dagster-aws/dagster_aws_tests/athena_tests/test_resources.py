@@ -63,8 +63,9 @@ def test_execute_query_succeeds_on_last_poll(mock_athena_client):
 
 
 def test_op(mock_athena_client):  # pylint: disable=unused-argument
-    from dagster import build_op_context, op
     from dagster_aws.athena import fake_athena_resource
+
+    from dagster import build_op_context, op
 
     @op(required_resource_keys={"athena"})
     def example_athena_op(context):

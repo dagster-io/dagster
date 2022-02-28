@@ -2,6 +2,7 @@ from datetime import datetime
 from typing import cast
 
 import pendulum
+
 from dagster import (
     DailyPartitionsDefinition,
     HourlyPartitionsDefinition,

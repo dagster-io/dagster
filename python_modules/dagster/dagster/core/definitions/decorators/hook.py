@@ -9,8 +9,8 @@ from ..events import HookExecutionResult
 from ..hook_definition import HookDefinition
 
 if TYPE_CHECKING:
-    from dagster.core.execution.context.hook import HookContext
     from dagster.core.events import DagsterEvent
+    from dagster.core.execution.context.hook import HookContext
 
 
 def _validate_hook_fn_params(fn, expected_positionals):

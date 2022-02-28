@@ -1,9 +1,4 @@
 import pytest
-from dagster import DagsterResourceFunctionError, DagsterTypeCheckDidNotPass, multiprocess_executor
-from dagster.core.events import DagsterEventType
-from dagster.core.storage.fs_io_manager import fs_io_manager
-from dagster.utils import file_relative_path
-from dagster.utils.temp_file import get_temp_dir
 from dagster_test.graph_job_op_toys.asset_lineage import asset_lineage_job
 from dagster_test.graph_job_op_toys.branches import branch
 from dagster_test.graph_job_op_toys.composition import composition_job
@@ -30,6 +25,12 @@ from dagster_test.graph_job_op_toys.software_defined_assets import software_defi
 from dagster_tests.execution_tests.engine_tests.test_step_delegating_executor import (
     test_step_delegating_executor,
 )
+
+from dagster import DagsterResourceFunctionError, DagsterTypeCheckDidNotPass, multiprocess_executor
+from dagster.core.events import DagsterEventType
+from dagster.core.storage.fs_io_manager import fs_io_manager
+from dagster.utils import file_relative_path
+from dagster.utils.temp_file import get_temp_dir
 
 
 @pytest.fixture(name="executor_def", params=[multiprocess_executor, test_step_delegating_executor])

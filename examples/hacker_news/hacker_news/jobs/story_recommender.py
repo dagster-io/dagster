@@ -1,4 +1,3 @@
-from dagster import ResourceDefinition, graph
 from hacker_news.ops.comment_stories import build_comment_stories
 from hacker_news.ops.recommender_model import (
     build_component_top_stories,
@@ -8,6 +7,8 @@ from hacker_news.ops.recommender_model import (
 from hacker_news.ops.user_story_matrix import build_user_story_matrix
 from hacker_news.ops.user_top_recommended_stories import build_user_top_recommended_stories
 from hacker_news.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
+
+from dagster import ResourceDefinition, graph
 
 
 @graph

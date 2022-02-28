@@ -1,5 +1,6 @@
-from dagster import Bool, Field, Float, StringSource, resource
 from dagster_msteams.client import TeamsClient
+
+from dagster import Bool, Field, Float, StringSource, resource
 
 
 @resource(

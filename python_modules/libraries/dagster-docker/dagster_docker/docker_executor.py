@@ -2,6 +2,8 @@ import os
 from typing import List
 
 import docker
+from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
+
 from dagster import check, executor
 from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
@@ -14,7 +16,6 @@ from dagster.core.executor.step_delegating.step_handler.base import StepHandler,
 from dagster.serdes.utils import hash_str
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import experimental
-from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
 
 
 @executor(

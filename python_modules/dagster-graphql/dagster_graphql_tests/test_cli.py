@@ -5,11 +5,12 @@ import time
 from contextlib import contextmanager
 
 from click.testing import CliRunner
+from dagster_graphql.cli import ui
+
 from dagster import seven
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
-from dagster_graphql.cli import ui
 
 
 @contextmanager

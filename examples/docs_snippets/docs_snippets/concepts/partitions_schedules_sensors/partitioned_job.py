@@ -10,7 +10,11 @@ from datetime import datetime
 
 @daily_partitioned_config(start_date=datetime(2020, 1, 1))
 def my_partitioned_config(start: datetime, _end: datetime):
-    return {"ops": {"process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}}}
+    return {
+        "ops": {
+            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
+        }
+    }
 
 
 # end_partitioned_config

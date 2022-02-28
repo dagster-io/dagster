@@ -1,13 +1,14 @@
 from collections import namedtuple
 
 import pytest
-from dagster.core.run_coordinator import SubmitRunContext
-from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster_tests.core_tests.run_coordinator_tests.test_queued_run_coordinator import (
     TestQueuedRunCoordinator,
 )
 from mock import patch
 from run_attribution_example.custom_run_coordinator import CustomRunCoordinator
+
+from dagster.core.run_coordinator import SubmitRunContext
+from dagster.core.storage.pipeline_run import PipelineRunStatus
 
 
 class TestCustomRunCoordinator(TestQueuedRunCoordinator):

@@ -1,7 +1,8 @@
 from unittest import mock
 
-from dagster import build_op_context, op
 from dagster_datadog import datadog_resource
+
+from dagster import build_op_context, op
 
 
 @mock.patch("datadog.statsd.timing")

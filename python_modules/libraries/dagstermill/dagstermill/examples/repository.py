@@ -3,6 +3,8 @@ import pickle
 import uuid
 
 import dagstermill
+from dagstermill.io_managers import local_output_notebook_io_manager
+
 from dagster import (
     Field,
     FileHandle,
@@ -23,7 +25,6 @@ from dagster import (
 )
 from dagster.core.storage.file_manager import local_file_manager
 from dagster.utils import PICKLE_PROTOCOL, file_relative_path
-from dagstermill.io_managers import local_output_notebook_io_manager
 
 try:
     from dagster_pandas import DataFrame

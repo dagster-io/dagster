@@ -1,11 +1,12 @@
 from gzip import GzipFile
 
 import click
+from tqdm import tqdm
+
 from dagster import DagsterInstance, check
 from dagster.core.debug import DebugRunPayload
 from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
-from tqdm import tqdm
 
 
 def _recent_failed_runs_text(instance):

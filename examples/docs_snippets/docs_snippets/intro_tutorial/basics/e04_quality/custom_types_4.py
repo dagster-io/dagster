@@ -37,9 +37,7 @@ def less_simple_data_frame_type_check(_, value):
         metadata={
             "n_rows": len(value),
             "n_cols": len(value[0].keys()) if len(value) > 0 else 0,
-            "column_names": str(
-                list(value[0].keys()) if len(value) > 0 else []
-            ),
+            "column_names": str(list(value[0].keys()) if len(value) > 0 else []),
         },
     )
 

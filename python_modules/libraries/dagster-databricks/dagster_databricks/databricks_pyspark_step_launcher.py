@@ -4,6 +4,15 @@ import pickle
 import tempfile
 import time
 
+from dagster_databricks import databricks_step_main
+from dagster_databricks.databricks import (
+    DEFAULT_RUN_MAX_WAIT_TIME_SEC,
+    DatabricksJobRunner,
+    poll_run_state,
+)
+from dagster_pyspark.utils import build_pyspark_zip
+from requests import HTTPError
+
 from dagster import Bool, Field, IntSource, StringSource, check, resource
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import raise_execution_interrupts
@@ -14,14 +23,6 @@ from dagster.core.execution.plan.external_step import (
 )
 from dagster.serdes import deserialize_value
 from dagster.utils.backoff import backoff
-from dagster_databricks import databricks_step_main
-from dagster_databricks.databricks import (
-    DEFAULT_RUN_MAX_WAIT_TIME_SEC,
-    DatabricksJobRunner,
-    poll_run_state,
-)
-from dagster_pyspark.utils import build_pyspark_zip
-from requests import HTTPError
 
 from .configs import (
     define_databricks_secrets_config,

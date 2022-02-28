@@ -14,6 +14,8 @@ from typing import (
     cast,
 )
 
+from toposort import CircularDependencyError, toposort_flatten
+
 from dagster import check
 from dagster.config import Field, Shape
 from dagster.config.config_type import ConfigType
@@ -32,7 +34,6 @@ from dagster.core.types.dagster_type import (
     construct_dagster_type_dictionary,
 )
 from dagster.utils import merge_dicts
-from toposort import CircularDependencyError, toposort_flatten
 
 from .dependency import (
     DependencyStructure,
@@ -52,12 +53,13 @@ from .solid_container import create_execution_structure, validate_dependency_dic
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
+    from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster.core.instance import DagsterInstance
-    from .solid_definition import SolidDefinition
-    from .partition import PartitionedConfig, PartitionsDefinition
+
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
-    from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+    from .partition import PartitionedConfig, PartitionsDefinition
+    from .solid_definition import SolidDefinition
 
 
 def _check_node_defs_arg(graph_name: str, node_defs: Optional[List[NodeDefinition]]):
@@ -511,9 +513,9 @@ class GraphDefinition(NodeDefinition):
         Returns:
             JobDefinition
         """
+        from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
         from .job_definition import JobDefinition
         from .partition import PartitionedConfig, PartitionsDefinition
-        from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
 
         job_name = check_valid_name(name or self.name)
 
@@ -650,8 +652,9 @@ class GraphDefinition(NodeDefinition):
         from dagster.core.execution.build_resources import wrap_resources_for_execution
         from dagster.core.execution.execute_in_process import core_execute_in_process
         from dagster.core.instance import DagsterInstance
-        from .job_definition import JobDefinition
+
         from .executor_definition import execute_in_process_executor
+        from .job_definition import JobDefinition
 
         instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         resources = check.opt_dict_param(resources, "resources", key_type=str)

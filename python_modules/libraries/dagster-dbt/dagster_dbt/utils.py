@@ -1,6 +1,7 @@
 from typing import Any, Dict, Iterator, List, Optional
 
 import dateutil
+
 from dagster import AssetMaterialization, MetadataEntry, check
 
 from .types import DbtOutput

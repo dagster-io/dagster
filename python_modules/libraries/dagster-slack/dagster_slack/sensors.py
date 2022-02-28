@@ -1,5 +1,7 @@
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+from slack_sdk import WebClient
+
 from dagster import DefaultSensorStatus
 from dagster.core.definitions import GraphDefinition, PipelineDefinition
 from dagster.core.definitions.run_status_sensor_definition import (
@@ -8,7 +10,6 @@ from dagster.core.definitions.run_status_sensor_definition import (
     pipeline_failure_sensor,
     run_failure_sensor,
 )
-from slack_sdk import WebClient
 
 
 def _build_slack_blocks_and_text(

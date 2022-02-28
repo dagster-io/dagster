@@ -3,6 +3,10 @@ import os
 import textwrap
 from typing import AbstractSet, Any, Callable, Dict, Mapping, Optional, Sequence, Set, Tuple
 
+from dagster_dbt.cli.types import DbtCliOutput
+from dagster_dbt.cli.utils import execute_cli
+from dagster_dbt.utils import generate_materializations
+
 from dagster import (
     AssetKey,
     Out,
@@ -14,9 +18,6 @@ from dagster import (
     get_dagster_logger,
 )
 from dagster.core.asset_defs import AssetsDefinition, multi_asset
-from dagster_dbt.cli.types import DbtCliOutput
-from dagster_dbt.cli.utils import execute_cli
-from dagster_dbt.utils import generate_materializations
 
 
 def _load_manifest_for_project(

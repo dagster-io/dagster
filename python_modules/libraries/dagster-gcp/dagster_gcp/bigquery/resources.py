@@ -1,5 +1,6 @@
-from dagster import resource
 from google.cloud import bigquery  # type: ignore
+
+from dagster import resource
 
 from .configs import bq_resource_config
 

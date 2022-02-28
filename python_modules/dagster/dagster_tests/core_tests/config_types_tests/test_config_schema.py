@@ -1,4 +1,5 @@
 import pytest
+
 from dagster import Field, composite_solid, solid
 from dagster.check import CheckError
 from dagster.config.config_type import ConfigAnyInstance

@@ -42,7 +42,8 @@ def emit_events_op(input_num):
         success=a_num > 0, label="positive", description="A num must be positive"
     )
     yield AssetMaterialization(
-        asset_key="persisted_string", description="Let us pretend we persisted the string somewhere"
+        asset_key="persisted_string",
+        description="Let us pretend we persisted the string somewhere",
     )
     yield Output(value=a_num, output_name="a_num")
 
@@ -128,7 +129,9 @@ def my_foo_resource(context):
 
 
 def test_op_resource_def():
-    context = build_op_context(resources={"foo": my_foo_resource.configured({"my_str": "bar"})})
+    context = build_op_context(
+        resources={"foo": my_foo_resource.configured({"my_str": "bar"})}
+    )
     assert op_requires_foo(context) == "found bar"
 
 
@@ -137,7 +140,12 @@ def test_op_resource_def():
 # start_test_job_with_config
 def test_job_with_config():
     result = do_math_job.execute_in_process(
-        run_config={"ops": {"add_one": {"inputs": {"num": 2}}, "add_two": {"inputs": {"num": 3}}}}
+        run_config={
+            "ops": {
+                "add_one": {"inputs": {"num": 2}},
+                "add_two": {"inputs": {"num": 3}},
+            }
+        }
     )
 
     assert result.success

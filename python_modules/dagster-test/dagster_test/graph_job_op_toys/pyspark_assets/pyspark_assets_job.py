@@ -1,9 +1,10 @@
 import os
 
-from dagster import Field, In, String, graph, op, resource
 from pyspark.sql import SparkSession, Window
 from pyspark.sql.functions import col, concat, lit
 from pyspark.sql.functions import max as pyspark_max
+
+from dagster import Field, In, String, graph, op, resource
 
 
 def create_spark_session():

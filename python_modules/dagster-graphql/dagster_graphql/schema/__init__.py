@@ -6,10 +6,6 @@ from .roots.subscription import GrapheneDagitSubscription
 
 
 def types():
-    from .logs import types as log_types
-    from .pipelines import types as pipelines_types
-    from .roots import types as roots_types
-    from .schedules import types as schedules_types
     from .asset_key import GrapheneAssetKey
     from .backfill import GrapheneLaunchBackfillResult, GrapheneLaunchBackfillSuccess
     from .config_type_or_error import GrapheneConfigTypeOrError
@@ -26,12 +22,16 @@ def types():
         GrapheneRunLauncher,
     )
     from .instigation import types as instigation_types
+    from .logs import types as log_types
     from .metadata import types as metadata_types
     from .paging import GrapheneCursor
     from .partition_sets import types as partition_sets_types
-    from .repository_origin import GrapheneRepositoryOrigin, GrapheneRepositoryMetadata
+    from .pipelines import types as pipelines_types
+    from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin
+    from .roots import types as roots_types
     from .run_config import GrapheneRunConfigSchema, GrapheneRunConfigSchemaOrError
     from .runs import types as runs_types
+    from .schedules import types as schedules_types
     from .sensors import types as sensors_types
     from .solids import types as solids_types
     from .table import types as table_types

@@ -1,6 +1,16 @@
 import copy
 
 import yaml
+from dagster_graphql.test.utils import (
+    define_out_of_process_context,
+    execute_dagster_graphql,
+    infer_pipeline_selector,
+    infer_repository_selector,
+)
+from dagster_graphql_tests.graphql.graphql_context_test_suite import (
+    ExecutingGraphQLContextTestMatrix,
+)
+
 from dagster import (
     AssetMaterialization,
     Output,
@@ -17,15 +27,6 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import Counter, traced_counter
-from dagster_graphql.test.utils import (
-    define_out_of_process_context,
-    execute_dagster_graphql,
-    infer_pipeline_selector,
-    infer_repository_selector,
-)
-from dagster_graphql_tests.graphql.graphql_context_test_suite import (
-    ExecutingGraphQLContextTestMatrix,
-)
 
 RUNS_QUERY = """
 query PipelineRunsRootQuery($selector: PipelineSelector!) {

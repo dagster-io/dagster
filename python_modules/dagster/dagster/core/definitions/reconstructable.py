@@ -26,10 +26,11 @@ from dagster.utils.backcompat import experimental
 from .pipeline_base import IPipeline
 
 if TYPE_CHECKING:
-    from .repository_definition import RepositoryDefinition
-    from .pipeline_definition import PipelineDefinition
-    from .graph_definition import GraphDefinition
     from dagster.core.asset_defs.asset_group import AssetGroup
+
+    from .graph_definition import GraphDefinition
+    from .pipeline_definition import PipelineDefinition
+    from .repository_definition import RepositoryDefinition
 
 
 def get_ephemeral_repository_name(pipeline_name: str) -> str:
@@ -177,7 +178,7 @@ class ReconstructablePipeline(
                 pipeline_name=self.pipeline_name,
             )
 
-        from dagster.core.definitions import PipelineDefinition, JobDefinition
+        from dagster.core.definitions import JobDefinition, PipelineDefinition
 
         pipeline_def = self.get_definition()
         if isinstance(pipeline_def, JobDefinition):
@@ -332,7 +333,7 @@ def reconstructable(target):
 
         reconstructable_bar_job = reconstructable(make_bar_job)
     """
-    from dagster.core.definitions import PipelineDefinition, JobDefinition
+    from dagster.core.definitions import JobDefinition, PipelineDefinition
 
     if not seven.is_function_or_decorator_instance_of(target, PipelineDefinition):
         if isinstance(target, JobDefinition):
@@ -510,10 +511,11 @@ def bootstrap_standalone_recon_pipeline(pointer):
 
 
 def _check_is_loadable(definition):
+    from dagster.core.asset_defs import AssetGroup
+
+    from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
     from .repository_definition import RepositoryDefinition
-    from .graph_definition import GraphDefinition
-    from dagster.core.asset_defs import AssetGroup
 
     if not isinstance(
         definition, (PipelineDefinition, RepositoryDefinition, GraphDefinition, AssetGroup)
@@ -546,10 +548,11 @@ def def_from_pointer(
 ) -> Union["PipelineDefinition", "RepositoryDefinition", "GraphDefinition"]:
     target = pointer.load_target()
 
+    from dagster.core.asset_defs.asset_group import AssetGroup
+
+    from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
     from .repository_definition import RepositoryDefinition
-    from .graph_definition import GraphDefinition
-    from dagster.core.asset_defs.asset_group import AssetGroup
 
     if isinstance(
         target, (PipelineDefinition, RepositoryDefinition, GraphDefinition, AssetGroup)
@@ -598,10 +601,11 @@ def repository_def_from_target_def(target: object) -> None:
 
 
 def repository_def_from_target_def(target):
-    from .pipeline_definition import PipelineDefinition
-    from .graph_definition import GraphDefinition
-    from .repository_definition import CachingRepositoryData, RepositoryDefinition
     from dagster.core.asset_defs.asset_group import AssetGroup
+
+    from .graph_definition import GraphDefinition
+    from .pipeline_definition import PipelineDefinition
+    from .repository_definition import CachingRepositoryData, RepositoryDefinition
 
     # special case - we can wrap a single pipeline in a repository
     if isinstance(target, (PipelineDefinition, GraphDefinition)):

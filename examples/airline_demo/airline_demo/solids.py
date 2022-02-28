@@ -4,6 +4,11 @@ import os
 import re
 
 import dagster_pyspark
+from dagster_aws.s3 import S3Coordinate
+from dagstermill import define_dagstermill_solid
+from pyspark.sql import DataFrame
+from sqlalchemy import text
+
 from dagster import (
     AssetMaterialization,
     ExpectationResult,
@@ -21,10 +26,6 @@ from dagster import (
     solid,
 )
 from dagster.core.types.dagster_type import create_string_type
-from dagster_aws.s3 import S3Coordinate
-from dagstermill import define_dagstermill_solid
-from pyspark.sql import DataFrame
-from sqlalchemy import text
 
 from .cache_file_from_s3 import cache_file_from_s3
 from .unzip_file_handle import unzip_file_handle

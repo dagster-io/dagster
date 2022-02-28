@@ -1,4 +1,5 @@
 import graphene
+
 from dagster.core.definitions.events import AssetKey
 from dagster.core.workspace.permissions import Permissions
 

@@ -33,9 +33,7 @@ def download_csv():
 @op(ins={"cereals": In(SimpleDataFrame)})
 def sort_by_calories(cereals):
     sorted_cereals = sorted(cereals, key=lambda cereal: cereal["calories"])
-    get_dagster_logger().info(
-        f'Most caloric cereal: {sorted_cereals[-1]["name"]}'
-    )
+    get_dagster_logger().info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
 
 
 # end_custom_types_marker_1

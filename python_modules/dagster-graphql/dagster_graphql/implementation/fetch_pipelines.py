@@ -1,6 +1,7 @@
+from graphql.execution.base import ResolveInfo
+
 from dagster import check
 from dagster.core.storage.pipeline_run import PipelineRun
-from graphql.execution.base import ResolveInfo
 
 from .external import get_external_pipeline_or_raise, get_full_external_pipeline_or_raise
 from .utils import PipelineSelector, UserFacingGraphQLError, capture_error

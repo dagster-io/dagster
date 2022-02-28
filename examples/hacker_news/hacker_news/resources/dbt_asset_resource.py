@@ -1,8 +1,9 @@
 from typing import Any, Dict, List
 
 import pandas
-from dagster import AssetKey, AssetMaterialization, MetadataEntry
 from dagster_dbt import DbtOutput
+
+from dagster import AssetKey, AssetMaterialization, MetadataEntry
 
 from .snowflake_io_manager import connect_snowflake
 

@@ -1,5 +1,6 @@
-from dagster import asset
 from pandas import DataFrame
+
+from dagster import asset
 
 
 @asset

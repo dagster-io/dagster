@@ -34,15 +34,11 @@ from dagster.utils.error import SerializableErrorInfo, serializable_error_info_f
 from dagster.utils.timing import format_duration
 
 if TYPE_CHECKING:
+    from dagster.core.definitions.events import ObjectStoreOperation
+    from dagster.core.execution.plan.inputs import StepInputData
+    from dagster.core.execution.plan.objects import StepFailureData, StepRetryData, StepSuccessData
     from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.execution.plan.step import ExecutionStep, StepKind
-    from dagster.core.execution.plan.inputs import StepInputData
-    from dagster.core.execution.plan.objects import (
-        StepSuccessData,
-        StepFailureData,
-        StepRetryData,
-    )
-    from dagster.core.definitions.events import ObjectStoreOperation
 
     EventSpecificData = Union[
         StepOutputData,
@@ -210,8 +206,8 @@ def _assert_type(
 def _validate_event_specific_data(
     event_type: DagsterEventType, event_specific_data: Optional["EventSpecificData"]
 ) -> Optional["EventSpecificData"]:
-    from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
     from dagster.core.execution.plan.inputs import StepInputData
+    from dagster.core.execution.plan.objects import StepFailureData, StepSuccessData
 
     if event_type == DagsterEventType.STEP_OUTPUT:
         check.inst_param(event_specific_data, "event_specific_data", StepOutputData)

@@ -26,9 +26,7 @@ from dagster import (
 
 @op
 def sort_by_calories(context, cereals):
-    sorted_cereals = sorted(
-        cereals, key=lambda cereal: int(cereal["calories"])
-    )
+    sorted_cereals = sorted(cereals, key=lambda cereal: int(cereal["calories"]))
     least_caloric = sorted_cereals[0]["name"]
     most_caloric = sorted_cereals[-1]["name"]
 
@@ -52,9 +50,7 @@ def sort_by_calories(context, cereals):
             asset_key="sorted_cereals_csv",
             description="Cereals data frame sorted by caloric content",
             metadata={
-                "sorted_cereals_csv_path": MetadataValue.path(
-                    sorted_cereals_csv_path
-                )
+                "sorted_cereals_csv_path": MetadataValue.path(sorted_cereals_csv_path)
             },
         )
     )

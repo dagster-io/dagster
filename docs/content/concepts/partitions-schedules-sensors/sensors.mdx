@@ -75,7 +75,9 @@ def my_directory_sensor():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
+                run_config={
+                    "ops": {"process_file": {"config": {"filename": filename}}}
+                },
             )
 ```
 
@@ -188,7 +190,9 @@ def my_directory_sensor_with_skip_reasons():
         if os.path.isfile(filepath):
             yield RunRequest(
                 run_key=filename,
-                run_config={"ops": {"process_file": {"config": {"filename": filename}}}},
+                run_config={
+                    "ops": {"process_file": {"config": {"filename": filename}}}
+                },
             )
             has_files = True
     if not has_files:
@@ -428,7 +432,9 @@ you create a job failure sensor that will message a given Slack channel:
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_slack_marker endbefore=end_slack_marker
 from dagster_slack import make_slack_on_run_failure_sensor
 
-slack_on_run_failure = make_slack_on_run_failure_sensor("#my_channel", os.getenv("MY_SLACK_TOKEN"))
+slack_on_run_failure = make_slack_on_run_failure_sensor(
+    "#my_channel", os.getenv("MY_SLACK_TOKEN")
+)
 ```
 
 <PyObject module="dagster.utils" object="make_email_on_run_failure_sensor" /> helps
@@ -505,9 +511,7 @@ We can use the same pattern to build the context for <PyObject object="run_failu
 ```python file=/concepts/partitions_schedules_sensors/sensors/sensor_alert.py startafter=start_simple_fail_sensor endbefore=end_simple_fail_sensor
 @run_failure_sensor
 def my_email_failure_sensor(context: RunFailureSensorContext):
-    message = (
-        f'Job "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}'
-    )
+    message = f'Job "{context.pipeline_run.pipeline_name}" failed. Error: {context.failure_event.message}'
     email_alert(message)
 ```
 

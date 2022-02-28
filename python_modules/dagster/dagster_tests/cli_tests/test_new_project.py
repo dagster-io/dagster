@@ -1,6 +1,7 @@
 import os
 
 from click.testing import CliRunner
+
 from dagster.cli import new_project_cli
 
 

@@ -3,8 +3,9 @@
 
 import re
 
-import dagster
 import pytest
+
+import dagster
 from dagster.core.definitions.events import Output
 from dagster.core.definitions.input import InputDefinition
 from dagster.core.definitions.metadata import (

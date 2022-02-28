@@ -3,6 +3,8 @@
 from contextlib import contextmanager
 
 import pytest
+from dagster_tests.api_tests.utils import get_foo_pipeline_handle
+
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.storage.pipeline_run import IN_PROGRESS_RUN_STATUSES, PipelineRunStatus
 from dagster.core.storage.tags import PRIORITY_TAG
@@ -13,7 +15,6 @@ from dagster.core.test_utils import (
 )
 from dagster.core.workspace.load_target import EmptyWorkspaceTarget
 from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
-from dagster_tests.api_tests.utils import get_foo_pipeline_handle
 
 
 @contextmanager

@@ -1,14 +1,15 @@
 import os
 import time
 
-from dagster import AssetKey
-from dagster.utils import safe_tempfile_path
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_pipeline_selector,
     infer_repository_selector,
 )
+
+from dagster import AssetKey
+from dagster.utils import safe_tempfile_path
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 

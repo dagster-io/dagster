@@ -1,6 +1,7 @@
 import os
 
 import pytest
+
 from dagster import (
     AssetKey,
     DagsterInvalidDefinitionError,

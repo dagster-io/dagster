@@ -37,7 +37,9 @@ def continent_schedule():
 
 @schedule(cron_schedule="0 0 * * *", job=continent_job)
 def antarctica_schedule():
-    request = continent_job.run_request_for_partition(partition_key="Antarctica", run_key=None)
+    request = continent_job.run_request_for_partition(
+        partition_key="Antarctica", run_key=None
+    )
     yield request
 
 

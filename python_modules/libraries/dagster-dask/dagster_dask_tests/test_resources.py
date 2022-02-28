@@ -1,3 +1,6 @@
+from dagster_dask import dask_resource
+from dask.distributed import Client
+
 from dagster import (
     Dict,
     ModeDefinition,
@@ -8,8 +11,6 @@ from dagster import (
     solid,
 )
 from dagster.core.test_utils import instance_for_test
-from dagster_dask import dask_resource
-from dask.distributed import Client
 
 
 @solid(

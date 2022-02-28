@@ -13,6 +13,8 @@ from time import sleep
 from typing import NamedTuple
 
 import grpc
+from grpc_health.v1 import health, health_pb2, health_pb2_grpc
+
 from dagster import check, seven
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import ReconstructableRepository
@@ -30,7 +32,6 @@ from dagster.serdes import (
 from dagster.serdes.ipc import IPCErrorMessage, ipc_write_stream, open_ipc_subprocess
 from dagster.utils import find_free_port, frozenlist, safe_tempfile_path_unmanaged
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 from .__generated__ import api_pb2
 from .__generated__.api_pb2_grpc import DagsterApiServicer, add_DagsterApiServicer_to_server

@@ -1,8 +1,9 @@
 import os
 
-from dagster import ResourceDefinition
 from dagster_aws.s3 import s3_resource
 from dagster_pyspark import pyspark_resource
+
+from dagster import ResourceDefinition
 
 from .common_bucket_s3_pickle_io_manager import common_bucket_s3_pickle_io_manager
 from .parquet_io_manager import (

@@ -53,8 +53,8 @@ from .context.system import (
 )
 
 if TYPE_CHECKING:
-    from dagster.core.executor.base import Executor
     from dagster.core.execution.plan.outputs import StepOutputHandle
+    from dagster.core.executor.base import Executor
 
 
 def initialize_console_manager(pipeline_run: Optional[PipelineRun]) -> DagsterLogManager:

@@ -1,4 +1,6 @@
 import graphene
+from dagster_graphql.schema.solids import GrapheneSolidDefinition, build_solid_definition
+
 from dagster import AssetKey, check
 from dagster.core.host_representation import ExternalRepository, RepositoryLocation
 from dagster.core.host_representation.external_data import (
@@ -6,7 +8,6 @@ from dagster.core.host_representation.external_data import (
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,
 )
-from dagster_graphql.schema.solids import GrapheneSolidDefinition, build_solid_definition
 
 from ..implementation.loader import BatchMaterializationLoader
 from . import external

@@ -2,6 +2,7 @@
 # alembic dynamically populates the alembic.context module
 
 from alembic import context
+
 from dagster.core.storage.schedules import ScheduleStorageSqlMetadata
 from dagster.core.storage.sqlite import run_migrations_offline, run_migrations_online
 

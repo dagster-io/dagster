@@ -65,7 +65,9 @@ def observes_dataset_op(context):
             metadata={
                 "text_metadata": "Text-based metadata for this event",
                 "path": EventMetadata.path(remote_storage_path),
-                "dashboard_url": EventMetadata.url("http://mycoolsite.com/url_for_my_data"),
+                "dashboard_url": EventMetadata.url(
+                    "http://mycoolsite.com/url_for_my_data"
+                ),
                 "size (bytes)": calculate_bytes(df),
             },
         )

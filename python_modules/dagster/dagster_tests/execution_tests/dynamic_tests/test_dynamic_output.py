@@ -3,6 +3,7 @@ from typing import NamedTuple
 
 import objgraph
 import pytest
+
 from dagster import (
     DynamicOut,
     DynamicOutput,

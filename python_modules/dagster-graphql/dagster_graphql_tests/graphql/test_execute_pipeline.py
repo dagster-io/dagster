@@ -2,9 +2,6 @@ import json
 import time
 import uuid
 
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
-from dagster.utils import file_relative_path
-from dagster.utils.test import get_temp_file_name
 from dagster_graphql.client.query import (
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
     RUN_EVENTS_QUERY,
@@ -12,6 +9,10 @@ from dagster_graphql.client.query import (
 )
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 from graphql import parse
+
+from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.utils import file_relative_path
+from dagster.utils.test import get_temp_file_name
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,

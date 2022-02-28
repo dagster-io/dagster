@@ -1,8 +1,4 @@
 import pytest
-from dagster import __version__ as dagster_version
-from dagster import graph
-from dagster.core.test_utils import environ, remove_none_recursively
-from dagster.utils import merge_dicts
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
 from dagster_k8s.job import (
     DAGSTER_PG_PASSWORD_ENV_VAR,
@@ -11,6 +7,11 @@ from dagster_k8s.job import (
     UserDefinedDagsterK8sConfig,
     get_user_defined_k8s_config,
 )
+
+from dagster import __version__ as dagster_version
+from dagster import graph
+from dagster.core.test_utils import environ, remove_none_recursively
+from dagster.utils import merge_dicts
 
 
 def test_job_serialization():

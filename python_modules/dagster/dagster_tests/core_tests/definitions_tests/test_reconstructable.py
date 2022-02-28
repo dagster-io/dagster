@@ -3,6 +3,7 @@ import sys
 import types
 
 import pytest
+
 from dagster import DagsterInvariantViolationError, PipelineDefinition, lambda_solid, pipeline
 from dagster.core.code_pointer import FileCodePointer
 from dagster.core.definitions.reconstructable import reconstructable

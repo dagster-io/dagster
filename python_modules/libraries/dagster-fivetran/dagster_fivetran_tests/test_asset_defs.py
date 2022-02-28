@@ -1,9 +1,10 @@
 import pytest
 import responses
-from dagster import AssetKey, DagsterStepOutputNotFoundError, build_assets_job
 from dagster_fivetran import fivetran_resource
 from dagster_fivetran.asset_defs import build_fivetran_assets
 from dagster_fivetran.resources import FIVETRAN_API_BASE, FIVETRAN_CONNECTOR_PATH
+
+from dagster import AssetKey, DagsterStepOutputNotFoundError, build_assets_job
 
 from .utils import (
     DEFAULT_CONNECTOR_ID,

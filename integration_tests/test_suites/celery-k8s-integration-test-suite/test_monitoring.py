@@ -4,15 +4,16 @@
 import os
 import time
 
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import poll_for_finished_run
-from dagster.utils import merge_dicts
-from dagster.utils.yaml_utils import merge_yamls
 from dagster_k8s.job import get_job_name_from_run_id
 from dagster_k8s.utils import delete_job
 from dagster_k8s_test_infra.integration_utils import image_pull_policy, launch_run_over_graphql
 from dagster_test.test_project import get_test_project_environments_path
 from marks import mark_monitoring
+
+from dagster.core.storage.pipeline_run import PipelineRunStatus
+from dagster.core.test_utils import poll_for_finished_run
+from dagster.utils import merge_dicts
+from dagster.utils.yaml_utils import merge_yamls
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

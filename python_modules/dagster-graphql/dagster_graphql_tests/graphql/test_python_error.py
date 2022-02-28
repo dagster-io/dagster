@@ -1,13 +1,14 @@
 import sys
 from unittest import mock
 
-from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster_graphql.client.client_queries import (
     CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY,
 )
 from dagster_graphql.implementation.utils import ErrorCapture
 from dagster_graphql.schema.errors import GraphenePythonError
 from dagster_graphql.test.utils import execute_dagster_graphql
+
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 
 def test_python_error():

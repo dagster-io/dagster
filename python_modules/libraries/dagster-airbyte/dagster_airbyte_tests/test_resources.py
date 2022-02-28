@@ -1,8 +1,9 @@
 import pytest
 import responses
-from dagster import Failure, MetadataEntry, build_init_resource_context
 from dagster_airbyte import AirbyteOutput, AirbyteState, airbyte_resource
 from dagster_airbyte.utils import generate_materializations
+
+from dagster import Failure, MetadataEntry, build_init_resource_context
 
 
 @responses.activate

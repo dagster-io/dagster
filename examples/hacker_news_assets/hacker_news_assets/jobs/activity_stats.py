@@ -2,8 +2,6 @@ import json
 import os
 
 import pandas as pd
-from dagster import MetadataValue, build_assets_job
-from dagster.utils import file_relative_path
 from dagster_dbt import dbt_cli_resource
 from dagster_dbt.asset_defs import load_assets_from_dbt_manifest
 from hacker_news_assets.resources import RESOURCES_PROD, RESOURCES_STAGING
@@ -11,6 +9,9 @@ from hacker_news_assets.resources.snowflake_io_manager import (
     SHARED_SNOWFLAKE_CONF,
     connect_snowflake,
 )
+
+from dagster import MetadataValue, build_assets_job
+from dagster.utils import file_relative_path
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../hacker_news_dbt")
 DBT_PROFILES_DIR = DBT_PROJECT_DIR + "/config"

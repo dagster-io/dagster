@@ -29,9 +29,7 @@ from dagster.serdes import (
 from dagster.serdes.serdes import WhitelistMap, unpack_inner_value
 
 if TYPE_CHECKING:
-    from dagster.core.host_representation.repository_location import (
-        GrpcServerRepositoryLocation,
-    )
+    from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 
 # This is a hard-coded name for the special "in-process" location.
 # This is typically only used for test, although we may allow
@@ -214,12 +212,13 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
 
     @contextmanager
     def create_single_location(self):
-        from .repository_location import GrpcServerRepositoryLocation
-        from .grpc_server_registry import ProcessGrpcServerRegistry
         from dagster.core.workspace.context import (
             DAGIT_GRPC_SERVER_HEARTBEAT_TTL,
             DAGIT_GRPC_SERVER_STARTUP_TIMEOUT,
         )
+
+        from .grpc_server_registry import ProcessGrpcServerRegistry
+        from .repository_location import GrpcServerRepositoryLocation
 
         with ProcessGrpcServerRegistry(
             reload_interval=0,

@@ -1,6 +1,7 @@
 from unittest import mock
 
 from dagster import DagsterEventType, ResourceDefinition, job, op
+
 from docs_snippets.concepts.solids_pipelines.op_hooks import (
     a,
     notif_all,
@@ -16,7 +17,8 @@ from docs_snippets.concepts.solids_pipelines.op_hooks_context import my_failure_
 
 def test_notif_all():
     result = notif_all.execute_in_process(
-        run_config={"resources": {"slack": {"config": {"token": "..."}}}}, raise_on_error=False
+        run_config={"resources": {"slack": {"config": {"token": "..."}}}},
+        raise_on_error=False,
     )
     assert not result.success
 
@@ -31,7 +33,8 @@ def test_notif_all():
 
 def test_selective_notif():
     result = selective_notif.execute_in_process(
-        run_config={"resources": {"slack": {"config": {"token": "..."}}}}, raise_on_error=False
+        run_config={"resources": {"slack": {"config": {"token": "..."}}}},
+        raise_on_error=False,
     )
     assert not result.success
 
@@ -45,7 +48,8 @@ def test_selective_notif():
 
 def test_notif_all_dev():
     result = notif_all_dev.execute_in_process(
-        run_config={"resources": {"slack": {"config": {"token": "..."}}}}, raise_on_error=False
+        run_config={"resources": {"slack": {"config": {"token": "..."}}}},
+        raise_on_error=False,
     )
     assert not result.success
 
@@ -60,7 +64,8 @@ def test_notif_all_dev():
 
 def test_notif_all_prod():
     result = notif_all_prod.execute_in_process(
-        run_config={"resources": {"slack": {"config": {"token": "..."}}}}, raise_on_error=False
+        run_config={"resources": {"slack": {"config": {"token": "..."}}}},
+        raise_on_error=False,
     )
     assert not result.success
 

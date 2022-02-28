@@ -45,7 +45,7 @@ from ..run_request import RunRequest, SkipReason
 from ..schedule_definition import DefaultScheduleStatus, ScheduleDefinition, is_context_provided
 
 if TYPE_CHECKING:
-    from dagster import ScheduleEvaluationContext, Partition
+    from dagster import Partition, ScheduleEvaluationContext
 
 # Error messages are long
 # pylint: disable=C0301

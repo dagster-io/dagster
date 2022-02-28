@@ -1,4 +1,5 @@
 import pytest
+
 from dagster.utils import file_relative_path
 from dagster.utils.test.mysql_instance import TestMySQLInstance
 

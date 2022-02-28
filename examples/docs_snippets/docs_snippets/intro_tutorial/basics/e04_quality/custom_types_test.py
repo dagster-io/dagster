@@ -28,9 +28,7 @@ def less_simple_data_frame_type_check(_, value):
         if not isinstance(row, dict):
             raise Failure(
                 "LessSimpleDataFrame should be a list of dicts, "
-                "got {type_} for row {idx}".format(
-                    type_=type(row), idx=(i + 1)
-                )
+                "got {type_} for row {idx}".format(type_=type(row), idx=(i + 1))
             )
         row_fields = [field for field in row.keys()]
         if fields != row_fields:
@@ -88,9 +86,7 @@ if __name__ == "__main__":
     custom_type_job.execute_in_process(
         run_config={
             "ops": {
-                "sort_by_calories": {
-                    "inputs": {"cereals": {"csv_path": "cereal.csv"}}
-                }
+                "sort_by_calories": {"inputs": {"cereals": {"csv_path": "cereal.csv"}}}
             }
         },
     )
@@ -98,13 +94,9 @@ if __name__ == "__main__":
 
 # start_custom_types_test_marker_0
 def test_less_simple_data_frame():
-    assert check_dagster_type(
-        LessSimpleDataFrame, [{"foo": 1}, {"foo": 2}]
-    ).success
+    assert check_dagster_type(LessSimpleDataFrame, [{"foo": 1}, {"foo": 2}]).success
 
-    type_check = check_dagster_type(
-        LessSimpleDataFrame, [{"foo": 1}, {"bar": 2}]
-    )
+    type_check = check_dagster_type(LessSimpleDataFrame, [{"foo": 1}, {"bar": 2}])
     assert not type_check.success
     assert type_check.description == (
         "Rows in LessSimpleDataFrame should have the same fields, "
