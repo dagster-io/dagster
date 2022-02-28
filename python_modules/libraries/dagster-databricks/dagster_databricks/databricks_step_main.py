@@ -81,13 +81,13 @@ def main(
         site.addsitedir(tmp)
 
         # We can use regular local filesystem APIs to access DBFS inside the Databricks runtime.
-        with open(setup_filepath, "rb") as handle:
+        with open(setup_filepath, "rb", encoding="utf8") as handle:
             databricks_config = pickle.load(handle)
 
         # sc and dbutils are globally defined in the Databricks runtime.
         databricks_config.setup(dbutils, sc)  # noqa pylint: disable=undefined-variable
 
-        with open(step_run_ref_filepath, "rb") as handle:
+        with open(step_run_ref_filepath, "rb", encoding="utf8") as handle:
             step_run_ref = pickle.load(handle)
         print("Running dagster job")  # noqa pylint: disable=print-call
 
@@ -104,7 +104,7 @@ def main(
             pass
 
         def put_events(events):
-            with open(events_filepath, "wb") as handle:
+            with open(events_filepath, "wb", encoding="utf8") as handle:
                 pickle.dump(serialize_value(events), handle)
 
         # Set up a thread to handle writing events back to the plan process, so execution doesn't get

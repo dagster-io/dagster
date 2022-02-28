@@ -42,7 +42,7 @@ def test_fs_asset_io_manager():
 
         filepath_a = os.path.join(tmpdir_path, "one", "two", "three", "asset1")
         assert os.path.isfile(filepath_a)
-        with open(filepath_a, "rb") as read_obj:
+        with open(filepath_a, "rb", encoding="utf8") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]
 
         loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.all_node_events))
@@ -51,7 +51,7 @@ def test_fs_asset_io_manager():
 
         filepath_b = os.path.join(tmpdir_path, "four", "five", "asset2")
         assert os.path.isfile(filepath_b)
-        with open(filepath_b, "rb") as read_obj:
+        with open(filepath_b, "rb", encoding="utf8") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3, 4]
 
 

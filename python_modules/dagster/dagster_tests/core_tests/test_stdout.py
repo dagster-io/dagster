@@ -82,7 +82,7 @@ def test_compute_log_to_disk():
                 continue
             compute_io_path = manager.get_local_path(result.run_id, step_key, ComputeIOType.STDOUT)
             assert os.path.exists(compute_io_path)
-            with open(compute_io_path, "r") as stdout_file:
+            with open(compute_io_path, "r", encoding="utf8") as stdout_file:
                 assert normalize_file_content(stdout_file.read()) == HELLO_SOLID
 
 
@@ -110,7 +110,7 @@ def test_compute_log_to_disk_multiprocess():
                 continue
             compute_io_path = manager.get_local_path(result.run_id, step_key, ComputeIOType.STDOUT)
             assert os.path.exists(compute_io_path)
-            with open(compute_io_path, "r") as stdout_file:
+            with open(compute_io_path, "r", encoding="utf8") as stdout_file:
                 assert normalize_file_content(stdout_file.read()) == HELLO_SOLID
 
 
@@ -197,7 +197,7 @@ def test_compute_log_manager_subscription_updates():
         assert not last_chunk.data
         assert last_chunk.cursor == 0
 
-        with open(stdout_path, "a+") as f:
+        with open(stdout_path, "a+", encoding="utf8") as f:
             print(HELLO_SOLID, file=f)  # pylint:disable=print-call
 
         # wait longer than the watchdog timeout

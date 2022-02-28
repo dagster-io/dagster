@@ -120,7 +120,7 @@ def instance_for_test(overrides=None, set_dagster_home=True, temp_dir=None):
                 environ({"DAGSTER_HOME": temp_dir, "DAGSTER_DISABLE_TELEMETRY": "yes"})
             )
 
-        with open(os.path.join(temp_dir, "dagster.yaml"), "w") as fd:
+        with open(os.path.join(temp_dir, "dagster.yaml"), "w", encoding="utf8") as fd:
             yaml.dump(instance_overrides, fd, default_flow_style=False)
 
         with DagsterInstance.from_config(temp_dir) as instance:

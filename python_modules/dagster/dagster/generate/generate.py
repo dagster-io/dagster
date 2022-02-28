@@ -57,7 +57,7 @@ def generate_new_project(path: str):
             if dst_file_path.endswith(".tmpl"):
                 dst_file_path = dst_file_path[: -len(".tmpl")]
 
-            with open(dst_file_path, "w") as f:
+            with open(dst_file_path, "w", encoding="utf8") as f:
                 # Jinja template names must use the POSIX path separator "/".
                 template_name = src_relative_file_path.replace(os.sep, posixpath.sep)
                 template = env.get_template(name=template_name)

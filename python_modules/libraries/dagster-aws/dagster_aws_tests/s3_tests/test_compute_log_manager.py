@@ -106,7 +106,7 @@ compute_logs:
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(os.path.join(tempdir, "dagster.yaml"), "wb") as f:
+        with open(os.path.join(tempdir, "dagster.yaml"), "wb", encoding="utf8") as f:
             f.write(dagster_yaml.encode("utf-8"))
 
         instance = DagsterInstance.from_config(tempdir)

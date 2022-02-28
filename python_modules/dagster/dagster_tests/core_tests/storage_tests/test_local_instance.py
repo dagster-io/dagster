@@ -73,7 +73,7 @@ def test_fs_stores():
 
 def test_init_compute_log_with_bad_config():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        with open(os.path.join(tmpdir_path, "dagster.yaml"), "w") as fd:
+        with open(os.path.join(tmpdir_path, "dagster.yaml"), "w", encoding="utf8") as fd:
             yaml.dump({"compute_logs": {"garbage": "flargh"}}, fd, default_flow_style=False)
         with pytest.raises(
             DagsterInvalidConfigError, match='Received unexpected config entry "garbage"'
@@ -93,7 +93,7 @@ def test_init_compute_log_with_bad_config_override():
 
 def test_init_compute_log_with_bad_config_module():
     with tempfile.TemporaryDirectory() as tmpdir_path:
-        with open(os.path.join(tmpdir_path, "dagster.yaml"), "w") as fd:
+        with open(os.path.join(tmpdir_path, "dagster.yaml"), "w", encoding="utf8") as fd:
             yaml.dump(
                 {"compute_logs": {"module": "flargh", "class": "Woble", "config": {}}},
                 fd,

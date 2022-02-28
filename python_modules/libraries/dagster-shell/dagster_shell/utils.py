@@ -67,7 +67,7 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
                 signal.signal(getattr(signal, sig), signal.SIG_DFL)
         os.setsid()
 
-    with open(shell_script_path, "rb") as f:
+    with open(shell_script_path, "rb", encoding="utf8") as f:
         shell_command = f.read().decode("utf-8")
 
     log.info(f"Running command:\n{shell_command}")
@@ -141,7 +141,7 @@ def execute(shell_command, output_logging, log, cwd=None, env=None):
         tmp_path = os.path.dirname(tmp_file_path)
         log.info("Using temporary directory: %s" % tmp_path)
 
-        with open(tmp_file_path, "wb") as tmp_file:
+        with open(tmp_file_path, "wb", encoding="utf8") as tmp_file:
             tmp_file.write(shell_command.encode("utf-8"))
             tmp_file.flush()
             script_location = os.path.abspath(tmp_file.name)

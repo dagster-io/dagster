@@ -28,7 +28,7 @@ def main(step_run_ref_path: str) -> None:
         list(run_step_from_ref(step_run_ref, instance))
     finally:
         events_out_path = os.path.join(os.path.dirname(step_run_ref_path), PICKLED_EVENTS_FILE_NAME)
-        with open(events_out_path, "wb") as events_file:
+        with open(events_out_path, "wb", encoding="utf8") as events_file:
             pickle.dump(serialize_value(all_events), events_file)
 
 

@@ -37,7 +37,7 @@ def _send_kbd_int(temp_files):
 
 @solid(config_schema={"tempfile": Field(String)})
 def write_a_file(context):
-    with open(context.solid_config["tempfile"], "w") as ff:
+    with open(context.solid_config["tempfile"], "w", encoding="utf8") as ff:
         ff.write("yup")
 
     start_time = time.time()
@@ -150,7 +150,7 @@ def test_interrupt_resource_teardown():
 
     @solid(config_schema={"tempfile": Field(String)}, required_resource_keys={"a"})
     def write_a_file_resource_solid(context):
-        with open(context.solid_config["tempfile"], "w") as ff:
+        with open(context.solid_config["tempfile"], "w", encoding="utf8") as ff:
             ff.write("yup")
 
         while True:
@@ -308,7 +308,7 @@ def write_and_spin_if_missing(context):
     if os.path.exists(target):
         return
 
-    with open(target, "w") as ff:
+    with open(target, "w", encoding="utf8") as ff:
         ff.write(str(os.getpid()))
 
     start_time = time.time()
@@ -336,7 +336,7 @@ def test_retry_policy():
         pid = None
         while True:
             if os.path.exists(path):
-                with open(path) as f:
+                with open(path, encoding="utf8") as f:
                     pid_str = f.read()
                     if pid_str:
                         pid = int(pid_str)

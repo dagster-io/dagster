@@ -72,7 +72,7 @@ class ADLS2FileManager(FileManager):
                 file_path=file_handle.key,
             )
             download = file.download_file()
-            with open(temp_name, "wb") as file_obj:
+            with open(temp_name, "wb", encoding="utf8") as file_obj:
                 download.readinto(file_obj)
             self._local_handle_cache[file_handle.adls2_path] = temp_name
 
@@ -86,7 +86,7 @@ class ADLS2FileManager(FileManager):
 
         self._download_if_not_cached(file_handle)
 
-        with open(self._get_local_path(file_handle), mode) as file_obj:
+        with open(self._get_local_path(file_handle), mode, encoding="utf8") as file_obj:
             yield file_obj
 
     def _file_handle_cached(self, file_handle):

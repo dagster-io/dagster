@@ -25,8 +25,8 @@ def cache_file_from_s3(s3_coord: S3Coordinate) -> str:
         )
 
         target_path = os.path.join(file_cache_folder(), target_key)
-        with open(tmp_file, "rb") as tmp_file_object:
-            with open(target_path, "wb") as target_file_object:
+        with open(tmp_file, "rb", encoding="utf8") as tmp_file_object:
+            with open(target_path, "wb", encoding="utf8") as target_file_object:
                 shutil.copyfileobj(tmp_file_object, target_file_object)
                 return target_path
 

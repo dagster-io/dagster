@@ -49,7 +49,7 @@ class TestSqliteEventLogStorage(TestEventLogStorage):
     def test_filesystem_event_log_storage_run_corrupted(self, storage):
         # URL begins sqlite:///
         # pylint: disable=protected-access
-        with open(os.path.abspath(storage.conn_string_for_shard("foo")[10:]), "w") as fd:
+        with open(os.path.abspath(storage.conn_string_for_shard("foo")[10:]), "w", encoding="utf8") as fd:
             fd.write("some nonsense")
         with pytest.raises(sqlalchemy.exc.DatabaseError):
             storage.get_logs_for_run("foo")

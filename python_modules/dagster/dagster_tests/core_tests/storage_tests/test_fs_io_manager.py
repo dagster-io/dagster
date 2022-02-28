@@ -45,7 +45,7 @@ def test_fs_io_manager():
         assert result_metadata_entry_a.label == "path"
         assert result_metadata_entry_a.value == MetadataValue.path(filepath_a)
         assert os.path.isfile(filepath_a)
-        with open(filepath_a, "rb") as read_obj:
+        with open(filepath_a, "rb", encoding="utf8") as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]
 
         loaded_input_events = list(filter(lambda evt: evt.is_loaded_input, result.event_list))
@@ -60,7 +60,7 @@ def test_fs_io_manager():
         assert result_metadata_entry_b.label == "path"
         assert result_metadata_entry_b.value == MetadataValue.path(filepath_b)
         assert os.path.isfile(filepath_b)
-        with open(filepath_b, "rb") as read_obj:
+        with open(filepath_b, "rb", encoding="utf8") as read_obj:
             assert pickle.load(read_obj) == 1
 
 
@@ -75,7 +75,7 @@ def test_fs_io_manager_base_dir():
         assert result.result_for_solid("solid_a").output_value() == [1, 2, 3]
 
         with open(
-            os.path.join(instance.storage_directory(), result.run_id, "solid_a", "result"), "rb"
+            os.path.join(instance.storage_directory(), result.run_id, "solid_a", "result"), "rb", encoding="utf8"
         ) as read_obj:
             assert pickle.load(read_obj) == [1, 2, 3]
 

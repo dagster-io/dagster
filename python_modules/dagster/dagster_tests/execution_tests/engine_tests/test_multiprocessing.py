@@ -263,7 +263,7 @@ def define_subdag_pipeline():
         config_schema=Field(String),
     )
     def writer(context):
-        with open(context.solid_config, "w") as fd:
+        with open(context.solid_config, "w", encoding="utf8") as fd:
             fd.write("1")
         return
 

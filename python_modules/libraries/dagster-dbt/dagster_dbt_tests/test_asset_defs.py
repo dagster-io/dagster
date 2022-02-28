@@ -15,11 +15,11 @@ from dagster.utils import file_relative_path
 
 def test_load_from_manifest_json():
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r") as f:
+    with open(manifest_path, "r", encoding="utf8") as f:
         manifest_json = json.load(f)
 
     run_results_path = file_relative_path(__file__, "sample_run_results.json")
-    with open(run_results_path, "r") as f:
+    with open(run_results_path, "r", encoding="utf8") as f:
         run_results_json = json.load(f)
 
     dbt_assets = load_assets_from_dbt_manifest(manifest_json=manifest_json)
@@ -37,11 +37,11 @@ def test_load_from_manifest_json():
 
 def test_runtime_metadata_fn():
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r") as f:
+    with open(manifest_path, "r", encoding="utf8") as f:
         manifest_json = json.load(f)
 
     run_results_path = file_relative_path(__file__, "sample_run_results.json")
-    with open(run_results_path, "r") as f:
+    with open(run_results_path, "r", encoding="utf8") as f:
         run_results_json = json.load(f)
 
     def runtime_metadata_fn(context, node_info):
@@ -187,7 +187,7 @@ def test_select_from_manifest(
 ):  # pylint: disable=unused-argument
 
     manifest_path = file_relative_path(__file__, "sample_manifest.json")
-    with open(manifest_path, "r") as f:
+    with open(manifest_path, "r", encoding="utf8") as f:
         manifest_json = json.load(f)
     dbt_assets = load_assets_from_dbt_manifest(
         manifest_json,

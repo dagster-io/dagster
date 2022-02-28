@@ -66,13 +66,13 @@ def test_execution_plan_reexecution():
 
     with open(
         os.path.join(instance.storage_directory(), result.run_id, "add_one", "result"),
-        "rb",
+        "rb", encoding="utf8",
     ) as read_obj:
         assert pickle.load(read_obj) == 4
 
     with open(
         os.path.join(instance.storage_directory(), result.run_id, "add_two", "result"),
-        "rb",
+        "rb", encoding="utf8",
     ) as read_obj:
         assert pickle.load(read_obj) == 6
 
@@ -108,7 +108,7 @@ def test_execution_plan_reexecution():
     )
     with open(
         os.path.join(instance.storage_directory(), pipeline_run.run_id, "add_two", "result"),
-        "rb",
+        "rb", encoding="utf8",
     ) as read_obj:
         assert pickle.load(read_obj) == 6
 
@@ -190,13 +190,13 @@ def test_pipeline_step_key_subset_execution():
     assert result.success
     with open(
         os.path.join(instance.storage_directory(), result.run_id, "add_one", "result"),
-        "rb",
+        "rb", encoding="utf8",
     ) as read_obj:
         assert pickle.load(read_obj) == 4
 
     with open(
         os.path.join(instance.storage_directory(), result.run_id, "add_two", "result"),
-        "rb",
+        "rb", encoding="utf8",
     ) as read_obj:
         assert pickle.load(read_obj) == 6
 
@@ -223,7 +223,7 @@ def test_pipeline_step_key_subset_execution():
         os.path.join(
             instance.storage_directory(), pipeline_reexecution_result.run_id, "add_two", "result"
         ),
-        "rb",
+        "rb", encoding="utf8",
     ) as read_obj:
         assert pickle.load(read_obj) == 6
 

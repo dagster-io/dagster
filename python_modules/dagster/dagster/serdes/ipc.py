@@ -19,13 +19,13 @@ from dagster.utils.error import SerializableErrorInfo, serializable_error_info_f
 def write_unary_input(input_file, obj):
     check.str_param(input_file, "input_file")
     check.not_none_param(obj, "obj")
-    with open(os.path.abspath(input_file), "w") as fp:
+    with open(os.path.abspath(input_file), "w", encoding="utf8") as fp:
         fp.write(serialize_dagster_namedtuple(obj))
 
 
 def read_unary_input(input_file):
     check.str_param(input_file, "input_file")
-    with open(os.path.abspath(input_file), "r") as fp:
+    with open(os.path.abspath(input_file), "r", encoding="utf8") as fp:
         return deserialize_json_to_dagster_namedtuple(fp.read())
 
 
@@ -100,7 +100,7 @@ class FileBasedWriteStream:
 
 
 def _send(file_path, obj):
-    with open(os.path.abspath(file_path), "a+") as fp:
+    with open(os.path.abspath(file_path), "a+", encoding="utf8") as fp:
         fp.write(serialize_dagster_namedtuple(obj) + "\n")
 
 
@@ -160,7 +160,7 @@ def ipc_read_event_stream(file_path, timeout=30, ipc_process=None):
             )
         )
 
-    with open(os.path.abspath(file_path), "r") as file_pointer:
+    with open(os.path.abspath(file_path), "r", encoding="utf8") as file_pointer:
         message = _process_line(file_pointer)
         while elapsed_time < timeout and message == None:
             _poll_process(ipc_process)

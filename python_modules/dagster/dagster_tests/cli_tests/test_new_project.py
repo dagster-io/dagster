@@ -17,7 +17,7 @@ def test_new_project_command_fails_when_dir_path_exists():
 def test_new_project_command_fails_when_file_path_exists():
     runner = CliRunner()
     with runner.isolated_filesystem():
-        open("existing_file", "a").close()
+        open("existing_file", "a", encoding="utf8").close()
         result = runner.invoke(new_project_cli, ["existing_file"])
         assert isinstance(result.exception, FileExistsError)
         assert result.exit_code != 0

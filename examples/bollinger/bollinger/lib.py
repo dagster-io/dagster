@@ -66,7 +66,7 @@ def download_file(url: str, path: str):
     """Download a file from a URL to a local path. If relative path, will be resolved relative to `DATA_ROOT`."""
     path = normalize_path(path)
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "wb") as f:
+    with open(path, "wb", encoding="utf8") as f:
         f.write(requests.get(url).content)
 
 

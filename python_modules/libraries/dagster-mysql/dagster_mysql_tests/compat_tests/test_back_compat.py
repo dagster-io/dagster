@@ -27,8 +27,8 @@ def test_0_13_17_mysql_convert_float_cols(hostname, _conn_string):
     )
 
     with tempfile.TemporaryDirectory() as tempdir:
-        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
-            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r", encoding="utf8") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w", encoding="utf8") as target_fd:
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 

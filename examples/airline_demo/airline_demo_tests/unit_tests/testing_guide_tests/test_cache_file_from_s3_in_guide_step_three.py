@@ -22,7 +22,7 @@ def cache_file_from_s3(context, s3_coord: S3Coordinate) -> str:
         )
 
         file_cache = context.resources.file_cache
-        with open(tmp_file, "rb") as tmp_file_object:
+        with open(tmp_file, "rb", encoding="utf8") as tmp_file_object:
             # returns a handle rather than a path
             file_handle = file_cache.write_file_object(target_key, tmp_file_object)
             return file_handle.path
@@ -63,7 +63,7 @@ def test_cache_file_from_s3_step_three_fake(snapshot):
         target_file = os.path.join(temp_dir, "some-key")
         assert os.path.exists(target_file)
 
-        with open(target_file, "rb") as ff:
+        with open(target_file, "rb", encoding="utf8") as ff:
             assert ff.read() == b"foo"
 
     snapshot.assert_match(

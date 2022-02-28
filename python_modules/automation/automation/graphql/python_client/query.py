@@ -57,7 +57,7 @@ def check():
         query_is_present = False
         for filename in os.listdir(query_dir):
             file_path = os.path.join(query_dir, filename)
-            with open(file_path, "r") as f:
+            with open(file_path, "r", encoding="utf8") as f:
                 old_query = f.read()
                 if are_queries_compatible(old_query, current_queries_dict[query_name]):
                     query_is_present = True
@@ -105,7 +105,7 @@ def snapshot():
             most_recent_query_filename = serialize_to_query_filename(
                 last_dagster_version, last_date.strftime(DATE_FORMAT_STRING)
             )
-            with open(os.path.join(query_dir, most_recent_query_filename), "r") as f:
+            with open(os.path.join(query_dir, most_recent_query_filename), "r", encoding="utf8") as f:
                 most_recent_query = f.read()
 
         # Create a new snapshot if it's the first one or the query is not compatible
@@ -121,6 +121,6 @@ def snapshot():
                 f"Writing the dagster_graphql.client.client_queries.{current_query_name}"
                 + f" query to a file: {query_full_file_path}"
             )
-            with open(query_full_file_path, "w") as f:
+            with open(query_full_file_path, "w", encoding="utf8") as f:
                 f.write(current_query_body)
     click.echo("Dagster GraphQL Client query snapshot complete!")

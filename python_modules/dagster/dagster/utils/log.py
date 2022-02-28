@@ -40,7 +40,7 @@ class JsonFileHandler(logging.Handler):
 
             log_dict.update(dagster_meta_dict)
 
-            with open(self.json_path, "a") as ff:
+            with open(self.json_path, "a", encoding="utf8") as ff:
                 text_line = seven.json.dumps(log_dict)
                 ff.write(text_line + "\n")
         # Need to catch Exception here, so disabling lint
@@ -88,7 +88,7 @@ class JsonEventLoggerHandler(logging.Handler):
     def emit(self, record):
         try:
             event_record = self.construct_event_record(record)
-            with open(self.json_path, "a") as ff:
+            with open(self.json_path, "a", encoding="utf8") as ff:
                 text_line = seven.json.dumps(event_record.to_dict())
                 ff.write(text_line + "\n")
 

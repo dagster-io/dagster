@@ -279,7 +279,7 @@ def run():
         "python_modules/libraries/dagster-aws/dagster_aws/emr/configs_spark.py",
     ]
     for output_file in output_files:
-        with open(output_file, "wb") as f:
+        with open(output_file, "wb", encoding="utf8") as f:
             f.write(serialized)
 
 

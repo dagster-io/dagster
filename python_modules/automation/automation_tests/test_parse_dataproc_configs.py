@@ -6,7 +6,7 @@ from automation.parse_dataproc_configs import ConfigParser
 
 def test_config_parser_job():
     curr_path = os.path.dirname(__file__)
-    with open(os.path.join(curr_path, "__snapshots__", "schema.json"), "r") as f:
+    with open(os.path.join(curr_path, "__snapshots__", "schema.json"), "r", encoding="utf8") as f:
         json_schema = json.loads(f.read()).get("schemas")
 
     c = ConfigParser(json_schema)

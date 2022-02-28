@@ -58,7 +58,7 @@ class VersionedPickledObjectFilesystemIOManager(MemoizableIOManager):
         # Ensure path exists
         mkdir_p(os.path.dirname(filepath))
 
-        with open(filepath, self.write_mode) as write_obj:
+        with open(filepath, self.write_mode, encoding="utf8") as write_obj:
             pickle.dump(obj, write_obj, PICKLE_PROTOCOL)
 
     def load_input(self, context):
@@ -68,7 +68,7 @@ class VersionedPickledObjectFilesystemIOManager(MemoizableIOManager):
 
         context.log.debug(f"Loading file from: {filepath}")
 
-        with open(filepath, self.read_mode) as read_obj:
+        with open(filepath, self.read_mode, encoding="utf8") as read_obj:
             return pickle.load(read_obj)
 
     def has_output(self, context):

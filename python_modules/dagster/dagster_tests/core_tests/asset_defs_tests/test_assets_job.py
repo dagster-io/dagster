@@ -264,7 +264,7 @@ def test_non_argument_deps():
 
         @asset
         def foo():
-            with open(path, "w") as ff:
+            with open(path, "w", encoding="utf8") as ff:
                 ff.write("yup")
 
         @asset(non_argument_deps={AssetKey("foo")})

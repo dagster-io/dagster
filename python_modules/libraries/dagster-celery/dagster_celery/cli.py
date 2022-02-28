@@ -75,7 +75,7 @@ def get_config_dir(config_yaml=None):
     )
 
     validated_config = get_validated_config(config_yaml)
-    with open(config_path, "w") as fd:
+    with open(config_path, "w", encoding="utf8") as fd:
         if "broker" in validated_config and validated_config["broker"]:
             fd.write(
                 "broker_url = '{broker_url}'\n".format(broker_url=str(validated_config["broker"]))

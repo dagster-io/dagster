@@ -93,7 +93,7 @@ class LocalComputeLogManager(ComputeLogManager, ConfigurableClass):
             return ComputeLogFileData(path=path, data=None, cursor=0, size=0, download_url=None)
 
         # See: https://docs.python.org/2/library/stdtypes.html#file.tell for Windows behavior
-        with open(path, "rb") as f:
+        with open(path, "rb", encoding="utf8") as f:
             f.seek(cursor, os.SEEK_SET)
             data = f.read(max_bytes)
             cursor = f.tell()

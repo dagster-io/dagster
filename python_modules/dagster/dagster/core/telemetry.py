@@ -351,7 +351,7 @@ def _get_telemetry_instance_id():
     if not os.path.exists(telemetry_id_path):
         return
 
-    with open(telemetry_id_path, "r") as telemetry_id_file:
+    with open(telemetry_id_path, "r", encoding="utf8") as telemetry_id_file:
         telemetry_id_yaml = yaml.safe_load(telemetry_id_file)
         if (
             telemetry_id_yaml
@@ -371,7 +371,7 @@ def _set_telemetry_instance_id():
     instance_id = str(uuid.uuid4())
 
     try:  # In case we encounter an error while writing to user's file system
-        with open(telemetry_id_path, "w") as telemetry_id_file:
+        with open(telemetry_id_path, "w", encoding="utf8") as telemetry_id_file:
             yaml.dump({INSTANCE_ID_STR: instance_id}, telemetry_id_file, default_flow_style=False)
         return instance_id
     except Exception:

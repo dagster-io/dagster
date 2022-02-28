@@ -5,7 +5,7 @@ from automation.parse_spark_configs import extract, serialize
 
 def test_extract():
     curr_path = os.path.dirname(__file__)
-    with open(os.path.join(curr_path, "__snapshots__", "spark_confs.md"), "r") as f:
+    with open(os.path.join(curr_path, "__snapshots__", "spark_confs.md"), "r", encoding="utf8") as f:
         spark_conf_markdown = f.read()
 
     result = extract(spark_conf_markdown)
@@ -68,7 +68,7 @@ def test_extract():
 
 def test_serialize():
     curr_path = os.path.dirname(__file__)
-    with open(os.path.join(curr_path, "__snapshots__", "spark_confs.md"), "r") as f:
+    with open(os.path.join(curr_path, "__snapshots__", "spark_confs.md"), "r", encoding="utf8") as f:
         spark_conf_markdown = f.read()
 
     result = extract(spark_conf_markdown)

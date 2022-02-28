@@ -33,7 +33,7 @@ def test_composite_config():
             __file__,
             "../../../docs_snippets/concepts/solids_pipelines/composite_config.yaml",
         ),
-        "r",
+        "r", encoding="utf8",
     ) as fd:
         run_config = yaml.safe_load(fd.read())
 
@@ -58,7 +58,7 @@ def test_config_mapping():
             __file__,
             "../../../docs_snippets/concepts/solids_pipelines/composite_config_mapping.yaml",
         ),
-        "r",
+        "r", encoding="utf8",
     ) as fd:
         run_config = yaml.safe_load(fd.read())
 

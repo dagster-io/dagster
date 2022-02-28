@@ -58,7 +58,7 @@ class LocalExternalStepLauncher(StepLauncher):
         os.makedirs(step_run_dir)
 
         step_run_ref_file_path = os.path.join(step_run_dir, PICKLED_STEP_RUN_REF_FILE_NAME)
-        with open(step_run_ref_file_path, "wb") as step_pickle_file:
+        with open(step_run_ref_file_path, "wb", encoding="utf8") as step_pickle_file:
             pickle.dump(step_run_ref, step_pickle_file)
 
         command_tokens = [

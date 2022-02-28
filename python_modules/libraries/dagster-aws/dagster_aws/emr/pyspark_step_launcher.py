@@ -286,7 +286,7 @@ class EmrPySparkStepLauncher(StepLauncher):
 
             # Create step run ref pickle file
             step_run_ref_local_path = os.path.join(temp_dir, PICKLED_STEP_RUN_REF_FILE_NAME)
-            with open(step_run_ref_local_path, "wb") as step_pickle_file:
+            with open(step_run_ref_local_path, "wb", encoding="utf8") as step_pickle_file:
                 pickle.dump(step_run_ref, step_pickle_file)
 
             _upload_file_to_s3(step_run_ref_local_path, PICKLED_STEP_RUN_REF_FILE_NAME)

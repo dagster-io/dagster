@@ -432,6 +432,6 @@ def get_notebook_data(notebook_path):
             "unexpected file extension for notebooks. Please provide a path that ends with '.ipynb'."
         )
 
-    with open(os.path.abspath(notebook_path), "rb") as f:
+    with open(os.path.abspath(notebook_path), "rb", encoding="utf8") as f:
         content = f.read()
         return content

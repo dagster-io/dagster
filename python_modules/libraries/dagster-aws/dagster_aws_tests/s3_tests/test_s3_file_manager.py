@@ -51,7 +51,7 @@ def test_depends_on_s3_resource_file_manager(mock_s3_bucket):
     def accept_file(context, file_handle):
         local_path = context.resources.file_manager.copy_handle_to_local_temp(file_handle)
         assert isinstance(local_path, str)
-        assert open(local_path, "rb").read() == bar_bytes
+        assert open(local_path, "rb", encoding="utf8").read() == bar_bytes
 
     @job(resource_defs={"s3": s3_resource, "file_manager": s3_file_manager})
     def s3_file_manager_test():

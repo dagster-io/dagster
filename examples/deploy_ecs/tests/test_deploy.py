@@ -73,7 +73,7 @@ def source_code(reference_deployment, tmpdir):
             shutil.copytree(source, modules / requirement, ignore=shutil.ignore_patterns(".tox"))
             overrides.append(f"./modules/{requirement}\n")
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf8") as f:
             f.writelines(overrides)
 
     return modules
@@ -82,13 +82,13 @@ def source_code(reference_deployment, tmpdir):
 @pytest.fixture
 def overridden_dockerfile(source_code):
     # Override Dockerfile to copy our source code into the container
-    with open("Dockerfile", "r") as f:
+    with open("Dockerfile", "r", encoding="utf8") as f:
         dockerfile = f.readlines()
         # Copy the files in directly after we set the WORKDIR
         index = dockerfile.index("WORKDIR $DAGSTER_HOME\n") + 1
         copy = ["RUN mkdir -p $DAGSTER_HOME/modules\n", "COPY modules $DAGSTER_HOME/modules\n"]
         dockerfile = dockerfile[:index] + copy + dockerfile[index:]
-    with open("Dockerfile", "w") as f:
+    with open("Dockerfile", "w", encoding="utf8") as f:
         f.writelines(dockerfile)
 
 
@@ -98,13 +98,13 @@ def overridden_dagster_yaml(reference_deployment):
     # run on a real ECS cluster whereas DefaultRunLauncher can successfully run
     # end-to-end on a local ECS simulation. This is because the local ECS
     # simulation doesn't mock out the ECS API in its entirety.
-    with open("dagster.yaml", "r") as f:
+    with open("dagster.yaml", "r", encoding="utf8") as f:
         dagster_yaml = yaml.safe_load(f)
         dagster_yaml["run_launcher"] = {
             "module": "dagster.core.launcher",
             "class": "DefaultRunLauncher",
         }
-    with open("dagster.yaml", "w") as f:
+    with open("dagster.yaml", "w", encoding="utf8") as f:
         f.write(yaml.safe_dump(dagster_yaml))
 
 

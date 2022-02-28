@@ -51,7 +51,7 @@ def cache_file_from_s3(context, s3_coordinate: S3Coordinate) -> FileHandle:
 
             context.log.info("File downloaded to {}".format(tmp_file))
 
-            with open(tmp_file, "rb") as tmp_file_object:
+            with open(tmp_file, "rb", encoding="utf8") as tmp_file_object:
                 file_cache.write_file_object(target_key, tmp_file_object)
                 context.log.info("File handle written at : {}".format(target_file_handle.path_desc))
     else:

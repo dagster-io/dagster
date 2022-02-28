@@ -140,7 +140,7 @@ def _execute_load_in_source(context, source, source_name):
 
     # Load from file. See: https://cloud.google.com/bigquery/docs/loading-data-local
     elif source_name == BigQueryLoadSource.File:
-        with open(source, "rb") as file_obj:
+        with open(source, "rb", encoding="utf8") as file_obj:
             context.resources.bigquery.load_table_from_file(
                 file_obj, destination, job_config=cfg
             ).result()

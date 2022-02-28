@@ -118,7 +118,7 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         # Ensure path exists
         mkdir_p(os.path.dirname(filepath))
 
-        with open(filepath, self.write_mode) as write_obj:
+        with open(filepath, self.write_mode, encoding="utf8") as write_obj:
             try:
                 pickle.dump(obj, write_obj, PICKLE_PROTOCOL)
             except (AttributeError, RecursionError, ImportError, pickle.PicklingError) as e:
@@ -151,7 +151,7 @@ class PickledObjectFilesystemIOManager(MemoizableIOManager):
         filepath = self._get_path(context.upstream_output)
         context.add_input_metadata({"path": MetadataValue.path(os.path.abspath(filepath))})
 
-        with open(filepath, self.read_mode) as read_obj:
+        with open(filepath, self.read_mode, encoding="utf8") as read_obj:
             return pickle.load(read_obj)
 
 
@@ -188,7 +188,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
         mkdir_p(os.path.dirname(filepath))
         context.log.debug(f"Writing file at: {filepath}")
 
-        with open(filepath, self.write_mode) as write_obj:
+        with open(filepath, self.write_mode, encoding="utf8") as write_obj:
             pickle.dump(obj, write_obj, PICKLE_PROTOCOL)
 
         return AssetMaterialization(
@@ -206,7 +206,7 @@ class CustomPathPickledObjectFilesystemIOManager(IOManager):
         filepath = self._get_path(path)
         context.log.debug(f"Loading file from: {filepath}")
 
-        with open(filepath, self.read_mode) as read_obj:
+        with open(filepath, self.read_mode, encoding="utf8") as read_obj:
             return pickle.load(read_obj)
 
 

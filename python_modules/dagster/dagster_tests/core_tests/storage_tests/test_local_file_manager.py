@@ -27,7 +27,7 @@ def test_basic_file_manager_copy_handle_to_local_temp():
         with my_local_file_manager(instance, "0") as manager:
             local_temp = manager.copy_handle_to_local_temp(foo_handle)
             assert local_temp != foo_handle.path
-            with open(local_temp, "rb") as ff:
+            with open(local_temp, "rb", encoding="utf8") as ff:
                 assert ff.read() == foo_data
 
 
@@ -39,7 +39,7 @@ def test_basic_file_manager_execute():
         foo_bytes = b"foo"
         file_handle = context.resources.file_manager.write_data(foo_bytes)
         assert isinstance(file_handle, LocalFileHandle)
-        with open(file_handle.path, "rb") as handle_obj:
+        with open(file_handle.path, "rb", encoding="utf8") as handle_obj:
             assert foo_bytes == handle_obj.read()
 
         with context.resources.file_manager.read(file_handle) as handle_obj:
@@ -49,7 +49,7 @@ def test_basic_file_manager_execute():
         assert isinstance(file_handle, LocalFileHandle)
         assert file_handle.path[-4:] == ".foo"
 
-        with open(file_handle.path, "rb") as handle_obj:
+        with open(file_handle.path, "rb", encoding="utf8") as handle_obj:
             assert foo_bytes == handle_obj.read()
 
         with context.resources.file_manager.read(file_handle) as handle_obj:
