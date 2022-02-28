@@ -1,5 +1,4 @@
 import pendulum
-from dagster import AssetMaterialization, Output, graph, op, repository
 from dagster_test.graph_job_op_toys.asset_lineage import (
     asset_lineage_job,
     asset_lineage_partition_set,
@@ -23,8 +22,10 @@ from dagster_test.graph_job_op_toys.many_events import many_events, many_events_
 from dagster_test.graph_job_op_toys.notebooks import hello_world_notebook_pipeline
 from dagster_test.graph_job_op_toys.retries import retry_job
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
-from dagster_test.graph_job_op_toys.software_defined_assets import software_defined_assets_job
+from dagster_test.graph_job_op_toys.software_defined_assets import software_defined_assets
 from dagster_test.graph_job_op_toys.unreliable import unreliable_job
+
+from dagster import AssetMaterialization, Output, graph, op, repository
 
 from .schedules import get_toys_schedules
 from .sensors import get_toys_sensors
@@ -70,9 +71,9 @@ def toys_repository():
             asset_lineage_partition_set,
             model_job,
             hello_world_notebook_pipeline,
-            software_defined_assets_job,
             big_honkin_assets_job,
             long_asset_keys_job,
+            software_defined_assets,
         ]
         + get_toys_schedules()
         + get_toys_sensors()

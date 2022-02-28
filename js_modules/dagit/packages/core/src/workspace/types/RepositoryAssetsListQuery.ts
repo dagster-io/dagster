@@ -18,10 +18,17 @@ export interface RepositoryAssetsListQuery_repositoryOrError_Repository_assetNod
   path: string[];
 }
 
-export interface RepositoryAssetsListQuery_repositoryOrError_Repository_assetNodes_jobs {
-  __typename: "Pipeline";
+export interface RepositoryAssetsListQuery_repositoryOrError_Repository_assetNodes_repository_location {
+  __typename: "RepositoryLocation";
   id: string;
   name: string;
+}
+
+export interface RepositoryAssetsListQuery_repositoryOrError_Repository_assetNodes_repository {
+  __typename: "Repository";
+  id: string;
+  name: string;
+  location: RepositoryAssetsListQuery_repositoryOrError_Repository_assetNodes_repository_location;
 }
 
 export interface RepositoryAssetsListQuery_repositoryOrError_Repository_assetNodes {
@@ -30,7 +37,7 @@ export interface RepositoryAssetsListQuery_repositoryOrError_Repository_assetNod
   assetKey: RepositoryAssetsListQuery_repositoryOrError_Repository_assetNodes_assetKey;
   opName: string | null;
   description: string | null;
-  jobs: RepositoryAssetsListQuery_repositoryOrError_Repository_assetNodes_jobs[];
+  repository: RepositoryAssetsListQuery_repositoryOrError_Repository_assetNodes_repository;
 }
 
 export interface RepositoryAssetsListQuery_repositoryOrError_Repository {

@@ -1,8 +1,8 @@
 from dagster import (
     AssetMaterialization,
-    EventMetadata,
     ExpectationResult,
     In,
+    MetadataValue,
     Nothing,
     Out,
     Output,
@@ -42,7 +42,7 @@ def create_raw_file_op(name):
     def raw_file_op(_context):
         yield AssetMaterialization(
             asset_key="table_info",
-            metadata={"table_path": EventMetadata.path("/path/to/{}.raw".format(name))},
+            metadata={"table_path": MetadataValue.path("/path/to/{}.raw".format(name))},
         )
         yield do_expectation(_context, name)
         yield Output(name)
@@ -83,10 +83,10 @@ def many_table_materializations(_context):
                 asset_key="table_info",
                 metadata={
                     "table_name": table,
-                    "table_path": EventMetadata.path(f"/path/to/{table}"),
+                    "table_path": MetadataValue.path(f"/path/to/{table}"),
                     "table_data": {"name": table},
-                    "table_name_big": EventMetadata.url(f"https://bigty.pe/{table}"),
-                    "table_blurb": EventMetadata.md(md_str),
+                    "table_name_big": MetadataValue.url(f"https://bigty.pe/{table}"),
+                    "table_blurb": MetadataValue.md(md_str),
                     "big_int": 29119888133298982934829348,
                     "float_nan": float("nan"),
                 },
@@ -116,7 +116,7 @@ def many_materializations_and_passing_expectations(_context):
         yield AssetMaterialization(
             asset_key="table_info",
             metadata={
-                "table_path": EventMetadata.path(f"/path/to/{table}.raw"),
+                "table_path": MetadataValue.path(f"/path/to/{table}.raw"),
             },
         )
         yield ExpectationResult(

@@ -5,6 +5,7 @@ import os
 import time
 
 import pytest
+
 from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.launcher import CheckRunHealthResult, RunLauncher, WorkerStatus
@@ -103,7 +104,6 @@ def report_starting_event(instance, run, timestamp):
     )
 
     event_record = EventLogEntry(
-        message="",
         user_message="",
         level=logging.INFO,
         pipeline_name=run.pipeline_name,

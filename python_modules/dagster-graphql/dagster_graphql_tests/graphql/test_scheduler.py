@@ -1,6 +1,14 @@
 import os
 
 import pendulum
+from dagster_graphql.test.utils import (
+    execute_dagster_graphql,
+    infer_repository_selector,
+    infer_schedule_selector,
+    main_repo_location_name,
+    main_repo_name,
+)
+
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
@@ -14,13 +22,6 @@ from dagster.core.scheduler.instigation import (
 )
 from dagster.seven.compat.pendulum import create_pendulum_time
 from dagster.utils import Counter, traced_counter
-from dagster_graphql.test.utils import (
-    execute_dagster_graphql,
-    infer_repository_selector,
-    infer_schedule_selector,
-    main_repo_location_name,
-    main_repo_name,
-)
 
 GET_SCHEDULES_QUERY = """
 query SchedulesQuery($repositorySelector: RepositorySelector!) {
@@ -86,6 +87,20 @@ query getSchedule($scheduleSelector: ScheduleSelector!, $ticksAfter: Float) {
           id
           timestamp
         }
+      }
+    }
+  }
+}
+"""
+
+GET_SCHEDULE_STATE_QUERY = """
+query getScheduleState($scheduleSelector: ScheduleSelector!) {
+  scheduleOrError(scheduleSelector: $scheduleSelector) {
+    __typename
+    ... on Schedule {
+      scheduleState {
+        id
+        status
       }
     }
   }
@@ -515,3 +530,51 @@ def test_repository_batching(graphql_context):
     # 2) `all_instigator_state` is fetched to instantiate GrapheneSchedule
     assert counts.get("DagsterInstance.get_run_records") == 1
     assert counts.get("DagsterInstance.all_instigator_state") == 1
+
+
+def test_start_schedule_with_default_status(graphql_context):
+    schedule_selector = infer_schedule_selector(graphql_context, "running_in_code_schedule")
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_SCHEDULE_STATE_QUERY,
+        variables={"scheduleSelector": schedule_selector},
+    )
+
+    schedule_origin_id = result.data["scheduleOrError"]["scheduleState"]["id"]
+    assert result.data["scheduleOrError"]["scheduleState"]["status"] == "RUNNING"
+
+    # Start a single schedule
+    start_result = execute_dagster_graphql(
+        graphql_context,
+        START_SCHEDULES_QUERY,
+        variables={"scheduleSelector": schedule_selector},
+    )
+
+    assert (
+        "You have attempted to start schedule running_in_code_schedule, but it is already running"
+        in start_result.data["startSchedule"]["message"]
+    )
+
+    # Stop a single schedule
+    stop_result = execute_dagster_graphql(
+        graphql_context,
+        STOP_SCHEDULES_QUERY,
+        variables={"scheduleOriginId": schedule_origin_id},
+    )
+    assert (
+        stop_result.data["stopRunningSchedule"]["scheduleState"]["status"]
+        == InstigatorStatus.STOPPED.value
+    )
+
+    # Start a single schedule
+    start_result = execute_dagster_graphql(
+        graphql_context,
+        START_SCHEDULES_QUERY,
+        variables={"scheduleSelector": schedule_selector},
+    )
+
+    assert (
+        start_result.data["startSchedule"]["scheduleState"]["status"]
+        == InstigatorStatus.RUNNING.value
+    )

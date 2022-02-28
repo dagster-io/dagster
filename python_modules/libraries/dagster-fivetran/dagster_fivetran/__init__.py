@@ -1,5 +1,6 @@
 from dagster.core.utils import check_dagster_package_version
 
+from .asset_defs import build_fivetran_assets
 from .ops import fivetran_sync_op
 from .resources import FivetranResource, fivetran_resource
 from .types import FivetranOutput

@@ -3,9 +3,10 @@
 import dagster_aws
 import pytest
 from botocore.exceptions import ClientError
-from dagster.check import CheckError
-from dagster.core.events import EventMetadataEntry
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
+
+from dagster.check import CheckError
+from dagster.core.events import MetadataEntry
 
 
 @pytest.mark.parametrize("task_long_arn_format", ["enabled", "disabled"])
@@ -78,9 +79,9 @@ def test_default_launcher(
     latest_event = events[-1]
     assert latest_event.message == "[EcsRunLauncher] Launching run in ECS task"
     event_metadata = latest_event.dagster_event.engine_event_data.metadata_entries
-    assert EventMetadataEntry.text(task_arn, "ECS Task ARN") in event_metadata
-    assert EventMetadataEntry.text(cluster_arn, "ECS Cluster") in event_metadata
-    assert EventMetadataEntry.text(run.run_id, "Run ID") in event_metadata
+    assert MetadataEntry.text(task_arn, "ECS Task ARN") in event_metadata
+    assert MetadataEntry.text(cluster_arn, "ECS Cluster") in event_metadata
+    assert MetadataEntry.text(run.run_id, "Run ID") in event_metadata
 
 
 def test_launching_custom_task_definition(

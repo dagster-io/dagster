@@ -1,20 +1,49 @@
+# Makefile oddities:
+# - Commands must start with literal tab characters (\t), not spaces.
+# - Multi-command rules (like `black` below) by default terminate as soon as a command has a non-0
+#   exit status. Prefix the command with "-" to instruct make to continue to the next command
+#   regardless of the preceding command's exit status.
+
 pylint:
 	pylint -j 0 `git ls-files '*.py'` --rcfile=.pylintrc
 
 update_doc_snapshot:
 	pytest docs --snapshot-update
 
+# NOTE: See pyproject.toml [tool.black] for majority of black config. Only include/exclude options
+# and format targets should be specified here. Note there are separate pyproject.toml for the root
+# and examples/docs_snippets.
+#
+# NOTE: Use `extend-exclude` instead of `exclude`. If `exclude` is provided, it stops black from
+# reading gitignore. `extend-exclude` is layered on top of gitignore. See:
+#   https://black.readthedocs.io/en/stable/usage_and_configuration/file_collection_and_discovery.html#gitignore 
 black:
-	black examples integration_tests helm python_modules .buildkite --line-length 100 --target-version py36 --target-version py37 --target-version py38 --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/|intro_tutorial/"
-	black examples/docs_snippets/docs_snippets/intro_tutorial --line-length 78 --target-version py36 --target-version py37 --target-version py38 --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/"
+	black --fast \
+    --extend-exclude="examples/docs_snippets|snapshots" \
+    examples integration_tests helm python_modules .buildkite
+	black --fast \
+    examples/docs_snippets
 
 check_black:
-	black examples integration_tests helm python_modules .buildkite --check --line-length 100 --target-version py36 --target-version py37 --target-version py38 --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/|intro_tutorial/"
-	black examples/docs_snippets/docs_snippets/intro_tutorial --check --line-length 78 --target-version py36 --target-version py37 --target-version py38 --fast --exclude "build/|buck-out/|dist/|_build/|\.eggs/|\.git/|\.hg/|\.mypy_cache/|\.nox/|\.tox/|\.venv/|snapshots/"
+	-black --check --fast \
+    --extend-exclude="examples/docs_snippets|snapshots" \
+    examples integration_tests helm python_modules .buildkite
+	-black --check --fast \
+    examples/docs_snippets
 
 isort:
-	isort `git ls-files '*.py' ':!:examples/docs_snippets/docs_snippets/intro_tutorial'`
-	isort -l 78 `git ls-files 'examples/docs_snippets/docs_snippets/intro_tutorial/*.py'`
+	isort \
+    --skip=examples/docs_snippets --skip=snapshots \
+    examples integration_tests helm python_modules .buildkite
+	isort \
+    examples/docs_snippets
+
+check_isort:
+	-isort --check \
+    --skip=examples/docs_snippets --skip=snapshots \
+    examples integration_tests helm python_modules .buildkite
+	-isort --check \
+    examples/docs_snippets
 
 yamllint:
 	yamllint -c .yamllint.yaml --strict `git ls-files 'helm/**/*.yml' 'helm/**/*.yaml' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'`

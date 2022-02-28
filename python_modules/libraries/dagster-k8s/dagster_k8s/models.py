@@ -3,10 +3,11 @@ import re
 from typing import Any, Dict
 
 import kubernetes
-from dagster import check
-from dagster.utils import frozendict
 from dateutil.parser import parse
 from kubernetes.client import ApiClient
+
+from dagster import check
+from dagster.utils import frozendict
 
 
 def _k8s_value(data, classname, attr_name):

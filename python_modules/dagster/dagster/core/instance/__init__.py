@@ -27,6 +27,7 @@ from typing import (
 )
 
 import yaml
+
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
@@ -47,8 +48,8 @@ from dagster.core.storage.pipeline_run import (
     PipelineRun,
     PipelineRunStatsSnapshot,
     PipelineRunStatus,
-    PipelineRunsFilter,
     RunRecord,
+    RunsFilter,
     TagBucket,
 )
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
@@ -73,23 +74,23 @@ IS_AIRFLOW_INGEST_PIPELINE_STR = "is_airflow_ingest_pipeline"
 
 
 if TYPE_CHECKING:
+    from dagster.core.debug import DebugRunPayload
     from dagster.core.events import DagsterEvent, DagsterEventType
+    from dagster.core.events.log import EventLogEntry
+    from dagster.core.execution.stats import RunStepKeyStatsSnapshot
     from dagster.core.host_representation import HistoricalPipeline
-    from dagster.core.snap import PipelineSnapshot, ExecutionPlanSnapshot
-    from dagster.core.storage.event_log.base import EventRecordsFilter, EventLogRecord
-    from dagster.core.workspace.workspace import IWorkspace
-    from dagster.daemon.types import DaemonHeartbeat
+    from dagster.core.launcher import RunLauncher
+    from dagster.core.run_coordinator import RunCoordinator
+    from dagster.core.scheduler import Scheduler
+    from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
     from dagster.core.storage.compute_log_manager import ComputeLogManager
     from dagster.core.storage.event_log import EventLogStorage
+    from dagster.core.storage.event_log.base import EventLogRecord, EventRecordsFilter
     from dagster.core.storage.root import LocalArtifactStorage
     from dagster.core.storage.runs import RunStorage
     from dagster.core.storage.schedules import ScheduleStorage
-    from dagster.core.scheduler import Scheduler
-    from dagster.core.run_coordinator import RunCoordinator
-    from dagster.core.launcher import RunLauncher
-    from dagster.core.execution.stats import RunStepKeyStatsSnapshot
-    from dagster.core.debug import DebugRunPayload
-    from dagster.core.events.log import EventLogEntry
+    from dagster.core.workspace.workspace import IWorkspace
+    from dagster.daemon.types import DaemonHeartbeat
 
 
 def _check_run_equality(
@@ -131,8 +132,8 @@ class _EventListenerLogHandler(logging.Handler):
         super(_EventListenerLogHandler, self).__init__()
 
     def emit(self, record):
-        from dagster.core.events.log import construct_event_record, StructuredLoggerMessage
         from dagster.core.events import EngineEventData
+        from dagster.core.events.log import StructuredLoggerMessage, construct_event_record
 
         event = construct_event_record(
             StructuredLoggerMessage(
@@ -267,14 +268,14 @@ class DagsterInstance:
         settings: Optional[Dict[str, Any]] = None,
         ref: Optional[InstanceRef] = None,
     ):
+        from dagster.core.launcher import RunLauncher
+        from dagster.core.run_coordinator import RunCoordinator
+        from dagster.core.scheduler import Scheduler
         from dagster.core.storage.compute_log_manager import ComputeLogManager
         from dagster.core.storage.event_log import EventLogStorage
         from dagster.core.storage.root import LocalArtifactStorage
         from dagster.core.storage.runs import RunStorage
         from dagster.core.storage.schedules import ScheduleStorage
-        from dagster.core.scheduler import Scheduler
-        from dagster.core.run_coordinator import RunCoordinator
-        from dagster.core.launcher import RunLauncher
 
         self._instance_type = check.inst_param(instance_type, "instance_type", InstanceType)
         self._local_artifact_storage = check.inst_param(
@@ -331,12 +332,12 @@ class DagsterInstance:
     def ephemeral(
         tempdir: Optional[str] = None, preload: Optional[List["DebugRunPayload"]] = None
     ) -> "DagsterInstance":
-        from dagster.core.run_coordinator import DefaultRunCoordinator
         from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
+        from dagster.core.run_coordinator import DefaultRunCoordinator
         from dagster.core.storage.event_log import InMemoryEventLogStorage
+        from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
         from dagster.core.storage.root import LocalArtifactStorage
         from dagster.core.storage.runs import InMemoryRunStorage
-        from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 
         if tempdir is None:
             tempdir = DagsterInstance.temp_storage()
@@ -363,7 +364,7 @@ class DagsterInstance:
                     "This directory is used to store metadata across sessions, or load the dagster.yaml "
                     "file which can configure storing metadata in an external database.\n"
                     "You can resolve this error by exporting the environment variable. For example, you can run the following command in your shell or include it in your shell configuration file:\n"
-                    '\texport DAGSTER_HOME="~/dagster_home"\n'
+                    '\texport DAGSTER_HOME=~"/dagster_home"\n'
                     "or PowerShell\n"
                     "$env:DAGSTER_HOME = ($home + '\\dagster_home')"
                     "or batch"
@@ -730,8 +731,8 @@ class DagsterInstance:
         external_pipeline_origin=None,
         pipeline_code_origin=None,
     ):
-        from dagster.core.execution.plan.plan import ExecutionPlan
         from dagster.core.execution.api import create_execution_plan
+        from dagster.core.execution.plan.plan import ExecutionPlan
         from dagster.core.snap import snapshot_from_execution_plan
 
         check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
@@ -863,7 +864,7 @@ class DagsterInstance:
         )
 
     def _ensure_persisted_pipeline_snapshot(self, pipeline_snapshot, parent_pipeline_snapshot):
-        from dagster.core.snap import create_pipeline_snapshot_id, PipelineSnapshot
+        from dagster.core.snap import PipelineSnapshot, create_pipeline_snapshot_id
 
         check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
         check.opt_inst_param(parent_pipeline_snapshot, "parent_pipeline_snapshot", PipelineSnapshot)
@@ -1060,7 +1061,7 @@ class DagsterInstance:
     @traced
     def get_runs(
         self,
-        filters: PipelineRunsFilter = None,
+        filters: RunsFilter = None,
         cursor: str = None,
         limit: int = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
@@ -1068,19 +1069,19 @@ class DagsterInstance:
         return self._run_storage.get_runs(filters, cursor, limit, bucket_by)
 
     @traced
-    def get_runs_count(self, filters: PipelineRunsFilter = None) -> int:
+    def get_runs_count(self, filters: RunsFilter = None) -> int:
         return self._run_storage.get_runs_count(filters)
 
     @traced
     def get_run_groups(
-        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
+        self, filters: RunsFilter = None, cursor: str = None, limit: int = None
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
 
     @traced
     def get_run_records(
         self,
-        filters: PipelineRunsFilter = None,
+        filters: RunsFilter = None,
         limit: int = None,
         order_by: str = None,
         ascending: bool = False,
@@ -1090,7 +1091,7 @@ class DagsterInstance:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
 
         Args:
-            filters (Optional[PipelineRunsFilter]): the filter by which to filter runs.
+            filters (Optional[RunsFilter]): the filter by which to filter runs.
             limit (Optional[int]): Number of results to get. Defaults to infinite.
             order_by (Optional[str]): Name of the column to sort by. Defaults to id.
             ascending (Optional[bool]): Sort the result in ascending order if True, descending
@@ -1102,6 +1103,10 @@ class DagsterInstance:
         return self._run_storage.get_run_records(
             filters, limit, order_by, ascending, cursor, bucket_by
         )
+
+    @property
+    def supports_bucket_queries(self):
+        return self._run_storage.supports_bucket_queries
 
     def wipe(self):
         self._run_storage.wipe()
@@ -1129,7 +1134,7 @@ class DagsterInstance:
         )
 
     @traced
-    def all_logs(self, run_id, of_type: "DagsterEventType" = None):
+    def all_logs(self, run_id, of_type: Union["DagsterEventType", Set["DagsterEventType"]] = None):
         return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
 
     def watch_event_logs(self, run_id, cursor, cb):
@@ -1309,10 +1314,10 @@ records = instance.get_event_records(
         """
         Report a EngineEvent that occurred outside of a pipeline execution context.
         """
-        from dagster.core.events import EngineEventData, DagsterEvent, DagsterEventType
+        from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
         from dagster.core.events.log import EventLogEntry
 
-        check.class_param(cls, "cls")
+        check.opt_class_param(cls, "cls")
         check.str_param(message, "message")
         check.opt_inst_param(pipeline_run, "pipeline_run", PipelineRun)
         check.opt_str_param(run_id, "run_id")
@@ -1348,8 +1353,7 @@ records = instance.get_event_records(
             step_key=step_key,
         )
         event_record = EventLogEntry(
-            message=message,
-            user_message=message,
+            user_message="",
             level=log_level,
             pipeline_name=pipeline_name,
             run_id=run_id,
@@ -1380,7 +1384,6 @@ records = instance.get_event_records(
         )
 
         event_record = EventLogEntry(
-            message=message,
             user_message="",
             level=logging.INFO,
             pipeline_name=run.pipeline_name,
@@ -1414,8 +1417,7 @@ records = instance.get_event_records(
             message=message,
         )
         event_record = EventLogEntry(
-            message=message,
-            user_message=message,
+            user_message="",
             level=logging.ERROR,
             pipeline_name=pipeline_run.pipeline_name,
             run_id=pipeline_run.run_id,
@@ -1445,8 +1447,7 @@ records = instance.get_event_records(
             message=message,
         )
         event_record = EventLogEntry(
-            message=message,
-            user_message=message,
+            user_message="",
             level=logging.ERROR,
             pipeline_name=pipeline_run.pipeline_name,
             run_id=pipeline_run.run_id,
@@ -1539,9 +1540,9 @@ records = instance.get_event_records(
         Args:
             run_id (str): The id of the run the launch.
         """
-        from dagster.core.launcher import LaunchRunContext
-        from dagster.core.events import EngineEventData, DagsterEvent, DagsterEventType
+        from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
         from dagster.core.events.log import EventLogEntry
+        from dagster.core.launcher import LaunchRunContext
 
         run = self.get_run_by_id(run_id)
         if run is None:
@@ -1555,7 +1556,6 @@ records = instance.get_event_records(
         )
 
         event_record = EventLogEntry(
-            message="",
             user_message="",
             level=logging.INFO,
             pipeline_name=run.pipeline_name,
@@ -1594,8 +1594,8 @@ records = instance.get_event_records(
         Args:
             run_id (str): The id of the run the launch.
         """
-        from dagster.core.launcher import ResumeRunContext
         from dagster.core.events import EngineEventData
+        from dagster.core.launcher import ResumeRunContext
         from dagster.daemon.monitoring import RESUME_RUN_LOG_MESSAGE
 
         run = self.get_run_by_id(run_id)
@@ -1634,8 +1634,8 @@ records = instance.get_event_records(
         return run
 
     def count_resume_run_attempts(self, run_id: str):
-        from dagster.daemon.monitoring import RESUME_RUN_LOG_MESSAGE
         from dagster.core.events import DagsterEventType
+        from dagster.daemon.monitoring import RESUME_RUN_LOG_MESSAGE
 
         events = self.all_logs(run_id, of_type=DagsterEventType.ENGINE_EVENT)
         return len([event for event in events if event.message == RESUME_RUN_LOG_MESSAGE])
@@ -1654,8 +1654,8 @@ records = instance.get_event_records(
         return self._scheduler.stop_schedule(self, schedule_origin_id, external_schedule)
 
     def scheduler_debug_info(self):
-        from dagster.core.scheduler import SchedulerDebugInfo
         from dagster.core.definitions.run_request import InstigatorType
+        from dagster.core.scheduler import SchedulerDebugInfo
 
         errors = []
 
@@ -1682,19 +1682,21 @@ records = instance.get_event_records(
     # Schedule / Sensor Storage
 
     def start_sensor(self, external_sensor):
+        from dagster.core.definitions.run_request import InstigatorType
         from dagster.core.scheduler.instigation import (
             InstigatorState,
             InstigatorStatus,
             SensorInstigatorData,
         )
-        from dagster.core.definitions.run_request import InstigatorType
-
-        check.invariant(
-            not external_sensor.default_status,
-            "Can only manually start a sensor that does not have its status set in code",
-        )
 
         state = self.get_instigator_state(external_sensor.get_external_origin_id())
+
+        if external_sensor.get_current_instigator_state(state).is_running:
+            raise Exception(
+                "You have attempted to start sensor {name}, but it is already running".format(
+                    name=external_sensor.name
+                )
+            )
 
         if not state:
             return self.add_instigator_state(
@@ -1709,12 +1711,12 @@ records = instance.get_event_records(
             return self.update_instigator_state(state.with_status(InstigatorStatus.RUNNING))
 
     def stop_sensor(self, instigator_origin_id, external_sensor):
+        from dagster.core.definitions.run_request import InstigatorType
         from dagster.core.scheduler.instigation import (
             InstigatorState,
             InstigatorStatus,
             SensorInstigatorData,
         )
-        from dagster.core.definitions.run_request import InstigatorType
 
         state = self.get_instigator_state(instigator_origin_id)
 
@@ -1819,10 +1821,10 @@ records = instance.get_event_records(
         from dagster.core.run_coordinator import QueuedRunCoordinator
         from dagster.core.scheduler import DagsterDaemonScheduler
         from dagster.daemon.daemon import (
-            SchedulerDaemon,
-            SensorDaemon,
             BackfillDaemon,
             MonitoringDaemon,
+            SchedulerDaemon,
+            SensorDaemon,
         )
         from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import (
             QueuedRunCoordinatorDaemon,

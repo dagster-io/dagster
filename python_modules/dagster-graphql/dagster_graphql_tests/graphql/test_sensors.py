@@ -1,10 +1,4 @@
 import pendulum
-from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus
-from dagster.core.test_utils import create_test_daemon_workspace
-from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.sensor import execute_sensor_iteration
-from dagster.utils import Counter, traced_counter
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_repository_selector,
@@ -12,6 +6,13 @@ from dagster_graphql.test.utils import (
     main_repo_location_name,
     main_repo_name,
 )
+
+from dagster.core.definitions.run_request import InstigatorType
+from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus
+from dagster.core.test_utils import create_test_daemon_workspace
+from dagster.daemon import get_default_daemon_logger
+from dagster.daemon.sensor import execute_sensor_iteration
+from dagster.utils import Counter, traced_counter
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -97,6 +98,20 @@ query SensorQuery($sensorSelector: SensorSelector!) {
                 stack
             }
         }
+      }
+    }
+  }
+}
+"""
+
+GET_SENSOR_STATUS_QUERY = """
+query SensorStateQuery($sensorSelector: SensorSelector!) {
+  sensorOrError(sensorSelector: $sensorSelector) {
+    __typename
+    ... on Sensor {
+      sensorState {
+        id
+        status
       }
     }
   }
@@ -251,6 +266,46 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             result.data["stopSensor"]["instigationState"]["status"]
             == InstigatorStatus.STOPPED.value
         )
+
+    def test_start_sensor_with_default_status(self, graphql_context):
+        sensor_selector = infer_sensor_selector(graphql_context, "running_in_code_sensor")
+
+        result = execute_dagster_graphql(
+            graphql_context,
+            GET_SENSOR_STATUS_QUERY,
+            variables={"sensorSelector": sensor_selector},
+        )
+
+        assert result.data["sensorOrError"]["sensorState"]["status"] == "RUNNING"
+        sensor_origin_id = result.data["sensorOrError"]["sensorState"]["id"]
+
+        start_result = execute_dagster_graphql(
+            graphql_context,
+            START_SENSORS_QUERY,
+            variables={"sensorSelector": sensor_selector},
+        )
+
+        assert (
+            "You have attempted to start sensor running_in_code_sensor, but it is already running"
+            in start_result.data["startSensor"]["message"]
+        )
+
+        stop_result = execute_dagster_graphql(
+            graphql_context,
+            STOP_SENSORS_QUERY,
+            variables={"jobOriginId": sensor_origin_id},
+        )
+
+        assert stop_result.data["stopSensor"]["instigationState"]["status"] == "STOPPED"
+
+        # Now can be restarted
+        start_result = execute_dagster_graphql(
+            graphql_context,
+            START_SENSORS_QUERY,
+            variables={"sensorSelector": sensor_selector},
+        )
+
+        assert start_result.data["startSensor"]["sensorState"]["status"] == "RUNNING"
 
 
 def test_sensor_next_ticks(graphql_context):

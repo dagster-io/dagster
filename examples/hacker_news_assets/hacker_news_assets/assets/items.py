@@ -2,11 +2,12 @@
 
 from typing import Tuple
 
-from dagster import Output, asset
 from hacker_news_assets.partitions import hourly_partitions
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql.types import ArrayType, DoubleType, LongType, StringType, StructField, StructType
+
+from dagster import Output, asset
 
 HN_ITEMS_SCHEMA = StructType(
     [

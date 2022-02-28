@@ -4,6 +4,7 @@ import time
 
 import mock
 import pytest
+
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -12,11 +13,11 @@ from dagster import (
     DagsterInvariantViolationError,
     DynamicOut,
     DynamicOutput,
-    EventMetadataEntry,
     Field,
     IOManagerDefinition,
     In,
     InputDefinition,
+    MetadataEntry,
     ModeDefinition,
     Out,
     OutputDefinition,
@@ -835,7 +836,7 @@ def test_context_logging_metadata():
                 self.values[keys] = obj
 
                 context.add_output_metadata({"foo": "bar"})
-                yield EventMetadataEntry.text(label="baz", text="baz")
+                yield MetadataEntry.text(label="baz", text="baz")
                 context.add_output_metadata({"bar": "bar"})
                 yield materialization
 
@@ -892,7 +893,7 @@ def test_metadata_dynamic_outputs():
             keys = tuple(context.get_output_identifier())
             self.values[keys] = obj
 
-            yield EventMetadataEntry.text(label="handle_output", text="I come from handle_output")
+            yield MetadataEntry.text(label="handle_output", text="I come from handle_output")
 
         def load_input(self, context):
             keys = tuple(context.upstream_output.get_output_identifier())

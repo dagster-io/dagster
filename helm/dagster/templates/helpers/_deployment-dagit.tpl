@@ -103,6 +103,10 @@ spec:
               protocol: TCP
           resources:
             {{- toYaml .Values.dagit.resources | nindent 12 }}
+        {{- if .Values.dagit.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.dagit.readinessProbe | nindent 12 }}
+        {{- end }}
         {{- if .Values.dagit.livenessProbe }}
           livenessProbe:
             {{- toYaml .Values.dagit.livenessProbe | nindent 12 }}

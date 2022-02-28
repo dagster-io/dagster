@@ -6,6 +6,8 @@ import subprocess
 import tempfile
 
 import pytest
+from sqlalchemy import create_engine
+
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -18,10 +20,9 @@ from dagster import (
 )
 from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster.utils import file_relative_path
-from sqlalchemy import create_engine
 
 
 def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
@@ -264,7 +265,7 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
             DagsterInstanceMigrationRequired,
             match=_migration_regex("run", current_revision="7cba9eeaaf1d"),
         ):
-            instance.get_runs(filters=PipelineRunsFilter(mode="the_mode"))
+            instance.get_runs(filters=RunsFilter(mode="the_mode"))
 
         instance.upgrade()
 

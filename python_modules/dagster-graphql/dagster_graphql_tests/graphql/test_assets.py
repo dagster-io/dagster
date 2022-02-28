@@ -1,14 +1,15 @@
 import os
 import time
 
-from dagster import AssetKey
-from dagster.utils import safe_tempfile_path
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_pipeline_selector,
     infer_repository_selector,
 )
+
+from dagster import AssetKey
+from dagster.utils import safe_tempfile_path
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 
@@ -88,11 +89,8 @@ GET_ASSET_IN_PROGRESS_RUNS = """
             ... on Repository {
                 assetNodes {
                     opName
+                    jobNames
                     description
-                    jobs {
-                        id
-                        name
-                    }
                 }
                 inProgressRunsByStep {
                     stepKey
@@ -184,7 +182,7 @@ GET_ASSET_OBSERVATIONS = """
                     metadataEntries {
                         label
                         description
-                        ... on EventTextMetadataEntry {
+                        ... on TextMetadataEntry {
                             text
                         }
                     }
@@ -771,8 +769,8 @@ class TestAssetAwareEventLog(
         assert result.data["repositoryOrError"]
         result = get_response_by_step(result.data["repositoryOrError"]["latestRunByStep"])
         assert result["asset_1"]["jobNames"] == ["failure_assets_job"]
-        # A job containing asset 1 was run 6 times, since latest materialization
-        assert result["asset_1"]["count"] == 6
+        # A job containing asset 1 was run 5 times, since latest materialization
+        assert result["asset_1"]["count"] == 5
         assert result["asset_1"]["sinceLatestMaterialization"] == True
         # A job containing asset 2 was run 6 times, asset 2 was never materialized
         assert result["asset_2"]["count"] == 6

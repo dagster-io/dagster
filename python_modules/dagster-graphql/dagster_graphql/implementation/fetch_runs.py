@@ -1,16 +1,17 @@
 from collections import defaultdict
 from typing import Dict, List
 
+from graphql.execution.base import ResolveInfo
+
 from dagster import PipelineDefinition, PipelineRunStatus, check
 from dagster.config.validate import validate_config
 from dagster.core.definitions import create_run_config_schema
 from dagster.core.errors import DagsterRunNotFoundError
 from dagster.core.execution.stats import StepEventStatus
 from dagster.core.host_representation import PipelineSelector
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun, RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 from dagster.utils import utc_datetime_from_timestamp
-from graphql.execution.base import ResolveInfo
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import UserFacingGraphQLError, capture_error
@@ -50,7 +51,7 @@ def get_run_by_id(graphene_info, run_id):
     from ..schema.pipelines.pipeline import GrapheneRun
 
     instance = graphene_info.context.instance
-    records = instance.get_run_records(PipelineRunsFilter(run_ids=[run_id]))
+    records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
     if not records:
         return GrapheneRunNotFoundError(run_id)
     else:
@@ -83,7 +84,7 @@ def get_run_group(graphene_info, run_id):
     run_group_run_ids = [run.run_id for run in run_group]
     records_by_id = {
         record.pipeline_run.run_id: record
-        for record in instance.get_run_records(PipelineRunsFilter(run_ids=run_group_run_ids))
+        for record in instance.get_run_records(RunsFilter(run_ids=run_group_run_ids))
     }
     return GrapheneRunGroup(
         root_run_id=root_run_id,
@@ -94,7 +95,7 @@ def get_run_group(graphene_info, run_id):
 def get_runs(graphene_info, filters, cursor=None, limit=None):
     from ..schema.pipelines.pipeline import GrapheneRun
 
-    check.opt_inst_param(filters, "filters", PipelineRunsFilter)
+    check.opt_inst_param(filters, "filters", RunsFilter)
     check.opt_str_param(cursor, "cursor")
     check.opt_int_param(limit, "limit")
 
@@ -128,9 +129,7 @@ def get_in_progress_runs_by_step(graphene_info, job_names, step_keys):
     in_progress_records = []
     for job_name in job_names:
         in_progress_records.extend(
-            instance.get_run_records(
-                PipelineRunsFilter(pipeline_name=job_name, statuses=PENDING_STATUSES)
-            )
+            instance.get_run_records(RunsFilter(pipeline_name=job_name, statuses=PENDING_STATUSES))
         )
 
     in_progress_runs_by_step = defaultdict(list)
@@ -196,10 +195,7 @@ def get_asset_run_stats_by_step(graphene_info, asset_nodes):
 
 
 def get_latest_asset_run_by_step_key(graphene_info, asset_nodes):
-    from ..schema.pipelines.pipeline import (
-        GrapheneLatestRun,
-        GrapheneRun,
-    )
+    from ..schema.pipelines.pipeline import GrapheneLatestRun, GrapheneRun
 
     # This method returns the latest run that has occurred for a given step.
     # Because it is expensive to deserialize PipelineRun objects, we limit this
@@ -218,7 +214,7 @@ def get_latest_asset_run_by_step_key(graphene_info, asset_nodes):
         run_records = []
         for job_name in job_names:
             run_records.extend(
-                instance.get_run_records(PipelineRunsFilter(pipeline_name=job_name), limit=5)
+                instance.get_run_records(RunsFilter(pipeline_name=job_name), limit=5)
             )
 
         if len(run_records) == 0:
@@ -264,7 +260,7 @@ def get_asset_runs_count_by_step(graphene_info, asset_nodes):
         runs_count = sum(
             [
                 instance.get_runs_count(
-                    PipelineRunsFilter(
+                    RunsFilter(
                         pipeline_name=job_name,
                         updated_after=utc_datetime_from_timestamp(event.timestamp)
                         if event
@@ -274,6 +270,12 @@ def get_asset_runs_count_by_step(graphene_info, asset_nodes):
                 for job_name in job_names
             ]
         )
+
+        # If a materialization has occurred, we subtract one so that the runs count
+        # does not include the run that generated the materialization.
+        if event:
+            runs_count -= 1
+
         jobs_runs_count[step_key] = GrapheneJobRunsCount(
             step_key, job_names, runs_count, True if event else False
         )
@@ -288,7 +290,7 @@ def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
     from ..schema.pipelines.pipeline import GrapheneRun
     from ..schema.runs import GrapheneRunGroup
 
-    check.opt_inst_param(filters, "filters", PipelineRunsFilter)
+    check.opt_inst_param(filters, "filters", RunsFilter)
     check.opt_str_param(cursor, "cursor")
     check.opt_int_param(limit, "limit")
 
@@ -297,7 +299,7 @@ def get_run_groups(graphene_info, filters=None, cursor=None, limit=None):
     run_ids = {run.run_id for run_group in run_groups.values() for run in run_group.get("runs", [])}
     records_by_ids = {
         record.pipeline_run.run_id: record
-        for record in instance.get_run_records(PipelineRunsFilter(run_ids=list(run_ids)))
+        for record in instance.get_run_records(RunsFilter(run_ids=list(run_ids)))
     }
 
     for root_run_id in run_groups:

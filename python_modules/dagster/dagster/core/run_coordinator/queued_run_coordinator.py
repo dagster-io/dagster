@@ -123,7 +123,6 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             pipeline_name=pipeline_run.pipeline_name,
         )
         event_record = EventLogEntry(
-            message="",
             user_message="",
             level=logging.INFO,
             pipeline_name=pipeline_run.pipeline_name,

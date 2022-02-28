@@ -1,7 +1,8 @@
 import pickle
 
 import boto3
-from dagster import EventMetadataEntry, IOManager, io_manager
+
+from dagster import IOManager, MetadataEntry, io_manager
 
 
 def s3_client():
@@ -20,7 +21,7 @@ class FixedS3PickleIOManager(IOManager):
 
         context.log.debug("about to pickle object")
         pickled_obj = pickle.dumps(obj)
-        yield EventMetadataEntry.int(len(pickled_obj), "Bytes")
+        yield MetadataEntry.int(len(pickled_obj), "Bytes")
         client = s3_client()
         context.log.debug("created S3 client")
         client.put_object(Bucket=bucket, Key=key, Body=pickled_obj)

@@ -1,5 +1,6 @@
 import pytest
 from click.testing import CliRunner
+
 from dagster.cli.job import job_scaffold_command
 from dagster.cli.pipeline import execute_scaffold_command, pipeline_scaffold_command
 

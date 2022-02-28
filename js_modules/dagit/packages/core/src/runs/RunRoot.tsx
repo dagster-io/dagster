@@ -5,6 +5,7 @@ import {useParams} from 'react-router-dom';
 
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
@@ -12,6 +13,7 @@ import {Run} from './Run';
 import {RunConfigDialog, RunDetails} from './RunDetails';
 import {RunFragments} from './RunFragments';
 import {RunStatusTag} from './RunStatusTag';
+import {RunStepKeysAssetList} from './RunStepKeysAssetList';
 import {RunRootQuery} from './types/RunRootQuery';
 
 export const RunRoot = () => {
@@ -74,17 +76,21 @@ export const RunRoot = () => {
                 >
                   <TagWIP icon="info" />
                 </Popover>
-                <TagWIP icon="run">
-                  Run of{' '}
-                  <PipelineReference
-                    pipelineName={run?.pipelineName}
-                    pipelineHrefContext={repoAddress || 'repo-unknown'}
-                    snapshotId={snapshotID}
-                    size="small"
-                    isJob={isJob}
-                  />
-                </TagWIP>
                 <RunStatusTag status={run.status} />
+                {run.pipelineName !== __ASSET_GROUP ? (
+                  <TagWIP icon="run">
+                    Run of{' '}
+                    <PipelineReference
+                      pipelineName={run?.pipelineName}
+                      pipelineHrefContext={repoAddress || 'repo-unknown'}
+                      snapshotId={snapshotID}
+                      size="small"
+                      isJob={isJob}
+                    />
+                  </TagWIP>
+                ) : (
+                  <RunStepKeysAssetList stepKeys={run.stepKeysToExecute} clickableTags />
+                )}
               </>
             ) : null
           }

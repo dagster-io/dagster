@@ -5,6 +5,8 @@ from enum import Enum
 from typing import NamedTuple, Set
 
 import pytest
+
+from dagster import seven
 from dagster.check import ParameterCheckError, inst_param, set_param
 from dagster.serdes.errors import DeserializationError, SerdesUsageError, SerializationError
 from dagster.serdes.serdes import (
@@ -685,3 +687,36 @@ def test_namedtuple_backcompat():
     new_thing_deserialized = _deserialize_json(new_thing_serialized, old_map)
     assert isinstance(new_thing_deserialized, OldThing)
     assert new_thing_deserialized.get_id() == old_thing_id
+
+
+def test_namedtuple_name_map():
+
+    wmap = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=wmap)
+    class Thing(NamedTuple):
+        name: str
+
+    wmap.register_serialized_name("Thing", "SerializedThing")
+    thing = Thing("foo")
+
+    thing_serialized = _serialize_dagster_namedtuple(thing, wmap)
+    assert seven.json.loads(thing_serialized)["__class__"] == "SerializedThing"
+
+    with pytest.raises(DeserializationError):
+        _deserialize_json(thing_serialized, wmap)
+
+    wmap.register_deserialized_name("SerializedThing", "Thing")
+    assert _deserialize_json(thing_serialized, wmap) == thing
+
+
+def test_whitelist_storage_name():
+
+    wmap = WhitelistMap.create()
+
+    @_whitelist_for_serdes(whitelist_map=wmap, storage_name="SerializedThing")
+    class Thing(NamedTuple):
+        name: str
+
+    assert wmap.get_serialized_name("Thing") == "SerializedThing"
+    assert wmap.get_deserialized_name("SerializedThing") == "Thing"

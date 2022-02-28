@@ -54,9 +54,10 @@ from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
     from dagster.core.definitions.dependency import Node, NodeHandle
-    from dagster.core.instance import DagsterInstance
-    from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.definitions.resource_definition import Resources
+    from dagster.core.execution.plan.plan import ExecutionPlan
+    from dagster.core.instance import DagsterInstance
+
     from .hook import HookContext
 
 

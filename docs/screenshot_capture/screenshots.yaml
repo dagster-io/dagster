@@ -74,6 +74,18 @@
   width: 1536
   height: 1152
 
+- path: concepts/assets/software-defined-assets/catalog.png
+  defs_file: examples/docs_snippets/docs_snippets/concepts/assets/asset_group.py
+  url: http://127.0.0.1:3000/instance/assets
+
+- path: concepts/assets/software-defined-assets/details.png
+  defs_file: examples/docs_snippets/docs_snippets/concepts/assets/asset_group.py
+  url: http://127.0.0.1:3000/instance/assets/upstream_asset?view=definition
+
+- path: concepts/assets/software-defined-assets/graph.png
+  defs_file: examples/docs_snippets/docs_snippets/concepts/assets/asset_group.py
+  url: http://127.0.0.1:3000/instance/asset-graph
+
 - path: concepts/config-dagit.png
   vetted: false
 
@@ -100,6 +112,20 @@
   steps:
     - run the job
     - click on the run
+  vetted: false
+
+- path: concepts/assets/observation.png
+  defs_file: examples/docs_snippets/docs_snippets/concepts/assets/observations.py
+  steps:
+    - run my_observation_job
+    - click on the run
+  vetted: false
+
+- path: concepts/assets/asset-activity-observation.png
+  defs_file: examples/docs_snippets/docs_snippets/concepts/assets/observations.py
+  steps:
+    - run my_dataset_job
+    - View the asset details page for "my_dataset"
   vetted: false
 
 - path: concepts/assets/asset-lineage.png

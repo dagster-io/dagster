@@ -1,9 +1,10 @@
 import pytest
 from dagit import app
+from starlette.testclient import TestClient
+
 from dagster import DagsterInstance
 from dagster.cli.workspace import get_workspace_process_context_from_kwargs
 from dagster.core.test_utils import instance_for_test
-from starlette.testclient import TestClient
 
 SMOKE_TEST_QUERY = """
 {

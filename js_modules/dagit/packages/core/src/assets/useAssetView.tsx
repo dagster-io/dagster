@@ -1,24 +1,14 @@
-import * as React from 'react';
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 
 const ASSET_VIEW_KEY = 'AssetViewPreference';
 
-type View = 'flat' | 'directory';
+type View = 'flat' | 'directory' | 'graph';
 
-type Output = [View, (update: View) => void];
+const validateSavedAssetView = (storedValue: any) =>
+  storedValue === 'flat' || storedValue === 'directory' || storedValue === 'graph'
+    ? storedValue
+    : 'flat';
 
 export const useAssetView = () => {
-  const [view, setView] = React.useState<View>(() => {
-    const storedValue = window.localStorage.getItem(ASSET_VIEW_KEY);
-    if (storedValue === 'flat' || storedValue === 'directory') {
-      return storedValue;
-    }
-    return 'flat';
-  });
-
-  const onChange = React.useCallback((update: View) => {
-    window.localStorage.setItem(ASSET_VIEW_KEY, update);
-    setView(update);
-  }, []);
-
-  return React.useMemo(() => [view, onChange], [view, onChange]) as Output;
+  return useStateWithStorage<View>(ASSET_VIEW_KEY, validateSavedAssetView);
 };

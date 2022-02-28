@@ -25,6 +25,8 @@ from subprocess import PIPE, STDOUT, Popen
 from dagster import check
 from dagster.utils import safe_tempfile_path
 
+OUTPUT_LOGGING_OPTIONS = ["STREAM", "BUFFER", "NONE"]
+
 
 def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=None):
     """Execute a shell script file specified by the argument ``shell_command``. The script will be
@@ -55,6 +57,9 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
     check.opt_str_param(cwd, "cwd", default=os.path.dirname(shell_script_path))
     env = check.opt_dict_param(env, "env")
 
+    if output_logging not in OUTPUT_LOGGING_OPTIONS:
+        raise Exception("Unrecognized output_logging %s" % output_logging)
+
     def pre_exec():
         # Restore default signal disposition and invoke setsid
         for sig in ("SIGPIPE", "SIGXFZ", "SIGXFSZ"):
@@ -70,43 +75,37 @@ def execute_script_file(shell_script_path, output_logging, log, cwd=None, env=No
     # pylint: disable=subprocess-popen-preexec-fn
     sub_process = None
     try:
+        stdout_pipe = PIPE
+        stderr_pipe = STDOUT
+        if output_logging == "NONE":
+            stdout_pipe = stderr_pipe = None
+
         sub_process = Popen(
             ["bash", shell_script_path],
-            stdout=PIPE,
-            stderr=STDOUT,
+            stdout=stdout_pipe,
+            stderr=stderr_pipe,
             cwd=cwd,
             env=env,
             preexec_fn=pre_exec,
+            encoding="UTF-8",
         )
 
         log.info(f"Command pid: {sub_process.pid}")
 
-        # Will return the string result of reading stdout of the shell command
         output = ""
-
-        if output_logging not in ["STREAM", "BUFFER", "NONE"]:
-            raise Exception("Unrecognized output_logging %s" % output_logging)
-
-        # Stream back logs as they are emitted
         if output_logging == "STREAM":
-            for raw_line in iter(sub_process.stdout.readline, b""):
-                line = raw_line.decode("utf-8")
+            # Stream back logs as they are emitted
+            lines = []
+            for line in sub_process.stdout:
                 log.info(line.rstrip())
-                output += line
-
-        sub_process.wait()
-
-        # Collect and buffer all logs, then emit
-        if output_logging == "BUFFER":
-            output = "".join(
-                [raw_line.decode("utf-8") for raw_line in iter(sub_process.stdout.readline, b"")]
-            )
+                lines.append(line)
+            output = "".join(lines)
+        elif output_logging == "BUFFER":
+            # Collect and buffer all logs, then emit
+            output, _ = sub_process.communicate()
             log.info(output)
 
-        # no logging in this case
-        elif output_logging == "NONE":
-            pass
-
+        sub_process.wait()
         log.info("Command exited with return code {retcode}".format(retcode=sub_process.returncode))
 
         return output, sub_process.returncode

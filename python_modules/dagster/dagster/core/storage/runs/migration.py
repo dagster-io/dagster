@@ -1,7 +1,8 @@
 from contextlib import ExitStack
 
-from dagster import check
 from tqdm import tqdm
+
+from dagster import check
 
 from ..pipeline_run import PipelineRunStatus
 from ..runs.base import RunStorage
@@ -50,7 +51,7 @@ def chunked_run_iterator(storage, print_fn=None, chunk_size=RUN_CHUNK_SIZE):
                 yield run
 
             if progress:
-                progress.update(len(chunk))
+                progress.update(len(chunk))  # pylint: disable=no-member
 
 
 def chunked_run_records_iterator(storage, print_fn=None, chunk_size=RUN_CHUNK_SIZE):
@@ -73,7 +74,7 @@ def chunked_run_records_iterator(storage, print_fn=None, chunk_size=RUN_CHUNK_SI
                 yield run
 
             if progress:
-                progress.update(len(chunk))
+                progress.update(len(chunk))  # pylint: disable=no-member
 
 
 def migrate_run_partition(storage, print_fn=None):

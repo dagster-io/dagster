@@ -14,7 +14,7 @@ import {CONFIG_TYPE_SCHEMA_FRAGMENT} from '../typeexplorer/ConfigTypeSchema';
 import {DagsterTypeFragment} from './types/DagsterTypeFragment';
 
 export const dagsterTypeKind = (type: {metadataEntries: MetadataEntryFragment[]}) => {
-  const tableSchema = type.metadataEntries.find(gqlTypePredicate('EventTableSchemaMetadataEntry'));
+  const tableSchema = type.metadataEntries.find(gqlTypePredicate('TableSchemaMetadataEntry'));
   if (tableSchema) {
     return 'table';
   } else {
@@ -46,15 +46,19 @@ export const DagsterTypeSummary: React.FC<{
   type: DagsterTypeFragment;
   horizontalPadding?: Spacing;
 }> = ({type, horizontalPadding}) => {
-  horizontalPadding = horizontalPadding || 24;
-  const tableSchemaEntry = type.metadataEntries.find(
-    gqlTypePredicate('EventTableSchemaMetadataEntry'),
-  );
+  horizontalPadding = horizontalPadding || 0;
+  const tableSchemaEntry = type.metadataEntries.find(gqlTypePredicate('TableSchemaMetadataEntry'));
   return (
-    <Box flex={{direction: 'column', gap: 8}} padding={{top: 16}} style={{overflowY: 'auto'}}>
-      <Box padding={{horizontal: 24}}>
-        <DagsterTypeName type={type} />
-      </Box>
+    <Box
+      flex={{direction: 'column', gap: 8}}
+      padding={{horizontal: 24, vertical: 16}}
+      style={{overflowY: 'auto'}}
+    >
+      {type.name && (
+        <Box>
+          <DagsterTypeName type={type} />
+        </Box>
+      )}
       {type.description && (
         <Box padding={{horizontal: horizontalPadding}}>
           <Description description={type.description} />
@@ -63,8 +67,8 @@ export const DagsterTypeSummary: React.FC<{
       {tableSchemaEntry && (
         <Box
           border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+          style={{overflowY: 'auto', marginBottom: -12}}
           margin={{top: 4}}
-          style={{overflowY: 'auto'}}
         >
           <TableSchema schema={tableSchemaEntry.schema} itemHorizontalPadding={horizontalPadding} />
         </Box>

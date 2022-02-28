@@ -1,8 +1,9 @@
-from dagster import build_assets_job, in_process_executor
 from hacker_news_assets.assets.id_range_for_time import id_range_for_time
 from hacker_news_assets.assets.items import comments, items, stories
 from hacker_news_assets.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
 from hacker_news_assets.resources.hn_resource import hn_api_subsample_client, hn_snapshot_client
+
+from dagster import build_assets_job, in_process_executor
 
 DOWNLOAD_TAGS = {
     "dagster-k8s/config": {

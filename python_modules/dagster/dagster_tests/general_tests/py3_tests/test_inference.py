@@ -1,6 +1,7 @@
 from typing import Any, Dict, List, Optional, Tuple
 
 import pytest
+
 from dagster import (
     DagsterInvalidDefinitionError,
     DagsterType,

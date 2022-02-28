@@ -1,13 +1,16 @@
 import json
 from unittest.mock import MagicMock
 
-from dagster import AssetKey, EventMetadataEntry, ResourceDefinition
+import pytest
+from dagster_dbt import dbt_cli_resource
+from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
+from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError
+from dagster_dbt.types import DbtOutput
+
+from dagster import AssetKey, MetadataEntry, ResourceDefinition
 from dagster.core.asset_defs import build_assets_job
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 from dagster.utils import file_relative_path
-from dagster_dbt import dbt_cli_resource
-from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
-from dagster_dbt.types import DbtOutput
 
 
 def test_load_from_manifest_json():
@@ -66,8 +69,8 @@ def test_runtime_metadata_fn():
     ]
     assert len(materializations) == 4
     assert materializations[0].metadata_entries == [
-        EventMetadataEntry.text(dbt_assets[0].op.name, label="op_name"),
-        EventMetadataEntry.text(materializations[0].asset_key.path[0], label="dbt_model"),
+        MetadataEntry.text(dbt_assets[0].op.name, label="op_name"),
+        MetadataEntry.text(materializations[0].asset_key.path[0], label="dbt_model"),
     ]
 
 
@@ -126,7 +129,7 @@ def test_select_from_project(
 ):  # pylint: disable=unused-argument
 
     dbt_assets = load_assets_from_dbt_project(
-        test_project_dir, dbt_config_dir, select="sort_by_calories"
+        test_project_dir, dbt_config_dir, select="sort_by_calories subdir.least_caloric"
     )
 
     result = build_assets_job(
@@ -145,7 +148,12 @@ def test_select_from_project(
         for event in result.events_for_node(dbt_assets[0].op.name)
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
-    assert len(materializations) == 1
+    assert len(materializations) == 2
+
+
+def test_dbt_ls_fail_fast():
+    with pytest.raises(DagsterDbtCliFatalRuntimeError):
+        load_assets_from_dbt_project("bad_project_dir", "bad_config_dir")
 
 
 def test_select_from_manifest(
@@ -156,7 +164,11 @@ def test_select_from_manifest(
     with open(manifest_path, "r") as f:
         manifest_json = json.load(f)
     dbt_assets = load_assets_from_dbt_manifest(
-        manifest_json, selected_unique_ids={"model.dagster_dbt_test_project.sort_by_calories"}
+        manifest_json,
+        selected_unique_ids={
+            "model.dagster_dbt_test_project.sort_by_calories",
+            "model.dagster_dbt_test_project.least_caloric",
+        },
     )
 
     result = build_assets_job(
@@ -175,7 +187,7 @@ def test_select_from_manifest(
         for event in result.events_for_node(dbt_assets[0].op.name)
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
-    assert len(materializations) == 1
+    assert len(materializations) == 2
 
 
 def test_node_info_to_asset_key(

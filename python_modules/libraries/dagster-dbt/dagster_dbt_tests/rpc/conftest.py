@@ -47,8 +47,8 @@ def dbt_rpc_server(
 ):  # pylint: disable=unused-argument, redefined-outer-name
     proc = subprocess.Popen(
         [
-            dbt_executable,
-            "rpc",
+            "dbt-rpc",
+            "serve",
             "--host",
             TEST_HOSTNAME,
             "--port",

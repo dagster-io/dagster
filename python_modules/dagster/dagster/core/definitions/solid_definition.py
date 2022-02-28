@@ -137,9 +137,9 @@ class SolidDefinition(NodeDefinition):
         )
 
     def __call__(self, *args, **kwargs) -> Any:
+        from ..execution.context.invocation import UnboundSolidExecutionContext
         from .composition import is_in_composition
         from .decorators.solid import DecoratedSolidFunction
-        from ..execution.context.invocation import UnboundSolidExecutionContext
 
         if is_in_composition():
             return super(SolidDefinition, self).__call__(*args, **kwargs)

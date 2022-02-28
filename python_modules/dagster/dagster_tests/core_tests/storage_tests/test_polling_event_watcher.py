@@ -51,12 +51,11 @@ RUN_ID = "foo"
 
 def create_event(count: int, run_id: str = RUN_ID):
     return EventLogEntry(
-        None,
-        str(count),
-        "debug",
-        "",
-        run_id,
-        time.time(),
+        error_info=None,
+        user_message=str(count),
+        level="debug",
+        run_id=run_id,
+        timestamp=time.time(),
         dagster_event=DagsterEvent(
             DagsterEventType.ENGINE_EVENT.value,
             "nonce",

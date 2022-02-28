@@ -1,4 +1,5 @@
 import pytest
+
 from dagster import (
     AssetKey,
     AssetObservation,
@@ -20,8 +21,8 @@ from dagster import (
     solid,
 )
 from dagster.check import CheckError
-from dagster.core.definitions.event_metadata import EventMetadataEntry, PartitionMetadataEntry
 from dagster.core.definitions.events import AssetLineageInfo
+from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.storage.io_manager import IOManager
 
@@ -39,8 +40,8 @@ def check_materialization(materialization, asset_key, parent_assets=None, metada
 
 def test_output_definition_single_partition_materialization():
 
-    entry1 = EventMetadataEntry.int(123, "nrows")
-    entry2 = EventMetadataEntry.float(3.21, "some value")
+    entry1 = MetadataEntry.int(123, "nrows")
+    entry2 = MetadataEntry.float(3.21, "some value")
 
     @solid(output_defs=[OutputDefinition(name="output1", asset_key=AssetKey("table1"))])
     def solid1(_):
@@ -76,10 +77,10 @@ def test_output_definition_single_partition_materialization():
 
 def test_output_definition_multiple_partition_materialization():
 
-    entry1 = EventMetadataEntry.int(123, "nrows")
-    entry2 = EventMetadataEntry.float(3.21, "some value")
+    entry1 = MetadataEntry.int(123, "nrows")
+    entry2 = MetadataEntry.float(3.21, "some value")
 
-    partition_entries = [EventMetadataEntry.int(123 * i * i, "partition count") for i in range(3)]
+    partition_entries = [MetadataEntry.int(123 * i * i, "partition count") for i in range(3)]
 
     @solid(
         output_defs=[
@@ -245,8 +246,8 @@ def test_context_error_observe_metadata():
 
 def test_io_manager_single_partition_materialization():
 
-    entry1 = EventMetadataEntry.int(123, "nrows")
-    entry2 = EventMetadataEntry.float(3.21, "some value")
+    entry1 = MetadataEntry.int(123, "nrows")
+    entry2 = MetadataEntry.float(3.21, "some value")
 
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -302,7 +303,7 @@ def test_partition_specific_fails_on_na_partitions():
     def fail_solid(_):
         yield Output(
             None,
-            metadata_entries=[PartitionMetadataEntry("3", EventMetadataEntry.int(1, "x"))],
+            metadata_entries=[PartitionMetadataEntry("3", MetadataEntry.int(1, "x"))],
         )
 
     @pipeline
@@ -318,7 +319,7 @@ def test_partition_specific_fails_on_zero_partitions():
     def fail_solid(_):
         yield Output(
             None,
-            metadata_entries=[PartitionMetadataEntry("3", EventMetadataEntry.int(1, "x"))],
+            metadata_entries=[PartitionMetadataEntry("3", MetadataEntry.int(1, "x"))],
         )
 
     @pipeline

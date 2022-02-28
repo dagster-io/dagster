@@ -19,3 +19,8 @@ Resources
 
 .. autoclass:: AirbyteResource
     :members:
+
+Assets
+======
+
+.. autofunction:: build_airbyte_assets

@@ -96,7 +96,9 @@ from dagster_graphql import (
     ShutdownRepositoryLocationStatus,
 )
 
-shutdown_info: ShutdownRepositoryLocationInfo = client.shutdown_repository_location(REPO_NAME)
+shutdown_info: ShutdownRepositoryLocationInfo = client.shutdown_repository_location(
+    REPO_NAME
+)
 if shutdown_info.status == ShutdownRepositoryLocationStatus.SUCCESS:
     do_something_on_success()
 else:

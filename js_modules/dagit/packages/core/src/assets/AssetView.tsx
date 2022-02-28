@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Alert, Box, ButtonLink, ColorsWIP, Spinner} from '@dagster-io/ui';
+import {Alert, Box, ButtonLink, ColorsWIP, NonIdealState, Spinner, Tab, Tabs} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {QueryCountdown} from '../app/QueryCountdown';
@@ -32,6 +32,7 @@ interface Props {
 }
 
 export interface AssetViewParams {
+  view?: 'activity' | 'definition';
   partition?: string;
   time?: string;
   asOf?: string;
@@ -104,16 +105,31 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       <AssetPageHeader
         assetKey={assetKey}
         repoAddress={repoAddress}
+        tabs={
+          <Tabs size="large" selectedTabId={params.view || 'activity'}>
+            <Tab
+              id="activity"
+              title="Activity"
+              onClick={() => setParams({...params, view: 'activity'})}
+            />
+            <Tab
+              id="definition"
+              title="Definition"
+              onClick={() => setParams({...params, view: 'definition'})}
+              disabled={!definition}
+            />
+          </Tabs>
+        }
         right={
           <Box style={{margin: '-4px 0'}} flex={{gap: 8, alignItems: 'baseline'}}>
             <Box margin={{top: 4}}>
               <QueryCountdown pollInterval={5 * 1000} queryResult={queryResult} />
             </Box>
-            {definition && definition.jobs.length > 0 && repoAddress && (
+            {definition && definition.jobNames.length > 0 && repoAddress && (
               <LaunchAssetExecutionButton
                 assets={[definition]}
                 upstreamAssetKeys={definition.dependencies.map((d) => d.asset.assetKey)}
-                assetJobName={definition.jobs[0].name}
+                preferredJobName={definition.jobNames[0]}
                 title={lastMaterializedAt ? 'Rematerialize' : 'Materialize'}
               />
             )}
@@ -127,7 +143,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             style={{height: 390}}
             flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
           >
-            <Spinner purpose="section" />
+            <Spinner purpose="page" />
           </Box>
         ) : params.asOf ? (
           <Box
@@ -140,21 +156,41 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
               hasDefinition={!!definition}
             />
           </Box>
-        ) : definition ? (
-          <AssetNodeDefinition assetNode={definition} liveDataByNode={liveDataByNode} />
         ) : undefined}
       </div>
-      {isDefinitionLoaded && (
-        <AssetEvents
-          assetKey={assetKey}
-          assetLastMaterializedAt={lastMaterializedAt}
-          assetHasDefinedPartitions={!!definition?.partitionDefinition}
-          params={params}
-          paramsTimeWindowOnly={!!params.asOf}
-          setParams={setParams}
-          liveData={definition ? liveDataByNode[definition.id] : undefined}
-        />
-      )}
+      {isDefinitionLoaded &&
+        (params.view === 'definition' ? (
+          definition ? (
+            <AssetNodeDefinition assetNode={definition} liveDataByNode={liveDataByNode} />
+          ) : (
+            <Box padding={{vertical: 32}}>
+              <NonIdealState
+                title="No definition"
+                description="This asset doesn't have a software definition in any of your loaded repositories."
+                icon="materialization"
+              />
+            </Box>
+          )
+        ) : (
+          <AssetEvents
+            assetKey={assetKey}
+            assetLastMaterializedAt={lastMaterializedAt}
+            assetHasDefinedPartitions={!!definition?.partitionDefinition}
+            params={params}
+            paramsTimeWindowOnly={!!params.asOf}
+            setParams={setParams}
+            liveData={definition ? liveDataByNode[definition.id] : undefined}
+            repository={
+              definition?.repository
+                ? {
+                    repositoryLocationName: definition?.repository.location.name,
+                    repositoryName: definition.repository.name,
+                  }
+                : undefined
+            }
+            opName={definition?.opName}
+          />
+        ))}
     </div>
   );
 };

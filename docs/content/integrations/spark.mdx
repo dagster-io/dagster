@@ -49,9 +49,10 @@ This example writes out DataFrames to the local file system, but can be tweaked 
 ```python file=../../basic_pyspark/repo.py startafter=start_repo_marker_0 endbefore=end_repo_marker_0
 import os
 
-from dagster import IOManager, graph, io_manager, op, repository
 from pyspark.sql import DataFrame, Row, SparkSession
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
+
+from dagster import IOManager, graph, io_manager, op, repository
 
 
 class LocalParquetIOManager(IOManager):
@@ -103,13 +104,14 @@ This example demonstrates how to use the <PyObject module='dagster_aws.emr' obje
 ```python file=../../emr_pyspark/repo.py startafter=start-snippet endbefore=end-snippet
 from pathlib import Path
 
-from dagster import IOManager, graph, io_manager, op, repository
-from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster_aws.emr import emr_pyspark_step_launcher
 from dagster_aws.s3 import s3_resource
 from dagster_pyspark import pyspark_resource
 from pyspark.sql import DataFrame, Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
+
+from dagster import IOManager, graph, io_manager, op, repository
+from dagster.core.definitions.no_step_launcher import no_step_launcher
 
 
 class ParquetIOManager(IOManager):

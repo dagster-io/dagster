@@ -6,21 +6,22 @@ from typing import Any, Dict, Tuple
 from urllib.parse import urljoin
 
 import requests
+from dagster_fivetran.types import FivetranOutput
+from dagster_fivetran.utils import get_fivetran_connector_url, get_fivetran_logs_url
+from dateutil import parser
+from requests.auth import HTTPBasicAuth
+from requests.exceptions import RequestException
+
 from dagster import (
-    EventMetadata,
     Failure,
     Field,
+    MetadataValue,
     StringSource,
     __version__,
     check,
     get_dagster_logger,
     resource,
 )
-from dagster_fivetran.types import FivetranOutput
-from dagster_fivetran.utils import get_fivetran_connector_url, get_fivetran_logs_url
-from dateutil import parser
-from requests.auth import HTTPBasicAuth
-from requests.exceptions import RequestException
 
 FIVETRAN_API_BASE = "https://api.fivetran.com"
 FIVETRAN_CONNECTOR_PATH = "v1/connectors/"
@@ -263,8 +264,8 @@ class FivetranResource:
             raise Failure(
                 f"Sync for connector '{connector_id}' failed!",
                 metadata={
-                    "connector_details": EventMetadata.json(connector_details),
-                    "log_url": EventMetadata.url(get_fivetran_logs_url(connector_details)),
+                    "connector_details": MetadataValue.json(connector_details),
+                    "log_url": MetadataValue.url(get_fivetran_logs_url(connector_details)),
                 },
             )
         return connector_details

@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Tuple
 
-from dagster import EventMetadataEntry, Out, Output, check, op
+from dagster import MetadataEntry, Out, Output, check, op
 
 
 def binary_search_nearest_left(get_value, start, end, min_target):
@@ -76,12 +76,12 @@ def _id_range_for_time(start, end, hn_client):
     end_timestamp = str(datetime.fromtimestamp(_get_item_timestamp(end_id), tz=timezone.utc))
 
     metadata_entries = [
-        EventMetadataEntry.int(value=max_item_id, label="max_item_id"),
-        EventMetadataEntry.int(value=start_id, label="start_id"),
-        EventMetadataEntry.int(value=end_id, label="end_id"),
-        EventMetadataEntry.int(value=end_id - start_id, label="items"),
-        EventMetadataEntry.text(text=start_timestamp, label="start_timestamp"),
-        EventMetadataEntry.text(text=end_timestamp, label="end_timestamp"),
+        MetadataEntry.int(value=max_item_id, label="max_item_id"),
+        MetadataEntry.int(value=start_id, label="start_id"),
+        MetadataEntry.int(value=end_id, label="end_id"),
+        MetadataEntry.int(value=end_id - start_id, label="items"),
+        MetadataEntry.text(text=start_timestamp, label="start_timestamp"),
+        MetadataEntry.text(text=end_timestamp, label="end_timestamp"),
     ]
 
     id_range = (start_id, end_id)

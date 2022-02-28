@@ -74,8 +74,8 @@ class SnowflakeConnection:
     @contextmanager
     def get_connection(self, raw_conn=True):
         if self.connector == "sqlalchemy":
-            from sqlalchemy import create_engine
             from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
+            from sqlalchemy import create_engine
 
             engine = create_engine(URL(**self.conn_args))
             conn = engine.raw_connection() if raw_conn else engine.connect()

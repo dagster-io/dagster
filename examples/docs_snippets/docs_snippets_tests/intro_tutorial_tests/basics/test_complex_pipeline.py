@@ -1,4 +1,6 @@
-from docs_snippets.intro_tutorial.basics.connecting_solids.complex_pipeline import diamond
+from docs_snippets.intro_tutorial.basics.connecting_solids.complex_pipeline import (
+    diamond,
+)
 from docs_snippets.intro_tutorial.test_util import patch_cereal_requests
 
 

@@ -117,7 +117,7 @@ export const AppTopNavLogo: React.FC = () => {
           placement="bottom"
           modifiers={{offset: {enabled: true, options: {offset: [0, 18]}}}}
         >
-          <Link to="/workspace" style={{outline: 0, display: 'flex'}}>
+          <Link to="/home" style={{outline: 0, display: 'flex'}}>
             <GhostDaggy />
           </Link>
         </DaggyTooltip>

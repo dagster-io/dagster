@@ -3,7 +3,7 @@ import os
 import sys
 from typing import List, Optional
 
-from dagster import EventMetadataEntry, check
+from dagster import MetadataEntry, check
 from dagster.core.errors import (
     DagsterExecutionInterruptedError,
     DagsterSubprocessError,
@@ -70,8 +70,8 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
                 self.pipeline_run,
                 EngineEventData(
                     [
-                        EventMetadataEntry.text(str(os.getpid()), "pid"),
-                        EventMetadataEntry.text(self.step_key, "step_key"),
+                        MetadataEntry.text(str(os.getpid()), "pid"),
+                        MetadataEntry.text(self.step_key, "step_key"),
                     ],
                     marker_end=DELEGATE_MARKER,
                 ),
@@ -104,7 +104,7 @@ class MultiprocessExecutor(Executor):
         valid_starts = multiprocessing.get_all_start_methods()
 
         if start_method is None:
-            start_method = "forkserver" if "forkserver" in valid_starts else "spawn"
+            start_method = "spawn"
 
         if start_method not in valid_starts:
             raise DagsterUnmetExecutorRequirementsError(

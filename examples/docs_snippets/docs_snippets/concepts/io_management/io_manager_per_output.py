@@ -13,7 +13,13 @@ def op_2(a):
     return a + 1
 
 
-@job(resource_defs={"fs": fs_io_manager, "s3_io": s3_pickle_io_manager, "s3": s3_resource})
+@job(
+    resource_defs={
+        "fs": fs_io_manager,
+        "s3_io": s3_pickle_io_manager,
+        "s3": s3_resource,
+    }
+)
 def my_job():
     op_2(op_1())
 

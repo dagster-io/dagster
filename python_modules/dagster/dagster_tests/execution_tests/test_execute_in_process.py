@@ -1,4 +1,5 @@
 import pytest
+
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -279,3 +280,29 @@ def test_asset_observation():
     assert result.asset_observations_for_node("my_op") == [
         AssetObservation(asset_key=AssetKey(["abc"]))
     ]
+
+
+def test_dagster_run():
+    @op
+    def success_op():
+        return True
+
+    @job
+    def my_success_job():
+        success_op()
+
+    result = my_success_job.execute_in_process()
+    assert result.success
+    assert result.dagster_run.is_success
+
+    @op
+    def fail_op():
+        raise Exception
+
+    @job
+    def my_failure_job():
+        fail_op()
+
+    result = my_failure_job.execute_in_process(raise_on_error=False)
+    assert not result.success
+    assert not result.dagster_run.is_success

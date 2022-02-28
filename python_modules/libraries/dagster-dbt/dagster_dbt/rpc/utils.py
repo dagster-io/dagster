@@ -3,10 +3,11 @@ from collections import defaultdict
 from enum import Enum
 from typing import Dict, List
 
-from dagster import EventMetadataEntry, Failure, RetryRequested
-from dagster.core.execution.context.compute import SolidExecutionContext
 from requests import Response
 from requests.exceptions import RequestException
+
+from dagster import Failure, MetadataEntry, RetryRequested
+from dagster.core.execution.context.compute import SolidExecutionContext
 
 
 def fmt_rpc_logs(logs: List[Dict]) -> Dict[int, str]:
@@ -50,8 +51,8 @@ def raise_for_rpc_error(context: SolidExecutionContext, resp: Response) -> None:
             raise Failure(
                 description=error["message"],
                 metadata_entries=[
-                    EventMetadataEntry.text(text=str(error["code"]), label="RPC Error Code"),
-                    EventMetadataEntry.text(
+                    MetadataEntry.text(text=str(error["code"]), label="RPC Error Code"),
+                    MetadataEntry.text(
                         text=error["data"]["cause"]["message"], label="RPC Error Cause"
                     ),
                 ],
@@ -60,31 +61,25 @@ def raise_for_rpc_error(context: SolidExecutionContext, resp: Response) -> None:
             raise Failure(
                 description=error["message"],
                 metadata_entries=[
-                    EventMetadataEntry.text(text=str(error["code"]), label="RPC Error Code"),
-                    EventMetadataEntry.text(text=str(error["data"]["signum"]), label="RPC Signum"),
-                    EventMetadataEntry.text(
-                        text=error["data"]["message"], label="RPC Error Message"
-                    ),
+                    MetadataEntry.text(text=str(error["code"]), label="RPC Error Code"),
+                    MetadataEntry.text(text=str(error["data"]["signum"]), label="RPC Signum"),
+                    MetadataEntry.text(text=error["data"]["message"], label="RPC Error Message"),
                 ],
             )
         elif error["code"] == DBTErrors.rpc_timeout_error.value:
             raise Failure(
                 description=error["message"],
                 metadata_entries=[
-                    EventMetadataEntry.text(text=str(error["code"]), label="RPC Error Code"),
-                    EventMetadataEntry.text(
-                        text=str(error["data"]["timeout"]), label="RPC Timeout"
-                    ),
-                    EventMetadataEntry.text(
-                        text=error["data"]["message"], label="RPC Error Message"
-                    ),
+                    MetadataEntry.text(text=str(error["code"]), label="RPC Error Code"),
+                    MetadataEntry.text(text=str(error["data"]["timeout"]), label="RPC Timeout"),
+                    MetadataEntry.text(text=error["data"]["message"], label="RPC Error Message"),
                 ],
             )
         else:
             raise Failure(
                 description=error["message"],
                 metadata_entries=[
-                    EventMetadataEntry.text(text=str(error["code"]), label="RPC Error Code"),
+                    MetadataEntry.text(text=str(error["code"]), label="RPC Error Code"),
                 ],
             )
 

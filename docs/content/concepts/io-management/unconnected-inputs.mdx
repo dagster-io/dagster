@@ -54,10 +54,14 @@ my_job.execute_in_process(
 When you have an op at the beginning of your job that operates on a dagster type that you've defined, you can write your own <PyObject module="dagster" object="DagsterTypeLoader" /> to define how to load that input via run config.
 
 ```python file=/concepts/io_management/load_custom_type_from_config.py startafter=def_start_marker endbefore=def_end_marker
-@dagster_type_loader(config_schema={"diameter": float, "juiciness": float, "cultivar": str})
+@dagster_type_loader(
+    config_schema={"diameter": float, "juiciness": float, "cultivar": str}
+)
 def apple_loader(_context, config):
     return Apple(
-        diameter=config["diameter"], juiciness=config["juiciness"], cultivar=config["cultivar"]
+        diameter=config["diameter"],
+        juiciness=config["juiciness"],
+        cultivar=config["cultivar"],
     )
 
 
@@ -87,7 +91,11 @@ my_job.execute_in_process(
             "ops": {
                 "my_op": {
                     "inputs": {
-                        "input_apple": {"diameter": 2.4, "juiciness": 6.0, "cultivar": "honeycrisp"}
+                        "input_apple": {
+                            "diameter": 2.4,
+                            "juiciness": 6.0,
+                            "cultivar": "honeycrisp",
+                        }
                     }
                 }
             }
@@ -141,7 +149,9 @@ Then, when executing a job, you can pass in this per-input config.
         my_op()
 
     my_job.execute_in_process(
-        run_config={"ops": {"my_op": {"inputs": {"dataframe": {"table_name": "table1"}}}}},
+        run_config={
+            "ops": {"my_op": {"inputs": {"dataframe": {"table_name": "table1"}}}}
+        },
     )
 ```
 
@@ -197,7 +207,9 @@ When running the full job, `op2`'s input will be loaded using the IO manager on 
 
 ```python file=/concepts/io_management/subselection.py startafter=start_execute_subselection endbefore=end_execute_subselection
 my_job.execute_in_process(
-        run_config={"ops": {"op2": {"inputs": {"dataframe": {"table_name": "tableX"}}}}},
+        run_config={
+            "ops": {"op2": {"inputs": {"dataframe": {"table_name": "tableX"}}}}
+        },
         op_selection=["op2"],
     )
 ```

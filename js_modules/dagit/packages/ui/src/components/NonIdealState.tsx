@@ -14,9 +14,16 @@ export type NonIdealStateProps = React.DetailedHTMLProps<
   title: string;
   description?: React.ReactNode;
   action?: React.ReactNode;
+  shrinkable?: boolean;
 };
 
-export const NonIdealState: React.FC<NonIdealStateProps> = ({title, description, icon, action}) => {
+export const NonIdealState: React.FC<NonIdealStateProps> = ({
+  title,
+  description,
+  icon,
+  action,
+  shrinkable,
+}) => {
   const singleContentElement = [title, description, action].filter(Boolean).length === 1;
 
   return (
@@ -27,7 +34,7 @@ export const NonIdealState: React.FC<NonIdealStateProps> = ({title, description,
       style={{
         margin: 'auto',
         borderRadius: 8,
-        width: 'max-content',
+        width: shrinkable ? 'initial' : 'max-content',
         maxWidth: 500,
       }}
     >

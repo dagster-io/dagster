@@ -1,6 +1,7 @@
 import os
 
 import click
+
 from dagster import check
 from dagster.core.instance import DagsterInstance
 

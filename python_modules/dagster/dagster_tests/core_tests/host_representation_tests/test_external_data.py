@@ -1,4 +1,5 @@
 import pytest
+
 from dagster import AssetKey, DagsterInvariantViolationError, Out
 from dagster.check import CheckError
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
@@ -530,22 +531,22 @@ def test_source_asset_conflicts_with_asset():
 
 
 def test_input_name_or_output_name_dep_by():
-    with pytest.raises(CheckError, match="Exactly one"):
+    with pytest.raises(CheckError, match="input `foo` and output `bar`"):
         ExternalAssetDependedBy(
-            downstream_asset_key=AssetKey("bar"), input_name="foo", output_name="foo"
+            downstream_asset_key=AssetKey("bar"), input_name="foo", output_name="bar"
         )
-    with pytest.raises(CheckError, match="Exactly one"):
+    with pytest.raises(CheckError, match="input `None` and output `None`"):
         ExternalAssetDependedBy(
             downstream_asset_key=AssetKey("bar"), input_name=None, output_name=None
         )
 
 
 def test_input_name_or_output_name_dependency():
-    with pytest.raises(CheckError, match="Exactly one"):
+    with pytest.raises(CheckError, match="input `foo` and output `bar`"):
         ExternalAssetDependency(
-            upstream_asset_key=AssetKey("bar"), input_name="foo", output_name="foo"
+            upstream_asset_key=AssetKey("bar"), input_name="foo", output_name="bar"
         )
-    with pytest.raises(CheckError, match="Exactly one"):
+    with pytest.raises(CheckError, match="input `None` and output `None`"):
         ExternalAssetDependency(
             upstream_asset_key=AssetKey("bar"), input_name=None, output_name=None
         )

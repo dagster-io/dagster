@@ -12,9 +12,7 @@ def hello_cereal(context):
     lines = response.text.split("\n")
     cereals = [row for row in csv.DictReader(lines)]
     date = context.op_config["date"]
-    get_dagster_logger().info(
-        f"Today is {date}. Found {len(cereals)} cereals."
-    )
+    get_dagster_logger().info(f"Today is {date}. Found {len(cereals)} cereals.")
 
 
 @job

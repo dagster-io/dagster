@@ -104,7 +104,13 @@ def op_2(a):
     return a + 1
 
 
-@job(resource_defs={"fs": fs_io_manager, "s3_io": s3_pickle_io_manager, "s3": s3_resource})
+@job(
+    resource_defs={
+        "fs": fs_io_manager,
+        "s3_io": s3_pickle_io_manager,
+        "s3": s3_resource,
+    }
+)
 def my_job():
     op_2(op_1())
 ```
@@ -263,7 +269,9 @@ class MyIOManager(IOManager):
         self.storage_dict[(context.step_key, context.name)] = obj
 
     def load_input(self, context):
-        return self.storage_dict[(context.upstream_output.step_key, context.upstream_output.name)]
+        return self.storage_dict[
+            (context.upstream_output.step_key, context.upstream_output.name)
+        ]
 
 
 @io_manager
@@ -282,13 +290,15 @@ def test_my_io_manager_load_input():
     manager = my_io_manager(None)
     manager.storage_dict[("123", "abc")] = 5
 
-    context = build_input_context(upstream_output=build_output_context(name="abc", step_key="123"))
+    context = build_input_context(
+        upstream_output=build_output_context(name="abc", step_key="123")
+    )
     assert manager.load_input(context) == 5
 ```
 
 ## Yielding metadata from an IOManager <Experimental />
 
-Sometimes, you may want to record some metadata while handling an output in an IOManager. To do this, you can optionally yield <PyObject object="EventMetadataEntry"/> objects from within the body of the `handle_output` function. Using this, we can modify one of the [above examples](/concepts/io-management/io-managers#a-custom-io-manager-that-stores-pandas-dataframes-in-tables) to now include some helpful metadata in the log:
+Sometimes, you may want to record some metadata while handling an output in an IOManager. To do this, you can optionally yield <PyObject object="MetadataEntry"/> objects from within the body of the `handle_output` function. Using this, we can modify one of the [above examples](/concepts/io-management/io-managers#a-custom-io-manager-that-stores-pandas-dataframes-in-tables) to now include some helpful metadata in the log:
 
 ```python file=/concepts/io_management/custom_io_manager.py startafter=start_metadata_marker endbefore=end_metadata_marker
 class DataframeTableIOManagerWithMetadata(IOManager):
@@ -297,8 +307,8 @@ class DataframeTableIOManagerWithMetadata(IOManager):
         write_dataframe_to_table(name=table_name, dataframe=obj)
 
         # attach these to the Handled Output event
-        yield EventMetadataEntry.int(len(obj), label="number of rows")
-        yield EventMetadataEntry.text(table_name, label="table name")
+        yield MetadataEntry.int(len(obj), label="number of rows")
+        yield MetadataEntry.text(table_name, label="table name")
 
     def load_input(self, context):
         table_name = context.upstream_output.name

@@ -23,5 +23,7 @@ prod_server = ResourceDefinition.mock_resource()
 local_server = ResourceDefinition.mock_resource()
 
 prod_job = do_stuff.to_job(resource_defs={"server": prod_server}, name="do_stuff_prod")
-local_job = do_stuff.to_job(resource_defs={"local": local_server}, name="do_stuff_local")
+local_job = do_stuff.to_job(
+    resource_defs={"local": local_server}, name="do_stuff_local"
+)
 # end_define_jobs

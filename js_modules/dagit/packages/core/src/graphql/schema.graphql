@@ -159,7 +159,7 @@ type InputDefinition {
   name: String!
   description: String
   type: DagsterType!
-  metadataEntries: [EventMetadataEntry!]!
+  metadataEntries: [MetadataEntry!]!
 }
 
 type SolidDefinition implements ISolidDefinition {
@@ -179,7 +179,7 @@ type OutputDefinition {
   description: String
   isDynamic: Boolean
   type: DagsterType!
-  metadataEntries: [EventMetadataEntry!]!
+  metadataEntries: [MetadataEntry!]!
 }
 
 interface DagsterType {
@@ -194,7 +194,7 @@ interface DagsterType {
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
   innerTypes: [DagsterType!]!
-  metadataEntries: [EventMetadataEntry!]!
+  metadataEntries: [MetadataEntry!]!
 }
 
 interface ConfigType {
@@ -205,7 +205,7 @@ interface ConfigType {
   isSelector: Boolean!
 }
 
-interface EventMetadataEntry {
+interface MetadataEntry {
   label: String!
   description: String
 }
@@ -217,6 +217,7 @@ type AssetNode {
   opName: String
   op: SolidDefinition
   jobs: [Pipeline!]!
+  jobNames: [String!]!
   repository: Repository!
   dependencies: [AssetDependency!]!
   dependedBy: [AssetDependency!]!
@@ -252,7 +253,7 @@ type MaterializationEvent implements MessageEvent & StepEvent & DisplayableEvent
   eventType: DagsterEventType
   label: String!
   description: String
-  metadataEntries: [EventMetadataEntry!]!
+  metadataEntries: [MetadataEntry!]!
   assetKey: AssetKey
   runOrError: RunOrError!
   stepStats: RunStepStats!
@@ -327,7 +328,7 @@ interface StepEvent {
 interface DisplayableEvent {
   label: String!
   description: String
-  metadataEntries: [EventMetadataEntry!]!
+  metadataEntries: [MetadataEntry!]!
 }
 
 union RunOrError = Run | RunNotFoundError | PythonError
@@ -488,7 +489,7 @@ enum StepEventStatus {
 type ExpectationResult implements DisplayableEvent {
   label: String!
   description: String
-  metadataEntries: [EventMetadataEntry!]!
+  metadataEntries: [MetadataEntry!]!
   success: Boolean!
 }
 
@@ -578,7 +579,7 @@ type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
   eventType: DagsterEventType
   label: String!
   description: String
-  metadataEntries: [EventMetadataEntry!]!
+  metadataEntries: [MetadataEntry!]!
   assetKey: AssetKey
   runOrError: RunOrError!
   stepStats: RunStepStats!
@@ -640,7 +641,7 @@ enum ErrorSource {
 type FailureMetadata implements DisplayableEvent {
   label: String!
   description: String
-  metadataEntries: [EventMetadataEntry!]!
+  metadataEntries: [MetadataEntry!]!
 }
 
 type ExecutionStepInputEvent implements MessageEvent & StepEvent {
@@ -658,7 +659,7 @@ type ExecutionStepInputEvent implements MessageEvent & StepEvent {
 type TypeCheck implements DisplayableEvent {
   label: String!
   description: String
-  metadataEntries: [EventMetadataEntry!]!
+  metadataEntries: [MetadataEntry!]!
   success: Boolean!
 }
 
@@ -672,7 +673,7 @@ type ExecutionStepOutputEvent implements MessageEvent & StepEvent & DisplayableE
   eventType: DagsterEventType
   label: String!
   description: String
-  metadataEntries: [EventMetadataEntry!]!
+  metadataEntries: [MetadataEntry!]!
   outputName: String!
   typeCheck: TypeCheck!
 }
@@ -842,7 +843,7 @@ type HandledOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
   eventType: DagsterEventType
   label: String!
   description: String
-  metadataEntries: [EventMetadataEntry!]!
+  metadataEntries: [MetadataEntry!]!
   outputName: String!
   managerKey: String!
 }
@@ -888,7 +889,7 @@ type ObjectStoreOperationEvent implements MessageEvent & StepEvent {
 type ObjectStoreOperationResult implements DisplayableEvent {
   label: String!
   description: String
-  metadataEntries: [EventMetadataEntry!]!
+  metadataEntries: [MetadataEntry!]!
   op: ObjectStoreOperationType!
 }
 
@@ -920,7 +921,7 @@ type EngineEvent implements MessageEvent & DisplayableEvent & StepEvent {
   eventType: DagsterEventType
   label: String!
   description: String
-  metadataEntries: [EventMetadataEntry!]!
+  metadataEntries: [MetadataEntry!]!
   error: PythonError
   markerStart: String
   markerEnd: String
@@ -1099,7 +1100,7 @@ type RegularDagsterType implements DagsterType {
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
   innerTypes: [DagsterType!]!
-  metadataEntries: [EventMetadataEntry!]!
+  metadataEntries: [MetadataEntry!]!
 }
 
 type PipelineNotFoundError implements Error {
@@ -1173,6 +1174,7 @@ type InstigationTick {
   runIds: [String!]!
   error: PythonError
   skipReason: String
+  cursor: String
   runs: [Run!]!
   originRunIds: [String!]!
 }
@@ -2051,107 +2053,6 @@ enum LocationStateChangeEventType {
   LOCATION_ERROR
 }
 
-type EventPipelineRunMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  runId: String!
-}
-
-type EventAssetMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  assetKey: AssetKey!
-}
-
-type EventTableSchemaMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  schema: TableSchema!
-}
-
-type TableSchema {
-  constraints: TableConstraints
-  columns: [TableColumn!]!
-}
-
-type TableConstraints {
-  other: [String!]!
-}
-
-type TableColumn {
-  name: String!
-  type: String!
-  description: String
-  constraints: TableColumnConstraints!
-}
-
-type TableColumnConstraints {
-  nullable: Boolean!
-  unique: Boolean!
-  other: [String!]!
-}
-
-type EventTableMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  table: Table!
-}
-
-type Table {
-  schema: TableSchema!
-  records: [String!]!
-}
-
-type EventFloatMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  floatValue: Float
-}
-
-type EventIntMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  intValue: Int
-  intRepr: String!
-}
-
-type EventJsonMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  jsonString: String!
-}
-
-type EventMarkdownMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  mdStr: String!
-}
-
-type EventPathMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  path: String!
-}
-
-type EventPythonArtifactMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  module: String!
-  name: String!
-}
-
-type EventTextMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  text: String!
-}
-
-type EventUrlMetadataEntry implements EventMetadataEntry {
-  label: String!
-  description: String
-  url: String!
-}
-
 type MissingRunIdErrorEvent {
   invalidRunId: String!
 }
@@ -2383,7 +2284,7 @@ type ListDagsterType implements DagsterType & WrappingDagsterType {
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
   innerTypes: [DagsterType!]!
-  metadataEntries: [EventMetadataEntry!]!
+  metadataEntries: [MetadataEntry!]!
   ofType: DagsterType!
 }
 
@@ -2403,7 +2304,7 @@ type NullableDagsterType implements DagsterType & WrappingDagsterType {
   inputSchemaType: ConfigType
   outputSchemaType: ConfigType
   innerTypes: [DagsterType!]!
-  metadataEntries: [EventMetadataEntry!]!
+  metadataEntries: [MetadataEntry!]!
   ofType: DagsterType!
 }
 
@@ -2426,6 +2327,107 @@ input StepExecution {
 input StepOutputHandle {
   stepKey: String!
   outputName: String!
+}
+
+type TableSchemaMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  schema: TableSchema!
+}
+
+type TableSchema {
+  constraints: TableConstraints
+  columns: [TableColumn!]!
+}
+
+type TableConstraints {
+  other: [String!]!
+}
+
+type TableColumn {
+  name: String!
+  type: String!
+  description: String
+  constraints: TableColumnConstraints!
+}
+
+type TableColumnConstraints {
+  nullable: Boolean!
+  unique: Boolean!
+  other: [String!]!
+}
+
+type TableMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  table: Table!
+}
+
+type Table {
+  schema: TableSchema!
+  records: [String!]!
+}
+
+type FloatMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  floatValue: Float
+}
+
+type IntMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  intValue: Int
+  intRepr: String!
+}
+
+type JsonMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  jsonString: String!
+}
+
+type MarkdownMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  mdStr: String!
+}
+
+type PathMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  path: String!
+}
+
+type PythonArtifactMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  module: String!
+  name: String!
+}
+
+type TextMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  text: String!
+}
+
+type UrlMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  url: String!
+}
+
+type PipelineRunMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  runId: String!
+}
+
+type AssetMetadataEntry implements MetadataEntry {
+  label: String!
+  description: String
+  assetKey: AssetKey!
 }
 
 type RunGroups {

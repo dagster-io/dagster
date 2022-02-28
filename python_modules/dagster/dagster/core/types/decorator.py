@@ -60,7 +60,7 @@ def usable_as_dagster_type(
     """
 
     def _with_args(bare_cls):
-        check.type_param(bare_cls, "bare_cls")
+        check.class_param(bare_cls, "bare_cls")
         new_name = name if name else bare_cls.__name__
 
         make_python_type_usable_as_dagster_type(

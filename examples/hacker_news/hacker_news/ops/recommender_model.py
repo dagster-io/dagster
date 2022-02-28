@@ -1,11 +1,12 @@
 import random
 
-from dagster import EventMetadata, In, InputDefinition, Out, Output, op
-from dagster.utils import file_relative_path
 from dagstermill import define_dagstermill_solid
 from hacker_news.ops.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame, Series
 from sklearn.decomposition import TruncatedSVD
+
+from dagster import In, InputDefinition, MetadataValue, Out, Output, op
+from dagster.utils import file_relative_path
 
 
 @op(out=Out(dagster_type=TruncatedSVD, metadata={"key": "recommender_model"}))
@@ -83,7 +84,7 @@ def build_component_top_stories(
     yield Output(
         component_top_stories,
         metadata={
-            "Top component top stories": EventMetadata.md(
+            "Top component top stories": MetadataValue.md(
                 top_components_to_markdown(component_top_stories)
             ),
         },

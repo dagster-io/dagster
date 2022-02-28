@@ -4,6 +4,8 @@ import tempfile
 
 import pytest
 from botocore.exceptions import ClientError
+from dagster_aws.s3 import S3ComputeLogManager
+
 from dagster import DagsterEventType, job, op
 from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster.core.launcher import DefaultRunLauncher
@@ -13,7 +15,6 @@ from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
 from dagster.core.test_utils import environ
-from dagster_aws.s3 import S3ComputeLogManager
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"

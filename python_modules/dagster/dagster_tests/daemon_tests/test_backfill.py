@@ -7,6 +7,7 @@ from contextlib import contextmanager
 
 import pendulum
 import pytest
+
 from dagster import (
     Any,
     Field,
@@ -26,7 +27,7 @@ from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
 )
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster.core.test_utils import create_test_daemon_workspace, instance_for_test
 from dagster.core.workspace.load_target import PythonFileTarget
@@ -400,7 +401,7 @@ def test_failure_backfill():
         wait_for_all_runs_to_start(instance)
 
         assert instance.get_runs_count() == 6
-        from_failure_filter = PipelineRunsFilter(tags={BACKFILL_ID_TAG: "fromfailure"})
+        from_failure_filter = RunsFilter(tags={BACKFILL_ID_TAG: "fromfailure"})
         assert instance.get_runs_count(filters=from_failure_filter) == 3
 
         runs = instance.get_runs(filters=from_failure_filter)
@@ -509,7 +510,7 @@ def test_partial_backfill():
         wait_for_all_runs_to_start(instance)
 
         assert instance.get_runs_count() == 5
-        partial_filter = PipelineRunsFilter(tags={BACKFILL_ID_TAG: "partial"})
+        partial_filter = RunsFilter(tags={BACKFILL_ID_TAG: "partial"})
         assert instance.get_runs_count(filters=partial_filter) == 3
         runs = instance.get_runs(filters=partial_filter)
         three, two, one = runs

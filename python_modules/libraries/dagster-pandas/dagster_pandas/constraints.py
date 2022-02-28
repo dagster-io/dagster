@@ -4,9 +4,10 @@ from datetime import datetime
 from functools import wraps
 
 import pandas as pd
-from dagster import DagsterType, EventMetadataEntry, TypeCheck, check
-from dagster.utils.backcompat import experimental_class_warning
 from pandas import DataFrame
+
+from dagster import DagsterType, MetadataEntry, TypeCheck, check
+from dagster.utils.backcompat import experimental_class_warning
 
 
 class ConstraintViolationException(Exception):
@@ -50,7 +51,7 @@ class ConstraintWithMetadataException(Exception):
         )
 
     def convert_to_metadata(self):
-        return EventMetadataEntry.json(
+        return MetadataEntry.json(
             {
                 "constraint_name": self.constraint_name,
                 "constraint_description": self.constraint_description,

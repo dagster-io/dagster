@@ -24,6 +24,7 @@ export const ColorsWIP = {
   Red700: 'rgba(165, 9, 6, 1)',
   Red500: 'rgba(221, 84, 72, 1)',
   Red200: 'rgba(241, 187, 182, 1)',
+  Red100: 'rgba(248, 236, 235, 1)',
   Red50: 'rgba(165, 9, 6, 0.08)',
   HighlightRed: 'rgba(255, 128, 100, 1)',
   Yellow700: 'rgba(165, 88, 2, 1)',

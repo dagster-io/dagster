@@ -10,6 +10,13 @@ from contextlib import contextmanager
 from copy import deepcopy
 from typing import List
 
+from dagster_graphql.test.utils import (
+    define_out_of_process_context,
+    infer_pipeline_selector,
+    main_repo_location_name,
+    main_repo_name,
+)
+
 from dagster import (
     Any,
     AssetKey,
@@ -17,11 +24,12 @@ from dagster import (
     AssetObservation,
     Bool,
     DagsterInstance,
+    DefaultScheduleStatus,
+    DefaultSensorStatus,
     DynamicOutput,
     DynamicOutputDefinition,
     Enum,
     EnumValue,
-    EventMetadataEntry,
     ExpectationResult,
     Field,
     HourlyPartitionsDefinition,
@@ -31,6 +39,7 @@ from dagster import (
     Int,
     Map,
     Materialization,
+    MetadataEntry,
     ModeDefinition,
     Noneable,
     Nothing,
@@ -76,19 +85,13 @@ from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.fs_io_manager import fs_io_manager
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import default_mode_def_for_test, today_at_midnight
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, segfault
-from dagster_graphql.test.utils import (
-    define_out_of_process_context,
-    infer_pipeline_selector,
-    main_repo_location_name,
-    main_repo_name,
-)
 
 LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 
@@ -691,26 +694,26 @@ def materialization_pipeline():
             asset_key="all_types",
             description="a materialization with all metadata types",
             metadata_entries=[
-                EventMetadataEntry.text("text is cool", "text"),
-                EventMetadataEntry.url("https://bigty.pe/neato", "url"),
-                EventMetadataEntry.fspath("/tmp/awesome", "path"),
-                EventMetadataEntry.json({"is_dope": True}, "json"),
-                EventMetadataEntry.python_artifact(EventMetadataEntry, "python class"),
-                EventMetadataEntry.python_artifact(file_relative_path, "python function"),
-                EventMetadataEntry.float(1.2, "float"),
-                EventMetadataEntry.int(1, "int"),
-                EventMetadataEntry.float(float("nan"), "float NaN"),
-                EventMetadataEntry.int(LONG_INT, "long int"),
-                EventMetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
-                EventMetadataEntry.asset(AssetKey("my_asset"), "my asset"),
-                EventMetadataEntry.table(
+                MetadataEntry.text("text is cool", "text"),
+                MetadataEntry.url("https://bigty.pe/neato", "url"),
+                MetadataEntry.fspath("/tmp/awesome", "path"),
+                MetadataEntry.json({"is_dope": True}, "json"),
+                MetadataEntry.python_artifact(MetadataEntry, "python class"),
+                MetadataEntry.python_artifact(file_relative_path, "python function"),
+                MetadataEntry.float(1.2, "float"),
+                MetadataEntry.int(1, "int"),
+                MetadataEntry.float(float("nan"), "float NaN"),
+                MetadataEntry.int(LONG_INT, "long int"),
+                MetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
+                MetadataEntry.asset(AssetKey("my_asset"), "my asset"),
+                MetadataEntry.table(
                     label="table",
                     records=[
                         TableRecord(foo=1, bar=2),
                         TableRecord(foo=3, bar=4),
                     ],
                 ),
-                EventMetadataEntry.table_schema(
+                MetadataEntry.table_schema(
                     label="table_schema",
                     schema=TableSchema(
                         columns=[
@@ -1023,7 +1026,7 @@ def last_empty_partition(context, partition_set_def):
         return None
     selected = None
     for partition in reversed(partitions):
-        filters = PipelineRunsFilter.for_partition(partition_set_def, partition)
+        filters = RunsFilter.for_partition(partition_set_def, partition)
         matching = context.instance.get_runs(filters)
         if not any(run.status == PipelineRunStatus.SUCCESS for run in matching):
             selected = partition
@@ -1076,6 +1079,15 @@ def define_schedules():
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
     )
     def partition_based_decorator(_date):
+        return {}
+
+    @daily_schedule(
+        pipeline_name="no_config_pipeline",
+        start_date=today_at_midnight().subtract(days=1),
+        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
+        default_status=DefaultScheduleStatus.RUNNING,
+    )
+    def running_in_code_schedule(_date):
         return {}
 
     @daily_schedule(
@@ -1194,6 +1206,7 @@ def define_schedules():
         tags_error_schedule,
         timezone_schedule,
         invalid_config_schedule,
+        running_in_code_schedule,
     ]
 
 
@@ -1260,12 +1273,24 @@ def define_sensors():
             tags={"test": "1234"},
         )
 
+    @sensor(
+        pipeline_name="no_config_pipeline",
+        mode="default",
+        default_status=DefaultSensorStatus.RUNNING,
+    )
+    def running_in_code_sensor(_):
+        return RunRequest(
+            run_key=None,
+            tags={"test": "1234"},
+        )
+
     return [
         always_no_config_sensor,
         once_no_config_sensor,
         never_no_config_sensor,
         multi_no_config_sensor,
         custom_interval_sensor,
+        running_in_code_sensor,
     ]
 
 
@@ -1299,18 +1324,18 @@ def backcompat_materialization_pipeline():
             asset_key="all_types",
             description="a materialization with all metadata types",
             metadata_entries=[
-                EventMetadataEntry.text("text is cool", "text"),
-                EventMetadataEntry.url("https://bigty.pe/neato", "url"),
-                EventMetadataEntry.fspath("/tmp/awesome", "path"),
-                EventMetadataEntry.json({"is_dope": True}, "json"),
-                EventMetadataEntry.python_artifact(EventMetadataEntry, "python class"),
-                EventMetadataEntry.python_artifact(file_relative_path, "python function"),
-                EventMetadataEntry.float(1.2, "float"),
-                EventMetadataEntry.int(1, "int"),
-                EventMetadataEntry.float(float("nan"), "float NaN"),
-                EventMetadataEntry.int(LONG_INT, "long int"),
-                EventMetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
-                EventMetadataEntry.asset(AssetKey("my_asset"), "my asset"),
+                MetadataEntry.text("text is cool", "text"),
+                MetadataEntry.url("https://bigty.pe/neato", "url"),
+                MetadataEntry.fspath("/tmp/awesome", "path"),
+                MetadataEntry.json({"is_dope": True}, "json"),
+                MetadataEntry.python_artifact(MetadataEntry, "python class"),
+                MetadataEntry.python_artifact(file_relative_path, "python function"),
+                MetadataEntry.float(1.2, "float"),
+                MetadataEntry.int(1, "int"),
+                MetadataEntry.float(float("nan"), "float NaN"),
+                MetadataEntry.int(LONG_INT, "long int"),
+                MetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
+                MetadataEntry.asset(AssetKey("my_asset"), "my asset"),
             ],
         )
         yield Output(None)

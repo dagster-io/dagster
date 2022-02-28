@@ -2,6 +2,9 @@ import json
 import logging
 import os
 
+from dagstermill.examples.repository import hello_logging
+from dagstermill.io_managers import local_output_notebook_io_manager
+
 from dagster import (
     ModeDefinition,
     String,
@@ -13,8 +16,6 @@ from dagster import (
 )
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import safe_tempfile_path
-from dagstermill.examples.repository import hello_logging
-from dagstermill.io_managers import local_output_notebook_io_manager
 
 
 class LogTestFileHandler(logging.Handler):

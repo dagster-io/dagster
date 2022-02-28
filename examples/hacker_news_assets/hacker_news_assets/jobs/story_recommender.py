@@ -1,10 +1,11 @@
-from dagster import build_assets_job
 from hacker_news_assets.assets.comment_stories import comment_stories
 from hacker_news_assets.assets.items import comments, stories
 from hacker_news_assets.assets.recommender_model import component_top_stories, recommender_model
 from hacker_news_assets.assets.user_story_matrix import user_story_matrix
 from hacker_news_assets.assets.user_top_recommended_stories import user_top_recommended_stories
 from hacker_news_assets.resources import RESOURCES_PROD, RESOURCES_STAGING
+
+from dagster import build_assets_job
 
 assets = [
     comment_stories,

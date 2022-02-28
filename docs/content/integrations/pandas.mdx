@@ -24,7 +24,9 @@ TripDataFrame = create_dagster_pandas_dataframe_type(
         PandasColumn.datetime_column(
             "start_time", min_datetime=datetime(year=2020, month=2, day=10)
         ),
-        PandasColumn.datetime_column("end_time", min_datetime=datetime(year=2020, month=2, day=10)),
+        PandasColumn.datetime_column(
+            "end_time", min_datetime=datetime(year=2020, month=2, day=10)
+        ),
         PandasColumn.string_column("station"),
         PandasColumn.exists("amount_paid"),
         PandasColumn.boolean_column("was_member"),
@@ -72,7 +74,7 @@ If we rerun the above example with this dataframe, nothing should change. Howeve
 
 ## Dagster DataFrame Summary Statistics
 
-Aside from constraint validation, `create_dagster_pandas_dataframe_type` also takes in a summary statistics function that emits `EventMetadataEntry` objects which are surfaced during runs. Since data systems seldom control the quality of the data they receive, it becomes important to monitor data as it flows through your systems. In complex jobs, this can help debug and monitor data drift over time. Let's illustrate how this works in our example:
+Aside from constraint validation, `create_dagster_pandas_dataframe_type` also takes in a summary statistics function that emits `MetadataEntry` objects which are surfaced during runs. Since data systems seldom control the quality of the data they receive, it becomes important to monitor data as it flows through your systems. In complex jobs, this can help debug and monitor data drift over time. Let's illustrate how this works in our example:
 
 ```python file=/legacy/dagster_pandas_guide/summary_stats.py startafter=start_summary endbefore=end_summary
 def compute_trip_dataframe_summary_statistics(dataframe):
@@ -86,7 +88,8 @@ def compute_trip_dataframe_summary_statistics(dataframe):
 
 
 SummaryStatsTripDataFrame = create_dagster_pandas_dataframe_type(
-    name="SummaryStatsTripDataFrame", event_metadata_fn=compute_trip_dataframe_summary_statistics
+    name="SummaryStatsTripDataFrame",
+    event_metadata_fn=compute_trip_dataframe_summary_statistics,
 )
 ```
 
@@ -114,7 +117,9 @@ class DivisibleByFiveConstraint(ColumnConstraint):
         )
 
     def validate(self, dataframe, column_name):
-        rows_with_unexpected_buckets = dataframe[dataframe[column_name].apply(lambda x: x % 5 != 0)]
+        rows_with_unexpected_buckets = dataframe[
+            dataframe[column_name].apply(lambda x: x % 5 != 0)
+        ]
         if not rows_with_unexpected_buckets.empty:
             raise ColumnConstraintViolationException(
                 constraint_name=self.name,
@@ -129,7 +134,10 @@ CustomTripDataFrame = create_dagster_pandas_dataframe_type(
     columns=[
         PandasColumn(
             "amount_paid",
-            constraints=[ColumnDTypeInSetConstraint({"int64"}), DivisibleByFiveConstraint()],
+            constraints=[
+                ColumnDTypeInSetConstraint({"int64"}),
+                DivisibleByFiveConstraint(),
+            ],
         )
     ],
 )

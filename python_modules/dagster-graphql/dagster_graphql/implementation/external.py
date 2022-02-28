@@ -1,11 +1,12 @@
 import sys
 
+from graphql.execution.base import ResolveInfo
+
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
 from dagster.core.host_representation import ExternalPipeline, PipelineSelector, RepositorySelector
 from dagster.core.workspace.context import BaseWorkspaceRequestContext
 from dagster.utils.error import serializable_error_info_from_exc_info
-from graphql.execution.base import ResolveInfo
 
 from .utils import UserFacingGraphQLError, capture_error
 
@@ -35,8 +36,8 @@ def get_external_pipeline_or_raise(graphene_info, selector):
 
 
 def get_subset_external_pipeline(context, selector):
-    from ..schema.pipelines.pipeline_errors import GrapheneInvalidSubsetError
     from ..schema.pipelines.pipeline import GraphenePipeline
+    from ..schema.pipelines.pipeline_errors import GrapheneInvalidSubsetError
 
     check.inst_param(selector, "selector", PipelineSelector)
 

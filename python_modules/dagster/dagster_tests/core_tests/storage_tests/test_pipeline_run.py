@@ -1,6 +1,7 @@
 import sys
 
 import pytest
+
 from dagster import check
 from dagster.core.code_pointer import ModuleCodePointer
 from dagster.core.definitions.reconstructable import ReconstructableRepository

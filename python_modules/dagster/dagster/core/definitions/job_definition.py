@@ -44,11 +44,12 @@ from .partition import PartitionSetDefinition
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
 from .resource_definition import ResourceDefinition
+from .run_request import RunRequest
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
-    from dagster.core.instance import DagsterInstance
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+    from dagster.core.instance import DagsterInstance
     from dagster.core.snap import PipelineSnapshot
 
 
@@ -210,7 +211,7 @@ class JobDefinition(PipelineDefinition):
 
         resolved_op_selection_dict = parse_op_selection(self, op_selection)
 
-        sub_graph = _get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
+        sub_graph = get_subselected_graph_definition(self.graph, resolved_op_selection_dict)
 
         return JobDefinition(
             name=self.name,
@@ -251,6 +252,16 @@ class JobDefinition(PipelineDefinition):
 
         return self._cached_partition_set
 
+    def run_request_for_partition(self, partition_key: str, run_key: Optional[str]) -> RunRequest:
+        partition_set = self.get_partition_set_def()
+        if not partition_set:
+            check.failed("Called run_request_for_partition on a non-partitioned job")
+
+        partition = partition_set.get_partition(partition_key)
+        run_config = partition_set.run_config_for_partition(partition)
+        tags = partition_set.tags_for_partition(partition)
+        return RunRequest(run_key=run_key, run_config=run_config, tags=tags)
+
     def with_hooks(self, hook_defs: AbstractSet[HookDefinition]) -> "JobDefinition":
         """Apply a set of hooks to all op instances within the job."""
 
@@ -286,6 +297,7 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: Pipeline
     switching to in-memory when using execute_in_process.
     """
     from dagster.core.storage.mem_io_manager import mem_io_manager
+
     from .graph_definition import default_job_io_manager
 
     if (
@@ -310,7 +322,7 @@ def _dep_key_of(node: Node) -> NodeInvocation:
     )
 
 
-def _get_subselected_graph_definition(
+def get_subselected_graph_definition(
     graph: GraphDefinition,
     resolved_op_selection_dict: Dict,
     parent_handle: Optional[NodeHandle] = None,
@@ -330,7 +342,7 @@ def _get_subselected_graph_definition(
 
         # rebuild graph if any nodes inside the graph are selected
         if node.is_graph and resolved_op_selection_dict[node.name] is not LeafNodeSelection:
-            definition = _get_subselected_graph_definition(
+            definition = get_subselected_graph_definition(
                 node.definition,
                 resolved_op_selection_dict[node.name],
                 parent_handle=node_handle,

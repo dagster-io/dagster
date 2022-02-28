@@ -1,8 +1,9 @@
 import pytest
 import yaml
-from dagster.core.test_utils import environ, instance_for_test
 from dagster_mysql.run_storage import MySQLRunStorage
 from dagster_tests.core_tests.storage_tests.utils.run_storage import TestRunStorage
+
+from dagster.core.test_utils import environ, instance_for_test
 
 TestRunStorage.__test__ = False
 

@@ -1,8 +1,9 @@
 from typing import Any, Dict, List
 
-from dagster import AssetMaterialization, EventMetadata
-from dagster.core.definitions.event_metadata.table import TableColumn, TableSchema
 from dagster_airbyte.types import AirbyteOutput
+
+from dagster import AssetMaterialization, MetadataValue
+from dagster.core.definitions.metadata.table import TableColumn, TableSchema
 
 
 def _materialization_for_stream(
@@ -15,7 +16,7 @@ def _materialization_for_stream(
     return AssetMaterialization(
         asset_key=asset_key_prefix + [name],
         metadata={
-            "schema": EventMetadata.table_schema(
+            "schema": MetadataValue.table_schema(
                 TableSchema(
                     columns=[
                         TableColumn(name=name, type=str(info["type"]))

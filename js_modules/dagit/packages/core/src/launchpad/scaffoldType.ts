@@ -70,7 +70,6 @@ export const createTypeLookup = (
 
 export const scaffoldPipelineConfig = (configSchema: ConfigEditorRunConfigSchemaFragment) => {
   const {allConfigTypes, rootConfigType} = configSchema;
-  console.log(allConfigTypes);
   const typeLookup = createTypeLookup(allConfigTypes);
   const config = scaffoldType(rootConfigType.key, typeLookup);
   return config;

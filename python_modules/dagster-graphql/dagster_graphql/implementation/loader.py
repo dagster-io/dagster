@@ -7,7 +7,7 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.scheduler.instigation import InstigatorType
-from dagster.core.storage.pipeline_run import JobBucket, PipelineRunsFilter, RunRecord, TagBucket
+from dagster.core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
 from dagster.core.storage.tags import SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
 
 
@@ -57,9 +57,20 @@ class RepositoryScopedBatchLoader:
 
         if data_type == RepositoryDataType.JOB_RUNS:
             job_names = [x.name for x in self._repository.get_all_external_pipelines()]
-            records = self._instance.get_run_records(
-                bucket_by=JobBucket(bucket_limit=limit, job_names=job_names),
-            )
+            if self._instance.supports_bucket_queries:
+                records = self._instance.get_run_records(
+                    bucket_by=JobBucket(bucket_limit=limit, job_names=job_names),
+                )
+            else:
+                records = []
+                for job_name in job_names:
+                    records.extend(
+                        list(
+                            self._instance.get_run_records(
+                                filters=RunsFilter(pipeline_name=job_name), limit=limit
+                            )
+                        )
+                    )
             for record in records:
                 fetched[record.pipeline_run.pipeline_name].append(record)
 
@@ -67,25 +78,49 @@ class RepositoryScopedBatchLoader:
             schedule_names = [
                 schedule.name for schedule in self._repository.get_external_schedules()
             ]
-            records = self._instance.get_run_records(
-                bucket_by=TagBucket(
-                    tag_key=SCHEDULE_NAME_TAG,
-                    bucket_limit=limit,
-                    tag_values=schedule_names,
-                ),
-            )
+            if self._instance.supports_bucket_queries:
+                records = self._instance.get_run_records(
+                    bucket_by=TagBucket(
+                        tag_key=SCHEDULE_NAME_TAG,
+                        bucket_limit=limit,
+                        tag_values=schedule_names,
+                    ),
+                )
+            else:
+                records = []
+                for schedule_name in schedule_names:
+                    records.extend(
+                        list(
+                            self._instance.get_run_records(
+                                filters=RunsFilter(tags={SCHEDULE_NAME_TAG: schedule_name}),
+                                limit=limit,
+                            )
+                        )
+                    )
             for record in records:
                 fetched[record.pipeline_run.tags.get(SCHEDULE_NAME_TAG)].append(record)
 
         elif data_type == RepositoryDataType.SENSOR_RUNS:
             sensor_names = [sensor.name for sensor in self._repository.get_external_sensors()]
-            records = self._instance.get_run_records(
-                bucket_by=TagBucket(
-                    tag_key=SENSOR_NAME_TAG,
-                    bucket_limit=limit,
-                    tag_values=sensor_names,
-                ),
-            )
+            if self._instance.supports_bucket_queries:
+                records = self._instance.get_run_records(
+                    bucket_by=TagBucket(
+                        tag_key=SENSOR_NAME_TAG,
+                        bucket_limit=limit,
+                        tag_values=sensor_names,
+                    ),
+                )
+            else:
+                records = []
+                for sensor_name in sensor_names:
+                    records.extend(
+                        list(
+                            self._instance.get_run_records(
+                                filters=RunsFilter(tags={SENSOR_NAME_TAG: sensor_name}),
+                                limit=limit,
+                            )
+                        )
+                    )
             for record in records:
                 fetched[record.pipeline_run.tags.get(SENSOR_NAME_TAG)].append(record)
 
@@ -168,7 +203,7 @@ class BatchRunLoader:
         return self._records.get(run_id)
 
     def _fetch(self):
-        records = self._instance.get_run_records(PipelineRunsFilter(run_ids=list(self._run_ids)))
+        records = self._instance.get_run_records(RunsFilter(run_ids=list(self._run_ids)))
         for record in records:
             self._records[record.pipeline_run.run_id] = record
 

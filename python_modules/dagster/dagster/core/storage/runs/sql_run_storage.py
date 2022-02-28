@@ -9,6 +9,7 @@ from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
 
 import pendulum
 import sqlalchemy as db
+
 from dagster import check
 from dagster.core.errors import (
     DagsterInvariantViolationError,
@@ -34,7 +35,7 @@ from dagster.serdes import (
 from dagster.seven import JSONDecodeError
 from dagster.utils import merge_dicts, utc_datetime_from_timestamp
 
-from ..pipeline_run import JobBucket, PipelineRun, PipelineRunsFilter, RunRecord, TagBucket
+from ..pipeline_run import JobBucket, PipelineRun, RunRecord, RunsFilter, TagBucket
 from .base import RunStorage
 from .migration import OPTIONAL_DATA_MIGRATIONS, REQUIRED_DATA_MIGRATIONS, RUN_PARTITIONS
 from .schema import (
@@ -198,14 +199,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return query
 
-    def _add_filters_to_query(self, query, filters: PipelineRunsFilter):
-        check.inst_param(filters, "filters", PipelineRunsFilter)
+    def _add_filters_to_query(self, query, filters: RunsFilter):
+        check.inst_param(filters, "filters", RunsFilter)
 
         if filters.run_ids:
             query = query.where(RunsTable.c.run_id.in_(filters.run_ids))
 
-        if filters.pipeline_name:
-            query = query.where(RunsTable.c.pipeline_name == filters.pipeline_name)
+        if filters.job_name:
+            query = query.where(RunsTable.c.pipeline_name == filters.job_name)
 
         if filters.mode:
             query = query.where(RunsTable.c.mode == filters.mode)
@@ -241,6 +242,9 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def _bucket_rank_column(self, bucket_by, order_by, ascending):
         check.inst_param(bucket_by, "bucket_by", (JobBucket, TagBucket))
+        check.invariant(
+            self.supports_bucket_queries, "Bucket queries are not supported by this storage layer"
+        )
         sorting_column = getattr(RunsTable.c, order_by) if order_by else RunsTable.c.id
         direction = db.asc if ascending else db.desc
         bucket_column = (
@@ -254,7 +258,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def _runs_query(
         self,
-        filters: PipelineRunsFilter = None,
+        filters: RunsFilter = None,
         cursor: str = None,
         limit: int = None,
         columns: List[str] = None,
@@ -262,9 +266,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         ascending: bool = False,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ):
-        filters = check.opt_inst_param(
-            filters, "filters", PipelineRunsFilter, default=PipelineRunsFilter()
-        )
+        filters = check.opt_inst_param(filters, "filters", RunsFilter, default=RunsFilter())
         check.opt_str_param(cursor, "cursor")
         check.opt_int_param(limit, "limit")
         check.opt_list_param(columns, "columns")
@@ -325,7 +327,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def get_runs(
         self,
-        filters: PipelineRunsFilter = None,
+        filters: RunsFilter = None,
         cursor: str = None,
         limit: int = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
@@ -334,7 +336,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         rows = self.fetchall(query)
         return self._rows_to_runs(rows)
 
-    def get_runs_count(self, filters: PipelineRunsFilter = None) -> int:
+    def get_runs_count(self, filters: RunsFilter = None) -> int:
         subquery = self._runs_query(filters=filters).alias("subquery")
 
         # We use an alias here because Postgres requires subqueries to be
@@ -363,16 +365,14 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def get_run_records(
         self,
-        filters: PipelineRunsFilter = None,
+        filters: RunsFilter = None,
         limit: int = None,
         order_by: str = None,
         ascending: bool = False,
         cursor: str = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
-        filters = check.opt_inst_param(
-            filters, "filters", PipelineRunsFilter, default=PipelineRunsFilter()
-        )
+        filters = check.opt_inst_param(filters, "filters", RunsFilter, default=RunsFilter())
         check.opt_int_param(limit, "limit")
 
         columns = ["id", "run_body", "create_timestamp", "update_timestamp"]
@@ -514,7 +514,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return (root_run_id, [root_run] + run_group)
 
     def get_run_groups(
-        self, filters: PipelineRunsFilter = None, cursor: str = None, limit: int = None
+        self, filters: RunsFilter = None, cursor: str = None, limit: int = None
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         # The runs that would be returned by calling RunStorage.get_runs with the same arguments
         runs = self._runs_query(
@@ -762,7 +762,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         if not self.has_built_index(RUN_PARTITIONS):
             # query by tags
             return self.get_runs(
-                filters=PipelineRunsFilter(
+                filters=RunsFilter(
                     tags={
                         PARTITION_SET_TAG: partition_set_name,
                         PARTITION_NAME_TAG: partition_name,

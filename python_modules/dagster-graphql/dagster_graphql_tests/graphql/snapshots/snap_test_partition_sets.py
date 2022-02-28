@@ -1258,6 +1258,12 @@ snapshots['TestPartitionSets.test_get_partition_sets_for_pipeline[non_launchable
             },
             {
                 'mode': 'default',
+                'name': 'running_in_code_schedule_partitions',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            },
+            {
+                'mode': 'default',
                 'name': 'scheduled_integer_partitions',
                 'pipelineName': 'no_config_pipeline',
                 'solidSelection': None
@@ -1319,6 +1325,12 @@ snapshots['TestPartitionSets.test_get_partition_sets_for_pipeline[non_launchable
             {
                 'mode': 'default',
                 'name': 'run_config_error_schedule_partitions',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            },
+            {
+                'mode': 'default',
+                'name': 'running_in_code_schedule_partitions',
                 'pipelineName': 'no_config_pipeline',
                 'solidSelection': None
             },
@@ -1390,6 +1402,12 @@ snapshots['TestPartitionSets.test_get_partition_sets_for_pipeline[non_launchable
             },
             {
                 'mode': 'default',
+                'name': 'running_in_code_schedule_partitions',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            },
+            {
+                'mode': 'default',
                 'name': 'scheduled_integer_partitions',
                 'pipelineName': 'no_config_pipeline',
                 'solidSelection': None
@@ -1451,6 +1469,12 @@ snapshots['TestPartitionSets.test_get_partition_sets_for_pipeline[non_launchable
             {
                 'mode': 'default',
                 'name': 'run_config_error_schedule_partitions',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            },
+            {
+                'mode': 'default',
+                'name': 'running_in_code_schedule_partitions',
                 'pipelineName': 'no_config_pipeline',
                 'solidSelection': None
             },
@@ -1522,6 +1546,12 @@ snapshots['TestPartitionSets.test_get_partition_sets_for_pipeline[non_launchable
             },
             {
                 'mode': 'default',
+                'name': 'running_in_code_schedule_partitions',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            },
+            {
+                'mode': 'default',
                 'name': 'scheduled_integer_partitions',
                 'pipelineName': 'no_config_pipeline',
                 'solidSelection': None
@@ -1583,6 +1613,12 @@ snapshots['TestPartitionSets.test_get_partition_sets_for_pipeline[non_launchable
             {
                 'mode': 'default',
                 'name': 'run_config_error_schedule_partitions',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            },
+            {
+                'mode': 'default',
+                'name': 'running_in_code_schedule_partitions',
                 'pipelineName': 'no_config_pipeline',
                 'solidSelection': None
             },
@@ -1654,6 +1690,12 @@ snapshots['TestPartitionSets.test_get_partition_sets_for_pipeline[non_launchable
             },
             {
                 'mode': 'default',
+                'name': 'running_in_code_schedule_partitions',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            },
+            {
+                'mode': 'default',
                 'name': 'scheduled_integer_partitions',
                 'pipelineName': 'no_config_pipeline',
                 'solidSelection': None
@@ -1715,6 +1757,12 @@ snapshots['TestPartitionSets.test_get_partition_sets_for_pipeline[non_launchable
             {
                 'mode': 'default',
                 'name': 'run_config_error_schedule_partitions',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            },
+            {
+                'mode': 'default',
+                'name': 'running_in_code_schedule_partitions',
                 'pipelineName': 'no_config_pipeline',
                 'solidSelection': None
             },
@@ -1786,6 +1834,12 @@ snapshots['TestPartitionSets.test_get_partition_sets_for_pipeline[non_launchable
             },
             {
                 'mode': 'default',
+                'name': 'running_in_code_schedule_partitions',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            },
+            {
+                'mode': 'default',
                 'name': 'scheduled_integer_partitions',
                 'pipelineName': 'no_config_pipeline',
                 'solidSelection': None
@@ -1847,6 +1901,12 @@ snapshots['TestPartitionSets.test_get_partition_sets_for_pipeline[non_launchable
             {
                 'mode': 'default',
                 'name': 'run_config_error_schedule_partitions',
+                'pipelineName': 'no_config_pipeline',
+                'solidSelection': None
+            },
+            {
+                'mode': 'default',
+                'name': 'running_in_code_schedule_partitions',
                 'pipelineName': 'no_config_pipeline',
                 'solidSelection': None
             },

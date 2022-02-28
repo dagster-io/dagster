@@ -195,3 +195,13 @@ DAGSTER_K8S_PIPELINE_RUN_ENV_CONFIGMAP: "{{ template "dagster.fullname" . }}-pip
 DAGSTER_K8S_PIPELINE_RUN_IMAGE: {{ include "dagster.dagsterImage.name" (list $ .Values.pipelineRun.image) | quote }}
 DAGSTER_K8S_PIPELINE_RUN_IMAGE_PULL_POLICY: "{{ .Values.pipelineRun.image.pullPolicy }}"
 {{- end -}}
+
+{{/* Assigns an ingress path port to the correct key based on its type */}}
+{{- define "ingress.service.port" -}}
+  {{- $portType := typeOf .servicePort }}
+  {{- if eq $portType "string" }}
+  name: {{ .servicePort }}
+  {{- else }}
+  number: {{ .servicePort }}
+  {{- end }}
+{{- end }}

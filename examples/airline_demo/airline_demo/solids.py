@@ -4,14 +4,19 @@ import os
 import re
 
 import dagster_pyspark
+from dagster_aws.s3 import S3Coordinate
+from dagstermill import define_dagstermill_solid
+from pyspark.sql import DataFrame
+from sqlalchemy import text
+
 from dagster import (
     AssetMaterialization,
-    EventMetadataEntry,
     ExpectationResult,
     Field,
     FileHandle,
     InputDefinition,
     Int,
+    MetadataEntry,
     Output,
     OutputDefinition,
     String,
@@ -21,10 +26,6 @@ from dagster import (
     solid,
 )
 from dagster.core.types.dagster_type import create_string_type
-from dagster_aws.s3 import S3Coordinate
-from dagstermill import define_dagstermill_solid
-from pyspark.sql import DataFrame
-from sqlalchemy import text
 
 from .cache_file_from_s3 import cache_file_from_s3
 from .unzip_file_handle import unzip_file_handle
@@ -244,8 +245,8 @@ def load_data_to_database_from_spark(context, data_frame):
             "Persisted table {table_name} in database configured in the db_info resource."
         ).format(table_name=table_name),
         metadata_entries=[
-            EventMetadataEntry.text(label="Host", text=context.resources.db_info.host),
-            EventMetadataEntry.text(label="Db", text=context.resources.db_info.db_name),
+            MetadataEntry.text(label="Host", text=context.resources.db_info.host),
+            MetadataEntry.text(label="Db", text=context.resources.db_info.db_name),
         ],
     )
     yield Output(value=table_name, output_name="table_name")
@@ -574,7 +575,7 @@ def join_q2_data(
         label="airport_ids_present",
         description="Sequence IDs present in incoming monthly flight data.",
         metadata_entries=[
-            EventMetadataEntry.json(label="metadata", data={"missing_columns": missing_things})
+            MetadataEntry.json(label="metadata", data={"missing_columns": missing_things})
         ],
     )
 
@@ -582,7 +583,7 @@ def join_q2_data(
         success=set(april_data.columns) == set(may_data.columns) == set(june_data.columns),
         label="flight_data_same_shape",
         metadata_entries=[
-            EventMetadataEntry.json(label="metadata", data={"columns": april_data.columns})
+            MetadataEntry.json(label="metadata", data={"columns": april_data.columns})
         ],
     )
 

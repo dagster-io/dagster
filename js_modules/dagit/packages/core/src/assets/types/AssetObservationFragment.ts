@@ -39,156 +39,156 @@ export interface AssetObservationFragment_stepStats {
   startTime: number | null;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface AssetObservationFragment_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface AssetObservationFragment_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface AssetObservationFragment_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface AssetObservationFragment_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface AssetObservationFragment_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface AssetObservationFragment_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface AssetObservationFragment_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface AssetObservationFragment_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface AssetObservationFragment_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface AssetObservationFragment_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetObservationFragment_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface AssetObservationFragment_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: AssetObservationFragment_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: AssetObservationFragment_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface AssetObservationFragment_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface AssetObservationFragment_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: AssetObservationFragment_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface AssetObservationFragment_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface AssetObservationFragment_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: AssetObservationFragment_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetObservationFragment_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table {
+export interface AssetObservationFragment_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: AssetObservationFragment_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface AssetObservationFragment_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: AssetObservationFragment_metadataEntries_EventTableMetadataEntry_table;
+  table: AssetObservationFragment_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface AssetObservationFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface AssetObservationFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: AssetObservationFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface AssetObservationFragment_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface AssetObservationFragment_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: AssetObservationFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetObservationFragment_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface AssetObservationFragment_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: AssetObservationFragment_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type AssetObservationFragment_metadataEntries = AssetObservationFragment_metadataEntries_EventPathMetadataEntry | AssetObservationFragment_metadataEntries_EventJsonMetadataEntry | AssetObservationFragment_metadataEntries_EventUrlMetadataEntry | AssetObservationFragment_metadataEntries_EventTextMetadataEntry | AssetObservationFragment_metadataEntries_EventMarkdownMetadataEntry | AssetObservationFragment_metadataEntries_EventPythonArtifactMetadataEntry | AssetObservationFragment_metadataEntries_EventFloatMetadataEntry | AssetObservationFragment_metadataEntries_EventIntMetadataEntry | AssetObservationFragment_metadataEntries_EventPipelineRunMetadataEntry | AssetObservationFragment_metadataEntries_EventAssetMetadataEntry | AssetObservationFragment_metadataEntries_EventTableMetadataEntry | AssetObservationFragment_metadataEntries_EventTableSchemaMetadataEntry;
+export type AssetObservationFragment_metadataEntries = AssetObservationFragment_metadataEntries_PathMetadataEntry | AssetObservationFragment_metadataEntries_JsonMetadataEntry | AssetObservationFragment_metadataEntries_UrlMetadataEntry | AssetObservationFragment_metadataEntries_TextMetadataEntry | AssetObservationFragment_metadataEntries_MarkdownMetadataEntry | AssetObservationFragment_metadataEntries_PythonArtifactMetadataEntry | AssetObservationFragment_metadataEntries_FloatMetadataEntry | AssetObservationFragment_metadataEntries_IntMetadataEntry | AssetObservationFragment_metadataEntries_PipelineRunMetadataEntry | AssetObservationFragment_metadataEntries_AssetMetadataEntry | AssetObservationFragment_metadataEntries_TableMetadataEntry | AssetObservationFragment_metadataEntries_TableSchemaMetadataEntry;
 
 export interface AssetObservationFragment {
   __typename: "ObservationEvent";

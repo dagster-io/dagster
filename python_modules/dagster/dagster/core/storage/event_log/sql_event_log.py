@@ -6,6 +6,7 @@ from typing import Dict, Iterable, List, Mapping, Optional, Sequence, cast
 
 import pendulum
 import sqlalchemy as db
+
 from dagster import check, seven
 from dagster.core.assets import AssetDetails
 from dagster.core.definitions.events import AssetKey, AssetMaterialization
@@ -202,16 +203,25 @@ class SqlEventLogStorage(EventLogStorage):
             cursor >= -1,
             "Don't know what to do with negative cursor {cursor}".format(cursor=cursor),
         )
-        check.opt_inst_param(dagster_event_type, "dagster_event_type", DagsterEventType)
+
+        dagster_event_types = (
+            {dagster_event_type}
+            if isinstance(dagster_event_type, DagsterEventType)
+            else check.opt_set_param(
+                dagster_event_type, "dagster_event_type", of_type=DagsterEventType
+            )
+        )
 
         query = (
             db.select([SqlEventLogStorageTable.c.id, SqlEventLogStorageTable.c.event])
             .where(SqlEventLogStorageTable.c.run_id == run_id)
             .order_by(SqlEventLogStorageTable.c.id.asc())
         )
-        if dagster_event_type:
-            query = query.where(
-                SqlEventLogStorageTable.c.dagster_event_type == dagster_event_type.value
+        if dagster_event_types:
+            query = query.filter(
+                SqlEventLogStorageTable.c.dagster_event_type.in_(
+                    [dagster_event_type.value for dagster_event_type in dagster_event_types]
+                )
             )
 
         # adjust 0 based index cursor to SQL offset
@@ -259,7 +269,12 @@ class SqlEventLogStorage(EventLogStorage):
             cursor >= -1,
             "Don't know what to do with negative cursor {cursor}".format(cursor=cursor),
         )
-        check.opt_inst_param(of_type, "of_type", DagsterEventType)
+
+        check.invariant(
+            not of_type
+            or isinstance(of_type, DagsterEventType)
+            or isinstance(of_type, (frozenset, set))
+        )
 
         events_by_id = self.get_logs_for_run_by_log_id(run_id, cursor, of_type, limit)
         return [event for id, event in sorted(events_by_id.items(), key=lambda x: x[0])]
@@ -275,7 +290,12 @@ class SqlEventLogStorage(EventLogStorage):
                     db.func.max(SqlEventLogStorageTable.c.timestamp).label("last_event_timestamp"),
                 ]
             )
-            .where(SqlEventLogStorageTable.c.run_id == run_id)
+            .where(
+                db.and_(
+                    SqlEventLogStorageTable.c.run_id == run_id,
+                    SqlEventLogStorageTable.c.dagster_event_type != None,
+                )
+            )
             .group_by("dagster_event_type")
         )
 
@@ -287,9 +307,9 @@ class SqlEventLogStorage(EventLogStorage):
             times = {}
             for result in results:
                 (dagster_event_type, n_events_of_type, last_event_timestamp) = result
-                if dagster_event_type:
-                    counts[dagster_event_type] = n_events_of_type
-                    times[dagster_event_type] = last_event_timestamp
+                check.invariant(dagster_event_type is not None)
+                counts[dagster_event_type] = n_events_of_type
+                times[dagster_event_type] = last_event_timestamp
 
             enqueued_time = times.get(DagsterEventType.PIPELINE_ENQUEUED.value, None)
             launch_time = times.get(DagsterEventType.PIPELINE_STARTING.value, None)

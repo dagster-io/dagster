@@ -12,14 +12,14 @@ from .events import AssetMaterialization, DynamicOutput, ExpectationResult, Mate
 from .output import DynamicOutputDefinition
 
 if TYPE_CHECKING:
-    from .solid_definition import SolidDefinition
-    from .decorators.solid import DecoratedSolidFunction
-    from .output import OutputDefinition
-    from .composition import PendingNodeInvocation
     from ..execution.context.invocation import (
         BoundSolidExecutionContext,
         UnboundSolidExecutionContext,
     )
+    from .composition import PendingNodeInvocation
+    from .decorators.solid import DecoratedSolidFunction
+    from .output import OutputDefinition
+    from .solid_definition import SolidDefinition
 
 
 def solid_invocation_result(
@@ -28,8 +28,9 @@ def solid_invocation_result(
     *args,
     **kwargs,
 ) -> Any:
-    from dagster.core.execution.context.invocation import build_solid_context
     from dagster.core.definitions.decorators.solid import DecoratedSolidFunction
+    from dagster.core.execution.context.invocation import build_solid_context
+
     from .composition import PendingNodeInvocation
 
     solid_def = (

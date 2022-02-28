@@ -7,7 +7,7 @@ for that.
 from abc import ABC, abstractmethod
 from collections import defaultdict, namedtuple
 from datetime import datetime
-from typing import Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple
 
 from dagster import StaticPartitionsDefinition, check
 from dagster.core.asset_defs import SourceAsset
@@ -37,19 +37,26 @@ from dagster.utils.error import SerializableErrorInfo
 
 @whitelist_for_serdes
 class ExternalRepositoryData(
-    namedtuple(
+    NamedTuple(
         "_ExternalRepositoryData",
-        "name external_pipeline_datas external_schedule_datas external_partition_set_datas external_sensor_datas external_asset_graph_data",
+        [
+            ("name", str),
+            ("external_pipeline_datas", Sequence["ExternalPipelineData"]),
+            ("external_schedule_datas", Sequence["ExternalScheduleData"]),
+            ("external_partition_set_datas", Sequence["ExternalPartitionSetData"]),
+            ("external_sensor_datas", Sequence["ExternalSensorData"]),
+            ("external_asset_graph_data", Sequence["ExternalAssetNode"]),
+        ],
     )
 ):
     def __new__(
         cls,
-        name,
-        external_pipeline_datas,
-        external_schedule_datas,
-        external_partition_set_datas,
-        external_sensor_datas=None,
-        external_asset_graph_data=None,
+        name: str,
+        external_pipeline_datas: Sequence["ExternalPipelineData"],
+        external_schedule_datas: Sequence["ExternalScheduleData"],
+        external_partition_set_datas: Sequence["ExternalPartitionSetData"],
+        external_sensor_datas: Sequence["ExternalSensorData"] = None,
+        external_asset_graph_data: Sequence["ExternalAssetNode"] = None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
@@ -125,9 +132,21 @@ class ExternalRepositoryData(
 
 @whitelist_for_serdes
 class ExternalPipelineSubsetResult(
-    namedtuple("_ExternalPipelineSubsetResult", "success error external_pipeline_data")
+    NamedTuple(
+        "_ExternalPipelineSubsetResult",
+        [
+            ("success", bool),
+            ("error", Optional[SerializableErrorInfo]),
+            ("external_pipeline_data", Optional["ExternalPipelineData"]),
+        ],
+    )
 ):
-    def __new__(cls, success, error=None, external_pipeline_data=None):
+    def __new__(
+        cls,
+        success: bool,
+        error: Optional[SerializableErrorInfo] = None,
+        external_pipeline_data: Optional["ExternalPipelineData"] = None,
+    ):
         return super(ExternalPipelineSubsetResult, cls).__new__(
             cls,
             success=check.bool_param(success, "success"),
@@ -140,13 +159,24 @@ class ExternalPipelineSubsetResult(
 
 @whitelist_for_serdes
 class ExternalPipelineData(
-    namedtuple(
+    NamedTuple(
         "_ExternalPipelineData",
-        "name pipeline_snapshot active_presets parent_pipeline_snapshot is_job",
+        [
+            ("name", str),
+            ("pipeline_snapshot", PipelineSnapshot),
+            ("active_presets", Sequence["ExternalPresetData"]),
+            ("parent_pipeline_snapshot", Optional[PipelineSnapshot]),
+            ("is_job", bool),
+        ],
     )
 ):
     def __new__(
-        cls, name, pipeline_snapshot, active_presets, parent_pipeline_snapshot, is_job=False
+        cls,
+        name: str,
+        pipeline_snapshot: PipelineSnapshot,
+        active_presets: Sequence["ExternalPresetData"],
+        parent_pipeline_snapshot: Optional[PipelineSnapshot],
+        is_job: bool = False,
     ):
         return super(ExternalPipelineData, cls).__new__(
             cls,
@@ -166,18 +196,34 @@ class ExternalPipelineData(
 
 @whitelist_for_serdes
 class ExternalPresetData(
-    namedtuple("_ExternalPresetData", "name run_config solid_selection mode tags")
+    NamedTuple(
+        "_ExternalPresetData",
+        [
+            ("name", str),
+            ("run_config", Dict[str, Any]),
+            ("solid_selection", Optional[List[str]]),
+            ("mode", str),
+            ("tags", Dict[str, str]),
+        ],
+    )
 ):
-    def __new__(cls, name, run_config, solid_selection, mode, tags):
+    def __new__(
+        cls,
+        name: str,
+        run_config: Dict[str, Any],
+        solid_selection: Optional[List[str]],
+        mode: str,
+        tags: Dict[str, str],
+    ):
         return super(ExternalPresetData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            run_config=check.opt_dict_param(run_config, "run_config"),
+            run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
             solid_selection=check.opt_nullable_list_param(
                 solid_selection, "solid_selection", of_type=str
             ),
             mode=check.str_param(mode, "mode"),
-            tags=check.opt_dict_param(tags, "tags"),
+            tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
         )
 
 
@@ -238,9 +284,9 @@ class ExternalScheduleData(
 
 @whitelist_for_serdes
 class ExternalScheduleExecutionErrorData(
-    namedtuple("_ExternalScheduleExecutionErrorData", "error")
+    NamedTuple("_ExternalScheduleExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
 ):
-    def __new__(cls, error):
+    def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExternalScheduleExecutionErrorData, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -249,17 +295,12 @@ class ExternalScheduleExecutionErrorData(
 
 @whitelist_for_serdes
 class ExternalTargetData(
-    namedtuple(
+    NamedTuple(
         "_ExternalTargetData",
-        "pipeline_name mode solid_selection",
+        [("pipeline_name", str), ("mode", str), ("solid_selection", Optional[List[str]])],
     )
 ):
-    def __new__(
-        cls,
-        pipeline_name,
-        mode,
-        solid_selection,
-    ):
+    def __new__(cls, pipeline_name: str, mode: str, solid_selection: Optional[List[str]]):
         return super(ExternalTargetData, cls).__new__(
             cls,
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
@@ -269,12 +310,15 @@ class ExternalTargetData(
 
 
 @whitelist_for_serdes
-class ExternalSensorMetadata(namedtuple("_ExternalSensorMetadata", "asset_keys")):
+class ExternalSensorMetadata(
+    NamedTuple("_ExternalSensorMetadata", [("asset_keys", Optional[List[AssetKey]])])
+):
     """Stores additional sensor metadata which is available on the Dagit frontend."""
 
-    def __new__(cls, asset_keys=None):
+    def __new__(cls, asset_keys: Optional[List[AssetKey]] = None):
         return super(ExternalSensorMetadata, cls).__new__(
-            cls, asset_keys=check.opt_nullable_list_param(asset_keys, "asset_keys")
+            cls,
+            asset_keys=check.opt_nullable_list_param(asset_keys, "asset_keys", of_type=AssetKey),
         )
 
 
@@ -286,22 +330,32 @@ class ExternalSensorDataSerializer(DefaultNamedTupleSerializer):
 
 @whitelist_for_serdes(serializer=ExternalSensorDataSerializer)
 class ExternalSensorData(
-    namedtuple(
+    NamedTuple(
         "_ExternalSensorData",
-        "name pipeline_name solid_selection mode min_interval description target_dict metadata default_status",
+        [
+            ("name", str),
+            ("pipeline_name", Optional[str]),
+            ("solid_selection", Optional[List[str]]),
+            ("mode", Optional[str]),
+            ("min_interval", Optional[int]),
+            ("description", Optional[str]),
+            ("target_dict", Dict[str, ExternalTargetData]),
+            ("metadata", Optional[ExternalSensorMetadata]),
+            ("default_status", Optional[DefaultSensorStatus]),
+        ],
     )
 ):
     def __new__(
         cls,
-        name,
-        pipeline_name=None,
-        solid_selection=None,
-        mode=None,
-        min_interval=None,
-        description=None,
-        target_dict=None,
-        metadata=None,
-        default_status=None,
+        name: str,
+        pipeline_name: Optional[str] = None,
+        solid_selection: Optional[List[str]] = None,
+        mode: Optional[str] = None,
+        min_interval: Optional[int] = None,
+        description: Optional[str] = None,
+        target_dict: Dict[str, ExternalTargetData] = None,
+        metadata: Optional[ExternalSensorMetadata] = None,
+        default_status: Optional[DefaultSensorStatus] = None,
     ):
         if pipeline_name and not target_dict:
             # handle the legacy case where the ExternalSensorData was constructed from an earlier
@@ -504,7 +558,9 @@ class ExternalAssetDependency(
     def __new__(cls, upstream_asset_key: AssetKey, input_name: str = None, output_name: str = None):
         check.invariant(
             (input_name is None) ^ (output_name is None),
-            "Exactly one of `input_name` and `output_name` should be supplied",
+            "When constructing ExternalAssetDependency, exactly one of `input_name` and "
+            f"`output_name` should be supplied. AssetKey `{upstream_asset_key}` is associated with "
+            f"input `{input_name}` and output `{output_name}`.",
         )
         return super(ExternalAssetDependency, cls).__new__(
             cls,
@@ -529,7 +585,9 @@ class ExternalAssetDependedBy(
     ):
         check.invariant(
             (input_name is None) ^ (output_name is None),
-            "Exactly one of `input_name` and `output_name` should be supplied",
+            "When constructing ExternalAssetDependedBy, exactly one of `input_name` and "
+            f"`output_name` should be supplied. AssetKey `{downstream_asset_key}` is associated with "
+            f"input `{input_name}` and output `{output_name}`.",
         )
         return super(ExternalAssetDependedBy, cls).__new__(
             cls,
@@ -577,7 +635,9 @@ class ExternalAssetNode(
         )
 
 
-def external_repository_data_from_def(repository_def):
+def external_repository_data_from_def(
+    repository_def: RepositoryDefinition,
+) -> ExternalRepositoryData:
     check.inst_param(repository_def, "repository_def", RepositoryDefinition)
 
     pipelines = repository_def.get_all_pipelines()

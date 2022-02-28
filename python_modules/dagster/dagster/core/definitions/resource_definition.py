@@ -7,6 +7,8 @@ from typing import (
     Callable,
     Dict,
     List,
+    Mapping,
+    NamedTuple,
     Optional,
     Union,
     cast,
@@ -335,7 +337,10 @@ class IContainsGenerator:
 
 
 class ScopedResourcesBuilder(
-    namedtuple("ScopedResourcesBuilder", "resource_instance_dict contains_generator")
+    NamedTuple(
+        "ScopedResourcesBuilder",
+        [("resource_instance_dict", Mapping[str, object]), ("contains_generator", bool)],
+    )
 ):
     """There are concepts in the codebase (e.g. ops, system storage) that receive
     only the resources that they have specified in required_resource_keys.
@@ -344,8 +349,8 @@ class ScopedResourcesBuilder(
 
     def __new__(
         cls,
-        resource_instance_dict: Optional[Dict[str, Any]] = None,
-        contains_generator: Optional[bool] = False,
+        resource_instance_dict: Optional[Mapping[str, object]] = None,
+        contains_generator: bool = False,
     ):
         return super(ScopedResourcesBuilder, cls).__new__(
             cls,

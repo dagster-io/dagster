@@ -7,6 +7,7 @@ from contextlib import contextmanager
 import mock
 import pytest
 from click.testing import CliRunner
+
 from dagster import (
     ModeDefinition,
     Out,

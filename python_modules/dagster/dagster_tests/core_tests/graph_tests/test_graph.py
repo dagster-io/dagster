@@ -2,6 +2,7 @@ import enum
 import json
 
 import pytest
+
 from dagster import (
     ConfigMapping,
     DagsterInstance,

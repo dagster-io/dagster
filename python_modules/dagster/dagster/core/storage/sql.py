@@ -9,10 +9,11 @@ from alembic.command import downgrade, stamp, upgrade
 from alembic.config import Config
 from alembic.migration import MigrationContext  # pylint: disable=import-error
 from alembic.script import ScriptDirectory
+from sqlalchemy.ext.compiler import compiles
+
 from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.utils import file_relative_path
 from dagster.utils.log import quieten
-from sqlalchemy.ext.compiler import compiles
 
 create_engine = db.create_engine  # exported
 

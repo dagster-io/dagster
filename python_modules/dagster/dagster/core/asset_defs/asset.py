@@ -30,6 +30,9 @@ class AssetsDefinition:
         self._partitions_def = partitions_def
         self._partition_mappings = partition_mappings or {}
 
+    def __call__(self, *args, **kwargs):
+        return self._op(*args, **kwargs)
+
     @property
     def op(self) -> OpDefinition:
         return self._op

@@ -3,8 +3,9 @@ import * as React from 'react';
 
 import {TestProvider} from '../testing/TestProvider';
 import {LocationStateChangeEventType} from '../types/globalTypes';
+import {HIDDEN_REPO_KEYS} from '../workspace/WorkspaceContext';
 
-import {LeftNavRepositorySection, HIDDEN_REPO_KEYS} from './LeftNavRepositorySection';
+import {LeftNavRepositorySection} from './LeftNavRepositorySection';
 
 describe('Repository options', () => {
   const defaultMocks = {

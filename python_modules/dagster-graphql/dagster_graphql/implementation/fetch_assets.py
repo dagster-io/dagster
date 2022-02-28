@@ -1,4 +1,5 @@
 from dagster import AssetKey, DagsterEventType, EventRecordsFilter, check, seven
+from dagster.core.events import ASSET_EVENTS
 
 from .utils import capture_error
 
@@ -160,7 +161,7 @@ def get_assets_for_run_id(graphene_info, run_id):
 
     check.str_param(run_id, "run_id")
 
-    records = graphene_info.context.instance.all_logs(run_id)
+    records = graphene_info.context.instance.all_logs(run_id, of_type=ASSET_EVENTS)
     asset_keys = [
         record.dagster_event.asset_key
         for record in records

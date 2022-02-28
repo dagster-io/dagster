@@ -6,9 +6,10 @@ from enum import Enum
 from typing import Any, Callable, Dict, Generic, List, NamedTuple, Optional, TypeVar, Union, cast
 
 import pendulum
+from dateutil.relativedelta import relativedelta
+
 from dagster import check
 from dagster.serdes import whitelist_for_serdes
-from dateutil.relativedelta import relativedelta
 
 from ...seven.compat.pendulum import PendulumDateTime, to_timezone
 from ...utils import frozenlist, merge_dicts
@@ -188,6 +189,12 @@ class StaticPartitionsDefinition(
 ):  # pylint: disable=unsubscriptable-object
     def __init__(self, partition_keys: List[str]):
         check.list_param(partition_keys, "partition_keys", of_type=str)
+
+        # Dagit selects partition ranges following the format '2022-01-13...2022-01-14'
+        # "..." is an invalid substring in partition keys
+        if any(["..." in partition_key for partition_key in partition_keys]):
+            raise DagsterInvalidDefinitionError("'...' is an invalid substring in a partition key")
+
         self._partitions = [Partition(key) for key in partition_keys]
 
     def get_partitions(

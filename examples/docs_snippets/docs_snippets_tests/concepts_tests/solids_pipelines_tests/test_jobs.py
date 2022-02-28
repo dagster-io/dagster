@@ -16,4 +16,6 @@ def test_do_it_all_with_default_config():
 
 
 def test_do_it_all_with_simplified_config():
-    do_it_all_with_simplified_config.execute_in_process(run_config={"simplified_param": "stuff"})
+    do_it_all_with_simplified_config.execute_in_process(
+        run_config={"simplified_param": "stuff"}
+    )

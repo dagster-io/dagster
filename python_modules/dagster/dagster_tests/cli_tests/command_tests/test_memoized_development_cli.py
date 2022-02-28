@@ -4,6 +4,7 @@ import tempfile
 from io import BytesIO
 
 import yaml
+
 from dagster import execute_pipeline
 from dagster.cli.pipeline import execute_list_versions_command
 from dagster.core.test_utils import instance_for_test

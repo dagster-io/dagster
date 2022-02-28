@@ -1,4 +1,4 @@
-import {Intent} from '@blueprintjs/core';
+import {Intent, PopoverPosition} from '@blueprintjs/core';
 import {
   Box,
   ButtonWIP,
@@ -30,6 +30,7 @@ interface GraphQueryInputProps {
   autoFocus?: boolean;
   presets?: {name: string; value: string}[];
   width?: string | number;
+  popoverPosition?: PopoverPosition;
   className?: string;
   disabled?: boolean;
 
@@ -286,10 +287,10 @@ export const GraphQueryInput = React.memo(
         <Popover
           enforceFocus={!flattenGraphsEnabled} // Defer focus to be manually managed
           isOpen={focused}
-          position="top-left"
+          position={props.popoverPosition || 'top-left'}
           content={
             suggestions.length ? (
-              <MenuWIP style={{width: props.width || '30vw'}}>
+              <MenuWIP style={{width: props.width || '24vw'}}>
                 {suggestions.slice(0, 15).map((suggestion) => (
                   <MenuItemWIP
                     icon={suggestion.isGraph ? 'job' : 'op'}
@@ -334,7 +335,7 @@ export const GraphQueryInput = React.memo(
                 props.onBlur?.(pendingValue);
               }}
               onKeyDown={onKeyDown}
-              style={{width: props.width || '30vw'}}
+              style={{width: props.width || '24vw'}}
               className={props.className}
               ref={inputRef}
             />

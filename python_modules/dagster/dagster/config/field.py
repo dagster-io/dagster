@@ -174,8 +174,8 @@ def resolve_to_config_type(dagster_type) -> Union[ConfigType, bool]:
     #     up to callers to report a reasonable error.
 
     from dagster.primitive_mapping import (
-        remap_python_builtin_for_config,
         is_supported_config_python_builtin,
+        remap_python_builtin_for_config,
     )
 
     if BuiltinEnum.contains(dagster_type):
@@ -292,8 +292,8 @@ class Field:
         is_required=None,
         description=None,
     ):
-        from .validate import validate_config
         from .post_process import resolve_defaults
+        from .validate import validate_config
 
         self.config_type = check.inst(self._resolve_config_arg(config), ConfigType)
 

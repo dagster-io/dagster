@@ -2,8 +2,9 @@ from collections import namedtuple
 
 import boto3
 from botocore.exceptions import ClientError
+
 from dagster import Array, Field, Noneable, StringSource, check
-from dagster.core.events import EngineEventData, EventMetadataEntry
+from dagster.core.events import EngineEventData, MetadataEntry
 from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass
@@ -176,9 +177,9 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             pipeline_run=run,
             engine_event_data=EngineEventData(
                 [
-                    EventMetadataEntry.text(arn, "ECS Task ARN"),
-                    EventMetadataEntry.text(metadata.cluster, "ECS Cluster"),
-                    EventMetadataEntry.text(run.run_id, "Run ID"),
+                    MetadataEntry.text(arn, "ECS Task ARN"),
+                    MetadataEntry.text(metadata.cluster, "ECS Cluster"),
+                    MetadataEntry.text(run.run_id, "Run ID"),
                 ]
             ),
             cls=self.__class__,

@@ -1,7 +1,15 @@
 import sys
 
 import kubernetes
-from dagster import DagsterInvariantViolationError, EventMetadataEntry, check
+from dagster_k8s.job import (
+    DagsterK8sJobConfig,
+    construct_dagster_k8s_job,
+    get_job_name_from_run_id,
+    get_user_defined_k8s_config,
+)
+from dagster_k8s.utils import delete_job
+
+from dagster import DagsterInvariantViolationError, MetadataEntry, check
 from dagster.config.field import resolve_to_config_type
 from dagster.config.validate import process_config
 from dagster.core.events import EngineEventData
@@ -13,13 +21,6 @@ from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster_k8s.job import (
-    DagsterK8sJobConfig,
-    construct_dagster_k8s_job,
-    get_job_name_from_run_id,
-    get_user_defined_k8s_config,
-)
-from dagster_k8s.utils import delete_job
 
 from .config import CELERY_K8S_CONFIG_KEY, celery_k8s_executor_config
 
@@ -224,9 +225,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             run,
             EngineEventData(
                 [
-                    EventMetadataEntry.text(job_name, "Kubernetes Job name"),
-                    EventMetadataEntry.text(job_namespace, "Kubernetes Namespace"),
-                    EventMetadataEntry.text(run.run_id, "Run ID"),
+                    MetadataEntry.text(job_name, "Kubernetes Job name"),
+                    MetadataEntry.text(job_namespace, "Kubernetes Namespace"),
+                    MetadataEntry.text(run.run_id, "Run ID"),
                 ]
             ),
             cls=self.__class__,
@@ -238,9 +239,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             run,
             EngineEventData(
                 [
-                    EventMetadataEntry.text(job_name, "Kubernetes Job name"),
-                    EventMetadataEntry.text(job_namespace, "Kubernetes Namespace"),
-                    EventMetadataEntry.text(run.run_id, "Run ID"),
+                    MetadataEntry.text(job_name, "Kubernetes Job name"),
+                    MetadataEntry.text(job_namespace, "Kubernetes Namespace"),
+                    MetadataEntry.text(run.run_id, "Run ID"),
                 ]
             ),
             cls=self.__class__,

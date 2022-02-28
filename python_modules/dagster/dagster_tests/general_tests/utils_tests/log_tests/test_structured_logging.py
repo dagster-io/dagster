@@ -2,6 +2,7 @@ import logging
 from contextlib import contextmanager
 
 import pytest
+
 from dagster.utils.log import define_structured_logger
 from dagster.utils.test import create_test_pipeline_execution_context
 

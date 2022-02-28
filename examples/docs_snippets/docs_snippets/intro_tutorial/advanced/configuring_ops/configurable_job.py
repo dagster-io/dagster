@@ -14,13 +14,9 @@ def download_csv(context):
 
 @op
 def sort_by_calories(cereals):
-    sorted_cereals = sorted(
-        cereals, key=lambda cereal: int(cereal["calories"])
-    )
+    sorted_cereals = sorted(cereals, key=lambda cereal: int(cereal["calories"]))
 
-    get_dagster_logger().info(
-        f'Most caloric cereal: {sorted_cereals[-1]["name"]}'
-    )
+    get_dagster_logger().info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
 
 
 @job

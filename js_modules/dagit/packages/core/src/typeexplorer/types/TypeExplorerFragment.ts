@@ -7,156 +7,156 @@
 // GraphQL fragment: TypeExplorerFragment
 // ====================================================
 
-export interface TypeExplorerFragment_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface TypeExplorerFragment_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface TypeExplorerFragment_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface TypeExplorerFragment_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface TypeExplorerFragment_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface TypeExplorerFragment_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface TypeExplorerFragment_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface TypeExplorerFragment_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface TypeExplorerFragment_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface TypeExplorerFragment_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface TypeExplorerFragment_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface TypeExplorerFragment_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: TypeExplorerFragment_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: TypeExplorerFragment_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface TypeExplorerFragment_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface TypeExplorerFragment_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: TypeExplorerFragment_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: TypeExplorerFragment_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface TypeExplorerFragment_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface TypeExplorerFragment_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: TypeExplorerFragment_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: TypeExplorerFragment_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: TypeExplorerFragment_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: TypeExplorerFragment_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventTableMetadataEntry_table {
+export interface TypeExplorerFragment_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: TypeExplorerFragment_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: TypeExplorerFragment_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface TypeExplorerFragment_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: TypeExplorerFragment_metadataEntries_EventTableMetadataEntry_table;
+  table: TypeExplorerFragment_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: TypeExplorerFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: TypeExplorerFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: TypeExplorerFragment_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface TypeExplorerFragment_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: TypeExplorerFragment_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type TypeExplorerFragment_metadataEntries = TypeExplorerFragment_metadataEntries_EventPathMetadataEntry | TypeExplorerFragment_metadataEntries_EventJsonMetadataEntry | TypeExplorerFragment_metadataEntries_EventUrlMetadataEntry | TypeExplorerFragment_metadataEntries_EventTextMetadataEntry | TypeExplorerFragment_metadataEntries_EventMarkdownMetadataEntry | TypeExplorerFragment_metadataEntries_EventPythonArtifactMetadataEntry | TypeExplorerFragment_metadataEntries_EventFloatMetadataEntry | TypeExplorerFragment_metadataEntries_EventIntMetadataEntry | TypeExplorerFragment_metadataEntries_EventPipelineRunMetadataEntry | TypeExplorerFragment_metadataEntries_EventAssetMetadataEntry | TypeExplorerFragment_metadataEntries_EventTableMetadataEntry | TypeExplorerFragment_metadataEntries_EventTableSchemaMetadataEntry;
+export type TypeExplorerFragment_metadataEntries = TypeExplorerFragment_metadataEntries_PathMetadataEntry | TypeExplorerFragment_metadataEntries_JsonMetadataEntry | TypeExplorerFragment_metadataEntries_UrlMetadataEntry | TypeExplorerFragment_metadataEntries_TextMetadataEntry | TypeExplorerFragment_metadataEntries_MarkdownMetadataEntry | TypeExplorerFragment_metadataEntries_PythonArtifactMetadataEntry | TypeExplorerFragment_metadataEntries_FloatMetadataEntry | TypeExplorerFragment_metadataEntries_IntMetadataEntry | TypeExplorerFragment_metadataEntries_PipelineRunMetadataEntry | TypeExplorerFragment_metadataEntries_AssetMetadataEntry | TypeExplorerFragment_metadataEntries_TableMetadataEntry | TypeExplorerFragment_metadataEntries_TableSchemaMetadataEntry;
 
 export interface TypeExplorerFragment_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
