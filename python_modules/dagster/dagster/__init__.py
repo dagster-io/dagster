@@ -1,6 +1,8 @@
 import sys
 import typing
 
+from pep562 import pep562
+
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
 from dagster.config.config_schema import ConfigSchema
@@ -254,7 +256,6 @@ from dagster.utils.test import (
     execute_solid_within_pipeline,
     execute_solids_within_pipeline,
 )
-from pep562 import pep562
 
 from .version import __version__
 
@@ -270,22 +271,24 @@ from dagster.config.source import BoolSource, StringSource, IntSource  # isort:s
 
 if typing.TYPE_CHECKING:
     # pylint:disable=reimported
+    from dagster.core.definitions import DagsterAssetMetadataValue as DagsterAssetMetadataEntryData
     from dagster.core.definitions import (
-        MetadataEntry as EventMetadataEntry,
-        MetadataValue as EventMetadata,
-        TextMetadataValue as TextMetadataEntryData,
-        UrlMetadataValue as UrlMetadataEntryData,
-        PathMetadataValue as PathMetadataEntryData,
-        JsonMetadataValue as JsonMetadataEntryData,
-        MarkdownMetadataValue as MarkdownMetadataEntryData,
-        PythonArtifactMetadataValue as PythonArtifactMetadataEntryData,
-        FloatMetadataValue as FloatMetadataEntryData,
-        IntMetadataValue as IntMetadataEntryData,
         DagsterPipelineRunMetadataValue as DagsterPipelineRunMetadataEntryData,
-        DagsterAssetMetadataValue as DagsterAssetMetadataEntryData,
-        TableMetadataValue as TableMetadataEntryData,
-        TableSchemaMetadataValue as TableSchemaMetadataEntryData,
     )
+    from dagster.core.definitions import FloatMetadataValue as FloatMetadataEntryData
+    from dagster.core.definitions import IntMetadataValue as IntMetadataEntryData
+    from dagster.core.definitions import JsonMetadataValue as JsonMetadataEntryData
+    from dagster.core.definitions import MarkdownMetadataValue as MarkdownMetadataEntryData
+    from dagster.core.definitions import MetadataEntry as EventMetadataEntry
+    from dagster.core.definitions import MetadataValue as EventMetadata
+    from dagster.core.definitions import PathMetadataValue as PathMetadataEntryData
+    from dagster.core.definitions import (
+        PythonArtifactMetadataValue as PythonArtifactMetadataEntryData,
+    )
+    from dagster.core.definitions import TableMetadataValue as TableMetadataEntryData
+    from dagster.core.definitions import TableSchemaMetadataValue as TableSchemaMetadataEntryData
+    from dagster.core.definitions import TextMetadataValue as TextMetadataEntryData
+    from dagster.core.definitions import UrlMetadataValue as UrlMetadataEntryData
 
     # pylint:enable=reimported
 

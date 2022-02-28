@@ -1,8 +1,9 @@
 import inspect
 import re
 
-import dagster
 import pytest
+
+import dagster
 
 
 def test_all():
