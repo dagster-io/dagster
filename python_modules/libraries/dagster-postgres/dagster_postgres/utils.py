@@ -9,6 +9,7 @@ import psycopg2
 import psycopg2.errorcodes
 import sqlalchemy
 from dagster import Field, IntSource, Permissive, StringSource, check
+from dagster.core.definitions.policy import Backoff, Jitter, calculate_delay
 from dagster.core.storage.sql import get_alembic_config, handle_schema_errors
 
 
@@ -104,14 +105,16 @@ def retry_pg_creation_fn(fn, retry_limit=5, retry_wait=0.2):
 
 
 def retry_pg_connection_fn(fn, retry_limit=5, retry_wait=0.2):
-    """Reusable retry logic for any psycopg2/sqlalchemy PG connection functions that may fail.
+    """
+    Reusable retry logic for any psycopg2/sqlalchemy PG connection functions that may fail.
     Intended to be used anywhere we connect to PG, to gracefully handle transient connection issues.
     """
     check.callable_param(fn, "fn")
     check.int_param(retry_limit, "retry_limit")
     check.numeric_param(retry_wait, "retry_wait")
-
+    attempt_num = 0
     while True:
+        attempt_num += 1
         try:
             return fn()
         except (
@@ -122,12 +125,18 @@ def retry_pg_connection_fn(fn, retry_limit=5, retry_wait=0.2):
             sqlalchemy.exc.DatabaseError,
             sqlalchemy.exc.OperationalError,
         ) as exc:
-            logging.warning("Retrying failed database connection")
-            if retry_limit == 0:
+            logging.warning("Retrying failed database connection: %s", exc)
+            if attempt_num > retry_limit:
                 raise DagsterPostgresException("too many retries for DB connection") from exc
 
-        time.sleep(retry_wait)
-        retry_limit -= 1
+        time.sleep(
+            calculate_delay(
+                attempt_num=attempt_num,
+                base_delay=retry_wait,
+                jitter=Jitter.PLUS_MINUS,
+                backoff=Backoff.EXPONENTIAL,
+            )
+        )
 
 
 def wait_for_connection(conn_string, retry_limit=5, retry_wait=0.2):
