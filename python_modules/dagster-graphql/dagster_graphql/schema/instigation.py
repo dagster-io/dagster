@@ -14,7 +14,7 @@ from dagster.core.scheduler.instigation import (
     ScheduleInstigatorData,
     SensorInstigatorData,
 )
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 from dagster.seven.compat.pendulum import to_timezone
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
@@ -130,7 +130,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
 
         records_by_id = {
             record.pipeline_run.run_id: record
-            for record in instance.get_run_records(PipelineRunsFilter(run_ids=run_ids))
+            for record in instance.get_run_records(RunsFilter(run_ids=run_ids))
         }
 
         return [GrapheneRun(records_by_id[run_id]) for run_id in run_ids if run_id in records_by_id]
@@ -333,9 +333,9 @@ class GrapheneInstigationState(graphene.ObjectType):
             return [GrapheneRun(record) for record in records]
 
         if self._instigator_state.instigator_type == InstigatorType.SENSOR:
-            filters = PipelineRunsFilter.for_sensor(self._instigator_state)
+            filters = RunsFilter.for_sensor(self._instigator_state)
         else:
-            filters = PipelineRunsFilter.for_schedule(self._instigator_state)
+            filters = RunsFilter.for_schedule(self._instigator_state)
         return [
             GrapheneRun(record)
             for record in graphene_info.context.instance.get_run_records(
@@ -346,9 +346,9 @@ class GrapheneInstigationState(graphene.ObjectType):
 
     def resolve_runsCount(self, graphene_info):
         if self._instigator_state.instigator_type == InstigatorType.SENSOR:
-            filters = PipelineRunsFilter.for_sensor(self._instigator_state)
+            filters = RunsFilter.for_sensor(self._instigator_state)
         else:
-            filters = PipelineRunsFilter.for_schedule(self._instigator_state)
+            filters = RunsFilter.for_schedule(self._instigator_state)
         return graphene_info.context.instance.get_runs_count(filters=filters)
 
     def resolve_tick(self, graphene_info, timestamp):

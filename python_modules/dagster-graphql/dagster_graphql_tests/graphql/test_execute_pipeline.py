@@ -10,7 +10,7 @@ from dagster_graphql.client.query import (
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 from graphql import parse
 
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.utils import file_relative_path
 from dagster.utils.test import get_temp_file_name
 
@@ -571,7 +571,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
 
         # Check run storage
         runs_with_tag = graphql_context.instance.get_runs(
-            filters=PipelineRunsFilter(tags={"dagster/test_key": "test_value"})
+            filters=RunsFilter(tags={"dagster/test_key": "test_value"})
         )
         assert len(runs_with_tag) == 1
         assert runs_with_tag[0].run_id == run_id

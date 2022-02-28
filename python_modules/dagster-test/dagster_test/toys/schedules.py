@@ -9,13 +9,13 @@ from dagster import (
     monthly_schedule,
     weekly_schedule,
 )
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.utils.partitions import date_partition_range
 
 
 def _fetch_runs_by_partition(instance, partition_set_def, status_filters=None):
     # query runs db for this partition set
-    filters = PipelineRunsFilter(tags={"dagster/partition_set": partition_set_def.name})
+    filters = RunsFilter(tags={"dagster/partition_set": partition_set_def.name})
     partition_set_runs = instance.get_runs(filters)
 
     runs_by_partition = defaultdict(list)

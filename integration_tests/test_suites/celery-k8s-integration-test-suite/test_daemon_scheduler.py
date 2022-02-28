@@ -6,7 +6,7 @@ from dagster_test.test_project import (
 )
 from marks import mark_daemon
 
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun, RunsFilter
 from dagster.core.test_utils import poll_for_finished_run
 
 
@@ -22,7 +22,7 @@ def test_execute_schedule_on_celery_k8s(  # pylint: disable=redefined-outer-name
         dagster_instance_for_daemon.start_schedule(reoriginated_schedule)
 
         scheduler_runs = dagster_instance_for_daemon.get_runs(
-            PipelineRunsFilter(tags=PipelineRun.tags_for_schedule(reoriginated_schedule))
+            RunsFilter(tags=PipelineRun.tags_for_schedule(reoriginated_schedule))
         )
 
         assert len(scheduler_runs) == 0
@@ -33,7 +33,7 @@ def test_execute_schedule_on_celery_k8s(  # pylint: disable=redefined-outer-name
 
             while True:
                 schedule_runs = dagster_instance_for_daemon.get_runs(
-                    PipelineRunsFilter(tags=PipelineRun.tags_for_schedule(reoriginated_schedule))
+                    RunsFilter(tags=PipelineRun.tags_for_schedule(reoriginated_schedule))
                 )
 
                 if len(schedule_runs) > 0:

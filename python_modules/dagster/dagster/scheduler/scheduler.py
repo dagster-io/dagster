@@ -20,7 +20,7 @@ from dagster.core.scheduler.instigation import (
     TickStatus,
 )
 from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG, check_tags
 from dagster.core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster.core.workspace import IWorkspace
@@ -507,7 +507,7 @@ def _get_existing_run_for_request(instance, external_schedule, schedule_time, ru
     )
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key
-    runs_filter = PipelineRunsFilter(tags=tags)
+    runs_filter = RunsFilter(tags=tags)
     existing_runs = instance.get_runs(runs_filter)
     if not len(existing_runs):
         return None

@@ -8,13 +8,16 @@ from dagster import check
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster.core.utils import make_new_run_id
-from dagster.serdes import (
+from dagster.serdes.serdes import (
     DefaultNamedTupleSerializer,
+    EnumSerializer,
+    WhitelistMap,
+    register_serdes_enum_fallbacks,
     register_serdes_tuple_fallbacks,
+    replace_storage_keys,
     unpack_inner_value,
     whitelist_for_serdes,
 )
-from dagster.serdes.serdes import EnumSerializer, WhitelistMap, register_serdes_enum_fallbacks
 
 from .tags import (
     BACKFILL_ID_TAG,
@@ -431,13 +434,31 @@ class DagsterRun(PipelineRun):
 register_serdes_tuple_fallbacks({"PipelineRun": DagsterRun})
 
 
-@whitelist_for_serdes
-class PipelineRunsFilter(
+class RunsFilterSerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: NamedTuple,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        storage = super().value_to_storage_dict(
+            value,
+            whitelist_map,
+            descent_path,
+        )
+        # For backcompat, we store:
+        # job_name as pipeline_name
+        return replace_storage_keys(storage, {"job_name": "pipeline_name"})
+
+
+@whitelist_for_serdes(serializer=RunsFilterSerializer)
+class RunsFilter(
     NamedTuple(
-        "_PipelineRunsFilter",
+        "_RunsFilter",
         [
             ("run_ids", List[str]),
-            ("pipeline_name", Optional[str]),
+            ("job_name", Optional[str]),
             ("statuses", List[PipelineRunStatus]),
             ("tags", Dict[str, str]),
             ("snapshot_id", Optional[str]),
@@ -450,18 +471,20 @@ class PipelineRunsFilter(
     def __new__(
         cls,
         run_ids: List[str] = None,
-        pipeline_name: Optional[str] = None,
+        job_name: Optional[str] = None,
         statuses: List[PipelineRunStatus] = None,
         tags: Dict[str, str] = None,
         snapshot_id: Optional[str] = None,
         updated_after: Optional[datetime] = None,
         mode: Optional[str] = None,
         created_before: Optional[datetime] = None,
+        pipeline_name: Optional[str] = None,  # for backcompat purposes
     ):
-        return super(PipelineRunsFilter, cls).__new__(
+        job_name = job_name or pipeline_name
+        return super(RunsFilter, cls).__new__(
             cls,
             run_ids=check.opt_list_param(run_ids, "run_ids", of_type=str),
-            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
+            job_name=check.opt_str_param(job_name, "job_name"),
             statuses=check.opt_list_param(statuses, "statuses", of_type=PipelineRunStatus),
             tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
             snapshot_id=check.opt_str_param(snapshot_id, "snapshot_id"),
@@ -470,21 +493,30 @@ class PipelineRunsFilter(
             created_before=check.opt_inst_param(created_before, "created_before", datetime),
         )
 
+    @property
+    def pipeline_name(self):
+        return self.job_name
+
     @staticmethod
     def for_schedule(schedule):
-        return PipelineRunsFilter(tags=PipelineRun.tags_for_schedule(schedule))
+        return RunsFilter(tags=PipelineRun.tags_for_schedule(schedule))
 
     @staticmethod
     def for_partition(partition_set, partition):
-        return PipelineRunsFilter(tags=PipelineRun.tags_for_partition_set(partition_set, partition))
+        return RunsFilter(tags=PipelineRun.tags_for_partition_set(partition_set, partition))
 
     @staticmethod
     def for_sensor(sensor):
-        return PipelineRunsFilter(tags=PipelineRun.tags_for_sensor(sensor))
+        return RunsFilter(tags=PipelineRun.tags_for_sensor(sensor))
 
     @staticmethod
     def for_backfill(backfill_id):
-        return PipelineRunsFilter(tags=PipelineRun.tags_for_backfill_id(backfill_id))
+        return RunsFilter(tags=PipelineRun.tags_for_backfill_id(backfill_id))
+
+
+register_serdes_tuple_fallbacks({"PipelineRunsFilter": RunsFilter})
+# DEPRECATED - keeping around for backcompat reasons (some folks might have imported directly)
+PipelineRunsFilter = RunsFilter
 
 
 class JobBucket(NamedTuple):

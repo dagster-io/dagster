@@ -85,7 +85,7 @@ from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.fs_io_manager import fs_io_manager
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import default_mode_def_for_test, today_at_midnight
 from dagster.core.workspace.context import WorkspaceProcessContext
@@ -1026,7 +1026,7 @@ def last_empty_partition(context, partition_set_def):
         return None
     selected = None
     for partition in reversed(partitions):
-        filters = PipelineRunsFilter.for_partition(partition_set_def, partition)
+        filters = RunsFilter.for_partition(partition_set_def, partition)
         matching = context.instance.get_runs(filters)
         if not any(run.status == PipelineRunStatus.SUCCESS for run in matching):
             selected = partition
