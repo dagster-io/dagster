@@ -1,6 +1,6 @@
 import warnings
 from collections import OrderedDict
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -39,7 +39,9 @@ class ExternalRepository:
     objects such as these to interact with user-defined artifacts.
     """
 
-    def __init__(self, external_repository_data, repository_handle):
+    def __init__(
+        self, external_repository_data: ExternalRepositoryData, repository_handle: RepositoryHandle
+    ):
         self.external_repository_data = check.inst_param(
             external_repository_data, "external_repository_data", ExternalRepositoryData
         )
@@ -57,10 +59,11 @@ class ExternalRepository:
 
         self._handle = check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
 
-        instigation_list = (
-            external_repository_data.external_schedule_datas
-            + external_repository_data.external_sensor_datas
-        )
+        # mypy doesn't understand splat
+        instigation_list: Sequence[Union[ExternalScheduleData, ExternalSensorData]] = [
+            *external_repository_data.external_schedule_datas,  # type: ignore
+            *external_repository_data.external_sensor_datas,  # type: ignore
+        ]
         self._instigation_map = OrderedDict(
             (instigation_data.name, instigation_data) for instigation_data in instigation_list
         )
@@ -69,13 +72,16 @@ class ExternalRepository:
             for external_partition_set_data in external_repository_data.external_partition_set_datas
         )
 
-        self._asset_jobs = OrderedDict()
+        # pylint: disable=unsubscriptable-object
+        _asset_jobs: OrderedDict[str, List[ExternalAssetNode]] = OrderedDict()
         for asset_node in external_repository_data.external_asset_graph_data:
             for job_name in asset_node.job_names:
-                if job_name not in self._asset_jobs:
-                    self._asset_jobs[job_name] = [asset_node]
+                if job_name not in _asset_jobs:
+                    _asset_jobs[job_name] = [asset_node]
                 else:
-                    self._asset_jobs[job_name].append(asset_node)
+                    _asset_jobs[job_name].append(asset_node)
+        # pylint: disable=unsubscriptable-object
+        self._asset_jobs: OrderedDict[str, Sequence[ExternalAssetNode]] = OrderedDict(_asset_jobs)
 
     @property
     def name(self):
@@ -186,10 +192,10 @@ class ExternalRepository:
         return (
             self.external_repository_data.external_asset_graph_data
             if job_name is None
-            else self._asset_jobs.get(job_name)
+            else self._asset_jobs.get(job_name, [])
         )
 
-    def get_external_asset_node(self, asset_key: AssetKey) -> ExternalAssetNode:
+    def get_external_asset_node(self, asset_key: AssetKey) -> Optional[ExternalAssetNode]:
         matching = [
             asset_node
             for asset_node in self.external_repository_data.external_asset_graph_data

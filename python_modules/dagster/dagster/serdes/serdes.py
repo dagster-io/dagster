@@ -29,6 +29,7 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Union,
     cast,
     overload,
 )
@@ -432,14 +433,25 @@ def deserialize_json_to_dagster_namedtuple(
 
 
 T = TypeVar("T")
+U = TypeVar("U")
 
 
+@overload
+def deserialize_as(json_str: str, cls: Tuple[Type[T], Type[U]]) -> Union[T, U]:
+    pass
+
+
+@overload
 def deserialize_as(json_str: str, cls: Type[T]) -> T:
+    pass
+
+
+def deserialize_as(json_str: str, cls: Union[Type[T], Tuple[Type[T], Type[U]]]) -> Union[T, U]:
     """Deserialize a json encoded string to a specific namedtuple class."""
     val = deserialize_json_to_dagster_namedtuple(json_str)
-    if isinstance(val, cls):
-        return val
-    check.failed(f"Deserialized object was not expected target type {cls}, got {type(val)}")
+    if not isinstance(val, cls):
+        check.failed(f"Deserialized object was not expected target type {cls}, got {type(val)}")
+    return cast(Union[T, U], val)
 
 
 def opt_deserialize_as(json_str: Optional[str], cls: Type[T]) -> Optional[T]:
