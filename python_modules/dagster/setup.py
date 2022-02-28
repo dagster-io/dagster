@@ -114,6 +114,7 @@ if __name__ == "__main__":
                 "tqdm==4.48.0",  # pylint crash 48.1+
                 "yamllint",
                 "flake8>=3.7.8",
+                "astroid",  # let pylint determine the version
                 "pylint==2.12.2",
             ],
             "black": [
