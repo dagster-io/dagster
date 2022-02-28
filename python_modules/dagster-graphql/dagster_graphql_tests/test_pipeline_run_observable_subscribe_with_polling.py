@@ -47,12 +47,11 @@ class EventStorer:
     @staticmethod
     def create_event(count: int, run_id: str = RUN_ID):
         return EventLogEntry(
-            None,
-            str(count),
-            "debug",
-            "",
-            run_id,
-            time.time(),
+            error_info=None,
+            user_message=str(count),
+            level="debug",
+            run_id=run_id,
+            timestamp=time.time(),
             dagster_event=DagsterEvent(
                 DagsterEventType.ENGINE_EVENT.value,
                 "nonce",
@@ -93,7 +92,7 @@ def test_using_instance(before_watch_config: NumEventsAndCursor, num_events_afte
         call_args = observable_subscribe.observer.on_next.call_args_list
 
         # wait until all events have been captured
-        most_recent_event_processed = lambda: int(call_args[-1][0][0][0][-1].message)
+        most_recent_event_processed = lambda: int(call_args[-1][0][0][0][-1].user_message)
         attempts = 10
         while (
             len(call_args) == 0 or most_recent_event_processed() < total_num_events
@@ -103,7 +102,7 @@ def test_using_instance(before_watch_config: NumEventsAndCursor, num_events_afte
 
         # ensure all expected events captured, no duplicates, etc.
         events_list = [
-            [event_record.message for event_record in call[0][0][0]] for call in call_args
+            [event_record.user_message for event_record in call[0][0][0]] for call in call_args
         ]
         flattened_events_list = [int(message) for lst in events_list for message in lst]
         # PipelineRunObservableSubscribe requests ids > after_cursor + 1

@@ -362,9 +362,7 @@ def construct_basic_params(event_record):
     check.inst_param(event_record, "event_record", EventLogEntry)
     return {
         "runId": event_record.run_id,
-        "message": event_record.dagster_event.message
-        if (event_record.dagster_event and event_record.dagster_event.message)
-        else event_record.user_message,
+        "message": event_record.message,
         "timestamp": int(event_record.timestamp * 1000),
         "level": GrapheneLogLevel.from_level(event_record.level),
         "eventType": event_record.dagster_event.event_type

@@ -1714,12 +1714,11 @@ def test_pipeline_failure_sensor_empty_run_records(storage_config_fn):
                 # create a mismatch between event storage and run storage
                 instance.event_log_storage.store_event(
                     EventLogEntry(
-                        None,
-                        "fake failure event",
-                        "debug",
-                        "",
-                        "fake_run_id",
-                        time.time(),
+                        error_info=None,
+                        level="debug",
+                        user_message="",
+                        run_id="fake_run_id",
+                        timestamp=time.time(),
                         dagster_event=DagsterEvent(
                             DagsterEventType.PIPELINE_FAILURE.value,
                             "foo",

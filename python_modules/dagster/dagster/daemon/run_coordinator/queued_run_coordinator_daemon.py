@@ -213,7 +213,6 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             pipeline_name=run.pipeline_name,
         )
         event_record = EventLogEntry(
-            message="",
             user_message="",
             level=logging.INFO,
             pipeline_name=run.pipeline_name,
