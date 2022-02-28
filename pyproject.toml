@@ -125,4 +125,3 @@ disable=[
   # This rule is incompatible with SDAs, which have parameters named the same as upstream assets.
   'redefined-outer-name',
 ]
->>>>>>> f6f381a25 (migrate pylint config to pyproject.toml)
