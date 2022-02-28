@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -262,7 +262,8 @@ class NodeHandleSerializer(DefaultNamedTupleSerializer):
 @whitelist_for_serdes(serializer=NodeHandleSerializer)
 class NodeHandle(
     # mypy does not yet support recursive types
-    namedtuple("_NodeHandle", "name parent")
+    # NamedTuple("_NodeHandle", [("name", str), ("parent", Optional["NodeHandle"])])
+    NamedTuple("_NodeHandle", [("name", str), ("parent", Any)])
 ):
     """
     A structured object to identify nodes in the potentially recursive graph structure.

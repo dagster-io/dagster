@@ -130,6 +130,7 @@ const Header: React.FC<{assetKey: AssetKey; opName?: string}> = ({assetKey, opNa
         {displayName !== opName ? (
           <Box style={{opacity: 0.5}} flex={{gap: 6, alignItems: 'center'}}>
             <IconWIP name="op" size={16} />
+            {opName}
           </Box>
         ) : undefined}
       </SidebarTitle>

@@ -1,16 +1,29 @@
 from abc import ABC, abstractmethod
-from collections import namedtuple
+from typing import TYPE_CHECKING, Dict, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.execution.retries import RetryMode
 from dagster.core.storage.pipeline_run import PipelineRun
 
+if TYPE_CHECKING:
+    from dagster.core.execution.plan.state import KnownExecutionState
+
 
 class StepRunRef(
-    namedtuple(
+    NamedTuple(
         "_StepRunRef",
-        "run_config pipeline_run run_id retry_mode step_key recon_pipeline prior_attempts_count known_state parent_run",
+        [
+            ("run_config", Dict[str, object]),
+            ("pipeline_run", PipelineRun),
+            ("run_id", str),
+            ("retry_mode", RetryMode),
+            ("step_key", str),
+            ("recon_pipeline", ReconstructablePipeline),
+            ("prior_attempts_count", int),
+            ("known_state", Optional["KnownExecutionState"]),
+            ("parent_run", Optional[PipelineRun]),
+        ],
     )
 ):
     """
@@ -20,15 +33,15 @@ class StepRunRef(
 
     def __new__(
         cls,
-        run_config,
-        pipeline_run,
-        run_id,
-        retry_mode,
-        step_key,
-        recon_pipeline,
-        prior_attempts_count,
-        known_state,
-        parent_run,
+        run_config: Dict[str, object],
+        pipeline_run: PipelineRun,
+        run_id: str,
+        retry_mode: RetryMode,
+        step_key: str,
+        recon_pipeline: ReconstructablePipeline,
+        prior_attempts_count: int,
+        known_state: Optional["KnownExecutionState"],
+        parent_run: Optional[PipelineRun],
     ):
         from dagster.core.execution.plan.state import KnownExecutionState
 

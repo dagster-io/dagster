@@ -23,156 +23,156 @@ export interface LogsScrollingTableMessageFragment_MaterializationEvent_assetKey
   path: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableMetadataEntry_table {
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableMetadataEntry_table;
+  table: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries = LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventPathMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventJsonMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventUrlMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTextMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventMarkdownMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventPythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventFloatMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventIntMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventPipelineRunMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventAssetMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_EventTableSchemaMetadataEntry;
+export type LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries = LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_PathMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_JsonMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_UrlMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TextMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_MarkdownMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_PythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_FloatMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_IntMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_PipelineRunMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_AssetMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableMetadataEntry | LogsScrollingTableMessageFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry;
 
 export interface LogsScrollingTableMessageFragment_MaterializationEvent {
   __typename: "MaterializationEvent";
@@ -192,156 +192,156 @@ export interface LogsScrollingTableMessageFragment_ObservationEvent_assetKey {
   path: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table {
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry_table;
+  table: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries = LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventPathMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventJsonMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventUrlMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTextMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventMarkdownMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventPythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventFloatMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventIntMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventPipelineRunMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventAssetMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_EventTableSchemaMetadataEntry;
+export type LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries = LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_PathMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_JsonMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_UrlMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TextMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_MarkdownMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_PythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_FloatMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_IntMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_PipelineRunMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_AssetMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableMetadataEntry | LogsScrollingTableMessageFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry;
 
 export interface LogsScrollingTableMessageFragment_ObservationEvent {
   __typename: "ObservationEvent";
@@ -392,156 +392,156 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_err
   cause: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_error_cause | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableMetadataEntry_table {
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableMetadataEntry_table;
+  table: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries = LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventPathMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventJsonMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventUrlMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTextMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventMarkdownMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventPythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventFloatMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventIntMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventPipelineRunMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventAssetMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTableSchemaMetadataEntry;
+export type LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries = LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_PathMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_JsonMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_UrlMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TextMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_MarkdownMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_PythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_FloatMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_IntMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_PipelineRunMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_AssetMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry;
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata {
   __typename: "FailureMetadata";
@@ -560,156 +560,156 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepFailureEvent {
   failureMetadata: LogsScrollingTableMessageFragment_ExecutionStepFailureEvent_failureMetadata | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table {
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table;
+  table: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries = LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTextMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventMarkdownMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventFloatMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventIntMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPipelineRunMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventAssetMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry;
+export type LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries = LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_PathMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_JsonMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_UrlMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TextMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_MarkdownMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_PythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_FloatMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_IntMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_PipelineRunMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_AssetMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry;
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck {
   __typename: "TypeCheck";
@@ -730,156 +730,156 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepInputEvent {
   typeCheck: LogsScrollingTableMessageFragment_ExecutionStepInputEvent_typeCheck;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableMetadataEntry_table;
+  table: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries = LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTextMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventMarkdownMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventFloatMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventIntMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPipelineRunMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventAssetMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTableSchemaMetadataEntry;
+export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries = LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_PathMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_JsonMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_UrlMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TextMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_MarkdownMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_PythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_FloatMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_IntMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_PipelineRunMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_AssetMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry;
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck {
   __typename: "TypeCheck";
@@ -889,156 +889,156 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_type
   metadataEntries: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableMetadataEntry_table {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableMetadataEntry_table;
+  table: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries = LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventPathMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventJsonMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventUrlMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTextMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventMarkdownMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventPythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventFloatMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventIntMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventPipelineRunMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventAssetMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_EventTableSchemaMetadataEntry;
+export type LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries = LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_PathMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_JsonMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_UrlMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TextMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_MarkdownMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_PythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_FloatMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_IntMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_PipelineRunMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_AssetMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry | LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry;
 
 export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent {
   __typename: "ExecutionStepOutputEvent";
@@ -1052,156 +1052,156 @@ export interface LogsScrollingTableMessageFragment_ExecutionStepOutputEvent {
   metadataEntries: LogsScrollingTableMessageFragment_ExecutionStepOutputEvent_metadataEntries[];
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableMetadataEntry_table {
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableMetadataEntry_table;
+  table: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries = LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPathMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventJsonMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventUrlMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTextMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventMarkdownMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventFloatMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventIntMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPipelineRunMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventAssetMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTableSchemaMetadataEntry;
+export type LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries = LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_PathMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_JsonMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_UrlMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TextMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_MarkdownMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_PythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_FloatMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_IntMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_PipelineRunMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_AssetMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry | LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry;
 
 export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult {
   __typename: "ExpectationResult";
@@ -1221,156 +1221,156 @@ export interface LogsScrollingTableMessageFragment_StepExpectationResultEvent {
   expectationResult: LogsScrollingTableMessageFragment_StepExpectationResultEvent_expectationResult;
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableMetadataEntry_table {
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableMetadataEntry_table;
+  table: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries = LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventJsonMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventUrlMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTextMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventMarkdownMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventFloatMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventIntMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPipelineRunMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventAssetMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTableSchemaMetadataEntry;
+export type LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries = LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_PathMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_JsonMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_UrlMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TextMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_MarkdownMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_PythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_FloatMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_IntMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_PipelineRunMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_AssetMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry | LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry;
 
 export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult {
   __typename: "ObjectStoreOperationResult";
@@ -1388,156 +1388,156 @@ export interface LogsScrollingTableMessageFragment_ObjectStoreOperationEvent {
   operationResult: LogsScrollingTableMessageFragment_ObjectStoreOperationEvent_operationResult;
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableMetadataEntry_table {
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableMetadataEntry_table;
+  table: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries = LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventPathMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventJsonMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventUrlMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTextMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventMarkdownMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventPythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventFloatMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventIntMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventPipelineRunMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventAssetMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_EventTableSchemaMetadataEntry;
+export type LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries = LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_PathMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_JsonMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_UrlMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TextMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_MarkdownMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_PythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_FloatMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_IntMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_PipelineRunMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_AssetMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry | LogsScrollingTableMessageFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry;
 
 export interface LogsScrollingTableMessageFragment_HandledOutputEvent {
   __typename: "HandledOutputEvent";
@@ -1564,156 +1564,156 @@ export interface LogsScrollingTableMessageFragment_LoadedInputEvent {
   upstreamStepKey: string | null;
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableMetadataEntry_table {
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableMetadataEntry_table;
+  table: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type LogsScrollingTableMessageFragment_EngineEvent_metadataEntries = LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventPathMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventJsonMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventUrlMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTextMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventMarkdownMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventPythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventFloatMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventIntMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventPipelineRunMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventAssetMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_EventTableSchemaMetadataEntry;
+export type LogsScrollingTableMessageFragment_EngineEvent_metadataEntries = LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_PathMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_JsonMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_UrlMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TextMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_MarkdownMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_PythonArtifactMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_FloatMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_IntMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_PipelineRunMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_AssetMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableMetadataEntry | LogsScrollingTableMessageFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry;
 
 export interface LogsScrollingTableMessageFragment_EngineEvent_engineError_cause {
   __typename: "PythonError";

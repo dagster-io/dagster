@@ -78,6 +78,10 @@ Run storage
 
 .. autoclass:: PipelineRun
 
+.. autoclass:: DagsterRunStatus
+   :members:
+   :undoc-members:
+
 .. autoclass:: PipelineRunStatus
    :members:
    :undoc-members:

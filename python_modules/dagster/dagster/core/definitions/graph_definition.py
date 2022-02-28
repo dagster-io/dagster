@@ -118,6 +118,59 @@ def _create_adjacency_lists(
 
 
 class GraphDefinition(NodeDefinition):
+    """Defines a Dagster graph.
+
+    A graph is made up of
+
+    - Nodes, which can either be an op (the functional unit of computation), or another graph.
+    - Dependencies, which determine how the values produced by nodes as outputs flow from
+      one node to another. This tells Dagster how to arrange nodes into a directed, acyclic graph
+      (DAG) of compute.
+
+    End users should prefer the :func:`@graph <graph>` decorator. GraphDefinition is generally
+    intended to be used by framework authors or for programatically generated graphs.
+
+    Args:
+        name (str): The name of the graph. Must be unique within any :py:class:`GraphDefinition`
+            or :py:class:`JobDefinition` containing the graph.
+        description (Optional[str]): A human-readable description of the pipeline.
+        node_defs (Optional[List[NodeDefinition]]): The set of ops / graphs used in this graph.
+        dependencies (Optional[Dict[Union[str, NodeInvocation], Dict[str, DependencyDefinition]]]):
+            A structure that declares the dependencies of each op's inputs on the outputs of other
+            ops in the graph. Keys of the top level dict are either the string names of ops in the
+            graph or, in the case of aliased ops, :py:class:`NodeInvocations <NodeInvocation>`.
+            Values of the top level dict are themselves dicts, which map input names belonging to
+            the op or aliased op to :py:class:`DependencyDefinitions <DependencyDefinition>`.
+        input_mappings (Optional[List[InputMapping]]): Defines the inputs to the nested graph, and
+            how they map to the inputs of its constituent ops.
+        output_mappings (Optional[List[OutputMapping]]): Defines the outputs of the nested graph,
+            and how they map from the outputs of its constituent ops.
+        config (Optional[ConfigMapping]): Defines the config of the graph, and how its schema maps
+            to the config of its constituent ops.
+        tags (Optional[Dict[str, Any]]): Arbitrary metadata for any execution of the graph.
+            Values that are not strings will be json encoded and must meet the criteria that
+            `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
+            values provided at invocation time.
+
+    Examples:
+
+        .. code-block:: python
+
+            @op
+            def return_one():
+                return 1
+
+            @op
+            def add_one(num):
+                return num + 1
+
+            graph_def = GraphDefinition(
+                name='basic',
+                node_defs=[return_one, add_one],
+                dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
+            )
+    """
+
     def __init__(
         self,
         name: str,
@@ -751,32 +804,25 @@ def _validate_in_mappings(
         solid_input_handle = SolidInputHandle(target_solid, target_input)
 
         if mapping.maps_to_fan_in:
+            maps_to = cast(FanInInputPointer, mapping.maps_to)
             if not dependency_structure.has_fan_in_deps(solid_input_handle):
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' input mapping target "
-                    '"{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}" (index {mapping.maps_to.fan_in_index} of fan-in) '
-                    "is not a MultiDependencyDefinition.".format(
-                        name=name, mapping=mapping, class_name=class_name
-                    )
+                    f"In {class_name} '{name}' input mapping target "
+                    f'"{maps_to.solid_name}.{maps_to.input_name}" (index {maps_to.fan_in_index} of fan-in) '
+                    f"is not a MultiDependencyDefinition."
                 )
             inner_deps = dependency_structure.get_fan_in_deps(solid_input_handle)
-            if (mapping.maps_to.fan_in_index >= len(inner_deps)) or (
-                inner_deps[mapping.maps_to.fan_in_index] is not MappedInputPlaceholder
+            if (maps_to.fan_in_index >= len(inner_deps)) or (
+                inner_deps[maps_to.fan_in_index] is not MappedInputPlaceholder
             ):
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' input mapping target "
-                    '"{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}" index {mapping.maps_to.fan_in_index} in '
-                    "the MultiDependencyDefinition is not a MappedInputPlaceholder".format(
-                        name=name, mapping=mapping, class_name=class_name
-                    )
+                    f"In {class_name} '{name}' input mapping target "
+                    f'"{maps_to.solid_name}.{maps_to.input_name}" index {maps_to.fan_in_index} in '
+                    f"the MultiDependencyDefinition is not a MappedInputPlaceholder"
                 )
-            mapping_keys.add(
-                "{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}.{mapping.maps_to.fan_in_index}".format(
-                    mapping=mapping
-                )
-            )
+            mapping_keys.add(f"{maps_to.solid_name}.{maps_to.input_name}.{maps_to.fan_in_index}")
             target_type = target_input.dagster_type.get_inner_type_for_fan_in()
-            fan_in_msg = " (index {} of fan-in)".format(mapping.maps_to.fan_in_index)
+            fan_in_msg = " (index {} of fan-in)".format(maps_to.fan_in_index)
         else:
             if dependency_structure.has_deps(solid_input_handle):
                 raise DagsterInvalidDefinitionError(

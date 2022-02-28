@@ -1,13 +1,16 @@
+from typing import Optional
+
 import pytest
 from dagster import (
     DagsterInvalidDefinitionError,
     InputDefinition,
     Nothing,
-    Optional,
     composite_solid,
     execute_pipeline,
     execute_solid,
+    job,
     lambda_solid,
+    op,
     pipeline,
 )
 
@@ -171,3 +174,19 @@ def test_composite_mid_default():
     result = execute_solid(outter_wrap)
     assert result.success
     assert result.output_value() == 42
+
+
+def test_custom_type_default():
+    class CustomType:
+        pass
+
+    @op
+    def test_op(inp: Optional[CustomType] = None):
+        return 1
+
+    @job
+    def test_job():
+        test_op()
+
+    result = test_job.execute_in_process()
+    assert result.output_for_node("test_op") == 1

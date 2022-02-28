@@ -315,9 +315,9 @@ export default {
     );
   },
   img: ({ children, ...props }) => (
-    <div className="mx-auto">
+    <span className="block mx-auto">
       <img {...(props as any)} />
-    </div>
+    </span>
   ),
   Image: ({ children, ...props }) => {
     /* Only version images when all conditions meet:
@@ -329,10 +329,10 @@ export default {
     const { src } = props;
     if (version === "master" || !src.startsWith("/images/")) {
       return (
-      <Zoom>
-        <div className="mx-auto">
+      <Zoom wrapElement="span" wrapStyle={{display: 'block'}}>
+        <span className="block mx-auto">
           <Image {...(props as any)} />
-        </div>
+        </span>
       </Zoom>
       );
     }
@@ -343,15 +343,15 @@ export default {
     ).href;
 
     return (
-      <Zoom>
-        <div className="mx-auto">
+      <Zoom wrapElement="span" wrapStyle={{display: 'block'}}>
+        <span className="block mx-auto">
           <Image
             src={resolvedPath}
             width={props.width}
             height={props.height}
             alt={props.alt}
           />
-        </div>
+        </span>
       </Zoom>
     );
   },

@@ -65,12 +65,11 @@ TEST_TIMEOUT = 5
 
 def create_test_event_log_record(message: str, run_id: str = DEFAULT_RUN_ID):
     return EventLogEntry(
-        None,
-        message,
-        "debug",
-        "",
-        run_id,
-        time.time(),
+        error_info=None,
+        user_message=message,
+        level="debug",
+        run_id=run_id,
+        timestamp=time.time(),
         dagster_event=DagsterEvent(
             DagsterEventType.ENGINE_EVENT.value,
             "nonce",
@@ -151,12 +150,11 @@ def _event_record(run_id, solid_name, timestamp, event_type, event_specific_data
     solid_handle = NodeHandle(solid_name, None)
     step_handle = StepHandle(solid_handle)
     return EventLogEntry(
-        None,
-        "",
-        "debug",
-        "",
-        run_id,
-        timestamp,
+        error_info=None,
+        user_message="",
+        level="debug",
+        run_id=run_id,
+        timestamp=timestamp,
         step_key=step_handle.to_key(),
         pipeline_name=pipeline_name,
         dagster_event=DagsterEvent(
@@ -311,12 +309,11 @@ class TestEventLogStorage:
         assert len(storage.get_logs_for_run(DEFAULT_RUN_ID)) == 0
         storage.store_event(
             EventLogEntry(
-                None,
-                "Message2",
-                "debug",
-                "",
-                DEFAULT_RUN_ID,
-                time.time(),
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=DEFAULT_RUN_ID,
+                timestamp=time.time(),
                 dagster_event=DagsterEvent(
                     DagsterEventType.ENGINE_EVENT.value,
                     "nonce",
@@ -337,12 +334,11 @@ class TestEventLogStorage:
             assert len(storage.get_logs_for_run(run_id)) == 0
             storage.store_event(
                 EventLogEntry(
-                    None,
-                    "Message2",
-                    "debug",
-                    "",
-                    run_id,
-                    time.time(),
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id,
+                    timestamp=time.time(),
                     dagster_event=DagsterEvent(
                         DagsterEventType.STEP_SUCCESS.value,
                         "nonce",
@@ -399,7 +395,7 @@ class TestEventLogStorage:
         assert len(storage.get_logs_for_run(DEFAULT_RUN_ID)) == 0
         assert len(watched) == 3
 
-        assert [int(evt.message) for evt in watched] == [2, 3, 4]
+        assert [int(evt.user_message) for evt in watched] == [2, 3, 4]
 
     def test_event_log_storage_pagination(self, storage):
         # interleave two runs events to ensure pagination is not affected by other runs
@@ -440,12 +436,11 @@ class TestEventLogStorage:
         start_time = launched_time + 50
         storage.store_event(
             EventLogEntry(
-                None,
-                "message",
-                "debug",
-                "",
-                DEFAULT_RUN_ID,
-                enqueued_time,
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=DEFAULT_RUN_ID,
+                timestamp=enqueued_time,
                 dagster_event=DagsterEvent(
                     DagsterEventType.PIPELINE_ENQUEUED.value,
                     "nonce",
@@ -454,12 +449,11 @@ class TestEventLogStorage:
         )
         storage.store_event(
             EventLogEntry(
-                None,
-                "message",
-                "debug",
-                "",
-                DEFAULT_RUN_ID,
-                launched_time,
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=DEFAULT_RUN_ID,
+                timestamp=launched_time,
                 dagster_event=DagsterEvent(
                     DagsterEventType.PIPELINE_STARTING.value,
                     "nonce",
@@ -468,12 +462,11 @@ class TestEventLogStorage:
         )
         storage.store_event(
             EventLogEntry(
-                None,
-                "message",
-                "debug",
-                "",
-                DEFAULT_RUN_ID,
-                start_time,
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=DEFAULT_RUN_ID,
+                timestamp=start_time,
                 dagster_event=DagsterEvent(
                     DagsterEventType.PIPELINE_START.value,
                     "nonce",
@@ -673,6 +666,16 @@ class TestEventLogStorage:
             storage.get_logs_for_run(result.run_id, of_type=DagsterEventType.STEP_SUCCESS)
         ) == [DagsterEventType.STEP_SUCCESS]
 
+        assert (
+            _event_types(
+                storage.get_logs_for_run(
+                    result.run_id,
+                    of_type={DagsterEventType.STEP_SUCCESS, DagsterEventType.PIPELINE_SUCCESS},
+                )
+            )
+            == [DagsterEventType.STEP_SUCCESS, DagsterEventType.PIPELINE_SUCCESS]
+        )
+
     def test_basic_get_logs_for_run_cursor(self, storage):
         @solid
         def return_one(_):
@@ -859,12 +862,11 @@ class TestEventLogStorage:
         curr_time = time.time()
 
         event = EventLogEntry(
-            None,
-            "Message2",
-            "debug",
-            "",
-            "foo",
-            curr_time,
+            error_info=None,
+            level="debug",
+            user_message="",
+            run_id="foo",
+            timestamp=curr_time,
             dagster_event=DagsterEvent(
                 DagsterEventType.PIPELINE_START.value,
                 "nonce",

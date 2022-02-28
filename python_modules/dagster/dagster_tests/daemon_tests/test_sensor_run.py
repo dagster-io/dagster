@@ -151,6 +151,7 @@ def run_key_sensor(_context):
 
 @sensor(pipeline_name="the_pipeline")
 def error_sensor(context):
+    context.update_cursor("the exception below should keep this from being persisted")
     raise Exception("womp womp")
 
 
@@ -226,6 +227,11 @@ def my_run_failure_sensor_filtered(context):
     assert isinstance(context.instance, DagsterInstance)
 
 
+@run_failure_sensor()
+def my_run_failure_sensor_that_itself_fails(context):
+    raise Exception("How meta")
+
+
 @run_status_sensor(pipeline_run_status=PipelineRunStatus.SUCCESS)
 def my_pipeline_success_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
@@ -284,6 +290,7 @@ def the_repo():
         asset_job_sensor,
         my_pipeline_failure_sensor,
         my_run_failure_sensor_filtered,
+        my_run_failure_sensor_that_itself_fails,
         my_pipeline_success_sensor,
         failure_pipeline,
         failure_job,
@@ -610,6 +617,10 @@ def test_error_sensor(capfd):
                     InstigatorStatus.RUNNING,
                 )
             )
+
+            state = instance.get_instigator_state(external_sensor.get_external_origin_id())
+            assert state.instigator_data is None
+
             assert instance.get_runs_count() == 0
             ticks = instance.get_ticks(external_sensor.get_external_origin_id())
             assert len(ticks) == 0
@@ -632,6 +643,11 @@ def test_error_sensor(capfd):
             assert (
                 "Error occurred during the execution of evaluation_fn for sensor error_sensor"
             ) in captured.out
+
+            # Tick updated the sensor's last tick time, but not its cursor (due to the failure)
+            state = instance.get_instigator_state(external_sensor.get_external_origin_id())
+            assert state.instigator_data.cursor is None
+            assert state.instigator_data.last_tick_timestamp == freeze_datetime.timestamp()
 
 
 def test_wrong_config_sensor(capfd):
@@ -681,6 +697,8 @@ def test_wrong_config_sensor(capfd):
             captured = capfd.readouterr()
             assert ("Error in config for pipeline") in captured.out
 
+        freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
             # Error repeats on subsequent ticks
 
             evaluate_sensors(instance, workspace)
@@ -1298,6 +1316,77 @@ def test_pipeline_failure_sensor():
             )
 
 
+def test_run_failure_sensor_that_fails():
+    freeze_datetime = pendulum.now()
+    with instance_with_sensors() as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            failure_sensor = external_repo.get_external_sensor(
+                "my_run_failure_sensor_that_itself_fails"
+            )
+            instance.start_sensor(failure_sensor)
+
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_ticks(failure_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                failure_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+            freeze_datetime = freeze_datetime.add(seconds=60)
+            time.sleep(1)
+
+        with pendulum.test(freeze_datetime):
+            external_pipeline = external_repo.get_full_external_pipeline("failure_pipeline")
+            run = instance.create_run_for_pipeline(
+                failure_pipeline,
+                external_pipeline_origin=external_pipeline.get_external_origin(),
+                pipeline_code_origin=external_pipeline.get_python_origin(),
+            )
+            instance.submit_run(run.run_id, workspace)
+            wait_for_all_runs_to_finish(instance)
+            run = instance.get_runs()[0]
+            assert run.status == PipelineRunStatus.FAILURE
+            freeze_datetime = freeze_datetime.add(seconds=60)
+
+        with pendulum.test(freeze_datetime):
+
+            # should fire the failure sensor and fail
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_ticks(failure_sensor.get_external_origin_id())
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                failure_sensor,
+                freeze_datetime,
+                TickStatus.FAILURE,
+                expected_error="How meta",
+            )
+
+        # Next tick skips again
+        freeze_datetime = freeze_datetime.add(seconds=60)
+        with pendulum.test(freeze_datetime):
+            # should fire the failure sensor and fail
+            evaluate_sensors(instance, workspace)
+
+            ticks = instance.get_ticks(failure_sensor.get_external_origin_id())
+            assert len(ticks) == 3
+            validate_tick(
+                ticks[0],
+                failure_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+
 def test_run_failure_sensor_filtered():
     freeze_datetime = pendulum.now()
     with instance_with_sensors() as (
@@ -1625,12 +1714,11 @@ def test_pipeline_failure_sensor_empty_run_records(storage_config_fn):
                 # create a mismatch between event storage and run storage
                 instance.event_log_storage.store_event(
                     EventLogEntry(
-                        None,
-                        "fake failure event",
-                        "debug",
-                        "",
-                        "fake_run_id",
-                        time.time(),
+                        error_info=None,
+                        level="debug",
+                        user_message="",
+                        run_id="fake_run_id",
+                        timestamp=time.time(),
                         dagster_event=DagsterEvent(
                             DagsterEventType.PIPELINE_FAILURE.value,
                             "foo",

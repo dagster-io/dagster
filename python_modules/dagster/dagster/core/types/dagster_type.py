@@ -519,7 +519,7 @@ class PythonObjectDagsterType(DagsterType):
             typing_type = t.Union[python_type]  # type: ignore
 
         else:
-            self.python_type = check.type_param(python_type, "python_type")  # type: ignore
+            self.python_type = check.class_param(python_type, "python_type")  # type: ignore
             self.type_str = cast(str, python_type.__name__)
             typing_type = self.python_type  # type: ignore
         name = check.opt_str_param(name, "name", self.type_str)

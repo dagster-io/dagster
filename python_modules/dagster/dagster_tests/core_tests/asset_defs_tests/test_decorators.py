@@ -1,6 +1,15 @@
 import pytest
-from dagster import AssetKey, DagsterInvalidDefinitionError, Out, Output, String, check
-from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, multi_asset
+from dagster import (
+    AssetKey,
+    DagsterInvalidDefinitionError,
+    OpExecutionContext,
+    Out,
+    Output,
+    String,
+    build_op_context,
+    check,
+)
+from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 
 
@@ -245,3 +254,57 @@ def test_infer_input_dagster_type():
         pass
 
     assert my_asset.op.input_defs[0].dagster_type.display_name == "String"
+
+
+def test_invoking_simple_assets():
+    @asset
+    def no_input_asset():
+        return [1, 2, 3]
+
+    out = no_input_asset()
+    assert out == [1, 2, 3]
+
+    @asset
+    def arg_input_asset(arg1, arg2):
+        return arg1 + arg2
+
+    out = arg_input_asset([1, 2, 3], [4, 5, 6])
+    assert out == [1, 2, 3, 4, 5, 6]
+
+    @asset
+    def arg_kwarg_asset(arg1, kwarg1=[0]):
+        return arg1 + kwarg1
+
+    out = arg_kwarg_asset([1, 2, 3], kwarg1=[3, 2, 1])
+    assert out == [1, 2, 3, 3, 2, 1]
+
+    out = arg_kwarg_asset(([1, 2, 3]))
+    assert out == [1, 2, 3, 0]
+
+
+def test_invoking_asset_with_deps():
+    @asset
+    def upstream():
+        return [1]
+
+    @asset
+    def downstream(upstream):
+        return upstream + [2, 3]
+
+    # check that the asset dependencies are in place
+    job = build_assets_job("foo", [upstream, downstream])
+    assert job.execute_in_process().success
+
+    out = downstream([3])
+    assert out == [3, 2, 3]
+
+
+def test_invoking_asset_with_context():
+    @asset
+    def asset_with_context(context, arg1):
+        assert isinstance(context, OpExecutionContext)
+        return arg1
+
+    ctx = build_op_context()
+    out = asset_with_context(ctx, 1)
+    assert out == 1

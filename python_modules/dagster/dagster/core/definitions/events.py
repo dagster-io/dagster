@@ -292,10 +292,10 @@ class AssetObservation(
         elif isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
         elif isinstance(asset_key, list):
-            check.is_list(asset_key, of_type=str)
+            check.list_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
         else:
-            check.is_tuple(asset_key, of_type=str)
+            check.tuple_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
@@ -372,10 +372,10 @@ class AssetMaterialization(
         elif isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
         elif isinstance(asset_key, list):
-            check.is_list(asset_key, of_type=str)
+            check.list_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
         else:
-            check.is_tuple(asset_key, of_type=str)
+            check.tuple_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
         if tags:

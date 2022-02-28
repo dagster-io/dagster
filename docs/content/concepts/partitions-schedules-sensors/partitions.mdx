@@ -121,7 +121,45 @@ def continent_job():
 
 It's common that, when you have a partitioned job, you want to run it on a schedule. For example, if your job has a partition for each date, you likely want to run that job every day, on the partition for that day.
 
-The <PyObject object="build_schedule_from_partitioned_job"/> function allows you to construct a schedule from a partitioned job. The [Schedules concept page](/concepts/partitions-schedules-sensors/schedules#a-schedule-from-a-partitioned-job) describes how to use it.
+The <PyObject object="build_schedule_from_partitioned_job"/> function allows you to construct a schedule from a date partitioned job. It creates a schedule with an interval that matches the spacing of your partition. If you wanted to create a schedule for `do_stuff_partitioned` job defined above, you could write:
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_marker endbefore=end_marker
+from dagster import build_schedule_from_partitioned_job, job
+
+
+@job(config=my_partitioned_config)
+def do_stuff_partitioned():
+    ...
+
+
+do_stuff_partitioned_schedule = build_schedule_from_partitioned_job(
+    do_stuff_partitioned,
+)
+```
+
+Schedules can also be made from static partitioned jobs. If you wanted to make a schedule for the `continent_job` above that runs each partition, you could write:
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_static_partition endbefore=end_static_partition
+from dagster import schedule
+
+
+@schedule(cron_schedule="0 0 * * *", job=continent_job)
+def continent_schedule():
+    for c in CONTINENTS:
+        request = continent_job.run_request_for_partition(partition_key=c, run_key=c)
+        yield request
+```
+
+Or a schedule that will run a subselection of the partition
+
+```python file=/concepts/partitions_schedules_sensors/schedule_from_partitions.py startafter=start_single_partition endbefore=end_single_partition
+@schedule(cron_schedule="0 0 * * *", job=continent_job)
+def antarctica_schedule():
+    request = continent_job.run_request_for_partition(partition_key="Antarctica", run_key=None)
+    yield request
+```
+
+The [Schedules concept page](/concepts/partitions-schedules-sensors/schedules#a-schedule-from-a-partitioned-job) describes how construct both kinds of schedules in more detail.
 
 ## Testing
 

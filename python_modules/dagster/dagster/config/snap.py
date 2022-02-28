@@ -1,4 +1,3 @@
-from collections import namedtuple
 from typing import Any, Dict, List, NamedTuple, Optional, Set, cast
 
 from dagster import check
@@ -196,8 +195,10 @@ class ConfigTypeSnap(
 
 
 @whitelist_for_serdes
-class ConfigEnumValueSnap(namedtuple("_ConfigEnumValueSnap", "value description")):
-    def __new__(cls, value, description):
+class ConfigEnumValueSnap(
+    NamedTuple("_ConfigEnumValueSnap", [("value", str), ("description", Optional[str])])
+):
+    def __new__(cls, value: str, description: Optional[str]):
         return super(ConfigEnumValueSnap, cls).__new__(
             cls,
             value=check.str_param(value, "value"),

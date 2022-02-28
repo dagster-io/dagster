@@ -8,6 +8,7 @@ import {
   Caption,
   Subheading,
   Warning,
+  Checkbox,
 } from '@dagster-io/ui';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
@@ -15,6 +16,7 @@ import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {titleForRun} from '../runs/RunUtils';
@@ -387,6 +389,8 @@ export const AssetEvents: React.FC<Props> = ({
   );
 };
 
+const validateHiddenGraphsState = (json: string[]) => (Array.isArray(json) ? json : []);
+
 const AssetMaterializationGraphs: React.FC<{
   groups: AssetEventGroup[];
   xAxis: 'partition' | 'time';
@@ -399,7 +403,21 @@ const AssetMaterializationGraphs: React.FC<{
   }, [props.groups]);
 
   const graphDataByMetadataLabel = extractNumericData(reversed, props.xAxis);
-  const [graphedLabels] = React.useState(() => Object.keys(graphDataByMetadataLabel).slice(0, 4));
+  const graphLabels = Object.keys(graphDataByMetadataLabel).slice(0, 20).sort();
+
+  const [collapsedLabels, setCollapsedLabels] = useStateWithStorage(
+    'hidden-graphs',
+    validateHiddenGraphsState,
+  );
+
+  const toggleCollapsed = React.useCallback(
+    (label: string) => {
+      setCollapsedLabels((current = []) =>
+        current.includes(label) ? current.filter((c) => c !== label) : [...current, label],
+      );
+    },
+    [setCollapsedLabels],
+  );
 
   return (
     <>
@@ -411,37 +429,52 @@ const AssetMaterializationGraphs: React.FC<{
           flexDirection: 'column',
         }}
       >
-        {[...graphedLabels].sort().map((label) => (
+        {graphLabels.map((label) => (
           <Box
             key={label}
             style={{width: '100%'}}
             border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
           >
             {props.asSidebarSection ? (
-              <Box padding={{horizontal: 24, top: 8}}>
+              <Box padding={{horizontal: 24, top: 8}} flex={{justifyContent: 'space-between'}}>
                 <Caption style={{fontWeight: 700}}>{label}</Caption>
+                <Checkbox
+                  format="switch"
+                  checked={!collapsedLabels.includes(label)}
+                  onChange={() => toggleCollapsed(label)}
+                  size="small"
+                />
               </Box>
             ) : (
               <Box
                 padding={{horizontal: 24, vertical: 16}}
                 border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+                flex={{justifyContent: 'space-between'}}
               >
                 <Subheading>{label}</Subheading>
+                <Checkbox
+                  format="switch"
+                  checked={!collapsedLabels.includes(label)}
+                  onChange={() => toggleCollapsed(label)}
+                  size="small"
+                />
               </Box>
             )}
-            <Box padding={{horizontal: 24, vertical: 16}}>
-              <AssetValueGraph
-                label={label}
-                width="100%"
-                data={graphDataByMetadataLabel[label]}
-                xHover={xHover}
-                onHoverX={(x) => x !== xHover && setXHover(x)}
-              />
-            </Box>
+            {!collapsedLabels.includes(label) ? (
+              <Box padding={{horizontal: 24, vertical: 16}}>
+                <AssetValueGraph
+                  label={label}
+                  width="100%"
+                  data={graphDataByMetadataLabel[label]}
+                  xHover={xHover}
+                  onHoverX={(x) => x !== xHover && setXHover(x)}
+                />
+              </Box>
+            ) : undefined}
           </Box>
         ))}
       </div>
-      {graphedLabels.length === 0 ? (
+      {graphLabels.length === 0 ? (
         <Box padding={{horizontal: 24, top: 64}}>
           <NonIdealState
             shrinkable
@@ -482,7 +515,7 @@ const extractNumericData = (datapoints: AssetEventGroup[], xAxis: 'time' | 'part
   const numericMetadataLabels = uniq(
     flatMap(datapoints, (e) =>
       (e.latest?.metadataEntries || [])
-        .filter((k) => ['EventIntMetadataEntry', 'EventFloatMetadataEntry'].includes(k.__typename))
+        .filter((k) => ['IntMetadataEntry', 'FloatMetadataEntry'].includes(k.__typename))
         .map((k) => k.label),
     ),
   );
@@ -526,7 +559,7 @@ const extractNumericData = (datapoints: AssetEventGroup[], xAxis: 'time' | 'part
       }
 
       let y = NaN;
-      if (entry.__typename === 'EventIntMetadataEntry') {
+      if (entry.__typename === 'IntMetadataEntry') {
         if (entry.intValue !== null) {
           y = entry.intValue;
         } else {
@@ -534,7 +567,7 @@ const extractNumericData = (datapoints: AssetEventGroup[], xAxis: 'time' | 'part
           y = parseInt(entry.intRepr);
         }
       }
-      if (entry.__typename === 'EventFloatMetadataEntry' && entry.floatValue !== null) {
+      if (entry.__typename === 'FloatMetadataEntry' && entry.floatValue !== null) {
         y = entry.floatValue;
       }
 

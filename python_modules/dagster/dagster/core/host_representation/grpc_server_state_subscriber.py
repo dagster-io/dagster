@@ -1,5 +1,5 @@
-from collections import namedtuple
 from enum import Enum
+from typing import NamedTuple, Optional
 
 from dagster import check
 
@@ -12,9 +12,23 @@ class LocationStateChangeEventType(Enum):
 
 
 class LocationStateChangeEvent(
-    namedtuple("_LocationStateChangeEvent", "event_type location_name message server_id")
+    NamedTuple(
+        "_LocationStateChangeEvent",
+        [
+            ("event_type", LocationStateChangeEventType),
+            ("location_name", str),
+            ("message", str),
+            ("server_id", Optional[str]),
+        ],
+    )
 ):
-    def __new__(cls, event_type, location_name, message, server_id=None):
+    def __new__(
+        cls,
+        event_type: LocationStateChangeEventType,
+        location_name: str,
+        message: str,
+        server_id: Optional[str] = None,
+    ):
         return super(LocationStateChangeEvent, cls).__new__(
             cls,
             check.inst_param(event_type, "event_type", LocationStateChangeEventType),

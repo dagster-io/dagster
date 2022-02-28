@@ -63,11 +63,23 @@ def _get_entry_point(origin: PipelinePythonOrigin):
 
 @whitelist_for_serdes
 class ExecuteRunArgs(
-    namedtuple(
-        "_ExecuteRunArgs", "pipeline_origin pipeline_run_id instance_ref set_exit_code_on_failure"
+    NamedTuple(
+        "_ExecuteRunArgs",
+        [
+            ("pipeline_origin", PipelinePythonOrigin),
+            ("pipeline_run_id", str),
+            ("instance_ref", Optional[InstanceRef]),
+            ("set_exit_code_on_failure", Optional[bool]),
+        ],
     )
 ):
-    def __new__(cls, pipeline_origin, pipeline_run_id, instance_ref, set_exit_code_on_failure=None):
+    def __new__(
+        cls,
+        pipeline_origin: PipelinePythonOrigin,
+        pipeline_run_id: str,
+        instance_ref: Optional[InstanceRef],
+        set_exit_code_on_failure: Optional[bool] = None,
+    ):
         return super(ExecuteRunArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
@@ -95,11 +107,23 @@ class ExecuteRunArgs(
 
 @whitelist_for_serdes
 class ResumeRunArgs(
-    namedtuple(
-        "_ResumeRunArgs", "pipeline_origin pipeline_run_id instance_ref set_exit_code_on_failure"
+    NamedTuple(
+        "_ResumeRunArgs",
+        [
+            ("pipeline_origin", PipelinePythonOrigin),
+            ("pipeline_run_id", str),
+            ("instance_ref", Optional[InstanceRef]),
+            ("set_exit_code_on_failure", Optional[bool]),
+        ],
     )
 ):
-    def __new__(cls, pipeline_origin, pipeline_run_id, instance_ref, set_exit_code_on_failure=None):
+    def __new__(
+        cls,
+        pipeline_origin: PipelinePythonOrigin,
+        pipeline_run_id: str,
+        instance_ref: Optional[InstanceRef],
+        set_exit_code_on_failure: Optional[bool] = None,
+    ):
         return super(ResumeRunArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(

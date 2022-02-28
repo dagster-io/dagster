@@ -158,7 +158,7 @@ def whitelist_for_serdes(
         check.class_param(__cls, "__cls")
         return _whitelist_for_serdes(whitelist_map=_WHITELIST_MAP)(__cls)
     else:  # decorator passed params
-        check.opt_subclass_param(serializer, "serializer", Serializer)
+        check.opt_class_param(serializer, "serializer", superclass=Serializer)
         serializer = cast(Type[Serializer], serializer)
         return _whitelist_for_serdes(
             whitelist_map=_WHITELIST_MAP, serializer=serializer, storage_name=storage_name

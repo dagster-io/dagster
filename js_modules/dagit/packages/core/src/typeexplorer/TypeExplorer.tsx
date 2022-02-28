@@ -22,8 +22,7 @@ export const TypeExplorer: React.FC<ITypeExplorerProps> = (props) => {
   const {name, metadataEntries, inputSchemaType, outputSchemaType, description} = props.type;
   const typeKind = dagsterTypeKind(props.type);
   const displayName = typeKind === 'standard' ? name : `${name} (${typeKind})`;
-  const tableSchema = metadataEntries.find(gqlTypePredicate('EventTableSchemaMetadataEntry'))
-    ?.schema;
+  const tableSchema = metadataEntries.find(gqlTypePredicate('TableSchemaMetadataEntry'))?.schema;
   return (
     <div>
       <SidebarSubhead />

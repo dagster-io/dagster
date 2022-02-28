@@ -363,7 +363,7 @@ class DagsterInstance:
                     "This directory is used to store metadata across sessions, or load the dagster.yaml "
                     "file which can configure storing metadata in an external database.\n"
                     "You can resolve this error by exporting the environment variable. For example, you can run the following command in your shell or include it in your shell configuration file:\n"
-                    '\texport DAGSTER_HOME="~/dagster_home"\n'
+                    '\texport DAGSTER_HOME=~"/dagster_home"\n'
                     "or PowerShell\n"
                     "$env:DAGSTER_HOME = ($home + '\\dagster_home')"
                     "or batch"
@@ -1133,7 +1133,7 @@ class DagsterInstance:
         )
 
     @traced
-    def all_logs(self, run_id, of_type: "DagsterEventType" = None):
+    def all_logs(self, run_id, of_type: Union["DagsterEventType", Set["DagsterEventType"]] = None):
         return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
 
     def watch_event_logs(self, run_id, cursor, cb):
@@ -1316,7 +1316,7 @@ records = instance.get_event_records(
         from dagster.core.events import EngineEventData, DagsterEvent, DagsterEventType
         from dagster.core.events.log import EventLogEntry
 
-        check.class_param(cls, "cls")
+        check.opt_class_param(cls, "cls")
         check.str_param(message, "message")
         check.opt_inst_param(pipeline_run, "pipeline_run", PipelineRun)
         check.opt_str_param(run_id, "run_id")
@@ -1352,8 +1352,7 @@ records = instance.get_event_records(
             step_key=step_key,
         )
         event_record = EventLogEntry(
-            message=message,
-            user_message=message,
+            user_message="",
             level=log_level,
             pipeline_name=pipeline_name,
             run_id=run_id,
@@ -1384,7 +1383,6 @@ records = instance.get_event_records(
         )
 
         event_record = EventLogEntry(
-            message=message,
             user_message="",
             level=logging.INFO,
             pipeline_name=run.pipeline_name,
@@ -1418,8 +1416,7 @@ records = instance.get_event_records(
             message=message,
         )
         event_record = EventLogEntry(
-            message=message,
-            user_message=message,
+            user_message="",
             level=logging.ERROR,
             pipeline_name=pipeline_run.pipeline_name,
             run_id=pipeline_run.run_id,
@@ -1449,8 +1446,7 @@ records = instance.get_event_records(
             message=message,
         )
         event_record = EventLogEntry(
-            message=message,
-            user_message=message,
+            user_message="",
             level=logging.ERROR,
             pipeline_name=pipeline_run.pipeline_name,
             run_id=pipeline_run.run_id,
@@ -1559,7 +1555,6 @@ records = instance.get_event_records(
         )
 
         event_record = EventLogEntry(
-            message="",
             user_message="",
             level=logging.INFO,
             pipeline_name=run.pipeline_name,
@@ -1693,12 +1688,14 @@ records = instance.get_event_records(
         )
         from dagster.core.definitions.run_request import InstigatorType
 
-        check.invariant(
-            not external_sensor.default_status,
-            "Can only manually start a sensor that does not have its status set in code",
-        )
-
         state = self.get_instigator_state(external_sensor.get_external_origin_id())
+
+        if external_sensor.get_current_instigator_state(state).is_running:
+            raise Exception(
+                "You have attempted to start sensor {name}, but it is already running".format(
+                    name=external_sensor.name
+                )
+            )
 
         if not state:
             return self.add_instigator_state(

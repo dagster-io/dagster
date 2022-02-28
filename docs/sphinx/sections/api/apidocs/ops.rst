@@ -3,7 +3,7 @@
 Ops
 ===
 
-The foo foundational unit of computation in Dagster.
+The foundational unit of computation in Dagster.
 
 -----
 

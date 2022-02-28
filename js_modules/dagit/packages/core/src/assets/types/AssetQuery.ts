@@ -65,156 +65,156 @@ export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_
 
 export type AssetQuery_assetOrError_Asset_definition_assetMaterializations_runOrError = AssetQuery_assetOrError_Asset_definition_assetMaterializations_runOrError_RunNotFoundError | AssetQuery_assetOrError_Asset_definition_assetMaterializations_runOrError_Run;
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableMetadataEntry_table {
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableMetadataEntry_table;
+  table: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries = AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventPathMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventJsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventUrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTextMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventMarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventPythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventFloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventIntMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventPipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventAssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry;
+export type AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries = AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_PathMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_JsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_UrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TextMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_MarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_PythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_FloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_IntMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_PipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_AssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableMetadataEntry | AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries_TableSchemaMetadataEntry;
 
 export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_assetLineage_assetKey {
   __typename: "AssetKey";
@@ -246,307 +246,307 @@ export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations 
   stepStats: AssetQuery_assetOrError_Asset_definition_assetMaterializations_stepStats;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableMetadataEntry_table {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableMetadataEntry_table;
+  table: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventPathMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventJsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventUrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTextMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventMarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventPythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventFloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventIntMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventPipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventAssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_EventTableSchemaMetadataEntry;
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_PathMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_JsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_UrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TextMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_MarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_PythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_FloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_IntMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_PipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_AssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry;
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableMetadataEntry_table {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableMetadataEntry_table;
+  table: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventPathMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventJsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventUrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTextMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventMarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventPythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventFloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventIntMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventPipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventAssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_EventTableSchemaMetadataEntry;
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_PathMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_JsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_UrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TextMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_MarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_PythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_FloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_IntMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_PipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_AssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_metadataEntries_TableSchemaMetadataEntry;
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -1456,156 +1456,156 @@ export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_t
 
 export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ArrayConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_EnumConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_RegularConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_CompositeConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_ScalarUnionConfigType | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_outputSchemaType_MapConfigType;
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableMetadataEntry_table {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableMetadataEntry_table;
+  table: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventPathMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventJsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventUrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTextMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventMarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventPythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventFloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventIntMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventPipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventAssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_EventTableSchemaMetadataEntry;
+export type AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries = AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_PathMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_JsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_UrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TextMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_MarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_PythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_FloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_IntMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_PipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_AssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableMetadataEntry | AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_metadataEntries_TableSchemaMetadataEntry;
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_type_innerTypes_inputSchemaType_ArrayConfigType_recursiveConfigTypes_ArrayConfigType {
   __typename: "ArrayConfigType" | "NullableConfigType";
@@ -2599,156 +2599,156 @@ export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_ass
 
 export type AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_runOrError = AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_runOrError_RunNotFoundError | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_runOrError_Run;
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table {
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table;
+  table: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries = AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventPathMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventJsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventUrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTextMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventMarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventPythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventFloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventIntMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventPipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventAssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry;
+export type AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries = AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_PathMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_JsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_UrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TextMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_MarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_PythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_FloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_IntMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_PipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_AssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry;
 
 export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_assetLineage_assetKey {
   __typename: "AssetKey";
@@ -2839,156 +2839,156 @@ export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_asset
 
 export type AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_runOrError = AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_runOrError_RunNotFoundError | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_runOrError_Run;
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_columns {
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_columns_constraints;
+  constraints: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema {
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema {
   __typename: "TableSchema";
-  columns: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_columns[];
-  constraints: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema_constraints | null;
+  columns: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table {
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table {
   __typename: "Table";
   records: string[];
-  schema: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table_schema;
+  schema: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table_schema;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry {
-  __typename: "EventTableMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  table: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry_table;
+  table: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
   __typename: "TableColumnConstraints";
   nullable: boolean;
   unique: boolean;
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_columns {
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns {
   __typename: "TableColumn";
   name: string;
   description: string | null;
   type: string;
-  constraints: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_columns_constraints;
+  constraints: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints {
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
   __typename: "TableConstraints";
   other: string[];
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema {
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema {
   __typename: "TableSchema";
-  columns: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_columns[];
-  constraints: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema_constraints | null;
+  columns: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
 }
 
-export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry {
-  __typename: "EventTableSchemaMetadataEntry";
+export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
   label: string;
   description: string | null;
-  schema: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry_schema;
+  schema: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry_schema;
 }
 
-export type AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries = AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventPathMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventJsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventUrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTextMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventMarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventPythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventFloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventIntMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventPipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventAssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_EventTableSchemaMetadataEntry;
+export type AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries = AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_PathMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_JsonMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_UrlMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TextMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_MarkdownMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_PythonArtifactMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_FloatMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_IntMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_PipelineRunMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_AssetMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableMetadataEntry | AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries_TableSchemaMetadataEntry;
 
 export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_assetLineage_assetKey {
   __typename: "AssetKey";
