@@ -125,7 +125,7 @@ class FakeADLS2FileClient:
     @contextmanager
     def acquire_lease(self, lease_duration=-1):  # pylint: disable=unused-argument
         if self.lease is None:
-            self.lease = random.randint(0, 2 ** 9)
+            self.lease = random.randint(0, 2**9)
             try:
                 yield self.lease
             finally:

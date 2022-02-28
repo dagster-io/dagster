@@ -654,7 +654,7 @@ def _root(val: Any) -> str:
 
 
 def replace_storage_keys(storage_dict: Dict[str, Any], key_mapping: Dict[str, str]):
-    """ returns a version of the storage dict that replaces all the keys """
+    """returns a version of the storage dict that replaces all the keys"""
     result = {}
     for key, value in storage_dict.items():
         if key not in key_mapping:

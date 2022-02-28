@@ -7,9 +7,14 @@ k_means_iris = dm.define_dagstermill_op(
     "k_means_iris",
     script_relative_path("iris-kmeans_2.ipynb"),
     output_notebook_name="iris_kmeans_output",
-    input_defs=[InputDefinition("path", str, description="Local path to the Iris dataset")],
+    input_defs=[
+        InputDefinition("path", str, description="Local path to the Iris dataset")
+    ],
     config_schema=Field(
-        Int, default_value=3, is_required=False, description="The number of clusters to find"
+        Int,
+        default_value=3,
+        is_required=False,
+        description="The number of clusters to find",
     ),
 )
 

@@ -31,25 +31,19 @@ def test_assets_with_same_partitioning():
     def downstream_asset(upstream_asset):
         assert upstream_asset
 
-    assert (
-        get_upstream_partitions_for_partition_range(
-            downstream_asset,
-            upstream_asset,
-            AssetKey("upstream_asset"),
-            PartitionKeyRange("a", "c"),
-        )
-        == PartitionKeyRange("a", "c")
-    )
+    assert get_upstream_partitions_for_partition_range(
+        downstream_asset,
+        upstream_asset,
+        AssetKey("upstream_asset"),
+        PartitionKeyRange("a", "c"),
+    ) == PartitionKeyRange("a", "c")
 
-    assert (
-        get_downstream_partitions_for_partition_range(
-            downstream_asset,
-            upstream_asset,
-            AssetKey("upstream_asset"),
-            PartitionKeyRange("a", "c"),
-        )
-        == PartitionKeyRange("a", "c")
-    )
+    assert get_downstream_partitions_for_partition_range(
+        downstream_asset,
+        upstream_asset,
+        AssetKey("upstream_asset"),
+        PartitionKeyRange("a", "c"),
+    ) == PartitionKeyRange("a", "c")
 
 
 def test_filter_mapping_partitions_dep():
@@ -99,25 +93,19 @@ def test_filter_mapping_partitions_dep():
     def downstream_asset(upstream_asset):
         assert upstream_asset
 
-    assert (
-        get_upstream_partitions_for_partition_range(
-            downstream_asset,
-            upstream_asset,
-            AssetKey("upstream_asset"),
-            PartitionKeyRange("ringo", "paul"),
-        )
-        == PartitionKeyRange("southern|ringo", "southern|paul")
-    )
+    assert get_upstream_partitions_for_partition_range(
+        downstream_asset,
+        upstream_asset,
+        AssetKey("upstream_asset"),
+        PartitionKeyRange("ringo", "paul"),
+    ) == PartitionKeyRange("southern|ringo", "southern|paul")
 
-    assert (
-        get_downstream_partitions_for_partition_range(
-            downstream_asset,
-            upstream_asset,
-            AssetKey("upstream_asset"),
-            PartitionKeyRange("southern|ringo", "southern|paul"),
-        )
-        == PartitionKeyRange("ringo", "paul")
-    )
+    assert get_downstream_partitions_for_partition_range(
+        downstream_asset,
+        upstream_asset,
+        AssetKey("upstream_asset"),
+        PartitionKeyRange("southern|ringo", "southern|paul"),
+    ) == PartitionKeyRange("ringo", "paul")
 
 
 def test_single_partitioned_asset_job():

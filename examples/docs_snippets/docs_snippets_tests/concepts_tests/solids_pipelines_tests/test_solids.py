@@ -44,7 +44,9 @@ def test_context_op():
 
 
 def test_my_configurable_op():
-    my_configurable_op(build_op_context(config={"api_endpoint": "https://localhost:3000"}))
+    my_configurable_op(
+        build_op_context(config={"api_endpoint": "https://localhost:3000"})
+    )
 
 
 def test_op_factory():

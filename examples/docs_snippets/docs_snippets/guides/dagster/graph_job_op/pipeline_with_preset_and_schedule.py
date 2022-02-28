@@ -7,7 +7,8 @@ def do_something(_):
 
 
 do_it_all_preset = PresetDefinition(
-    "my_preset", run_config={"solids": {"do_something": {"config": {"param": "some_val"}}}}
+    "my_preset",
+    run_config={"solids": {"do_something": {"config": {"param": "some_val"}}}},
 )
 
 

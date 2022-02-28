@@ -32,7 +32,7 @@ class DatabricksClient:
         """Submit a run directly to the 'Runs Submit' API."""
         return self.client.jobs.submit_run(*args, **kwargs)["run_id"]  # pylint: disable=no-member
 
-    def read_file(self, dbfs_path, block_size=1024 ** 2):
+    def read_file(self, dbfs_path, block_size=1024**2):
         """Read a file from DBFS to a **byte string**."""
 
         if dbfs_path.startswith("dbfs://"):
@@ -49,7 +49,7 @@ class DatabricksClient:
             data += base64.b64decode(jdoc["data"])
         return data
 
-    def put_file(self, file_obj, dbfs_path, overwrite=False, block_size=1024 ** 2):
+    def put_file(self, file_obj, dbfs_path, overwrite=False, block_size=1024**2):
         """Upload an arbitrary large file to DBFS.
 
         This doesn't use the DBFS `Put` API because that endpoint is limited to 1MB.

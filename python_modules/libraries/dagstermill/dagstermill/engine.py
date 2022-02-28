@@ -76,7 +76,6 @@ if is_papermill_2():
             )
             return DagstermillNotebookClient(nb_man, **final_kwargs).execute()
 
-
 else:
     from papermill.engines import NBConvertEngine  # pylint: disable=import-error,no-name-in-module
 

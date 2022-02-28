@@ -2,10 +2,14 @@ from dagster import In, dagster_type_loader, job, op, usable_as_dagster_type
 
 
 # def_start_marker
-@dagster_type_loader(config_schema={"diameter": float, "juiciness": float, "cultivar": str})
+@dagster_type_loader(
+    config_schema={"diameter": float, "juiciness": float, "cultivar": str}
+)
 def apple_loader(_context, config):
     return Apple(
-        diameter=config["diameter"], juiciness=config["juiciness"], cultivar=config["cultivar"]
+        diameter=config["diameter"],
+        juiciness=config["juiciness"],
+        cultivar=config["cultivar"],
     )
 
 
@@ -37,7 +41,11 @@ def execute_with_config():
             "ops": {
                 "my_op": {
                     "inputs": {
-                        "input_apple": {"diameter": 2.4, "juiciness": 6.0, "cultivar": "honeycrisp"}
+                        "input_apple": {
+                            "diameter": 2.4,
+                            "juiciness": 6.0,
+                            "cultivar": "honeycrisp",
+                        }
                     }
                 }
             }

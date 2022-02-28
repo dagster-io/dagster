@@ -1,6 +1,13 @@
 from unittest.mock import MagicMock
 
-from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, pipeline, resource, solid
+from dagster import (
+    ModeDefinition,
+    ResourceDefinition,
+    execute_pipeline,
+    pipeline,
+    resource,
+    solid,
+)
 
 
 @resource
@@ -18,7 +25,9 @@ def do_something():
         ModeDefinition(resource_defs={"external_service": external_service}),
         ModeDefinition(
             "test",
-            resource_defs={"external_service": ResourceDefinition.hardcoded_resource(MagicMock())},
+            resource_defs={
+                "external_service": ResourceDefinition.hardcoded_resource(MagicMock())
+            },
         ),
     ]
 )
