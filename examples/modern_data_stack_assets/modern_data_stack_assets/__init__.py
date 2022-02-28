@@ -1,1 +1,1 @@
-from .repo import analytics_repo
+from .assets import analytics_assets
