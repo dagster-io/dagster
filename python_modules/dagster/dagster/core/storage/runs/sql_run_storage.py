@@ -67,6 +67,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         out-of-date instance of the storage up to date.
         """
 
+    @property
+    def supports_bucket_queries(self):
+        return db.__version__ >= "1.4.0"
+
     def fetchall(self, query):
         with self.connect() as conn:
             result_proxy = conn.execute(query)
