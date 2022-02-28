@@ -80,20 +80,35 @@ line_length=100
 # section in this doc:
 
 [tool.pylint.master]
-# ignore = ['snapshots', 'vendor']
-ignore-paths = ['snapshots', 'vendor']
+# As of pylint v2.12.2, `ignore` and `ignore-patterns` are broken and do not correctly filter
+# directories. So we have to use `ignore-paths`. This should be fixed in 2.13.0-- then we filter
+# basenames `snapshots` and `vendor`.
+ignore-paths = [
+  # 'snapshots',
+  'python_modules/libraries/dagster-airflow/dagster_airflow/vendor'
+]
+
+# Minimum python version supported by Dagster.
 py-version = 3.6
-# load-plugins=['dagster.utils.linter']
+
+# Contains assorted Dagster-specific checks (for dev purposes, not users).
+load-plugins=['dagster.utils.linter']
 
 [tool.pylint.messages-control]
 disable=[
-  'C',  # [category] convention-related checks
-  'R',  # [category] refactoring-related checks
-  'typecheck',  # [checker] redundant with mypy
-  # 'bare-except',
-  # 'broad-except',
-  # 'duplicate-code',
+  # [category] convention-related checks-- too much noise
+  'C',
+  # [category] refactoring-related checks-- too much noise
+  'R', 
 
+  # [checker] redundant with mypy
+  'typecheck',  
+
+  # There are many places where we want to catch a maximally generic exception.
+  'bare-except',
+  'broad-except',
+
+  # Sometimes it's useful to leave `TODO` comments in the code.
   'fixme',
 
   # Pylint is by default very strict on logging string interpolations, but the
@@ -103,9 +118,11 @@ disable=[
   'logging-format-interpolation',
   'logging-not-lazy',
 
-  # 'no-init',
+   # Maybe we should transition in the future, but right now there are many instances in Dagster
+   # code of manually wrapping outer exception text.
   'raise-missing-from',
+
+  # This rule is incompatible with SDAs, which have parameters named the same as upstream assets.
   'redefined-outer-name',
-  # 'unspecified-encoding'
 ]
 >>>>>>> f6f381a25 (migrate pylint config to pyproject.toml)

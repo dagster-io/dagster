@@ -13,10 +13,9 @@ is_darwin := $(filter Darwin,$(uname))
 #   https://pylint.pycqa.org/en/latest/user_guide/run.html#parallel-execution
 #   https://github.com/PyCQA/pylint/issues/4874
 pylint:
-	pylint -j $(if $(is_darwin),1,1) \
+	pylint -j $(if $(is_darwin),1,0) \
     `git ls-files {.buildkite,examples,integration_tests,helm,python_modules}'/**/*.py'`
 
-    # `git ls-files 'examples/**/*.py' 'python_modules/**/*.py' .buildkite/**/*.py``
 
 # NOTE: See pyproject.toml [tool.black] for majority of black config. Only include/exclude options
 # and format targets should be specified here. Note there are separate pyproject.toml for the root
