@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.log_manager import DagsterLogManager
     from dagster.core.types.dagster_type import DagsterType
+    from dagster.core.events import DagsterEvent
 
     from .output import OutputContext
 

@@ -3,7 +3,6 @@ import re
 import pytest
 from dagster import (
     AssetMaterialization,
-    AssetObservation,
     InputContext,
     OutputContext,
     build_input_context,
