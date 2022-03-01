@@ -1,13 +1,14 @@
 import numpy as np
-from dagster.utils import file_relative_path
 from dagster_postgres.utils import get_conn_string
+
+from dagster.utils import file_relative_path
 
 
 def model_func(x, a, b):
-    return a * np.exp(b * (x / 10 ** 18 - 1.6095))
+    return a * np.exp(b * (x / 10**18 - 1.6095))
 
 
-AIRBYTE_CONNECTION_ID = "15722450-ae59-4c65-a784-953808d7812c"
+AIRBYTE_CONNECTION_ID = "<your airbyte connection id>"
 AIRBYTE_CONFIG = {"host": "localhost", "port": "8000"}
 DBT_PROJECT_DIR = file_relative_path(__file__, "../mds_dbt")
 DBT_PROFILES_DIR = file_relative_path(__file__, "../mds_dbt/config")

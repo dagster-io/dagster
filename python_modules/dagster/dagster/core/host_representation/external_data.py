@@ -627,7 +627,7 @@ class ExternalAssetNode(
             dependencies=dependencies,
             depended_by=depended_by,
             op_name=op_name,
-            op_description=op_description,
+            op_description=op_description or output_description,
             job_names=job_names,
             partitions_def_data=partitions_def_data,
             output_name=output_name,

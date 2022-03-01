@@ -16,6 +16,7 @@ from dagster import (
     TableSchema,
     check,
     get_dagster_logger,
+    MetadataValue,
 )
 from dagster.core.asset_defs import AssetsDefinition, multi_asset
 
@@ -132,15 +133,17 @@ def _dbt_nodes_to_assets(
 def _columns_to_metadata(columns: Mapping[str, Any]) -> Optional[Mapping[str, Any]]:
     return (
         {
-            "schema": TableSchema(
-                columns=[
-                    TableColumn(
-                        name=name,
-                        type=metadata.get("data_type") or "?",
-                        description=metadata.get("description"),
-                    )
-                    for name, metadata in columns.items()
-                ]
+            "schema": MetadataValue.table_schema(
+                TableSchema(
+                    columns=[
+                        TableColumn(
+                            name=name,
+                            type=metadata.get("data_type") or "?",
+                            description=metadata.get("description"),
+                        )
+                        for name, metadata in columns.items()
+                    ]
+                )
             )
         }
         if len(columns) > 0
