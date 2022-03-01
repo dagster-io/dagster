@@ -5,16 +5,20 @@ import {
   Box,
   Checkbox,
   ColorsWIP,
+  CursorHistoryControls,
   NonIdealState,
   Spinner,
   Tab,
+  Table,
   Tabs,
   Subheading,
+  FontFamily,
 } from '@dagster-io/ui';
 import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import * as React from 'react';
 
+import {TickTag} from './InstigationTick';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
@@ -30,11 +34,16 @@ import {
   TickHistoryQueryVariables,
   TickHistoryQuery_instigationStateOrError_InstigationState_ticks,
 } from './types/TickHistoryQuery';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
+import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
+import {RunStatusLink, RUN_STATUS_FRAGMENT} from './InstigationUtils';
+import {RunStatusFragment} from './types/RunStatusFragment';
 
 Chart.register(zoomPlugin);
 
 type InstigationTick = TickHistoryQuery_instigationStateOrError_InstigationState_ticks;
 
+const PAGE_SIZE = 25;
 interface ShownStatusState {
   [InstigationTickStatus.SUCCESS]: boolean;
   [InstigationTickStatus.FAILURE]: boolean;
@@ -86,7 +95,135 @@ const TABS = [
 
 const MILLIS_PER_DAY = 86400 * 1000;
 
-export const TickHistory = ({
+export const TicksTable = ({name, repoAddress}: {name: string; repoAddress: RepoAddress}) => {
+  const [shownStates, setShownStates] = React.useState<ShownStatusState>(
+    DEFAULT_SHOWN_STATUS_STATE,
+  );
+  const instigationSelector = {...repoAddressToSelector(repoAddress), name};
+  const statuses = Object.keys(shownStates)
+    .filter((status) => shownStates[status])
+    .map((status) => status as InstigationTickStatus);
+  const {queryResult, paginationProps} = useCursorPaginatedQuery<
+    TickHistoryQuery,
+    TickHistoryQueryVariables
+  >({
+    nextCursorForResult: (data) => {
+      if (data.instigationStateOrError.__typename !== 'InstigationState') {
+        return undefined;
+      }
+      return data.instigationStateOrError.ticks[PAGE_SIZE - 1]?.id;
+    },
+    getResultArray: (data) => {
+      if (!data || data.instigationStateOrError.__typename !== 'InstigationState') {
+        return [];
+      }
+      return data.instigationStateOrError.ticks;
+    },
+    variables: {
+      instigationSelector,
+      statuses,
+    },
+    query: JOB_TICK_HISTORY_QUERY,
+    pageSize: PAGE_SIZE,
+  });
+  const {data} = queryResult;
+
+  if (!data || data.instigationStateOrError.__typename === 'PythonError') {
+    return null;
+  }
+
+  const {ticks, instigationType} = data.instigationStateOrError;
+
+  if (!ticks.length && statuses.length === Object.keys(DEFAULT_SHOWN_STATUS_STATE).length) {
+    return null;
+  }
+
+  const StatusFilter = ({status}: {status: InstigationTickStatus}) => (
+    <Checkbox
+      label={STATUS_TEXT_MAP[status]}
+      checked={shownStates[status]}
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+        setShownStates({...shownStates, [status]: e.target.checked});
+      }}
+    />
+  );
+
+  return (
+    <>
+      <Box
+        padding={{vertical: 16, horizontal: 24}}
+        border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+      >
+        <Subheading>Tick History</Subheading>
+        <Box flex={{direction: 'row', justifyContent: 'flex-end'}}>
+          <Box flex={{direction: 'row', gap: 16}}>
+            <StatusFilter status={InstigationTickStatus.STARTED} />
+            <StatusFilter status={InstigationTickStatus.SUCCESS} />
+            <StatusFilter status={InstigationTickStatus.FAILURE} />
+            <StatusFilter status={InstigationTickStatus.SKIPPED} />
+          </Box>
+        </Box>
+      </Box>
+      {ticks.length ? (
+        <Table>
+          <thead>
+            <tr>
+              <th style={{width: 120}}>Timestamp</th>
+              <th style={{width: 90}}>Status</th>
+              {instigationType === InstigationType.SENSOR ? (
+                <th style={{width: 120}}>Cursor</th>
+              ) : null}
+              <th style={{width: 180}}>Runs</th>
+            </tr>
+          </thead>
+          <tbody>
+            {ticks.map((tick) => (
+              <tr key={tick.id}>
+                <td>
+                  <TimestampDisplay timestamp={tick.timestamp} />
+                </td>
+                <td>
+                  <TickTag tick={tick} />
+                </td>
+                {instigationType === InstigationType.SENSOR ? (
+                  <td style={{width: 120}}>
+                    {tick.cursor ? (
+                      <span style={{fontFamily: FontFamily.monospace}}>{tick.cursor}</span>
+                    ) : (
+                      <>&mdash;</>
+                    )}
+                  </td>
+                ) : null}
+                <td>
+                  {tick.runIds.length ? (
+                    tick.runs.map((run: RunStatusFragment) => (
+                      <>
+                        <RunStatusLink key={run.id} run={run} />
+                      </>
+                    ))
+                  ) : (
+                    <>&mdash;</>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </Table>
+      ) : (
+        <Box padding={{vertical: 32}} flex={{justifyContent: 'center'}}>
+          <NonIdealState icon="no-results" title="No ticks to display" />
+        </Box>
+      )}
+      {ticks.length > 0 ? (
+        <div style={{marginTop: '16px'}}>
+          <CursorHistoryControls {...paginationProps} />
+        </div>
+      ) : null}
+    </>
+  );
+};
+
+export const TickHistoryTimeline = ({
   name,
   repoAddress,
   onHighlightRunIds,
@@ -147,7 +284,7 @@ export const TickHistory = ({
           padding={{top: 16, horizontal: 24}}
           border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
         >
-          <Subheading>Tick History</Subheading>
+          <Subheading>Tick Timeline</Subheading>
           {tabs}
         </Box>
         <Box padding={{vertical: 64}}>
@@ -200,7 +337,7 @@ export const TickHistory = ({
         onClose={() => onTickClick(undefined)}
       />
       <Box padding={{top: 16, horizontal: 24}}>
-        <Subheading>Tick History</Subheading>
+        <Subheading>Tick Timeline</Subheading>
         <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
           {tabs}
           {ticks.length ? (
@@ -222,7 +359,7 @@ export const TickHistory = ({
             onHoverTick={onTickHover}
             onSelectTick={onTickClick}
           />
-        ) : ticks.length ? (
+        ) : displayedTicks.length ? (
           <HistoricalTickTimeline
             ticks={displayedTicks}
             selectedTick={displayedTicks.find((t) => t.timestamp === selectedTime)}
@@ -250,7 +387,13 @@ export const TickHistory = ({
 };
 
 const JOB_TICK_HISTORY_QUERY = gql`
-  query TickHistoryQuery($instigationSelector: InstigationSelector!, $dayRange: Int, $limit: Int) {
+  query TickHistoryQuery(
+    $instigationSelector: InstigationSelector!
+    $dayRange: Int
+    $limit: Int
+    $cursor: String
+    $statuses: [InstigationTickStatus!]
+  ) {
     instigationStateOrError(instigationSelector: $instigationSelector) {
       __typename
       ... on InstigationState {
@@ -259,13 +402,18 @@ const JOB_TICK_HISTORY_QUERY = gql`
         nextTick {
           timestamp
         }
-        ticks(dayRange: $dayRange, limit: $limit) {
+        ticks(dayRange: $dayRange, limit: $limit, cursor: $cursor, statuses: $statuses) {
           id
           status
           timestamp
           cursor
           skipReason
           runIds
+          runs {
+            id
+            status
+            ...RunStatusFragment
+          }
           originRunIds
           error {
             ...PythonErrorFragment
@@ -280,4 +428,5 @@ const JOB_TICK_HISTORY_QUERY = gql`
   }
   ${PYTHON_ERROR_FRAGMENT}
   ${TICK_TAG_FRAGMENT}
+  ${RUN_STATUS_FRAGMENT}
 `;

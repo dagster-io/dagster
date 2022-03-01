@@ -5,7 +5,7 @@ import {useParams} from 'react-router-dom';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {TickHistory} from '../instigation/TickHistory';
+import {TickHistoryTimeline} from '../instigation/TickHistory';
 import {DagsterTag} from '../runs/RunTag';
 import {Loading} from '../ui/Loading';
 import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from '../workspace/PreviousRunsSection';
@@ -81,7 +81,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
             >
               <SchedulerInfo daemonHealth={instance.daemonHealth} />
             </Box>
-            <TickHistory
+            <TickHistoryTimeline
               repoAddress={repoAddress}
               name={scheduleOrError.name}
               onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}

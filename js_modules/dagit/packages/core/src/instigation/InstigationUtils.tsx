@@ -11,6 +11,7 @@ import {REPOSITORY_ORIGIN_FRAGMENT} from '../workspace/RepositoryInformation';
 
 import {TICK_TAG_FRAGMENT} from './InstigationTick';
 import {InstigationStateFragment} from './types/InstigationStateFragment';
+import {RunStatusFragment} from './types/RunStatusFragment';
 
 export const InstigatedRunStatus: React.FC<{
   instigationState: InstigationStateFragment;
@@ -18,16 +19,25 @@ export const InstigatedRunStatus: React.FC<{
   if (!instigationState.runs.length) {
     return <span style={{color: ColorsWIP.Gray300}}>None</span>;
   }
-  const run = instigationState.runs[0];
-  return (
-    <Group direction="row" spacing={4} alignItems="center">
-      <RunStatusIndicator status={run.status} />
-      <Link to={`/instance/runs/${run.runId}`} target="_blank" rel="noreferrer">
-        <Mono>{titleForRun({runId: run.runId})}</Mono>
-      </Link>
-    </Group>
-  );
+  return <RunStatusLink run={instigationState.runs[0]} />;
 };
+
+export const RunStatusLink: React.FC<{run: RunStatusFragment}> = ({run}) => (
+  <Group direction="row" spacing={4} alignItems="center">
+    <RunStatusIndicator status={run.status} />
+    <Link to={`/instance/runs/${run.runId}`} target="_blank" rel="noreferrer">
+      <Mono>{titleForRun({runId: run.runId})}</Mono>
+    </Link>
+  </Group>
+);
+
+export const RUN_STATUS_FRAGMENT = gql`
+  fragment RunStatusFragment on Run {
+    id
+    runId
+    status
+  }
+`;
 
 export const INSTIGATION_STATE_FRAGMENT = gql`
   fragment InstigationStateFragment on InstigationState {
@@ -49,8 +59,7 @@ export const INSTIGATION_STATE_FRAGMENT = gql`
     }
     runs(limit: 1) {
       id
-      runId
-      status
+      ...RunStatusFragment
     }
     status
     ticks(limit: 1) {
@@ -63,6 +72,7 @@ export const INSTIGATION_STATE_FRAGMENT = gql`
   ${REPOSITORY_ORIGIN_FRAGMENT}
   ${PYTHON_ERROR_FRAGMENT}
   ${TICK_TAG_FRAGMENT}
+  ${RUN_STATUS_FRAGMENT}
 `;
 
 export const StatusTable = styled.table`

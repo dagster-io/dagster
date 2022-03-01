@@ -5,7 +5,7 @@ import {useParams} from 'react-router-dom';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {TickHistory} from '../instigation/TickHistory';
+import {TicksTable, TickHistoryTimeline} from '../instigation/TickHistory';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -71,27 +71,13 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
             >
               <SensorInfo daemonHealth={instance.daemonHealth} />
             </Box>
-            <TickHistory
+            <TickHistoryTimeline
               repoAddress={repoAddress}
               name={sensorOrError.name}
               showRecent={true}
               onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
             />
-            <Box border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}>
-              {sensorOrError.targets && sensorOrError.targets.length ? (
-                <SensorPreviousRuns
-                  repoAddress={repoAddress}
-                  sensor={sensorOrError}
-                  highlightedIds={selectedRunIds}
-                />
-              ) : (
-                <NoTargetSensorPreviousRuns
-                  repoAddress={repoAddress}
-                  sensor={sensorOrError}
-                  highlightedIds={selectedRunIds}
-                />
-              )}
-            </Box>
+            <TicksTable repoAddress={repoAddress} name={sensorOrError.name} />
           </Page>
         );
       }}
