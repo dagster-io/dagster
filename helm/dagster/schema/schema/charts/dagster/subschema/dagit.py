@@ -1,5 +1,7 @@
 from typing import Dict, List, Optional
 
+from pydantic import Extra  # pylint: disable=no-name-in-module
+
 from ...utils import kubernetes
 from ...utils.utils import BaseModel
 
@@ -23,14 +25,20 @@ class Dagit(BaseModel):
     env: Dict[str, str]
     envConfigMaps: List[kubernetes.ConfigMapEnvSource]
     envSecrets: List[kubernetes.SecretEnvSource]
+    deploymentLabels: Dict[str, str]
+    labels: Dict[str, str]
     nodeSelector: kubernetes.NodeSelector
     affinity: kubernetes.Affinity
     tolerations: kubernetes.Tolerations
     podSecurityContext: kubernetes.PodSecurityContext
     securityContext: kubernetes.SecurityContext
     resources: kubernetes.Resources
+    readinessProbe: kubernetes.ReadinessProbe
     livenessProbe: kubernetes.LivenessProbe
     startupProbe: kubernetes.StartupProbe
     annotations: kubernetes.Annotations
     enableReadOnly: bool
     dbStatementTimeout: Optional[int]
+
+    class Config:
+        extra = Extra.forbid

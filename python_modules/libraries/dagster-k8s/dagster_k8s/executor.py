@@ -1,8 +1,10 @@
 import kubernetes
+from dagster_k8s.launcher import K8sRunLauncher
+
 from dagster import Field, StringSource, check, executor
 from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
-from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, EventMetadataEntry
+from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.retries import RetryMode, get_retries_config
 from dagster.core.executor.base import Executor
@@ -12,7 +14,6 @@ from dagster.core.executor.step_delegating.step_handler import StepHandler
 from dagster.core.executor.step_delegating.step_handler.base import StepHandlerContext
 from dagster.core.types.dagster_type import Optional
 from dagster.utils import frozentags, merge_dicts
-from dagster_k8s.launcher import K8sRunLauncher
 
 from .job import (
     DagsterK8sJobConfig,
@@ -26,7 +27,7 @@ from .utils import delete_job
 @executor(
     name="k8s",
     config_schema=merge_dicts(
-        DagsterK8sJobConfig.config_type_pipeline_run(),
+        DagsterK8sJobConfig.config_type_job(),
         {"job_namespace": Field(StringSource, is_required=False)},
         {"retries": get_retries_config()},
     ),
@@ -56,6 +57,9 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             env_config_maps: ...
             env_secrets: ...
             job_image: ... # leave out if using userDeployments
+
+    Configuration set on the Kubernetes Jobs and Pods created by the `K8sRunLauncher` will also be
+    set on Kubernetes Jobs and Pods created by the `k8s_job_executor`.
     """
 
     run_launcher = init_context.instance.run_launcher
@@ -87,6 +91,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         env_secrets=run_launcher.env_secrets + (exc_cfg.get("env_secrets") or []),
         volume_mounts=run_launcher.volume_mounts + (exc_cfg.get("volume_mounts") or []),
         volumes=run_launcher.volumes + (exc_cfg.get("volumes") or []),
+        labels=merge_dicts(run_launcher.labels, exc_cfg.get("labels", {})),
     )
 
     return StepDelegatingExecutor(
@@ -200,8 +205,8 @@ class K8sStepHandler(StepHandler):
                 message=f"Executing step {step_key} in Kubernetes job {job_name}",
                 event_specific_data=EngineEventData(
                     [
-                        EventMetadataEntry.text(step_key, "Step key"),
-                        EventMetadataEntry.text(job_name, "Kubernetes Job name"),
+                        MetadataEntry.text(step_key, "Step key"),
+                        MetadataEntry.text(job_name, "Kubernetes Job name"),
                     ],
                 ),
             )

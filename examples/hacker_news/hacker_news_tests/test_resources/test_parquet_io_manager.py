@@ -2,11 +2,12 @@ import os
 import tempfile
 
 import pandas
-from dagster import Out, graph, op
 from dagster_pyspark import pyspark_resource
 from hacker_news.resources.parquet_io_manager import local_partitioned_parquet_io_manager
 from hacker_news.resources.partition_bounds import partition_bounds
 from pyspark.sql import DataFrame as SparkDF
+
+from dagster import Out, graph, op
 
 
 @op(out={"out": Out(io_manager_key="pandas_to_spark")})

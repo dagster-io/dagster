@@ -2,9 +2,10 @@ import json
 import textwrap
 from typing import Any, List
 
-from dagster import BoolSource, IntSource, StringSource
+from dagster import BoolSource, Field, IntSource, StringSource
 from dagster.config.config_type import ConfigType, ConfigTypeKind
 from dagster.core.definitions.configurable import ConfigurableDefinition
+from dagster.serdes import ConfigurableClass
 from sphinx.ext.autodoc import DataDocumenter
 
 
@@ -97,7 +98,7 @@ class ConfigurableDocumenter(DataDocumenter):
 
     @classmethod
     def can_document_member(cls, member: Any, membername: str, isattr: bool, parent: Any) -> bool:
-        return isinstance(member, ConfigurableDefinition)
+        return isinstance(member, ConfigurableDefinition) or isinstance(member, ConfigurableClass)
 
     def add_content(self, more_content, no_docstring: bool = False) -> None:
         source_name = self.get_sourcename()
@@ -106,7 +107,11 @@ class ConfigurableDocumenter(DataDocumenter):
         self.add_line("|", source_name)
         self.add_line("", source_name)
 
-        for line in config_field_to_lines(self.object.config_schema.as_field()):
+        if isinstance(self.object, ConfigurableDefinition):
+            config_field = self.object.config_schema.as_field()
+        elif issubclass(self.object, ConfigurableClass):
+            config_field = Field(self.object.config_type())
+        for line in config_field_to_lines(config_field):
             self.add_line(line, source_name)
 
         self.add_line("", source_name)

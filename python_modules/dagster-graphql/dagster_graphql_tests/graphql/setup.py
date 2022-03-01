@@ -1,5 +1,6 @@
 import csv
 import datetime
+import gc
 import logging
 import os
 import string
@@ -9,17 +10,26 @@ from contextlib import contextmanager
 from copy import deepcopy
 from typing import List
 
+from dagster_graphql.test.utils import (
+    define_out_of_process_context,
+    infer_pipeline_selector,
+    main_repo_location_name,
+    main_repo_name,
+)
+
 from dagster import (
     Any,
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     Bool,
     DagsterInstance,
+    DefaultScheduleStatus,
+    DefaultSensorStatus,
     DynamicOutput,
     DynamicOutputDefinition,
     Enum,
     EnumValue,
-    EventMetadataEntry,
     ExpectationResult,
     Field,
     HourlyPartitionsDefinition,
@@ -27,7 +37,9 @@ from dagster import (
     IOManagerDefinition,
     InputDefinition,
     Int,
+    Map,
     Materialization,
+    MetadataEntry,
     ModeDefinition,
     Noneable,
     Nothing,
@@ -42,6 +54,11 @@ from dagster import (
     SolidExecutionContext,
     StaticPartitionsDefinition,
     String,
+    TableColumn,
+    TableColumnConstraints,
+    TableConstraints,
+    TableRecord,
+    TableSchema,
     check,
     composite_solid,
     dagster_type_loader,
@@ -61,26 +78,20 @@ from dagster import (
     usable_as_dagster_type,
     weekly_schedule,
 )
-from dagster.core.asset_defs import ForeignAsset, asset, build_assets_job
+from dagster.core.asset_defs import SourceAsset, asset, build_assets_job
 from dagster.core.definitions.decorators.sensor import sensor
 from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.fs_io_manager import fs_io_manager
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import default_mode_def_for_test, today_at_midnight
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import PythonFileTarget
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, segfault
-from dagster_graphql.test.utils import (
-    define_out_of_process_context,
-    infer_pipeline_selector,
-    main_repo_location_name,
-    main_repo_name,
-)
 
 LONG_INT = 2875972244  # 32b unsigned, > 32b signed
 
@@ -320,6 +331,26 @@ def more_complicated_config():
 
 
 @pipeline
+def config_with_map():
+    @solid(
+        config_schema={
+            "field_one": Field(Map(str, int, key_label_name="username")),
+            "field_two": Field({bool: int}, is_required=False),
+            "field_three": Field(
+                {str: {"nested": [Noneable(int)]}},
+                is_required=False,
+                default_value={"test": {"nested": [None, 1, 2]}},
+            ),
+        }
+    )
+    def a_solid_with_map_config(_context):
+        return None
+
+    noop_solid()
+    a_solid_with_map_config()
+
+
+@pipeline
 def more_complicated_nested_config():
     @solid(
         name="a_solid_with_multilayered_config",
@@ -399,6 +430,18 @@ def hello_world_with_tags():
 @solid(name="solid_with_list", input_defs=[], output_defs=[], config_schema=[int])
 def solid_def(_):
     return None
+
+
+@pipeline
+def pipeline_with_input_output_metadata():
+    @solid(
+        input_defs=[InputDefinition("foo", Int, metadata={"a": "b"})],
+        output_defs=[OutputDefinition(Int, "bar", metadata={"c": "d"})],
+    )
+    def solid_with_input_output_metadata(foo):
+        return foo + 1
+
+    solid_with_input_output_metadata()
 
 
 @pipeline
@@ -651,18 +694,41 @@ def materialization_pipeline():
             asset_key="all_types",
             description="a materialization with all metadata types",
             metadata_entries=[
-                EventMetadataEntry.text("text is cool", "text"),
-                EventMetadataEntry.url("https://bigty.pe/neato", "url"),
-                EventMetadataEntry.fspath("/tmp/awesome", "path"),
-                EventMetadataEntry.json({"is_dope": True}, "json"),
-                EventMetadataEntry.python_artifact(EventMetadataEntry, "python class"),
-                EventMetadataEntry.python_artifact(file_relative_path, "python function"),
-                EventMetadataEntry.float(1.2, "float"),
-                EventMetadataEntry.int(1, "int"),
-                EventMetadataEntry.float(float("nan"), "float NaN"),
-                EventMetadataEntry.int(LONG_INT, "long int"),
-                EventMetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
-                EventMetadataEntry.asset(AssetKey("my_asset"), "my asset"),
+                MetadataEntry.text("text is cool", "text"),
+                MetadataEntry.url("https://bigty.pe/neato", "url"),
+                MetadataEntry.fspath("/tmp/awesome", "path"),
+                MetadataEntry.json({"is_dope": True}, "json"),
+                MetadataEntry.python_artifact(MetadataEntry, "python class"),
+                MetadataEntry.python_artifact(file_relative_path, "python function"),
+                MetadataEntry.float(1.2, "float"),
+                MetadataEntry.int(1, "int"),
+                MetadataEntry.float(float("nan"), "float NaN"),
+                MetadataEntry.int(LONG_INT, "long int"),
+                MetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
+                MetadataEntry.asset(AssetKey("my_asset"), "my asset"),
+                MetadataEntry.table(
+                    label="table",
+                    records=[
+                        TableRecord(foo=1, bar=2),
+                        TableRecord(foo=3, bar=4),
+                    ],
+                ),
+                MetadataEntry.table_schema(
+                    label="table_schema",
+                    schema=TableSchema(
+                        columns=[
+                            TableColumn(
+                                name="foo",
+                                type="integer",
+                                constraints=TableColumnConstraints(unique=True),
+                            ),
+                            TableColumn(name="bar", type="string"),
+                        ],
+                        constraints=TableConstraints(
+                            other=["some constraint"],
+                        ),
+                    ),
+                ),
             ],
         )
         yield Output(None)
@@ -834,7 +900,24 @@ def tagged_pipeline():
     simple_solid()
 
 
-@pipeline(mode_defs=[default_mode_def_for_test])
+@resource
+def disable_gc(_context):
+    # Workaround for termination signals being raised during GC and getting swallowed during
+    # tests
+    try:
+        print("Disabling GC")  # pylint: disable=print-call
+        gc.disable()
+        yield
+    finally:
+        print("Re-enabling GC")  # pylint: disable=print-call
+        gc.enable()
+
+
+@pipeline(
+    mode_defs=[
+        ModeDefinition(resource_defs={"io_manager": fs_io_manager, "disable_gc": disable_gc})
+    ]
+)
 def retry_multi_input_early_terminate_pipeline():
     @lambda_solid(output_def=OutputDefinition(Int))
     def return_one():
@@ -844,6 +927,7 @@ def retry_multi_input_early_terminate_pipeline():
         config_schema={"wait_to_terminate": bool},
         input_defs=[InputDefinition("one", Int)],
         output_defs=[OutputDefinition(Int)],
+        required_resource_keys={"disable_gc"},
     )
     def get_input_one(context, one):
         if context.solid_config["wait_to_terminate"]:
@@ -855,6 +939,7 @@ def retry_multi_input_early_terminate_pipeline():
         config_schema={"wait_to_terminate": bool},
         input_defs=[InputDefinition("one", Int)],
         output_defs=[OutputDefinition(Int)],
+        required_resource_keys={"disable_gc"},
     )
     def get_input_two(context, one):
         if context.solid_config["wait_to_terminate"]:
@@ -941,7 +1026,7 @@ def last_empty_partition(context, partition_set_def):
         return None
     selected = None
     for partition in reversed(partitions):
-        filters = PipelineRunsFilter.for_partition(partition_set_def, partition)
+        filters = RunsFilter.for_partition(partition_set_def, partition)
         matching = context.instance.get_runs(filters)
         if not any(run.status == PipelineRunStatus.SUCCESS for run in matching):
             selected = partition
@@ -994,6 +1079,15 @@ def define_schedules():
         execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
     )
     def partition_based_decorator(_date):
+        return {}
+
+    @daily_schedule(
+        pipeline_name="no_config_pipeline",
+        start_date=today_at_midnight().subtract(days=1),
+        execution_time=(datetime.datetime.now() + datetime.timedelta(hours=2)).time(),
+        default_status=DefaultScheduleStatus.RUNNING,
+    )
+    def running_in_code_schedule(_date):
         return {}
 
     @daily_schedule(
@@ -1112,6 +1206,7 @@ def define_schedules():
         tags_error_schedule,
         timezone_schedule,
         invalid_config_schedule,
+        running_in_code_schedule,
     ]
 
 
@@ -1178,12 +1273,24 @@ def define_sensors():
             tags={"test": "1234"},
         )
 
+    @sensor(
+        pipeline_name="no_config_pipeline",
+        mode="default",
+        default_status=DefaultSensorStatus.RUNNING,
+    )
+    def running_in_code_sensor(_):
+        return RunRequest(
+            run_key=None,
+            tags={"test": "1234"},
+        )
+
     return [
         always_no_config_sensor,
         once_no_config_sensor,
         never_no_config_sensor,
         multi_no_config_sensor,
         custom_interval_sensor,
+        running_in_code_sensor,
     ]
 
 
@@ -1217,18 +1324,18 @@ def backcompat_materialization_pipeline():
             asset_key="all_types",
             description="a materialization with all metadata types",
             metadata_entries=[
-                EventMetadataEntry.text("text is cool", "text"),
-                EventMetadataEntry.url("https://bigty.pe/neato", "url"),
-                EventMetadataEntry.fspath("/tmp/awesome", "path"),
-                EventMetadataEntry.json({"is_dope": True}, "json"),
-                EventMetadataEntry.python_artifact(EventMetadataEntry, "python class"),
-                EventMetadataEntry.python_artifact(file_relative_path, "python function"),
-                EventMetadataEntry.float(1.2, "float"),
-                EventMetadataEntry.int(1, "int"),
-                EventMetadataEntry.float(float("nan"), "float NaN"),
-                EventMetadataEntry.int(LONG_INT, "long int"),
-                EventMetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
-                EventMetadataEntry.asset(AssetKey("my_asset"), "my asset"),
+                MetadataEntry.text("text is cool", "text"),
+                MetadataEntry.url("https://bigty.pe/neato", "url"),
+                MetadataEntry.fspath("/tmp/awesome", "path"),
+                MetadataEntry.json({"is_dope": True}, "json"),
+                MetadataEntry.python_artifact(MetadataEntry, "python class"),
+                MetadataEntry.python_artifact(file_relative_path, "python function"),
+                MetadataEntry.float(1.2, "float"),
+                MetadataEntry.int(1, "int"),
+                MetadataEntry.float(float("nan"), "float NaN"),
+                MetadataEntry.int(LONG_INT, "long int"),
+                MetadataEntry.pipeline_run("fake_run_id", "pipeline run"),
+                MetadataEntry.asset(AssetKey("my_asset"), "my asset"),
             ],
         )
         yield Output(None)
@@ -1269,11 +1376,11 @@ class DummyIOManager(IOManager):
         pass
 
 
-dummy_foreign_asset = ForeignAsset(key=AssetKey("dummy_foreign_asset"))
+dummy_source_asset = SourceAsset(key=AssetKey("dummy_source_asset"))
 
 
 @asset
-def first_asset(dummy_foreign_asset):  # pylint: disable=redefined-outer-name,unused-argument
+def first_asset(dummy_source_asset):  # pylint: disable=redefined-outer-name,unused-argument
     return 1
 
 
@@ -1296,7 +1403,7 @@ def never_runs_asset(hanging_asset):  # pylint: disable=redefined-outer-name,unu
 
 hanging_job = build_assets_job(
     name="hanging_job",
-    source_assets=[dummy_foreign_asset],
+    source_assets=[dummy_source_asset],
     assets=[first_asset, hanging_asset, never_runs_asset],
     resource_defs={
         "io_manager": IOManagerDefinition.hardcoded_io_manager(DummyIOManager()),
@@ -1373,21 +1480,72 @@ partition_materialization_job = build_assets_job(
 )
 
 
+@asset
+def asset_yields_observation():
+    yield AssetObservation(asset_key=AssetKey("asset_yields_observation"), metadata={"text": "FOO"})
+    yield AssetMaterialization(asset_key=AssetKey("asset_yields_observation"))
+    yield Output(5)
+
+
+observation_job = build_assets_job(
+    "observation_job", assets=[asset_yields_observation], executor_def=in_process_executor
+)
+
+
+@op
+def op_1():
+    return 1
+
+
+@op
+def op_2():
+    return 2
+
+
 @job
 def two_ins_job():
-    @op
-    def op_1():
-        return 1
-
-    @op
-    def op_2():
-        return 1
-
     @op
     def op_with_2_ins(in_1, in_2):
         return in_1 + in_2
 
     op_with_2_ins(op_1(), op_2())
+
+
+@job
+def nested_job():
+    @op
+    def adder(num1: int, num2: int):
+        return num1 + num2
+
+    @op
+    def plus_one(num: int):
+        return num + 1
+
+    @graph
+    def subgraph():
+        return plus_one(adder(op_1(), op_2()))
+
+    plus_one(subgraph())
+
+
+@asset
+def asset_1():
+    yield Output(3)
+
+
+@asset(non_argument_deps={AssetKey("asset_1")})
+def asset_2():
+    raise Exception("foo")
+
+
+@asset(non_argument_deps={AssetKey("asset_2")})
+def asset_3():
+    yield Output(7)
+
+
+failure_assets_job = build_assets_job(
+    "failure_assets_job", [asset_1, asset_2, asset_3], executor_def=in_process_executor
+)
 
 
 @repository
@@ -1410,16 +1568,19 @@ def define_pipelines():
         materialization_pipeline,
         more_complicated_config,
         more_complicated_nested_config,
+        config_with_map,
         multi_asset_pipeline,
         multi_mode_with_loggers,
         multi_mode_with_resources,
         naughty_programmer_pipeline,
+        nested_job,
         no_config_chain_pipeline,
         no_config_pipeline,
         noop_pipeline,
         partitioned_asset_pipeline,
         pipeline_with_enum_config,
         pipeline_with_expectations,
+        pipeline_with_input_output_metadata,
         pipeline_with_invalid_definition_error,
         pipeline_with_list,
         required_resource_pipeline,
@@ -1445,6 +1606,8 @@ def define_pipelines():
         static_partitioned_assets_job,
         time_partitioned_assets_job,
         partition_materialization_job,
+        observation_job,
+        failure_assets_job,
     ]
 
 

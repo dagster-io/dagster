@@ -1,11 +1,12 @@
 import sys
 
+from graphql.execution.base import ResolveInfo
+
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
 from dagster.core.host_representation import ExternalPipeline, PipelineSelector, RepositorySelector
 from dagster.core.workspace.context import BaseWorkspaceRequestContext
 from dagster.utils.error import serializable_error_info_from_exc_info
-from graphql.execution.base import ResolveInfo
 
 from .utils import UserFacingGraphQLError, capture_error
 
@@ -23,9 +24,6 @@ def get_full_external_pipeline_or_raise(graphene_info, selector):
 
 
 def get_external_pipeline_or_raise(graphene_info, selector):
-    from ..schema.pipelines.pipeline_errors import GrapheneInvalidSubsetError
-    from ..schema.pipelines.pipeline import GraphenePipeline
-
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.inst_param(selector, "selector", PipelineSelector)
 
@@ -34,23 +32,12 @@ def get_external_pipeline_or_raise(graphene_info, selector):
     if selector.solid_selection is None:
         return full_pipeline
 
-    for solid_name in selector.solid_selection:
-        if not full_pipeline.has_solid_invocation(solid_name):
-            raise UserFacingGraphQLError(
-                GrapheneInvalidSubsetError(
-                    message='Solid "{solid_name}" does not exist in "{pipeline_name}"'.format(
-                        solid_name=solid_name, pipeline_name=selector.pipeline_name
-                    ),
-                    pipeline=GraphenePipeline(full_pipeline),
-                )
-            )
-
     return get_subset_external_pipeline(graphene_info.context, selector)
 
 
 def get_subset_external_pipeline(context, selector):
-    from ..schema.pipelines.pipeline_errors import GrapheneInvalidSubsetError
     from ..schema.pipelines.pipeline import GraphenePipeline
+    from ..schema.pipelines.pipeline_errors import GrapheneInvalidSubsetError
 
     check.inst_param(selector, "selector", PipelineSelector)
 
@@ -124,7 +111,11 @@ def fetch_repositories(graphene_info):
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     return GrapheneRepositoryConnection(
         nodes=[
-            GrapheneRepository(repository=repository, repository_location=location)
+            GrapheneRepository(
+                instance=graphene_info.context.instance,
+                repository=repository,
+                repository_location=location,
+            )
             for location in graphene_info.context.repository_locations
             for repository in location.get_repositories().values()
         ]
@@ -143,6 +134,7 @@ def fetch_repository(graphene_info, repository_selector):
         repo_loc = graphene_info.context.get_repository_location(repository_selector.location_name)
         if repo_loc.has_repository(repository_selector.repository_name):
             return GrapheneRepository(
+                instance=graphene_info.context.instance,
                 repository=repo_loc.get_repository(repository_selector.repository_name),
                 repository_location=repo_loc,
             )

@@ -25,6 +25,8 @@ export const StyledButton = styled.button<StyledButtonProps>`
   padding: 6px 12px;
   transition: background 100ms, box-shadow 150ms, filter 100ms, opacity 150ms;
   user-select: none;
+  white-space: nowrap;
+
   box-shadow: ${({$strokeColor}) => `${$strokeColor} inset 0px 0px 0px 1px`};
 
   :hover {
@@ -87,4 +89,10 @@ export const StyledButton = styled.button<StyledButtonProps>`
   ${IconWrapper}:first-child:last-child {
     margin: 2px -4px;
   }
+`;
+
+export const StyledButtonText = styled.span`
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 `;

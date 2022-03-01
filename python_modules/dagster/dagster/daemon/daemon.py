@@ -7,6 +7,7 @@ from collections import deque
 from contextlib import AbstractContextManager
 
 import pendulum
+
 from dagster import DagsterInstance, check
 from dagster.core.telemetry import DAEMON_ALIVE, log_action
 from dagster.core.workspace import IWorkspace
@@ -62,51 +63,56 @@ class DagsterDaemon(AbstractContextManager):
         error_interval_seconds,
         until=None,
     ):
+        from dagster.core.telemetry_upload import uploading_logging_thread
+
         # Each loop runs in its own thread with its own instance and IWorkspace
         with DagsterInstance.from_ref(instance_ref) as instance:
-            with gen_workspace(instance) as workspace:
-                check.inst_param(workspace, "workspace", IWorkspace)
+            with uploading_logging_thread():
+                with gen_workspace(instance) as workspace:
+                    check.inst_param(workspace, "workspace", IWorkspace)
 
-                daemon_generator = self.core_loop(instance, workspace)
+                    daemon_generator = self.core_loop(instance, workspace)
 
-                try:
-                    while (not daemon_shutdown_event.is_set()) and (
-                        not until or pendulum.now("UTC") < until
-                    ):
-                        try:
-                            result = check.opt_inst(next(daemon_generator), SerializableErrorInfo)
-                            if result:
-                                self._errors.appendleft((result, pendulum.now("UTC")))
-                        except StopIteration:
-                            self._logger.error(
-                                "Daemon loop finished without raising an error - daemon loops should run forever until they are interrupted."
-                            )
-                            break
-                        except Exception:
-                            error_info = serializable_error_info_from_exc_info(sys.exc_info())
-                            self._logger.error(
-                                "Caught error, daemon loop will restart:\n{}".format(error_info)
-                            )
-                            self._errors.appendleft((error_info, pendulum.now("UTC")))
-                            daemon_generator.close()
-                            daemon_generator = self.core_loop(instance, workspace)
-                        finally:
+                    try:
+                        while (not daemon_shutdown_event.is_set()) and (
+                            not until or pendulum.now("UTC") < until
+                        ):
                             try:
-                                self._check_add_heartbeat(
-                                    instance,
-                                    daemon_uuid,
-                                    heartbeat_interval_seconds,
-                                    error_interval_seconds,
+                                result = check.opt_inst(
+                                    next(daemon_generator), SerializableErrorInfo
                                 )
-                            except Exception:
+                                if result:
+                                    self._errors.appendleft((result, pendulum.now("UTC")))
+                            except StopIteration:
                                 self._logger.error(
-                                    "Failed to add heartbeat: \n{}".format(
-                                        serializable_error_info_from_exc_info(sys.exc_info())
-                                    )
+                                    "Daemon loop finished without raising an error - daemon loops should run forever until they are interrupted."
                                 )
-                finally:
-                    # cleanup the generator if it was stopped part-way through
-                    daemon_generator.close()
+                                break
+                            except Exception:
+                                error_info = serializable_error_info_from_exc_info(sys.exc_info())
+                                self._logger.error(
+                                    "Caught error, daemon loop will restart:\n{}".format(error_info)
+                                )
+                                self._errors.appendleft((error_info, pendulum.now("UTC")))
+                                daemon_generator.close()
+                                daemon_generator = self.core_loop(instance, workspace)
+                            finally:
+                                try:
+                                    self._check_add_heartbeat(
+                                        instance,
+                                        daemon_uuid,
+                                        heartbeat_interval_seconds,
+                                        error_interval_seconds,
+                                    )
+                                except Exception:
+                                    self._logger.error(
+                                        "Failed to add heartbeat: \n{}".format(
+                                            serializable_error_info_from_exc_info(sys.exc_info())
+                                        )
+                                    )
+                    finally:
+                        # cleanup the generator if it was stopped part-way through
+                        daemon_generator.close()
 
     def _check_add_heartbeat(
         self, instance, daemon_uuid, heartbeat_interval_seconds, error_interval_seconds
@@ -135,9 +141,9 @@ class DagsterDaemon(AbstractContextManager):
             and last_stored_heartbeat
             and last_stored_heartbeat.daemon_id != daemon_uuid
         ):
-            self._logger.warning(
-                "Taking over from another {} daemon process. If this "
-                "message reoccurs, you may have multiple daemons running which is not supported. "
+            self._logger.error(
+                "Another {} daemon is still sending heartbeats. You likely have multiple "
+                "daemon processes running at once, which is not supported. "
                 "Last heartbeat daemon id: {}, "
                 "Current daemon_id: {}".format(
                     daemon_type,

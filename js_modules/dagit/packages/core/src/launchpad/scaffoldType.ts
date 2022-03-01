@@ -29,6 +29,8 @@ export const scaffoldType = (
       return config;
     case 'ArrayConfigType':
       return [];
+    case 'MapConfigType':
+      return {};
     case 'NullableConfigType':
       // If a type is nullable we include it in the scaffolded config anyway
       // by using the inner type
@@ -68,7 +70,6 @@ export const createTypeLookup = (
 
 export const scaffoldPipelineConfig = (configSchema: ConfigEditorRunConfigSchemaFragment) => {
   const {allConfigTypes, rootConfigType} = configSchema;
-  console.log(allConfigTypes);
   const typeLookup = createTypeLookup(allConfigTypes);
   const config = scaffoldType(rootConfigType.key, typeLookup);
   return config;

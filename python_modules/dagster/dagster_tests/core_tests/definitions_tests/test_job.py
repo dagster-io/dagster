@@ -1,13 +1,18 @@
 import pytest
+
 from dagster import (
     DagsterInvariantViolationError,
+    Field,
+    StringSource,
     execute_pipeline,
     graph,
     job,
     op,
     reconstructable,
+    static_partitioned_config,
 )
-from dagster.core.test_utils import instance_for_test
+from dagster.core.storage.tags import PARTITION_NAME_TAG
+from dagster.core.test_utils import environ, instance_for_test
 
 
 def define_the_job():
@@ -104,3 +109,45 @@ def test_job_top_level_input():
     result = my_job_with_input.execute_in_process(run_config={"inputs": {"x": {"value": 2}}})
     assert result.success
     assert result.output_for_node("my_op") == 2
+
+
+def test_job_post_process_config():
+    @op(config_schema={"foo": Field(StringSource)})
+    def the_op(context):
+        return context.op_config["foo"]
+
+    @graph
+    def basic():
+        the_op()
+
+    with environ({"SOME_ENV_VAR": None}):
+        # Ensure that the env var not existing will not throw an error, since resolution happens in post-processing.
+        the_job = basic.to_job(
+            config={"ops": {"the_op": {"config": {"foo": {"env": "SOME_ENV_VAR"}}}}}
+        )
+
+    with environ({"SOME_ENV_VAR": "blah"}):
+        assert the_job.execute_in_process().success
+
+
+def test_job_run_request():
+    def partition_fn(partition_key: str):
+        return {"ops": {"my_op": {"config": {"partition": partition_key}}}}
+
+    @static_partitioned_config(partition_keys=["a", "b", "c", "d"])
+    def my_partitioned_config(partition_key: str):
+        return partition_fn(partition_key)
+
+    @op
+    def my_op():
+        pass
+
+    @job(config=my_partitioned_config)
+    def my_job():
+        my_op()
+
+    for partition_key in ["a", "b", "c", "d"]:
+        run_request = my_job.run_request_for_partition(partition_key=partition_key, run_key=None)
+        assert run_request.run_config == partition_fn(partition_key)
+        assert run_request.tags
+        assert run_request.tags.get(PARTITION_NAME_TAG) == partition_key

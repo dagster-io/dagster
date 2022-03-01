@@ -84,9 +84,7 @@ def download_csv():
 @op(ins={"cereals": In(SimpleDataFrame)})
 def sort_by_calories(cereals):
     sorted_cereals = sorted(cereals, key=lambda cereal: cereal["calories"])
-    get_dagster_logger().info(
-        f'Most caloric cereal: {sorted_cereals[-1]["name"]}'
-    )
+    get_dagster_logger().info(f'Most caloric cereal: {sorted_cereals[-1]["name"]}')
 ```
 
 The type metadata now appears in Dagit and the system will ensure the input and output to this op indeed match the criteria for `SimpleDataFrame`. As usual, run:
@@ -178,9 +176,7 @@ def less_simple_data_frame_type_check(_, value):
         metadata={
             "n_rows": len(value),
             "n_cols": len(value[0].keys()) if len(value) > 0 else 0,
-            "column_names": str(
-                list(value[0].keys()) if len(value) > 0 else []
-            ),
+            "column_names": str(list(value[0].keys()) if len(value) > 0 else []),
         },
     )
 ```

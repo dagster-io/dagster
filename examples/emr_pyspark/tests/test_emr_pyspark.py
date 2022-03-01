@@ -3,15 +3,14 @@ import os
 
 from dagster.core.execution.api import create_execution_plan
 
-from ..repo import count_people_over_50_emr, count_people_over_50_local
+from ..repo import make_and_filter_data_emr, make_and_filter_data_local
 
 
 def test_emr_pyspark_execution_plan():
     os.environ["EMR_CLUSTER_ID"] = "some_cluster_id"
-    create_execution_plan(count_people_over_50_emr)
+    create_execution_plan(make_and_filter_data_emr)
 
 
 def test_emr_pyspark_local():
-    res = count_people_over_50_local.execute_in_process()
+    res = make_and_filter_data_local.execute_in_process()
     assert res.success
-    assert res.output_for_node("count_people") == 1

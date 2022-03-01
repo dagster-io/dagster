@@ -243,7 +243,7 @@ class _PlanBuilder:
                 )
             if self._instance_ref is None:
                 raise DagsterInvariantViolationError(
-                    "Attempted to build memoized execution plan without providing a persistent"
+                    "Attempted to build memoized execution plan without providing a persistent "
                     "DagsterInstance to create_execution_plan."
                 )
             instance = DagsterInstance.from_ref(self._instance_ref)
@@ -831,8 +831,8 @@ class ExecutionPlan(
         Returns:
             ExecutionPlan: Execution plan that runs only unmemoized steps.
         """
-        from ..build_resources import build_resources, initialize_console_manager
         from ...storage.memoizable_io_manager import MemoizableIOManager
+        from ..build_resources import build_resources, initialize_console_manager
         from ..resources_init import get_dependencies, resolve_resource_dependencies
 
         mode = resolved_run_config.mode

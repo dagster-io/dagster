@@ -64,6 +64,7 @@ export interface ScheduleFragment_scheduleState_ticks_error {
 export interface ScheduleFragment_scheduleState_ticks {
   __typename: "InstigationTick";
   id: string;
+  cursor: string | null;
   status: InstigationTickStatus;
   timestamp: number;
   skipReason: string | null;

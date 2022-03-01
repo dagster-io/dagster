@@ -62,8 +62,24 @@ def _get_entry_point(origin: PipelinePythonOrigin):
 
 
 @whitelist_for_serdes
-class ExecuteRunArgs(namedtuple("_ExecuteRunArgs", "pipeline_origin pipeline_run_id instance_ref")):
-    def __new__(cls, pipeline_origin, pipeline_run_id, instance_ref):
+class ExecuteRunArgs(
+    NamedTuple(
+        "_ExecuteRunArgs",
+        [
+            ("pipeline_origin", PipelinePythonOrigin),
+            ("pipeline_run_id", str),
+            ("instance_ref", Optional[InstanceRef]),
+            ("set_exit_code_on_failure", Optional[bool]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        pipeline_origin: PipelinePythonOrigin,
+        pipeline_run_id: str,
+        instance_ref: Optional[InstanceRef],
+        set_exit_code_on_failure: Optional[bool] = None,
+    ):
         return super(ExecuteRunArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
@@ -73,6 +89,12 @@ class ExecuteRunArgs(namedtuple("_ExecuteRunArgs", "pipeline_origin pipeline_run
             ),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+            set_exit_code_on_failure=(
+                True
+                if check.opt_bool_param(set_exit_code_on_failure, "set_exit_code_on_failure")
+                == True
+                else None
+            ),  # for back-compat
         )
 
     def get_command_args(self) -> List[str]:
@@ -84,8 +106,24 @@ class ExecuteRunArgs(namedtuple("_ExecuteRunArgs", "pipeline_origin pipeline_run
 
 
 @whitelist_for_serdes
-class ResumeRunArgs(namedtuple("_ResumeRunArgs", "pipeline_origin pipeline_run_id instance_ref")):
-    def __new__(cls, pipeline_origin, pipeline_run_id, instance_ref):
+class ResumeRunArgs(
+    NamedTuple(
+        "_ResumeRunArgs",
+        [
+            ("pipeline_origin", PipelinePythonOrigin),
+            ("pipeline_run_id", str),
+            ("instance_ref", Optional[InstanceRef]),
+            ("set_exit_code_on_failure", Optional[bool]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        pipeline_origin: PipelinePythonOrigin,
+        pipeline_run_id: str,
+        instance_ref: Optional[InstanceRef],
+        set_exit_code_on_failure: Optional[bool] = None,
+    ):
         return super(ResumeRunArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
@@ -95,6 +133,12 @@ class ResumeRunArgs(namedtuple("_ResumeRunArgs", "pipeline_origin pipeline_run_i
             ),
             pipeline_run_id=check.str_param(pipeline_run_id, "pipeline_run_id"),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+            set_exit_code_on_failure=(
+                True
+                if check.opt_bool_param(set_exit_code_on_failure, "set_exit_code_on_failure")
+                == True
+                else None
+            ),  # for back-compat
         )
 
     def get_command_args(self) -> List[str]:

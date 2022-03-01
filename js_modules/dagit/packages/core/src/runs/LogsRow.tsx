@@ -5,6 +5,7 @@ import * as React from 'react';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {setHighlightedGanttChartTime} from '../gantt/GanttChart';
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {LogLevel} from '../types/globalTypes';
 
 import {CellTruncationProvider} from './CellTruncationProvider';
@@ -16,7 +17,6 @@ import {
   TimestampColumn,
 } from './LogsRowComponents';
 import {LogsRowStructuredContent} from './LogsRowStructuredContent';
-import {METADATA_ENTRY_FRAGMENT} from './MetadataEntry';
 import {IRunMetadataDict} from './RunMetadataProvider';
 import {LogsRowStructuredFragment} from './types/LogsRowStructuredFragment';
 import {LogsRowUnstructuredFragment} from './types/LogsRowUnstructuredFragment';
@@ -99,16 +99,24 @@ export const LOGS_ROW_STRUCTURED_FRAGMENT = gql`
       level
       stepKey
     }
-    ... on StepMaterializationEvent {
-      materialization {
-        assetKey {
-          path
-        }
-        label
-        description
-        metadataEntries {
-          ...MetadataEntryFragment
-        }
+    ... on MaterializationEvent {
+      assetKey {
+        path
+      }
+      label
+      description
+      metadataEntries {
+        ...MetadataEntryFragment
+      }
+    }
+    ... on ObservationEvent {
+      assetKey {
+        path
+      }
+      label
+      description
+      metadataEntries {
+        ...MetadataEntryFragment
       }
     }
     ... on RunFailureEvent {

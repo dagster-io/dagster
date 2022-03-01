@@ -3,9 +3,10 @@
 import dagster_aws
 import pytest
 from botocore.exceptions import ClientError
-from dagster.check import CheckError
-from dagster.core.events import EventMetadataEntry
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
+
+from dagster.check import CheckError
+from dagster.core.events import MetadataEntry
 
 
 @pytest.mark.parametrize("task_long_arn_format", ["enabled", "disabled"])
@@ -78,9 +79,9 @@ def test_default_launcher(
     latest_event = events[-1]
     assert latest_event.message == "[EcsRunLauncher] Launching run in ECS task"
     event_metadata = latest_event.dagster_event.engine_event_data.metadata_entries
-    assert EventMetadataEntry.text(task_arn, "ECS Task ARN") in event_metadata
-    assert EventMetadataEntry.text(cluster_arn, "ECS Cluster") in event_metadata
-    assert EventMetadataEntry.text(run.run_id, "Run ID") in event_metadata
+    assert MetadataEntry.text(task_arn, "ECS Task ARN") in event_metadata
+    assert MetadataEntry.text(cluster_arn, "ECS Cluster") in event_metadata
+    assert MetadataEntry.text(run.run_id, "Run ID") in event_metadata
 
 
 def test_launching_custom_task_definition(
@@ -229,9 +230,13 @@ def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
     task = ecs.describe_tasks(tasks=[task_arn])["tasks"][0]
 
     assert task.get("memory") == task_definition.get("memory")
+    # taskOverrides expects cpu/memory as strings
     assert task.get("overrides").get("memory") == "1024"
+    # taskOverrides expects cpu/memory as integers
+    assert task.get("overrides").get("containerOverrides")[0].get("memory") == 1024
     assert task.get("cpu") == task_definition.get("cpu")
     assert not task.get("overrides").get("cpu")
+    assert not task.get("overrides").get("containerOverrides")[0].get("cpu")
 
     # Also override cpu
     existing_tasks = ecs.list_tasks()["taskArns"]
@@ -245,8 +250,10 @@ def test_memory_and_cpu(ecs, instance, workspace, run, task_definition):
 
     assert task.get("memory") == task_definition.get("memory")
     assert task.get("overrides").get("memory") == "1024"
+    assert task.get("overrides").get("containerOverrides")[0].get("memory") == 1024
     assert task.get("cpu") == task_definition.get("cpu")
     assert task.get("overrides").get("cpu") == "512"
+    assert task.get("overrides").get("containerOverrides")[0].get("cpu") == 512
 
     # Override with invalid constraints
     instance.add_run_tags(run.run_id, {"ecs/memory": "999"})

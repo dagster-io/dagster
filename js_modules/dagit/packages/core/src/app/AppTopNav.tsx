@@ -97,7 +97,12 @@ export const AppTopNavLogo: React.FC = () => {
         shortcutLabel="."
         shortcutFilter={(e) => e.key === '.'}
       >
-        <NavButton onClick={onToggle} onKeyDown={onKeyDown} ref={navButton}>
+        <NavButton
+          onClick={onToggle}
+          onKeyDown={onKeyDown}
+          ref={navButton}
+          $visible={nav.isCollapsible}
+        >
           <IconWIP name="menu" color={ColorsWIP.White} size={24} />
         </NavButton>
       </ShortcutHandler>
@@ -112,7 +117,7 @@ export const AppTopNavLogo: React.FC = () => {
           placement="bottom"
           modifiers={{offset: {enabled: true, options: {offset: [0, 18]}}}}
         >
-          <Link to="/workspace" style={{outline: 0, display: 'flex'}}>
+          <Link to="/home" style={{outline: 0, display: 'flex'}}>
             <GhostDaggy />
           </Link>
         </DaggyTooltip>
@@ -207,7 +212,7 @@ const LogoContainer = styled.div`
   }
 `;
 
-const NavButton = styled.button`
+const NavButton = styled.button<{$visible: boolean}>`
   border-radius: 20px;
   cursor: pointer;
   margin-left: 4px;
@@ -215,7 +220,7 @@ const NavButton = styled.button`
   padding: 6px;
   border: none;
   background: transparent;
-  display: none;
+  display: ${(p) => (p.$visible ? `block` : 'none')};
 
   ${IconWrapper} {
     transition: background 100ms linear;
@@ -231,9 +236,5 @@ const NavButton = styled.button`
 
   :focus {
     background: ${ColorsWIP.Gray700};
-  }
-
-  @media (max-width: 1440px) {
-    display: block;
   }
 `;

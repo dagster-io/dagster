@@ -287,6 +287,20 @@ class StubbedEcs:
         return self.client.register_task_definition(**kwargs)
 
     @stubbed
+    def create_service(self, **kwargs):
+        cluster = self._cluster(kwargs.get("cluster"))
+        service_name = kwargs["serviceName"]
+
+        arn = self._service_arn(cluster, service_name)
+        self.stubber.add_response(
+            method="create_service",
+            service_response={"service": {"serviceArn": arn}},
+            expected_params={**kwargs},
+        )
+
+        return self.client.create_service(**kwargs)
+
+    @stubbed
     def run_task(self, **kwargs):
         """
         run_task is an endpoint with complex behaviors and consequently is not
@@ -329,7 +343,7 @@ class StubbedEcs:
                     "clusterArn": self._cluster_arn(cluster),
                     "containers": containers,
                     "lastStatus": "RUNNING",
-                    "overrides": kwargs.get("overrides", {}),
+                    "overrides": overrides,
                     "taskArn": arn,
                     "taskDefinitionArn": task_definition["taskDefinitionArn"],
                     "cpu": task_definition["cpu"],
@@ -440,6 +454,9 @@ class StubbedEcs:
 
     def _task_arn(self, cluster):
         return self._arn("task", f"{self._cluster(cluster)}/{uuid.uuid4()}")
+
+    def _service_arn(self, cluster, service):
+        return self._arn("service", f"{self._cluster(cluster)}/{service}")
 
     def _task_definition_arn(self, family, revision):
         return self._arn("task-definition", f"{family}:{revision}")

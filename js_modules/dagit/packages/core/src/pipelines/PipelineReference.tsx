@@ -7,14 +7,18 @@ import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspac
 
 import {PipelineSnapshotLink} from './PipelinePathUtils';
 
-interface Props {
+export interface Props {
   pipelineName: string;
   pipelineHrefContext: 'repo-unknown' | RepoAddress | 'no-link';
   isJob: boolean;
   snapshotId?: string | null;
   showIcon?: boolean;
+  truncationThreshold?: number;
   size?: 'small' | 'normal';
 }
+
+const DEFAULT_TRUNCATION_THRESHOLD = 40;
+const TRUNCATION_BUFFER = 5;
 
 export const PipelineReference: React.FC<Props> = ({
   pipelineName,
@@ -22,13 +26,19 @@ export const PipelineReference: React.FC<Props> = ({
   isJob,
   snapshotId,
   showIcon,
+  truncationThreshold = DEFAULT_TRUNCATION_THRESHOLD,
   size = 'normal',
 }) => {
+  const truncatedName =
+    truncationThreshold > 0 && pipelineName.length > truncationThreshold
+      ? `${pipelineName.slice(0, truncationThreshold - TRUNCATION_BUFFER)}…`
+      : pipelineName;
+
   const pipeline =
     pipelineHrefContext === 'repo-unknown' ? (
-      <Link to={workspacePipelinePathGuessRepo(pipelineName, isJob)}>{pipelineName}</Link>
+      <Link to={workspacePipelinePathGuessRepo(pipelineName, isJob)}>{truncatedName}</Link>
     ) : pipelineHrefContext === 'no-link' ? (
-      <>{pipelineName}</>
+      <>{truncatedName}</>
     ) : (
       <Link
         to={workspacePipelinePath({
@@ -38,7 +48,7 @@ export const PipelineReference: React.FC<Props> = ({
           isJob,
         })}
       >
-        {pipelineName}
+        {truncatedName}
       </Link>
     );
 

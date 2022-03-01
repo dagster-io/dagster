@@ -27,6 +27,7 @@ class CeleryWorkerQueue(BaseModel):
 
 class CeleryK8sRunLauncherConfig(BaseModel):
     image: kubernetes.Image
+    imagePullPolicy: Optional[kubernetes.PullPolicy]
     nameOverride: str
     configSource: dict
     workerQueues: List[CeleryWorkerQueue] = Field(min_items=1)
@@ -43,6 +44,8 @@ class CeleryK8sRunLauncherConfig(BaseModel):
     livenessProbe: kubernetes.LivenessProbe
     volumeMounts: List[kubernetes.VolumeMount]
     volumes: List[kubernetes.Volume]
+    labels: Optional[Dict[str, str]]
+    failPodOnRunFailure: Optional[bool]
 
     class Config:
         extra = Extra.forbid
@@ -59,6 +62,8 @@ class K8sRunLauncherConfig(BaseModel):
     envVars: List[str]
     volumeMounts: List[kubernetes.VolumeMount]
     volumes: List[kubernetes.Volume]
+    labels: Optional[Dict[str, str]]
+    failPodOnRunFailure: Optional[bool]
 
     class Config:
         extra = Extra.forbid

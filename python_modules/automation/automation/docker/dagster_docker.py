@@ -1,8 +1,9 @@
 import contextlib
 import os
-from collections import namedtuple
+from typing import Callable, NamedTuple, Optional
 
 import yaml
+
 from dagster import check
 
 from .ecr import ecr_image, get_aws_account_id, get_aws_region
@@ -25,7 +26,9 @@ def do_nothing(_cwd):
     yield
 
 
-class DagsterDockerImage(namedtuple("_DagsterDockerImage", "image build_cm path")):
+class DagsterDockerImage(
+    NamedTuple("_DagsterDockerImage", [("image", str), ("build_cm", Callable), ("path", str)])
+):
     """Represents a Dagster image.
 
     Properties:
@@ -35,7 +38,7 @@ class DagsterDockerImage(namedtuple("_DagsterDockerImage", "image build_cm path"
         path (Optional(str)): The path to the image's path. Defaults to docker/images/<IMAGE NAME>
     """
 
-    def __new__(cls, image, build_cm=do_nothing, path=None):
+    def __new__(cls, image: str, build_cm: Callable = do_nothing, path: Optional[str] = None):
         return super(DagsterDockerImage, cls).__new__(
             cls,
             check.str_param(image, "image"),

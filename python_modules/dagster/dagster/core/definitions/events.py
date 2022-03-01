@@ -6,14 +6,14 @@ from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Tuple, Un
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidAssetKey
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
-from dagster.utils.backcompat import experimental_arg_warning, experimental_class_param_warning
+from dagster.utils.backcompat import experimental_class_param_warning
 
-from .event_metadata import (
-    EventMetadataEntry,
-    ParseableMetadataEntryData,
+from .metadata import (
+    MetadataEntry,
     PartitionMetadataEntry,
+    RawMetadataValue,
     last_file_comp,
-    parse_metadata,
+    normalize_metadata,
 )
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
@@ -145,7 +145,7 @@ class Output(
         [
             ("value", Any),
             ("output_name", str),
-            ("metadata_entries", List[Union[PartitionMetadataEntry, EventMetadataEntry]]),
+            ("metadata_entries", List[Union[PartitionMetadataEntry, MetadataEntry]]),
         ],
     )
 ):
@@ -163,38 +163,34 @@ class Output(
         value (Any): The value returned by the compute function.
         output_name (Optional[str]): Name of the corresponding out. (default:
             "result")
-        metadata_entries (Optional[Union[EventMetadataEntry, PartitionMetadataEntry]]):
+        metadata_entries (Optional[Union[MetadataEntry, PartitionMetadataEntry]]):
             (Experimental) A set of metadata entries to attach to events related to this Output.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadata]]]):
+        metadata (Optional[Dict[str, Union[str, float, int, Dict, MetadataValue]]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
-            list, and one of the data classes returned by a EventMetadata static method.
+            list, and one of the data classes returned by a MetadataValue static method.
     """
 
     def __new__(
         cls,
         value: Any,
         output_name: Optional[str] = DEFAULT_OUTPUT,
-        metadata_entries: Optional[List[Union[EventMetadataEntry, PartitionMetadataEntry]]] = None,
-        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
+        metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
-        if metadata_entries:
-            experimental_arg_warning("metadata_entries", "Output.__new__")
-        elif metadata:
-            experimental_arg_warning("metadata", "Output.__new__")
 
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_list_param(
             metadata_entries,
             "metadata_entries",
-            of_type=(EventMetadataEntry, PartitionMetadataEntry),
+            of_type=(MetadataEntry, PartitionMetadataEntry),
         )
 
         return super(Output, cls).__new__(
             cls,
             value,
             check.str_param(output_name, "output_name"),
-            parse_metadata(metadata, metadata_entries),
+            normalize_metadata(metadata, metadata_entries),
         )
 
 
@@ -205,12 +201,12 @@ class DynamicOutput(
             ("value", Any),
             ("mapping_key", str),
             ("output_name", str),
-            ("metadata_entries", List[Union[PartitionMetadataEntry, EventMetadataEntry]]),
+            ("metadata_entries", List[Union[PartitionMetadataEntry, MetadataEntry]]),
         ],
     )
 ):
     """
-    (Experimental) Variant of :py:class:`Output <dagster.Output>` used to support
+    Variant of :py:class:`Output <dagster.Output>` used to support
     dynamic mapping & collect. Each ``DynamicOutput`` produced by an op represents
     one item in a set that can be processed individually with ``map`` or gathered
     with ``collect``.
@@ -227,12 +223,12 @@ class DynamicOutput(
         output_name (Optional[str]):
             Name of the corresponding :py:class:`DynamicOut` defined on the op.
             (default: "result")
-        metadata_entries (Optional[Union[EventMetadataEntry, PartitionMetadataEntry]]):
+        metadata_entries (Optional[Union[MetadataEntry, PartitionMetadataEntry]]):
             (Experimental) A set of metadata entries to attach to events related to this output.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadata]]]):
+        metadata (Optional[Dict[str, Union[str, float, int, Dict, MetadataValue]]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
-            list, and one of the data classes returned by a EventMetadata static method.
+            list, and one of the data classes returned by a MetadataValue static method.
     """
 
     def __new__(
@@ -240,17 +236,13 @@ class DynamicOutput(
         value: Any,
         mapping_key: str,
         output_name: Optional[str] = DEFAULT_OUTPUT,
-        metadata_entries: Optional[List[Union[PartitionMetadataEntry, EventMetadataEntry]]] = None,
-        metadata: Optional[Dict[str, ParseableMetadataEntryData]] = None,
+        metadata_entries: Optional[List[Union[PartitionMetadataEntry, MetadataEntry]]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
-        if metadata_entries:
-            experimental_arg_warning("metadata_entries", "DynamicOutput.__new__")
-        elif metadata:
-            experimental_arg_warning("metadata", "DynamicOutput.__new__")
 
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
 
         return super(DynamicOutput, cls).__new__(
@@ -258,11 +250,8 @@ class DynamicOutput(
             value=value,
             mapping_key=check_valid_name(check.str_param(mapping_key, "mapping_key")),
             output_name=check.str_param(output_name, "output_name"),
-            metadata_entries=parse_metadata(metadata, metadata_entries),
+            metadata_entries=normalize_metadata(metadata, metadata_entries),
         )
-
-
-MetadataValues = Union[str, float, int, Dict, EventMetadataEntry]
 
 
 @whitelist_for_serdes
@@ -271,7 +260,8 @@ class AssetObservation(
         "_AssetObservation",
         [
             ("asset_key", AssetKey),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("description", Optional[str]),
+            ("metadata_entries", List[MetadataEntry]),
             ("partition", Optional[str]),
         ],
     )
@@ -280,46 +270,52 @@ class AssetObservation(
 
     Args:
         asset_key (Union[str, List[str], AssetKey]): A key to identify the asset.
-        metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the asset.
+        metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the asset.
         partition (Optional[str]): The name of a partition of the asset that the metadata
             corresponds to.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadata]]]):
+        metadata (Optional[Dict[str, Union[str, float, int, Dict, MetadataValue]]]):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
-            list, and one of the data classes returned by a EventMetadata static method.
+            list, and one of the data classes returned by a MetadataValue static method.
     """
 
     def __new__(
         cls,
         asset_key: Union[List[str], AssetKey, str],
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        description: Optional[str] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
         partition: Optional[str] = None,
-        metadata: Optional[Dict[str, MetadataValues]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
         elif isinstance(asset_key, list):
-            check.is_list(asset_key, of_type=str)
+            check.list_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
         else:
-            check.is_tuple(asset_key, of_type=str)
+            check.tuple_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
 
         return super(AssetObservation, cls).__new__(
             cls,
             asset_key=asset_key,
+            description=check.opt_str_param(description, "description"),
             metadata_entries=cast(
-                List[EventMetadataEntry], parse_metadata(metadata, metadata_entries)
+                List[MetadataEntry], normalize_metadata(metadata, metadata_entries)
             ),
             partition=check.opt_str_param(partition, "partition"),
         )
+
+    @property
+    def label(self) -> str:
+        return " ".join(self.asset_key.path)
 
 
 @whitelist_for_serdes
@@ -329,7 +325,7 @@ class AssetMaterialization(
         [
             ("asset_key", AssetKey),
             ("description", Optional[str]),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[Union[MetadataEntry, PartitionMetadataEntry]]),
             ("partition", Optional[str]),
             ("tags", Dict[str, str]),
         ],
@@ -350,36 +346,36 @@ class AssetMaterialization(
         asset_key (Union[str, List[str], AssetKey]): A key to identify the materialized asset across job
             runs
         description (Optional[str]): A longer human-readable description of the materialized value.
-        metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
+        metadata_entries (Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]]): Arbitrary metadata about the
             materialized value.
         partition (Optional[str]): The name of the partition that was materialized.
         tags (Optional[Dict[str, str]]): (Experimental) Tag metadata for a given asset
             materialization.  Used for search and organization of the asset entry in the asset
             catalog in Dagit.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadata]]]):
+        metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the asset.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
-            list, and one of the data classes returned by a EventMetadata static method.
+            list, and one of the data classes returned by a MetadataValue static method.
     """
 
     def __new__(
         cls,
         asset_key: Union[List[str], AssetKey, str],
         description: Optional[str] = None,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         partition: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
-        metadata: Optional[Dict[str, MetadataValues]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
         elif isinstance(asset_key, list):
-            check.is_list(asset_key, of_type=str)
+            check.list_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
         else:
-            check.is_tuple(asset_key, of_type=str)
+            check.tuple_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
 
         if tags:
@@ -387,16 +383,14 @@ class AssetMaterialization(
 
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
 
         return super(AssetMaterialization, cls).__new__(
             cls,
             asset_key=asset_key,
             description=check.opt_str_param(description, "description"),
-            metadata_entries=cast(
-                List[EventMetadataEntry], parse_metadata(metadata, metadata_entries)
-            ),
+            metadata_entries=normalize_metadata(metadata, metadata_entries),
             partition=check.opt_str_param(partition, "partition"),
             tags=check.opt_dict_param(tags, "tags", key_type=str, value_type=str),
         )
@@ -423,7 +417,7 @@ class AssetMaterialization(
         return AssetMaterialization(
             asset_key=cast(Union[str, AssetKey, List[str]], asset_key),
             description=description,
-            metadata_entries=[EventMetadataEntry.fspath(path)],
+            metadata_entries=[MetadataEntry.fspath(path)],
         )
 
 
@@ -442,7 +436,7 @@ class Materialization(
         [
             ("label", str),
             ("description", Optional[str]),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
             ("asset_key", AssetKey),
             ("partition", Optional[str]),
             ("tags", Dict[str, str]),
@@ -462,7 +456,7 @@ class Materialization(
     Args:
         label (str): A short display name for the materialized value.
         description (Optional[str]): A longer human-radable description of the materialized value.
-        metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
+        metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the
             materialized value.
         asset_key (Optional[Union[str, AssetKey]]): An optional parameter to identify the materialized asset
             across runs
@@ -476,7 +470,7 @@ class Materialization(
         cls,
         label: str = None,
         description: Optional[str] = None,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
         asset_key: Optional[Union[str, AssetKey]] = None,
         partition: Optional[str] = None,
         tags: Optional[Dict[str, str]] = None,
@@ -500,7 +494,7 @@ class Materialization(
             warnings.warn("`Materialization` is deprecated; use `AssetMaterialization` instead.")
 
         metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
 
         return super(Materialization, cls).__new__(
@@ -508,7 +502,7 @@ class Materialization(
             label=check.str_param(label, "label"),
             description=check.opt_str_param(description, "description"),
             metadata_entries=check.opt_list_param(
-                metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+                metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
             asset_key=asset_key,
             partition=check.opt_str_param(partition, "partition"),
@@ -530,7 +524,7 @@ class Materialization(
         return Materialization(
             label=last_file_comp(path),
             description=description,
-            metadata_entries=[EventMetadataEntry.fspath(path)],
+            metadata_entries=[MetadataEntry.fspath(path)],
             asset_key=asset_key,
         )
 
@@ -543,7 +537,7 @@ class ExpectationResult(
             ("success", bool),
             ("label", Optional[str]),
             ("description", Optional[str]),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
         ],
     )
 ):
@@ -557,12 +551,12 @@ class ExpectationResult(
         success (bool): Whether the expectation passed or not.
         label (Optional[str]): Short display name for expectation. Defaults to "result".
         description (Optional[str]): A longer human-readable description of the expectation.
-        metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
+        metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the
             expectation.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadata]]]):
+        metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
-            list, and one of the data classes returned by a EventMetadata static method.
+            list, and one of the data classes returned by a MetadataValue static method.
     """
 
     def __new__(
@@ -570,11 +564,11 @@ class ExpectationResult(
         success: bool,
         label: Optional[str] = None,
         description: Optional[str] = None,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
-        metadata: Optional[Dict[str, MetadataValues]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
         metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
 
@@ -584,7 +578,7 @@ class ExpectationResult(
             label=check.opt_str_param(label, "label", "result"),
             description=check.opt_str_param(description, "description"),
             metadata_entries=cast(
-                List[EventMetadataEntry], parse_metadata(metadata, metadata_entries)
+                List[MetadataEntry], normalize_metadata(metadata, metadata_entries)
             ),
         )
 
@@ -596,7 +590,7 @@ class TypeCheck(
         [
             ("success", bool),
             ("description", Optional[str]),
-            ("metadata_entries", List[EventMetadataEntry]),
+            ("metadata_entries", List[MetadataEntry]),
         ],
     )
 ):
@@ -612,24 +606,24 @@ class TypeCheck(
     Args:
         success (bool): ``True`` if the type check succeeded, ``False`` otherwise.
         description (Optional[str]): A human-readable description of the type check.
-        metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
+        metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the
             type check.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadata]]]):
+        metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
-            list, and one of the data classes returned by a EventMetadata static method.
+            list, and one of the data classes returned by a MetadataValue static method.
     """
 
     def __new__(
         cls,
         success: bool,
         description: Optional[str] = None,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
-        metadata: Optional[Dict[str, MetadataValues]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
 
         metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
 
@@ -638,7 +632,7 @@ class TypeCheck(
             success=check.bool_param(success, "success"),
             description=check.opt_str_param(description, "description"),
             metadata_entries=cast(
-                List[EventMetadataEntry], parse_metadata(metadata, metadata_entries)
+                List[MetadataEntry], normalize_metadata(metadata, metadata_entries)
             ),
         )
 
@@ -652,28 +646,28 @@ class Failure(Exception):
 
     Args:
         description (Optional[str]): A human-readable description of the failure.
-        metadata_entries (Optional[List[EventMetadataEntry]]): Arbitrary metadata about the
+        metadata_entries (Optional[List[MetadataEntry]]): Arbitrary metadata about the
             failure.
-        metadata (Optional[Dict[str, Union[str, float, int, Dict, EventMetadata]]]):
+        metadata (Optional[Dict[str, RawMetadataValue]]):
             Arbitrary metadata about the failure.  Keys are displayed string labels, and values are
             one of the following: string, float, int, JSON-serializable dict, JSON-serializable
-            list, and one of the data classes returned by a EventMetadata static method.
+            list, and one of the data classes returned by a MetadataValue static method.
     """
 
     def __init__(
         self,
         description: Optional[str] = None,
-        metadata_entries: Optional[List[EventMetadataEntry]] = None,
-        metadata: Optional[Dict[str, MetadataValues]] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
         metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
         metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
 
         super(Failure, self).__init__(description)
         self.description = check.opt_str_param(description, "description")
-        self.metadata_entries = parse_metadata(metadata, metadata_entries)
+        self.metadata_entries = normalize_metadata(metadata, metadata_entries)
 
 
 class RetryRequested(Exception):
@@ -812,3 +806,6 @@ class HookExecutionResult(
             hook_name=check.str_param(hook_name, "hook_name"),
             is_skipped=cast(bool, check.opt_bool_param(is_skipped, "is_skipped", default=False)),
         )
+
+
+UserEvent = Union[Materialization, AssetMaterialization, AssetObservation, ExpectationResult]

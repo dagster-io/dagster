@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, Group, IconWIP, NonIdealState, Table, Mono} from '@dagster-io/ui';
+import {Box, ColorsWIP, Group, IconWIP, Mono, NonIdealState, Table} from '@dagster-io/ui';
 import {gql} from 'graphql.macro';
 import qs from 'qs';
 import * as React from 'react';
@@ -6,10 +6,11 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {Timestamp} from '../app/time/Timestamp';
+import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {PipelineReference} from '../pipelines/PipelineReference';
-import {MetadataEntry, METADATA_ENTRY_FRAGMENT} from '../runs/MetadataEntry';
 import {titleForRun} from '../runs/RunUtils';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetLineageElements} from './AssetLineageElements';
@@ -37,7 +38,7 @@ export const LatestMaterializationMetadata: React.FC<{
     );
   }
 
-  const latestEvent = latest?.materializationEvent;
+  const latestEvent = latest;
   const latestAssetLineage = latestEvent?.assetLineage;
 
   return (
@@ -48,7 +49,7 @@ export const LatestMaterializationMetadata: React.FC<{
           <td>
             {latestRun ? (
               <div>
-                <Box margin={{bottom: 4}}>
+                <Box>
                   {'Run '}
                   <Link
                     to={`/instance/runs/${latestEvent.runId}?timestamp=${latestEvent.timestamp}`}
@@ -56,26 +57,30 @@ export const LatestMaterializationMetadata: React.FC<{
                     <Mono>{titleForRun({runId: latestEvent.runId})}</Mono>
                   </Link>
                 </Box>
-                <Box padding={{left: 8}}>
-                  <PipelineReference
-                    showIcon
-                    pipelineName={latestRun.pipelineName}
-                    pipelineHrefContext={repoAddress || 'repo-unknown'}
-                    snapshotId={latestRun.pipelineSnapshotId}
-                    isJob={isThisThingAJob(repo, latestRun.pipelineName)}
-                  />
-                </Box>
-                <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
-                  <IconWIP name="linear_scale" color={ColorsWIP.Gray400} />
-                  <Link
-                    to={`/instance/runs/${latestRun.runId}?${qs.stringify({
-                      selection: latestEvent.stepKey,
-                      logs: `step:${latestEvent.stepKey}`,
-                    })}`}
-                  >
-                    {latestEvent.stepKey}
-                  </Link>
-                </Group>
+                {latestRun.pipelineName !== __ASSET_GROUP && (
+                  <>
+                    <Box padding={{left: 8, top: 4}}>
+                      <PipelineReference
+                        showIcon
+                        pipelineName={latestRun.pipelineName}
+                        pipelineHrefContext={repoAddress || 'repo-unknown'}
+                        snapshotId={latestRun.pipelineSnapshotId}
+                        isJob={isThisThingAJob(repo, latestRun.pipelineName)}
+                      />
+                    </Box>
+                    <Group direction="row" padding={{left: 8}} spacing={8} alignItems="center">
+                      <IconWIP name="linear_scale" color={ColorsWIP.Gray400} />
+                      <Link
+                        to={`/instance/runs/${latestRun.runId}?${qs.stringify({
+                          selection: latestEvent.stepKey,
+                          logs: `step:${latestEvent.stepKey}`,
+                        })}`}
+                      >
+                        {latestEvent.stepKey}
+                      </Link>
+                    </Group>
+                  </>
+                )}
               </div>
             ) : (
               'No materialization events'
@@ -109,12 +114,13 @@ export const LatestMaterializationMetadata: React.FC<{
             </td>
           </tr>
         ) : null}
-        {latestEvent?.materialization.metadataEntries.map((entry) => (
+        {latestEvent?.metadataEntries.map((entry) => (
           <tr key={`metadata-${entry.label}`}>
             <td>{entry.label}</td>
             <td>
               <MetadataEntry entry={entry} expandSmallValues={true} />
             </td>
+            <td>{entry.description}</td>
           </tr>
         ))}
       </tbody>
@@ -134,7 +140,7 @@ const MetadataTable = styled(Table)`
 `;
 
 export const LATEST_MATERIALIZATION_METADATA_FRAGMENT = gql`
-  fragment LatestMaterializationMetadataFragment on AssetMaterialization {
+  fragment LatestMaterializationMetadataFragment on MaterializationEvent {
     partition
     runOrError {
       ... on PipelineRun {
@@ -150,25 +156,17 @@ export const LATEST_MATERIALIZATION_METADATA_FRAGMENT = gql`
         }
       }
     }
-    materializationEvent {
-      runId
-      timestamp
-      stepKey
-      stepStats {
-        endTime
-        startTime
+    runId
+    timestamp
+    stepKey
+    metadataEntries {
+      ...MetadataEntryFragment
+    }
+    assetLineage {
+      assetKey {
+        path
       }
-      materialization {
-        metadataEntries {
-          ...MetadataEntryFragment
-        }
-      }
-      assetLineage {
-        assetKey {
-          path
-        }
-        partitions
-      }
+      partitions
     }
   }
   ${METADATA_ENTRY_FRAGMENT}

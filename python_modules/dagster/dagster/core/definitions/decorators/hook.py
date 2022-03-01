@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, List, Optional, Union, cast
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, List, Optional, Union, cast, overload
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
@@ -9,8 +9,8 @@ from ..events import HookExecutionResult
 from ..hook_definition import HookDefinition
 
 if TYPE_CHECKING:
-    from dagster.core.execution.context.hook import HookContext
     from dagster.core.events import DagsterEvent
+    from dagster.core.execution.context.hook import HookContext
 
 
 def _validate_hook_fn_params(fn, expected_positionals):
@@ -61,8 +61,24 @@ class _Hook:
         return hook_def
 
 
+@overload
 def event_list_hook(
-    name: Union[Optional[str], Callable[..., Any]] = None,
+    name: Callable[..., Any],
+) -> HookDefinition:
+    pass
+
+
+@overload
+def event_list_hook(
+    name: Optional[str] = ...,
+    required_resource_keys: Optional[AbstractSet[str]] = ...,
+    decorated_fn: Optional[Callable[..., Any]] = ...,
+) -> _Hook:
+    pass
+
+
+def event_list_hook(
+    name: Union[Callable[..., Any], Optional[str]] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     decorated_fn: Optional[Callable[..., Any]] = None,
 ) -> Union[HookDefinition, _Hook]:
@@ -112,10 +128,26 @@ def event_list_hook(
     )
 
 
+SuccessOrFailureHookFn = Callable[["HookContext"], Any]
+
+
+@overload
+def success_hook(name: SuccessOrFailureHookFn) -> Union[HookDefinition, _Hook]:
+    ...
+
+
+@overload
 def success_hook(
-    name: Union[Optional[str], Callable[..., Any]] = None,
+    name: Optional[str] = ...,
+    required_resource_keys: Optional[AbstractSet[str]] = ...,
+) -> Callable[[SuccessOrFailureHookFn], Union[HookDefinition, _Hook]]:
+    ...
+
+
+def success_hook(
+    name: Union[SuccessOrFailureHookFn, Optional[str]] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
-) -> Union[Union[HookDefinition, _Hook], Callable[..., Union[HookDefinition, _Hook]],]:
+) -> Union[HookDefinition, _Hook, Callable[[SuccessOrFailureHookFn], Union[HookDefinition, _Hook]]]:
     """Create a hook on step success events with the specified parameters from the decorated function.
 
     Args:
@@ -139,7 +171,7 @@ def success_hook(
 
     """
 
-    def wrapper(fn) -> Union[HookDefinition, _Hook]:
+    def wrapper(fn: Callable[["HookContext"], Any]) -> Union[HookDefinition, _Hook]:
 
         check.callable_param(fn, "fn")
 
@@ -173,12 +205,23 @@ def success_hook(
     return wrapper
 
 
+@overload
+def failure_hook(name: SuccessOrFailureHookFn) -> Union[HookDefinition, _Hook]:
+    ...
+
+
+@overload
 def failure_hook(
-    name: Optional[str] = None, required_resource_keys: Optional[AbstractSet[str]] = None
-) -> Union[
-    Union[HookDefinition, _Hook],
-    Callable[[Callable[["HookContext"], Any]], Union[HookDefinition, _Hook]],
-]:
+    name: Optional[str] = ...,
+    required_resource_keys: Optional[AbstractSet[str]] = ...,
+) -> Callable[[SuccessOrFailureHookFn], Union[HookDefinition, _Hook]]:
+    ...
+
+
+def failure_hook(
+    name: Union[SuccessOrFailureHookFn, Optional[str]] = None,
+    required_resource_keys: Optional[AbstractSet[str]] = None,
+) -> Union[HookDefinition, _Hook, Callable[[SuccessOrFailureHookFn], Union[HookDefinition, _Hook]]]:
     """Create a hook on step failure events with the specified parameters from the decorated function.
 
     Args:

@@ -387,7 +387,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
           <GraphQueryInput
             items={props.graph}
             value={props.selection.query}
-            placeholder="Type a Step Subset"
+            placeholder="Type a step subset"
             onChange={props.onUpdateQuery}
             presets={metadata ? interestingQueriesFor(metadata, layout) : undefined}
             className={selection.keys.length > 0 ? 'has-step' : ''}

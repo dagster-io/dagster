@@ -3,6 +3,8 @@ import {ColorsWIP, IconWIP, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {displayNameForAssetKey} from '../app/Util';
+
 import {OpIOBox, metadataForIO} from './OpIOBox';
 import {OpTags, IOpTag} from './OpTags';
 import {IFullOpLayout, ILayout} from './getFullOpLayout';
@@ -162,8 +164,17 @@ export class OpNode extends React.Component<IOpNodeProps> {
             {!minified && <IconWIP name="op" size={16} />}
             <div className="label">{invocation ? invocation.name : definition.name}</div>
           </div>
-          {!minified && (
+          {!minified && (definition.description || definition.assetNodes.length === 0) && (
             <div className="description">{(definition.description || '').split('\n')[0]}</div>
+          )}
+          {!minified && definition.assetNodes.length > 0 && (
+            <div className="assets">
+              <IconWIP name="asset" size={16} />
+              {displayNameForAssetKey(definition.assetNodes[0].assetKey)}
+              {definition.assetNodes.length > 1
+                ? ` + ${definition.assetNodes.length - 1} more`
+                : ''}
+            </div>
           )}
         </div>
 
@@ -232,6 +243,12 @@ export const OP_NODE_DEFINITION_FRAGMENT = gql`
       key
       value
     }
+    assetNodes {
+      id
+      assetKey {
+        path
+      }
+    }
     inputDefinitions {
       name
       type {
@@ -285,6 +302,11 @@ export const OP_NODE_DEFINITION_FRAGMENT = gql`
   }
 `;
 
+export const NodeHighlightColors = {
+  Border: 'rgba(255, 69, 0, 1)',
+  Background: 'rgba(255, 69, 0, 0.2)',
+};
+
 const NodeContainer = styled.div<{
   $minified: boolean;
   $selected: boolean;
@@ -297,12 +319,12 @@ const NodeContainer = styled.div<{
   .highlight-box {
     border: ${(p) =>
       p.$selected
-        ? `2px dashed rgba(255, 69, 0, 1)`
+        ? `2px dashed ${NodeHighlightColors.Border}`
         : p.$secondaryHighlight
         ? `2px solid ${ColorsWIP.Blue500}55`
         : '2px solid transparent'};
     border-radius: 6px;
-    background: ${(p) => (p.$selected ? 'rgba(255, 69, 0, 0.2)' : 'transparent')};
+    background: ${(p) => (p.$selected ? NodeHighlightColors.Background : 'transparent')};
   }
   .node-box {
     border: 2px solid #dcd5ca;
@@ -344,6 +366,19 @@ const NodeContainer = styled.div<{
       overflow: hidden;
       text-overflow: ellipsis;
     }
+  }
+  .assets {
+    padding: 0 4px;
+    white-space: nowrap;
+    line-height: 22px;
+    height: 22px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: #f5f3ef;
+    font-size: 12px;
+    display: flex;
+    gap: 4px;
+    align-items: center;
   }
   .description {
     padding: 0 8px;

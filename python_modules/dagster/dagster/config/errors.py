@@ -1,6 +1,5 @@
-from collections import namedtuple
 from enum import Enum
-from typing import Dict, List, NamedTuple
+from typing import Dict, List, NamedTuple, Union
 
 from dagster import check
 from dagster.utils.error import SerializableErrorInfo
@@ -99,7 +98,7 @@ class SelectorTypeErrorData(
         )
 
 
-ERROR_DATA_TYPES = (
+ERROR_DATA_UNION = Union[
     FieldNotDefinedErrorData,
     FieldsNotDefinedErrorData,
     MissingFieldErrorData,
@@ -108,11 +107,29 @@ ERROR_DATA_TYPES = (
     SelectorTypeErrorData,
     SerializableErrorInfo,
     FieldAliasCollisionErrorData,
-)
+]
+
+ERROR_DATA_TYPES = ERROR_DATA_UNION.__args__  # type: ignore
 
 
-class EvaluationError(namedtuple("_EvaluationError", "stack reason message error_data")):
-    def __new__(cls, stack, reason, message, error_data):
+class EvaluationError(
+    NamedTuple(
+        "_EvaluationError",
+        [
+            ("stack", EvaluationStack),
+            ("reason", DagsterEvaluationErrorReason),
+            ("message", str),
+            ("error_data", ERROR_DATA_UNION),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        stack: EvaluationStack,
+        reason: DagsterEvaluationErrorReason,
+        message: str,
+        error_data: ERROR_DATA_UNION,
+    ):
         return super(EvaluationError, cls).__new__(
             cls,
             check.inst_param(stack, "stack", EvaluationStack),
@@ -245,6 +262,23 @@ def create_array_error(context, config_value):
         stack=context.stack,
         reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
         message='Value {path_msg} must be list. Expected: "{type_name}"'.format(
+            path_msg=get_friendly_path_msg(context.stack),
+            type_name=print_config_type_key_to_string(
+                context.config_schema_snapshot, context.config_type_key, with_lines=False
+            ),
+        ),
+        error_data=RuntimeMismatchErrorData(context.config_type_snap, repr(config_value)),
+    )
+
+
+def create_map_error(context, config_value):
+    check.inst_param(context, "context", ContextData)
+    check.param_invariant(context.config_type_snap.kind == ConfigTypeKind.MAP, "config_type")
+
+    return EvaluationError(
+        stack=context.stack,
+        reason=DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH,
+        message='Value {path_msg} must be dict. Expected: "{type_name}"'.format(
             path_msg=get_friendly_path_msg(context.stack),
             type_name=print_config_type_key_to_string(
                 context.config_schema_snapshot, context.config_type_key, with_lines=False

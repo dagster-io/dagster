@@ -1,14 +1,4 @@
 import pytest
-from dagster import (
-    DagsterInvariantViolationError,
-    DagsterResourceFunctionError,
-    DagsterTypeCheckDidNotPass,
-    execute_pipeline,
-    reconstructable,
-)
-from dagster.core.test_utils import instance_for_test
-from dagster.utils import file_relative_path
-from dagster.utils.temp_file import get_temp_dir
 from dagster_test.toys.asset_lineage import asset_lineage_pipeline
 from dagster_test.toys.composition import composition
 from dagster_test.toys.dynamic import dynamic_pipeline
@@ -24,6 +14,17 @@ from dagster_test.toys.resources import resource_pipeline
 from dagster_test.toys.retries import retry_pipeline
 from dagster_test.toys.schedules import longitudinal_schedule
 from dagster_test.toys.sleepy import sleepy_pipeline
+
+from dagster import (
+    DagsterInvariantViolationError,
+    DagsterResourceFunctionError,
+    DagsterTypeCheckDidNotPass,
+    execute_pipeline,
+    reconstructable,
+)
+from dagster.core.test_utils import instance_for_test
+from dagster.utils import file_relative_path
+from dagster.utils.temp_file import get_temp_dir
 
 
 def test_repo():

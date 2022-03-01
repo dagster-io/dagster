@@ -2,8 +2,10 @@
 
 import os
 import sys
+from typing import Generator, List, Optional
 
 import pendulum
+
 from dagster import check
 from dagster.core.definitions import ScheduleEvaluationContext
 from dagster.core.definitions.reconstructable import (
@@ -20,7 +22,7 @@ from dagster.core.errors import (
     SensorExecutionError,
     user_code_error_boundary,
 )
-from dagster.core.events import EngineEventData
+from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_run_iterator
 from dagster.core.host_representation import external_pipeline_data_from_def
 from dagster.core.host_representation.external_data import (
@@ -41,7 +43,7 @@ from dagster.core.snap.execution_plan_snapshot import (
 )
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.types import ExecutionPlanSnapshotArgs
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.serdes import deserialize_as
 from dagster.serdes.ipc import IPCErrorMessage
 from dagster.seven import nullcontext
 from dagster.utils import start_termination_thread
@@ -59,14 +61,21 @@ class StartRunInSubprocessSuccessful:
     """Sentinel passed over multiprocessing Queue when launch is successful in subprocess."""
 
 
-def _report_run_failed_if_not_finished(instance, pipeline_run_id):
+def _report_run_failed_if_not_finished(
+    instance: DagsterInstance, pipeline_run_id: str
+) -> Generator[DagsterEvent, None, None]:
     check.inst_param(instance, "instance", DagsterInstance)
     pipeline_run = instance.get_run_by_id(pipeline_run_id)
     if pipeline_run and (not pipeline_run.is_finished):
         yield instance.report_run_failed(pipeline_run)
 
 
-def core_execute_run(recon_pipeline, pipeline_run, instance, resume_from_failure=False):
+def core_execute_run(
+    recon_pipeline: ReconstructablePipeline,
+    pipeline_run: PipelineRun,
+    instance: DagsterInstance,
+    resume_from_failure: bool = False,
+) -> Generator[DagsterEvent, None, None]:
     check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
@@ -81,8 +90,7 @@ def core_execute_run(recon_pipeline, pipeline_run, instance, resume_from_failure
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
         )
         yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
-        return
-
+        raise
     try:
         yield from execute_run_iterator(
             recon_pipeline, pipeline_run, instance, resume_from_failure=resume_from_failure
@@ -93,6 +101,7 @@ def core_execute_run(recon_pipeline, pipeline_run, instance, resume_from_failure
             message="Run execution terminated by interrupt",
             pipeline_run=pipeline_run,
         )
+        raise
     except Exception:
         yield instance.report_engine_event(
             "An exception was thrown during execution that is likely a framework error, "
@@ -101,6 +110,7 @@ def core_execute_run(recon_pipeline, pipeline_run, instance, resume_from_failure
             EngineEventData.engine_error(serializable_error_info_from_exc_info(sys.exc_info())),
         )
         yield from _report_run_failed_if_not_finished(instance, pipeline_run.run_id)
+        raise
 
 
 def _run_in_subprocess(
@@ -113,14 +123,14 @@ def _run_in_subprocess(
 
     start_termination_thread(termination_event)
     try:
-        execute_run_args = deserialize_json_to_dagster_namedtuple(serialized_execute_run_args)
-        check.inst_param(execute_run_args, "execute_run_args", ExecuteExternalPipelineArgs)
+        execute_run_args = deserialize_as(serialized_execute_run_args, ExecuteExternalPipelineArgs)
 
         with (
             DagsterInstance.from_ref(execute_run_args.instance_ref)
             if execute_run_args.instance_ref
             else nullcontext()
         ) as instance:
+            instance = check.not_none(instance)
             pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
 
             if not pipeline_run:
@@ -164,6 +174,9 @@ def _run_in_subprocess(
     except GeneratorExit:
         closed = True
         raise
+    except:
+        # Relies on core_execute_run logging all exceptions to the event log before raising
+        pass
     finally:
         if not closed:
             run_event_handler(
@@ -189,8 +202,11 @@ def start_run_in_subprocess(
         )
 
 
-def get_external_pipeline_subset_result(recon_pipeline, solid_selection):
+def get_external_pipeline_subset_result(
+    recon_pipeline: ReconstructablePipeline, solid_selection: Optional[List[str]]
+):
     check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
+    check.opt_list_param(solid_selection, "solid_selection", str)
 
     if solid_selection:
         try:

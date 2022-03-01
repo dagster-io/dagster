@@ -5,15 +5,13 @@ import {useHistory} from 'react-router-dom';
 import {AssetNode} from '../workspace/asset-graph/AssetNode';
 import {ForeignNode} from '../workspace/asset-graph/ForeignNode';
 import {LiveData} from '../workspace/asset-graph/Utils';
-import {RepoAddress} from '../workspace/types';
 
 import {AssetNodeDefinitionFragment_dependencies} from './types/AssetNodeDefinitionFragment';
 
 export const AssetNodeList: React.FC<{
   items: AssetNodeDefinitionFragment_dependencies[];
-  repoAddress: RepoAddress;
   liveDataByNode: LiveData;
-}> = ({items, liveDataByNode, repoAddress}) => {
+}> = ({items, liveDataByNode}) => {
   const history = useHistory();
 
   return (
@@ -34,18 +32,17 @@ export const AssetNodeList: React.FC<{
             style={{position: 'relative', flexShrink: 0, width: 240, height: 90}}
             onClick={(e) => {
               e.stopPropagation();
-              history.push(`/instance/assets/${asset.assetKey.path.join('/')}`);
+              history.push(`/instance/assets/${asset.assetKey.path.join('/')}?view=definition`);
             }}
           >
-            {asset.jobs.length ? (
+            {asset.jobNames.length ? (
               <AssetNode
-                definition={{...asset, description: null}}
+                definition={asset}
                 metadata={[]}
-                jobName={asset.jobs[0].name}
+                inAssetCatalog
+                jobName={asset.jobNames[0]}
                 selected={false}
                 liveData={liveDataByNode[asset.id]}
-                secondaryHighlight={false}
-                repoAddress={repoAddress}
               />
             ) : (
               <ForeignNode assetKey={asset.assetKey} />

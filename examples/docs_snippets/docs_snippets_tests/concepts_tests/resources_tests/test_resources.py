@@ -1,4 +1,5 @@
 from dagster import build_init_resource_context, build_op_context
+
 from docs_snippets.concepts.resources.resources import (
     cereal_fetcher,
     connect,
@@ -12,6 +13,7 @@ from docs_snippets.concepts.resources.resources import (
     test_my_resource,
     test_my_resource_with_context,
     use_db_connection,
+    uses_db_connection,
 )
 
 
@@ -57,3 +59,7 @@ def test_cm_resource_example():
 def test_cm_resource_op():
     with build_op_context(resources={"db_connection": db_connection}) as context:
         use_db_connection(context)
+
+
+def test_build_resources_example():
+    uses_db_connection()

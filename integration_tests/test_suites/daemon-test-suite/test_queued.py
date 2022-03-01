@@ -1,7 +1,8 @@
+from utils import start_daemon
+
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.test_utils import create_run_for_test, poll_for_finished_run
-from dagster.utils import merge_dicts
-from utils import start_daemon
+from dagster.utils import file_relative_path, merge_dicts
 
 
 def create_run(instance, external_pipeline, **kwargs):  # pylint: disable=redefined-outer-name
@@ -28,10 +29,10 @@ def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_exa
     external_sensor = foo_example_repo.get_external_sensor("always_on_sensor")
     external_pipeline = foo_example_repo.get_full_external_pipeline("foo_pipeline")
 
-    instance.start_schedule_and_update_storage_state(external_schedule)
+    instance.start_schedule(external_schedule)
     instance.start_sensor(external_sensor)
 
-    with start_daemon(timeout=180):
+    with start_daemon(timeout=180, workspace_file=file_relative_path(__file__, "repo.py")):
         run = create_run(instance, external_pipeline)
         instance.submit_run(run.run_id, foo_example_workspace)
 
@@ -60,7 +61,7 @@ def test_queue_from_schedule_and_sensor(instance, foo_example_workspace, foo_exa
 
 
 def test_queued_runs(instance, foo_example_workspace, foo_example_repo):
-    with start_daemon():
+    with start_daemon(workspace_file=file_relative_path(__file__, "repo.py")):
         external_pipeline = foo_example_repo.get_full_external_pipeline("foo_pipeline")
 
         run = create_run(instance, external_pipeline)

@@ -4,6 +4,7 @@ import tempfile
 from difflib import SequenceMatcher
 
 from click.testing import CliRunner
+
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.core.definitions.reconstructable import get_ephemeral_repository_name
 from dagster.core.telemetry import (
@@ -23,9 +24,7 @@ EXPECTED_KEYS = set(
         "elapsed_time",
         "event_id",
         "instance_id",
-        "pipeline_name_hash",
-        "num_pipelines_in_repo",
-        "repo_hash",
+        "run_storage_id",
         "python_version",
         "metadata",
         "version",
@@ -59,9 +58,10 @@ def test_dagster_telemetry_enabled(caplog):
             for record in caplog.records:
                 message = json.loads(record.getMessage())
                 if message.get("action") == UPDATE_REPO_STATS:
-                    assert message.get("pipeline_name_hash") == hash_name(pipeline_name)
-                    assert message.get("num_pipelines_in_repo") == str(1)
-                    assert message.get("repo_hash") == hash_name(
+                    metadata = message.get("metadata")
+                    assert metadata.get("pipeline_name_hash") == hash_name(pipeline_name)
+                    assert metadata.get("num_pipelines_in_repo") == str(1)
+                    assert metadata.get("repo_hash") == hash_name(
                         get_ephemeral_repository_name(pipeline_name)
                     )
                 assert set(message.keys()) == EXPECTED_KEYS
@@ -104,9 +104,10 @@ def test_dagster_telemetry_unset(caplog):
                 for record in caplog.records:
                     message = json.loads(record.getMessage())
                     if message.get("action") == UPDATE_REPO_STATS:
-                        assert message.get("pipeline_name_hash") == hash_name(pipeline_name)
-                        assert message.get("num_pipelines_in_repo") == str(1)
-                        assert message.get("repo_hash") == hash_name(
+                        metadata = message.get("metadata")
+                        assert metadata.get("pipeline_name_hash") == hash_name(pipeline_name)
+                        assert metadata.get("num_pipelines_in_repo") == str(1)
+                        assert metadata.get("repo_hash") == hash_name(
                             get_ephemeral_repository_name(pipeline_name)
                         )
                     assert set(message.keys()) == EXPECTED_KEYS
@@ -142,9 +143,10 @@ def test_repo_stats(caplog):
                 for record in caplog.records:
                     message = json.loads(record.getMessage())
                     if message.get("action") == UPDATE_REPO_STATS:
-                        assert message.get("pipeline_name_hash") == hash_name(pipeline_name)
-                        assert message.get("num_pipelines_in_repo") == str(4)
-                        assert message.get("repo_hash") == hash_name("dagster_test_repository")
+                        metadata = message.get("metadata")
+                        assert metadata.get("pipeline_name_hash") == hash_name(pipeline_name)
+                        assert metadata.get("num_pipelines_in_repo") == str(4)
+                        assert metadata.get("repo_hash") == hash_name("dagster_test_repository")
                     assert set(message.keys()) == EXPECTED_KEYS
 
                 assert len(caplog.records) == 5

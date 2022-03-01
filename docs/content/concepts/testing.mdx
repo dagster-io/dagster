@@ -115,7 +115,9 @@ def test_local():
 
     # Since we have access to the computation graph independent of the set of resources, we can
     # test it locally.
-    result = download.execute_in_process(resources={"api": ResourceDefinition.mock_resource()})
+    result = download.execute_in_process(
+        resources={"api": ResourceDefinition.mock_resource()}
+    )
     assert result.success
 
 
@@ -191,7 +193,9 @@ def my_foo_resource(context):
 
 
 def test_op_resource_def():
-    context = build_op_context(resources={"foo": my_foo_resource.configured({"my_str": "bar"})})
+    context = build_op_context(
+        resources={"foo": my_foo_resource.configured({"my_str": "bar"})}
+    )
     assert op_requires_foo(context) == "found bar"
 ```
 
@@ -202,7 +206,12 @@ Sometimes, you may want to test with different configuration. You can execute jo
 ```python file=/concepts/solids_pipelines/unit_tests.py startafter=start_test_job_with_config endbefore=end_test_job_with_config
 def test_job_with_config():
     result = do_math_job.execute_in_process(
-        run_config={"ops": {"add_one": {"inputs": {"num": 2}}, "add_two": {"inputs": {"num": 3}}}}
+        run_config={
+            "ops": {
+                "add_one": {"inputs": {"num": 2}},
+                "add_two": {"inputs": {"num": 3}},
+            }
+        }
     )
 
     assert result.success

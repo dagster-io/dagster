@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 
-from dagster import EventMetadataEntry, Output, check
-from dagster.core.asset_defs import asset
+from hacker_news_assets.partitions import hourly_partitions
+
+from dagster import MetadataEntry, Output, asset, check
 
 
 def binary_search_nearest_left(get_value, start, end, min_target):
@@ -50,15 +51,8 @@ def binary_search_nearest_right(get_value, start, end, max_target):
     return end
 
 
-def _id_range_for_time(start, end, hn_client):
+def _id_range_for_time(start: int, end: int, hn_client):
     check.invariant(end >= start, "End time comes before start time")
-
-    start = datetime.timestamp(
-        datetime.strptime(start, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
-    )
-    end = datetime.timestamp(
-        datetime.strptime(end, "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
-    )
 
     def _get_item_timestamp(item_id):
         item = hn_client.fetch_item_by_id(item_id)
@@ -76,12 +70,12 @@ def _id_range_for_time(start, end, hn_client):
     end_timestamp = str(datetime.fromtimestamp(_get_item_timestamp(end_id), tz=timezone.utc))
 
     metadata_entries = [
-        EventMetadataEntry.int(value=max_item_id, label="max_item_id"),
-        EventMetadataEntry.int(value=start_id, label="start_id"),
-        EventMetadataEntry.int(value=end_id, label="end_id"),
-        EventMetadataEntry.int(value=end_id - start_id, label="items"),
-        EventMetadataEntry.text(text=start_timestamp, label="start_timestamp"),
-        EventMetadataEntry.text(text=end_timestamp, label="end_timestamp"),
+        MetadataEntry.int(value=max_item_id, label="max_item_id"),
+        MetadataEntry.int(value=start_id, label="start_id"),
+        MetadataEntry.int(value=end_id, label="end_id"),
+        MetadataEntry.int(value=end_id - start_id, label="items"),
+        MetadataEntry.text(text=start_timestamp, label="start_timestamp"),
+        MetadataEntry.text(text=end_timestamp, label="end_timestamp"),
     ]
 
     id_range = (start_id, end_id)
@@ -89,16 +83,16 @@ def _id_range_for_time(start, end, hn_client):
 
 
 @asset(
-    required_resource_keys={"hn_client", "partition_start", "partition_end"},
+    required_resource_keys={"hn_client"},
     description="The lower (inclusive) and upper (exclusive) ids that bound the range for the partition",
+    partitions_def=hourly_partitions,
 )
 def id_range_for_time(context):
     """
     For the configured time partition, searches for the range of ids that were created in that time.
     """
+    start, end = context.output_asset_partitions_time_window()
     id_range, metadata_entries = _id_range_for_time(
-        context.resources.partition_start,
-        context.resources.partition_end,
-        context.resources.hn_client,
+        start.timestamp(), end.timestamp(), context.resources.hn_client
     )
     yield Output(id_range, metadata_entries=metadata_entries)

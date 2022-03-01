@@ -3,6 +3,8 @@ import Fuse from 'fuse.js';
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {displayNameForAssetKey} from '../app/Util';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoPath} from '../workspace/buildRepoAddress';
 import {workspacePath} from '../workspace/workspacePath';
 
@@ -42,29 +44,31 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
         const {name: locationName} = repoLocation;
         const repoPath = buildRepoPath(repoName, locationName);
 
-        const allPipelinesAndJobs = pipelines.reduce((flat, pipelineOrJob) => {
-          const {name, isJob} = pipelineOrJob;
-          return [
-            ...flat,
-            {
-              key: `${repoPath}-${name}`,
-              label: name,
-              description: manyRepos
-                ? `${isJob ? 'Job' : 'Pipeline'} in ${repoPath}`
-                : isJob
-                ? 'Job'
-                : 'Pipeline',
-              href: workspacePath(
-                repoName,
-                locationName,
-                `/${isJob ? 'jobs' : 'pipelines'}/${name}`,
-              ),
-              type: SearchResultType.Pipeline,
-            },
-          ];
-        }, [] as SearchResult[]);
+        const allPipelinesAndJobs = pipelines
+          .reduce((flat, pipelineOrJob) => {
+            const {name, isJob} = pipelineOrJob;
+            return [
+              ...flat,
+              {
+                key: `${repoPath}-${name}`,
+                label: name,
+                description: manyRepos
+                  ? `${isJob ? 'Job' : 'Pipeline'} in ${repoPath}`
+                  : isJob
+                  ? 'Job'
+                  : 'Pipeline',
+                href: workspacePath(
+                  repoName,
+                  locationName,
+                  `/${isJob ? 'jobs' : 'pipelines'}/${name}`,
+                ),
+                type: SearchResultType.Pipeline,
+              },
+            ];
+          }, [] as SearchResult[])
+          .filter((item) => item.label !== __ASSET_GROUP);
 
-        const allSchedules = schedules.map((schedule) => ({
+        const allSchedules: SearchResult[] = schedules.map((schedule) => ({
           key: `${repoPath}-${schedule.name}`,
           label: schedule.name,
           description: manyRepos ? `Schedule in ${repoPath}` : 'Schedule',
@@ -72,7 +76,7 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
           type: SearchResultType.Schedule,
         }));
 
-        const allSensors = sensors.map((sensor) => ({
+        const allSensors: SearchResult[] = sensors.map((sensor) => ({
           key: `${repoPath}-${sensor.name}`,
           label: sensor.name,
           description: manyRepos ? `Sensor in ${repoPath}` : 'Sensor',
@@ -80,7 +84,7 @@ const bootstrapDataToSearchResults = (data?: SearchBootstrapQuery) => {
           type: SearchResultType.Sensor,
         }));
 
-        const allPartitionSets = partitionSets.map((partitionSet) => ({
+        const allPartitionSets: SearchResult[] = partitionSets.map((partitionSet) => ({
           key: `${repoPath}-${partitionSet.name}`,
           label: partitionSet.name,
           description: manyRepos ? `Partition set in ${repoPath}` : 'Partition set',
@@ -112,12 +116,10 @@ const secondaryDataToSearchResults = (data?: SearchSecondaryQuery) => {
   }
 
   const {nodes} = data.assetsOrError;
-  const allEntries = nodes.map((node) => {
-    const {key} = node;
-    const path = key.path.join(' › ');
+  const allEntries = nodes.map(({key}) => {
     return {
-      key: path,
-      label: path,
+      key: displayNameForAssetKey(key),
+      label: displayNameForAssetKey(key),
       segments: key.path,
       description: 'Asset',
       href: `/instance/assets/${key.path.map(encodeURIComponent).join('/')}`,
@@ -160,21 +162,6 @@ export const useRepoSearch = () => {
       return [...bootstrapResults, ...secondaryResults];
     },
     [bootstrapFuse, secondaryFuse, performQuery, secondaryQueryCalled],
-  );
-
-  return {loading, performSearch};
-};
-
-export const useAssetSearch = () => {
-  const {data, loading} = useQuery<SearchSecondaryQuery>(SEARCH_SECONDARY_QUERY, {
-    fetchPolicy: 'cache-and-network',
-  });
-
-  const fuse = React.useMemo(() => secondaryDataToSearchResults(data), [data]);
-
-  const performSearch = React.useCallback(
-    (queryString: string): Fuse.FuseResult<SearchResult>[] => fuse.search(queryString),
-    [fuse],
   );
 
   return {loading, performSearch};

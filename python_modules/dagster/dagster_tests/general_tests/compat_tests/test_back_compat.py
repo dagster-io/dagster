@@ -7,6 +7,7 @@ from enum import Enum
 from gzip import GzipFile
 
 import pytest
+
 from dagster import (
     AssetKey,
     AssetMaterialization,
@@ -24,9 +25,11 @@ from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.events import DagsterEvent
 from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance, InstanceRef
+from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick
 from dagster.core.storage.event_log.migration import migrate_event_log_data
 from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
 from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster.serdes import DefaultNamedTupleSerializer, create_snapshot_id
 from dagster.serdes.serdes import (
     WhitelistMap,
     _deserialize_json,
@@ -345,8 +348,8 @@ def test_run_partition_migration():
 def test_run_partition_data_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_9_22_post_schema_pre_data_partition/sqlite")
     with copy_directory(src_dir) as test_dir:
-        from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
         from dagster.core.storage.runs.migration import RUN_PARTITIONS
+        from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
 
         # load db that has migrated schema, but not populated data for run partitions
         db_path = os.path.join(test_dir, "history", "runs.db")
@@ -377,7 +380,7 @@ def test_run_partition_data_migration():
         assert len(run_storage._get_partition_runs(partition_set_name, partition_name)) == 0
 
         # actually migrate the data
-        run_storage.build_missing_indexes(force_rebuild_all=True)
+        run_storage.migrate(force_rebuild_all=True)
 
         # ensure that we get the same partitioned runs returned
         assert run_storage.has_built_index(RUN_PARTITIONS)
@@ -407,7 +410,7 @@ def test_0_10_0_schedule_wipe():
         assert "job_ticks" in get_sqlite3_tables(db_path)
 
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as upgraded_instance:
-            assert len(upgraded_instance.all_stored_job_state()) == 0
+            assert len(upgraded_instance.all_instigator_state()) == 0
 
 
 def test_0_10_6_add_bulk_actions_table():
@@ -621,3 +624,106 @@ def test_last_observation_timestamp():
         with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
             instance.upgrade()
             assert "last_observation_timestamp" in set(get_sqlite3_columns(db_path, "asset_keys"))
+
+
+def test_external_job_origin_instigator_origin():
+    def build_legacy_whitelist_map():
+        legacy_env = WhitelistMap.create()
+
+        @_whitelist_for_serdes(legacy_env)
+        class ExternalJobOrigin(
+            namedtuple("_ExternalJobOrigin", "external_repository_origin job_name")
+        ):
+            def get_id(self):
+                return create_snapshot_id(self)
+
+        @_whitelist_for_serdes(legacy_env)
+        class ExternalRepositoryOrigin(
+            namedtuple("_ExternalRepositoryOrigin", "repository_location_origin repository_name")
+        ):
+            def get_id(self):
+                return create_snapshot_id(self)
+
+        class GrpcServerOriginSerializer(DefaultNamedTupleSerializer):
+            @classmethod
+            def skip_when_empty(cls):
+                return {"use_ssl"}
+
+        @_whitelist_for_serdes(whitelist_map=legacy_env, serializer=GrpcServerOriginSerializer)
+        class GrpcServerRepositoryLocationOrigin(
+            namedtuple(
+                "_GrpcServerRepositoryLocationOrigin",
+                "host port socket location_name use_ssl",
+            ),
+        ):
+            def __new__(cls, host, port=None, socket=None, location_name=None, use_ssl=None):
+                return super(GrpcServerRepositoryLocationOrigin, cls).__new__(
+                    cls, host, port, socket, location_name, use_ssl
+                )
+
+        return (
+            legacy_env,
+            ExternalJobOrigin,
+            ExternalRepositoryOrigin,
+            GrpcServerRepositoryLocationOrigin,
+        )
+
+    legacy_env, klass, repo_klass, location_klass = build_legacy_whitelist_map()
+
+    from dagster.core.host_representation.origin import (
+        ExternalInstigatorOrigin,
+        ExternalRepositoryOrigin,
+        GrpcServerRepositoryLocationOrigin,
+    )
+
+    # serialize from current code, compare against old code
+    instigator_origin = ExternalInstigatorOrigin(
+        external_repository_origin=ExternalRepositoryOrigin(
+            repository_location_origin=GrpcServerRepositoryLocationOrigin(
+                host="localhost", port=1234, location_name="test_location"
+            ),
+            repository_name="the_repo",
+        ),
+        instigator_name="simple_schedule",
+    )
+    instigator_origin_str = serialize_dagster_namedtuple(instigator_origin)
+    instigator_to_job = _deserialize_json(instigator_origin_str, legacy_env)
+    assert isinstance(instigator_to_job, klass)
+    # ensure that the origin id is stable
+    assert instigator_to_job.get_id() == instigator_origin.get_id()
+
+    # # serialize from old code, compare against current code
+    job_origin = klass(
+        external_repository_origin=repo_klass(
+            repository_location_origin=location_klass(
+                host="localhost", port=1234, location_name="test_location"
+            ),
+            repository_name="the_repo",
+        ),
+        job_name="simple_schedule",
+    )
+    job_origin_str = serialize_value(job_origin, legacy_env)
+    from dagster.serdes.serdes import _WHITELIST_MAP
+
+    job_to_instigator = deserialize_json_to_dagster_namedtuple(job_origin_str)
+    assert isinstance(job_to_instigator, ExternalInstigatorOrigin)
+    # ensure that the origin id is stable
+    assert job_to_instigator.get_id() == job_origin.get_id()
+
+
+def test_schedule_namedtuple_job_instigator_backcompat():
+    src_dir = file_relative_path(__file__, "snapshot_0_13_19_instigator_named_tuples/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            states = instance.all_instigator_state()
+            assert len(states) == 2
+            check.is_list(states, of_type=InstigatorState)
+            for state in states:
+                assert state.instigator_type
+                assert state.instigator_data
+                ticks = instance.get_ticks(state.instigator_origin_id)
+                check.is_list(ticks, of_type=InstigatorTick)
+                for tick in ticks:
+                    assert tick.tick_data
+                    assert tick.instigator_type
+                    assert tick.instigator_name

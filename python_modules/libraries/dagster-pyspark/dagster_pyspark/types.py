@@ -1,3 +1,5 @@
+from pyspark.sql import DataFrame as NativeSparkDataFrame
+
 from dagster import (
     Any,
     AssetMaterialization,
@@ -16,7 +18,6 @@ from dagster import (
 )
 from dagster.config.field_utils import Selector
 from dagster.utils import dict_without_keys
-from pyspark.sql import DataFrame as NativeSparkDataFrame
 
 WriteModeOptions = Enum(
     "WriteMode",

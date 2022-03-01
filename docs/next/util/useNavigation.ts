@@ -1,5 +1,5 @@
 import masterNavigation from "../../content/_navigation.json";
-import { useVersion } from "./useVersion";
+import { useVersion, latestVersion } from "./useVersion";
 import versionedNavigation from "../.versioned_content/_versioned_navigation.json";
 
 export function flatten(yx: any) {
@@ -26,8 +26,8 @@ export const useNavigation = () => {
 };
 
 export const latestAllPaths = () => {
-  // Master
-  return flatten(masterNavigation)
+  // latest version
+  return flatten(versionedNavigation[latestVersion])
     .filter((n: { path: any }) => n.path)
     .map(({ path }) => path.split("/").splice(1))
     .map((page: string[]) => {

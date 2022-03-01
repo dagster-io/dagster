@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
+    "paths": {
+      "@dagster-io/ui": ["../ui"]
+    },
     "module": "esnext",
     "target": "es5",
     "lib": [

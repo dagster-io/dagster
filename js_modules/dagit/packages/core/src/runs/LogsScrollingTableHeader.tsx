@@ -2,7 +2,7 @@ import {ColorsWIP} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {getJSONForKey} from '../app/LocalStorage';
+import {getJSONForKey} from '../hooks/useStateWithStorage';
 
 const ColumnWidthsStorageKey = 'ColumnWidths';
 const ColumnWidths = Object.assign(

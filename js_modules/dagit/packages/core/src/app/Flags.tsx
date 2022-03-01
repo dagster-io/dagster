@@ -1,14 +1,12 @@
 import memoize from 'lodash/memoize';
 import * as React from 'react';
 
-import {getJSONForKey} from './LocalStorage';
+import {getJSONForKey} from '../hooks/useStateWithStorage';
 
 const DAGIT_FLAGS_KEY = 'DAGIT_FLAGS';
 
 export enum FeatureFlag {
   flagDebugConsoleLogging = 'flagDebugConsoleLogging',
-  flagAssetGraph = 'flagAssetGraph',
-  flagInstanceOverview = 'flagInstanceOverview',
 }
 
 export const getFeatureFlags: () => FeatureFlag[] = memoize(

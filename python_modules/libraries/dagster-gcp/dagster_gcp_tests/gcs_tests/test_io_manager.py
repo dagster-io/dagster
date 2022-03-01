@@ -1,3 +1,7 @@
+from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager, gcs_pickle_io_manager
+from dagster_gcp.gcs.resources import gcs_resource
+from google.cloud import storage  # type: ignore
+
 from dagster import (
     DagsterInstance,
     DynamicOut,
@@ -18,9 +22,6 @@ from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
-from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager, gcs_pickle_io_manager
-from dagster_gcp.gcs.resources import gcs_resource
-from google.cloud import storage
 
 
 def get_step_output(step_events, step_key, output_name="result"):

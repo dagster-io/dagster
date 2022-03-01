@@ -61,14 +61,29 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
             cursor >= -1,
             "Don't know what to do with negative cursor {cursor}".format(cursor=cursor),
         )
-        check.opt_inst_param(of_type, "of_type", DagsterEventType)
+
+        of_types = (
+            (
+                {of_type.value}
+                if isinstance(of_type, DagsterEventType)
+                else (
+                    {
+                        dagster_event_type.value
+                        for dagster_event_type in check.set_param(
+                            of_type, "of_type", DagsterEventType
+                        )
+                    }
+                )
+            )
+            if of_type
+            else None
+        )
 
         cursor = cursor + 1
-        if of_type:
+        if of_types:
             events = list(
                 filter(
-                    lambda r: r.is_dagster_event
-                    and r.dagster_event.event_type_value == of_type.value,
+                    lambda r: r.is_dagster_event and r.dagster_event.event_type_value in of_types,
                     self._logs[run_id][cursor:],
                 )
             )
@@ -247,6 +262,7 @@ class InMemoryEventLogStorage(EventLogStorage, ConfigurableClass):
                 record
                 for record in records
                 if record.is_dagster_event
+                and record.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
                 and record.dagster_event.asset_key
                 and record.dagster_event.asset_key in asset_keys
             ]

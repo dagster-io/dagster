@@ -9,10 +9,11 @@ from alembic.command import downgrade, stamp, upgrade
 from alembic.config import Config
 from alembic.migration import MigrationContext  # pylint: disable=import-error
 from alembic.script import ScriptDirectory
+from sqlalchemy.ext.compiler import compiles
+
 from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.utils import file_relative_path
 from dagster.utils.log import quieten
-from sqlalchemy.ext.compiler import compiles
 
 create_engine = db.create_engine  # exported
 
@@ -143,6 +144,7 @@ def run_migrations_online(context, config, target_metadata):
 # 1: make MySQL dates equivalent to PG or Sqlite dates
 
 MYSQL_DATE_PRECISION: int = 6
+MYSQL_FLOAT_PRECISION: int = 32
 
 # datetime issue fix from here: https://stackoverflow.com/questions/29711102/sqlalchemy-mysql-millisecond-or-microsecond-precision/29723278
 @compiles(db.DateTime, "mysql")
@@ -169,6 +171,22 @@ def compiles_get_current_timestamp_default(_element, _compiler, **_kw):
 @compiles(db.types.TIMESTAMP, "mysql")
 def add_precision_to_mysql_timestamps(_element, _compiler, **_kw):
     return f"TIMESTAMP({MYSQL_DATE_PRECISION})"
+
+
+@compiles(db.types.Float, "mysql")
+def add_precision_to_mysql_floats(_element, _compiler, **_kw):
+    """Forces floats to have minimum precision of 32, which converts the underlying type to be a
+    double.  This is necessary because the default precision of floats is too low for some types,
+    including unix timestamps, resulting in truncated values in MySQL"""
+    return f"FLOAT({MYSQL_FLOAT_PRECISION})"
+
+
+@compiles(db.types.FLOAT, "mysql")
+def add_precision_to_mysql_FLOAT(_element, _compiler, **_kw):
+    """Forces floats to have minimum precision of 32, which converts the underlying type to be a
+    double.  This is necessary because the default precision of floats is too low for some types,
+    including unix timestamps, resulting in truncated values in MySQL"""
+    return f"FLOAT({MYSQL_FLOAT_PRECISION})"
 
 
 class MySQLCompatabilityTypes:

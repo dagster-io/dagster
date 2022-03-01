@@ -1,10 +1,10 @@
 import {gql} from '@apollo/client';
 import * as React from 'react';
 
+import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {StepEventStatus} from '../types/globalTypes';
 
 import {LogsProviderLogs} from './LogsProvider';
-import {METADATA_ENTRY_FRAGMENT} from './MetadataEntry';
 import {RunContext} from './RunContext';
 import {RunFragment} from './types/RunFragment';
 import {RunMetadataProviderMessageFragment} from './types/RunMetadataProviderMessageFragment';
@@ -109,14 +109,11 @@ function extractMetadataFromRun(run?: RunFragment): IRunMetadataDict {
   if (!run) {
     return metadata;
   }
-  if (run.stats.__typename !== 'RunStatsSnapshot') {
-    return metadata;
+  if (run.startTime) {
+    metadata.startedPipelineAt = fromTimestamp(run.startTime);
   }
-  if (run.stats.startTime) {
-    metadata.startedPipelineAt = fromTimestamp(run.stats.startTime);
-  }
-  if (run.stats.endTime) {
-    metadata.exitedAt = fromTimestamp(run.stats.endTime);
+  if (run.endTime) {
+    metadata.exitedAt = fromTimestamp(run.endTime);
   }
 
   run.stepStats.forEach((stepStat) => {

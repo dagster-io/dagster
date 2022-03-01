@@ -8,7 +8,7 @@ import {
   applyRemoveSession,
   applySelectSession,
   IStorageData,
-} from '../app/LocalStorage';
+} from '../app/ExecutionSessionStorage';
 
 interface ExecutationTabProps {
   canRemove?: boolean;

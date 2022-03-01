@@ -1,11 +1,15 @@
 import warnings
 from collections import OrderedDict
-from typing import Optional, Sequence
+from typing import TYPE_CHECKING, List, Optional, Sequence, Union
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.definitions.sensor_definition import DEFAULT_SENSOR_DAEMON_INTERVAL
+from dagster.core.definitions.schedule_definition import DefaultScheduleStatus
+from dagster.core.definitions.sensor_definition import (
+    DEFAULT_SENSOR_DAEMON_INTERVAL,
+    DefaultSensorStatus,
+)
 from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, StepHandle
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap import ExecutionPlanSnapshot
@@ -20,9 +24,12 @@ from .external_data import (
     ExternalScheduleData,
     ExternalSensorData,
 )
-from .handle import JobHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
+from .handle import InstigatorHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
+
+if TYPE_CHECKING:
+    from dagster.core.scheduler.instigation import InstigatorState
 
 
 class ExternalRepository:
@@ -32,37 +39,31 @@ class ExternalRepository:
     objects such as these to interact with user-defined artifacts.
     """
 
-    def __init__(self, external_repository_data, repository_handle):
+    def __init__(
+        self, external_repository_data: ExternalRepositoryData, repository_handle: RepositoryHandle
+    ):
         self.external_repository_data = check.inst_param(
             external_repository_data, "external_repository_data", ExternalRepositoryData
         )
-        self._pipeline_index_map = OrderedDict(
-            (
-                external_pipeline_data.pipeline_snapshot.name,
-                PipelineIndex(
-                    external_pipeline_data.pipeline_snapshot,
-                    external_pipeline_data.parent_pipeline_snapshot,
-                ),
+        self._pipeline_index_map = OrderedDict()
+        self._job_index_map = OrderedDict()
+        for external_pipeline_data in external_repository_data.external_pipeline_datas:
+            key = external_pipeline_data.pipeline_snapshot.name
+            index = PipelineIndex(
+                external_pipeline_data.pipeline_snapshot,
+                external_pipeline_data.parent_pipeline_snapshot,
             )
-            for external_pipeline_data in external_repository_data.external_pipeline_datas
-        )
-        self._job_index_map = OrderedDict(
-            (
-                external_pipeline_data.pipeline_snapshot.name,
-                PipelineIndex(
-                    external_pipeline_data.pipeline_snapshot,
-                    external_pipeline_data.parent_pipeline_snapshot,
-                ),
-            )
-            for external_pipeline_data in external_repository_data.external_pipeline_datas
-            if external_pipeline_data.is_job
-        )
+            self._pipeline_index_map[key] = index
+            if external_pipeline_data.is_job:
+                self._job_index_map[key] = index
+
         self._handle = check.inst_param(repository_handle, "repository_handle", RepositoryHandle)
 
-        instigation_list = (
-            external_repository_data.external_schedule_datas
-            + external_repository_data.external_sensor_datas
-        )
+        # mypy doesn't understand splat
+        instigation_list: Sequence[Union[ExternalScheduleData, ExternalSensorData]] = [
+            *external_repository_data.external_schedule_datas,  # type: ignore
+            *external_repository_data.external_sensor_datas,  # type: ignore
+        ]
         self._instigation_map = OrderedDict(
             (instigation_data.name, instigation_data) for instigation_data in instigation_list
         )
@@ -71,13 +72,16 @@ class ExternalRepository:
             for external_partition_set_data in external_repository_data.external_partition_set_datas
         )
 
-        self._asset_jobs = OrderedDict()
+        # pylint: disable=unsubscriptable-object
+        _asset_jobs: OrderedDict[str, List[ExternalAssetNode]] = OrderedDict()
         for asset_node in external_repository_data.external_asset_graph_data:
             for job_name in asset_node.job_names:
-                if job_name not in self._asset_jobs:
-                    self._asset_jobs[job_name] = [asset_node]
+                if job_name not in _asset_jobs:
+                    _asset_jobs[job_name] = [asset_node]
                 else:
-                    self._asset_jobs[job_name].append(asset_node)
+                    _asset_jobs[job_name].append(asset_node)
+        # pylint: disable=unsubscriptable-object
+        self._asset_jobs: OrderedDict[str, Sequence[ExternalAssetNode]] = OrderedDict(_asset_jobs)
 
     @property
     def name(self):
@@ -188,10 +192,10 @@ class ExternalRepository:
         return (
             self.external_repository_data.external_asset_graph_data
             if job_name is None
-            else self._asset_jobs.get(job_name)
+            else self._asset_jobs.get(job_name, [])
         )
 
-    def get_external_asset_node(self, asset_key: AssetKey) -> ExternalAssetNode:
+    def get_external_asset_node(self, asset_key: AssetKey) -> Optional[ExternalAssetNode]:
         matching = [
             asset_node
             for asset_node in self.external_repository_data.external_asset_graph_data
@@ -436,7 +440,7 @@ class ExternalSchedule:
         self._external_schedule_data = check.inst_param(
             external_schedule_data, "external_schedule_data", ExternalScheduleData
         )
-        self._handle = JobHandle(
+        self._handle = InstigatorHandle(
             self._external_schedule_data.name, check.inst_param(handle, "handle", RepositoryHandle)
         )
 
@@ -486,22 +490,45 @@ class ExternalSchedule:
     def get_external_origin_id(self):
         return self.get_external_origin().get_id()
 
-    # ScheduleState that represents the state of the schedule
-    # when there is no row in the schedule DB (for example, when
-    # the schedule is first created in code)
-    def get_default_instigation_state(self):
+    @property
+    def default_status(self) -> DefaultScheduleStatus:
+        return (
+            self._external_schedule_data.default_status
+            if self._external_schedule_data.default_status
+            else DefaultScheduleStatus.STOPPED
+        )
+
+    def get_current_instigator_state(self, stored_state: Optional["InstigatorState"]):
         from dagster.core.scheduler.instigation import (
             InstigatorState,
             InstigatorStatus,
             ScheduleInstigatorData,
         )
 
-        return InstigatorState(
-            self.get_external_origin(),
-            InstigatorType.SCHEDULE,
-            InstigatorStatus.STOPPED,
-            ScheduleInstigatorData(self.cron_schedule, start_timestamp=None),
-        )
+        if self.default_status == DefaultScheduleStatus.RUNNING:
+            if stored_state:
+                return stored_state
+
+            return InstigatorState(
+                self.get_external_origin(),
+                InstigatorType.SCHEDULE,
+                InstigatorStatus.AUTOMATICALLY_RUNNING,
+                ScheduleInstigatorData(self.cron_schedule, start_timestamp=None),
+            )
+        else:
+            # Ignore AUTOMATICALLY_RUNNING states in the DB if the default status
+            # isn't DefaultScheduleStatus.RUNNING - this would indicate that the schedule's
+            # default has been changed in code but there's still a lingering AUTOMATICALLY_RUNNING
+            # row in the database that can be ignored
+            if stored_state and stored_state.status != InstigatorStatus.AUTOMATICALLY_RUNNING:
+                return stored_state
+
+            return InstigatorState(
+                self.get_external_origin(),
+                InstigatorType.SCHEDULE,
+                InstigatorStatus.STOPPED,
+                ScheduleInstigatorData(self.cron_schedule, start_timestamp=None),
+            )
 
     def execution_time_iterator(self, start_timestamp):
         return schedule_execution_time_iterator(
@@ -514,13 +541,17 @@ class ExternalSensor:
         self._external_sensor_data = check.inst_param(
             external_sensor_data, "external_sensor_data", ExternalSensorData
         )
-        self._handle = JobHandle(
+        self._handle = InstigatorHandle(
             self._external_sensor_data.name, check.inst_param(handle, "handle", RepositoryHandle)
         )
 
     @property
     def name(self):
         return self._external_sensor_data.name
+
+    @property
+    def handle(self):
+        return self._handle
 
     @property
     def pipeline_name(self):
@@ -571,23 +602,49 @@ class ExternalSensor:
     def get_external_origin_id(self):
         return self.get_external_origin().get_id()
 
-    def get_default_instigation_state(self):
+    def get_current_instigator_state(self, stored_state: Optional["InstigatorState"]):
         from dagster.core.scheduler.instigation import (
             InstigatorState,
             InstigatorStatus,
             SensorInstigatorData,
         )
 
-        return InstigatorState(
-            self.get_external_origin(),
-            InstigatorType.SENSOR,
-            InstigatorStatus.STOPPED,
-            SensorInstigatorData(min_interval=self.min_interval_seconds),
-        )
+        if self.default_status == DefaultSensorStatus.RUNNING:
+            return (
+                stored_state
+                if stored_state
+                else InstigatorState(
+                    self.get_external_origin(),
+                    InstigatorType.SENSOR,
+                    InstigatorStatus.AUTOMATICALLY_RUNNING,
+                    SensorInstigatorData(min_interval=self.min_interval_seconds),
+                )
+            )
+        else:
+            # Ignore AUTOMATICALLY_RUNNING states in the DB if the default status
+            # isn't DefaultSensorStatus.RUNNING - this would indicate that the schedule's
+            # default has changed
+            if stored_state and stored_state.status != InstigatorStatus.AUTOMATICALLY_RUNNING:
+                return stored_state
+
+            return InstigatorState(
+                self.get_external_origin(),
+                InstigatorType.SENSOR,
+                InstigatorStatus.STOPPED,
+                SensorInstigatorData(min_interval=self.min_interval_seconds),
+            )
 
     @property
     def metadata(self):
         return self._external_sensor_data.metadata
+
+    @property
+    def default_status(self) -> DefaultSensorStatus:
+        return (
+            self._external_sensor_data.default_status
+            if self._external_sensor_data
+            else DefaultSensorStatus.STOPPED
+        )
 
 
 class ExternalPartitionSet:

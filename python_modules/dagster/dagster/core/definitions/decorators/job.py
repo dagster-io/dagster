@@ -14,8 +14,8 @@ from ..resource_definition import ResourceDefinition
 from ..version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
-    from ..partition import PartitionedConfig, PartitionsDefinition
     from ..executor_definition import ExecutorDefinition
+    from ..partition import PartitionedConfig, PartitionsDefinition
 
 
 class _Job:
@@ -105,16 +105,16 @@ def job(name: Callable[..., Any]) -> JobDefinition:
 
 @overload
 def job(
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
-    config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
-    tags: Optional[Dict[str, Any]] = None,
-    logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
-    executor_def: Optional["ExecutorDefinition"] = None,
-    hooks: Optional[AbstractSet[HookDefinition]] = None,
-    op_retry_policy: Optional[RetryPolicy] = None,
-    version_strategy: Optional[VersionStrategy] = None,
+    name: Optional[str] = ...,
+    description: Optional[str] = ...,
+    resource_defs: Optional[Dict[str, ResourceDefinition]] = ...,
+    config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = ...,
+    tags: Optional[Dict[str, Any]] = ...,
+    logger_defs: Optional[Dict[str, LoggerDefinition]] = ...,
+    executor_def: Optional["ExecutorDefinition"] = ...,
+    hooks: Optional[AbstractSet[HookDefinition]] = ...,
+    op_retry_policy: Optional[RetryPolicy] = ...,
+    version_strategy: Optional[VersionStrategy] = ...,
 ) -> _Job:
     ...
 
@@ -131,7 +131,7 @@ def job(
     op_retry_policy: Optional[RetryPolicy] = None,
     version_strategy: Optional[VersionStrategy] = None,
     partitions_def: Optional["PartitionsDefinition"] = None,
-) -> Union[_Job, JobDefinition]:
+) -> Union[JobDefinition, _Job]:
     """Creates a job with the specified parameters from the decorated graph/op invocation function.
 
     Using this decorator allows you to build an executable job by writing a function that invokes

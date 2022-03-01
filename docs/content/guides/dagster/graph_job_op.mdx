@@ -87,7 +87,9 @@ def do_something():
     ...
 
 
-@pipeline(mode_defs=[ModeDefinition(resource_defs={"external_service": external_service})])
+@pipeline(
+    mode_defs=[ModeDefinition(resource_defs={"external_service": external_service})]
+)
 def do_it_all():
     do_something()
 ```
@@ -120,7 +122,14 @@ With pipelines, if you wanted to execute a pipeline with resources for a test, y
 ```python file=/guides/dagster/graph_job_op/pipeline_mode_test.py
 from unittest.mock import MagicMock
 
-from dagster import ModeDefinition, ResourceDefinition, execute_pipeline, pipeline, resource, solid
+from dagster import (
+    ModeDefinition,
+    ResourceDefinition,
+    execute_pipeline,
+    pipeline,
+    resource,
+    solid,
+)
 
 
 @resource
@@ -138,7 +147,9 @@ def do_something():
         ModeDefinition(resource_defs={"external_service": external_service}),
         ModeDefinition(
             "test",
-            resource_defs={"external_service": ResourceDefinition.hardcoded_resource(MagicMock())},
+            resource_defs={
+                "external_service": ResourceDefinition.hardcoded_resource(MagicMock())
+            },
         ),
     ]
 )
@@ -174,7 +185,9 @@ def do_it_all():
 
 
 def test_do_it_all():
-    result = do_it_all.graph.execute_in_process(resources={"external_service": MagicMock()})
+    result = do_it_all.graph.execute_in_process(
+        resources={"external_service": MagicMock()}
+    )
     assert result.success
 ```
 
@@ -201,7 +214,9 @@ And here's a pipeline that includes these resources inside a pair of modes, alon
 ```python file=/guides/dagster/graph_job_op/prod_dev_modes.py startafter=start endbefore=end
 @pipeline(
     mode_defs=[
-        ModeDefinition("prod", resource_defs={"external_service": prod_external_service}),
+        ModeDefinition(
+            "prod", resource_defs={"external_service": prod_external_service}
+        ),
         ModeDefinition("dev", resource_defs={"external_service": dev_external_service}),
     ]
 )
@@ -353,7 +368,9 @@ def do_it_all():
     do_something()
 
 
-do_it_all_schedule = ScheduleDefinition(cron_schedule="0 0 * * *", pipeline_name="do_it_all")
+do_it_all_schedule = ScheduleDefinition(
+    cron_schedule="0 0 * * *", pipeline_name="do_it_all"
+)
 
 
 @repository
@@ -402,7 +419,11 @@ def do_it_all():
     do_something()
 
 
-@schedule(cron_schedule="0 0 * * *", pipeline_name="do_it_all", execution_timezone="US/Central")
+@schedule(
+    cron_schedule="0 0 * * *",
+    pipeline_name="do_it_all",
+    execution_timezone="US/Central",
+)
 def do_it_all_schedule(context):
     date = context.scheduled_execution_time.strftime("%Y-%m-%d")
     return {"solids": {"do_something": {"config": {"date": date}}}}
@@ -444,7 +465,8 @@ def do_something(_):
 
 
 do_it_all_preset = PresetDefinition(
-    "my_preset", run_config={"solids": {"do_something": {"config": {"param": "some_val"}}}}
+    "my_preset",
+    run_config={"solids": {"do_something": {"config": {"param": "some_val"}}}},
 )
 
 
@@ -503,7 +525,11 @@ def do_it_all():
 @daily_schedule(pipeline_name="do_it_all", start_date=datetime.datetime(2020, 1, 1))
 def do_it_all_schedule(date):
     return {
-        "solids": {"do_something_with_config": {"config": {"date": date.strftime("%Y-%m-%d %H")}}}
+        "solids": {
+            "do_something_with_config": {
+                "config": {"date": date.strftime("%Y-%m-%d %H")}
+            }
+        }
     }
 
 
@@ -770,7 +796,9 @@ def return_multi():
     yield Output(2, "two")
 
 
-@composite_solid(output_defs=[OutputDefinition(int, "one"), OutputDefinition(int, "two")])
+@composite_solid(
+    output_defs=[OutputDefinition(int, "one"), OutputDefinition(int, "two")]
+)
 def do_two_things():
     do_something()
     one, two = return_multi()
@@ -833,7 +861,10 @@ Each mode on a pipeline could have multiple executors, but each job can only hav
 from dagster import job, multiprocess_executor
 
 
-@job(executor_def=multiprocess_executor, config={"execution": {"config": {"max_concurrent": 5}}})
+@job(
+    executor_def=multiprocess_executor,
+    config={"execution": {"config": {"max_concurrent": 5}}},
+)
 def do_it_all():
     ...
 ```

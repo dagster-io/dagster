@@ -10,12 +10,17 @@ from contextlib import contextmanager
 from typing import Iterable, Optional
 
 import sqlalchemy as db
+from sqlalchemy.pool import NullPool
+from tqdm import tqdm
+from watchdog.events import PatternMatchingEventHandler
+from watchdog.observers import Observer
+
 from dagster import check, seven
 from dagster.config.source import StringSource
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log.base import EventLogRecord, EventRecordsFilter
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.core.storage.sql import (
     check_alembic_revision,
     create_engine,
@@ -31,10 +36,6 @@ from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
 )
 from dagster.utils import mkdir_p
-from sqlalchemy.pool import NullPool
-from tqdm import tqdm
-from watchdog.events import PatternMatchingEventHandler
-from watchdog.observers import Observer
 
 from ..schema import SqlEventLogStorageMetadata, SqlEventLogStorageTable
 from ..sql_event_log import RunShardedEventsCursor, SqlEventLogStorage
@@ -230,16 +231,21 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         with self.run_connection(run_id) as conn:
             conn.execute(insert_event_statement)
 
-        if (
-            event.is_dagster_event
-            and event.dagster_event.is_step_materialization
-            and event.dagster_event.asset_key
-        ):
+        if event.is_dagster_event and event.dagster_event.asset_key:
+            check.invariant(
+                event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
+                or event.dagster_event_type == DagsterEventType.ASSET_OBSERVATION,
+                "Can only store asset materializations and observations in index database",
+            )
             # mirror the event in the cross-run index database
             with self.index_connection() as conn:
                 conn.execute(insert_event_statement)
 
-            self.store_asset(event)
+            if event.dagster_event.is_step_materialization:
+                # Currently, only materializations are stored in the asset catalog.
+                # We will store observations after adding a column migration to
+                # store latest asset observation timestamp in the asset key table.
+                self.store_asset(event)
 
     def get_event_records(
         self,
@@ -256,13 +262,13 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         check.opt_int_param(limit, "limit")
         check.bool_param(ascending, "ascending")
 
-        is_asset_query = (
-            event_records_filter
-            and event_records_filter.event_type == DagsterEventType.ASSET_MATERIALIZATION
+        is_asset_query = event_records_filter and (
+            event_records_filter.event_type == DagsterEventType.ASSET_MATERIALIZATION
+            or event_records_filter.event_type == DagsterEventType.ASSET_OBSERVATION
         )
         if is_asset_query:
-            # asset materializations get mirrored into the index shard, so no custom run shard-aware
-            # cursor logic needed
+            # asset materializations and observations get mirrored into the index shard, so no
+            # custom run shard-aware cursor logic needed
             return super(SqliteEventLogStorage, self).get_event_records(
                 event_records_filter=event_records_filter, limit=limit, ascending=ascending
             )
@@ -308,7 +314,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             else None
         )
         run_records = self._instance.get_run_records(
-            filters=PipelineRunsFilter(updated_after=run_updated_after),
+            filters=RunsFilter(updated_after=run_updated_after),
             order_by="update_timestamp",
             ascending=ascending,
         )

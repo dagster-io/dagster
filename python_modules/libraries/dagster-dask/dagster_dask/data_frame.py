@@ -1,6 +1,7 @@
 import contextlib
 
 import dask.dataframe as dd
+
 from dagster import (
     Any,
     AssetMaterialization,
@@ -9,9 +10,9 @@ from dagster import (
     DagsterType,
     Enum,
     EnumValue,
-    EventMetadataEntry,
     Field,
     Int,
+    MetadataEntry,
     Permissive,
     Selector,
     Shape,
@@ -482,7 +483,7 @@ def df_type_check(_, value):
         success=True,
         metadata_entries=[
             # string cast columns since they may be things like datetime
-            EventMetadataEntry.json({"columns": list(map(str, value.columns))}, "metadata"),
+            MetadataEntry.json({"columns": list(map(str, value.columns))}, "metadata"),
         ],
     )
 

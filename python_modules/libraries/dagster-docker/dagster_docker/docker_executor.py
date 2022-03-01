@@ -2,9 +2,11 @@ import os
 from typing import List
 
 import docker
+from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
+
 from dagster import check, executor
 from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
-from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, EventMetadataEntry
+from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.retries import RetryMode, get_retries_config
 from dagster.core.executor.base import Executor
@@ -14,7 +16,6 @@ from dagster.core.executor.step_delegating.step_handler.base import StepHandler,
 from dagster.serdes.utils import hash_str
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import experimental
-from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
 
 
 @executor(
@@ -29,6 +30,30 @@ from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, v
 )
 @experimental
 def docker_executor(init_context: InitExecutorContext) -> Executor:
+    """
+    Executor which launches steps as Docker containers.
+
+    To use the `docker_executor`, set it as the `executor_def` when defining a job:
+
+    .. literalinclude:: ../../../../../../python_modules/libraries/dagster-docker/dagster_docker_tests/test_example_executor.py
+       :start-after: start_marker
+       :end-before: end_marker
+       :language: python
+
+    Then you can configure the executor with run config as follows:
+
+    .. code-block:: YAML
+
+        execution:
+          config:
+            registry: ...
+            network: ...
+            networks: ...
+            container_kwargs: ...
+
+    If you're using the DockerRunLauncher, configuration set on the containers created by the run
+    launcher will also be set on the containers that are created for each step.
+    """
     from . import DockerRunLauncher
 
     image = init_context.executor_config.get("image")
@@ -165,8 +190,8 @@ class DockerStepHandler(StepHandler):
                 message="Launching step in Docker container",
                 event_specific_data=EngineEventData(
                     [
-                        EventMetadataEntry.text(step_key, "Step key"),
-                        EventMetadataEntry.text(step_container.id, "Docker container id"),
+                        MetadataEntry.text(step_key, "Step key"),
+                        MetadataEntry.text(step_container.id, "Docker container id"),
                     ],
                 ),
             )

@@ -5,7 +5,7 @@ import styled from 'styled-components/macro';
 
 export interface SVGViewportInteractor {
   onMouseDown(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>): void;
-  onWheel(viewport: SVGViewport, event: React.MouseEvent<HTMLDivElement>): void;
+  onWheel(viewport: SVGViewport, event: WheelEvent): void;
   render?(viewport: SVGViewport): React.ReactElement<any> | null;
 }
 
@@ -91,7 +91,7 @@ const PanAndZoomInteractor: SVGViewportInteractor = {
     event.stopPropagation();
   },
 
-  onWheel(viewport: SVGViewport, event: React.WheelEvent<HTMLDivElement>) {
+  onWheel(viewport: SVGViewport, event: WheelEvent) {
     const cursorPosition = viewport.getOffsetXY(event);
     if (!cursorPosition) {
       return;
@@ -212,9 +212,47 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     minScale: 0,
   };
 
+  resizeObserver: any | undefined;
+
   componentDidMount() {
     this.autocenter();
+
+    // The wheel event cannot be prevented via the `onWheel` handler.
+    document.addEventListener('wheel', this.onWheel, {passive: false});
+
+    // The op/asset graphs clip rendered nodes to the visible region, so changes to the
+    // size of the viewport need to cause re-renders. Otherwise you expand the window
+    // and see nothing in the newly visible areas.
+    if (
+      this.element.current &&
+      this.element.current instanceof HTMLElement &&
+      'ResizeObserver' in window
+    ) {
+      const RO = window['ResizeObserver'] as any;
+      this.resizeObserver = new RO(() => {
+        window.requestAnimationFrame(() => {
+          this.forceUpdate();
+        });
+      });
+      this.resizeObserver.observe(this.element.current);
+    }
   }
+
+  componentWillUnmount() {
+    document.removeEventListener('wheel', this.onWheel);
+    this.resizeObserver?.disconnect();
+  }
+
+  onWheel = (e: WheelEvent) => {
+    const container = this.element.current;
+    // If the wheel event occurs within our SVG container, prevent it from zooming
+    // the document, and handle it with the interactor.
+    if (container && e.target instanceof Node && container.contains(e.target)) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.props.interactor.onWheel(this, e);
+    }
+  };
 
   cancelAnimations() {
     if (this._animation) {
@@ -319,6 +357,21 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     return this.props.maxZoom;
   }
 
+  public getViewport() {
+    let viewport = {top: 0, left: 0, right: 0, bottom: 0};
+    if (this.element.current) {
+      const el = this.element.current!;
+      const {width, height} = el.getBoundingClientRect();
+      viewport = {
+        left: -this.state.x / this.state.scale,
+        top: -this.state.y / this.state.scale,
+        right: (-this.state.x + width) / this.state.scale,
+        bottom: (-this.state.y + height) / this.state.scale,
+      };
+    }
+    return viewport;
+  }
+
   onZoomAndCenter = (event: React.MouseEvent<HTMLDivElement>) => {
     const offsetXY = this.getOffsetXY(event);
     if (!offsetXY) {
@@ -346,24 +399,11 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
     const {children, onKeyDown, onClick, interactor, backgroundColor} = this.props;
     const {x, y, scale} = this.state;
 
-    let viewport = {top: 0, left: 0, right: 0, bottom: 0};
-    if (this.element.current) {
-      const el = this.element.current!;
-      const {width, height} = el.getBoundingClientRect();
-      viewport = {
-        left: -this.state.x / this.state.scale,
-        top: -this.state.y / this.state.scale,
-        right: (-this.state.x + width) / this.state.scale,
-        bottom: (-this.state.y + height) / this.state.scale,
-      };
-    }
-
     return (
       <div
         ref={this.element}
         style={Object.assign({backgroundColor}, SVGViewportStyles)}
         onMouseDown={(e) => interactor.onMouseDown(this, e)}
-        onWheel={(e) => interactor.onWheel(this, e)}
         onDoubleClick={this.onDoubleClick}
         onClick={onClick}
         onKeyDown={onKeyDown}
@@ -375,7 +415,7 @@ export class SVGViewport extends React.Component<SVGViewportProps, SVGViewportSt
             transform: `matrix(${scale}, 0, 0, ${scale}, ${x}, ${y})`,
           }}
         >
-          {children(this.state, viewport)}
+          {children(this.state, this.getViewport())}
         </div>
         {interactor.render && interactor.render(this)}
       </div>

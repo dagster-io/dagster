@@ -7,6 +7,7 @@ from contextlib import contextmanager
 import mock
 import pytest
 from click.testing import CliRunner
+
 from dagster import (
     ModeDefinition,
     Out,
@@ -237,12 +238,12 @@ def fail_op(context):
     raise Exception("FAILURE OP")
 
 
-@graph()
+@job(executor_def=in_process_executor)
 def my_stdout():
     spew_op()
 
 
-@graph()
+@job(executor_def=in_process_executor)
 def my_stderr():
     fail_op()
 

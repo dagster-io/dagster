@@ -2,8 +2,9 @@ from contextlib import contextmanager
 
 import sqlalchemy as db
 from alembic import op
-from dagster import check
 from sqlalchemy.engine import reflection
+
+from dagster import check
 
 
 def get_inspector():
@@ -214,3 +215,43 @@ def create_event_log_event_idx():
         ["dagster_event_type", "id"],
         mysql_length={"dagster_event_type": 64},
     )
+
+
+def create_run_range_indices():
+    if not has_table("runs"):
+        return
+    indices = [x.get("name") for x in get_inspector().get_indexes("runs")]
+    if not "idx_run_range" in indices:
+        op.create_index(
+            "idx_run_range",
+            "runs",
+            ["status", "update_timestamp", "create_timestamp"],
+            unique=False,
+            mysql_length={
+                "status": 32,
+                "update_timestamp": 8,
+                "create_timestamp": 8,
+            },
+        )
+
+
+def add_run_record_start_end_timestamps():
+    if not has_table("runs"):
+        return
+
+    if has_column("runs", "start_time"):
+        return
+
+    op.add_column("runs", db.Column("start_time", db.Float))
+    op.add_column("runs", db.Column("end_time", db.Float))
+
+
+def drop_run_record_start_end_timestamps():
+    if not has_table("runs"):
+        return
+
+    if not has_column("runs", "start_time"):
+        return
+
+    op.drop_column("runs", "start_time")
+    op.drop_column("runs", "end_time")

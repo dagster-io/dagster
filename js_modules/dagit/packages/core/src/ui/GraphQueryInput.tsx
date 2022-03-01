@@ -1,13 +1,15 @@
-import {Intent} from '@blueprintjs/core';
+import {Intent, PopoverPosition} from '@blueprintjs/core';
 import {
   Box,
   ButtonWIP,
+  Checkbox,
   ColorsWIP,
   IconWIP,
   MenuItemWIP,
   MenuWIP,
   Popover,
   TextInput,
+  Tooltip,
 } from '@dagster-io/ui';
 import isEqual from 'lodash/isEqual';
 import uniq from 'lodash/uniq';
@@ -17,6 +19,7 @@ import styled from 'styled-components/macro';
 
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
 import {dynamicKeyWithoutIndex, isDynamicStep} from '../gantt/DynamicStepSupport';
+import {GraphExplorerSolidHandleFragment_solid} from '../pipelines/types/GraphExplorerSolidHandleFragment';
 import {workspacePipelinePath} from '../workspace/workspacePath';
 
 interface GraphQueryInputProps {
@@ -27,6 +30,7 @@ interface GraphQueryInputProps {
   autoFocus?: boolean;
   presets?: {name: string; value: string}[];
   width?: string | number;
+  popoverPosition?: PopoverPosition;
   className?: string;
   disabled?: boolean;
 
@@ -37,6 +41,9 @@ interface GraphQueryInputProps {
     isJob: boolean;
   };
 
+  flattenGraphsEnabled?: boolean;
+  flattenGraphs?: boolean;
+  setFlattenGraphs?: () => void;
   onChange: (value: string) => void;
   onKeyDown?: (e: React.KeyboardEvent<any>) => void;
   onFocus?: () => void;
@@ -46,6 +53,11 @@ interface GraphQueryInputProps {
 interface ActiveSuggestionInfo {
   text: string;
   idx: number;
+}
+
+interface SuggestionItem {
+  name: string;
+  isGraph: boolean;
 }
 
 /** Generates placeholder text for the solid query box that includes a
@@ -99,11 +111,22 @@ const intentToStrokeColor = (intent: Intent | undefined) => {
   }
 };
 
-const buildSuggestions = (lastElementName: string, items: GraphQueryItem[], suffix: string) => {
-  const available = items.map((s) => s.name);
-  for (const name of available) {
-    if (isDynamicStep(name)) {
-      available.push(dynamicKeyWithoutIndex(name));
+const buildSuggestions = (
+  lastElementName: string,
+  items: GraphQueryItem[] | GraphExplorerSolidHandleFragment_solid[],
+  suffix: string,
+) => {
+  const available: SuggestionItem[] = items.map((item) => {
+    const solidItem = item as GraphExplorerSolidHandleFragment_solid;
+    const isGraph =
+      solidItem.definition && solidItem.definition.__typename === 'CompositeSolidDefinition';
+
+    return {name: item.name, isGraph};
+  });
+
+  for (const item of available) {
+    if (isDynamicStep(item.name)) {
+      available.push({name: dynamicKeyWithoutIndex(item.name), isGraph: item.isGraph});
     }
   }
 
@@ -112,11 +135,11 @@ const buildSuggestions = (lastElementName: string, items: GraphQueryItem[], suff
     lastElementLower && !suffix
       ? uniq(available)
           .sort()
-          .filter((n) => n.toLowerCase().startsWith(lastElementLower))
+          .filter((n) => n.name.toLowerCase().startsWith(lastElementLower))
       : [];
 
   // No need to show a match if our string exactly matches the one suggestion.
-  if (matching.length === 1 && matching[0].toLowerCase() === lastElementLower) {
+  if (matching.length === 1 && matching[0].name.toLowerCase() === lastElementLower) {
     return [];
   }
 
@@ -129,6 +152,7 @@ export const GraphQueryInput = React.memo(
     const [focused, setFocused] = React.useState<boolean>(false);
     const [pendingValue, setPendingValue] = React.useState<string>(props.value);
     const inputRef = React.useRef<HTMLInputElement>(null);
+    const flattenGraphsEnabled = props.flattenGraphsEnabled || false;
 
     React.useEffect(() => {
       // props.value is our source of truth, but we hold "un-committed" changes in
@@ -147,25 +171,21 @@ export const GraphQueryInput = React.memo(
 
     const onConfirmSuggestion = (suggestion: string) => {
       const preceding = lastClause ? pendingValue.substr(0, lastClause.index) : '';
-      setPendingValue(preceding + prefix + suggestion + suffix);
+      setPendingValue(preceding + prefix + `"${suggestion}"` + suffix);
     };
 
     React.useEffect(() => {
-      if (!active && suggestions.length) {
-        setActive({text: suggestions[0], idx: 0});
-        return;
-      }
       if (!active) {
         return;
       }
       // Relocate the currently active item in the latest suggestions list
-      const pos = suggestions.findIndex((a) => a === active.text);
+      const pos = suggestions.map((a) => a.name).findIndex((a) => a === active.text);
 
       // The new index is the index of the active item, or whatever item
       // is now at it's location if it's gone, bounded to the array.
       let nextIdx = pos !== -1 ? pos : active.idx;
       nextIdx = Math.max(0, Math.min(suggestions.length - 1, nextIdx));
-      const nextText = suggestions[nextIdx];
+      const nextText = suggestions[nextIdx].name;
 
       if (nextIdx !== active.idx || nextText !== active.text) {
         setActive({text: nextText, idx: nextIdx});
@@ -189,6 +209,7 @@ export const GraphQueryInput = React.memo(
         } else {
           e.currentTarget.blur();
         }
+        setActive(null);
       }
 
       // The up/down arrow keys shift selection in the dropdown.
@@ -198,31 +219,88 @@ export const GraphQueryInput = React.memo(
         e.preventDefault();
         let idx = (active ? active.idx : -1) + shift;
         idx = Math.max(0, Math.min(idx, suggestions.length - 1));
-        setActive({text: suggestions[idx], idx});
+        setActive({text: suggestions[idx].name, idx});
       }
 
       props.onKeyDown?.(e);
     };
 
+    const OpSelectionWrapperDivRef = React.useRef<HTMLDivElement>(null);
+
+    React.useEffect(() => {
+      const clickListener = (event: MouseEvent) => {
+        const OpSelectionWrapperDivElement = OpSelectionWrapperDivRef.current;
+        const inputElement = inputRef.current;
+        const {target} = event;
+
+        if (!flattenGraphsEnabled) {
+          return;
+        }
+        // Make TypeScript happy
+        if (
+          OpSelectionWrapperDivElement == null ||
+          inputElement == null ||
+          !(target instanceof Node)
+        ) {
+          return;
+        }
+
+        // `true` if user clicked on either the `OpSelectionWrapperDivElement` itself, or its descendant
+        const shouldWrapperGetFocus = OpSelectionWrapperDivElement.contains(target);
+        setFocused(shouldWrapperGetFocus);
+
+        const shouldTextInputGetFocus = inputElement.contains(target);
+        if (shouldTextInputGetFocus) {
+          inputElement.focus();
+        }
+      };
+
+      document.addEventListener('click', clickListener);
+
+      return () => {
+        document.removeEventListener('click', clickListener);
+      };
+    }, [flattenGraphsEnabled]);
+
     const uncomitted = (pendingValue || '*') !== (props.value || '*');
+    const flattenGraphsFlag = props.flattenGraphs ? '!' : '';
+
+    const opCountInfo = props.linkToPreview && (
+      <OpCountWrap $hasWrap={flattenGraphsEnabled}>
+        {`${filterByQuery(props.items, pendingValue).all.length} matching ops`}
+        <Link
+          target="_blank"
+          style={{display: 'flex', alignItems: 'center', gap: 4}}
+          onMouseDown={(e) => e.currentTarget.click()}
+          to={workspacePipelinePath({
+            ...props.linkToPreview,
+            pipelineName: `${props.linkToPreview.pipelineName}~${flattenGraphsFlag}${pendingValue}`,
+          })}
+        >
+          Graph Preview <IconWIP color={ColorsWIP.Link} name="open_in_new" />
+        </Link>
+      </OpCountWrap>
+    );
 
     return (
       <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
         <Popover
+          enforceFocus={!flattenGraphsEnabled} // Defer focus to be manually managed
           isOpen={focused}
-          position="top-left"
+          position={props.popoverPosition || 'top-left'}
           content={
             suggestions.length ? (
-              <MenuWIP style={{width: props.width || '30vw'}}>
+              <MenuWIP style={{width: props.width || '24vw'}}>
                 {suggestions.slice(0, 15).map((suggestion) => (
                   <MenuItemWIP
-                    key={suggestion}
-                    text={suggestion}
-                    active={active ? active.text === suggestion : false}
+                    icon={suggestion.isGraph ? 'job' : 'op'}
+                    key={suggestion.name}
+                    text={suggestion.name}
+                    active={active ? active.text === suggestion.name : false}
                     onMouseDown={(e: React.MouseEvent<any>) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      onConfirmSuggestion(suggestion);
+                      onConfirmSuggestion(suggestion.name);
                     }}
                   />
                 ))}
@@ -232,7 +310,7 @@ export const GraphQueryInput = React.memo(
             )
           }
         >
-          <div style={{position: 'relative'}}>
+          <div style={{position: 'relative'}} ref={OpSelectionWrapperDivRef}>
             <TextInput
               disabled={props.disabled}
               value={pendingValue}
@@ -242,36 +320,51 @@ export const GraphQueryInput = React.memo(
               placeholder={placeholderTextForItems(props.placeholder, props.items)}
               onChange={(e: React.ChangeEvent<any>) => setPendingValue(e.target.value)}
               onFocus={() => {
-                setFocused(true);
+                if (!flattenGraphsEnabled) {
+                  // Defer focus to be manually managed
+                  setFocused(true);
+                }
                 props.onFocus?.();
               }}
               onBlur={() => {
-                setFocused(false);
+                if (!flattenGraphsEnabled) {
+                  // Defer focus to be manually managed
+                  setFocused(false);
+                }
                 props.onChange(pendingValue);
                 props.onBlur?.(pendingValue);
               }}
               onKeyDown={onKeyDown}
-              style={{width: props.width || '30vw'}}
+              style={{width: props.width || '24vw'}}
               className={props.className}
               ref={inputRef}
             />
             {focused && uncomitted && <EnterHint>Enter</EnterHint>}
-            {focused && props.linkToPreview && (
-              <OpCountWrap>
-                {`${filterByQuery(props.items, pendingValue).all.length} matching ops`}
-                <Link
-                  target="_blank"
-                  style={{display: 'flex', alignItems: 'center', gap: 4}}
-                  onMouseDown={(e) => e.currentTarget.click()}
-                  to={workspacePipelinePath({
-                    ...props.linkToPreview,
-                    pipelineName: `${props.linkToPreview.pipelineName}~${pendingValue}`,
-                  })}
-                >
-                  Graph Preview <IconWIP color={ColorsWIP.Link} name="open_in_new" />
-                </Link>
-              </OpCountWrap>
-            )}
+            {focused &&
+              props.linkToPreview &&
+              (flattenGraphsEnabled ? (
+                <OpInfoWrap>
+                  <Box flex={{direction: 'row', alignItems: 'center', gap: 8}}>
+                    <Checkbox
+                      label="Flatten subgraphs"
+                      checked={props.flattenGraphs ?? false}
+                      onChange={() => {
+                        props.setFlattenGraphs?.();
+                      }}
+                      format="switch"
+                    />
+                    <Tooltip
+                      content="Flatten subgraphs to select ops within nested graphs"
+                      placement="right"
+                    >
+                      <IconWIP name="info" color={ColorsWIP.Gray500} />
+                    </Tooltip>
+                  </Box>
+                  {opCountInfo}
+                </OpInfoWrap>
+              ) : (
+                opCountInfo
+              ))}
           </div>
         </Popover>
         {props.presets &&
@@ -319,9 +412,9 @@ export const GraphQueryInput = React.memo(
     isEqual(prevProps.presets, nextProps.presets),
 );
 
-const OpCountWrap = styled.div`
+const OpInfoWrap = styled.div`
   width: 350px;
-  padding: 10px;
+  padding: 10px 16px 10px 16px;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -334,6 +427,10 @@ const OpCountWrap = styled.div`
   box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
   z-index: 2;
   left: 0;
+`;
+
+const OpCountWrap = styled(OpInfoWrap)<{$hasWrap: boolean}>`
+  margin-top: ${(p) => (p.$hasWrap ? 0 : 2)}px;
 `;
 
 const EnterHint = styled.div`

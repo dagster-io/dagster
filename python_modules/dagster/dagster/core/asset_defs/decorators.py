@@ -1,7 +1,8 @@
-from typing import Any, Callable, Dict, Mapping, Optional, Set
+from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Set, Union, cast, overload
 
 from dagster import check
 from dagster.builtins import Nothing
+from dagster.config import Field
 from dagster.core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster.core.definitions.decorators.op import _Op
 from dagster.core.definitions.events import AssetKey
@@ -16,11 +17,38 @@ from .asset import AssetsDefinition
 from .asset_in import AssetIn
 from .partition_mapping import PartitionMapping
 
+ASSET_DEPENDENCY_METADATA_KEY = ".dagster/asset_deps"
+
+
+@overload
+def asset(
+    name: Callable[..., Any],
+) -> AssetsDefinition:
+    ...
+
+
+@overload
+def asset(
+    name: Optional[str] = ...,
+    namespace: Optional[Sequence[str]] = ...,
+    ins: Optional[Mapping[str, AssetIn]] = ...,
+    non_argument_deps: Optional[Set[AssetKey]] = ...,
+    metadata: Optional[Mapping[str, Any]] = ...,
+    description: Optional[str] = ...,
+    required_resource_keys: Optional[Set[str]] = ...,
+    io_manager_key: Optional[str] = ...,
+    compute_kind: Optional[str] = ...,
+    dagster_type: Optional[DagsterType] = ...,
+    partitions_def: Optional[PartitionsDefinition] = ...,
+    partition_mappings: Optional[Mapping[str, PartitionMapping]] = ...,
+) -> Callable[[Callable[..., Any]], AssetsDefinition]:
+    ...
+
 
 @experimental_decorator
 def asset(
-    name: Optional[str] = None,
-    namespace: Optional[str] = None,
+    name: Union[Callable[..., Any], Optional[str]] = None,
+    namespace: Optional[Sequence[str]] = None,
     ins: Optional[Mapping[str, AssetIn]] = None,
     non_argument_deps: Optional[Set[AssetKey]] = None,
     metadata: Optional[Mapping[str, Any]] = None,
@@ -31,7 +59,7 @@ def asset(
     dagster_type: Optional[DagsterType] = None,
     partitions_def: Optional[PartitionsDefinition] = None,
     partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
-) -> Callable[[Callable[..., Any]], AssetsDefinition]:
+) -> Union[AssetsDefinition, Callable[[Callable[..., Any]], AssetsDefinition]]:
     """Create a definition for how to compute an asset.
 
     A software-defined asset is the combination of:
@@ -46,7 +74,7 @@ def asset(
     Args:
         name (Optional[str]): The name of the asset.  If not provided, defaults to the name of the
             decorated function.
-        namespace (Optional[str]): The namespace that the asset resides in.  The namespace + the
+        namespace (Optional[Sequence[str]]): The namespace that the asset resides in.  The namespace + the
             name forms the asset key.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
             and namespaces.
@@ -81,7 +109,7 @@ def asset(
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
         return _Asset(
-            name=name,
+            name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             namespace=namespace,
             ins=ins,
             non_argument_deps=non_argument_deps,
@@ -102,7 +130,7 @@ class _Asset:
     def __init__(
         self,
         name: Optional[str] = None,
-        namespace: Optional[str] = None,
+        namespace: Optional[Sequence[str]] = None,
         ins: Optional[Mapping[str, AssetIn]] = None,
         non_argument_deps: Optional[Set[AssetKey]] = None,
         metadata: Optional[Mapping[str, Any]] = None,
@@ -115,7 +143,8 @@ class _Asset:
         partition_mappings: Optional[Mapping[str, PartitionMapping]] = None,
     ):
         self.name = name
-        self.namespace = namespace
+        # if user inputs a single string, coerce to list
+        self.namespace = [namespace] if isinstance(namespace, str) else namespace
         self.ins = ins or {}
         self.non_argument_deps = non_argument_deps
         self.metadata = metadata
@@ -130,9 +159,7 @@ class _Asset:
     def __call__(self, fn: Callable) -> AssetsDefinition:
         asset_name = self.name or fn.__name__
 
-        ins_by_input_names: Mapping[str, In] = build_asset_ins(
-            fn, self.namespace, self.ins or {}, self.non_argument_deps
-        )
+        asset_ins = build_asset_ins(fn, self.namespace, self.ins or {}, self.non_argument_deps)
 
         partition_fn: Optional[Callable] = None
         if self.partitions_def:
@@ -140,8 +167,9 @@ class _Asset:
             def partition_fn(context):  # pylint: disable=function-redefined
                 return [context.partition_key]
 
+        out_asset_key = AssetKey(list(filter(None, [*(self.namespace or []), asset_name])))
         out = Out(
-            asset_key=AssetKey(list(filter(None, [self.namespace, asset_name]))),
+            asset_key=out_asset_key,
             metadata=self.metadata or {},
             io_manager_key=self.io_manager_key,
             dagster_type=self.dagster_type,
@@ -149,26 +177,29 @@ class _Asset:
             asset_partitions=partition_fn,
         )
         op = _Op(
-            name=asset_name,
+            name="__".join(out_asset_key.path),
             description=self.description,
-            ins={
-                input_name: in_def for input_name, in_def in ins_by_input_names.items()
-            },  # convert Mapping object to dict
+            ins=asset_ins,
             out=out,
             required_resource_keys=self.required_resource_keys,
             tags={"kind": self.compute_kind} if self.compute_kind else None,
+            config_schema={
+                "assets": {
+                    "input_partitions": Field(dict, is_required=False),
+                    "output_partitions": Field(dict, is_required=False),
+                }
+            },
         )(fn)
 
-        out_asset_key = AssetKey(list(filter(None, [self.namespace, asset_name])))
         return AssetsDefinition(
             input_names_by_asset_key={
-                in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
+                in_def.asset_key: input_name for input_name, in_def in asset_ins.items()
             },
             output_names_by_asset_key={out_asset_key: "result"},
             op=op,
             partitions_def=self.partitions_def,
             partition_mappings={
-                ins_by_input_names[input_name].asset_key: partition_mapping
+                asset_ins[input_name].asset_key: partition_mapping
                 for input_name, partition_mapping in self.partition_mappings.items()
             }
             if self.partition_mappings
@@ -184,6 +215,8 @@ def multi_asset(
     non_argument_deps: Optional[Set[AssetKey]] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[Set[str]] = None,
+    compute_kind: Optional[str] = None,
+    internal_asset_deps: Optional[Mapping[str, Set[AssetKey]]] = None,
 ) -> Callable[[Callable[..., Any]], AssetsDefinition]:
     """Create a combined definition of multiple assets that are computed using the same op and same
     upstream assets.
@@ -200,41 +233,106 @@ def multi_asset(
         io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
             output of the op as an asset, and for loading it in downstream ops
             (default: "io_manager").
+        compute_kind (Optional[str]): A string to represent the kind of computation that produces
+            the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
+        internal_asset_deps (Optional[Mapping[str, Set[AssetKey]]]): By default, it is assumed
+            that all assets produced by a multi_asset depend on all assets that are consumed by that
+            multi asset. If this default is not correct, you pass in a map of output names to a
+            corrected set of AssetKeys that they depend on. Any AssetKeys in this list must be either
+            used as input to the asset or produced within the op.
     """
 
+    check.invariant(
+        all(out.asset_key is None or isinstance(out.asset_key, AssetKey) for out in outs.values()),
+        "The asset_key argument for Outs supplied to a multi_asset must be a constant or None, not a function. ",
+    )
+    internal_asset_deps = check.opt_dict_param(
+        internal_asset_deps, "internal_asset_deps", key_type=str, value_type=set
+    )
+
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
-        asset_name = name or fn.__name__
-        ins_by_input_names: Mapping[str, In] = build_asset_ins(
-            fn, None, ins or {}, non_argument_deps
-        )
+        op_name = name or fn.__name__
+        asset_ins = build_asset_ins(fn, None, ins or {}, non_argument_deps)
+        asset_outs = build_asset_outs(op_name, outs, asset_ins, internal_asset_deps or {})
 
         op = _Op(
-            name=asset_name,
+            name=op_name,
             description=description,
-            ins={
-                input_name: in_def for input_name, in_def in ins_by_input_names.items()
-            },  # convert Mapping object to dict
-            out=outs,
+            ins=asset_ins,
+            out=asset_outs,
             required_resource_keys=required_resource_keys,
+            tags={"kind": compute_kind} if compute_kind else None,
         )(fn)
 
         return AssetsDefinition(
             input_names_by_asset_key={
-                in_def.asset_key: input_name for input_name, in_def in ins_by_input_names.items()
+                in_def.asset_key: input_name for input_name, in_def in asset_ins.items()
             },
-            output_names_by_asset_key={AssetKey([name]): name for name in outs.keys()},
+            output_names_by_asset_key={
+                out_def.asset_key: output_name for output_name, out_def in asset_outs.items()  # type: ignore
+            },
             op=op,
         )
 
     return inner
 
 
+def build_asset_outs(
+    op_name: str,
+    outs: Mapping[str, Out],
+    ins: Mapping[str, In],
+    internal_asset_deps: Mapping[str, Set[AssetKey]],
+) -> Dict[str, Out]:
+
+    # if an AssetKey is not supplied, create one based off of the out's name
+    asset_keys_by_out_name = {
+        out_name: out.asset_key if isinstance(out.asset_key, AssetKey) else AssetKey([out_name])
+        for out_name, out in outs.items()
+    }
+
+    # update asset_key if necessary, add metadata indicating inter asset deps
+    outs = {
+        out_name: out._replace(
+            asset_key=asset_keys_by_out_name[out_name],
+            metadata=dict(
+                **(out.metadata or {}),
+                **(
+                    {ASSET_DEPENDENCY_METADATA_KEY: internal_asset_deps[out_name]}
+                    if out_name in internal_asset_deps
+                    else {}
+                ),
+            ),
+        )
+        for out_name, out in outs.items()
+    }
+
+    # validate that the internal_asset_deps make sense
+    valid_asset_deps = set(in_def.asset_key for in_def in ins.values())
+    valid_asset_deps.update(asset_keys_by_out_name.values())
+    for out_name, asset_keys in internal_asset_deps.items():
+        check.invariant(
+            out_name in outs,
+            f"Invalid out key '{out_name}' supplied to `internal_asset_deps` argument for multi-asset "
+            f"{op_name}. Must be one of the outs for this multi-asset {list(outs.keys())}.",
+        )
+        invalid_asset_deps = asset_keys.difference(valid_asset_deps)
+        check.invariant(
+            not invalid_asset_deps,
+            f"Invalid asset dependencies: {invalid_asset_deps} specified in `internal_asset_deps` "
+            f"argument for multi-asset '{op_name}' on key '{out_name}'. Each specified asset key "
+            "must be associated with an input to the asset or produced by this asset. Valid "
+            f"keys: {valid_asset_deps}",
+        )
+
+    return outs
+
+
 def build_asset_ins(
     fn: Callable,
-    asset_namespace: Optional[str],
+    asset_namespace: Optional[Sequence[str]],
     asset_ins: Mapping[str, AssetIn],
     non_argument_deps: Optional[Set[AssetKey]],
-) -> Mapping[str, In]:
+) -> Dict[str, In]:
 
     non_argument_deps = check.opt_set_param(non_argument_deps, "non_argument_deps", AssetKey)
 
@@ -270,7 +368,7 @@ def build_asset_ins(
             dagster_type = None
 
         asset_key = asset_key or AssetKey(
-            list(filter(None, [namespace or asset_namespace, input_name]))
+            list(filter(None, [*(namespace or asset_namespace or []), input_name]))
         )
 
         ins[input_name] = In(
@@ -281,8 +379,8 @@ def build_asset_ins(
         )
 
     for asset_key in non_argument_deps:
-        stringified_asset_key = asset_key.to_string(legacy=True)
+        stringified_asset_key = "_".join(asset_key.path)
         if stringified_asset_key:
-            ins[str(stringified_asset_key)] = In(dagster_type=Nothing, asset_key=asset_key)
+            ins[stringified_asset_key] = In(dagster_type=Nothing, asset_key=asset_key)
 
     return ins

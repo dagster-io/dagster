@@ -11,7 +11,7 @@ from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     PipelineRun,
     PipelineRunStatus,
-    PipelineRunsFilter,
+    RunsFilter,
 )
 from dagster.core.storage.tags import PRIORITY_TAG
 from dagster.core.workspace import IWorkspace
@@ -125,7 +125,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
         queued_runs = self._get_queued_runs(instance)
 
         if not queued_runs:
-            self._logger.info("Poll returned no queued runs.")
+            self._logger.debug("Poll returned no queued runs.")
         else:
             self._logger.info("Retrieved {} queued runs, checking limits.".format(len(queued_runs)))
 
@@ -170,10 +170,11 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
             yield error_info
 
-        self._logger.info("Launched {} runs.".format(num_dequeued_runs))
+        if num_dequeued_runs > 0:
+            self._logger.info("Launched {} runs.".format(num_dequeued_runs))
 
     def _get_queued_runs(self, instance):
-        queued_runs_filter = PipelineRunsFilter(statuses=[PipelineRunStatus.QUEUED])
+        queued_runs_filter = RunsFilter(statuses=[PipelineRunStatus.QUEUED])
 
         # Reversed for fifo ordering
         # Note: should add a maximum fetch limit https://github.com/dagster-io/dagster/issues/3339
@@ -182,7 +183,7 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
 
     def _get_in_progress_runs(self, instance):
         # Note: should add a maximum fetch limit https://github.com/dagster-io/dagster/issues/3339
-        return instance.get_runs(filters=PipelineRunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
+        return instance.get_runs(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
 
     def _priority_sort(self, runs):
         def get_priority(run):
@@ -212,7 +213,6 @@ class QueuedRunCoordinatorDaemon(IntervalDaemon):
             pipeline_name=run.pipeline_name,
         )
         event_record = EventLogEntry(
-            message="",
             user_message="",
             level=logging.INFO,
             pipeline_name=run.pipeline_name,

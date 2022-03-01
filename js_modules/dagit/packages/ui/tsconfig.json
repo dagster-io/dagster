@@ -17,6 +17,7 @@
       "noImplicitAny": true,
       "strictNullChecks": true,
       "suppressImplicitAnyIndexErrors": true,
+      "noUncheckedIndexedAccess": true,
       "allowSyntheticDefaultImports": true,
       "types": [
         "jest",

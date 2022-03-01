@@ -56,7 +56,7 @@ def max_rx_bytes():
         return int(env_set)
 
     # default 50 MB
-    return 50 * (10 ** 6)
+    return 50 * (10**6)
 
 
 def max_send_bytes():
@@ -65,4 +65,4 @@ def max_send_bytes():
         return int(env_set)
 
     # default 50 MB
-    return 50 * (10 ** 6)
+    return 50 * (10**6)

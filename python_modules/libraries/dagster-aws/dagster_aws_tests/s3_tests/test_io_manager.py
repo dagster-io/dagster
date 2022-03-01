@@ -1,7 +1,19 @@
-from dagster import In, Int, Out, Output, VersionStrategy, job, op, resource
-from dagster.core.test_utils import instance_for_test
-from dagster_aws.s3.io_manager import s3_pickle_io_manager
+from dagster_aws.s3.io_manager import s3_pickle_asset_io_manager, s3_pickle_io_manager
 from dagster_aws.s3.utils import construct_s3_client
+
+from dagster import (
+    In,
+    Int,
+    Out,
+    Output,
+    VersionStrategy,
+    asset,
+    build_assets_job,
+    job,
+    op,
+    resource,
+)
+from dagster.core.test_utils import instance_for_test
 
 
 @resource
@@ -105,3 +117,41 @@ def test_memoization_s3_io_manager(mock_s3_bucket):
         result = memoized.execute_in_process(run_config=run_config, instance=instance)
         assert result.success
         assert len(result.all_node_events) == 0
+
+
+def define_assets_job():
+    @asset
+    def asset1():
+        return 1
+
+    @asset
+    def asset2(asset1):
+        return asset1 + 1
+
+    return build_assets_job(
+        name="assets",
+        assets=[asset1, asset2],
+        resource_defs={
+            "io_manager": s3_pickle_asset_io_manager,
+            "s3": s3_test_resource,
+        },
+    )
+
+
+def test_s3_pickle_asset_io_manager_execution(mock_s3_bucket):
+    assert not len(list(mock_s3_bucket.objects.all()))
+    inty_job = define_assets_job()
+
+    run_config = {"resources": {"io_manager": {"config": {"s3_bucket": mock_s3_bucket.name}}}}
+
+    result = inty_job.execute_in_process(run_config)
+
+    assert result.output_for_node("asset1") == 1
+    assert result.output_for_node("asset2") == 2
+
+    objects = list(mock_s3_bucket.objects.all())
+    assert len(objects) == 2
+    assert objects[0].bucket_name == "test-bucket"
+    assert objects[0].key == "dagster/asset1"
+    assert objects[1].bucket_name == "test-bucket"
+    assert objects[1].key == "dagster/asset2"

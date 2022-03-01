@@ -1,4 +1,5 @@
-import './blueprint.css';
+import './css/fonts.css';
+import './css/blueprint.css';
 
 export * from './components/Alert';
 export * from './components/BaseButton';
@@ -39,5 +40,6 @@ export * from './components/Toaster';
 export * from './components/TokenizingField';
 export * from './components/Tooltip';
 export * from './components/Trace';
+export * from './components/Warning';
 export * from './components/styles';
 export * from './components/useSuggestionsForString';

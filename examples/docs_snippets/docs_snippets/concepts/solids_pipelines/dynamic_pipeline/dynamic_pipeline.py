@@ -9,7 +9,9 @@ from dagster.utils import file_relative_path
 
 
 @op(
-    config_schema={"path": Field(str, default_value=file_relative_path(__file__, "sample"))},
+    config_schema={
+        "path": Field(str, default_value=file_relative_path(__file__, "sample"))
+    },
     out=DynamicOut(str),
 )
 def files_in_directory(context):

@@ -3,15 +3,21 @@ from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.solid_definition import SolidDefinition
+from dagster.core.definitions.time_window_partitions import (
+    TimeWindow,
+    TimeWindowPartitionsDefinition,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 
 if TYPE_CHECKING:
-    from .output import OutputContext
     from dagster.core.definitions.resource_definition import Resources
+    from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.log_manager import DagsterLogManager
     from dagster.core.types.dagster_type import DagsterType
-    from dagster.core.execution.context.system import StepExecutionContext
+
+    from .output import OutputContext
 
 
 class InputContext:
@@ -52,7 +58,7 @@ class InputContext:
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
     ):
-        from dagster.core.definitions.resource_definition import Resources, IContainsGenerator
+        from dagster.core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster.core.execution.build_resources import build_resources
 
         self._name = name
@@ -224,6 +230,63 @@ class InputContext:
         """
         return self.step_context.partition_key
 
+    @property
+    def has_asset_partitions(self) -> bool:
+        if self._step_context is not None:
+            return self._step_context.has_asset_partitions_for_input(self.name)
+        else:
+            return False
+
+    @property
+    def asset_partition_key(self) -> str:
+        """The partition key for input asset.
+
+        Raises an error if the input asset has no partitioning, or if the run covers a partition
+        range for the input asset.
+        """
+        return self.step_context.asset_partition_key_for_input(self.name)
+
+    @property
+    def asset_partition_key_range(self) -> PartitionKeyRange:
+        """The partition key range for input asset.
+
+        Raises an error if the input asset has no partitioning.
+        """
+        return self.step_context.asset_partition_key_range_for_input(self.name)
+
+    @property
+    def asset_partitions_time_window(self) -> TimeWindow:
+        """The time window for the partitions of the input asset.
+
+        Raises an error if either of the following are true:
+        - The input asset has no partitioning.
+        - The input asset is not partitioned with a TimeWindowPartitionsDefinition.
+        """
+        if self.upstream_output is None:
+            check.failed("InputContext needs upstream_output to get asset_partitions_time_window")
+
+        partitions_def = self.upstream_output.solid_def.output_def_named(
+            self.upstream_output.name
+        ).asset_partitions_def
+
+        if not partitions_def:
+            raise ValueError(
+                "Tried to get asset partitions for an output that does not correspond to a "
+                "partitioned asset."
+            )
+
+        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            raise ValueError(
+                "Tried to get asset partitions for an input that correponds to a partitioned "
+                "asset that is not partitioned with a TimeWindowPartitionsDefinition."
+            )
+
+        partition_key_range = self.asset_partition_key_range
+        return TimeWindow(
+            partitions_def.time_window_for_partition_key(partition_key_range.start).start,
+            partitions_def.time_window_for_partition_key(partition_key_range.end).end,
+        )
+
 
 def build_input_context(
     name: Optional[str] = None,
@@ -268,8 +331,8 @@ def build_input_context(
                 do_something
     """
     from dagster.core.execution.context.output import OutputContext
-    from dagster.core.types.dagster_type import DagsterType
     from dagster.core.execution.context_creation_pipeline import initialize_console_manager
+    from dagster.core.types.dagster_type import DagsterType
 
     name = check.opt_str_param(name, "name")
     metadata = check.opt_dict_param(metadata, "metadata", key_type=str)

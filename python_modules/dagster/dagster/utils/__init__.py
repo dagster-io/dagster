@@ -1,9 +1,11 @@
+import _thread as thread
 import contextlib
 import contextvars
 import datetime
 import errno
 import functools
 import inspect
+import multiprocessing
 import os
 import re
 import signal
@@ -15,16 +17,16 @@ import threading
 from collections import OrderedDict, defaultdict, namedtuple
 from datetime import timezone
 from enum import Enum
-from typing import TYPE_CHECKING, Callable, ContextManager, Generator, Generic, Iterator
+from typing import TYPE_CHECKING, Any, Callable, ContextManager, Generator, Generic, Iterator
 from typing import Mapping as TypingMapping
-from typing import Optional, Type, TypeVar, Union, cast
+from typing import Optional, Type, TypeVar, Union, cast, overload
 from warnings import warn
 
-import _thread as thread
 import yaml
+
 from dagster import check, seven
 from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
-from dagster.seven import IS_WINDOWS, multiprocessing
+from dagster.seven import IS_WINDOWS
 from dagster.seven.abc import Mapping
 
 from .merger import merge_dicts
@@ -38,6 +40,7 @@ else:
 if TYPE_CHECKING:
     from dagster.core.events import DagsterEvent
 
+T = TypeVar("T")
 
 EPOCH = datetime.datetime.utcfromtimestamp(0)
 
@@ -309,6 +312,16 @@ def safe_tempfile_path() -> Iterator[str]:
             os.unlink(path)
 
 
+@overload
+def ensure_gen(thing_or_gen: Generator[T, Any, Any]) -> Generator[T, Any, Any]:
+    pass
+
+
+@overload
+def ensure_gen(thing_or_gen: T) -> Generator[T, Any, Any]:
+    pass
+
+
 def ensure_gen(thing_or_gen):
     if not inspect.isgenerator(thing_or_gen):
 
@@ -373,8 +386,6 @@ def start_termination_thread(termination_event):
     int_thread.start()
 
 
-T = TypeVar("T")
-
 # Executes the next() function within an instance of the supplied context manager class
 # (leaving the context before yielding each result)
 def iterate_with_context(
@@ -438,7 +449,7 @@ class EventGenerationManager(Generic[GeneratedContext]):
         require_object: Optional[bool] = True,
     ):
         self.generator = check.generator(generator)
-        self.object_cls: Type[GeneratedContext] = check.type_param(object_cls, "object_cls")
+        self.object_cls: Type[GeneratedContext] = check.class_param(object_cls, "object_cls")
         self.require_object = check.bool_param(require_object, "require_object")
         self.object: Optional[GeneratedContext] = None
         self.did_setup = False

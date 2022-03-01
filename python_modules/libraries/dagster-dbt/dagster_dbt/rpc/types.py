@@ -1,6 +1,7 @@
 from typing import Any, Dict
 
 import requests
+
 from dagster import usable_as_dagster_type
 
 from ..types import DbtOutput

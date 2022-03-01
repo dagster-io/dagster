@@ -1,7 +1,8 @@
-from dagster import Array, Bool, Field, In, Noneable, Nothing, Out, Output, op
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
 from dagster_fivetran.types import FivetranOutput
 from dagster_fivetran.utils import generate_materializations
+
+from dagster import Array, Bool, Field, In, Noneable, Nothing, Out, Output, op
 
 
 @op(

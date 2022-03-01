@@ -1,9 +1,14 @@
+from typing import TYPE_CHECKING
+
 from dagster import check
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.utils.error import SerializableErrorInfo
 
+if TYPE_CHECKING:
+    from dagster.grpc.client import DagsterGrpcClient
 
-def sync_get_server_id(api_client):
+
+def sync_get_server_id(api_client: "DagsterGrpcClient") -> str:
     from dagster.grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)

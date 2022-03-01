@@ -6,31 +6,55 @@ from schema.charts.dagster.subschema.ingress import (
     FlowerIngressConfiguration,
     Ingress,
     IngressPath,
+    IngressPathType,
     IngressTLSConfiguration,
 )
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.utils.helm_template import HelmTemplate
 
 
-@pytest.fixture(name="template")
-def helm_template() -> HelmTemplate:
-    return HelmTemplate(
+@pytest.fixture(name="template_function")
+def helm_template_function():
+    return lambda output, model: HelmTemplate(
         helm_dir_path="helm/dagster",
         subchart_paths=["charts/dagster-user-deployments"],
-        output="templates/ingress.yaml",
-        model=models.ExtensionsV1beta1Ingress,
+        output=output,
+        model=model,
     )
 
 
-def test_ingress(template: HelmTemplate):
+@pytest.mark.parametrize(
+    argnames=["output", "model", "api_version"],
+    argvalues=[
+        (
+            "templates/ingress-v1beta1.yaml",
+            models.ExtensionsV1beta1Ingress,
+            "extensions/v1beta1/Ingress",
+        ),
+        (
+            "templates/ingress.yaml",
+            models.V1Ingress,
+            "networking.k8s.io/v1/Ingress",
+        ),
+    ],
+)
+def test_ingress(template_function, output, model, api_version):
+    template = template_function(output, model)
     helm_values = DagsterHelmValues.construct(
         ingress=Ingress.construct(
             enabled=True,
+            apiVersion=api_version,
             dagit=DagitIngressConfiguration.construct(
                 host="foobar.com",
                 path="bing",
+                pathType=IngressPathType.IMPLEMENTATION_SPECIFIC,
                 precedingPaths=[
-                    IngressPath(path="/*", serviceName="ssl-redirect", servicePort="use-annotion")
+                    IngressPath(
+                        path="/*",
+                        pathType=IngressPathType.IMPLEMENTATION_SPECIFIC,
+                        serviceName="ssl-redirect",
+                        servicePort="use-annotion",
+                    )
                 ],
             ),
         )
@@ -46,21 +70,49 @@ def test_ingress(template: HelmTemplate):
     assert rule.host == "foobar.com"
 
 
-def test_ingress_read_only(template: HelmTemplate):
+@pytest.mark.parametrize(
+    argnames=["output", "model", "api_version"],
+    argvalues=[
+        (
+            "templates/ingress-v1beta1.yaml",
+            models.ExtensionsV1beta1Ingress,
+            "extensions/v1beta1/Ingress",
+        ),
+        (
+            "templates/ingress.yaml",
+            models.V1Ingress,
+            "networking.k8s.io/v1/Ingress",
+        ),
+    ],
+)
+def test_ingress_read_only(template_function, output, model, api_version):
+    template = template_function(output, model)
     helm_values = DagsterHelmValues.construct(
         ingress=Ingress.construct(
             enabled=True,
+            apiVersion=api_version,
             dagit=DagitIngressConfiguration.construct(
                 host="foobar.com",
                 path="bing",
+                pathType=IngressPathType.IMPLEMENTATION_SPECIFIC,
                 precedingPaths=[
-                    IngressPath(path="/*", serviceName="ssl-redirect", servicePort="use-annotion")
+                    IngressPath(
+                        path="/*",
+                        pathType=IngressPathType.IMPLEMENTATION_SPECIFIC,
+                        serviceName="ssl-redirect",
+                        servicePort="use-annotion",
+                    )
                 ],
             ),
             readOnlyDagit=DagitIngressConfiguration.construct(
                 host="dagster.io",
                 succeedingPaths=[
-                    IngressPath(path="/*", serviceName="ssl-redirect", servicePort="use-annotion")
+                    IngressPath(
+                        path="/*",
+                        pathType=IngressPathType.IMPLEMENTATION_SPECIFIC,
+                        serviceName="ssl-redirect",
+                        servicePort="use-annotion",
+                    )
                 ],
             ),
         ),
@@ -75,7 +127,23 @@ def test_ingress_read_only(template: HelmTemplate):
     assert [rule.host for rule in ingress.spec.rules] == ["foobar.com", "dagster.io"]
 
 
-def test_ingress_tls(template: HelmTemplate):
+@pytest.mark.parametrize(
+    argnames=["output", "model", "api_version"],
+    argvalues=[
+        (
+            "templates/ingress-v1beta1.yaml",
+            models.ExtensionsV1beta1Ingress,
+            "extensions/v1beta1/Ingress",
+        ),
+        (
+            "templates/ingress.yaml",
+            models.V1Ingress,
+            "networking.k8s.io/v1/Ingress",
+        ),
+    ],
+)
+def test_ingress_tls(template_function, output, model, api_version):
+    template = template_function(output, model)
     dagit_host = "dagit.com"
     dagit_readonly_host = "dagit-readonly.com"
     flower_host = "flower.com"
@@ -87,18 +155,22 @@ def test_ingress_tls(template: HelmTemplate):
     helm_values = DagsterHelmValues.construct(
         ingress=Ingress.construct(
             enabled=True,
+            apiVersion=api_version,
             dagit=DagitIngressConfiguration.construct(
                 host=dagit_host,
+                pathType=IngressPathType.IMPLEMENTATION_SPECIFIC,
                 tls=IngressTLSConfiguration(enabled=True, secretName=dagit_tls_secret_name),
             ),
             readOnlyDagit=DagitIngressConfiguration.construct(
                 host=dagit_readonly_host,
+                pathType=IngressPathType.IMPLEMENTATION_SPECIFIC,
                 tls=IngressTLSConfiguration(
                     enabled=True, secretName=dagit_readonly_tls_secret_name
                 ),
             ),
             flower=FlowerIngressConfiguration.construct(
                 host=flower_host,
+                pathType=IngressPathType.IMPLEMENTATION_SPECIFIC,
                 tls=IngressTLSConfiguration(enabled=True, secretName=flower_tls_secret_name),
             ),
         ),

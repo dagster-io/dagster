@@ -1,4 +1,7 @@
 import graphene
+from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+
 from dagster import check
 from dagster.core.snap import PipelineSnapshot
 from dagster.core.types.dagster_type import DagsterTypeKind
@@ -49,6 +52,7 @@ def to_dagster_type(pipeline_snapshot, dagster_type_key):
                 dagster_type_meta.type_param_keys,
             )
         ),
+        metadata_entries=list(iterate_metadata_entries(dagster_type_meta.metadata_entries)),
     )
 
     if dagster_type_meta.kind == DagsterTypeKind.LIST:
@@ -80,6 +84,7 @@ class GrapheneDagsterType(graphene.Interface):
     output_schema_type = graphene.Field(GrapheneConfigType)
 
     inner_types = non_null_list(lambda: GrapheneDagsterType)
+    metadata_entries = non_null_list(GrapheneMetadataEntry)
 
     class Meta:
         name = "DagsterType"

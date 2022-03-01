@@ -15,7 +15,7 @@ from dagster.core.host_representation.external_data import (
 )
 from dagster.core.host_representation.origin import ExternalPartitionSetOrigin
 from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster.core.storage.tags import (
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
@@ -258,9 +258,11 @@ def create_backfill_run(
     log_action(
         instance,
         BACKFILL_RUN_CREATED,
-        metadata={"DAEMON_SESSION_ID": get_telemetry_daemon_session_id()},
-        repo_hash=hash_name(repo_location.name),
-        pipeline_name_hash=hash_name(external_pipeline.name),
+        metadata={
+            "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
+            "repo_hash": hash_name(repo_location.name),
+            "pipeline_name_hash": hash_name(external_pipeline.name),
+        },
     )
 
     return instance.create_run(
@@ -289,7 +291,7 @@ def _fetch_last_run(instance, external_partition_set, partition_name):
     check.str_param(partition_name, "partition_name")
 
     runs = instance.get_runs(
-        PipelineRunsFilter(
+        RunsFilter(
             pipeline_name=external_partition_set.pipeline_name,
             tags={
                 PARTITION_SET_TAG: external_partition_set.name,

@@ -3,6 +3,7 @@ import sys
 import types
 
 import pytest
+
 from dagster import DagsterInvariantViolationError, PipelineDefinition, lambda_solid, pipeline
 from dagster.core.code_pointer import FileCodePointer
 from dagster.core.definitions.reconstructable import reconstructable
@@ -94,8 +95,8 @@ def test_bad_target():
     with pytest.raises(
         DagsterInvariantViolationError,
         match=re.escape(
-            "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, or a "
-            "RepositoryDefinition. Got None."
+            "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, "
+            "AssetGroup, or RepositoryDefinition. Got None."
         ),
     ):
         reconstructable(not_the_pipeline)

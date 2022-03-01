@@ -38,9 +38,9 @@ export const OneRow = () => {
 
   const jobs = React.useMemo(() => {
     const jobKey = faker.random.words(2).split(' ').join('-').toLowerCase();
-    return {
-      [jobKey]: {label: jobKey, path: `/${jobKey}`, runs: generateRuns(6, [twoHoursAgo, now])},
-    };
+    return [
+      {key: jobKey, jobName: jobKey, path: `/${jobKey}`, runs: generateRuns(6, [twoHoursAgo, now])},
+    ];
   }, [twoHoursAgo, now]);
 
   return <RunTimeline jobs={jobs} range={[twoHoursAgo, now]} />;
@@ -53,13 +53,14 @@ export const RowWithOverlappingRuns = () => {
   const jobs = React.useMemo(() => {
     const jobKey = faker.random.words(2).split(' ').join('-').toLowerCase();
     const [first, second, third] = generateRuns(3, [twoHoursAgo, now]);
-    return {
-      [jobKey]: {
-        label: jobKey,
+    return [
+      {
+        key: jobKey,
+        jobName: jobKey,
         path: `/${jobKey}`,
         runs: [{...first}, {...first}, {...second}, {...second}, {...second}, third],
       },
-    };
+    ];
   }, [twoHoursAgo, now]);
 
   return <RunTimeline jobs={jobs} range={[twoHoursAgo, now]} />;
@@ -72,8 +73,16 @@ export const ManyRows = () => {
   const jobs = React.useMemo(() => {
     return [...new Array(12)].reduce((accum) => {
       const jobKey = faker.random.words(3).split(' ').join('-').toLowerCase();
-      return {...accum, [jobKey]: {path: `/${jobKey}`, runs: generateRuns(6, [twoHoursAgo, now])}};
-    }, {});
+      return [
+        ...accum,
+        {
+          key: jobKey,
+          jobName: jobKey,
+          path: `/${jobKey}`,
+          runs: generateRuns(6, [twoHoursAgo, now]),
+        },
+      ];
+    }, []);
   }, [twoHoursAgo, now]);
 
   return <RunTimeline jobs={jobs} range={[twoHoursAgo, now]} />;
@@ -88,9 +97,10 @@ export const VeryLongRunning = () => {
   const jobs = React.useMemo(() => {
     const jobKeyA = faker.random.words(2).split(' ').join('-').toLowerCase();
     const jobKeyB = faker.random.words(2).split(' ').join('-').toLowerCase();
-    return {
-      [jobKeyA]: {
-        label: jobKeyA,
+    return [
+      {
+        key: jobKeyA,
+        jobName: jobKeyA,
         path: `/${jobKeyA}`,
         runs: [
           {
@@ -101,8 +111,9 @@ export const VeryLongRunning = () => {
           },
         ],
       },
-      [jobKeyB]: {
-        label: jobKeyB,
+      {
+        key: jobKeyB,
+        jobName: jobKeyB,
         path: `/${jobKeyB}`,
         runs: [
           {
@@ -113,7 +124,7 @@ export const VeryLongRunning = () => {
           },
         ],
       },
-    };
+    ];
   }, [twoDaysAgo, twoHoursAgo]);
 
   return <RunTimeline jobs={jobs} range={[fourHoursAgo, future]} />;

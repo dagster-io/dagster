@@ -1,10 +1,11 @@
 import os
 import shutil
 
-import docs_snippets.guides.dagster.dagster_type_factories as example_root
 import pytest
 from dagster import check_dagster_type
 from dagster.core.errors import DagsterTypeCheckDidNotPass
+
+import docs_snippets.guides.dagster.dagster_type_factories as example_root
 from docs_snippets.guides.dagster.dagster_type_factories.job_1 import (
     generate_trip_distribution_plot as job_1,
 )

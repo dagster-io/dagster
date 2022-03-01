@@ -11,6 +11,7 @@ import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useFavicon} from '../hooks/useFavicon';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {RunStatus} from '../types/globalTypes';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 
 import {ComputeLogPanel} from './ComputeLogPanel';
 import {LogFilter, LogsProvider, LogsProviderLogs} from './LogsProvider';
@@ -55,7 +56,11 @@ export const Run: React.FC<RunProps> = (props) => {
 
   useFavicon(run ? runStatusFavicon(run.status) : '/favicon.svg');
   useDocumentTitle(
-    run ? `${run.pipelineName} ${runId.slice(0, 8)} [${run.status}]` : `Run: ${runId}`,
+    run
+      ? `${run.pipelineName !== __ASSET_GROUP ? run.pipelineName : ''} ${runId.slice(0, 8)} [${
+          run.status
+        }]`
+      : `Run: ${runId}`,
   );
 
   const onShowStateDetails = (stepKey: string, logs: RunDagsterRunEventFragment[]) => {
@@ -212,17 +217,19 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
   const onClickStep = (stepKey: string, evt: React.MouseEvent<any>) => {
     const index = selectionStepKeys.indexOf(stepKey);
     let newSelected: string[];
-
+    const filterForExactStep = `"${stepKey}"`;
     if (evt.shiftKey) {
-      // shift-click to multi select steps
-      newSelected = [...selectionStepKeys];
+      // shift-click to multi select steps, preserving quotations if present
+      newSelected = [
+        ...selectionStepKeys.map((k) => (selectionQuery.includes(`"${k}"`) ? `"${k}"` : k)),
+      ];
 
       if (index !== -1) {
         // deselect the step if already selected
         newSelected.splice(index, 1);
       } else {
         // select the step otherwise
-        newSelected.push(stepKey);
+        newSelected.push(filterForExactStep);
       }
     } else {
       if (selectionStepKeys.length === 1 && index !== -1) {
@@ -230,7 +237,7 @@ const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
         newSelected = [];
       } else {
         // select the step otherwise
-        newSelected = [stepKey];
+        newSelected = [filterForExactStep];
       }
     }
 

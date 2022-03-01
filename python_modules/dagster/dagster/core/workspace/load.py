@@ -23,8 +23,8 @@ if TYPE_CHECKING:
 def load_workspace_process_context_from_yaml_paths(
     instance: DagsterInstance, yaml_paths: List[str], version: str = ""
 ) -> "WorkspaceProcessContext":
-    from .load_target import WorkspaceFileTarget
     from .context import WorkspaceProcessContext
+    from .load_target import WorkspaceFileTarget
 
     return WorkspaceProcessContext(instance, WorkspaceFileTarget(paths=yaml_paths), version=version)
 

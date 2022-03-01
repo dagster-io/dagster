@@ -74,8 +74,8 @@ class SnowflakeConnection:
     @contextmanager
     def get_connection(self, raw_conn=True):
         if self.connector == "sqlalchemy":
-            from sqlalchemy import create_engine
             from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
+            from sqlalchemy import create_engine
 
             engine = create_engine(URL(**self.conn_args))
             conn = engine.raw_connection() if raw_conn else engine.connect()
@@ -153,20 +153,18 @@ def snowflake_resource(context):
 
     .. code-block:: python
 
-        from dagster import execute_pipeline, pipeline, DependencyDefinition, ModeDefinition
+        from dagster import job, op
         from dagster_snowflake import snowflake_resource
 
         @op(required_resource_keys={'snowflake'})
         def get_one(context):
             context.resources.snowflake.execute_query('SELECT 1')
 
-        @graph
-        def my_snowflake_graph():
+        @job(resource_defs={'snowflake': snowflake_resource})
+        def my_snowflake_job():
             get_one()
 
-        my_snowflake_graph.to_job(
-            resources={'snowflake': snowflake_resource}
-        ).execute_in_process(
+        my_snowflake_job.execute_in_process(
             run_config={
                 'resources': {
                     'snowflake': {

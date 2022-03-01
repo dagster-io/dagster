@@ -1,11 +1,12 @@
-from dagster.core.test_utils import create_test_daemon_workspace
-from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.sensor import execute_sensor_iteration
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_instigation_selector,
     infer_repository_selector,
 )
+
+from dagster.core.test_utils import create_test_daemon_workspace
+from dagster.daemon import get_default_daemon_logger
+from dagster.daemon.sensor import execute_sensor_iteration
 
 from .graphql_context_test_suite import (  # get_dict_recon_repo,
     GraphQLContextVariant,
@@ -31,10 +32,14 @@ query JobQuery($instigationSelector: InstigationSelector!) {
 """
 
 
-def _create_sensor_tick(instance):
-    with create_test_daemon_workspace() as workspace:
+def _create_sensor_tick(graphql_context):
+    with create_test_daemon_workspace(
+        graphql_context.process_context.workspace_load_target
+    ) as workspace:
         list(
-            execute_sensor_iteration(instance, get_default_daemon_logger("SensorDaemon"), workspace)
+            execute_sensor_iteration(
+                graphql_context.instance, get_default_daemon_logger("SensorDaemon"), workspace
+            )
         )
 
 
@@ -54,7 +59,7 @@ class TestNextTickRepository(
         selector = infer_instigation_selector(graphql_context, schedule_name)
 
         # need to be running in order to generate a future tick
-        graphql_context.instance.start_schedule_and_update_storage_state(external_schedule)
+        graphql_context.instance.start_schedule(external_schedule)
         result = execute_dagster_graphql(
             graphql_context, INSTIGATION_QUERY, variables={"instigationSelector": selector}
         )
@@ -77,7 +82,7 @@ class TestNextTickRepository(
         # need to be running and create a sensor tick in the last 30 seconds in order to generate a
         # future tick
         graphql_context.instance.start_sensor(external_sensor)
-        _create_sensor_tick(graphql_context.instance)
+        _create_sensor_tick(graphql_context)
 
         result = execute_dagster_graphql(
             graphql_context, INSTIGATION_QUERY, variables={"instigationSelector": selector}

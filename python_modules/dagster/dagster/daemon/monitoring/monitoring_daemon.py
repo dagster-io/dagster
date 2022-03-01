@@ -7,7 +7,7 @@ from dagster.core.launcher import WorkerStatus
 from dagster.core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     PipelineRunStatus,
-    PipelineRunsFilter,
+    RunsFilter,
 )
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -57,10 +57,16 @@ def monitor_started_run(instance: DagsterInstance, workspace, run, logger):
                 attempt_number,
             )
         else:
-            msg = (
-                f"Detected run worker status {check_health_result}. Marking run {run.run_id} as "
-                "failed, because it has surpassed the configured maximum attempts to resume the run: {max_resume_run_attempts}."
-            )
+            if instance.run_launcher.supports_resume_run:
+                msg = (
+                    f"Detected run worker status {check_health_result}. Marking run {run.run_id} as "
+                    "failed, because it has surpassed the configured maximum attempts to resume the run: {max_resume_run_attempts}."
+                )
+            else:
+                msg = (
+                    f"Detected run worker status {check_health_result}. Marking run {run.run_id} as "
+                    "failed."
+                )
             logger.info(msg)
             instance.report_run_failed(run, msg)
 
@@ -71,7 +77,7 @@ def execute_monitoring_iteration(instance, workspace, logger, _debug_crash_flags
     )
 
     # TODO: consider limiting number of runs to fetch
-    runs = instance.get_runs(filters=PipelineRunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
+    runs = instance.get_runs(filters=RunsFilter(statuses=IN_PROGRESS_RUN_STATUSES))
 
     logger.info(f"Collected {len(runs)} runs for monitoring")
 

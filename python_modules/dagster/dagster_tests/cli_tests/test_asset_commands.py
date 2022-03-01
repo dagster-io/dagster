@@ -1,5 +1,6 @@
 import pytest
 from click.testing import CliRunner
+
 from dagster import AssetKey, AssetMaterialization, Output, execute_pipeline, pipeline, solid
 from dagster.cli.asset import asset_wipe_command
 from dagster.core.instance import DagsterInstance
@@ -122,3 +123,20 @@ def test_asset_wipe_all(asset_instance):
     assert "Removed asset indexes from event logs" in result.output
     asset_keys = asset_instance.all_asset_keys()
     assert len(asset_keys) == 0
+
+
+def test_asset_single_wipe_noprompt(asset_instance):
+    runner = CliRunner()
+    execute_pipeline(pipeline_one, instance=asset_instance)
+    execute_pipeline(pipeline_two, instance=asset_instance)
+    asset_keys = asset_instance.all_asset_keys()
+    assert len(asset_keys) == 4
+
+    result = runner.invoke(
+        asset_wipe_command, ["--noprompt", json.dumps(["path", "to", "asset_3"])]
+    )
+    assert result.exit_code == 0
+    assert "Removed asset indexes from event logs" in result.output
+
+    asset_keys = asset_instance.all_asset_keys()
+    assert len(asset_keys) == 3

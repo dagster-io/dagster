@@ -4,6 +4,8 @@ from datetime import datetime, time
 
 import pendulum
 import pytest
+from dateutil.relativedelta import relativedelta
+
 from dagster import (
     DagsterInvalidDefinitionError,
     RunRequest,
@@ -27,7 +29,6 @@ from dagster.utils.partitions import (
     DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,
     DEFAULT_MONTHLY_FORMAT,
 )
-from dateutil.relativedelta import relativedelta
 
 # This file tests a lot of parameter name stuff, so these warnings are spurious
 # pylint: disable=unused-variable, unused-argument, redefined-outer-name

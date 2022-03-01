@@ -1,4 +1,5 @@
 import pytest
+
 from dagster import (
     DagsterUnknownPartitionError,
     daily_partitioned_config,

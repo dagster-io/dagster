@@ -1,5 +1,6 @@
-from dagster import solid
 from memoized_development.solids.solid_utils import get_hash_for_file
+
+from dagster import solid
 
 
 @solid(version=get_hash_for_file(__file__), config_schema={"dog_breed": str})

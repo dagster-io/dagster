@@ -2,6 +2,7 @@ import csv
 import os
 
 from dagster.utils import script_relative_path
+
 from docs_snippets.intro_tutorial.advanced.pipelines.modes import (
     SqlAlchemyPostgresWarehouse as sapw1,
 )
@@ -20,7 +21,9 @@ BUILDKITE = bool(os.getenv("BUILDKITE"))
 
 
 def test_warehouse(postgres):
-    with open(script_relative_path("../../../docs_snippets/intro_tutorial/cereal.csv"), "r") as fd:
+    with open(
+        script_relative_path("../../../docs_snippets/intro_tutorial/cereal.csv"), "r"
+    ) as fd:
         cereals = [row for row in csv.DictReader(fd)]
 
     for SqlAlchemyPostgresWarehouse in [sapw1, sapw2]:

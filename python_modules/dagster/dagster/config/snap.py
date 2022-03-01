@@ -1,4 +1,3 @@
-from collections import namedtuple
 from typing import Any, Dict, List, NamedTuple, Optional, Set, cast
 
 from dagster import check
@@ -112,12 +111,33 @@ class ConfigTypeSnap(
         )
 
     @property
-    def inner_type_key(self) -> str:
-        # valid for Noneable and Array
-        check.invariant(self.kind == ConfigTypeKind.NONEABLE or self.kind == ConfigTypeKind.ARRAY)
+    def key_type_key(self) -> str:
+        """For a type which has keys such as Map, returns the type of the key."""
+        # valid for Map, which has its key type as the first entry in type_param_keys
+        check.invariant(self.kind == ConfigTypeKind.MAP)
+
         type_param_keys = check.is_list(self.type_param_keys, of_type=str)
-        check.invariant(len(type_param_keys) == 1)
+        check.invariant(len(type_param_keys) == 2)
         return type_param_keys[0]
+
+    @property
+    def inner_type_key(self) -> str:
+        """For container types such as Array or Noneable, the contained type. For a Map, the value type."""
+        # valid for Noneable, Map, and Array
+        check.invariant(
+            self.kind == ConfigTypeKind.NONEABLE
+            or self.kind == ConfigTypeKind.ARRAY
+            or self.kind == ConfigTypeKind.MAP
+        )
+
+        type_param_keys = check.is_list(self.type_param_keys, of_type=str)
+        if self.kind == ConfigTypeKind.MAP:
+            # For a Map, the inner (value) type is the second entry (the first is the key type)
+            check.invariant(len(type_param_keys) == 2)
+            return type_param_keys[1]
+        else:
+            check.invariant(len(type_param_keys) == 1)
+            return type_param_keys[0]
 
     @property
     def scalar_type_key(self) -> str:
@@ -175,8 +195,10 @@ class ConfigTypeSnap(
 
 
 @whitelist_for_serdes
-class ConfigEnumValueSnap(namedtuple("_ConfigEnumValueSnap", "value description")):
-    def __new__(cls, value, description):
+class ConfigEnumValueSnap(
+    NamedTuple("_ConfigEnumValueSnap", [("value", str), ("description", Optional[str])])
+):
+    def __new__(cls, value: str, description: Optional[str]):
         return super(ConfigEnumValueSnap, cls).__new__(
             cls,
             value=check.str_param(value, "value"),
@@ -284,6 +306,8 @@ def minimal_config_for_type_snap(
         return defaults.get(config_type_snap.given_name, "<unknown>")  # type: ignore
     elif config_type_snap.kind == ConfigTypeKind.ARRAY:
         return []
+    elif config_type_snap.kind == ConfigTypeKind.MAP:
+        return {}
     elif config_type_snap.kind == ConfigTypeKind.ENUM:
         # guard against the edge case that an enum is defined with zero options
         return (

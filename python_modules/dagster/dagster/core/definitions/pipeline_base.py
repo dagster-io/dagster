@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod, abstractproperty
-from typing import TYPE_CHECKING, FrozenSet, List
+from typing import TYPE_CHECKING, FrozenSet, List, Optional
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidSubsetError
@@ -26,12 +26,12 @@ class IPipeline(ABC):
         pass
 
     @abstractproperty
-    def solids_to_execute(self) -> FrozenSet[str]:
+    def solids_to_execute(self) -> Optional[FrozenSet[str]]:
         pass
 
     @abstractmethod
     def subset_for_execution_from_existing_pipeline(
-        self, solids_to_execute: FrozenSet[str]
+        self, solids_to_execute: Optional[FrozenSet[str]]
     ) -> "IPipeline":
         pass
 

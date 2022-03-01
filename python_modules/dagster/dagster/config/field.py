@@ -8,7 +8,7 @@ from dagster.utils import is_enum_value
 from dagster.utils.typing_api import is_closed_python_optional_type, is_typing_type
 
 from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
-from .field_utils import FIELD_NO_DEFAULT_PROVIDED, all_optional_type
+from .field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, all_optional_type
 
 
 def _is_config_type_class(obj):
@@ -52,6 +52,35 @@ def resolve_to_config_type(dagster_type) -> Union[ConfigType, bool]:
         return dagster_type
 
     if isinstance(dagster_type, dict):
+        # Dicts of the special form {type: value} are treated as Maps
+        # mapping from the type to value type, otherwise treat as dict type
+        if len(dagster_type) == 1:
+            key = list(dagster_type.keys())[0]
+            key_type = resolve_to_config_type(key)
+            if not isinstance(key, str):
+                if not key_type:
+                    raise DagsterInvalidDefinitionError(
+                        "Invalid key in map specification: {key} in map {collection}".format(
+                            key=repr(key), collection=dagster_type
+                        )
+                    )
+
+                if not key_type.kind == ConfigTypeKind.SCALAR:
+                    raise DagsterInvalidDefinitionError(
+                        "Non-scalar key in map specification: {key} in map {collection}".format(
+                            key=repr(key), collection=dagster_type
+                        )
+                    )
+
+                inner_type = resolve_to_config_type(dagster_type[key])
+
+                if not inner_type:
+                    raise DagsterInvalidDefinitionError(
+                        "Invalid value in map specification: {value} in map {collection}".format(
+                            value=repr(dagster_type[str]), collection=dagster_type
+                        )
+                    )
+                return Map(key_type, inner_type)
         return convert_fields_to_dict_type(dagster_type)
 
     if isinstance(dagster_type, list):
@@ -145,8 +174,8 @@ def resolve_to_config_type(dagster_type) -> Union[ConfigType, bool]:
     #     up to callers to report a reasonable error.
 
     from dagster.primitive_mapping import (
-        remap_python_builtin_for_config,
         is_supported_config_python_builtin,
+        remap_python_builtin_for_config,
     )
 
     if BuiltinEnum.contains(dagster_type):
@@ -263,8 +292,8 @@ class Field:
         is_required=None,
         description=None,
     ):
-        from .validate import validate_config
         from .post_process import resolve_defaults
+        from .validate import validate_config
 
         self.config_type = check.inst(self._resolve_config_arg(config), ConfigType)
 

@@ -2,6 +2,10 @@ from urllib.parse import urljoin, urlparse
 
 import click
 import requests
+from graphql import graphql
+from graphql.execution.executors.gevent import GeventExecutor
+from graphql.execution.executors.sync import SyncExecutor
+
 from dagster import __version__ as dagster_version
 from dagster import check, seven
 from dagster.cli.workspace import workspace_target_argument
@@ -13,9 +17,6 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster.utils.log import get_stack_trace_array
-from graphql import graphql
-from graphql.execution.executors.gevent import GeventExecutor
-from graphql.execution.executors.sync import SyncExecutor
 
 from .client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from .schema import create_schema

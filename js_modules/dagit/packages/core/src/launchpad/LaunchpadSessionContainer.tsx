@@ -20,8 +20,8 @@ import {
   IExecutionSessionChanges,
   PipelineRunTag,
   SessionBase,
-  useStorage,
-} from '../app/LocalStorage';
+  useExecutionSessionStorage,
+} from '../app/ExecutionSessionStorage';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {ConfigEditor} from '../configeditor/ConfigEditor';
@@ -163,7 +163,11 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     return {};
   }, [isJob, partitionSets.results, presets]);
 
-  const [data, onSave] = useStorage(repoAddress.name || '', pipeline.name, initialDataForMode);
+  const [data, onSave] = useExecutionSessionStorage(
+    repoAddress.name || '',
+    pipeline.name,
+    initialDataForMode,
+  );
 
   const currentSession = data.sessions[data.current];
 
@@ -209,6 +213,10 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
       solidSelection,
       solidSelectionQuery,
     });
+  };
+
+  const onFlattenGraphsChange = (flattenGraphs: boolean) => {
+    onSaveSession({flattenGraphs});
   };
 
   const onModeChange = (mode: string) => {
@@ -561,6 +569,8 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
                 value={currentSession.solidSelection || null}
                 query={currentSession.solidSelectionQuery || null}
                 onChange={onOpSelectionChange}
+                flattenGraphs={currentSession.flattenGraphs}
+                onFlattenGraphsChange={onFlattenGraphsChange}
                 repoAddress={repoAddress}
               />
               {isJob ? (

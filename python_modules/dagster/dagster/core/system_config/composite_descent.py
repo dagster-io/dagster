@@ -1,4 +1,4 @@
-from collections import namedtuple
+from typing import NamedTuple, Optional
 
 from dagster import check
 from dagster.config.evaluate_value_result import EvaluateValueResult
@@ -18,8 +18,10 @@ from dagster.core.system_config.objects import SolidConfig
 from dagster.utils.merger import merge_dicts
 
 
-class SolidConfigEntry(namedtuple("_SolidConfigEntry", "handle solid_config")):
-    def __new__(cls, handle, solid_config):
+class SolidConfigEntry(
+    NamedTuple("_SolidConfigEntry", [("handle", NodeHandle), ("solid_config", SolidConfig)])
+):
+    def __new__(cls, handle: NodeHandle, solid_config: SolidConfig):
         return super(SolidConfigEntry, cls).__new__(
             cls,
             check.inst_param(handle, "handle", NodeHandle),
@@ -27,8 +29,12 @@ class SolidConfigEntry(namedtuple("_SolidConfigEntry", "handle solid_config")):
         )
 
 
-class DescentStack(namedtuple("_DescentStack", "pipeline_def handle")):
-    def __new__(cls, pipeline_def, handle):
+class DescentStack(
+    NamedTuple(
+        "_DescentStack", [("pipeline_def", PipelineDefinition), ("handle", Optional[NodeHandle])]
+    )
+):
+    def __new__(cls, pipeline_def: PipelineDefinition, handle: Optional[NodeHandle]):
         return super(DescentStack, cls).__new__(
             cls,
             pipeline_def=check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition),
@@ -46,8 +52,7 @@ class DescentStack(namedtuple("_DescentStack", "pipeline_def handle")):
 
     @property
     def current_handle_str(self):
-        check.invariant(self.handle)
-        return self.handle.to_string()
+        return check.not_none(self.handle).to_string()
 
     def descend(self, solid):
         return self._replace(handle=NodeHandle(solid.name, parent=self.handle))
@@ -255,9 +260,13 @@ def _get_mapped_solids_dict(
     # Dynamically construct the type that the output of the config mapping function will
     # be evaluated against
 
+    # diff original graph and the subselected graph to find nodes to ignore so the system knows to
+    # skip the validation then when config mapping generates values where the nodes are not selected
+    ignored_solids = graph_def.get_top_level_omitted_nodes() if graph_def.is_subselected else None
+
     type_to_evaluate_against = define_solid_dictionary_cls(
         solids=graph_def.solids,
-        ignored_solids=None,
+        ignored_solids=ignored_solids,
         dependency_structure=graph_def.dependency_structure,
         parent_handle=current_stack.handle,
         resource_defs=resource_defs,

@@ -2,13 +2,14 @@ from itertools import chain
 from typing import Any, Dict, Iterable, List, Optional
 
 import requests.exceptions
+from gql import Client, gql
+from gql.transport import Transport
+from gql.transport.requests import RequestsHTTPTransport
+
 from dagster import check
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.utils.backcompat import experimental_class_warning
-from gql import Client, gql
-from gql.transport import Transport
-from gql.transport.requests import RequestsHTTPTransport
 
 from .client_queries import (
     CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY,
@@ -125,6 +126,7 @@ class DagsterGraphQLClient:
         mode: Optional[str] = None,
         preset: Optional[str] = None,
         tags: Optional[Dict[str, Any]] = None,
+        solid_selection: Optional[List[str]] = None,
         is_using_job_op_graph_apis: Optional[bool] = False,
     ):
         check.opt_str_param(repository_location_name, "repository_location_name")
@@ -162,12 +164,13 @@ class DagsterGraphQLClient:
                     f"\n\tchoose one of: {pipeline_info_lst}"
                 )
 
-        variables = {
+        variables: Dict[str, Any] = {
             "executionParams": {
                 "selector": {
                     "repositoryLocationName": repository_location_name,
                     "repositoryName": repository_name,
                     "pipelineName": pipeline_name,
+                    "solidSelection": solid_selection,
                 }
             }
         }
@@ -218,6 +221,7 @@ class DagsterGraphQLClient:
         mode: Optional[str] = None,
         preset: Optional[str] = None,
         tags: Optional[Dict[str, Any]] = None,
+        solid_selection: Optional[List[str]] = None,
     ) -> str:
         """Submits a Pipeline with attached configuration for execution.
 
@@ -265,6 +269,7 @@ class DagsterGraphQLClient:
             mode,
             preset,
             tags,
+            solid_selection,
             is_using_job_op_graph_apis=False,
         )
 
@@ -275,6 +280,7 @@ class DagsterGraphQLClient:
         repository_name: Optional[str] = None,
         run_config: Optional[Dict[str, Any]] = None,
         tags: Optional[Dict[str, Any]] = None,
+        op_selection: Optional[List[str]] = None,
     ) -> str:
         """Submits a job with attached configuration for execution.
 
@@ -315,6 +321,7 @@ class DagsterGraphQLClient:
             mode="default",
             preset=None,
             tags=tags,
+            solid_selection=op_selection,
             is_using_job_op_graph_apis=True,
         )
 

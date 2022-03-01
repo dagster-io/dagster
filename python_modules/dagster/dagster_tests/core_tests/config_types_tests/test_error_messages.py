@@ -1,7 +1,9 @@
 import re
 
 import pytest
+
 from dagster import DagsterInvalidDefinitionError, Dict, List, Noneable, Optional, solid
+from dagster.core.errors import DagsterInvalidConfigDefinitionError
 
 
 def test_invalid_optional_in_config():
@@ -46,3 +48,14 @@ def test_invalid_list_element():
         ),
     ):
         _ = List[Noneable(int)]
+
+
+def test_non_scalar_key_map():
+    with pytest.raises(
+        DagsterInvalidConfigDefinitionError,
+        match=re.escape("Map dict must have a scalar type as its only key."),
+    ):
+
+        @solid(config_schema={Noneable(int): str})
+        def _solid(_):
+            pass

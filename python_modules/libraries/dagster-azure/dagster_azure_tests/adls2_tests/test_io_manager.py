@@ -1,4 +1,9 @@
 import pytest
+from dagster_azure.adls2 import create_adls2_client
+from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pickle_io_manager
+from dagster_azure.adls2.resources import adls2_resource
+from dagster_azure.blob import create_blob_client
+
 from dagster import (
     DagsterInstance,
     DynamicOutput,
@@ -19,10 +24,6 @@ from dagster.core.execution.api import execute_plan
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
-from dagster_azure.adls2 import create_adls2_client
-from dagster_azure.adls2.io_manager import PickledObjectADLS2IOManager, adls2_pickle_io_manager
-from dagster_azure.adls2.resources import adls2_resource
-from dagster_azure.blob import create_blob_client
 
 
 def fake_io_manager_factory(io_manager):
@@ -66,10 +67,8 @@ def define_inty_job():
     )
 
 
-nettest = pytest.mark.nettest
-
-
-@nettest
+@pytest.mark.nettest
+@pytest.mark.skip("https://github.com/dagster-io/dagster/issues/6607")
 def test_adls2_pickle_io_manager_execution(storage_account, file_system, credential):
     job = define_inty_job()
 

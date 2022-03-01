@@ -5,7 +5,7 @@ Captures a screenshot, based on a screenshot spec.
 Meant to be called from the repo root.
 
 Usage example:
-    python docs/screenshot_capture/capture_screenshot.py concepts/dagit/runs-tab.png
+    python docs/screenshot_capture/capture-screenshot.py concepts/dagit/runs-tab.png
 """
 
 import os
@@ -21,7 +21,7 @@ from selenium import webdriver
 
 def load_screenshot_specs():
     with open("./docs/screenshot_capture/screenshots.yaml", "r") as f:
-        return yaml.load(f)
+        return yaml.safe_load(f)
 
 
 def capture_screenshots(screenshot_specs: Sequence[Mapping[str, str]]):

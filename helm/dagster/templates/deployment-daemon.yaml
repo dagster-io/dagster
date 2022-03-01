@@ -1,4 +1,5 @@
 {{- if .Values.dagsterDaemon.enabled }}
+{{- $userDeployments := index .Values "dagster-user-deployments" }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -7,12 +8,17 @@ metadata:
     {{- include "dagster.labels" $ | nindent 4 }}
     component: dagster-daemon
     deployment: daemon
+    {{- with .Values.dagsterDaemon.deploymentLabels }}
+    {{- . | toYaml | nindent 4 }}
+    {{- end }}
   annotations:
     {{- range $key, $value := .Values.dagsterDaemon.annotations }}
     {{ $key }}: {{ $value | squote }}
     {{- end }}
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       {{- include "dagster.selectorLabels" $ | nindent 6 }}
@@ -24,7 +30,13 @@ spec:
         {{- include "dagster.selectorLabels" $ | nindent 8 }}
         component: dagster-daemon
         deployment: daemon
+        {{- with .Values.dagsterDaemon.labels }}
+        {{- . | toYaml | nindent 8 }}
+        {{- end }}
       annotations:
+        {{- if $userDeployments.enabled }}
+        checksum/dagster-workspace: {{ include (print $.Template.BasePath "/configmap-workspace.yaml") . | sha256sum }}
+        {{- end }}
         checksum/dagster-instance: {{ include (print $.Template.BasePath "/configmap-instance.yaml") . | sha256sum }}
         {{- range $key, $value := .Values.dagsterDaemon.annotations }}
         {{ $key }}: {{ $value | squote }}
@@ -42,14 +54,24 @@ spec:
           command: ['sh', '-c', {{ include "dagster.postgresql.pgisready" . | squote }}]
           securityContext:
             {{- toYaml .Values.dagsterDaemon.securityContext | nindent 12 }}
+        {{- if (and $userDeployments.enabled $userDeployments.enableSubchart) }}
+        {{- range $deployment := $userDeployments.deployments }}
+        - name: "init-user-deployment-{{- $deployment.name -}}"
+          image: {{ include "dagster.externalImage.name" $.Values.busybox.image | quote }}
+          command: ['sh', '-c', "until nslookup {{ $deployment.name -}}; do echo waiting for user service; sleep 2; done"]
+        {{- end }}
+        {{- end }}
       containers:
         - name: {{ $.Chart.Name }}
           securityContext:
             {{- toYaml .Values.dagsterDaemon.securityContext | nindent 12 }}
           imagePullPolicy: {{ .Values.dagsterDaemon.image.pullPolicy }}
           image: {{ include "dagster.dagsterImage.name" (list $ .Values.dagsterDaemon.image) | quote }}
-          command: ["dagster-daemon"]
-          args: ["run"]
+          command: [
+            "/bin/bash",
+            "-c",
+            "{{- template "dagster.dagsterDaemon.daemonCommand" . }}"
+          ]
           env:
             - name: DAGSTER_PG_PASSWORD
               valueFrom:
@@ -75,11 +97,20 @@ spec:
             - name: dagster-instance
               mountPath: "{{ $.Values.global.dagsterHome }}/dagster.yaml"
               subPath: dagster.yaml
+            {{- if $userDeployments.enabled }}
+            - name: dagster-workspace-yaml
+              mountPath: "/dagster-workspace/workspace.yaml"
+              subPath: workspace.yaml
+            {{- end }}
           resources:
             {{- toYaml .Values.dagsterDaemon.resources | nindent 12 }}
           {{- if .Values.dagsterDaemon.livenessProbe }}
           livenessProbe:
             {{- toYaml .Values.dagsterDaemon.livenessProbe | nindent 12 }}
+          {{- end }}
+          {{- if .Values.dagsterDaemon.readinessProbe }}
+          readinessProbe:
+            {{- toYaml .Values.dagsterDaemon.readinessProbe | nindent 12 }}
           {{- end }}
           {{- if .Values.dagsterDaemon.startupProbe.enabled}}
           {{- $startupProbe := omit .Values.dagsterDaemon.startupProbe "enabled" }}
@@ -92,6 +123,11 @@ spec:
         - name: dagster-instance
           configMap:
             name: {{ template "dagster.fullname" $ }}-instance
+        {{- if $userDeployments.enabled }}
+        - name: dagster-workspace-yaml
+          configMap:
+            name: {{ template "dagster.fullname" . }}-workspace-yaml
+        {{- end }}
       affinity:
         {{- toYaml .Values.dagsterDaemon.affinity | nindent 8 }}
       tolerations:

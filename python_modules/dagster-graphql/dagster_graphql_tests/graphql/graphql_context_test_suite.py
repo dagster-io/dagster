@@ -5,6 +5,9 @@ from contextlib import contextmanager
 from unittest.mock import patch
 
 import pytest
+from dagster_graphql import DagsterGraphQLClient
+from dagster_graphql.test.utils import execute_dagster_graphql
+
 from dagster import check, file_relative_path
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -28,8 +31,6 @@ from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import merge_dicts
 from dagster.utils.test import FilesystemTestScheduler
 from dagster.utils.test.postgres_instance import TestPostgresInstance
-from dagster_graphql import DagsterGraphQLClient
-from dagster_graphql.test.utils import execute_dagster_graphql
 
 
 def get_main_loadable_target_origin():
@@ -789,7 +790,7 @@ def make_graphql_context_test_suite(context_variants):
     """
         Arguments:
 
-        runs (List[GraphQLContextVariant]): List of runs to run per test in this class.
+        context_variants (List[GraphQLContextVariant]): List of runs to run per test in this class.
 
         This is the base class factory for test suites in the dagster-graphql test.
 
@@ -800,7 +801,7 @@ def make_graphql_context_test_suite(context_variants):
         GraphQLContextVariant has a number of static methods to provide common run configurations
         as well as common groups of run configuration
 
-        One can also make bespoke GraphQLContextVariants which specific implementations
+        One can also make bespoke GraphQLContextVariants with specific implementations
         of DagsterInstance, RepositoryLocation, and so forth. See that class
         for more details.
 

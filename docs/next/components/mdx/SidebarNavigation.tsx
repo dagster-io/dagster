@@ -10,7 +10,7 @@ export function getItems(node, current) {
   } else if (node.type === `paragraph`) {
     visit(node, (item) => {
       if (item.type === `link`) {
-        const url: string = item.url as any;
+        const url: string = item["url"];
         // workaround for https://github.com/syntax-tree/mdast-util-toc/issues/70
         // remove ids of HTML elements from the headings, i.e. "experimental", "cross", "check"
         current.url = url
@@ -19,7 +19,7 @@ export function getItems(node, current) {
           .replace(/-experimental-?$/, "");
       }
       if (item.type === `text`) {
-        current.title = item.value;
+        current.title = item["value"];
       }
     });
     return current;
@@ -108,7 +108,7 @@ const renderItems = (items, activeId, depth) => {
   return (
     <ol>
       {items.map((item) => {
-        return (
+        return item.url ? (
           <li key={item.url} className={cx(MARGINS[depth], "mt-3 list-inside")}>
             <a
               href={item.url}
@@ -125,6 +125,8 @@ const renderItems = (items, activeId, depth) => {
             </a>
             {item.items && renderItems(item.items, activeId, depth + 1)}
           </li>
+        ) : (
+          renderItems(item.items, activeId, depth)
         );
       })}
     </ol>

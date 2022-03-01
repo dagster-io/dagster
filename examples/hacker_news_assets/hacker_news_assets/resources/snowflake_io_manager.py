@@ -1,10 +1,9 @@
 import os
 import textwrap
 from contextlib import contextmanager
-from typing import Dict, Optional, Sequence, Union
+from datetime import datetime
+from typing import Optional, Sequence, Tuple, Union
 
-from dagster import AssetKey, EventMetadataEntry, InputContext, OutputContext, check, io_manager
-from dagster.core.storage.io_manager import IOManager
 from pandas import DataFrame as PandasDataFrame
 from pandas import read_sql
 from pyspark.sql import DataFrame as SparkDataFrame
@@ -13,16 +12,10 @@ from snowflake.connector.pandas_tools import pd_writer
 from snowflake.sqlalchemy import URL  # pylint: disable=no-name-in-module,import-error
 from sqlalchemy import create_engine
 
-SHARED_SNOWFLAKE_CONF = {
-    "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
-    "user": os.getenv("SNOWFLAKE_USER", ""),
-    "password": os.getenv("SNOWFLAKE_PASSWORD", ""),
-    "database": "DEMO_DB",
-    "warehouse": "TINY_WAREHOUSE",
-}
+from dagster import IOManager, InputContext, MetadataEntry, OutputContext, io_manager
 
-DEV_SNOWFLAKE_CONF = dict(schema="hackernews_dev", **SHARED_SNOWFLAKE_CONF)
-PROD_SNOWFLAKE_CONF = dict(schema="hackernews", **SHARED_SNOWFLAKE_CONF)
+SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
+DB_SCHEMA = "hackernews"
 
 
 def spark_field_to_snowflake_type(spark_field: StructField):
@@ -34,15 +27,23 @@ def spark_field_to_snowflake_type(spark_field: StructField):
         return spark_type
 
 
+SHARED_SNOWFLAKE_CONF = {
+    "account": os.getenv("SNOWFLAKE_ACCOUNT", ""),
+    "user": os.getenv("SNOWFLAKE_USER", ""),
+    "password": os.getenv("SNOWFLAKE_PASSWORD", ""),
+    "warehouse": "TINY_WAREHOUSE",
+}
+
+
 @contextmanager
-def connect_snowflake(config):
+def connect_snowflake(config, schema="public"):
     url = URL(
         account=config["account"],
         user=config["user"],
         password=config["password"],
         database=config["database"],
         warehouse=config["warehouse"],
-        schema=config["schema"],
+        schema=schema,
         timezone="UTC",
     )
 
@@ -55,144 +56,127 @@ def connect_snowflake(config):
             conn.close()
 
 
-@io_manager
-def snowflake_io_manager_dev():
-    return SnowflakeIOManager(config=DEV_SNOWFLAKE_CONF)
-
-
-@io_manager
-def snowflake_io_manager_prod():
-    return SnowflakeIOManager(config=PROD_SNOWFLAKE_CONF)
-
-
-@io_manager(required_resource_keys={"partition_start", "partition_end"})
-def time_partitioned_snowflake_io_manager_prod():
-    return TimePartitionedSnowflakeIOManager(config=PROD_SNOWFLAKE_CONF)
+@io_manager(config_schema={"database": str})
+def snowflake_io_manager(init_context):
+    return SnowflakeIOManager(
+        config=dict(database=init_context.resource_config["database"], **SHARED_SNOWFLAKE_CONF)
+    )
 
 
 class SnowflakeIOManager(IOManager):
     """
-    This IOManager can handle Outputs that are either pandas DataFrames or ParquetPointers (which
-    are just paths that spark can interpret which store some parquet files). In either case, the
-    data will be written to a Snowflake table specified by metadata on the relevant OutputDefinition.
+    This IOManager can handle outputs that are either Spark or Pandas DataFrames. In either case,
+    the data will be written to a Snowflake table specified by metadata on the relevant Out.
     """
 
     def __init__(self, config):
-        self.config = check.dict_param(config, "config")
+        self._config = config
 
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
-        schema, table = self.config["schema"], context.asset_key.path[-1]
+        schema, table = "hackernews", context.asset_key.path[-1]
 
-        with connect_snowflake(config=self.config) as con:
-            con.execute(self._get_cleanup_statement(table, context.resources))
+        time_window = context.asset_partitions_time_window if context.has_asset_partitions else None
+        with connect_snowflake(config=self._config, schema=schema) as con:
+            con.execute(self._get_cleanup_statement(table, schema, time_window))
 
         if isinstance(obj, SparkDataFrame):
-            yield from self._handle_spark_output(self.config, obj, schema, table)
+            yield from self._handle_spark_output(obj, schema, table)
         elif isinstance(obj, PandasDataFrame):
-            yield from self._handle_pandas_output(self.config, obj, table)
-        elif obj is not None:
+            yield from self._handle_pandas_output(obj, schema, table)
+        else:
             raise Exception(
                 "SnowflakeIOManager only supports pandas DataFrames and spark DataFrames"
             )
 
-    def _handle_pandas_output(self, config: Dict, obj: PandasDataFrame, table: str):
+        yield MetadataEntry.text(
+            self._get_select_statement(
+                table,
+                schema,
+                None,
+                time_window,
+            ),
+            "Query",
+        )
+
+    def _handle_pandas_output(self, obj: PandasDataFrame, schema: str, table: str):
         from snowflake import connector  # pylint: disable=no-name-in-module
 
-        yield EventMetadataEntry.int(obj.shape[0], "Rows")
-        yield EventMetadataEntry.md(pandas_columns_to_markdown(obj), "DataFrame columns")
+        yield MetadataEntry.int(obj.shape[0], "Rows")
+        yield MetadataEntry.md(pandas_columns_to_markdown(obj), "DataFrame columns")
 
         connector.paramstyle = "pyformat"
-        with connect_snowflake(config=config) as con:
+        with connect_snowflake(config=self._config, schema=schema) as con:
             with_uppercase_cols = obj.rename(str.upper, copy=False, axis="columns")
             with_uppercase_cols.to_sql(
                 table,
                 con=con,
-                if_exists="replace",
+                if_exists="append",
                 index=False,
                 method=pd_writer,
             )
 
-    def _handle_spark_output(self, config: Dict, df: SparkDataFrame, schema: str, table: str):
+    def _handle_spark_output(self, df: SparkDataFrame, schema: str, table: str):
         options = {
-            "sfURL": f"{config['account']}.snowflakecomputing.com",
-            "sfUser": config["user"],
-            "sfPassword": config["password"],
-            "sfDatabase": config["database"],
+            "sfURL": f"{self._config['account']}.snowflakecomputing.com",
+            "sfUser": self._config["user"],
+            "sfPassword": self._config["password"],
+            "sfDatabase": self._config["database"],
             "sfSchema": schema,
-            "sfWarehouse": config["warehouse"],
+            "sfWarehouse": self._config["warehouse"],
             "dbtable": table,
         }
-        yield EventMetadataEntry.md(spark_columns_to_markdown(df.schema), "DataFrame columns")
+        yield MetadataEntry.md(spark_columns_to_markdown(df.schema), "DataFrame columns")
 
         df.write.format("net.snowflake.spark.snowflake").options(**options).mode("append").save()
 
-    def _get_cleanup_statement(self, table: str, _resources):
-        return f"""
-        DELETE FROM {table} WHERE true;
+    def _get_cleanup_statement(
+        self, table: str, schema: str, time_window: Optional[Tuple[datetime, datetime]]
+    ) -> str:
         """
-
-    def _get_select_statement(
-        self, _resources, asset_key: AssetKey, columns: Optional[Sequence[str]]
-    ):
-        col_str = ", ".join(f'"{c}"' for c in columns) if columns else "*"
-        return f"""
-        SELECT {col_str} FROM {asset_key.path[-1]};
+        Returns a SQL statement that deletes data in the given table to make way for the output data
+        being written.
         """
+        if time_window:
+            return f"DELETE FROM {schema}.{table} {self._time_window_where_clause(time_window)}"
+        else:
+            return f"DELETE FROM {schema}.{table}"
 
     def load_input(self, context: InputContext) -> PandasDataFrame:
-        resources = context.resources
-        with connect_snowflake(config=self.config) as con:
+        asset_key = context.upstream_output.asset_key
+
+        schema, table = DB_SCHEMA, asset_key.path[-1]
+        with connect_snowflake(config=self._config) as con:
             result = read_sql(
                 sql=self._get_select_statement(
-                    resources, context.upstream_output.asset_key, context.metadata.get("columns")
+                    table,
+                    schema,
+                    (context.metadata or {}).get("columns"),
+                    context.asset_partitions_time_window if context.has_asset_partitions else None,
                 ),
                 con=con,
             )
             result.columns = map(str.lower, result.columns)
             return result
 
-
-class TimePartitionedSnowflakeIOManager(SnowflakeIOManager):
-    """
-    This version of the SnowflakeIOManager divides its data into seperate time partitions. Based on
-    the values specified by the partition_start and partition_end resources, this will first delete
-    the data that is present within those bounds, then load the output data into the table.
-
-    This is useful for pipelines that run on a schedule, updating each hour (or day, etc.) with new
-    data.
-    """
-
-    def get_output_asset_partitions(self, context: OutputContext):
-        return [context.resources.partition_start]
-
-    def _get_cleanup_statement(self, table: str, resources):
-        return f"""
-        DELETE FROM {table} WHERE
-            TO_TIMESTAMP("time") BETWEEN
-                '{resources.partition_start}' AND '{resources.partition_end}';
-        """
-
     def _get_select_statement(
         self,
-        resources,
-        asset_key: AssetKey,
+        table: str,
+        schema: str,
         columns: Optional[Sequence[str]],
+        time_window: Optional[Tuple[datetime, datetime]],
     ):
-        check.invariant(columns is None)
-        return f"""
-        SELECT * FROM {asset_key.path[-1]} WHERE
-            TO_TIMESTAMP("time") BETWEEN
-                '{resources.partition_start}' AND '{resources.partition_end}';
-        """
+        col_str = ", ".join(columns) if columns else "*"
+        if time_window:
+            return (
+                f"""SELECT * FROM {self._config["database"]}.{schema}.{table}\n"""
+                + self._time_window_where_clause(time_window)
+            )
+        else:
+            return f"""SELECT {col_str} FROM {schema}.{table}"""
 
-
-def expectations_markdown():
-    return textwrap.dedent(
-        """
-        - Column "story_id" was expected to be unique, but was not.
-        - Unknown column "storie_id"
-        """
-    )
+    def _time_window_where_clause(self, time_window: Tuple[datetime, datetime]) -> str:
+        start_dt, end_dt = time_window
+        return f"""WHERE TO_TIMESTAMP(time::INT) BETWEEN '{start_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)}' AND '{end_dt.strftime(SNOWFLAKE_DATETIME_FORMAT)}'"""
 
 
 def pandas_columns_to_markdown(dataframe: PandasDataFrame) -> str:

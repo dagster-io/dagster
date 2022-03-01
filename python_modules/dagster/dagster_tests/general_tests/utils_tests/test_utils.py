@@ -1,6 +1,7 @@
 import os
 
 import pytest
+
 from dagster.check import CheckError, ParameterCheckError
 from dagster.utils import EventGenerationManager, ensure_dir, ensure_gen, ensure_single_item
 
@@ -37,7 +38,7 @@ def test_event_generation_manager():
     with pytest.raises(CheckError, match="Not a generator"):
         EventGenerationManager(None, int)
 
-    with pytest.raises(CheckError, match="was supposed to be a type"):
+    with pytest.raises(CheckError, match="must be a class"):
         EventGenerationManager(basic_generator(), None)
 
     with pytest.raises(CheckError, match="Called `get_object` before `generate_setup_events`"):

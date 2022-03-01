@@ -11,9 +11,10 @@ APIs
 ----
 .. currentmodule:: dagster_k8s
 
-.. autoclass:: K8sRunLauncher
+.. autoconfigurable:: K8sRunLauncher
+  :annotation: RunLauncher
 
-.. autodata:: k8s_job_executor
+.. autoconfigurable:: k8s_job_executor
   :annotation: ExecutorDefinition
 
 

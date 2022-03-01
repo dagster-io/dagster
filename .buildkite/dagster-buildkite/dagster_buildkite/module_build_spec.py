@@ -1,7 +1,8 @@
 from collections import namedtuple
 
-from .defines import TOX_MAP, SupportedPython, SupportedPythons
+from .defines import TOX_MAP, SupportedPython
 from .step_builder import StepBuilder
+from .utils import get_python_versions_for_branch
 
 MYPY_EXCLUDES = [
     "python_modules/dagit",
@@ -79,7 +80,7 @@ class ModuleBuildSpec(
             cls,
             directory,
             env_vars or [],
-            supported_pythons or SupportedPythons,
+            supported_pythons or get_python_versions_for_branch(),
             extra_cmds_fn,
             depends_on_fn,
             tox_file,
@@ -120,9 +121,10 @@ class ModuleBuildSpec(
                         f"buildkite-agent artifact upload {coverage}",
                     ]
 
+                version_str = ".".join(version.split(".")[:2])
                 step = (
                     StepBuilder(
-                        f":pytest: {label} {version[:3]}",
+                        f":pytest: {label} {version_str}",
                         timeout_in_minutes=self.timeout_in_minutes,
                     )
                     .run(*cmds)
@@ -158,7 +160,14 @@ class ModuleBuildSpec(
         if self.directory not in MYPY_EXCLUDES:
             tests.append(
                 StepBuilder(f":mypy: {package}")
-                .run("pip install mypy==0.812", f"mypy --config-file mypy/config {self.directory}")
+                .run(
+                    "pip install -e python_modules/dagster[lint]",
+                    "mkdir -p .mypy_cache",
+                    # mypy raises an error for missing stubs. We try to specify them in
+                    # dependencies, but inclusion of `--install-types
+                    # --non-interactive` will cause mypy to automatically download any missing ones.
+                    f"mypy --config-file mypy/config --install-types --non-interactive {self.directory}",
+                )
                 .on_integration_image(SupportedPython.V3_8)
                 .build()
             )

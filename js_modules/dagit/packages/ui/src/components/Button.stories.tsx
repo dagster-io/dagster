@@ -114,3 +114,15 @@ export const Disabled = () => {
     </Group>
   );
 };
+
+export const Truncation = () => {
+  return (
+    <Group direction="column" spacing={8}>
+      <Button>Normal</Button>
+      <Button style={{maxWidth: '250px'}}>Normal with max-width</Button>
+      <Button style={{maxWidth: '250px'}}>
+        Four score and seven years ago our fathers brought forth on this continent
+      </Button>
+    </Group>
+  );
+};

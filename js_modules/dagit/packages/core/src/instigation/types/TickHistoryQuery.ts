@@ -32,6 +32,7 @@ export interface TickHistoryQuery_instigationStateOrError_InstigationState_ticks
   id: string;
   status: InstigationTickStatus;
   timestamp: number;
+  cursor: string | null;
   skipReason: string | null;
   runIds: string[];
   originRunIds: string[];

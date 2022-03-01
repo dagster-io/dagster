@@ -50,7 +50,9 @@ def my_input_op(abc, xyz):
 
 # start_typed_input_op_marker
 
-MyDagsterType = DagsterType(type_check_fn=lambda _, value: value % 2 == 0, name="MyDagsterType")
+MyDagsterType = DagsterType(
+    type_check_fn=lambda _, value: value % 2 == 0, name="MyDagsterType"
+)
 
 
 @op(ins={"abc": In(dagster_type=MyDagsterType)})
@@ -99,7 +101,7 @@ def x_op(
 ):
     """
     Args:
-        args (any): One or more arguments used to generate the nwe op
+        args (any): One or more arguments used to generate the new op
         name (str): The name of the new op.
         ins (Dict[str, In]): Any Ins for the new op. Default: None.
 

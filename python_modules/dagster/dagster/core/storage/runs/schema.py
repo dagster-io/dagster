@@ -24,7 +24,18 @@ RunsTable = db.Table(
     db.Column("partition_set", db.Text),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
     db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
-    # December 2021 - Added by PR 6038
+    # Added start/end_time in #6038 (12/2021), MySQL fix added in #6451 (2/2022)
+    # We are using floats here to store unix timestamps in the database. They are optional perf
+    # optimizations, mirroring the timestamps in the event_log for the corresponding events marking
+    # the start and end of the run.  Using the float datatype is a bit of a hack - we had to change
+    # the underlying datatype in MySQL to avoid timestamp truncation.  Ideally, we could use a
+    # Timestamp field or Datetime field, but we lack the appropriate handling in the application
+    # layer to deal with the timezone-offsets at the insertion/fetching boundary with some DBs
+    # (notably Postgres DBs with a non-UTC timezone set).  This isn't a problem for the existing
+    # DateTime / Timestamp fields used in the rest of the codebase, because those fields are only
+    # used for query filtering, not for actual display in the UI (they instead use the float values
+    # within a JSON-serialized payload). We may want to revisit this in the future, dropping these
+    # columns in favor of DateTime / Timestamp columns.
     db.Column("start_time", db.Float),
     db.Column("end_time", db.Float),
 )
@@ -77,8 +88,25 @@ BulkActionsTable = db.Table(
     db.Column("body", db.Text),
 )
 
+InstanceInfo = db.Table(
+    "instance_info",
+    RunStorageSqlMetadata,
+    db.Column("run_storage_id", db.Text),
+)
+
 db.Index("idx_run_tags", RunTagsTable.c.key, RunTagsTable.c.value, mysql_length=64)
 db.Index("idx_run_partitions", RunsTable.c.partition_set, RunsTable.c.partition, mysql_length=64)
 db.Index("idx_bulk_actions", BulkActionsTable.c.key, mysql_length=32)
 db.Index("idx_bulk_actions_status", BulkActionsTable.c.status, mysql_length=32)
 db.Index("idx_run_status", RunsTable.c.status, mysql_length=32)
+db.Index(
+    "idx_run_range",
+    RunsTable.c.status,
+    RunsTable.c.update_timestamp,
+    RunsTable.c.create_timestamp,
+    mysql_length={
+        "status": 32,
+        "update_timestamp": 8,
+        "create_timestamp": 8,
+    },
+)

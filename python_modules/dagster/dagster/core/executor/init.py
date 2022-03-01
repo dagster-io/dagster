@@ -1,4 +1,4 @@
-from collections import namedtuple
+from typing import Dict, NamedTuple
 
 from dagster import check
 from dagster.core.definitions import ExecutorDefinition, IPipeline
@@ -6,9 +6,14 @@ from dagster.core.instance import DagsterInstance
 
 
 class InitExecutorContext(
-    namedtuple(
+    NamedTuple(
         "InitExecutorContext",
-        "job executor_def executor_config instance",
+        [
+            ("job", IPipeline),
+            ("executor_def", ExecutorDefinition),
+            ("executor_config", Dict[str, object]),
+            ("instance", DagsterInstance),
+        ],
     )
 ):
     """Executor-specific initialization context.
@@ -23,16 +28,16 @@ class InitExecutorContext(
 
     def __new__(
         cls,
-        job,
-        executor_def,
-        executor_config,
-        instance,
+        job: IPipeline,
+        executor_def: ExecutorDefinition,
+        executor_config: Dict[str, object],
+        instance: DagsterInstance,
     ):
         return super(InitExecutorContext, cls).__new__(
             cls,
             job=check.inst_param(job, "job", IPipeline),
             executor_def=check.inst_param(executor_def, "executor_def", ExecutorDefinition),
-            executor_config=check.dict_param(executor_config, executor_config, key_type=str),
+            executor_config=check.dict_param(executor_config, "executor_config", key_type=str),
             instance=check.inst_param(instance, "instance", DagsterInstance),
         )
 

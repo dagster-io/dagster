@@ -157,7 +157,7 @@ def step_context_to_step_run_ref(
         run_id=step_context.pipeline_run.run_id,
         step_key=step_context.step.key,
         retry_mode=retry_mode,
-        recon_pipeline=recon_pipeline,
+        recon_pipeline=recon_pipeline,  # type: ignore
         prior_attempts_count=prior_attempts_count,
         known_state=step_context.execution_plan.known_state,
         parent_run=parent_run,

@@ -2,12 +2,13 @@ import os
 import tempfile
 
 import pytest
-from dagster import execute_pipeline
 from dagster_airflow.dagster_pipeline_factory import (
     make_dagster_repo_from_airflow_dags_path,
     make_dagster_repo_from_airflow_example_dags,
 )
 from dagster_airflow_tests.marks import requires_airflow_db
+
+from dagster import execute_pipeline
 
 COMPLEX_DAG_FILE_CONTENTS = '''#
 # Licensed to the Apache Software Foundation (ASF) under one

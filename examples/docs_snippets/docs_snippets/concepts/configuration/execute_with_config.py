@@ -1,5 +1,7 @@
 from docs_snippets.concepts.configuration.configurable_op import config_example
-from docs_snippets.concepts.configuration.configurable_op_with_schema import nests_configurable
+from docs_snippets.concepts.configuration.configurable_op_with_schema import (
+    nests_configurable,
+)
 
 
 def execute_with_config():
@@ -15,7 +17,9 @@ def execute_with_bad_config():
     # start_execute_with_bad_config
     result = nests_configurable.execute_in_process(
         run_config={
-            "ops": {"configurable_with_schema": {"config": {"nonexistent_config_value": 1}}}
+            "ops": {
+                "configurable_with_schema": {"config": {"nonexistent_config_value": 1}}
+            }
         }
     )
     # end_execute_with_bad_config

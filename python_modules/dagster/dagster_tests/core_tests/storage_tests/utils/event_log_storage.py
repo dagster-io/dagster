@@ -4,16 +4,21 @@ from collections import Counter
 from contextlib import ExitStack
 
 import mock
+import pendulum
 import pytest
+
 from dagster import (
     AssetKey,
     AssetMaterialization,
+    AssetObservation,
     DagsterInstance,
+    Field,
     InputDefinition,
     ModeDefinition,
     Output,
     OutputDefinition,
     RetryRequested,
+    op,
     pipeline,
     resource,
     seven,
@@ -49,6 +54,7 @@ from dagster.core.test_utils import instance_for_test
 from dagster.core.utils import make_new_run_id
 from dagster.loggers import colored_console_logger
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.utils import datetime_as_float
 
 DEFAULT_RUN_ID = "foo"
 
@@ -60,12 +66,11 @@ TEST_TIMEOUT = 5
 
 def create_test_event_log_record(message: str, run_id: str = DEFAULT_RUN_ID):
     return EventLogEntry(
-        None,
-        message,
-        "debug",
-        "",
-        run_id,
-        time.time(),
+        error_info=None,
+        user_message=message,
+        level="debug",
+        run_id=run_id,
+        timestamp=time.time(),
         dagster_event=DagsterEvent(
             DagsterEventType.ENGINE_EVENT.value,
             "nonce",
@@ -146,12 +151,11 @@ def _event_record(run_id, solid_name, timestamp, event_type, event_specific_data
     solid_handle = NodeHandle(solid_name, None)
     step_handle = StepHandle(solid_handle)
     return EventLogEntry(
-        None,
-        "",
-        "debug",
-        "",
-        run_id,
-        timestamp,
+        error_info=None,
+        user_message="",
+        level="debug",
+        run_id=run_id,
+        timestamp=timestamp,
         step_key=step_handle.to_key(),
         pipeline_name=pipeline_name,
         dagster_event=DagsterEvent(
@@ -180,7 +184,7 @@ def _mode_def(event_callback):
 
 
 # This exists to create synthetic events to test the store
-def _synthesize_events(solids_fn, run_id=None, check_success=True, instance=None):
+def _synthesize_events(solids_fn, run_id=None, check_success=True, instance=None, run_config=None):
     events = []
 
     def _append_event(event):
@@ -193,8 +197,14 @@ def _synthesize_events(solids_fn, run_id=None, check_success=True, instance=None
     with ExitStack() as stack:
         if not instance:
             instance = stack.enter_context(DagsterInstance.ephemeral())
+
+        run_config = {
+            **{"loggers": {"callback": {}, "console": {}}},
+            **(run_config if run_config else {}),
+        }
+
         pipeline_run = instance.create_run_for_pipeline(
-            a_pipe, run_id=run_id, run_config={"loggers": {"callback": {}, "console": {}}}
+            a_pipe, run_id=run_id, run_config=run_config
         )
 
         result = execute_run(InMemoryPipeline(a_pipe), pipeline_run, instance)
@@ -219,6 +229,36 @@ def _event_types(out_events):
 def should_succeed(context):
     context.log.info("succeed")
     return "yay"
+
+
+@solid
+def solid_one(_):
+    yield AssetMaterialization(asset_key=AssetKey("asset_1"))
+    yield Output(1)
+
+
+@solid
+def solid_two(_):
+    yield AssetMaterialization(asset_key=AssetKey("asset_2"))
+    yield AssetMaterialization(asset_key=AssetKey(["path", "to", "asset_3"]))
+    yield Output(1)
+
+
+def one_solid():
+    solid_one()
+
+
+def two_solids():
+    solid_one()
+    solid_two()
+
+
+def cursor_datetime_args():
+    # parametrization function to test constructing run-sharded event log cursors, with both
+    # timezone-aware and timezone-naive datetimes
+    yield None
+    yield pendulum.now()
+    yield pendulum.now().naive()
 
 
 class TestEventLogStorage:
@@ -270,12 +310,11 @@ class TestEventLogStorage:
         assert len(storage.get_logs_for_run(DEFAULT_RUN_ID)) == 0
         storage.store_event(
             EventLogEntry(
-                None,
-                "Message2",
-                "debug",
-                "",
-                DEFAULT_RUN_ID,
-                time.time(),
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=DEFAULT_RUN_ID,
+                timestamp=time.time(),
                 dagster_event=DagsterEvent(
                     DagsterEventType.ENGINE_EVENT.value,
                     "nonce",
@@ -296,12 +335,11 @@ class TestEventLogStorage:
             assert len(storage.get_logs_for_run(run_id)) == 0
             storage.store_event(
                 EventLogEntry(
-                    None,
-                    "Message2",
-                    "debug",
-                    "",
-                    run_id,
-                    time.time(),
+                    error_info=None,
+                    level="debug",
+                    user_message="",
+                    run_id=run_id,
+                    timestamp=time.time(),
                     dagster_event=DagsterEvent(
                         DagsterEventType.STEP_SUCCESS.value,
                         "nonce",
@@ -358,7 +396,7 @@ class TestEventLogStorage:
         assert len(storage.get_logs_for_run(DEFAULT_RUN_ID)) == 0
         assert len(watched) == 3
 
-        assert [int(evt.message) for evt in watched] == [2, 3, 4]
+        assert [int(evt.user_message) for evt in watched] == [2, 3, 4]
 
     def test_event_log_storage_pagination(self, storage):
         # interleave two runs events to ensure pagination is not affected by other runs
@@ -399,12 +437,11 @@ class TestEventLogStorage:
         start_time = launched_time + 50
         storage.store_event(
             EventLogEntry(
-                None,
-                "message",
-                "debug",
-                "",
-                DEFAULT_RUN_ID,
-                enqueued_time,
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=DEFAULT_RUN_ID,
+                timestamp=enqueued_time,
                 dagster_event=DagsterEvent(
                     DagsterEventType.PIPELINE_ENQUEUED.value,
                     "nonce",
@@ -413,12 +450,11 @@ class TestEventLogStorage:
         )
         storage.store_event(
             EventLogEntry(
-                None,
-                "message",
-                "debug",
-                "",
-                DEFAULT_RUN_ID,
-                launched_time,
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=DEFAULT_RUN_ID,
+                timestamp=launched_time,
                 dagster_event=DagsterEvent(
                     DagsterEventType.PIPELINE_STARTING.value,
                     "nonce",
@@ -427,12 +463,11 @@ class TestEventLogStorage:
         )
         storage.store_event(
             EventLogEntry(
-                None,
-                "message",
-                "debug",
-                "",
-                DEFAULT_RUN_ID,
-                start_time,
+                error_info=None,
+                level="debug",
+                user_message="",
+                run_id=DEFAULT_RUN_ID,
+                timestamp=start_time,
                 dagster_event=DagsterEvent(
                     DagsterEventType.PIPELINE_START.value,
                     "nonce",
@@ -475,7 +510,7 @@ class TestEventLogStorage:
         assert d_stats.step_key == "D"
         assert d_stats.status.value == "SUCCESS"
         assert d_stats.end_time - d_stats.start_time == 150
-        assert len(d_stats.materializations) == 3
+        assert len(d_stats.materialization_events) == 3
         assert len(d_stats.expectation_results) == 2
         assert len(c_stats.attempts_list) == 1
 
@@ -631,6 +666,13 @@ class TestEventLogStorage:
         assert _event_types(
             storage.get_logs_for_run(result.run_id, of_type=DagsterEventType.STEP_SUCCESS)
         ) == [DagsterEventType.STEP_SUCCESS]
+
+        assert _event_types(
+            storage.get_logs_for_run(
+                result.run_id,
+                of_type={DagsterEventType.STEP_SUCCESS, DagsterEventType.PIPELINE_SUCCESS},
+            )
+        ) == [DagsterEventType.STEP_SUCCESS, DagsterEventType.PIPELINE_SUCCESS]
 
     def test_basic_get_logs_for_run_cursor(self, storage):
         @solid
@@ -818,12 +860,11 @@ class TestEventLogStorage:
         curr_time = time.time()
 
         event = EventLogEntry(
-            None,
-            "Message2",
-            "debug",
-            "",
-            "foo",
-            curr_time,
+            error_info=None,
+            level="debug",
+            user_message="",
+            run_id="foo",
+            timestamp=curr_time,
             dagster_event=DagsterEvent(
                 DagsterEventType.PIPELINE_START.value,
                 "nonce",
@@ -1122,7 +1163,10 @@ class TestEventLogStorage:
         assert len(step_stats[0].markers) == 1
         assert step_stats[0].markers[0].end_time >= step_stats[0].markers[0].start_time + 0.1
 
-    def test_get_event_records(self, storage):
+    @pytest.mark.parametrize(
+        "cursor_dt", cursor_datetime_args()
+    )  # test both tz-aware and naive datetimes
+    def test_get_event_records(self, storage, cursor_dt):
         if isinstance(storage, SqliteEventLogStorage):
             # test sqlite in test_get_event_records_sqlite
             pytest.skip()
@@ -1160,22 +1204,33 @@ class TestEventLogStorage:
         assert _event_types([all_records[-1].event_log_entry]) == [DagsterEventType.PIPELINE_START]
 
         # after cursor
+        def _build_cursor(record_id_cursor, run_cursor_dt):
+            if not run_cursor_dt:
+                return record_id_cursor
+            return RunShardedEventsCursor(id=record_id_cursor, run_updated_after=run_cursor_dt)
+
         assert not list(
             filter(
                 lambda r: r.storage_id <= 2,
-                storage.get_event_records(EventRecordsFilter(after_cursor=2)),
+                storage.get_event_records(
+                    EventRecordsFilter(after_cursor=_build_cursor(2, cursor_dt))
+                ),
             )
         )
         assert [
             i.storage_id
             for i in storage.get_event_records(
-                EventRecordsFilter(after_cursor=min_record_num + 2), ascending=True, limit=2
+                EventRecordsFilter(after_cursor=_build_cursor(min_record_num + 2, cursor_dt)),
+                ascending=True,
+                limit=2,
             )
         ] == [min_record_num + 3, min_record_num + 4]
         assert [
             i.storage_id
             for i in storage.get_event_records(
-                EventRecordsFilter(after_cursor=min_record_num + 2), ascending=False, limit=2
+                EventRecordsFilter(after_cursor=_build_cursor(min_record_num + 2, cursor_dt)),
+                ascending=False,
+                limit=2,
             )
         ] == [max_record_num, max_record_num - 1]
 
@@ -1187,7 +1242,6 @@ class TestEventLogStorage:
         ]
 
     def test_get_event_records_sqlite(self, storage):
-        # test for sqlite only because sqlite requires special logic to handle cross-run queries
         if not isinstance(storage, SqliteEventLogStorage):
             pytest.skip()
 
@@ -1271,12 +1325,32 @@ class TestEventLogStorage:
             for event in events:
                 storage.store_event(event)
 
-            # of_type
+            update_timestamp = run_records[-1].update_timestamp
+            tzaware_dt = pendulum.from_timestamp(datetime_as_float(update_timestamp), tz="UTC")
+
+            # use tz-aware cursor
             filtered_records = storage.get_event_records(
                 EventRecordsFilter(
                     event_type=DagsterEventType.PIPELINE_SUCCESS,
                     after_cursor=RunShardedEventsCursor(
-                        id=0, run_updated_after=run_records[-1].update_timestamp
+                        id=0, run_updated_after=tzaware_dt
+                    ),  # events after first run
+                ),
+                ascending=True,
+            )
+            assert len(filtered_records) == 2
+            assert _event_types([r.event_log_entry for r in filtered_records]) == [
+                DagsterEventType.PIPELINE_SUCCESS,
+                DagsterEventType.PIPELINE_SUCCESS,
+            ]
+            assert [r.event_log_entry.run_id for r in filtered_records] == ["2", "3"]
+
+            # use tz-naive cursor
+            filtered_records = storage.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.PIPELINE_SUCCESS,
+                    after_cursor=RunShardedEventsCursor(
+                        id=0, run_updated_after=tzaware_dt.naive()
                     ),  # events after first run
                 ),
                 ascending=True,
@@ -1412,6 +1486,7 @@ class TestEventLogStorage:
             yield AssetMaterialization(AssetKey("b"), tags={"num": str(1)})
             yield AssetMaterialization(AssetKey("c"), tags={"num": str(1)})
             yield AssetMaterialization(AssetKey("d"), tags={"num": str(1)})
+            yield AssetObservation(AssetKey("a"), metadata={"foo": "bar"})
             yield Output(1)
 
         @solid
@@ -1421,6 +1496,7 @@ class TestEventLogStorage:
             yield Output(2)
 
         def _event_tags(event):
+            assert event.dagster_event_type == DagsterEventType.ASSET_MATERIALIZATION
             return event.dagster_event.step_materialization_data.materialization.tags
 
         def _fetch_events(storage):
@@ -1475,48 +1551,413 @@ class TestEventLogStorage:
             assert _event_tags(events_by_key[AssetKey("c")])["num"] == "2"
             assert _event_tags(events_by_key[AssetKey("d")])["num"] == "1"
 
-    def test_get_materialization_count_by_partition(self, storage):
-        a = AssetKey("a")
-        b = AssetKey("b")
+    def test_asset_keys(self, storage):
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
 
-        @solid
-        def one(_):
-            yield AssetMaterialization(a, partition="a")
-            yield AssetMaterialization(b, partition="b")
-            yield AssetMaterialization(b, partition="b")
-            yield AssetMaterialization(b, partition="c")
-            yield Output(1)
+            events_one, _ = _synthesize_events(lambda: one_solid(), instance=instance)
+            events_two, _ = _synthesize_events(lambda: two_solids(), instance=instance)
 
-        @solid
-        def two(_):
-            yield AssetMaterialization(a, partition="d")
-            yield Output(2)
+            for event in events_one + events_two:
+                storage.store_event(event)
 
-        def _fetch_counts(storage):
-            return storage.get_materialization_count_by_partition([a, b])
+            asset_keys = storage.all_asset_keys()
+            assert len(asset_keys) == 3
+            assert set([asset_key.to_string() for asset_key in asset_keys]) == set(
+                ['["asset_1"]', '["asset_2"]', '["path", "to", "asset_3"]']
+            )
 
-        events, _ = _synthesize_events(lambda: one())
-        for event in events:
-            storage.store_event(event)
+    def test_has_asset_key(self, storage):
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
 
-        materialization_count_by_partition = _fetch_counts(storage)
-        assert materialization_count_by_partition[a]["a"] == 1
-        assert materialization_count_by_partition[b]["b"] == 2
-        assert materialization_count_by_partition[b]["c"] == 1
+            events_one, _ = _synthesize_events(lambda: one_solid(), instance=instance)
+            events_two, _ = _synthesize_events(lambda: two_solids(), instance=instance)
 
-        # wipe asset, make sure we respect that
-        if self.can_wipe():
-            storage.wipe_asset(a)
-            materialization_count_by_partition = _fetch_counts(storage)
-            assert materialization_count_by_partition.get(a) == {}
-            assert materialization_count_by_partition[b]["b"] == 2
+            for event in events_one + events_two:
+                storage.store_event(event)
 
-            # rematerialize wiped asset
-            events, _ = _synthesize_events(lambda: two())
+            assert storage.has_asset_key(AssetKey(["path", "to", "asset_3"]))
+            assert not storage.has_asset_key(AssetKey(["path", "to", "bogus", "asset"]))
+
+    def test_asset_events(self, storage):
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            events_one, _ = _synthesize_events(lambda: one_solid(), instance=instance)
+            events_two, _ = _synthesize_events(lambda: two_solids(), instance=instance)
+
+            for event in events_one + events_two:
+                storage.store_event(event)
+
+            asset_events = storage.get_asset_events(AssetKey("asset_1"))
+            assert len(asset_events) == 2
+            for event in asset_events:
+                assert isinstance(event, EventLogEntry)
+                assert event.is_dagster_event
+                assert event.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION
+                assert event.dagster_event.asset_key
+
+            asset_events = storage.get_asset_events(AssetKey(["path", "to", "asset_3"]))
+            assert len(asset_events) == 1
+
+    def test_asset_events_range(self, storage):
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            events_one, _ = _synthesize_events(lambda: one_solid(), instance=instance)
+            two_solids_first, _ = _synthesize_events(lambda: two_solids(), instance=instance)
+            two_solids_second, _ = _synthesize_events(lambda: two_solids(), instance=instance)
+
+            for event in events_one + two_solids_first + two_solids_second:
+                storage.store_event(event)
+
+            # descending
+            asset_events = storage.get_asset_events(AssetKey("asset_1"), include_cursor=True)
+            assert len(asset_events) == 3
+            [id_three, id_two, id_one] = [id for id, event in asset_events]
+
+            after_events = storage.get_asset_events(
+                AssetKey("asset_1"), include_cursor=True, after_cursor=id_one
+            )
+            assert len(after_events) == 2
+            assert [id for id, event in after_events] == [id_three, id_two]
+
+            before_events = storage.get_asset_events(
+                AssetKey("asset_1"), include_cursor=True, before_cursor=id_three
+            )
+            assert len(before_events) == 2
+            assert [id for id, event in before_events] == [id_two, id_one]
+
+            between_events = storage.get_asset_events(
+                AssetKey("asset_1"),
+                include_cursor=True,
+                before_cursor=id_three,
+                after_cursor=id_one,
+            )
+            assert len(between_events) == 1
+            assert [id for id, event in between_events] == [id_two]
+
+            # ascending
+            asset_events = storage.get_asset_events(
+                AssetKey("asset_1"), include_cursor=True, ascending=True
+            )
+            assert len(asset_events) == 3
+            [id_one, id_two, id_three] = [id for id, event in asset_events]
+
+            after_events = storage.get_asset_events(
+                AssetKey("asset_1"), include_cursor=True, after_cursor=id_one, ascending=True
+            )
+            assert len(after_events) == 2
+            assert [id for id, event in after_events] == [id_two, id_three]
+
+            before_events = storage.get_asset_events(
+                AssetKey("asset_1"), include_cursor=True, before_cursor=id_three, ascending=True
+            )
+            assert len(before_events) == 2
+            assert [id for id, event in before_events] == [id_one, id_two]
+
+            between_events = storage.get_asset_events(
+                AssetKey("asset_1"),
+                include_cursor=True,
+                before_cursor=id_three,
+                after_cursor=id_one,
+                ascending=True,
+            )
+            assert len(between_events) == 1
+            assert [id for id, event in between_events] == [id_two]
+
+    def test_asset_run_ids(self, storage):
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            one_run_id = "one"
+            two_run_id = "two"
+            one_events, _ = _synthesize_events(
+                lambda: one_solid(), run_id=one_run_id, instance=instance
+            )
+            two_events, _ = _synthesize_events(
+                lambda: two_solids(), run_id=two_run_id, instance=instance
+            )
+            for event in one_events + two_events:
+                storage.store_event(event)
+
+            run_ids = storage.get_asset_run_ids(AssetKey("asset_1"))
+            assert set(run_ids) == set([one_run_id, two_run_id])
+
+    def test_asset_normalization(self, storage):
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            @solid
+            def solid_normalization(_):
+                yield AssetMaterialization(asset_key="path/to-asset_4")
+                yield Output(1)
+
+            events, _ = _synthesize_events(lambda: solid_normalization(), instance=instance)
             for event in events:
                 storage.store_event(event)
 
-            materialization_count_by_partition = _fetch_counts(storage)
-            assert materialization_count_by_partition[a]["d"] == 1
-            assert len(materialization_count_by_partition[a]) == 1
-            assert materialization_count_by_partition[b]["b"] == 2
+            asset_keys = storage.all_asset_keys()
+            assert len(asset_keys) == 1
+            asset_key = asset_keys[0]
+            assert asset_key.to_string() == '["path", "to", "asset_4"]'
+            assert asset_key.path == ["path", "to", "asset_4"]
+
+    def test_asset_wipe(self, storage):
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            one_run_id = "one_run_id"
+            two_run_id = "two_run_id"
+            events_one, _ = _synthesize_events(
+                lambda: one_solid(), run_id=one_run_id, instance=instance
+            )
+            events_two, _ = _synthesize_events(
+                lambda: two_solids(), run_id=two_run_id, instance=instance
+            )
+            for event in events_one + events_two:
+                storage.store_event(event)
+
+            asset_keys = storage.all_asset_keys()
+            assert len(asset_keys) == 3
+            assert storage.has_asset_key(AssetKey("asset_1"))
+            asset_events = storage.get_asset_events(AssetKey("asset_1"))
+            assert len(asset_events) == 2
+            asset_run_ids = storage.get_asset_run_ids(AssetKey("asset_1"))
+            assert set(asset_run_ids) == set([one_run_id, two_run_id])
+
+            log_count = len(storage.get_logs_for_run(one_run_id))
+            if self.can_wipe():
+                for asset_key in asset_keys:
+                    storage.wipe_asset(asset_key)
+
+                asset_keys = storage.all_asset_keys()
+                assert len(asset_keys) == 0
+                assert not storage.has_asset_key(AssetKey("asset_1"))
+                asset_events = storage.get_asset_events(AssetKey("asset_1"))
+                assert len(asset_events) == 0
+                asset_run_ids = storage.get_asset_run_ids(AssetKey("asset_1"))
+                assert set(asset_run_ids) == set()
+                assert log_count == len(storage.get_logs_for_run(one_run_id))
+
+                one_run_id = "one_run_id_2"
+                events_one, _ = _synthesize_events(
+                    lambda: one_solid(), run_id=one_run_id, instance=instance
+                )
+                for event in events_one:
+                    storage.store_event(event)
+
+                asset_keys = storage.all_asset_keys()
+                assert len(asset_keys) == 1
+                assert storage.has_asset_key(AssetKey("asset_1"))
+                asset_events = storage.get_asset_events(AssetKey("asset_1"))
+                assert len(asset_events) == 1
+                asset_run_ids = storage.get_asset_run_ids(AssetKey("asset_1"))
+                assert set(asset_run_ids) == set([one_run_id])
+
+    def test_asset_secondary_index(self, storage):
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            events_one, _ = _synthesize_events(lambda: one_solid(), instance=instance)
+
+            for event in events_one:
+                storage.store_event(event)
+
+            asset_keys = storage.all_asset_keys()
+            assert len(asset_keys) == 1
+            migrate_asset_key_data(storage)
+
+            two_first_run_id = "first"
+            two_second_run_id = "second"
+            events_two, _ = _synthesize_events(
+                lambda: two_solids(), run_id=two_first_run_id, instance=instance
+            )
+            events_two_two, _ = _synthesize_events(
+                lambda: two_solids(), run_id=two_second_run_id, instance=instance
+            )
+            for event in events_two + events_two_two:
+                storage.store_event(event)
+
+            asset_keys = storage.all_asset_keys()
+            assert len(asset_keys) == 3
+
+            storage.delete_events(two_first_run_id)
+            asset_keys = storage.all_asset_keys()
+            assert len(asset_keys) == 3
+
+            storage.delete_events(two_second_run_id)
+            asset_keys = storage.all_asset_keys()
+            assert len(asset_keys) == 1
+
+    def test_asset_partition_query(self, storage):
+        @solid(config_schema={"partition": Field(str, is_required=False)})
+        def solid_partitioned(context):
+            yield AssetMaterialization(
+                asset_key=AssetKey("asset_key"), partition=context.solid_config.get("partition")
+            )
+            yield Output(1)
+
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            get_partitioned_config = lambda partition: {
+                "solids": {"solid_partitioned": {"config": {"partition": partition}}}
+            }
+
+            for partition in [f"partition_{x}" for x in ["a", "a", "b", "c"]]:
+                run_events, _ = _synthesize_events(
+                    lambda: solid_partitioned(),
+                    instance=instance,
+                    run_config=get_partitioned_config(partition),
+                )
+                for event in run_events:
+                    storage.store_event(event)
+
+            events = storage.get_asset_events(AssetKey("asset_key"))
+            assert len(events) == 4
+
+            events = storage.get_asset_events(
+                AssetKey("asset_key"), partitions=["partition_a", "partition_b"]
+            )
+            assert len(events) == 3
+
+    def test_get_asset_keys(self, storage):
+        @op
+        def gen_op():
+            yield AssetMaterialization(asset_key=AssetKey(["a"]))
+            yield AssetMaterialization(asset_key=AssetKey(["c"]))
+            yield AssetMaterialization(asset_key=AssetKey(["banana"]))
+            yield AssetMaterialization(asset_key=AssetKey(["b", "x"]))
+            yield AssetMaterialization(asset_key=AssetKey(["b", "y"]))
+            yield AssetMaterialization(asset_key=AssetKey(["b", "z"]))
+            yield Output(1)
+
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            events, _ = _synthesize_events(lambda: gen_op(), instance=instance)
+            for event in events:
+                storage.store_event(event)
+
+            asset_keys = storage.get_asset_keys()
+            assert len(asset_keys) == 6
+            # should come out sorted
+            assert [asset_key.to_string() for asset_key in asset_keys] == [
+                '["a"]',
+                '["b", "x"]',
+                '["b", "y"]',
+                '["b", "z"]',
+                '["banana"]',
+                '["c"]',
+            ]
+
+            # pagination fields
+            asset_keys = storage.get_asset_keys(cursor='["b", "y"]', limit=1)
+            assert len(asset_keys) == 1
+            assert asset_keys[0].to_string() == '["b", "z"]'
+
+            # prefix filter
+            asset_keys = storage.get_asset_keys(prefix=["b"])
+            assert len(asset_keys) == 3
+            assert [asset_key.to_string() for asset_key in asset_keys] == [
+                '["b", "x"]',
+                '["b", "y"]',
+                '["b", "z"]',
+            ]
+
+    def test_get_materialization_count_by_partition(self, storage):
+        a = AssetKey("no_materializations_asset")
+        b = AssetKey("no_partitions_asset")
+        c = AssetKey("two_partitions_asset")
+        d = AssetKey("one_partition_asset")
+
+        @op
+        def materialize():
+            yield AssetMaterialization(b)
+            yield AssetMaterialization(c, partition="a")
+            yield Output(None)
+
+        @op
+        def materialize_two():
+            yield AssetMaterialization(d, partition="x")
+            yield AssetMaterialization(c, partition="a")
+            yield AssetMaterialization(c, partition="b")
+            yield Output(None)
+
+        def _fetch_counts(storage):
+            return storage.get_materialization_count_by_partition([c, d])
+
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            events_one, _ = _synthesize_events(lambda: materialize(), instance=instance)
+            for event in events_one:
+                storage.store_event(event)
+
+            materialization_count_by_key = storage.get_materialization_count_by_partition([a, b, c])
+
+            assert materialization_count_by_key.get(a) == {}
+            assert materialization_count_by_key.get(b) == {}
+            assert materialization_count_by_key.get(c)["a"] == 1
+            assert len(materialization_count_by_key.get(c)) == 1
+
+            events_two, _ = _synthesize_events(lambda: materialize_two(), instance=instance)
+            for event in events_two:
+                storage.store_event(event)
+
+            materialization_count_by_key = storage.get_materialization_count_by_partition([a, b, c])
+            assert materialization_count_by_key.get(c)["a"] == 2
+            assert materialization_count_by_key.get(c)["b"] == 1
+
+            # wipe asset, make sure we respect that
+            if self.can_wipe():
+                storage.wipe_asset(c)
+                materialization_count_by_partition = _fetch_counts(storage)
+                assert materialization_count_by_partition.get(c) == {}
+
+                # rematerialize wiped asset
+                events, _ = _synthesize_events(lambda: materialize_two(), instance=instance)
+                for event in events:
+                    storage.store_event(event)
+
+                materialization_count_by_partition = _fetch_counts(storage)
+                assert materialization_count_by_partition.get(c)["a"] == 1
+                assert materialization_count_by_partition.get(d)["x"] == 2
+
+    def test_get_observation(self, storage):
+        a = AssetKey(["key_a"])
+
+        @op
+        def gen_op():
+            yield AssetObservation(asset_key=a, metadata={"foo": "bar"})
+            yield Output(1)
+
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            events_one, _ = _synthesize_events(lambda: gen_op(), instance=instance)
+            for event in events_one:
+                storage.store_event(event)
+
+            records = storage.get_event_records(
+                EventRecordsFilter(
+                    event_type=DagsterEventType.ASSET_OBSERVATION,
+                    asset_key=a,
+                )
+            )
+
+            assert len(records) == 1

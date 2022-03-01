@@ -1,5 +1,3 @@
-import '../fonts/fonts.css';
-
 import {
   ApolloLink,
   ApolloClient,

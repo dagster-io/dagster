@@ -1,4 +1,4 @@
-from collections import namedtuple
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -14,6 +14,7 @@ from typing import (
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.metadata import MetadataEntry, normalize_metadata
 from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster.utils.backcompat import experimental_arg_warning
@@ -56,8 +57,7 @@ class OutputDefinition:
             For example, users can provide a file path if the data object will be stored in a
             filesystem, or provide information of a database table when it is going to load the data
             into the table.
-        asset_key (Optional[Union[AssetKey, OutputContext -> AssetKey]]): (Experimental) An AssetKey
-            (or function that produces an AssetKey from the OutputContext) which should be associated
+        asset_key (Optional[AssetKey]]): (Experimental) An AssetKey which should be associated
             with this OutputDefinition. Used for tracking lineage information through Dagster.
         asset_partitions (Optional[Union[Set[str], OutputContext -> Set[str]]]): (Experimental) A
             set of partitions of the given asset_key (or a function that produces this list of
@@ -91,12 +91,20 @@ class OutputDefinition:
         self._manager_key = check.opt_str_param(
             io_manager_key, "io_manager_key", default="io_manager"
         )
-        self._metadata = metadata
+        self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        self._metadata_entries = check.is_list(
+            normalize_metadata(self._metadata, [], allow_invalid=True), MetadataEntry
+        )
 
         if asset_key:
             experimental_arg_warning("asset_key", "OutputDefinition.__init__")
 
-        if not callable(asset_key):
+        if callable(asset_key):
+            warnings.warn(
+                "Passing a function as the `asset_key` argument to `Out` or `OutputDefinition` is "
+                "deprecated behavior and will be removed in version 0.15.0."
+            )
+        else:
             check.opt_inst_param(asset_key, "asset_key", AssetKey)
 
         self._asset_key = asset_key
@@ -152,12 +160,20 @@ class OutputDefinition:
         return self._metadata
 
     @property
+    def metadata_entries(self):
+        return self._metadata_entries
+
+    @property
     def is_dynamic(self):
         return False
 
     @property
     def is_asset(self):
         return self._asset_key is not None
+
+    @property
+    def asset_partitions_def(self):
+        return self._asset_partitions_def
 
     @property
     def hardcoded_asset_key(self) -> Optional[AssetKey]:
@@ -292,8 +308,8 @@ class DynamicOutputDefinition(OutputDefinition):
         return True
 
 
-class OutputPointer(namedtuple("_OutputPointer", "solid_name output_name")):
-    def __new__(cls, solid_name, output_name=None):
+class OutputPointer(NamedTuple("_OutputPointer", [("solid_name", str), ("output_name", str)])):
+    def __new__(cls, solid_name: str, output_name: Optional[str] = None):
         return super(OutputPointer, cls).__new__(
             cls,
             check.str_param(solid_name, "solid_name"),
@@ -301,7 +317,9 @@ class OutputPointer(namedtuple("_OutputPointer", "solid_name output_name")):
         )
 
 
-class OutputMapping(namedtuple("_OutputMapping", "definition maps_from")):
+class OutputMapping(
+    NamedTuple("_OutputMapping", [("definition", OutputDefinition), ("maps_from", OutputPointer)])
+):
     """Defines an output mapping for a composite solid.
 
     Args:
@@ -310,7 +328,7 @@ class OutputMapping(namedtuple("_OutputMapping", "definition maps_from")):
         output_name (str): The name of the child solid's output from which to map the output.
     """
 
-    def __new__(cls, definition, maps_from):
+    def __new__(cls, definition: OutputDefinition, maps_from: OutputPointer):
         return super(OutputMapping, cls).__new__(
             cls,
             check.inst_param(definition, "definition", OutputDefinition),
@@ -355,8 +373,7 @@ class Out(
             For example, users can provide a file path if the data object will be stored in a
             filesystem, or provide information of a database table when it is going to load the data
             into the table.
-        asset_key (Optional[Union[AssetKey, OutputContext -> AssetKey]]): (Experimental) An AssetKey
-            (or function that produces an AssetKey from the OutputContext) which should be associated
+        asset_key (Optional[AssetKey]): (Experimental) An AssetKey which should be associated
             with this Out. Used for tracking lineage information through Dagster.
         asset_partitions (Optional[Union[Set[str], OutputContext -> Set[str]]]): (Experimental) A
             set of partitions of the given asset_key (or a function that produces this list of

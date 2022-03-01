@@ -1,6 +1,6 @@
 from random import random
 
-from dagster import graph, op
+from dagster import in_process_executor, job, op
 
 
 @op
@@ -22,6 +22,6 @@ def end(_num: int):
     pass
 
 
-@graph
+@job(executor_def=in_process_executor)
 def unreliable_job():
     end(unreliable(start()))

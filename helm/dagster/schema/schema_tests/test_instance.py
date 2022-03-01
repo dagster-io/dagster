@@ -1,6 +1,5 @@
 import pytest
 import yaml
-from dagster.core.run_coordinator import QueuedRunCoordinator
 from dagster_aws.s3.compute_log_manager import S3ComputeLogManager
 from dagster_azure.blob.compute_log_manager import AzureBlobComputeLogManager
 from dagster_gcp.gcs.compute_log_manager import GCSComputeLogManager
@@ -39,6 +38,8 @@ from schema.charts.dagster.subschema.run_launcher import (
 )
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.utils.helm_template import HelmTemplate
+
+from dagster.core.run_coordinator import QueuedRunCoordinator
 
 
 def to_camel_case(s: str) -> str:
@@ -120,6 +121,8 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
         {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
     ]
 
+    labels = {"my_label_key": "my_label_value"}
+
     helm_values = DagsterHelmValues.construct(
         runLauncher=RunLauncher.construct(
             type=RunLauncherType.K8S,
@@ -133,6 +136,7 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
                     envVars=env_vars,
                     volumeMounts=volume_mounts,
                     volumes=volumes,
+                    labels=labels,
                 )
             ),
         )
@@ -156,6 +160,34 @@ def test_k8s_run_launcher_config(template: HelmTemplate):
     assert run_launcher_config["config"]["env_vars"] == env_vars
     assert run_launcher_config["config"]["volume_mounts"] == volume_mounts
     assert run_launcher_config["config"]["volumes"] == volumes
+    assert run_launcher_config["config"]["labels"] == labels
+
+    assert not "fail_pod_on_run_failure" in run_launcher_config["config"]
+
+
+def test_k8s_run_launcher_fail_pod_on_run_failure(template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.K8S,
+            config=RunLauncherConfig.construct(
+                k8sRunLauncher=K8sRunLauncherConfig.construct(
+                    imagePullPolicy="Always",
+                    loadInclusterConfig=True,
+                    envConfigMaps=[],
+                    envSecrets=[],
+                    envVars=[],
+                    volumeMounts=[],
+                    volumes=[],
+                    failPodOnRunFailure=True,
+                )
+            ),
+        )
+    )
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+
+    assert run_launcher_config["config"]["fail_pod_on_run_failure"]
 
 
 def test_celery_k8s_run_launcher_config(template: HelmTemplate):
@@ -189,7 +221,12 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
         {"name": "test-pvc", "persistentVolumeClaim": {"claimName": "my_claim", "readOnly": False}},
     ]
 
+    labels = {"my_label_key": "my_label_value"}
+
+    image_pull_secrets = [{"name": "IMAGE_PULL_SECRET"}]
+
     helm_values = DagsterHelmValues.construct(
+        imagePullSecrets=image_pull_secrets,
         runLauncher=RunLauncher.construct(
             type=RunLauncherType.CELERY,
             config=RunLauncherConfig.construct(
@@ -199,9 +236,10 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
                     workerQueues=workerQueues,
                     volumeMounts=volume_mounts,
                     volumes=volumes,
+                    labels=labels,
                 )
             ),
-        )
+        ),
     )
 
     configmaps = template.render(helm_values)
@@ -219,6 +257,55 @@ def test_celery_k8s_run_launcher_config(template: HelmTemplate):
 
     assert run_launcher_config["config"]["volume_mounts"] == volume_mounts
     assert run_launcher_config["config"]["volumes"] == volumes
+    assert run_launcher_config["config"]["labels"] == labels
+
+    assert run_launcher_config["config"]["image_pull_secrets"] == image_pull_secrets
+
+    assert run_launcher_config["config"]["image_pull_policy"] == "Always"
+
+    assert run_launcher_config["config"]["service_account_name"] == "release-name-dagster"
+
+    assert not "fail_pod_on_run_failure" in run_launcher_config["config"]
+
+    helm_values_with_image_pull_policy = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.CELERY,
+            config=RunLauncherConfig.construct(
+                celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct(
+                    image=image,
+                    configSource=configSource,
+                    workerQueues=workerQueues,
+                    volumeMounts=volume_mounts,
+                    volumes=volumes,
+                    imagePullPolicy="IfNotPresent",
+                )
+            ),
+        ),
+    )
+
+    configmaps = template.render(helm_values_with_image_pull_policy)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+    assert run_launcher_config["config"]["image_pull_policy"] == "IfNotPresent"
+
+    helm_values_with_fail_pod_on_run_failure = DagsterHelmValues.construct(
+        runLauncher=RunLauncher.construct(
+            type=RunLauncherType.CELERY,
+            config=RunLauncherConfig.construct(
+                celeryK8sRunLauncher=CeleryK8sRunLauncherConfig.construct(
+                    image=image,
+                    configSource=configSource,
+                    workerQueues=workerQueues,
+                    failPodOnRunFailure=True,
+                )
+            ),
+        ),
+    )
+
+    configmaps = template.render(helm_values_with_fail_pod_on_run_failure)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    run_launcher_config = instance["run_launcher"]
+    assert run_launcher_config["config"]["fail_pod_on_run_failure"]
 
 
 @pytest.mark.parametrize("enabled", [True, False])

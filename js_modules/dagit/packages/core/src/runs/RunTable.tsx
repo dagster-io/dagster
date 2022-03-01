@@ -14,7 +14,6 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
-import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {PipelineSnapshotLink} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -23,6 +22,7 @@ import {
   isThisThingAJob,
   useRepositoryOptions,
 } from '../workspace/WorkspaceContext';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
@@ -30,6 +30,7 @@ import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspac
 import {RunActionsMenu, RunBulkActionsMenu} from './RunActionsMenu';
 import {RunStatusTagWithStats} from './RunStatusTag';
 import {canceledStatuses, queuedStatuses} from './RunStatuses';
+import {RunStepKeysAssetList} from './RunStepKeysAssetList';
 import {RunTags} from './RunTags';
 import {RunElapsed, RunTime, RUN_TIME_FRAGMENT, titleForRun} from './RunUtils';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
@@ -173,7 +174,6 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
     ...RunTimeFragment
   }
 
-  ${PYTHON_ERROR_FRAGMENT}
   ${RUN_TIME_FRAGMENT}
 `;
 
@@ -232,27 +232,32 @@ const RunRow: React.FC<{
       </td>
       <td>
         <Box flex={{direction: 'column', gap: 5}}>
-          <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
-            <PipelineReference
-              isJob={isJob}
-              pipelineName={run.pipelineName}
-              pipelineHrefContext="no-link"
-            />
-            <Link
-              to={
-                repo
-                  ? workspacePipelinePath({
-                      repoName: repo.match.repository.name,
-                      repoLocation: repo.match.repositoryLocation.name,
-                      pipelineName: run.pipelineName,
-                      isJob,
-                    })
-                  : workspacePipelinePathGuessRepo(run.pipelineName)
-              }
-            >
-              <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
-            </Link>
-          </Box>
+          {run.pipelineName !== __ASSET_GROUP ? (
+            <Box flex={{direction: 'row', gap: 8, alignItems: 'center'}}>
+              <PipelineReference
+                isJob={isJob}
+                showIcon
+                pipelineName={run.pipelineName}
+                pipelineHrefContext="no-link"
+              />
+              <Link
+                to={
+                  repo
+                    ? workspacePipelinePath({
+                        repoName: repo.match.repository.name,
+                        repoLocation: repo.match.repositoryLocation.name,
+                        pipelineName: run.pipelineName,
+                        isJob,
+                      })
+                    : workspacePipelinePathGuessRepo(run.pipelineName)
+                }
+              >
+                <IconWIP name="open_in_new" color={ColorsWIP.Blue500} />
+              </Link>
+            </Box>
+          ) : (
+            <RunStepKeysAssetList stepKeys={run.stepKeysToExecute} />
+          )}
           <RunTags
             tags={run.tags}
             mode={isJob ? (run.mode !== 'default' ? run.mode : null) : run.mode}

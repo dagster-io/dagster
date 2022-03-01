@@ -4,6 +4,7 @@ import {
   HighlightedCodeBlock,
   IconWIP,
   MenuDividerWIP,
+  MenuExternalLink,
   MenuItemWIP,
   MenuLink,
   MenuWIP,
@@ -157,11 +158,11 @@ export const RunActionsMenu: React.FC<{
               )}
               <MenuDividerWIP />
             </>
-            <MenuLink
+            <MenuExternalLink
               text="Download Debug File"
               icon="download_for_offline"
               download
-              to={`${rootServerURI}/download_debug/${run.runId}`}
+              href={`${rootServerURI}/download_debug/${run.runId}`}
             />
             {canDeletePipelineRun ? (
               <MenuItemWIP

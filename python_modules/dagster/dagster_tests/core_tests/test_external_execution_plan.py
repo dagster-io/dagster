@@ -2,6 +2,7 @@ import os
 import pickle
 
 import pytest
+
 from dagster import (
     DagsterEventType,
     DagsterExecutionStepNotFoundError,

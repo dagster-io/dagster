@@ -5,12 +5,27 @@ so we have a different layer of objects that encode the explicit public API
 in the user_context module
 """
 from abc import ABC, abstractproperty
-from typing import TYPE_CHECKING, Any, Dict, Iterable, NamedTuple, Optional, Set, cast
+from collections import defaultdict
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Set,
+    Union,
+    cast,
+)
 
 from dagster import check
+from dagster.core.definitions.events import AssetKey, AssetLineageInfo
 from dagster.core.definitions.hook_definition import HookDefinition
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.op_definition import OpDefinition
+from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.policy import RetryPolicy
@@ -18,6 +33,10 @@ from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
+from dagster.core.definitions.time_window_partitions import (
+    TimeWindow,
+    TimeWindowPartitionsDefinition,
+)
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.step import ExecutionStep
@@ -26,17 +45,19 @@ from dagster.core.executor.base import Executor
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.io_manager import IOManager
 from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.tags import PARTITION_NAME_TAG
 from dagster.core.system_config.objects import ResolvedRunConfig
-from dagster.core.types.dagster_type import DagsterType
+from dagster.core.types.dagster_type import DagsterType, DagsterTypeKind
 
 from .input import InputContext
 from .output import OutputContext, get_output_context
 
 if TYPE_CHECKING:
     from dagster.core.definitions.dependency import Node, NodeHandle
-    from dagster.core.instance import DagsterInstance
-    from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.definitions.resource_definition import Resources
+    from dagster.core.execution.plan.plan import ExecutionPlan
+    from dagster.core.instance import DagsterInstance
+
     from .hook import HookContext
 
 
@@ -289,13 +310,13 @@ class PlanExecutionContext(IPlanContext):
     def partition_key(self) -> str:
         tags = self._plan_data.pipeline_run.tags
         check.invariant(
-            "partition" in tags, "Tried to access partition_key for a non-partitioned run"
+            PARTITION_NAME_TAG in tags, "Tried to access partition_key for a non-partitioned run"
         )
-        return tags["partition"]
+        return tags[PARTITION_NAME_TAG]
 
     @property
     def has_partition_key(self) -> bool:
-        return "partition" in self._plan_data.pipeline_run.tags
+        return PARTITION_NAME_TAG in self._plan_data.pipeline_run.tags
 
     def for_type(self, dagster_type: DagsterType) -> "TypeCheckContext":
         return TypeCheckContext(
@@ -337,6 +358,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
             self._required_resource_keys
         )
         self._previous_attempt_count = previous_attempt_count
+        self._input_lineage: List[AssetLineageInfo] = []
 
         resources_iter = cast(Iterable, self._resources)
 
@@ -363,6 +385,9 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
         # but for now presence of any will cause output capture.
         if self.pipeline_def.get_all_hooks_for_handle(self.solid_handle):
             self._step_output_capture = {}
+
+        self._output_metadata: Dict[str, Any] = {}
+        self._seen_outputs: Dict[str, Union[str, Set[str]]] = {}
 
     @property
     def step(self) -> ExecutionStep:
@@ -484,6 +509,74 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
         return False
 
+    def observe_output(self, output_name: str, mapping_key: Optional[str] = None) -> None:
+        if mapping_key:
+            if output_name not in self._seen_outputs:
+                self._seen_outputs[output_name] = set()
+            cast(Set[str], self._seen_outputs[output_name]).add(mapping_key)
+        else:
+            self._seen_outputs[output_name] = "seen"
+
+    def has_seen_output(self, output_name: str, mapping_key: Optional[str] = None) -> bool:
+        if mapping_key:
+            return (
+                output_name in self._seen_outputs and mapping_key in self._seen_outputs[output_name]
+            )
+        return output_name in self._seen_outputs
+
+    def add_output_metadata(
+        self,
+        metadata: Mapping[str, Any],
+        output_name: Optional[str] = None,
+        mapping_key: Optional[str] = None,
+    ) -> None:
+
+        if output_name is None and len(self.solid_def.output_defs) == 1:
+            output_def = self.solid_def.output_defs[0]
+            output_name = output_def.name
+        elif output_name is None:
+            raise DagsterInvariantViolationError(
+                "Attempted to log metadata without providing output_name, but multiple outputs exist. Please provide an output_name to the invocation of `context.add_output_metadata`."
+            )
+        else:
+            output_def = self.solid_def.output_def_named(output_name)
+
+        if self.has_seen_output(output_name, mapping_key):
+            output_desc = (
+                f"output '{output_def.name}'"
+                if not mapping_key
+                else f"output '{output_def.name}' with mapping_key '{mapping_key}'"
+            )
+            raise DagsterInvariantViolationError(
+                f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log output metadata for {output_desc} which has already been yielded. Metadata must be logged before the output is yielded."
+            )
+        if output_def.is_dynamic and not mapping_key:
+            raise DagsterInvariantViolationError(
+                f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log metadata for dynamic output '{output_def.name}' without providing a mapping key. When logging metadata for a dynamic output, it is necessary to provide a mapping key."
+            )
+
+        output_name = output_def.name
+        if output_name in self._output_metadata:
+            if not mapping_key or mapping_key in self._output_metadata[output_name]:
+                raise DagsterInvariantViolationError(
+                    f"In {self.solid_def.node_type_str} '{self.solid.name}', attempted to log metadata for output '{output_name}' more than once."
+                )
+        if mapping_key:
+            if not output_name in self._output_metadata:
+                self._output_metadata[output_name] = {}
+            self._output_metadata[output_name][mapping_key] = metadata
+
+        else:
+            self._output_metadata[output_name] = metadata
+
+    def get_output_metadata(
+        self, output_name: str, mapping_key: Optional[str] = None
+    ) -> Optional[Mapping[str, Any]]:
+        metadata = self._output_metadata.get(output_name)
+        if mapping_key and metadata:
+            return metadata.get(mapping_key)
+        return metadata
+
     def _get_source_run_id_from_logs(self, step_output_handle: StepOutputHandle) -> Optional[str]:
         from dagster.core.events import DagsterEventType
 
@@ -553,6 +646,141 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
     @property
     def previous_attempt_count(self) -> int:
         return self._previous_attempt_count
+
+    @property
+    def op_config(self) -> Any:
+        solid_config = self.resolved_run_config.solids.get(str(self.solid_handle))
+        return solid_config.config if solid_config else None
+
+    def has_asset_partitions_for_input(self, input_name: str) -> bool:
+        op_config = self.op_config
+        if op_config is not None and "assets" in op_config:
+            all_input_asset_partitions = op_config["assets"].get("input_partitions")
+            if all_input_asset_partitions is not None:
+                this_input_asset_partitions = all_input_asset_partitions.get(input_name)
+                if this_input_asset_partitions is not None:
+                    return True
+
+        return False
+
+    def asset_partition_key_range_for_input(self, input_name: str) -> PartitionKeyRange:
+        op_config = self.op_config
+        if op_config is not None and "assets" in op_config:
+            all_input_asset_partitions = op_config["assets"].get("input_partitions")
+            if all_input_asset_partitions is not None:
+                this_input_asset_partitions = all_input_asset_partitions.get(input_name)
+                if this_input_asset_partitions is not None:
+                    return PartitionKeyRange(
+                        this_input_asset_partitions["start"], this_input_asset_partitions["end"]
+                    )
+
+        check.failed("The input has no asset partitions")
+
+    def asset_partition_key_for_input(self, input_name: str) -> str:
+        start, end = self.asset_partition_key_range_for_input(input_name)
+        if start == end:
+            return start
+        else:
+            check.failed(
+                f"Tried to access partition key for input '{input_name}' of step '{self.step.key}', "
+                f"but the step input has a partition range: '{start}' to '{end}'."
+            )
+
+    def has_asset_partitions_for_output(self, output_name: str) -> bool:
+        op_config = self.op_config
+        if op_config is not None and "assets" in op_config:
+            all_output_asset_partitions = op_config["assets"].get("output_partitions")
+            if all_output_asset_partitions is not None:
+                this_output_asset_partitions = all_output_asset_partitions.get(output_name)
+                if this_output_asset_partitions is not None:
+                    return True
+
+        return False
+
+    def asset_partition_key_range_for_output(self, output_name: str) -> PartitionKeyRange:
+        op_config = self.op_config
+        if op_config is not None and "assets" in op_config:
+            all_output_asset_partitions = op_config["assets"].get("output_partitions")
+            if all_output_asset_partitions is not None:
+                this_output_asset_partitions = all_output_asset_partitions.get(output_name)
+                if this_output_asset_partitions is not None:
+                    return PartitionKeyRange(
+                        this_output_asset_partitions["start"], this_output_asset_partitions["end"]
+                    )
+
+        check.failed("The output has no asset partitions")
+
+    def asset_partition_key_for_output(self, output_name: str) -> str:
+        start, end = self.asset_partition_key_range_for_output(output_name)
+        if start == end:
+            return start
+        else:
+            check.failed(
+                f"Tried to access partition key for output '{output_name}' of step '{self.step.key}', "
+                f"but the step output has a partition range: '{start}' to '{end}'."
+            )
+
+    def asset_partitions_time_window_for_output(self, output_name: str) -> TimeWindow:
+        """The time window for the partitions of the asset correponding to the given output.
+
+        Raises an error if either of the following are true:
+        - The output asset has no partitioning.
+        - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
+        """
+        partitions_def = self.solid_def.output_def_named(output_name).asset_partitions_def
+
+        if not partitions_def:
+            raise ValueError(
+                "Tried to get asset partitions for an output that does not correspond to a "
+                "partitioned asset."
+            )
+
+        if not isinstance(partitions_def, TimeWindowPartitionsDefinition):
+            raise ValueError(
+                "Tried to get asset partitions for an output that correponds to a partitioned "
+                "asset that is not partitioned with a TimeWindowPartitionsDefinition."
+            )
+
+        partition_key_range = self.asset_partition_key_range_for_output(output_name)
+        return TimeWindow(
+            partitions_def.time_window_for_partition_key(partition_key_range.start).start,
+            partitions_def.time_window_for_partition_key(partition_key_range.end).end,
+        )
+
+    def get_input_lineage(self) -> List[AssetLineageInfo]:
+        if not self._input_lineage:
+
+            for step_input in self.step.step_inputs:
+                input_def = step_input.source.get_input_def(self.pipeline_def)
+                dagster_type = input_def.dagster_type
+
+                if dagster_type.kind == DagsterTypeKind.NOTHING:
+                    continue
+
+                self._input_lineage.extend(step_input.source.get_asset_lineage(self))
+
+        self._input_lineage = _dedup_asset_lineage(self._input_lineage)
+
+        return self._input_lineage
+
+
+def _dedup_asset_lineage(asset_lineage: List[AssetLineageInfo]) -> List[AssetLineageInfo]:
+    """Method to remove duplicate specifications of the same Asset/Partition pair from the lineage
+    information. Duplicates can occur naturally when calculating transitive dependencies from solids
+    with multiple Outputs, which in turn have multiple Inputs (because each Output of the solid will
+    inherit all dependencies from all of the solid Inputs).
+    """
+    key_partition_mapping: Dict[AssetKey, Set[str]] = defaultdict(set)
+
+    for lineage_info in asset_lineage:
+        if not lineage_info.partitions:
+            key_partition_mapping[lineage_info.asset_key] |= set()
+        for partition in lineage_info.partitions:
+            key_partition_mapping[lineage_info.asset_key].add(partition)
+    return [
+        AssetLineageInfo(asset_key=asset_key, partitions=partitions)
+        for asset_key, partitions in key_partition_mapping.items()
+    ]
 
 
 class TypeCheckContext:

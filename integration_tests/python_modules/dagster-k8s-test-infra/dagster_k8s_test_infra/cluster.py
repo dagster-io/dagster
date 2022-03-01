@@ -10,6 +10,10 @@ import docker
 import kubernetes
 import psycopg2
 import pytest
+from dagster_k8s.utils import wait_for_pod
+from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage, PostgresScheduleStorage
+from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
+
 from dagster import check
 from dagster.cli.debug import export_run
 from dagster.core.instance import DagsterInstance, InstanceType
@@ -20,9 +24,6 @@ from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.test_utils import ExplodingRunLauncher, environ
 from dagster.utils import find_free_port
-from dagster_k8s.utils import wait_for_pod
-from dagster_postgres import PostgresEventLogStorage, PostgresRunStorage, PostgresScheduleStorage
-from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
 from .integration_utils import IS_BUILDKITE, check_output
 

@@ -6,9 +6,9 @@ Data is locally stored in csv files on the local filesystem.
 import os
 
 import pandas as pd
-from dagster import AssetKey, IOManager, IOManagerDefinition
-from dagster.core.asset_defs import build_assets_job
 from pandas import DataFrame
+
+from dagster import AssetKey, IOManager, IOManagerDefinition, build_assets_job
 
 from .assets import daily_temperature_highs, hottest_dates, sfo_q2_weather_sample
 

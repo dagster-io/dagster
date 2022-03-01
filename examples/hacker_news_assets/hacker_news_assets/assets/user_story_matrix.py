@@ -1,9 +1,10 @@
 from dataclasses import dataclass
 
 import numpy as np
-from dagster.core.asset_defs import asset
 from pandas import DataFrame, Series
 from scipy.sparse import coo_matrix
+
+from dagster import asset
 
 
 @dataclass

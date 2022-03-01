@@ -1,5 +1,5 @@
 from functools import update_wrapper
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Union, overload
 
 from dagster import check
 from dagster.core.decorator_utils import format_docstring_for_description
@@ -69,14 +69,33 @@ class _CompositeSolid:
         return composite_def
 
 
+@overload
 def composite_solid(
-    name: Union[Optional[str], Callable[..., Any]] = None,
+    name: Callable[..., Any],
+) -> CompositeSolidDefinition:
+    ...
+
+
+@overload
+def composite_solid(
+    name: Optional[str] = ...,
+    input_defs: Optional[List[InputDefinition]] = ...,
+    output_defs: Optional[List[OutputDefinition]] = ...,
+    description: Optional[str] = ...,
+    config_schema: Optional[Dict[str, Any]] = ...,
+    config_fn: Optional[Callable[[dict], dict]] = ...,
+) -> _CompositeSolid:
+    ...
+
+
+def composite_solid(
+    name: Union[Callable[..., Any], Optional[str]] = None,
     input_defs: Optional[List[InputDefinition]] = None,
     output_defs: Optional[List[OutputDefinition]] = None,
     description: Optional[str] = None,
     config_schema: Optional[Dict[str, Any]] = None,
     config_fn: Optional[Callable[[dict], dict]] = None,
-) -> _CompositeSolid:
+) -> Union[CompositeSolidDefinition, _CompositeSolid]:
     """Create a composite solid with the specified parameters from the decorated composition
     function.
 

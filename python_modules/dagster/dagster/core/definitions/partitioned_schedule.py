@@ -12,7 +12,11 @@ from .partition import (
     ScheduleType,
 )
 from .run_request import SkipReason
-from .schedule_definition import ScheduleDefinition, ScheduleEvaluationContext
+from .schedule_definition import (
+    DefaultScheduleStatus,
+    ScheduleDefinition,
+    ScheduleEvaluationContext,
+)
 from .time_window_partitions import TimeWindow, TimeWindowPartitionsDefinition
 
 
@@ -24,6 +28,7 @@ def build_schedule_from_partitioned_job(
     hour_of_day: Optional[int] = None,
     day_of_week: Optional[int] = None,
     day_of_month: Optional[int] = None,
+    default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
 ) -> ScheduleDefinition:
     """
     Creates a schedule from a time window-partitioned job.
@@ -83,6 +88,7 @@ def build_schedule_from_partitioned_job(
         execution_timezone=partitions_def.timezone,
         description=description,
         job=job,
+        default_status=default_status,
     )
 
     return schedule_def
@@ -94,8 +100,8 @@ schedule_from_partitions = build_schedule_from_partitioned_job
 def latest_window_partition_selector(
     context: ScheduleEvaluationContext, partition_set_def: PartitionSetDefinition[TimeWindow]
 ) -> Union[SkipReason, Partition[TimeWindow]]:
-    """Creates a selector for partitions that are time windows. Selects latest time window that ends
-    before the schedule tick time.
+    """Creates a selector for partitions that are time windows. Selects the latest partition that
+    exists as of the schedule tick time.
     """
     partitions = partition_set_def.get_partitions(context.scheduled_execution_time)
     if len(partitions) == 0:

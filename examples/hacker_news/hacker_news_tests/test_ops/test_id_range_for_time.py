@@ -1,4 +1,3 @@
-from dagster import build_op_context
 from hacker_news.ops.id_range_for_time import (
     binary_search_nearest_left,
     binary_search_nearest_right,
@@ -6,6 +5,8 @@ from hacker_news.ops.id_range_for_time import (
 )
 from hacker_news.resources.hn_resource import hn_snapshot_client
 from hacker_news.resources.partition_bounds import partition_bounds
+
+from dagster import build_op_context
 
 
 def test_binary_search():

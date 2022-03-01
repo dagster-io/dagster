@@ -10,7 +10,12 @@ import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
 import {RunElapsed, RunTime, RUN_TIME_FRAGMENT} from '../runs/RunUtils';
 
-import {RunGroupPanelQuery} from './types/RunGroupPanelQuery';
+import {
+  RunGroupPanelQuery,
+  RunGroupPanelQuery_runGroupOrError_RunGroup_runs,
+} from './types/RunGroupPanelQuery';
+
+type Run = RunGroupPanelQuery_runGroupOrError_RunGroup_runs;
 
 function subsetTitleForRun(run: {tags: {key: string; value: string}[]}) {
   const stepsTag = run.tags.find((t) => t.key === DagsterTag.StepSelection);
@@ -70,25 +75,15 @@ export const RunGroupPanel: React.FC<{runId: string; runStatusLastChangedAt: num
     return null;
   }
 
-  // BG Note: the g.stats check is a fix for our storybook tests, something is wrong with the
-  // apollo mocks for stats and I cannot figure it out.
-  const runs = (group.runs || [])
-    .filter(
-      (g) =>
-        g !== null &&
-        g.stats.__typename === 'RunStatsSnapshot' &&
-        typeof g.stats.startTime === 'number',
-    )
-    .sort((a, b) => {
-      // We've already filtered out runs that don't have stats, but we need to appease TS here.
-      const statsA = a?.stats;
-      const statsB = b?.stats;
-      if (statsA?.__typename === 'RunStatsSnapshot' && statsB?.__typename === 'RunStatsSnapshot') {
-        return (statsA.startTime || 0) - (statsB.startTime || 0);
-      }
-
-      return 0;
-    });
+  const unsorted: Run[] = [];
+  (group.runs || []).forEach((run: Run | null) => {
+    if (run && typeof run.startTime === 'number') {
+      unsorted.push(run);
+    }
+  });
+  const runs: Run[] = unsorted.sort((a: Run, b: Run) => {
+    return (a.startTime || 0) - (b.startTime || 0);
+  });
 
   return (
     <SidebarSection title={runs[0] ? `${runs[0].pipelineName} (${runs.length})` : ''}>

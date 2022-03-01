@@ -60,7 +60,7 @@ This value can be a:
     - Field
     - Python primitive types that resolve to dagster config types
         - int, float, bool, str, list.
-    - A dagster config type: Int, Float, Bool, List, Optional, Selector, Shape, Permissive
+    - A dagster config type: Int, Float, Bool, Array, Optional, Selector, Shape, Permissive, Map
     - A bare python dictionary, which is wrapped in Field(Shape(...)). Any values
       in the dictionary get resolved by the same rules, recursively.
     - A python list with a single entry that can resolve to a type, e.g. [int]
@@ -176,7 +176,7 @@ def user_code_error_boundary(error_cls, msg_fn, log_manager=None, **kwargs):
 
     """
     check.callable_param(msg_fn, "msg_fn")
-    check.subclass_param(error_cls, "error_cls", DagsterUserCodeExecutionError)
+    check.class_param(error_cls, "error_cls", superclass=DagsterUserCodeExecutionError)
 
     with raise_execution_interrupts():
         if log_manager:
@@ -477,12 +477,12 @@ class DagsterTypeCheckDidNotPass(DagsterError):
     """
 
     def __init__(self, description=None, metadata_entries=None, dagster_type=None):
-        from dagster import EventMetadataEntry, DagsterType
+        from dagster import DagsterType, MetadataEntry
 
         super(DagsterTypeCheckDidNotPass, self).__init__(description)
         self.description = check.opt_str_param(description, "description")
         self.metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=EventMetadataEntry
+            metadata_entries, "metadata_entries", of_type=MetadataEntry
         )
         self.dagster_type = check.opt_inst_param(dagster_type, "dagster_type", DagsterType)
 
@@ -513,8 +513,8 @@ class DagsterInvalidAssetKey(DagsterError):
     """Error raised by invalid asset key"""
 
 
-class DagsterInvalidEventMetadata(DagsterError):
-    """Error raised by invalid event metadata parameters"""
+class DagsterInvalidMetadata(DagsterError):
+    """Error raised by invalid metadata parameters"""
 
 
 class HookExecutionError(DagsterUserCodeExecutionError):

@@ -1,9 +1,10 @@
 from unittest import mock
 
-from dagster import configured, job, op
 from dagster_gcp.gcs.file_manager import GCSFileHandle, GCSFileManager
 from dagster_gcp.gcs.resources import gcs_file_manager
-from google.cloud import storage
+from google.cloud import storage  # type: ignore
+
+from dagster import configured, job, op
 
 
 def test_gcs_file_manager_write():

@@ -18,106 +18,342 @@ export interface RunDagsterRunEventFragment_ExecutionStepSkippedEvent {
   eventType: DagsterEventType | null;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_assetKey {
+export interface RunDagsterRunEventFragment_MaterializationEvent_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export type RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries = RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventPathMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventJsonMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventUrlMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventTextMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventMarkdownMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventPythonArtifactMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventFloatMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventIntMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventPipelineRunMetadataEntry | RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries_EventAssetMetadataEntry;
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent_materialization {
-  __typename: "Materialization";
-  assetKey: RunDagsterRunEventFragment_StepMaterializationEvent_materialization_assetKey | null;
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
   label: string;
   description: string | null;
-  metadataEntries: RunDagsterRunEventFragment_StepMaterializationEvent_materialization_metadataEntries[];
+  table: RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableMetadataEntry_table;
 }
 
-export interface RunDagsterRunEventFragment_StepMaterializationEvent {
-  __typename: "StepMaterializationEvent";
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type RunDagsterRunEventFragment_MaterializationEvent_metadataEntries = RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_PathMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_JsonMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_UrlMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TextMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_MarkdownMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_PythonArtifactMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_FloatMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_IntMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_PipelineRunMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_AssetMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableMetadataEntry | RunDagsterRunEventFragment_MaterializationEvent_metadataEntries_TableSchemaMetadataEntry;
+
+export interface RunDagsterRunEventFragment_MaterializationEvent {
+  __typename: "MaterializationEvent";
   message: string;
   timestamp: string;
   level: LogLevel;
   stepKey: string | null;
   eventType: DagsterEventType | null;
-  materialization: RunDagsterRunEventFragment_StepMaterializationEvent_materialization;
+  assetKey: RunDagsterRunEventFragment_MaterializationEvent_assetKey | null;
+  label: string;
+  description: string | null;
+  metadataEntries: RunDagsterRunEventFragment_MaterializationEvent_metadataEntries[];
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_AssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: RunDagsterRunEventFragment_ObservationEvent_metadataEntries_AssetMetadataEntry_assetKey;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type RunDagsterRunEventFragment_ObservationEvent_metadataEntries = RunDagsterRunEventFragment_ObservationEvent_metadataEntries_PathMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_JsonMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_UrlMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TextMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_MarkdownMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_PythonArtifactMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_FloatMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_IntMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_PipelineRunMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_AssetMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableMetadataEntry | RunDagsterRunEventFragment_ObservationEvent_metadataEntries_TableSchemaMetadataEntry;
+
+export interface RunDagsterRunEventFragment_ObservationEvent {
+  __typename: "ObservationEvent";
+  message: string;
+  timestamp: string;
+  level: LogLevel;
+  stepKey: string | null;
+  eventType: DagsterEventType | null;
+  assetKey: RunDagsterRunEventFragment_ObservationEvent_assetKey | null;
+  label: string;
+  description: string | null;
+  metadataEntries: RunDagsterRunEventFragment_ObservationEvent_metadataEntries[];
 }
 
 export interface RunDagsterRunEventFragment_RunFailureEvent_pipelineFailureError_cause {
@@ -156,84 +392,156 @@ export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_error {
   cause: RunDagsterRunEventFragment_ExecutionStepFailureEvent_error_cause | null;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export type RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries = RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventPathMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventJsonMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventUrlMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventTextMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventMarkdownMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventPythonArtifactMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventFloatMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventIntMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventPipelineRunMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_EventAssetMetadataEntry;
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries = RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_PathMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_JsonMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_UrlMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TextMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_MarkdownMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_PythonArtifactMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_FloatMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_IntMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_PipelineRunMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_AssetMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableMetadataEntry | RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata_metadataEntries_TableSchemaMetadataEntry;
 
 export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata {
   __typename: "FailureMetadata";
@@ -252,84 +560,156 @@ export interface RunDagsterRunEventFragment_ExecutionStepFailureEvent {
   failureMetadata: RunDagsterRunEventFragment_ExecutionStepFailureEvent_failureMetadata | null;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export type RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries = RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPathMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventTextMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventMarkdownMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPythonArtifactMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventFloatMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventIntMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventPipelineRunMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_EventAssetMetadataEntry;
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries = RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_PathMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_JsonMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_UrlMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TextMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_MarkdownMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_PythonArtifactMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_FloatMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_IntMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_PipelineRunMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_AssetMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableMetadataEntry | RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry;
 
 export interface RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck {
   __typename: "TypeCheck";
@@ -350,84 +730,156 @@ export interface RunDagsterRunEventFragment_ExecutionStepInputEvent {
   typeCheck: RunDagsterRunEventFragment_ExecutionStepInputEvent_typeCheck;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export type RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries = RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPathMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventJsonMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventUrlMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventTextMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventMarkdownMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPythonArtifactMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventFloatMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventIntMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventPipelineRunMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_EventAssetMetadataEntry;
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries = RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_PathMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_JsonMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_UrlMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TextMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_MarkdownMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_PythonArtifactMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_FloatMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_IntMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_PipelineRunMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_AssetMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries_TableSchemaMetadataEntry;
 
 export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck {
   __typename: "TypeCheck";
@@ -437,84 +889,156 @@ export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck {
   metadataEntries: RunDagsterRunEventFragment_ExecutionStepOutputEvent_typeCheck_metadataEntries[];
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export type RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries = RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventPathMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventJsonMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventUrlMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventTextMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventMarkdownMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventPythonArtifactMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventFloatMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventIntMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventPipelineRunMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_EventAssetMetadataEntry;
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries = RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_PathMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_JsonMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_UrlMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TextMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_MarkdownMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_PythonArtifactMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_FloatMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_IntMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_PipelineRunMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_AssetMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableMetadataEntry | RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries_TableSchemaMetadataEntry;
 
 export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent {
   __typename: "ExecutionStepOutputEvent";
@@ -528,84 +1052,156 @@ export interface RunDagsterRunEventFragment_ExecutionStepOutputEvent {
   metadataEntries: RunDagsterRunEventFragment_ExecutionStepOutputEvent_metadataEntries[];
 }
 
-export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export type RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries = RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPathMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventJsonMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventUrlMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventTextMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventMarkdownMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPythonArtifactMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventFloatMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventIntMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventPipelineRunMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_EventAssetMetadataEntry;
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries = RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_PathMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_JsonMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_UrlMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TextMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_MarkdownMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_PythonArtifactMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_FloatMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_IntMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_PipelineRunMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_AssetMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableMetadataEntry | RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult_metadataEntries_TableSchemaMetadataEntry;
 
 export interface RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult {
   __typename: "ExpectationResult";
@@ -625,84 +1221,156 @@ export interface RunDagsterRunEventFragment_StepExpectationResultEvent {
   expectationResult: RunDagsterRunEventFragment_StepExpectationResultEvent_expectationResult;
 }
 
-export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export type RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries = RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPathMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventJsonMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventUrlMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventTextMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventMarkdownMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPythonArtifactMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventFloatMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventIntMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventPipelineRunMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_EventAssetMetadataEntry;
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries = RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_PathMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_JsonMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_UrlMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TextMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_MarkdownMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_PythonArtifactMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_FloatMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_IntMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_PipelineRunMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_AssetMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableMetadataEntry | RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult_metadataEntries_TableSchemaMetadataEntry;
 
 export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult {
   __typename: "ObjectStoreOperationResult";
@@ -720,84 +1388,156 @@ export interface RunDagsterRunEventFragment_ObjectStoreOperationEvent {
   operationResult: RunDagsterRunEventFragment_ObjectStoreOperationEvent_operationResult;
 }
 
-export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export type RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries = RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventPathMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventJsonMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventUrlMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventTextMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventMarkdownMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventPythonArtifactMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventFloatMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventIntMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventPipelineRunMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_EventAssetMetadataEntry;
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries = RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_PathMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_JsonMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_UrlMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TextMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_MarkdownMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_PythonArtifactMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_FloatMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_IntMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_PipelineRunMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_AssetMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableMetadataEntry | RunDagsterRunEventFragment_HandledOutputEvent_metadataEntries_TableSchemaMetadataEntry;
 
 export interface RunDagsterRunEventFragment_HandledOutputEvent {
   __typename: "HandledOutputEvent";
@@ -824,84 +1564,156 @@ export interface RunDagsterRunEventFragment_LoadedInputEvent {
   upstreamStepKey: string | null;
 }
 
-export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventPathMetadataEntry {
-  __typename: "EventPathMetadataEntry";
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
   label: string;
   description: string | null;
   path: string;
 }
 
-export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventJsonMetadataEntry {
-  __typename: "EventJsonMetadataEntry";
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
   label: string;
   description: string | null;
   jsonString: string;
 }
 
-export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventUrlMetadataEntry {
-  __typename: "EventUrlMetadataEntry";
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
   label: string;
   description: string | null;
   url: string;
 }
 
-export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventTextMetadataEntry {
-  __typename: "EventTextMetadataEntry";
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
   label: string;
   description: string | null;
   text: string;
 }
 
-export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventMarkdownMetadataEntry {
-  __typename: "EventMarkdownMetadataEntry";
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
   label: string;
   description: string | null;
   mdStr: string;
 }
 
-export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventPythonArtifactMetadataEntry {
-  __typename: "EventPythonArtifactMetadataEntry";
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
   label: string;
   description: string | null;
   module: string;
   name: string;
 }
 
-export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventFloatMetadataEntry {
-  __typename: "EventFloatMetadataEntry";
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
   label: string;
   description: string | null;
   floatValue: number | null;
 }
 
-export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventIntMetadataEntry {
-  __typename: "EventIntMetadataEntry";
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
   label: string;
   description: string | null;
   intValue: number | null;
   intRepr: string;
 }
 
-export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventPipelineRunMetadataEntry {
-  __typename: "EventPipelineRunMetadataEntry";
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
   label: string;
   description: string | null;
   runId: string;
 }
 
-export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventAssetMetadataEntry_assetKey {
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_AssetMetadataEntry_assetKey {
   __typename: "AssetKey";
   path: string[];
 }
 
-export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventAssetMetadataEntry {
-  __typename: "EventAssetMetadataEntry";
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
   label: string;
   description: string | null;
-  assetKey: RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventAssetMetadataEntry_assetKey;
+  assetKey: RunDagsterRunEventFragment_EngineEvent_metadataEntries_AssetMetadataEntry_assetKey;
 }
 
-export type RunDagsterRunEventFragment_EngineEvent_metadataEntries = RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventPathMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventJsonMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventUrlMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventTextMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventMarkdownMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventPythonArtifactMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventFloatMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventIntMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventPipelineRunMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_EventAssetMetadataEntry;
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type RunDagsterRunEventFragment_EngineEvent_metadataEntries = RunDagsterRunEventFragment_EngineEvent_metadataEntries_PathMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_JsonMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_UrlMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_TextMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_MarkdownMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_PythonArtifactMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_FloatMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_IntMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_PipelineRunMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_AssetMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableMetadataEntry | RunDagsterRunEventFragment_EngineEvent_metadataEntries_TableSchemaMetadataEntry;
 
 export interface RunDagsterRunEventFragment_EngineEvent_engineError_cause {
   __typename: "PythonError";
@@ -964,4 +1776,4 @@ export interface RunDagsterRunEventFragment_LogsCapturedEvent {
   pid: number | null;
 }
 
-export type RunDagsterRunEventFragment = RunDagsterRunEventFragment_ExecutionStepSkippedEvent | RunDagsterRunEventFragment_StepMaterializationEvent | RunDagsterRunEventFragment_RunFailureEvent | RunDagsterRunEventFragment_ExecutionStepFailureEvent | RunDagsterRunEventFragment_ExecutionStepInputEvent | RunDagsterRunEventFragment_ExecutionStepOutputEvent | RunDagsterRunEventFragment_StepExpectationResultEvent | RunDagsterRunEventFragment_ObjectStoreOperationEvent | RunDagsterRunEventFragment_HandledOutputEvent | RunDagsterRunEventFragment_LoadedInputEvent | RunDagsterRunEventFragment_EngineEvent | RunDagsterRunEventFragment_HookErroredEvent | RunDagsterRunEventFragment_LogsCapturedEvent;
+export type RunDagsterRunEventFragment = RunDagsterRunEventFragment_ExecutionStepSkippedEvent | RunDagsterRunEventFragment_MaterializationEvent | RunDagsterRunEventFragment_ObservationEvent | RunDagsterRunEventFragment_RunFailureEvent | RunDagsterRunEventFragment_ExecutionStepFailureEvent | RunDagsterRunEventFragment_ExecutionStepInputEvent | RunDagsterRunEventFragment_ExecutionStepOutputEvent | RunDagsterRunEventFragment_StepExpectationResultEvent | RunDagsterRunEventFragment_ObjectStoreOperationEvent | RunDagsterRunEventFragment_HandledOutputEvent | RunDagsterRunEventFragment_LoadedInputEvent | RunDagsterRunEventFragment_EngineEvent | RunDagsterRunEventFragment_HookErroredEvent | RunDagsterRunEventFragment_LogsCapturedEvent;

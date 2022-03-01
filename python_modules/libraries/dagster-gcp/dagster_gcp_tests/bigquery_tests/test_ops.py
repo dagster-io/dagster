@@ -8,6 +8,18 @@ from unittest import mock
 import google.api_core.exceptions
 import pandas as pd
 import pytest
+from dagster_gcp import (
+    bigquery_resource,
+    bq_create_dataset,
+    bq_delete_dataset,
+    bq_op_for_queries,
+    import_df_to_bq,
+    import_gcs_paths_to_bq,
+)
+from dagster_pandas import DataFrame
+from google.cloud import bigquery  # type: ignore
+from google.cloud.exceptions import NotFound
+
 from dagster import (
     DagsterExecutionStepExecutionError,
     InputDefinition,
@@ -19,17 +31,6 @@ from dagster import (
 )
 from dagster.config.validate import process_config, validate_config
 from dagster.core.definitions import create_run_config_schema
-from dagster_gcp import (
-    bigquery_resource,
-    bq_create_dataset,
-    bq_delete_dataset,
-    bq_op_for_queries,
-    import_df_to_bq,
-    import_gcs_paths_to_bq,
-)
-from dagster_pandas import DataFrame
-from google.cloud import bigquery
-from google.cloud.exceptions import NotFound
 
 
 def dataset_exists(name):

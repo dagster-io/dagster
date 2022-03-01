@@ -3,6 +3,7 @@ from contextlib import ExitStack
 
 import pytest
 import yaml
+
 from dagster import DagsterInstance
 from dagster.core.host_representation import GrpcServerRepositoryLocation
 from dagster.core.workspace import WorkspaceProcessContext
@@ -190,7 +191,7 @@ def test_grpc_multi_location_workspace(config_source):
     )
     with ExitStack() as stack:
         repository_locations = {
-            name: stack.enter_context(origin.create_test_location())
+            name: stack.enter_context(origin.create_single_location())
             for name, origin in origins.items()
         }
 

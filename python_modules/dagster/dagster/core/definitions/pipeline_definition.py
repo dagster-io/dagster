@@ -32,7 +32,7 @@ from .dependency import (
     NodeInvocation,
     SolidInputHandle,
 )
-from .graph_definition import GraphDefinition
+from .graph_definition import GraphDefinition, SubselectedGraphDefinition
 from .hook_definition import HookDefinition
 from .mode import ModeDefinition
 from .node_definition import NodeDefinition
@@ -41,12 +41,13 @@ from .utils import validate_tags
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
-    from .run_config_schema import RunConfigSchema
-    from dagster.core.snap import PipelineSnapshot, ConfigSchemaSnapshot
-    from dagster.core.host_representation import PipelineIndex
-    from dagster.core.instance import DagsterInstance
     from dagster.core.definitions.partition import PartitionSetDefinition
     from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+    from dagster.core.host_representation import PipelineIndex
+    from dagster.core.instance import DagsterInstance
+    from dagster.core.snap import ConfigSchemaSnapshot, PipelineSnapshot
+
+    from .run_config_schema import RunConfigSchema
 
 
 class PipelineDefinition:
@@ -454,8 +455,8 @@ class PipelineDefinition:
         return self.get_pipeline_index().pipeline_snapshot_id
 
     def get_pipeline_index(self) -> "PipelineIndex":
-        from dagster.core.snap import PipelineSnapshot
         from dagster.core.host_representation import PipelineIndex
+        from dagster.core.snap import PipelineSnapshot
 
         return PipelineIndex(
             PipelineSnapshot.from_pipeline_def(self), self.get_parent_pipeline_snapshot()
@@ -943,6 +944,7 @@ def _checked_input_resource_reqs_for_mode(
                     not input_def.dagster_type.loader
                     and not input_def.dagster_type.kind == DagsterTypeKind.NOTHING
                     and not input_def.root_manager_key
+                    and not input_def.has_default_value
                 ):
                     raise DagsterInvalidDefinitionError(
                         "Input '{input_name}' in {described_node} is not connected to "
@@ -1022,14 +1024,12 @@ def _create_run_config_schema(
         define_run_config_schema_type,
     )
     from .run_config_schema import RunConfigSchema
-    from dagster.core.definitions.job_definition import JobDefinition
 
     # When executing with a subset pipeline, include the missing solids
     # from the original pipeline as ignored to allow execution with
     # run config that is valid for the original
-    if isinstance(pipeline_def, JobDefinition) and pipeline_def.op_selection_data:
-        # JobDefinition isn't aware of full graph but it threads ignored_solids in via OpSelectionData
-        ignored_solids = pipeline_def.op_selection_data.ignored_solids
+    if isinstance(pipeline_def.graph, SubselectedGraphDefinition):
+        ignored_solids = pipeline_def.graph.get_top_level_omitted_nodes()
     elif pipeline_def.is_subset_pipeline:
         if pipeline_def.parent_pipeline_def is None:
             check.failed("Unexpected subset pipeline state")

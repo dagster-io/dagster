@@ -14,10 +14,12 @@ from typing import (
     cast,
 )
 
+from toposort import CircularDependencyError, toposort_flatten
+
 from dagster import check
 from dagster.config import Field, Shape
 from dagster.config.config_type import ConfigType
-from dagster.config.validate import process_config
+from dagster.config.validate import validate_config
 from dagster.core.definitions.config import ConfigMapping
 from dagster.core.definitions.definition_config_schema import IDefinitionConfigSchema
 from dagster.core.definitions.mode import ModeDefinition
@@ -32,7 +34,6 @@ from dagster.core.types.dagster_type import (
     construct_dagster_type_dictionary,
 )
 from dagster.utils import merge_dicts
-from toposort import CircularDependencyError, toposort_flatten
 
 from .dependency import (
     DependencyStructure,
@@ -52,12 +53,13 @@ from .solid_container import create_execution_structure, validate_dependency_dic
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
+    from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster.core.instance import DagsterInstance
-    from .solid_definition import SolidDefinition
-    from .partition import PartitionedConfig, PartitionsDefinition
+
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
-    from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+    from .partition import PartitionedConfig, PartitionsDefinition
+    from .solid_definition import SolidDefinition
 
 
 def _check_node_defs_arg(graph_name: str, node_defs: Optional[List[NodeDefinition]]):
@@ -118,6 +120,59 @@ def _create_adjacency_lists(
 
 
 class GraphDefinition(NodeDefinition):
+    """Defines a Dagster graph.
+
+    A graph is made up of
+
+    - Nodes, which can either be an op (the functional unit of computation), or another graph.
+    - Dependencies, which determine how the values produced by nodes as outputs flow from
+      one node to another. This tells Dagster how to arrange nodes into a directed, acyclic graph
+      (DAG) of compute.
+
+    End users should prefer the :func:`@graph <graph>` decorator. GraphDefinition is generally
+    intended to be used by framework authors or for programatically generated graphs.
+
+    Args:
+        name (str): The name of the graph. Must be unique within any :py:class:`GraphDefinition`
+            or :py:class:`JobDefinition` containing the graph.
+        description (Optional[str]): A human-readable description of the pipeline.
+        node_defs (Optional[List[NodeDefinition]]): The set of ops / graphs used in this graph.
+        dependencies (Optional[Dict[Union[str, NodeInvocation], Dict[str, DependencyDefinition]]]):
+            A structure that declares the dependencies of each op's inputs on the outputs of other
+            ops in the graph. Keys of the top level dict are either the string names of ops in the
+            graph or, in the case of aliased ops, :py:class:`NodeInvocations <NodeInvocation>`.
+            Values of the top level dict are themselves dicts, which map input names belonging to
+            the op or aliased op to :py:class:`DependencyDefinitions <DependencyDefinition>`.
+        input_mappings (Optional[List[InputMapping]]): Defines the inputs to the nested graph, and
+            how they map to the inputs of its constituent ops.
+        output_mappings (Optional[List[OutputMapping]]): Defines the outputs of the nested graph,
+            and how they map from the outputs of its constituent ops.
+        config (Optional[ConfigMapping]): Defines the config of the graph, and how its schema maps
+            to the config of its constituent ops.
+        tags (Optional[Dict[str, Any]]): Arbitrary metadata for any execution of the graph.
+            Values that are not strings will be json encoded and must meet the criteria that
+            `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
+            values provided at invocation time.
+
+    Examples:
+
+        .. code-block:: python
+
+            @op
+            def return_one():
+                return 1
+
+            @op
+            def add_one(num):
+                return num + 1
+
+            graph_def = GraphDefinition(
+                name='basic',
+                node_defs=[return_one, add_one],
+                dependencies={'add_one': {'num': DependencyDefinition('return_one')}},
+            )
+    """
+
     def __init__(
         self,
         name: str,
@@ -458,9 +513,9 @@ class GraphDefinition(NodeDefinition):
         Returns:
             JobDefinition
         """
+        from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
         from .job_definition import JobDefinition
         from .partition import PartitionedConfig, PartitionsDefinition
-        from .executor_definition import ExecutorDefinition, multi_or_in_process_executor
 
         job_name = check_valid_name(name or self.name)
 
@@ -512,7 +567,7 @@ class GraphDefinition(NodeDefinition):
 
         return JobDefinition(
             name=job_name,
-            description=description,
+            description=description or self.description,
             graph_def=self,
             mode_def=ModeDefinition(
                 resource_defs=resource_defs_with_defaults,
@@ -597,8 +652,9 @@ class GraphDefinition(NodeDefinition):
         from dagster.core.execution.build_resources import wrap_resources_for_execution
         from dagster.core.execution.execute_in_process import core_execute_in_process
         from dagster.core.instance import DagsterInstance
-        from .job_definition import JobDefinition
+
         from .executor_definition import execute_in_process_executor
+        from .job_definition import JobDefinition
 
         instance = check.opt_inst_param(instance, "instance", DagsterInstance)
         resources = check.opt_dict_param(resources, "resources", key_type=str)
@@ -622,6 +678,71 @@ class GraphDefinition(NodeDefinition):
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
         )
+
+    @property
+    def parent_graph_def(self) -> Optional["GraphDefinition"]:
+        return None
+
+    @property
+    def is_subselected(self) -> bool:
+        return False
+
+
+class SubselectedGraphDefinition(GraphDefinition):
+    """Defines a subselected graph.
+
+    Args:
+        parent_graph_def (GraphDefinition): The parent graph that this current graph is subselected
+            from. This is used for tracking where the subselected graph originally comes from.
+            Note that we allow subselecting a subselected graph, and this field refers to the direct
+            parent graph of the current subselection, rather than the original root graph.
+        node_defs (Optional[List[NodeDefinition]]): A list of all top level nodes in the graph. A
+            node can be an op or a graph that contains other nodes.
+        dependencies (Optional[Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]]):
+            A structure that declares the dependencies of each op's inputs on the outputs of other
+            ops in the subselected graph. Keys of the top level dict are either the string names of
+            ops in the graph or, in the case of aliased solids, :py:class:`NodeInvocations <NodeInvocation>`.
+            Values of the top level dict are themselves dicts, which map input names belonging to
+            the op or aliased op to :py:class:`DependencyDefinitions <DependencyDefinition>`.
+        input_mappings (Optional[List[InputMapping]]): Define the inputs to the nested graph, and
+            how they map to the inputs of its constituent ops.
+        output_mappings (Optional[List[OutputMapping]]): Define the outputs of the nested graph, and
+            how they map from the outputs of its constituent ops.
+    """
+
+    def __init__(
+        self,
+        parent_graph_def: GraphDefinition,
+        node_defs: Optional[List[NodeDefinition]],
+        dependencies: Optional[Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]],
+        input_mappings: Optional[List[InputMapping]],
+        output_mappings: Optional[List[OutputMapping]],
+    ):
+        self._parent_graph_def = check.inst_param(
+            parent_graph_def, "parent_graph_def", GraphDefinition
+        )
+        super(SubselectedGraphDefinition, self).__init__(
+            name=parent_graph_def.name,  # should we create special name for subselected graphs
+            node_defs=node_defs,
+            dependencies=dependencies,
+            input_mappings=input_mappings,
+            output_mappings=output_mappings,
+            config=parent_graph_def.config_mapping,
+            tags=parent_graph_def.tags,
+        )
+
+    @property
+    def parent_graph_def(self) -> GraphDefinition:
+        return self._parent_graph_def
+
+    def get_top_level_omitted_nodes(self) -> List[Node]:
+        return [
+            solid for solid in self.parent_graph_def.solids if not self.has_solid_named(solid.name)
+        ]
+
+    @property
+    def is_subselected(self) -> bool:
+        return True
 
 
 def _validate_in_mappings(
@@ -686,32 +807,25 @@ def _validate_in_mappings(
         solid_input_handle = SolidInputHandle(target_solid, target_input)
 
         if mapping.maps_to_fan_in:
+            maps_to = cast(FanInInputPointer, mapping.maps_to)
             if not dependency_structure.has_fan_in_deps(solid_input_handle):
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' input mapping target "
-                    '"{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}" (index {mapping.maps_to.fan_in_index} of fan-in) '
-                    "is not a MultiDependencyDefinition.".format(
-                        name=name, mapping=mapping, class_name=class_name
-                    )
+                    f"In {class_name} '{name}' input mapping target "
+                    f'"{maps_to.solid_name}.{maps_to.input_name}" (index {maps_to.fan_in_index} of fan-in) '
+                    f"is not a MultiDependencyDefinition."
                 )
             inner_deps = dependency_structure.get_fan_in_deps(solid_input_handle)
-            if (mapping.maps_to.fan_in_index >= len(inner_deps)) or (
-                inner_deps[mapping.maps_to.fan_in_index] is not MappedInputPlaceholder
+            if (maps_to.fan_in_index >= len(inner_deps)) or (
+                inner_deps[maps_to.fan_in_index] is not MappedInputPlaceholder
             ):
                 raise DagsterInvalidDefinitionError(
-                    "In {class_name} '{name}' input mapping target "
-                    '"{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}" index {mapping.maps_to.fan_in_index} in '
-                    "the MultiDependencyDefinition is not a MappedInputPlaceholder".format(
-                        name=name, mapping=mapping, class_name=class_name
-                    )
+                    f"In {class_name} '{name}' input mapping target "
+                    f'"{maps_to.solid_name}.{maps_to.input_name}" index {maps_to.fan_in_index} in '
+                    f"the MultiDependencyDefinition is not a MappedInputPlaceholder"
                 )
-            mapping_keys.add(
-                "{mapping.maps_to.solid_name}.{mapping.maps_to.input_name}.{mapping.maps_to.fan_in_index}".format(
-                    mapping=mapping
-                )
-            )
+            mapping_keys.add(f"{maps_to.solid_name}.{maps_to.input_name}.{maps_to.fan_in_index}")
             target_type = target_input.dagster_type.get_inner_type_for_fan_in()
-            fan_in_msg = " (index {} of fan-in)".format(mapping.maps_to.fan_in_index)
+            fan_in_msg = " (index {} of fan-in)".format(maps_to.fan_in_index)
         else:
             if dependency_structure.has_deps(solid_input_handle):
                 raise DagsterInvalidDefinitionError(
@@ -728,7 +842,11 @@ def _validate_in_mappings(
             target_type = target_input.dagster_type
             fan_in_msg = ""
 
-        if target_type != mapping.definition.dagster_type and class_name != "GraphDefinition":
+        if (
+            # no need to check mapping type for graphs because users can't specify ins/out type on graphs
+            class_name not in (GraphDefinition.__name__, SubselectedGraphDefinition.__name__)
+            and target_type != mapping.definition.dagster_type
+        ):
             raise DagsterInvalidDefinitionError(
                 "In {class_name} '{name}' input "
                 "'{mapping.definition.name}' of type {mapping.definition.dagster_type.display_name} maps to "
@@ -881,7 +999,7 @@ def _config_mapping_with_default_value(
         field_aliases=inner_schema.field_aliases,
     )
 
-    config_evr = process_config(config_schema, default_config)
+    config_evr = validate_config(config_schema, default_config)
     if not config_evr.success:
         raise DagsterInvalidConfigError(
             f"Error in config when building job '{job_name}' from graph '{graph_name}' ",

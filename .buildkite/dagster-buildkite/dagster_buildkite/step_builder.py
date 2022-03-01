@@ -34,7 +34,8 @@ class StepBuilder:
                 "automatic": [
                     {"exit_status": -1, "limit": 2},  # agent lost
                     {"exit_status": 255, "limit": 2},  # agent forced shut down
-                ]
+                ],
+                "manual": {"permit_on_passed": True},
             },
         }
         if key is not None:

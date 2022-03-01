@@ -6,16 +6,18 @@ import {AssetNodeDefinitionFragment} from '../../assets/types/AssetNodeDefinitio
 
 import {getNodeDimensions} from './AssetNode';
 import {getForeignNodeDimensions} from './ForeignNode';
-import {AssetGraphLiveQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations} from './types/AssetGraphLiveQuery';
+import {AssetGraphLiveQuery_assetNodes_assetMaterializations} from './types/AssetGraphLiveQuery';
 import {
-  AssetGraphQuery_pipelineOrError_Pipeline_assetNodes,
-  AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey,
+  AssetGraphQuery_assetNodes,
+  AssetGraphQuery_assetNodes_assetKey,
 } from './types/AssetGraphQuery';
 import {AssetNodeLiveFragment} from './types/AssetNodeLiveFragment';
 import {InProgressRunsFragment} from './types/InProgressRunsFragment';
 
-type AssetNode = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes;
-type AssetKey = AssetGraphQuery_pipelineOrError_Pipeline_assetNodes_assetKey;
+type AssetNode = AssetGraphQuery_assetNodes;
+type AssetKey = AssetGraphQuery_assetNodes_assetKey;
+
+export const __ASSET_GROUP = '__ASSET_GROUP';
 
 export interface Node {
   id: string;
@@ -51,19 +53,26 @@ export const buildGraphData = (assetNodes: AssetNode[]) => {
     upstream: {},
   };
 
+  const addEdge = (upstreamKeyJson: string, downstreamKeyJson: string) => {
+    data.downstream[upstreamKeyJson] = {
+      ...(data.downstream[upstreamKeyJson] || {}),
+      [downstreamKeyJson]: true,
+    };
+    data.upstream[downstreamKeyJson] = {
+      ...(data.upstream[downstreamKeyJson] || {}),
+      [upstreamKeyJson]: true,
+    };
+  };
+
   assetNodes.forEach((definition: AssetNode) => {
     const assetKeyJson = JSON.stringify(definition.assetKey.path);
     definition.dependencyKeys.forEach(({path}) => {
-      const upstreamAssetKeyJson = JSON.stringify(path);
-      data.downstream[upstreamAssetKeyJson] = {
-        ...(data.downstream[upstreamAssetKeyJson] || {}),
-        [assetKeyJson]: true,
-      };
-      data.upstream[assetKeyJson] = {
-        ...(data.upstream[assetKeyJson] || {}),
-        [upstreamAssetKeyJson]: true,
-      };
+      addEdge(JSON.stringify(path), assetKeyJson);
     });
+    definition.dependedByKeys.forEach(({path}) => {
+      addEdge(assetKeyJson, JSON.stringify(path));
+    });
+
     data.nodes[assetKeyJson] = {
       id: assetKeyJson,
       assetKey: definition.assetKey,
@@ -83,7 +92,7 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
       [assetNode.id]: {
         id: assetNode.id,
         assetKey: assetNode.assetKey,
-        definition: {...assetNode, dependencyKeys: []},
+        definition: {...assetNode, dependencyKeys: [], dependedByKeys: []},
       },
     },
     upstream: {
@@ -97,7 +106,7 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
     graphData.nodes[asset.id] = {
       id: asset.id,
       assetKey: asset.assetKey,
-      definition: {...asset, dependencyKeys: []},
+      definition: {...asset, dependencyKeys: [], dependedByKeys: []},
     };
   }
   for (const {asset} of assetNode.dependedBy) {
@@ -106,7 +115,7 @@ export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragm
     graphData.nodes[asset.id] = {
       id: asset.id,
       assetKey: asset.assetKey,
-      definition: {...asset, dependencyKeys: []},
+      definition: {...asset, dependencyKeys: [], dependedByKeys: []},
     };
   }
   return graphData;
@@ -243,7 +252,7 @@ export interface LiveDataForNode {
   computeStatus: Status;
   unstartedRunIds: string[]; // run in progress and step not started
   inProgressRunIds: string[]; // run in progress and step in progress
-  lastMaterialization: AssetGraphLiveQuery_pipelineOrError_Pipeline_assetNodes_assetMaterializations | null;
+  lastMaterialization: AssetGraphLiveQuery_assetNodes_assetMaterializations | null;
   lastStepStart: number;
 }
 export interface LiveData {
@@ -257,15 +266,21 @@ export const buildLiveData = (
 ) => {
   const data: LiveData = {};
 
-  for (const node of nodes) {
-    const lastMaterialization = node.assetMaterializations[0] || null;
-    const lastStepStart = lastMaterialization?.materializationEvent.stepStats?.startTime || 0;
-    const isForeignNode = !node.opName;
-    const isPartitioned = graph.nodes[node.id].definition.partitionDefinition;
+  for (const liveNode of nodes) {
+    const graphNodeKey = JSON.stringify(liveNode.assetKey.path);
+    const graphNode = graph.nodes[graphNodeKey];
+    if (!graphNode) {
+      continue;
+    }
 
-    const runs = inProgressRunsByStep.find((r) => r.stepKey === node.opName);
+    const lastMaterialization = liveNode.assetMaterializations[0] || null;
+    const lastStepStart = lastMaterialization?.stepStats?.startTime || 0;
+    const isForeignNode = !liveNode.opName;
+    const isPartitioned = graphNode.definition.partitionDefinition;
 
-    data[node.id] = {
+    const runs = inProgressRunsByStep.find((r) => r.stepKey === liveNode.opName);
+
+    data[graphNodeKey] = {
       lastStepStart,
       lastMaterialization,
       inProgressRunIds: runs?.inProgressRuns.map((r) => r.id) || [],
@@ -282,8 +297,8 @@ export const buildLiveData = (
     };
   }
 
-  for (const asset of nodes) {
-    data[asset.id].computeStatus = findComputeStatusForId(data, graph.upstream, asset.id);
+  for (const liveNodeId of Object.keys(data)) {
+    data[liveNodeId].computeStatus = findComputeStatusForId(data, graph.upstream, liveNodeId);
   }
 
   return data;

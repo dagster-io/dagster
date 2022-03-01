@@ -25,8 +25,8 @@ class RunQueueConfig(
 
 class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
     """
-    Sends runs to the dequeuer process via the run storage. Requires the external process to be
-    alive for runs to be launched.
+    Enqueues runs via the run storage, to be deqeueued by the Dagster Daemon process. Requires
+    the Dagster Daemon process to be alive in order for runs to be launched.
     """
 
     def __init__(
@@ -67,7 +67,11 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
     @classmethod
     def config_type(cls):
         return {
-            "max_concurrent_runs": Field(config=IntSource, is_required=False),
+            "max_concurrent_runs": Field(
+                config=IntSource,
+                is_required=False,
+                description="The maximum number of runs that are allowed to be in progress at once",
+            ),
             "tag_concurrency_limits": Field(
                 config=Noneable(
                     Array(
@@ -87,8 +91,18 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
                     )
                 ),
                 is_required=False,
+                description="A set of limits that are applied to runs with particular tags. "
+                "If a value is set, the limit is applied to only that key-value pair. "
+                "If no value is set, the limit is applied across all values of that key. "
+                "If the value is set to a dict with `applyLimitPerUniqueValue: true`, the limit "
+                "will apply to the number of unique values for that key.",
             ),
-            "dequeue_interval_seconds": Field(config=IntSource, is_required=False),
+            "dequeue_interval_seconds": Field(
+                config=IntSource,
+                is_required=False,
+                description="The interval in seconds at which the Dagster Daemon "
+                "should periodically check the run queue for new runs to launch.",
+            ),
         }
 
     @classmethod
@@ -109,7 +123,6 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
             pipeline_name=pipeline_run.pipeline_name,
         )
         event_record = EventLogEntry(
-            message="",
             user_message="",
             level=logging.INFO,
             pipeline_name=pipeline_run.pipeline_name,

@@ -1,14 +1,22 @@
 import yaml
 from dagster import job
 from dagster.utils import file_relative_path
+
 from docs_snippets.concepts.solids_pipelines.composite_solids import (
     all_together_nested,
     subgraph_config_job,
     subgraph_multiple_outputs_job,
 )
-from docs_snippets.concepts.solids_pipelines.graph_provides_config import celsius_to_fahrenheit
-from docs_snippets.concepts.solids_pipelines.graph_provides_config_mapping import to_fahrenheit
-from docs_snippets.concepts.solids_pipelines.unnested_ops import all_together_unnested, return_fifty
+from docs_snippets.concepts.solids_pipelines.graph_provides_config import (
+    celsius_to_fahrenheit,
+)
+from docs_snippets.concepts.solids_pipelines.graph_provides_config_mapping import (
+    to_fahrenheit,
+)
+from docs_snippets.concepts.solids_pipelines.unnested_ops import (
+    all_together_unnested,
+    return_fifty,
+)
 
 
 def test_unnested():
@@ -22,7 +30,8 @@ def test_nested():
 def test_composite_config():
     with open(
         file_relative_path(
-            __file__, "../../../docs_snippets/concepts/solids_pipelines/composite_config.yaml"
+            __file__,
+            "../../../docs_snippets/concepts/solids_pipelines/composite_config.yaml",
         ),
         "r",
     ) as fd:

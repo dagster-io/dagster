@@ -19,6 +19,7 @@ import renderToString from "next-mdx-remote/render-to-string";
 import { useRouter } from "next/router";
 import { useVersion } from "../util/useVersion";
 import visit from "unist-util-visit";
+import { Shimmer } from "components/Shimmer";
 
 const components: MdxRemote.Components = MDXComponents;
 
@@ -96,13 +97,8 @@ function MDXRenderer({ data }: { data: MDXData }) {
   const { query } = useRouter();
   const { editMode } = query;
 
-  const {
-    mdxSource,
-    frontMatter,
-    searchIndex,
-    tableOfContents,
-    githubLink,
-  } = data;
+  const { mdxSource, frontMatter, searchIndex, tableOfContents, githubLink } =
+    data;
 
   const content = hydrate(mdxSource, {
     components,
@@ -111,6 +107,8 @@ function MDXRenderer({ data }: { data: MDXData }) {
       props: { value: searchIndex },
     },
   });
+
+  const navigationItems = tableOfContents.items.filter((item) => item?.items);
 
   return (
     <>
@@ -139,8 +137,8 @@ function MDXRenderer({ data }: { data: MDXData }) {
                 On this page
               </div>
               <div className="mt-6 ">
-                {tableOfContents.items[0].items && (
-                  <SidebarNavigation items={tableOfContents.items[0].items} />
+                {navigationItems && (
+                  <SidebarNavigation items={navigationItems} />
                 )}
               </div>
             </div>
@@ -199,18 +197,10 @@ function HTMLRenderer({ data }: { data: HTMLData }) {
 export default function MdxPage(props: Props) {
   const router = useRouter();
 
-  // If the page is not yet generated, this will be displayed
+  // If the page is not yet generated, this shimmer/skeleton will be displayed
   // initially until getStaticProps() finishes running
   if (router.isFallback) {
-    return (
-      <div className="w-full my-12 h-96 animate-pulse prose max-w-none">
-        <div className="bg-gray-200 px-4 w-48 h-12"></div>
-        <div className="bg-gray-200 mt-12 px-4 w-1/2 h-6"></div>
-        <div className="bg-gray-200 mt-5 px-4 w-2/3 h-6"></div>
-        <div className="bg-gray-200 mt-5 px-4 w-1/3 h-6"></div>
-        <div className="bg-gray-200 mt-5 px-4 w-1/2 h-6"></div>
-      </div>
-    );
+    return <Shimmer />;
   }
 
   if (props.type == PageType.MDX) {
@@ -227,10 +217,10 @@ function getItems(node, current) {
   } else if (node.type === `paragraph`) {
     visit(node, (item) => {
       if (item.type === `link`) {
-        current.url = item.url;
+        current.url = item["url"];
       }
       if (item.type === `text`) {
-        current.title = item.value;
+        current.title = item["value"];
       }
     });
     return current;

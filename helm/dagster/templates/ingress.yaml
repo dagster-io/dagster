@@ -1,5 +1,8 @@
-{{- if .Values.ingress.enabled -}}
-apiVersion: extensions/v1beta1
+{{- $apiVersion := .Values.ingress.apiVersion | default "" }}
+{{- $hasApiVersion := (.Capabilities.APIVersions.Has "networking.k8s.io/v1/Ingress") }}
+{{- $hasOverrideApiVersion := eq $apiVersion "networking.k8s.io/v1/Ingress" }}
+{{- if and (.Values.ingress.enabled) (or $hasApiVersion $hasOverrideApiVersion) }}
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ include "dagster.fullname" . }}-ingress
@@ -10,7 +13,9 @@ metadata:
     {{ $key }}: {{ $value | squote }}
     {{- end }}
 spec:
-  # See: https://github.com/helm/charts/blob/master/stable/airflow/templates/ingress-web.yaml
+  {{- with .Values.ingress.ingressClassName }}
+  ingressClassName: {{ . }}
+  {{- end }}
   tls:
     {{- if .Values.ingress.dagit.tls.enabled }}
     - hosts:
@@ -33,19 +38,25 @@ spec:
         paths:
           {{- range .Values.ingress.dagit.precedingPaths }}
           - path: {{ .path }}
+            pathType: {{ .pathType }}
             backend:
-              serviceName: {{ .serviceName }}
-              servicePort: {{ .servicePort }}
+              service:
+                name: {{ .serviceName }}
+                port: {{- include "ingress.service.port" . | nindent 16 }}
           {{- end }}
           - path: {{ .Values.ingress.dagit.path | default "/*" }}
+            pathType: {{ .Values.ingress.dagit.pathType }}
             backend:
-              serviceName: {{ include "dagster.dagit.fullname" . }}
-              servicePort: {{ .Values.dagit.service.port | default 80 }}
+              service:
+                name: {{ include "dagster.dagit.fullname" . }}
+                port:
+                  number: {{ .Values.dagit.service.port | default 80 }}
           {{- range .Values.ingress.dagit.succeedingPaths }}
           - path: {{ .path }}
             backend:
-              serviceName: {{ .serviceName }}
-              servicePort: {{ .servicePort }}
+              service:
+                name: {{ .serviceName }}
+                port: {{- include "ingress.service.port" . | nindent 16 }}
           {{- end }}
     {{- if .Values.dagit.enableReadOnly }}
     - host: {{ .Values.ingress.readOnlyDagit.host }}
@@ -53,19 +64,26 @@ spec:
         paths:
           {{- range .Values.ingress.readOnlyDagit.precedingPaths }}
           - path: {{ .path }}
+            pathType: {{ .pathType }}
             backend:
-              serviceName: {{ .serviceName }}
-              servicePort: {{ .servicePort }}
+              service:
+                name: {{ .serviceName }}
+                port: {{- include "ingress.service.port" . | nindent 16 }}
           {{- end }}
           - path: {{ .Values.ingress.readOnlyDagit.path | default "/*" }}
+            pathType: {{ .Values.ingress.readOnlyDagit.pathType }}
             backend:
-              serviceName: {{ template "dagster.dagit.fullname" dict "Values" .Values "Release" .Release "dagitReadOnly" true }}
-              servicePort: {{ .Values.dagit.service.port | default 80 }}
+              service:
+                name: {{ template "dagster.dagit.fullname" dict "Values" .Values "Release" .Release "dagitReadOnly" true }}
+                port:
+                  number: {{ .Values.dagit.service.port | default 80 }}
           {{- range .Values.ingress.readOnlyDagit.succeedingPaths }}
           - path: {{ .path }}
+            pathType: {{ .pathType }}
             backend:
-              serviceName: {{ .serviceName }}
-              servicePort: {{ .servicePort }}
+              service:
+                name: {{ .serviceName }}
+                port: {{- include "ingress.service.port" . | nindent 16 }}
           {{- end }}
     {{end}}
     {{- if .Values.flower.enabled }}
@@ -74,19 +92,26 @@ spec:
         paths:
           {{- range .Values.ingress.flower.precedingPaths }}
           - path: {{ .path }}
+            pathType: {{ .pathType }}
             backend:
-              serviceName: {{ .serviceName }}
-              servicePort: {{ .servicePort }}
+              service:
+                name: {{ .serviceName }}
+                port: {{- include "ingress.service.port" . | nindent 16 }}
           {{- end }}
           - path: {{ .Values.ingress.flower.path | default "/*" }}
+            pathType: {{ .Values.ingress.flower.pathType }}
             backend:
-              serviceName: {{ template "dagster.fullname" . }}-flower-service
-              servicePort: {{ .Values.flower.service.port }}
+              service:
+                name: {{ template "dagster.fullname" . }}-flower-service
+                port:
+                  number: {{ .Values.flower.service.port }}
           {{- range .Values.ingress.flower.succeedingPaths }}
           - path: {{ .path }}
+            pathType: {{ .pathType }}
             backend:
-              serviceName: {{ .serviceName }}
-              servicePort: {{ .servicePort }}
+              service:
+                name: {{ .serviceName }}
+                port: {{- include "ingress.service.port" . | nindent 16 }}
           {{- end }}
     {{end}}
 {{end}}

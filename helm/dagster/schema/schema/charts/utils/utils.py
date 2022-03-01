@@ -7,8 +7,7 @@ from pydantic import Extra
 
 
 class SupportedKubernetes(str, Enum):
-    V1_15 = "1.15.0"
-    V1_16 = "1.16.0"
+    V1_18 = "1.18.0"
 
 
 class ConfigurableClass(PydanticBaseModel):
@@ -48,7 +47,7 @@ class BaseModel(PydanticBaseModel):
                     value["anyOf"].append({"type": "null"})
 
 
-def create_definition_ref(definition: str, version: str = SupportedKubernetes.V1_15) -> str:
+def create_definition_ref(definition: str, version: str = SupportedKubernetes.V1_18) -> str:
     return (
         f"https://kubernetesjsonschema.dev/v{version}/_definitions.json#/definitions/{definition}"
     )

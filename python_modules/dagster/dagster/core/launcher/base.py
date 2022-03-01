@@ -6,6 +6,7 @@ from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.core.workspace.workspace import IWorkspace
+from dagster.serdes import whitelist_for_serdes
 
 
 class LaunchRunContext(NamedTuple):
@@ -35,6 +36,7 @@ class ResumeRunContext(NamedTuple):
         return self.pipeline_run.pipeline_code_origin
 
 
+@whitelist_for_serdes
 class WorkerStatus(Enum):
     RUNNING = "RUNNING"
     NOT_FOUND = "NOT_FOUND"
@@ -107,6 +109,13 @@ class RunLauncher(ABC, MayHaveInstanceWeakref):
         raise NotImplementedError(
             "This run launcher does not support run monitoring. Please disable it on your instance."
         )
+
+    @property
+    def supports_resume_run(self):
+        """
+        Whether the run launcher supports resume_run.
+        """
+        return False
 
     def resume_run(self, context: ResumeRunContext) -> None:
         raise NotImplementedError(

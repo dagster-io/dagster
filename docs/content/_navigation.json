@@ -239,8 +239,16 @@
         "title": "Assets",
         "children": [
           {
+            "title": "Software-Defined Assets",
+            "path": "/concepts/assets/software-defined-assets"
+          },
+          {
             "title": "Asset Materializations",
             "path": "/concepts/assets/asset-materializations"
+          },
+          {
+            "title": "Asset Observations",
+            "path": "/concepts/assets/asset-observations"
           }
         ]
       }
@@ -359,6 +367,10 @@
           {
             "title": "Dagster with Pandas",
             "path": "/integrations/pandas"
+          },
+          {
+            "title": "Dagster with Pandera",
+            "path": "/integrations/pandera"
           },
           {
             "title": "Dagster with Jupyter/Papermill",

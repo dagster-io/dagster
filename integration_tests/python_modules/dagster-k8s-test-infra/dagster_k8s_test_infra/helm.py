@@ -1,17 +1,20 @@
 # pylint: disable=print-call, redefined-outer-name
 import base64
+import json
 import os
 import subprocess
 import time
 from contextlib import contextmanager
 
+import boto3
 import kubernetes
 import pytest
 import requests
 import yaml
+from dagster_k8s.utils import wait_for_pod
+
 from dagster import check
 from dagster.utils import find_free_port, git_repository_root, merge_dicts
-from dagster_k8s.utils import wait_for_pod
 
 from .integration_utils import IS_BUILDKITE, check_output, get_test_namespace, image_pull_policy
 
@@ -159,10 +162,20 @@ def aws_configmap(namespace, should_cleanup):
         }
 
         if not aws_data["AWS_ACCESS_KEY_ID"] or not aws_data["AWS_SECRET_ACCESS_KEY"]:
-            raise Exception(
-                "Must have AWS credentials set in AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY "
-                "to be able to run Helm tests locally"
-            )
+            sm_client = boto3.client("secretsmanager", region_name="us-west-1")
+            try:
+                creds = json.loads(
+                    sm_client.get_secret_value(
+                        SecretId=os.getenv("AWS_SSM_REFERENCE", "development/DOCKER_AWS_CREDENTIAL")
+                    ).get("SecretString")
+                )
+                aws_data["AWS_ACCESS_KEY_ID"] = creds["aws_access_key_id"]
+                aws_data["AWS_SECRET_ACCESS_KEY"] = creds["aws_secret_access_key"]
+            except:
+                raise Exception(
+                    "Must have AWS credentials set in AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY "
+                    "to be able to run Helm tests locally"
+                )
 
         print("Creating ConfigMap %s with AWS credentials" % (TEST_AWS_CONFIGMAP_NAME))
         aws_configmap = kubernetes.client.V1ConfigMap(
@@ -584,6 +597,9 @@ def helm_chart_for_k8s_run_launcher(
                                 "configMap": {"name": TEST_VOLUME_CONFIGMAP_NAME},
                             }
                         ],
+                        "labels": {
+                            "run_launcher_label_key": "run_launcher_label_value",
+                        },
                     }
                 },
             },
@@ -600,16 +616,6 @@ def helm_chart_for_k8s_run_launcher(
                 "runMonitoring": {"enabled": True, "pollIntervalSeconds": 5}
                 if run_monitoring
                 else {},
-                "startupProbe": {
-                    "periodSeconds": 10,
-                    "failureThreshold": 12,
-                    "timeoutSeconds": 12,
-                },
-                "livenessProbe": {
-                    "periodSeconds": 30,
-                    "failureThreshold": 12,
-                    "timeoutSeconds": 12,
-                },
             },
             "imagePullSecrets": [{"name": TEST_IMAGE_PULL_SECRET_NAME}],
         },
@@ -653,7 +659,6 @@ def helm_chart_for_user_deployments_subchart_disabled(namespace, docker_image, s
                         "service": {
                             "annotations": {"dagster-integration-tests": "ucd-1-svc-annotation"}
                         },
-                        "replicaCount": 1,
                         "volumeMounts": [
                             {
                                 "name": "test-volume",
@@ -702,7 +707,6 @@ def helm_chart_for_user_deployments_subchart(namespace, docker_image, should_cle
                     "define_demo_execution_repo",
                 ],
                 "port": 3030,
-                "replicaCount": 1,
             }
         ],
     }
@@ -745,7 +749,6 @@ def _base_helm_config(docker_image):
                     "service": {
                         "annotations": {"dagster-integration-tests": "ucd-1-svc-annotation"}
                     },
-                    "replicaCount": 1,
                     "volumeMounts": [
                         {
                             "name": "test-volume",
@@ -764,16 +767,6 @@ def _base_helm_config(docker_image):
             "env": {"TEST_SET_ENV_VAR": "test_dagit_env_var"},
             "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
             "envSecrets": [{"name": TEST_SECRET_NAME}],
-            "livenessProbe": {
-                "httpGet": {"path": "/dagit_info", "port": 80},
-                "periodSeconds": 20,
-                "failureThreshold": 3,
-            },
-            "startupProbe": {
-                "httpGet": {"path": "/dagit_info", "port": 80},
-                "failureThreshold": 6,
-                "periodSeconds": 10,
-            },
             "annotations": {"dagster-integration-tests": "dagit-pod-annotation"},
             "service": {"annotations": {"dagster-integration-tests": "dagit-svc-annotation"}},
         },
@@ -834,6 +827,9 @@ def _base_helm_config(docker_image):
                             "configMap": {"name": TEST_VOLUME_CONFIGMAP_NAME},
                         }
                     ],
+                    "labels": {
+                        "run_launcher_label_key": "run_launcher_label_value",
+                    },
                 },
             },
         },
@@ -857,15 +853,9 @@ def _base_helm_config(docker_image):
             "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
             "envSecrets": [{"name": TEST_SECRET_NAME}],
             "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
-            "startupProbe": {
-                "periodSeconds": 10,
-                "failureThreshold": 12,
-                "timeoutSeconds": 12,
-            },
-            "livenessProbe": {
-                "periodSeconds": 30,
-                "failureThreshold": 12,
-                "timeoutSeconds": 12,
+            "runMonitoring": {
+                "enabled": True,
+                "pollIntervalSeconds": 5,
             },
         },
         # Used to set the environment variables in dagster.shared_env that determine the run config
@@ -894,16 +884,6 @@ def helm_chart_for_daemon(namespace, docker_image, should_cleanup=True):
                 "envConfigMaps": [{"name": TEST_CONFIGMAP_NAME}],
                 "envSecrets": [{"name": TEST_SECRET_NAME}],
                 "annotations": {"dagster-integration-tests": "daemon-pod-annotation"},
-                "startupProbe": {
-                    "periodSeconds": 10,
-                    "failureThreshold": 12,
-                    "timeoutSeconds": 12,
-                },
-                "livenessProbe": {
-                    "periodSeconds": 30,
-                    "failureThreshold": 12,
-                    "timeoutSeconds": 12,
-                },
             },
         },
     )

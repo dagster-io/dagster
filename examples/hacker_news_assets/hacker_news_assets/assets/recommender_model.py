@@ -1,11 +1,11 @@
 # pylint: disable=redefined-outer-name
 import random
 
-from dagster import EventMetadata, Output
-from dagster.core.asset_defs import AssetIn, asset
 from hacker_news_assets.assets.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame, Series
 from sklearn.decomposition import TruncatedSVD
+
+from dagster import AssetIn, MetadataValue, Output, asset
 
 
 @asset
@@ -63,7 +63,7 @@ def component_top_stories(
     yield Output(
         component_top_stories,
         metadata={
-            "Top component top stories": EventMetadata.md(
+            "Top component top stories": MetadataValue.md(
                 top_components_to_markdown(component_top_stories)
             ),
         },

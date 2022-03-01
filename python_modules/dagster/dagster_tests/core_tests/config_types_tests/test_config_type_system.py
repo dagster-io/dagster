@@ -3,6 +3,7 @@ import string
 import typing
 
 import pytest
+
 from dagster import (
     Any,
     DagsterInvalidConfigDefinitionError,
@@ -28,8 +29,9 @@ from dagster import (
     pipeline,
     solid,
 )
+from dagster.check import ParameterCheckError
 from dagster.config.errors import DagsterEvaluationErrorReason
-from dagster.config.field_utils import convert_potential_field
+from dagster.config.field_utils import Map, Shape, convert_potential_field
 from dagster.config.validate import process_config, validate_config
 
 
@@ -186,27 +188,24 @@ def test_undefined_field_error():
 
 
 def test_multiple_required_fields_passing():
-    assert (
-        _validate(
-            _multiple_required_fields_config_dict(),
-            {"field_one": "value_one", "field_two": "value_two"},
-        )
-        == {"field_one": "value_one", "field_two": "value_two"}
-    )
+    assert _validate(
+        _multiple_required_fields_config_dict(),
+        {"field_one": "value_one", "field_two": "value_two"},
+    ) == {"field_one": "value_one", "field_two": "value_two"}
 
 
 def test_multiple_required_fields_failing():
     expected_suggested_config = {"field_one": "...", "field_two": "..."}
     with pytest.raises(
         AssertionError,
-        match=fr"Missing required config entries \['field_one', 'field_two'\] at the root. .* {expected_suggested_config}",
+        match=rf"Missing required config entries \['field_one', 'field_two'\] at the root. .* {expected_suggested_config}",
     ):
         _validate(_multiple_required_fields_config_dict(), {})
 
     expected_suggested_config = {"field_two": "..."}
     with pytest.raises(
         AssertionError,
-        match=fr'Missing required config entry "field_two" at the root. .* {expected_suggested_config}',
+        match=rf'Missing required config entry "field_two" at the root. .* {expected_suggested_config}',
     ):
         _validate(_multiple_required_fields_config_dict(), {"field_one": "yup"})
 
@@ -300,14 +299,170 @@ def test_permissive_multiple_required_fields_failing():
         )
 
 
-def test_mixed_args_passing():
-    assert (
+def test_map_passing():
+    # Ensure long form works
+    assert _validate(
+        Field(Map(key_type=str, inner_type=str)),
+        {
+            "field_one": "value_one",
+            "field_two": "value_two",
+        },
+    ) == {
+        "field_one": "value_one",
+        "field_two": "value_two",
+    }
+
+    assert _validate(
+        Field(Map(key_type=int, inner_type=float)),
+        {5: 5.5, 3: 3.5},
+    ) == {5: 5.5, 3: 3.5}
+
+    # Ensure short form works
+    assert _validate(Field({str: int}), {"field_one": 2, "field_two": 5,},) == {
+        "field_one": 2,
+        "field_two": 5,
+    }
+
+
+def test_map_failing():
+    with pytest.raises(ParameterCheckError):
         _validate(
-            _mixed_required_optional_string_config_dict_with_default(),
-            {"optional_arg": "value_one", "required_arg": "value_two"},
+            Field(Map(key_type="asdf", inner_type=str)),
+            {
+                "field_one": "value_one",
+                "field_two": 2,
+            },
         )
-        == {"optional_arg": "value_one", "required_arg": "value_two"}
-    )
+
+    with pytest.raises(ParameterCheckError) as e:
+        _validate(
+            Field(Map(Noneable(str), str)),
+            {
+                "field_one": "value_one",
+                "field_two": 2,
+            },
+        )
+    assert "must be a scalar" in str(e)
+
+    with pytest.raises(DagsterInvalidDefinitionError) as e:
+        _validate(
+            Field({55: str}),
+            {
+                "field_one": "value_one",
+                "field_two": 2,
+            },
+        )
+    assert "Invalid key" in str(e)
+
+    with pytest.raises(DagsterInvalidDefinitionError) as e:
+        _validate(
+            Field({Noneable(str): str}),
+            {
+                "field_one": "value_one",
+                "field_two": 2,
+            },
+        )
+    assert "Non-scalar key" in str(e)
+
+    with pytest.raises(AssertionError):
+        _validate(
+            Field(Map(key_type=str, inner_type=str)),
+            {
+                "field_one": "value_one",
+                "field_two": 2,
+            },
+        )
+
+
+def test_map_shape_complex():
+    # Long form
+    assert _validate(
+        Field(Map(str, Shape({"name": Field(str), "number": Field(int)}))),
+        {
+            "foo": {
+                "name": "test_name",
+                "number": 5,
+            },
+            "bar": {
+                "name": "other_name",
+                "number": 10,
+            },
+        },
+    ) == {
+        "foo": {
+            "name": "test_name",
+            "number": 5,
+        },
+        "bar": {
+            "name": "other_name",
+            "number": 10,
+        },
+    }
+
+    # Short form
+    assert _validate(
+        Field(
+            {
+                str: {
+                    "name": Field(str),
+                    "number": Field(int),
+                },
+            }
+        ),
+        {
+            "foo": {
+                "name": "test_name",
+                "number": 5,
+            },
+            "bar": {
+                "name": "other_name",
+                "number": 10,
+            },
+        },
+    ) == {
+        "foo": {
+            "name": "test_name",
+            "number": 5,
+        },
+        "bar": {
+            "name": "other_name",
+            "number": 10,
+        },
+    }
+
+    with pytest.raises(AssertionError):
+        _validate(
+            Field(Map(str, Shape({"name": Field(str), "number": Field(int)}))),
+            {
+                "foo": {
+                    "name": "test_name",
+                    "number": "not_a_number",
+                },
+                "bar": {
+                    "name": "other_name",
+                    "number": 10,
+                },
+            },
+        )
+
+    with pytest.raises(AssertionError):
+        _validate(
+            Field(Map(str, Shape({"name": Field(str), "number": Field(int)}))),
+            {
+                "foo": {
+                    "name": "test_name",
+                    "number": 15,
+                },
+                "baz": "not_a_shape",
+            },
+        )
+
+
+def test_mixed_args_passing():
+    assert _validate(
+        _mixed_required_optional_string_config_dict_with_default(),
+        {"optional_arg": "value_one", "required_arg": "value_two"},
+    ) == {"optional_arg": "value_one", "required_arg": "value_two"}
 
     assert _validate(
         _mixed_required_optional_string_config_dict_with_default(), {"required_arg": "value_two"}
@@ -559,15 +714,10 @@ def test_two_list_types():
     def two_list_type(context):
         return context.solid_config
 
-    assert (
-        execute_solid(
-            two_list_type,
-            run_config={
-                "solids": {"two_list_type": {"config": {"list_one": [1], "list_two": [2]}}}
-            },
-        ).output_value()
-        == {"list_one": [1], "list_two": [2]}
-    )
+    assert execute_solid(
+        two_list_type,
+        run_config={"solids": {"two_list_type": {"config": {"list_one": [1], "list_two": [2]}}}},
+    ).output_value() == {"list_one": [1], "list_two": [2]}
 
     @solid(
         input_defs=[],
@@ -576,17 +726,14 @@ def test_two_list_types():
     def two_list_type_condensed_syntax(context):
         return context.solid_config
 
-    assert (
-        execute_solid(
-            two_list_type_condensed_syntax,
-            run_config={
-                "solids": {
-                    "two_list_type_condensed_syntax": {"config": {"list_one": [1], "list_two": [2]}}
-                }
-            },
-        ).output_value()
-        == {"list_one": [1], "list_two": [2]}
-    )
+    assert execute_solid(
+        two_list_type_condensed_syntax,
+        run_config={
+            "solids": {
+                "two_list_type_condensed_syntax": {"config": {"list_one": [1], "list_two": [2]}}
+            }
+        },
+    ).output_value() == {"list_one": [1], "list_two": [2]}
 
     @solid(
         input_defs=[],
@@ -595,19 +742,16 @@ def test_two_list_types():
     def two_list_type_condensed_syntax_primitives(context):
         return context.solid_config
 
-    assert (
-        execute_solid(
-            two_list_type_condensed_syntax_primitives,
-            run_config={
-                "solids": {
-                    "two_list_type_condensed_syntax_primitives": {
-                        "config": {"list_one": [1], "list_two": [2]}
-                    }
+    assert execute_solid(
+        two_list_type_condensed_syntax_primitives,
+        run_config={
+            "solids": {
+                "two_list_type_condensed_syntax_primitives": {
+                    "config": {"list_one": [1], "list_two": [2]}
                 }
-            },
-        ).output_value()
-        == {"list_one": [1], "list_two": [2]}
-    )
+            }
+        },
+    ).output_value() == {"list_one": [1], "list_two": [2]}
 
 
 def test_multilevel_default_handling():
@@ -753,6 +897,55 @@ def test_list_in_config_error():
         @solid(config_schema=List[int])
         def _no_runtime_list_in_config(_):
             pass
+
+
+def test_working_map_path():
+    called = {}
+
+    @solid(config_schema={str: int})
+    def required_map_int_solid(context):
+        assert context.solid_config == {"foo": 1, "bar": 2}
+        called["yup"] = True
+
+    @pipeline
+    def pipeline_def():
+        required_map_int_solid()
+
+    result = execute_pipeline(
+        pipeline_def,
+        run_config={"solids": {"required_map_int_solid": {"config": {"foo": 1, "bar": 2}}}},
+    )
+
+    assert result.success
+    assert called["yup"]
+
+
+def test_item_error_map_path():
+    called = {}
+
+    @solid(config_schema={str: int})
+    def required_map_int_solid(context):
+        assert context.solid_config == {"foo": 1, "bar": 2}
+        called["yup"] = True
+
+    @pipeline
+    def pipeline_def():
+        required_map_int_solid()
+
+    with pytest.raises(DagsterInvalidConfigError) as pe_info:
+        execute_pipeline(
+            pipeline_def,
+            run_config={
+                "solids": {"required_map_int_solid": {"config": {"foo": 1, "bar": "nope"}}}
+            },
+        )
+
+    pe = pe_info.value
+    assert len(pe.errors) == 1
+    rtm = pe.errors[0]
+    assert rtm.reason == DagsterEvaluationErrorReason.RUNTIME_TYPE_MISMATCH
+
+    assert "Invalid scalar at path root:solids:required_map_int_solid:config:'bar'" in str(pe)
 
 
 def test_required_resource_not_given():

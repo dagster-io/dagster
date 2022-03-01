@@ -1,10 +1,15 @@
 import os
 import pickle
+import sys
 import tempfile
 import time
 
 import boto3
 from botocore.exceptions import ClientError
+from dagster_aws.emr import EmrError, EmrJobRunner, emr_step_main
+from dagster_aws.emr.configs_spark import spark_config as get_spark_config
+from dagster_aws.utils.mrjob.log4j import parse_hadoop_log4j_records
+
 from dagster import Field, StringSource, check, resource
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import DagsterInvariantViolationError, raise_execution_interrupts
@@ -14,9 +19,6 @@ from dagster.core.execution.plan.external_step import (
     PICKLED_STEP_RUN_REF_FILE_NAME,
     step_context_to_step_run_ref,
 )
-from dagster_aws.emr import EmrError, EmrJobRunner, emr_step_main
-from dagster_aws.emr.configs_spark import spark_config as get_spark_config
-from dagster_aws.utils.mrjob.log4j import parse_hadoop_log4j_records
 
 # On EMR, Spark is installed here
 EMR_SPARK_HOME = "/usr/lib/spark/"
@@ -305,7 +307,9 @@ class EmrPySparkStepLauncher(StepLauncher):
             0
         ]
 
-        return self.wait_for_completion_and_log(log, run_id, step_key, emr_step_id, step_context)
+        yield from self.wait_for_completion_and_log(
+            log, run_id, step_key, emr_step_id, step_context
+        )
 
     def wait_for_completion_and_log(self, log, run_id, step_key, emr_step_id, step_context):
         s3 = boto3.resource("s3", region_name=self.region_name)
@@ -370,14 +374,19 @@ class EmrPySparkStepLauncher(StepLauncher):
         records = parse_hadoop_log4j_records(stderr_log)
         for record in records:
             if record.level:
-                log._log(  # pylint: disable=protected-access
-                    record.level,
-                    "".join(["Spark Driver stderr: ", record.logger, ": ", record.message]),
-                    {},
+                log.log(
+                    level=record.level,
+                    msg="".join(["Spark Driver stderr: ", record.logger, ": ", record.message]),
                 )
             else:
                 log.debug(f"Spark Driver stderr: {record.message}")
-        log.info("Spark Driver stdout: " + stdout_log)
+
+        sys.stdout.write(
+            "---------- Spark Driver stdout: ----------\n"
+            + stdout_log
+            + "\n"
+            + "---------- End of Spark Driver stdout ----------\n"
+        )
 
     def _get_emr_step_def(self, run_id, step_key, solid_name):
         """From the local Dagster instance, construct EMR steps that will kick off execution on a

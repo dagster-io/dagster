@@ -4,6 +4,7 @@ from collections import defaultdict
 from typing import Callable, List, MutableMapping, Optional
 
 import sqlalchemy as db
+
 from dagster import check, seven
 from dagster.core.events.log import EventLogEntry
 from dagster.core.storage.event_log import (
@@ -158,6 +159,9 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             and event.dagster_event.is_step_materialization
             and event.dagster_event.asset_key
         ):
+            # Currently, only materializations are stored in the asset catalog.
+            # We will store observations after adding a column migration to
+            # store latest asset observation timestamp in the asset key table.
             self.store_asset(event)
 
     def store_asset(self, event):

@@ -6,6 +6,7 @@ from contextlib import AbstractContextManager
 from typing import Generic, NamedTuple, Optional, TypeVar, Union, cast
 
 import pendulum
+
 from dagster import check
 from dagster.core.errors import DagsterUserCodeProcessError
 from dagster.core.host_representation.origin import (
@@ -95,7 +96,9 @@ class ProcessRegistryEntry(
 class ProcessGrpcServerRegistry(GrpcServerRegistry):
     def __init__(
         self,
-        # How often to reload created processes in a background thread
+        # How long each process should run before a new process should be created the next
+        # time a given origin is requested (which will pick up any changes that have been
+        # made to the code)
         reload_interval,
         # How long the process can live without a heartbeat before it dies. You should ensure
         # that either heartbeat_ttl is greater than reload_interval (so that the process will reload

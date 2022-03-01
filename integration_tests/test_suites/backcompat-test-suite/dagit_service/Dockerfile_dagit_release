@@ -2,8 +2,10 @@ FROM python:3.8-slim
 
 ARG DAGIT_BACKCOMPAT_VERSION
 
+COPY pins.txt pins.txt
 
 RUN pip install \
+    -r pins.txt \
     dagster=="${DAGIT_BACKCOMPAT_VERSION}" \
     dagster-postgres=="${DAGIT_BACKCOMPAT_VERSION}" \
     dagster-docker=="${DAGIT_BACKCOMPAT_VERSION}" \

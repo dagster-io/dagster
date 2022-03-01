@@ -85,8 +85,10 @@ from dagster import ResourceDefinition
 prod_server = ResourceDefinition.mock_resource()
 local_server = ResourceDefinition.mock_resource()
 
-prod_job = do_stuff.to_job(resource_defs={"server": prod_server})
-local_job = do_stuff.to_job(resource_defs={"local": local_server})
+prod_job = do_stuff.to_job(resource_defs={"server": prod_server}, name="do_stuff_prod")
+local_job = do_stuff.to_job(
+    resource_defs={"local": local_server}, name="do_stuff_local"
+)
 ```
 
 `to_job` accepts the same arguments as the <PyObject object="job" decorator /> decorator: you can provide [resources](/concepts/resources), [configuration](/concepts/configuration/config-schema), [hooks](/concepts/ops-jobs-graphs/op-hooks), tags, and an [executor](/deployment/executors).
@@ -159,7 +161,9 @@ def do_something(context):
 
 @config_mapping(config_schema={"simplified_param": str})
 def simplified_config(val):
-    return {"ops": {"do_something": {"config": {"config_param": val["simplified_param"]}}}}
+    return {
+        "ops": {"do_something": {"config": {"config_param": val["simplified_param"]}}}
+    }
 
 
 @job(config=simplified_config)
@@ -169,7 +173,9 @@ def do_it_all_with_simplified_config():
 
 if __name__ == "__main__":
     # Will log "config_param: stuff"
-    do_it_all_with_simplified_config.execute_in_process(run_config={"simplified_param": "stuff"})
+    do_it_all_with_simplified_config.execute_in_process(
+        run_config={"simplified_param": "stuff"}
+    )
 ```
 
 ## Examples
@@ -345,7 +351,9 @@ from dagster.utils import file_relative_path
 
 
 @op(
-    config_schema={"path": Field(str, default_value=file_relative_path(__file__, "sample"))},
+    config_schema={
+        "path": Field(str, default_value=file_relative_path(__file__, "sample"))
+    },
     out=DynamicOut(str),
 )
 def files_in_directory(context):
@@ -391,7 +399,9 @@ from dagster import In, Nothing, job, op
 
 @op
 def create_table_1():
-    get_database_connection().execute("create table_1 as select * from some_source_table")
+    get_database_connection().execute(
+        "create table_1 as select * from some_source_table"
+    )
 
 
 @op(ins={"start": In(Nothing)})

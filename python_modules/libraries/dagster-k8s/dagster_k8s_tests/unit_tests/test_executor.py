@@ -2,6 +2,9 @@ import json
 from unittest import mock
 
 import pytest
+from dagster_k8s.executor import K8sStepHandler, k8s_job_executor
+from dagster_k8s.job import DagsterK8sJobConfig, UserDefinedDagsterK8sConfig
+
 from dagster import execute_pipeline, pipeline, solid
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.reconstructable import reconstructable
@@ -10,8 +13,6 @@ from dagster.core.executor.step_delegating.step_handler.base import StepHandlerC
 from dagster.core.storage.fs_io_manager import fs_io_manager
 from dagster.core.test_utils import create_run_for_test, instance_for_test
 from dagster.grpc.types import ExecuteStepArgs
-from dagster_k8s.executor import K8sStepHandler, k8s_job_executor
-from dagster_k8s.job import DagsterK8sJobConfig, UserDefinedDagsterK8sConfig
 
 
 @solid

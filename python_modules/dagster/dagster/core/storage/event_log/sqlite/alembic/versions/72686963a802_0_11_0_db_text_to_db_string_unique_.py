@@ -7,6 +7,7 @@ Create Date: 2021-03-11 15:02:29.174707
 """
 import sqlalchemy as sa
 from alembic import op
+
 from dagster.core.storage.migration.utils import has_table
 from dagster.core.storage.sql import MySQLCompatabilityTypes
 

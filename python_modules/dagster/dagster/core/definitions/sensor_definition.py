@@ -1,5 +1,6 @@
 import inspect
 from contextlib import ExitStack
+from enum import Enum
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -30,12 +31,19 @@ from .events import AssetKey
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
 from .mode import DEFAULT_MODE_NAME
-from .run_request import InstigatorType, PipelineRunReaction, RunRequest, SkipReason
+from .run_request import PipelineRunReaction, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster.core.events.log import EventLogEntry
+
+
+@whitelist_for_serdes
+class DefaultSensorStatus(Enum):
+    RUNNING = "RUNNING"
+    STOPPED = "STOPPED"
+
 
 DEFAULT_SENSOR_DAEMON_INTERVAL = 30
 
@@ -159,6 +167,8 @@ class SensorDefinition:
         description (Optional[str]): A human-readable description of the sensor.
         job (Optional[GraphDefinition, JobDefinition]): The job to execute when this sensor fires.
         jobs (Optional[Sequence[GraphDefinition, JobDefinition]]): (experimental) A list of jobs to execute when this sensor fires.
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     def __init__(
@@ -175,6 +185,7 @@ class SensorDefinition:
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, JobDefinition]] = None,
         jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+        default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
 
         if job and jobs:
@@ -228,6 +239,9 @@ class SensorDefinition:
         )
         self._description = check.opt_str_param(description, "description")
         self._targets = check.opt_list_param(targets, "targets", (DirectTarget, RepoRelativeTarget))
+        self._default_status = check.inst_param(
+            default_status, "default_status", DefaultSensorStatus
+        )
 
     def __call__(self, *args, **kwargs):
         context_provided = is_context_provided(get_function_params(self._raw_fn))
@@ -275,10 +289,6 @@ class SensorDefinition:
         return self._name
 
     @property
-    def job_type(self) -> InstigatorType:
-        return InstigatorType.SENSOR
-
-    @property
     def description(self) -> Optional[str]:
         return self._description
 
@@ -305,6 +315,8 @@ class SensorDefinition:
 
         skip_message: Optional[str] = None
 
+        run_requests: List[RunRequest]
+        pipeline_run_reactions: List[PipelineRunReaction]
         if not result or result == [None]:
             run_requests = []
             pipeline_run_reactions = []
@@ -313,7 +325,9 @@ class SensorDefinition:
             item = result[0]
             check.inst(item, (SkipReason, RunRequest, PipelineRunReaction))
             run_requests = [item] if isinstance(item, RunRequest) else []
-            pipeline_run_reactions = [item] if isinstance(item, PipelineRunReaction) else []
+            pipeline_run_reactions = (
+                [cast(PipelineRunReaction, item)] if isinstance(item, PipelineRunReaction) else []
+            )
             skip_message = item.skip_message if isinstance(item, SkipReason) else None
         else:
             check.is_list(result, (SkipReason, RunRequest, PipelineRunReaction))
@@ -336,13 +350,13 @@ class SensorDefinition:
                     check.failed("Expected a single SkipReason: received multiple SkipReasons")
 
             if has_run_request:
-                run_requests = result
+                run_requests = cast(List[RunRequest], result)
                 pipeline_run_reactions = []
 
             else:
                 # only run reactions
                 run_requests = []
-                pipeline_run_reactions = result
+                pipeline_run_reactions = cast(List[PipelineRunReaction], result)
 
         self.check_valid_run_requests(run_requests)
 
@@ -404,6 +418,10 @@ class SensorDefinition:
     @property
     def mode(self) -> Optional[str]:
         return self._target.mode if self._target else None
+
+    @property
+    def default_status(self) -> DefaultSensorStatus:
+        return self._default_status
 
 
 @whitelist_for_serdes
@@ -534,7 +552,8 @@ class AssetSensorDefinition(SensorDefinition):
         description (Optional[str]): A human-readable description of the sensor.
         job (Optional[Union[GraphDefinition, JobDefinition]]): The job object to target with this sensor.
         jobs (Optional[Sequence[Union[GraphDefinition, JobDefinition]]]): (experimental) A list of jobs to be executed when the sensor fires.
-
+        default_status (DefaultSensorStatus): Whether the sensor starts as running or not. The default
+            status can be overridden from Dagit or via the GraphQL API.
     """
 
     def __init__(
@@ -552,6 +571,7 @@ class AssetSensorDefinition(SensorDefinition):
         description: Optional[str] = None,
         job: Optional[Union[GraphDefinition, JobDefinition]] = None,
         jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None,
+        default_status: DefaultSensorStatus = DefaultSensorStatus.STOPPED,
     ):
         self._asset_key = check.inst_param(asset_key, "asset_key", AssetKey)
 
@@ -598,6 +618,7 @@ class AssetSensorDefinition(SensorDefinition):
             description=description,
             job=job,
             jobs=jobs,
+            default_status=default_status,
         )
 
     @property

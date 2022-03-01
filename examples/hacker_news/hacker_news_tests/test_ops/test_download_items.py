@@ -1,9 +1,10 @@
 from unittest.mock import MagicMock
 
-from dagster import build_op_context
 from hacker_news.ops.download_items import download_items
 from hacker_news.resources.hn_resource import hn_snapshot_client
 from hacker_news.utils.snapshot import SNAPSHOT_START_ID
+
+from dagster import build_op_context
 
 
 def test_download_items():

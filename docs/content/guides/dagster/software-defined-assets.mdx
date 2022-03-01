@@ -27,11 +27,11 @@ Here are our asset (aka table) definitions.
 
 ```python file=../../software_defined_assets/software_defined_assets/assets.py startafter=start_marker endbefore=end_marker
 import pandas as pd
-from dagster import AssetKey
-from dagster.core.asset_defs import ForeignAsset, asset
 from pandas import DataFrame
 
-sfo_q2_weather_sample = ForeignAsset(
+from dagster import AssetKey, SourceAsset, asset
+
+sfo_q2_weather_sample = SourceAsset(
     key=AssetKey("sfo_q2_weather_sample"),
     description="Weather samples, taken every five minutes at SFO",
 )
@@ -50,7 +50,7 @@ def hottest_dates(daily_temperature_highs: DataFrame) -> DataFrame:
     return daily_temperature_highs.nlargest(10, "max_tmpf")
 ```
 
-`sfo_q2_weather_sample` represents our base temperature table. It's a <PyObject module="dagster.core.asset_defs" object="ForeignAsset" />, meaning that it's generated outside Dagster.
+`sfo_q2_weather_sample` represents our base temperature table. It's a <PyObject module="dagster" object="SourceAsset" />, meaning that we rely on it, but don't generate it.
 
 `daily_temperature_highs` represents a computed asset. It's derived by taking the `sfo_q2_weather_sample` table and applying the decorated function to it. Notice that it's defined using a pure function - i.e. a function with no side effects, just logical data transformation. The code for storing and retrieving the data in persistent storage will be supplied later on in an <PyObject object="IOManager" /> - that allows swapping in different implementations in different environments. E.g. we might want to store data in a local CSV file for easy testing, but store data a data warehouse in production.
 
@@ -101,10 +101,11 @@ class LocalFileSystemIOManager(IOManager):
 Not all the assets in a job need to have the same Python type. Here's an asset whose computation is defined using Spark DataFrames, that depends on the `daily_temperature_highs` asset we defined above using Pandas.
 
 ```python file=../../software_defined_assets/software_defined_assets/spark_asset.py
-from dagster.core.asset_defs import asset
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import Window
 from pyspark.sql import functions as f
+
+from dagster import asset
 
 
 @asset

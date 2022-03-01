@@ -1,9 +1,8 @@
 import inspect
 import os
 import sys
-from collections import namedtuple
 from functools import lru_cache
-from typing import TYPE_CHECKING, List, NamedTuple, Optional, Union, overload
+from typing import TYPE_CHECKING, FrozenSet, List, NamedTuple, Optional, Union, overload
 
 from dagster import check, seven
 from dagster.core.code_pointer import (
@@ -13,7 +12,7 @@ from dagster.core.code_pointer import (
     ModuleCodePointer,
     get_python_file_from_target,
 )
-from dagster.core.errors import DagsterInvalidSubsetError, DagsterInvariantViolationError
+from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     PipelinePythonOrigin,
@@ -27,9 +26,11 @@ from dagster.utils.backcompat import experimental
 from .pipeline_base import IPipeline
 
 if TYPE_CHECKING:
-    from .repository_definition import RepositoryDefinition
-    from .pipeline_definition import PipelineDefinition
+    from dagster.core.asset_defs.asset_group import AssetGroup
+
     from .graph_definition import GraphDefinition
+    from .pipeline_definition import PipelineDefinition
+    from .repository_definition import RepositoryDefinition
 
 
 def get_ephemeral_repository_name(pipeline_name: str) -> str:
@@ -99,12 +100,31 @@ class ReconstructableRepository(
 
 @whitelist_for_serdes
 class ReconstructablePipeline(
-    namedtuple(
+    NamedTuple(
         "_ReconstructablePipeline",
-        "repository pipeline_name solid_selection_str solids_to_execute",
+        [
+            ("repository", ReconstructableRepository),
+            ("pipeline_name", str),
+            ("solid_selection_str", Optional[str]),
+            ("solids_to_execute", Optional[FrozenSet[str]]),
+        ],
     ),
     IPipeline,
 ):
+    """Defines a reconstructable pipeline. When your pipeline/job must cross process boundaries,
+    Dagster must know how to reconstruct the pipeline/job on the other side of the process boundary.
+
+    Args:
+        repository (ReconstructableRepository): The reconstructable representation of the repository
+            the pipeline/job belongs to.
+        pipeline_name (str): The name of the pipeline/job.
+        solid_selection_str (Optional[str]): The string value of a comma separated list of user-input
+            solid/op selection. None if no selection is specified, i.e. the entire pipeline/job will
+            be run.
+        solids_to_execute (Optional[FrozenSet[str]]): A set of solid/op names to execute. None if no selection
+            is specified, i.e. the entire pipeline/job will be run.
+    """
+
     def __new__(
         cls,
         repository,
@@ -122,7 +142,7 @@ class ReconstructablePipeline(
         )
 
     @property
-    def solid_selection(self):
+    def solid_selection(self) -> Optional[List[str]]:
         return seven.json.loads(self.solid_selection_str) if self.solid_selection_str else None
 
     @lru_cache(maxsize=1)
@@ -133,68 +153,81 @@ class ReconstructablePipeline(
 
         if isinstance(defn, JobDefinition):
             return (
-                self.repository.get_definition()
-                .get_pipeline(self.pipeline_name)
-                .get_job_def_for_op_selection(
-                    list(self.solids_to_execute) if self.solids_to_execute else None
-                )
+                self.repository.get_definition().get_pipeline(self.pipeline_name)
+                # jobs use pre-resolved selection
+                .get_job_def_for_op_selection(self.solid_selection)
             )
-        else:
-            return (
-                self.repository.get_definition()
-                .get_pipeline(self.pipeline_name)
-                .get_pipeline_subset_def(self.solids_to_execute)
-            )
-
-    def _resolve_solid_selection(self, solid_selection):
-        # resolve a list of solid selection queries to a frozenset of qualified solid names
-        # e.g. ['foo_solid+'] to {'foo_solid', 'bar_solid'}
-        check.list_param(solid_selection, "solid_selection", of_type=str)
-        pipeline_def = self.get_definition()
-        solids_to_execute = parse_solid_selection(pipeline_def, solid_selection)
-        if len(solids_to_execute) == 0:
-            raise DagsterInvalidSubsetError(
-                "No qualified {node_type} to execute found for {selection_type}={requested}".format(
-                    requested=solid_selection,
-                    node_type="ops" if pipeline_def.is_job else "solids",
-                    selection_type="op_selection" if pipeline_def.is_job else "solid_selection",
-                )
-            )
-        return solids_to_execute
+        return (
+            self.repository.get_definition().get_pipeline(self.pipeline_name)
+            # pipelines use post-resolved selection
+            .get_pipeline_subset_def(self.solids_to_execute)
+        )
 
     def get_reconstructable_repository(self):
         return self.repository
 
-    def _subset_for_execution(self, solids_to_execute, solid_selection=None):
-        if solids_to_execute:
-            pipe = ReconstructablePipeline(
+    def _subset_for_execution(
+        self,
+        solids_to_execute: Optional[Optional[FrozenSet[str]]],
+        solid_selection: Optional[List[str]],
+    ) -> "ReconstructablePipeline":
+        # no selection
+        if solid_selection is None and solids_to_execute is None:
+            return ReconstructablePipeline(
+                repository=self.repository,
+                pipeline_name=self.pipeline_name,
+            )
+
+        from dagster.core.definitions import JobDefinition, PipelineDefinition
+
+        pipeline_def = self.get_definition()
+        if isinstance(pipeline_def, JobDefinition):
+            # when subselecting a job
+            # * job subselection depend on solid_selection rather than solids_to_execute
+            # * we'll resolve the op selection later in the stack
+            if solid_selection is None:
+                # when the pre-resolution info is unavailable (e.g. subset from existing run),
+                # we need to fill the solid_selection in order to pass the value down to deeper stack.
+                solid_selection = list(solids_to_execute) if solids_to_execute else None
+            return ReconstructablePipeline(
+                repository=self.repository,
+                pipeline_name=self.pipeline_name,
+                solid_selection_str=seven.json.dumps(solid_selection),
+                solids_to_execute=None,
+            )
+        elif isinstance(pipeline_def, PipelineDefinition):
+            # when subselecting a pipeline
+            # * pipeline subselection depend on solids_to_excute rather than solid_selection
+            # * we resolve a list of solid selection queries to a frozenset of qualified solid names
+            #   e.g. ['foo_solid+'] to {'foo_solid', 'bar_solid'}
+            if solid_selection and solids_to_execute is None:
+                # when post-resolution query is unavailable, resolve the query
+                solids_to_execute = parse_solid_selection(pipeline_def, solid_selection)
+            return ReconstructablePipeline(
                 repository=self.repository,
                 pipeline_name=self.pipeline_name,
                 solid_selection_str=seven.json.dumps(solid_selection) if solid_selection else None,
-                solids_to_execute=frozenset(solids_to_execute),
+                solids_to_execute=frozenset(solids_to_execute) if solids_to_execute else None,
             )
         else:
-            pipe = ReconstructablePipeline(
-                repository=self.repository,
-                pipeline_name=self.pipeline_name,
-            )
+            raise Exception(f"Unexpected pipeline/job type {pipeline_def.__class__.__name__}")
 
-        return pipe
-
-    def subset_for_execution(self, solid_selection):
-        # take a list of solid queries and resolve the queries to names of solids to execute
+    def subset_for_execution(
+        self, solid_selection: Optional[List[str]]
+    ) -> "ReconstructablePipeline":
+        # take a list of unresolved selection queries
         check.opt_list_param(solid_selection, "solid_selection", of_type=str)
-        solids_to_execute = (
-            self._resolve_solid_selection(solid_selection) if solid_selection else None
-        )
-        return self._subset_for_execution(solids_to_execute, solid_selection)
 
-    def subset_for_execution_from_existing_pipeline(self, solids_to_execute):
+        return self._subset_for_execution(solids_to_execute=None, solid_selection=solid_selection)
+
+    def subset_for_execution_from_existing_pipeline(
+        self, solids_to_execute: Optional[FrozenSet[str]]
+    ) -> "ReconstructablePipeline":
         # take a frozenset of resolved solid names from an existing pipeline
         # so there's no need to parse the selection
         check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
 
-        return self._subset_for_execution(solids_to_execute)
+        return self._subset_for_execution(solids_to_execute=solids_to_execute, solid_selection=None)
 
     def describe(self):
         return '"{name}" in repository ({repo})'.format(
@@ -233,6 +266,14 @@ class ReconstructablePipeline(
     def get_python_origin_id(self):
         return self.get_python_origin().get_id()
 
+    def get_module(self) -> Optional[str]:
+        """Return the module the pipeline is found in, the origin is a module code pointer"""
+        pointer = self.get_python_origin().get_repo_pointer()
+        if isinstance(pointer, ModuleCodePointer):
+            return pointer.module
+
+        return None
+
 
 def reconstructable(target):
     """
@@ -267,8 +308,8 @@ def reconstructable(target):
     call), or in interactive environments such as the Python REPL or Jupyter notebooks.
 
     If you need to reconstruct objects constructed in these ways, you should use
-    :py:func:`~dagster.core.definitions.reconstructable.build_reconstructable_pipeline` instead,
-    which allows you to specify your own reconstruction strategy.
+    :py:func:`~dagster.reconstructable.build_reconstructable_job` instead, which allows you to
+    specify your own reconstruction strategy.
 
     Examples:
 
@@ -292,7 +333,7 @@ def reconstructable(target):
 
         reconstructable_bar_job = reconstructable(make_bar_job)
     """
-    from dagster.core.definitions import PipelineDefinition, JobDefinition
+    from dagster.core.definitions import JobDefinition, PipelineDefinition
 
     if not seven.is_function_or_decorator_instance_of(target, PipelineDefinition):
         if isinstance(target, JobDefinition):
@@ -313,7 +354,7 @@ def reconstructable(target):
         raise DagsterInvariantViolationError(
             "Reconstructable target can not be a lambda. Use a function or "
             "decorated function defined at module scope instead, or use "
-            "build_reconstructable_target."
+            "build_reconstructable_job."
         )
 
     if seven.qualname_differs(target):
@@ -321,7 +362,7 @@ def reconstructable(target):
             'Reconstructable target "{target.__name__}" has a different '
             '__qualname__ "{target.__qualname__}" indicating it is not '
             "defined at module scope. Use a function or decorated function "
-            "defined at module scope instead, or use build_reconstructable_pipeline.".format(
+            "defined at module scope instead, or use build_reconstructable_job.".format(
                 target=target
             )
         )
@@ -339,10 +380,9 @@ def reconstructable(target):
     python_file = get_python_file_from_target(target)
     if not python_file:
         raise DagsterInvariantViolationError(
-            "reconstructable() can not reconstruct jobs or pipelines defined in interactive environments "
-            "like <stdin>, IPython, or Jupyter notebooks. "
-            "Use a pipeline defined in a module or file instead, or "
-            "use build_reconstructable_target."
+            "reconstructable() can not reconstruct jobs or pipelines defined in interactive "
+            "environments like <stdin>, IPython, or Jupyter notebooks. "
+            "Use a pipeline defined in a module or file instead, or use build_reconstructable_job."
         )
 
     pointer = FileCodePointer(
@@ -353,7 +393,7 @@ def reconstructable(target):
 
 
 @experimental
-def build_reconstructable_target(
+def build_reconstructable_job(
     reconstructor_module_name,
     reconstructor_function_name,
     reconstructable_args=None,
@@ -363,28 +403,28 @@ def build_reconstructable_target(
     """
     Create a :py:class:`dagster.core.definitions.reconstructable.ReconstructablePipeline`.
 
-    When your pipeline must cross process boundaries, e.g., for execution on multiple nodes or
-    in different systems (like ``dagstermill``), Dagster must know how to reconstruct the pipeline
+    When your job must cross process boundaries, e.g., for execution on multiple nodes or in
+    different systems (like ``dagstermill``), Dagster must know how to reconstruct the job
     on the other side of the process boundary.
 
-    This function allows you to use the strategy of your choice for reconstructing pipelines, so
-    that you can reconstruct certain kinds of pipelines that are not supported by
+    This function allows you to use the strategy of your choice for reconstructing jobs, so
+    that you can reconstruct certain kinds of jobs that are not supported by
     :py:func:`~dagster.reconstructable`, such as those defined by lambdas, in nested scopes (e.g.,
     dynamically within a method call), or in interactive environments such as the Python REPL or
     Jupyter notebooks.
 
-    If you need to reconstruct pipelines constructed in these ways, use this function instead of
+    If you need to reconstruct jobs constructed in these ways, use this function instead of
     :py:func:`~dagster.reconstructable`.
 
     Args:
         reconstructor_module_name (str): The name of the module containing the function to use to
-            reconstruct the pipeline.
+            reconstruct the job.
         reconstructor_function_name (str): The name of the function to use to reconstruct the
-            pipeline.
-        reconstructable_args (Tuple): Args to the function to use to reconstruct the pipeline.
+            job.
+        reconstructable_args (Tuple): Args to the function to use to reconstruct the job.
             Values of the tuple must be JSON serializable.
         reconstructable_kwargs (Dict[str, Any]): Kwargs to the function to use to reconstruct the
-            pipeline. Values of the dict must be JSON serializable.
+            job. Values of the dict must be JSON serializable.
 
     Examples:
 
@@ -392,34 +432,34 @@ def build_reconstructable_target(
 
         # module: mymodule
 
-        from dagster import PipelineDefinition, pipeline, build_reconstructable_pipeline
+        from dagster import JobDefinition, job, build_reconstructable_job
 
-        class PipelineFactory:
-            def make_pipeline(*args, **kwargs):
+        class JobFactory:
+            def make_job(*args, **kwargs):
 
-                @pipeline
-                def _pipeline(...):
+                @job
+                def _job(...):
                     ...
 
-                return _pipeline
+                return _job
 
-        def reconstruct_pipeline(*args):
-            factory = PipelineFactory()
-            return factory.make_pipeline(*args)
+        def reconstruct_job(*args):
+            factory = JobFactory()
+            return factory.make_job(*args)
 
-        factory = PipelineFactory()
+        factory = JobFactory()
 
-        foo_pipeline_args = (...,...)
+        foo_job_args = (...,...)
 
-        foo_pipeline_kwargs = {...:...}
+        foo_job_kwargs = {...:...}
 
-        foo_pipeline = factory.make_pipeline(*foo_pipeline_args, **foo_pipeline_kwargs)
+        foo_job = factory.make_job(*foo_job_args, **foo_job_kwargs)
 
-        reconstructable_foo_pipeline = build_reconstructable_pipeline(
+        reconstructable_foo_job = build_reconstructable_job(
             'mymodule',
-            'reconstruct_pipeline',
-            foo_pipeline_args,
-            foo_pipeline_kwargs,
+            'reconstruct_job',
+            foo_job_args,
+            foo_job_kwargs,
         )
     """
     check.str_param(reconstructor_module_name, "reconstructor_module_name")
@@ -454,7 +494,9 @@ def build_reconstructable_target(
     )
 
 
-build_reconstructable_pipeline = build_reconstructable_target
+# back compat, in case users have imported these directly
+build_reconstructable_pipeline = build_reconstructable_job
+build_reconstructable_target = build_reconstructable_job
 
 
 def bootstrap_standalone_recon_pipeline(pointer):
@@ -469,16 +511,20 @@ def bootstrap_standalone_recon_pipeline(pointer):
 
 
 def _check_is_loadable(definition):
+    from dagster.core.asset_defs import AssetGroup
+
+    from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
     from .repository_definition import RepositoryDefinition
-    from .graph_definition import GraphDefinition
 
-    if not isinstance(definition, (PipelineDefinition, RepositoryDefinition, GraphDefinition)):
+    if not isinstance(
+        definition, (PipelineDefinition, RepositoryDefinition, GraphDefinition, AssetGroup)
+    ):
         raise DagsterInvariantViolationError(
             (
-                "Loadable attributes must be either a JobDefinition, GraphDefinition, PipelineDefinition, or a "
-                "RepositoryDefinition. Got {definition}."
-            ).format(definition=repr(definition))
+                "Loadable attributes must be either a JobDefinition, GraphDefinition, "
+                f"PipelineDefinition, AssetGroup, or RepositoryDefinition. Got {repr(definition)}."
+            )
         )
     return definition
 
@@ -502,12 +548,14 @@ def def_from_pointer(
 ) -> Union["PipelineDefinition", "RepositoryDefinition", "GraphDefinition"]:
     target = pointer.load_target()
 
+    from dagster.core.asset_defs.asset_group import AssetGroup
+
+    from .graph_definition import GraphDefinition
     from .pipeline_definition import PipelineDefinition
     from .repository_definition import RepositoryDefinition
-    from .graph_definition import GraphDefinition
 
     if isinstance(
-        target, (PipelineDefinition, RepositoryDefinition, GraphDefinition)
+        target, (PipelineDefinition, RepositoryDefinition, GraphDefinition, AssetGroup)
     ) or not callable(target):
         return _check_is_loadable(target)
 
@@ -542,7 +590,7 @@ def pipeline_def_from_pointer(pointer: CodePointer) -> "PipelineDefinition":
 @overload
 # NOTE: mypy can't handle these overloads but pyright can
 def repository_def_from_target_def(  # type: ignore
-    target: Union["RepositoryDefinition", "PipelineDefinition", "GraphDefinition"]
+    target: Union["RepositoryDefinition", "PipelineDefinition", "GraphDefinition", "AssetGroup"]
 ) -> "RepositoryDefinition":
     ...
 
@@ -553,8 +601,10 @@ def repository_def_from_target_def(target: object) -> None:
 
 
 def repository_def_from_target_def(target):
-    from .pipeline_definition import PipelineDefinition
+    from dagster.core.asset_defs.asset_group import AssetGroup
+
     from .graph_definition import GraphDefinition
+    from .pipeline_definition import PipelineDefinition
     from .repository_definition import CachingRepositoryData, RepositoryDefinition
 
     # special case - we can wrap a single pipeline in a repository
@@ -563,6 +613,10 @@ def repository_def_from_target_def(target):
         return RepositoryDefinition(
             name=get_ephemeral_repository_name(target.name),
             repository_data=CachingRepositoryData.from_list([target]),
+        )
+    elif isinstance(target, AssetGroup):
+        return RepositoryDefinition(
+            name="__repository__", repository_data=CachingRepositoryData.from_list([target])
         )
     elif isinstance(target, RepositoryDefinition):
         return target

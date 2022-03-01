@@ -10,6 +10,14 @@ const TRUNCATE_PREFIX = '\u001b[33m...logs truncated...\u001b[39m\n';
 const SCROLLER_LINK_TIMEOUT_MS = 3000;
 export const MAX_STREAMING_LOG_BYTES = 5242880; // 5 MB
 
+const shouldTruncate = (content: string | null | undefined) => {
+  if (!content) {
+    return false;
+  }
+  const encoder = new TextEncoder();
+  return encoder.encode(content).length >= MAX_STREAMING_LOG_BYTES;
+};
+
 export class ComputeLogContent extends React.Component<{
   logData?: ComputeLogContentFileFragment | null;
   downloadUrl?: string | null;
@@ -87,7 +95,7 @@ export class ComputeLogContent extends React.Component<{
   render() {
     const {logData, isLoading, isVisible, downloadUrl} = this.props;
     let content = logData?.data;
-    const isTruncated = content && Buffer.byteLength(content, 'utf8') >= MAX_STREAMING_LOG_BYTES;
+    const isTruncated = shouldTruncate(content);
 
     if (content && isTruncated) {
       const nextLine = content.indexOf('\n') + 1;

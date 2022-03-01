@@ -7,7 +7,7 @@ const defaultVersion =
   process.env.NODE_ENV === "production"
     ? ALL_VERSIONS[ALL_VERSIONS.length - 1]
     : "master";
-const latestVersion = ALL_VERSIONS[ALL_VERSIONS.length - 1];
+export const latestVersion = ALL_VERSIONS[ALL_VERSIONS.length - 1];
 
 export function normalizeVersionPath(
   asPath: string,

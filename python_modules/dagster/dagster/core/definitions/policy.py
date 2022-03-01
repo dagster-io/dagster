@@ -4,7 +4,6 @@ from typing import NamedTuple, Optional
 
 from dagster import check
 from dagster.core.errors import DagsterInvalidDefinitionError
-from dagster.utils.backcompat import experimental_class_warning
 
 
 class Backoff(Enum):
@@ -65,8 +64,6 @@ class RetryPolicy(
         backoff: Optional[Backoff] = None,
         jitter: Optional[Jitter] = None,
     ):
-        experimental_class_warning("RetryPolicy")
-
         if backoff is not None and delay is None:
             raise DagsterInvalidDefinitionError(
                 "Can not set jitter on RetryPolicy without also setting delay"
@@ -86,26 +83,31 @@ class RetryPolicy(
         )
 
     def calculate_delay(self, attempt_num: int) -> check.Numeric:
-        backoff = self.backoff
-        jitter = self.jitter
-        base_delay = self.delay or 0
+        return calculate_delay(
+            attempt_num=attempt_num,
+            backoff=self.backoff,
+            jitter=self.jitter,
+            base_delay=self.delay or 0,
+        )
 
-        if backoff is Backoff.EXPONENTIAL:
-            calc_delay = ((2 ** attempt_num) - 1) * base_delay
-        elif backoff is Backoff.LINEAR:
-            calc_delay = base_delay * attempt_num
-        elif backoff is None:
-            calc_delay = base_delay
-        else:
-            check.assert_never(backoff)
 
-        if jitter is Jitter.FULL:
-            calc_delay = random() * calc_delay
-        elif jitter is Jitter.PLUS_MINUS:
-            calc_delay = calc_delay + ((2 * (random() * base_delay)) - base_delay)
-        elif jitter is None:
-            pass
-        else:
-            check.assert_never(jitter)
+def calculate_delay(attempt_num, backoff, jitter, base_delay):
+    if backoff is Backoff.EXPONENTIAL:
+        calc_delay = ((2**attempt_num) - 1) * base_delay
+    elif backoff is Backoff.LINEAR:
+        calc_delay = base_delay * attempt_num
+    elif backoff is None:
+        calc_delay = base_delay
+    else:
+        check.assert_never(backoff)
 
-        return calc_delay
+    if jitter is Jitter.FULL:
+        calc_delay = random() * calc_delay
+    elif jitter is Jitter.PLUS_MINUS:
+        calc_delay = calc_delay + ((2 * (random() * base_delay)) - base_delay)
+    elif jitter is None:
+        pass
+    else:
+        check.assert_never(jitter)
+
+    return calc_delay

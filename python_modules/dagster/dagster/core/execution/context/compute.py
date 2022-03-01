@@ -1,13 +1,22 @@
 from abc import ABC, abstractmethod, abstractproperty
-from typing import Any, Optional
+from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from dagster import check
 from dagster.core.definitions.dependency import Node, NodeHandle
+from dagster.core.definitions.events import (
+    AssetMaterialization,
+    AssetObservation,
+    ExpectationResult,
+    Materialization,
+    UserEvent,
+)
 from dagster.core.definitions.mode import ModeDefinition
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
+from dagster.core.definitions.time_window_partitions import TimeWindow
 from dagster.core.errors import DagsterInvalidPropertyError
+from dagster.core.events import DagsterEvent
 from dagster.core.instance import DagsterInstance
 from dagster.core.log_manager import DagsterLogManager
 from dagster.core.storage.pipeline_run import PipelineRun
@@ -90,13 +99,12 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
             StepExecutionContext,
         )
         self._pdb: Optional[ForkedPdb] = None
+        self._events: List[DagsterEvent] = []
+        self._output_metadata: Dict[str, Any] = {}
 
     @property
     def solid_config(self) -> Any:
-        solid_config = self._step_execution_context.resolved_run_config.solids.get(
-            str(self.solid_handle)
-        )
-        return solid_config.config if solid_config else None
+        return self._step_execution_context.op_config
 
     @property
     def pipeline_run(self) -> PipelineRun:
@@ -212,6 +220,21 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
         """
         return self._step_execution_context.partition_key
 
+    def output_asset_partition_key(self, output_name: str = "result") -> str:
+        """Returns the asset partition key for the given output. Defaults to "result", which is the
+        name of the default output.
+        """
+        return self._step_execution_context.asset_partition_key_for_output(output_name)
+
+    def output_asset_partitions_time_window(self, output_name: str = "result") -> TimeWindow:
+        """The time window for the partitions of the output asset.
+
+        Raises an error if either of the following are true:
+        - The output asset has no partitioning.
+        - The output asset is not partitioned with a TimeWindowPartitionsDefinition.
+        """
+        return self._step_execution_context.asset_partitions_time_window_for_output(output_name)
+
     def has_tag(self, key: str) -> bool:
         """Check if a logging tag is set.
 
@@ -233,6 +256,103 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
             Optional[str]: The value of the tag, if present.
         """
         return self._step_execution_context.get_tag(key)
+
+    def has_events(self) -> bool:
+        return bool(self._events)
+
+    def consume_events(self) -> Iterator[DagsterEvent]:
+        """Pops and yields all user-generated events that have been recorded from this context.
+
+        If consume_events has not yet been called, this will yield all logged events since the beginning of the op's computation. If consume_events has been called, it will yield all events since the last time consume_events was called. Designed for internal use. Users should never need to invoke this method.
+        """
+        events = self._events
+        self._events = []
+        yield from events
+
+    def log_event(self, event: UserEvent) -> None:
+        """Log an AssetMaterialization, AssetObservation, or ExpectationResult from within the body of an op.
+
+        Events logged with this method will appear in the list of DagsterEvents, as well as the event log.
+
+        Args:
+            event (Union[AssetMaterialization, Materialization, AssetObservation, ExpectationResult]): The event to log.
+
+        **Examples:**
+
+        .. code-block:: python
+
+            from dagster import op, AssetMaterialization
+
+            @op
+            def log_materialization(context):
+                context.log_event(AssetMaterialization("foo"))
+        """
+
+        if isinstance(event, (AssetMaterialization, Materialization)):
+            self._events.append(
+                DagsterEvent.asset_materialization(
+                    self._step_execution_context,
+                    event,
+                    self._step_execution_context.get_input_lineage(),
+                )
+            )
+        elif isinstance(event, AssetObservation):
+            self._events.append(DagsterEvent.asset_observation(self._step_execution_context, event))
+        elif isinstance(event, ExpectationResult):
+            self._events.append(
+                DagsterEvent.step_expectation_result(self._step_execution_context, event)
+            )
+        else:
+            check.failed("Unexpected event {event}".format(event=event))
+
+    def add_output_metadata(
+        self,
+        metadata: Mapping[str, Any],
+        output_name: Optional[str] = None,
+        mapping_key: Optional[str] = None,
+    ) -> None:
+        """Add metadata to one of the outputs of an op.
+
+        This can only be used once per output in the body of an op. Using this method with the same output_name more than once within an op will result in an error.
+
+        Args:
+            metadata (Mapping[str, Any]): The metadata to attach to the output
+            output_name (Optional[str]): The name of the output to attach metadata to. If there is only one output on the op, then this argument does not need to be provided. The metadata will automatically be attached to the only output.
+
+        **Examples:**
+
+        .. code-block:: python
+
+            from dagster import Out, op
+            from typing import Tuple
+
+            @op
+            def add_metadata(context):
+                context.add_output_metadata({"foo", "bar"})
+                return 5 # Since the default output is called "result", metadata will be attached to the output "result".
+
+            @op(out={"a": Out(), "b": Out()})
+            def add_metadata_two_outputs(context) -> Tuple[str, int]:
+                context.add_output_metadata({"foo": "bar"}, output_name="b")
+                context.add_output_metadata({"baz": "bat"}, output_name="a")
+
+                return ("dog", 5)
+
+        """
+        metadata = check.dict_param(metadata, "metadata", key_type=str)
+        output_name = check.opt_str_param(output_name, "output_name")
+        mapping_key = check.opt_str_param(mapping_key, "mapping_key")
+
+        self._step_execution_context.add_output_metadata(
+            metadata=metadata, output_name=output_name, mapping_key=mapping_key
+        )
+
+    def get_output_metadata(
+        self, output_name: str, mapping_key: Optional[str] = None
+    ) -> Optional[Mapping[str, Any]]:
+        return self._step_execution_context.get_output_metadata(
+            output_name=output_name, mapping_key=mapping_key
+        )
 
     def get_step_execution_context(self) -> StepExecutionContext:
         """Allows advanced users (e.g. framework authors) to punch through to the underlying

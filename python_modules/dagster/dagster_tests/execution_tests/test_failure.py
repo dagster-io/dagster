@@ -1,4 +1,4 @@
-from dagster import EventMetadataEntry, Failure, execute_pipeline, lambda_solid, pipeline
+from dagster import Failure, MetadataEntry, execute_pipeline, lambda_solid, pipeline
 
 
 def test_failure():
@@ -7,7 +7,7 @@ def test_failure():
         raise Failure(
             description="it Failure",
             metadata_entries=[
-                EventMetadataEntry.text(label="label", text="text", description="description")
+                MetadataEntry.text(label="label", text="text", description="description")
             ],
         )
 

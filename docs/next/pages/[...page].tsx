@@ -6,12 +6,13 @@ import Pagination from "../components/Pagination";
 import { SphinxPrefix, sphinxPrefixFromPage } from "../util/useSphinx";
 import { useVersion, versionFromPage } from "../util/useVersion";
 
+import axios from "axios";
 import { GetStaticProps } from "next";
 import Link from "../components/Link";
 import { MdxRemote } from "next-mdx-remote/types";
 import { NextSeo } from "next-seo";
 import SidebarNavigation, { getItems } from "components/mdx/SidebarNavigation";
-import { allPaths } from "util/useNavigation";
+import { latestAllPaths } from "util/useNavigation";
 import { promises as fs } from "fs";
 import generateToc from "mdast-util-toc";
 import hydrate from "next-mdx-remote/hydrate";
@@ -22,8 +23,8 @@ import rehypePlugins from "components/mdx/rehypePlugins";
 import remark from "remark";
 import renderToString from "next-mdx-remote/render-to-string";
 import { useRouter } from "next/router";
-import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
-import { Readable } from "stream";
+
+import { Shimmer } from "components/Shimmer";
 
 const components: MdxRemote.Components = MDXComponents;
 
@@ -229,18 +230,10 @@ function HTMLRenderer({ data }: { data: HTMLData }) {
 export default function MdxPage(props: Props) {
   const router = useRouter();
 
-  // If the page is not yet generated, this will be displayed
+  // If the page is not yet generated, this shimmer/skeleton will be displayed
   // initially until getStaticProps() finishes running
   if (router.isFallback) {
-    return (
-      <div className="w-full my-12 h-96 animate-pulse prose max-w-none">
-        <div className="bg-gray-200 px-4 w-48 h-12"></div>
-        <div className="bg-gray-200 mt-12 px-4 w-1/2 h-6"></div>
-        <div className="bg-gray-200 mt-5 px-4 w-2/3 h-6"></div>
-        <div className="bg-gray-200 mt-5 px-4 w-1/3 h-6"></div>
-        <div className="bg-gray-200 mt-5 px-4 w-1/2 h-6"></div>
-      </div>
-    );
+    return <Shimmer />;
   }
 
   if (props.type == PageType.MDX) {
@@ -250,40 +243,16 @@ export default function MdxPage(props: Props) {
   }
 }
 
-async function streamToString(stream: Readable): Promise<string> {
-  return await new Promise((resolve, reject) => {
-    const chunks: Uint8Array[] = [];
-    stream.on("data", (chunk) => chunks.push(chunk));
-    stream.on("error", reject);
-    stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf-8")));
-  });
-}
-const useS3Client = () => {
-  if (process.env.VERCEL) {
-    // If the app is running on Vercel, AWS creds need to be set via env vars
-    return new S3Client({
-      credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID_DOCS,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY_DOCS,
-      },
-      region: "us-west-1",
-    });
-  } else {
-    return new S3Client({ region: "us-west-1" });
-  }
-};
-
-const s3Client = useS3Client();
-
-async function getVersionedContent(version: string, asPath: string) {
-  // get versioned content from remote public s3 bucket
-  const command = new GetObjectCommand({
-    Bucket: "dagster-docs-versioned-content",
-    Key: path.join("versioned_content", version, asPath),
-  });
-  const { Body } = await s3Client.send(command);
-  const content = await streamToString(Body as Readable);
-  return content;
+async function getVersionedContent(
+  version: string,
+  asPath: string
+): Promise<string> {
+  const bucket = "dagster-docs-versioned-content";
+  const region = "us-west-1";
+  const folder = "versioned_content";
+  const url = `https://${bucket}.s3.${region}.amazonaws.com/${folder}/${version}${asPath}`;
+  const response = await axios.get(url, { transformResponse: (x) => x });
+  return response.data;
 }
 
 async function getContent(version: string, asPath: string) {
@@ -307,7 +276,7 @@ async function getSphinxData(
   page: string[]
 ) {
   if (sphinxPrefix === SphinxPrefix.API_DOCS) {
-    const content = await getContent(version, "api/sections.json");
+    const content = await getContent(version, "/api/sections.json");
     const {
       api: { apidocs: data },
     } = JSON.parse(content);
@@ -323,7 +292,7 @@ async function getSphinxData(
       props: { type: PageType.HTML, data: { body, toc } },
     };
   } else {
-    const content = await getContent(version, "api/modules.json");
+    const content = await getContent(version, "/api/modules.json");
     const data = JSON.parse(content);
     let curr = data;
     for (const part of page) {
@@ -364,7 +333,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
   try {
     // 1. Read and parse versioned search
-    const searchContent = await getContent(version, "api/searchindex.json");
+    const searchContent = await getContent(version, "/api/searchindex.json");
     const searchIndex = JSON.parse(searchContent);
 
     // 2. Read and parse versioned MDX content
@@ -400,7 +369,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           githubLink,
         },
       },
-      revalidate: 10, // In seconds
+      revalidate: 600, // In seconds; This enables Incremental Static Regeneration
     };
   } catch (err) {
     console.error(err);
@@ -412,7 +381,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
 export function getStaticPaths({}) {
   return {
-    paths: allPaths(),
+    paths: latestAllPaths(), // only generate pages of latest version at build time
     fallback: true,
   };
 }

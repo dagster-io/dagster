@@ -6,4 +6,8 @@ APIs
 
 .. currentmodule:: dagster_docker
 
-.. autoclass:: DockerRunLauncher
+.. autoconfigurable:: DockerRunLauncher
+  :annotation: RunLauncher
+
+.. autoconfigurable:: docker_executor
+  :annotation: ExecutorDefinition

@@ -1,4 +1,5 @@
 from dagster import OpDefinition, build_op_context
+
 from docs_snippets.concepts.solids_pipelines.solids import (
     context_op,
     my_configurable_op,
@@ -44,7 +45,9 @@ def test_context_op():
 
 
 def test_my_configurable_op():
-    my_configurable_op(build_op_context(config={"api_endpoint": "https://localhost:3000"}))
+    my_configurable_op(
+        build_op_context(config={"api_endpoint": "https://localhost:3000"})
+    )
 
 
 def test_op_factory():

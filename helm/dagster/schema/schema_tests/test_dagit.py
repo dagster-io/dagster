@@ -72,6 +72,21 @@ def test_startup_probe_enabled(deployment_template: HelmTemplate, enabled: bool)
     assert (container.startup_probe is not None) == enabled
 
 
+def test_readiness_probe(deployment_template: HelmTemplate):
+    helm_values = DagsterHelmValues.construct(dagit=Dagit.construct())
+
+    dagit = deployment_template.render(helm_values)
+    assert len(dagit) == 1
+    dagit = dagit[0]
+
+    assert len(dagit.spec.template.spec.containers) == 1
+    container = dagit.spec.template.spec.containers[0]
+
+    assert container.startup_probe is None
+    assert container.liveness_probe is None
+    assert container.readiness_probe is not None
+
+
 def test_dagit_read_only_disabled(deployment_template: HelmTemplate):
     helm_values = DagsterHelmValues.construct()
 
@@ -92,8 +107,8 @@ def test_dagit_read_only_enabled(deployment_template: HelmTemplate):
         for dagit in dagit_template
     ] == [False, True]
     assert [dagit.metadata.name for dagit in dagit_template] == [
-        "RELEASE-NAME-dagit",
-        "RELEASE-NAME-dagit-read-only",
+        "release-name-dagit",
+        "release-name-dagit-read-only",
     ]
 
     assert [dagit.spec.template.metadata.labels["component"] for dagit in dagit_template] == [
@@ -145,7 +160,7 @@ def test_dagit_service(service_template):
     dagit_template = service_template.render(helm_values)
 
     assert len(dagit_template) == 1
-    assert dagit_template[0].metadata.name == "RELEASE-NAME-dagit"
+    assert dagit_template[0].metadata.name == "release-name-dagit"
 
 
 def test_dagit_service_read_only(service_template):
@@ -154,8 +169,8 @@ def test_dagit_service_read_only(service_template):
 
     assert len(dagit_template) == 2
     assert [dagit.metadata.name for dagit in dagit_template] == [
-        "RELEASE-NAME-dagit",
-        "RELEASE-NAME-dagit-read-only",
+        "release-name-dagit",
+        "release-name-dagit-read-only",
     ]
     assert [dagit.spec.selector["component"] for dagit in dagit_template] == [
         "dagit",
@@ -173,3 +188,19 @@ def test_dagit_db_statement_timeout(deployment_template: HelmTemplate):
     command = " ".join(dagit_deployments[0].spec.template.spec.containers[0].command)
 
     assert f"--db-statement-timeout {db_statement_timeout_ms}" in command
+
+
+def test_dagit_labels(deployment_template: HelmTemplate):
+    deployment_labels = {"deployment_label": "label"}
+    pod_labels = {"pod_label": "label"}
+    helm_values = DagsterHelmValues.construct(
+        dagit=Dagit.construct(
+            deploymentLabels=deployment_labels,
+            labels=pod_labels,
+        )
+    )
+
+    [dagit_deployment] = deployment_template.render(helm_values)
+
+    assert set(deployment_labels.items()).issubset(dagit_deployment.metadata.labels.items())
+    assert set(pod_labels.items()).issubset(dagit_deployment.spec.template.metadata.labels.items())

@@ -3,7 +3,7 @@ import sys
 import threading
 from abc import abstractmethod
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union, cast
 
 from dagster import check
 from dagster.api.get_server_id import sync_get_server_id
@@ -62,6 +62,8 @@ from dagster.utils.hosted_user_process import external_repo_from_def
 from .selector import PipelineSelector
 
 if TYPE_CHECKING:
+    from dagster.core.definitions.schedule_definition import ScheduleExecutionData
+    from dagster.core.definitions.sensor_definition import SensorExecutionData
     from dagster.core.host_representation import (
         ExternalPartitionConfigData,
         ExternalPartitionExecutionErrorData,
@@ -70,11 +72,7 @@ if TYPE_CHECKING:
         ExternalPartitionTagsData,
         ExternalScheduleExecutionErrorData,
     )
-    from dagster.core.definitions.schedule_definition import ScheduleExecutionData
-    from dagster.core.definitions.sensor_definition import SensorExecutionData
-    from dagster.core.host_representation.external_data import (
-        ExternalSensorExecutionErrorData,
-    )
+    from dagster.core.host_representation.external_data import ExternalSensorExecutionErrorData
 
 
 class RepositoryLocation(AbstractContextManager):
@@ -649,14 +647,14 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
     def get_external_execution_plan(
         self,
         external_pipeline: ExternalPipeline,
-        run_config: Dict[str, Any],
+        run_config: Mapping[str, Any],
         mode: str,
         step_keys_to_execute: Optional[List[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-        check.dict_param(run_config, "run_config")
+        run_config = check.dict_param(run_config, "run_config")
         check.str_param(mode, "mode")
         check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)

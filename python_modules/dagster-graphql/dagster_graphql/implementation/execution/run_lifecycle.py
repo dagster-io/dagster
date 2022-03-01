@@ -1,3 +1,5 @@
+from graphql.execution.base import ResolveInfo
+
 from dagster import check
 from dagster.core.execution.plan.resume_retry import get_retry_steps_from_parent_run
 from dagster.core.execution.plan.state import KnownExecutionState
@@ -5,7 +7,6 @@ from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.utils import make_new_run_id
 from dagster.utils import merge_dicts
-from graphql.execution.base import ResolveInfo
 
 from ...schema.errors import GrapheneNoModeProvidedError
 from ..external import ensure_valid_config, get_external_execution_plan_or_raise
@@ -74,6 +75,7 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
         run_id=execution_params.execution_metadata.run_id
         if execution_params.execution_metadata.run_id
         else make_new_run_id(),
+        solid_selection=execution_params.selector.solid_selection,
         solids_to_execute=frozenset(execution_params.selector.solid_selection)
         if execution_params.selector.solid_selection
         else None,

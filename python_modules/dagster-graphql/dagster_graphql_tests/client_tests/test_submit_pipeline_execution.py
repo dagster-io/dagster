@@ -1,6 +1,7 @@
 import pytest
-from dagster import DagsterInvalidDefinitionError
 from dagster_graphql import DagsterGraphQLClientError, InvalidOutputErrorInfo
+
+from dagster import DagsterInvalidDefinitionError
 
 from .conftest import MockClient, python_client_test_suite
 
@@ -42,7 +43,10 @@ def test_job_success(mock_client: MockClient):
 def test_preset_success(mock_client: MockClient):
     mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
     actual_run_id = mock_client.python_client.submit_pipeline_execution(
-        "bar", repository_location_name="baz", repository_name="quux", preset="cool_preset"
+        "bar",
+        repository_location_name="baz",
+        repository_name="quux",
+        preset="cool_preset",
     )
     assert actual_run_id == EXPECTED_RUN_ID
 
@@ -69,6 +73,32 @@ def test_job_tags_success(mock_client: MockClient):
         repository_location_name="baz",
         repository_name="quuz",
         tags={"my_tag": "a", "my_other_tag": "b"},
+    )
+    assert actual_run_id == EXPECTED_RUN_ID
+
+
+@python_client_test_suite
+def test_pipeline_subset_success(mock_client: MockClient):
+    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
+    actual_run_id = mock_client.python_client.submit_pipeline_execution(
+        "bar",
+        repository_location_name="baz",
+        repository_name="quuz",
+        solid_selection=[""],
+        mode="default",
+        run_config={},
+    )
+    assert actual_run_id == EXPECTED_RUN_ID
+
+
+@python_client_test_suite
+def test_job_subset_success(mock_client: MockClient):
+    mock_client.mock_gql_client.execute.return_value = launch_pipeline_success_response
+    actual_run_id = mock_client.python_client.submit_job_execution(
+        "bar",
+        repository_location_name="baz",
+        repository_name="quuz",
+        op_selection=[""],
     )
     assert actual_run_id == EXPECTED_RUN_ID
 

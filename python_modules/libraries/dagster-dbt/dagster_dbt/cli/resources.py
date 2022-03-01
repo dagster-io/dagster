@@ -155,6 +155,11 @@ class DbtCliResource(DbtResource):
             DbtCliOutput: An instance of :class:`DbtCliOutput<dagster_dbt.DbtCliOutput>` containing
                 parsed log output as well as the contents of run_results.json (if applicable).
         """
+        if data and schema:
+            # do not include these arguments if both are True, as these are deprecated in later
+            # versions of dbt, and for older versions the functionality is the same regardless of
+            # if both are set or neither are set.
+            return self.cli("test", models=models, exclude=exclude, **kwargs)
         return self.cli("test", models=models, exclude=exclude, data=data, schema=schema, **kwargs)
 
     def seed(

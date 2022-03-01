@@ -13,8 +13,6 @@ def hello_cereal():
     cereals = [row for row in csv.DictReader(lines)]
     get_dagster_logger().info(f"Found {len(cereals)} cereals")
 
-    return cereals
-
 
 # end_solid_marker
 

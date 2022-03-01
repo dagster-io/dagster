@@ -27,5 +27,5 @@ const ForeignNodeLink = styled.div`
 `;
 export const getForeignNodeDimensions = (id: string) => {
   const path = JSON.parse(id);
-  return {width: displayNameForAssetKey({path}).length * 7 + 30, height: 30};
+  return {width: displayNameForAssetKey({path}).length * 8 + 30, height: 30};
 };

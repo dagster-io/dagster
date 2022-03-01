@@ -57,7 +57,7 @@ class TestSolidSelections(NonLaunchableGraphQLContextTestMatrix):
         assert not result.errors
         assert result.data
         assert result.data["runConfigSchemaOrError"]["__typename"] == "InvalidSubsetError"
-        assert '"nope" does not exist' in result.data["runConfigSchemaOrError"]["message"]
+        assert "No qualified solids to execute" in result.data["runConfigSchemaOrError"]["message"]
 
     def test_pipeline_with_invalid_definition_error(self, graphql_context):
         selector = infer_pipeline_selector(

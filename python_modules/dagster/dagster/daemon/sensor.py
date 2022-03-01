@@ -4,29 +4,30 @@ import time
 from collections import namedtuple
 
 import pendulum
+
 from dagster import check, seven
 from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.definitions.sensor_definition import SensorExecutionData
+from dagster.core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import PipelineSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
+    InstigatorState,
     InstigatorStatus,
     SensorInstigatorData,
     TickData,
     TickStatus,
 )
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, check_tags
 from dagster.core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster.core.workspace import IWorkspace
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-RECORDED_TICK_STATES = [TickStatus.SUCCESS, TickStatus.FAILURE]
-FULFILLED_TICK_STATES = [TickStatus.SKIPPED, TickStatus.SUCCESS]
-
 MIN_INTERVAL_LOOP_TIME = 5
+
+FINISHED_TICK_STATES = [TickStatus.SKIPPED, TickStatus.SUCCESS, TickStatus.FAILURE]
 
 
 class DagsterSensorDaemonError(DagsterError):
@@ -38,12 +39,14 @@ class SkippedSensorRun(namedtuple("SkippedSensorRun", "run_key existing_run")):
 
 
 class SensorLaunchContext:
-    def __init__(self, external_sensor, job_state, tick, instance, logger):
+    def __init__(self, external_sensor, state, tick, instance, logger):
         self._external_sensor = external_sensor
         self._instance = instance
         self._logger = logger
-        self._job_state = job_state
+        self._state = state
         self._tick = tick
+
+        self._should_update_cursor_on_failure = False
 
     @property
     def status(self):
@@ -87,40 +90,56 @@ class SensorLaunchContext:
     def add_run(self, run_id, run_key=None):
         self._tick = self._tick.with_run(run_id, run_key)
 
+    def set_should_update_cursor_on_failure(self, should_update_cursor_on_failure: bool):
+        self._should_update_cursor_on_failure = should_update_cursor_on_failure
+
     def _write(self):
-        self._instance.update_job_tick(self._tick)
-        if self._tick.status in FULFILLED_TICK_STATES:
-            last_run_key = (
-                self._job_state.job_specific_data.last_run_key
-                if self._job_state.job_specific_data
-                else None
-            )
-            if self._tick.run_keys:
-                last_run_key = self._tick.run_keys[-1]
-            self._instance.update_job_state(
-                self._job_state.with_data(
-                    SensorInstigatorData(
-                        last_tick_timestamp=self._tick.timestamp,
-                        last_run_key=last_run_key,
-                        min_interval=self._external_sensor.min_interval_seconds,
-                        cursor=self._tick.cursor,
-                    )
+        self._instance.update_tick(self._tick)
+
+        if self._tick.status not in FINISHED_TICK_STATES:
+            return
+
+        should_update_cursor_and_last_run_key = (
+            self._tick.status != TickStatus.FAILURE
+        ) or self._should_update_cursor_on_failure
+
+        last_run_key = (
+            self._state.instigator_data.last_run_key if self._state.instigator_data else None
+        )
+        if self._tick.run_keys and should_update_cursor_and_last_run_key:
+            last_run_key = self._tick.run_keys[-1]
+
+        cursor = self._state.instigator_data.cursor if self._state.instigator_data else None
+        if should_update_cursor_and_last_run_key:
+            cursor = self._tick.cursor
+
+        self._instance.update_instigator_state(
+            self._state.with_data(
+                SensorInstigatorData(
+                    last_tick_timestamp=self._tick.timestamp,
+                    last_run_key=last_run_key,
+                    min_interval=self._external_sensor.min_interval_seconds,
+                    cursor=cursor,
                 )
             )
+        )
 
     def __enter__(self):
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
+        if exception_type and isinstance(exception_value, KeyboardInterrupt):
+            return
+
         # Log the error if the failure wasn't an interrupt or the daemon generator stopping
-        if exception_value and not isinstance(exception_value, (KeyboardInterrupt, GeneratorExit)):
+        if exception_value and not isinstance(exception_value, GeneratorExit):
             error_data = serializable_error_info_from_exc_info(sys.exc_info())
             self.update_state(TickStatus.FAILURE, error=error_data)
 
         self._write()
 
-        self._instance.purge_job_ticks(
-            self._job_state.job_origin_id,
+        self._instance.purge_ticks(
+            self._state.instigator_origin_id,
             tick_status=TickStatus.SKIPPED,
             before=pendulum.now("UTC").subtract(days=7).timestamp(),  #  keep the last 7 days
         )
@@ -164,7 +183,10 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
             workspace_loaded_time = pendulum.now("UTC").timestamp()
             workspace_iteration = 0
 
-        yield from execute_sensor_iteration(instance, logger, workspace, workspace_iteration)
+        yield from execute_sensor_iteration(
+            instance, logger, workspace, log_verbose_checks=(workspace_iteration == 0)
+        )
+
         loop_duration = pendulum.now("UTC").timestamp() - start_time
         sleep_time = max(0, MIN_INTERVAL_LOOP_TIME - loop_duration)
         time.sleep(sleep_time)
@@ -173,55 +195,108 @@ def execute_sensor_iteration_loop(instance, workspace, logger, until=None):
 
 
 def execute_sensor_iteration(
-    instance, logger, workspace, workspace_iteration=None, debug_crash_flags=None
+    instance, logger, workspace, log_verbose_checks=True, debug_crash_flags=None
 ):
     check.inst_param(workspace, "workspace", IWorkspace)
     check.inst_param(instance, "instance", DagsterInstance)
-    sensor_jobs = [
-        s
-        for s in instance.all_stored_job_state(job_type=InstigatorType.SENSOR)
-        if s.status == InstigatorStatus.RUNNING
-    ]
-    if not sensor_jobs:
-        if not workspace_iteration:
+
+    workspace_snapshot = {
+        location_entry.origin: location_entry
+        for location_entry in workspace.get_workspace_snapshot().values()
+    }
+
+    all_sensor_states = {
+        sensor_state.origin.get_id(): sensor_state
+        for sensor_state in instance.all_instigator_state(instigator_type=InstigatorType.SENSOR)
+    }
+
+    sensors = {}
+    for location_entry in workspace_snapshot.values():
+        repo_location = location_entry.repository_location
+        if repo_location:
+            for repo in repo_location.get_repositories().values():
+                for sensor in repo.get_external_sensors():
+                    origin_id = sensor.get_external_origin().get_id()
+                    if sensor.get_current_instigator_state(
+                        all_sensor_states.get(origin_id)
+                    ).is_running:
+                        sensors[origin_id] = sensor
+        elif location_entry.load_error and log_verbose_checks:
+            logger.warning(
+                f"Could not load location {location_entry.origin.location_name} to check for sensors due to the following error: {location_entry.load_error}"
+            )
+
+    if log_verbose_checks:
+        unloadable_sensor_states = {
+            origin_id: sensor_state
+            for origin_id, sensor_state in all_sensor_states.items()
+            if origin_id not in sensors and sensor_state.status == InstigatorStatus.RUNNING
+        }
+
+        for sensor_state in unloadable_sensor_states.values():
+            sensor_name = sensor_state.origin.instigator_name
+            repo_location_origin = (
+                sensor_state.origin.external_repository_origin.repository_location_origin
+            )
+
+            repo_location_name = repo_location_origin.location_name
+            repo_name = sensor_state.origin.external_repository_origin.repository_name
+            if (
+                repo_location_origin not in workspace_snapshot
+                or not workspace_snapshot[repo_location_origin].repository_location
+            ):
+                logger.warning(
+                    f"Sensor {sensor_name} was started from a location "
+                    f"{repo_location_name} that can no longer be found in the workspace, or has "
+                    "metadata that has changed since the sensor was started. You can turn off "
+                    "this sensor in the Dagit UI from the Status tab."
+                )
+            elif not workspace_snapshot[repo_location_origin].repository_location.has_repository(
+                repo_name
+            ):
+                logger.warning(
+                    f"Could not find repository {repo_name} in location {repo_location_name} to "
+                    + f"run sensor {sensor_name}. If this repository no longer exists, you can "
+                    + "turn off the sensor in the Dagit UI from the Status tab.",
+                )
+            else:
+                logger.warning(
+                    f"Could not find sensor {sensor_name} in repository {repo_name}. If this "
+                    "sensor no longer exists, you can turn it off in the Dagit UI from the "
+                    "Status tab.",
+                )
+
+    if not sensors:
+        if log_verbose_checks:
             logger.info("Not checking for any runs since no sensors have been started.")
         yield
         return
 
-    for job_state in sensor_jobs:
-        sensor_debug_crash_flags = (
-            debug_crash_flags.get(job_state.job_name) if debug_crash_flags else None
-        )
+    now = pendulum.now("UTC")
+
+    for external_sensor in sensors.values():
+        sensor_name = external_sensor.name
+        sensor_debug_crash_flags = debug_crash_flags.get(sensor_name) if debug_crash_flags else None
         error_info = None
         try:
-            origin = job_state.origin.external_repository_origin.repository_location_origin
-            repo_location = workspace.get_location(origin)
-
-            repo_name = job_state.origin.external_repository_origin.repository_name
-
-            if not repo_location.has_repository(repo_name):
-                raise DagsterSensorDaemonError(
-                    f"Could not find repository {repo_name} in location {repo_location.name} to "
-                    + f"run sensor {job_state.job_name}. If this repository no longer exists, you can "
-                    + "turn off the sensor in the Dagit UI.",
+            sensor_state = all_sensor_states.get(external_sensor.get_external_origin().get_id())
+            if not sensor_state:
+                assert external_sensor.default_status == DefaultSensorStatus.RUNNING
+                sensor_state = InstigatorState(
+                    external_sensor.get_external_origin(),
+                    InstigatorType.SENSOR,
+                    InstigatorStatus.AUTOMATICALLY_RUNNING,
+                    SensorInstigatorData(min_interval=external_sensor.min_interval_seconds),
                 )
-
-            external_repo = repo_location.get_repository(repo_name)
-            if not external_repo.has_external_sensor(job_state.job_name):
-                raise DagsterSensorDaemonError(
-                    f"Could not find sensor {job_state.job_name} in repository {repo_name}. If this "
-                    "sensor no longer exists, you can turn it off in the Dagit UI.",
-                )
-
-            now = pendulum.now("UTC")
-            if _is_under_min_interval(job_state, now):
+                instance.add_instigator_state(sensor_state)
+            elif _is_under_min_interval(sensor_state, external_sensor, now):
                 continue
 
-            tick = instance.create_job_tick(
+            tick = instance.create_tick(
                 TickData(
-                    job_origin_id=job_state.job_origin_id,
-                    job_name=job_state.job_name,
-                    job_type=InstigatorType.SENSOR,
+                    instigator_origin_id=sensor_state.instigator_origin_id,
+                    instigator_name=sensor_state.instigator_name,
+                    instigator_type=InstigatorType.SENSOR,
                     status=TickStatus.STARTED,
                     timestamp=now.timestamp(),
                 )
@@ -229,26 +304,23 @@ def execute_sensor_iteration(
 
             _check_for_debug_crash(sensor_debug_crash_flags, "TICK_CREATED")
 
-            external_sensor = external_repo.get_external_sensor(job_state.job_name)
             with SensorLaunchContext(
-                external_sensor, job_state, tick, instance, logger
+                external_sensor, sensor_state, tick, instance, logger
             ) as tick_context:
                 _check_for_debug_crash(sensor_debug_crash_flags, "TICK_HELD")
                 yield from _evaluate_sensor(
                     tick_context,
                     instance,
                     workspace,
-                    repo_location,
-                    external_repo,
                     external_sensor,
-                    job_state,
+                    sensor_state,
                     sensor_debug_crash_flags,
                 )
         except Exception:
             error_info = serializable_error_info_from_exc_info(sys.exc_info())
             logger.error(
                 "Sensor daemon caught an error for sensor {sensor_name} : {error_info}".format(
-                    sensor_name=job_state.job_name,
+                    sensor_name=external_sensor.name,
                     error_info=error_info.to_string(),
                 )
             )
@@ -259,20 +331,25 @@ def _evaluate_sensor(
     context,
     instance,
     workspace,
-    repo_location,
-    external_repo,
     external_sensor,
-    job_state,
+    state,
     sensor_debug_crash_flags=None,
 ):
     context.logger.info(f"Checking for new runs for sensor: {external_sensor.name}")
+
+    sensor_origin = external_sensor.get_external_origin()
+    repository_handle = external_sensor.handle.repository_handle
+    repo_location = workspace.get_location(
+        sensor_origin.external_repository_origin.repository_location_origin
+    )
+
     sensor_runtime_data = repo_location.get_external_sensor_execution_data(
         instance,
-        external_repo.handle,
+        repository_handle,
         external_sensor.name,
-        job_state.job_specific_data.last_tick_timestamp if job_state.job_specific_data else None,
-        job_state.job_specific_data.last_run_key if job_state.job_specific_data else None,
-        job_state.job_specific_data.cursor if job_state.job_specific_data else None,
+        state.instigator_data.last_tick_timestamp if state.instigator_data else None,
+        state.instigator_data.last_run_key if state.instigator_data else None,
+        state.instigator_data.cursor if state.instigator_data else None,
     )
 
     yield
@@ -291,6 +368,9 @@ def _evaluate_sensor(
                         cursor=sensor_runtime_data.cursor,
                         error=pipeline_run_reaction.error,
                     )
+                    # Since run status sensors have side effects that we don't want to repeat,
+                    # we still want to update the cursor, even though the tick failed
+                    context.set_should_update_cursor_on_failure(True)
                 else:
                     # log to the original pipeline run
                     message = (
@@ -331,7 +411,7 @@ def _evaluate_sensor(
 
         pipeline_selector = PipelineSelector(
             location_name=repo_location.name,
-            repository_name=external_repo.name,
+            repository_name=sensor_origin.external_repository_origin.repository_name,
             pipeline_name=target_data.pipeline_name,
             solid_selection=target_data.solid_selection,
         )
@@ -393,18 +473,18 @@ def _evaluate_sensor(
     yield
 
 
-def _is_under_min_interval(job_state, now):
-    if not job_state.job_specific_data:
+def _is_under_min_interval(state, external_sensor, now):
+    if not state.instigator_data:
         return False
 
-    if not job_state.job_specific_data.last_tick_timestamp:
+    if not state.instigator_data.last_tick_timestamp:
         return False
 
-    if not job_state.job_specific_data.min_interval:
+    if not external_sensor.min_interval_seconds:
         return False
 
-    elapsed = now.timestamp() - job_state.job_specific_data.last_tick_timestamp
-    return elapsed < job_state.job_specific_data.min_interval
+    elapsed = now.timestamp() - state.instigator_data.last_tick_timestamp
+    return elapsed < external_sensor.min_interval_seconds
 
 
 def _get_or_create_sensor_run(
@@ -417,7 +497,7 @@ def _get_or_create_sensor_run(
         )
 
     existing_runs = instance.get_runs(
-        PipelineRunsFilter(
+        RunsFilter(
             tags=merge_dicts(
                 PipelineRun.tags_for_sensor(external_sensor),
                 {RUN_KEY_TAG: run_request.run_key},
@@ -429,7 +509,7 @@ def _get_or_create_sensor_run(
         run = existing_runs[0]
         if run.status != PipelineRunStatus.NOT_STARTED:
             # A run already exists and was launched for this time period,
-            # but the scheduler must have crashed before the tick could be put
+            # but the daemon must have crashed before the tick could be put
             # into a SUCCESS state
             context.logger.info(f"Skipping run for {run_request.run_key}, found {run.run_id}.")
             return SkippedSensorRun(run_key=run_request.run_key, existing_run=run)
@@ -474,11 +554,11 @@ def _create_sensor_run(
     log_action(
         instance,
         SENSOR_RUN_CREATED,
-        pipeline_name_hash=hash_name(external_pipeline.name),
-        repo_hash=hash_name(repo_location.name),
         metadata={
             "DAEMON_SESSION_ID": get_telemetry_daemon_session_id(),
             "SENSOR_NAME_HASH": hash_name(external_sensor.name),
+            "pipeline_name_hash": hash_name(external_pipeline.name),
+            "repo_hash": hash_name(repo_location.name),
         },
     )
 

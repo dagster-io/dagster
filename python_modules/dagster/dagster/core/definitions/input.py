@@ -1,8 +1,9 @@
 from collections import namedtuple
-from typing import NamedTuple, Optional, Set
+from typing import NamedTuple, Optional, Set, Union
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.metadata import MetadataEntry, normalize_metadata
 from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import (
     BuiltinScalarDagsterType,
@@ -96,6 +97,9 @@ class InputDefinition:
         self._root_manager_key = check.opt_str_param(root_manager_key, "root_manager_key")
 
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
+        self._metadata_entries = check.is_list(
+            normalize_metadata(self._metadata, [], allow_invalid=True), MetadataEntry
+        )
 
         if asset_key:
             experimental_arg_warning("asset_key", "InputDefinition.__init__")
@@ -152,6 +156,10 @@ class InputDefinition:
     @property
     def is_asset(self):
         return self._asset_key is not None
+
+    @property
+    def metadata_entries(self):
+        return self._metadata_entries
 
     @property
     def hardcoded_asset_key(self) -> Optional[AssetKey]:
@@ -278,8 +286,8 @@ def _checked_inferred_type(inferred: InferredInputProps) -> DagsterType:
     return resolved_type
 
 
-class InputPointer(namedtuple("_InputPointer", "solid_name input_name")):
-    def __new__(cls, solid_name, input_name):
+class InputPointer(NamedTuple("_InputPointer", [("solid_name", str), ("input_name", str)])):
+    def __new__(cls, solid_name: str, input_name: str):
         return super(InputPointer, cls).__new__(
             cls,
             check.str_param(solid_name, "solid_name"),
@@ -287,8 +295,12 @@ class InputPointer(namedtuple("_InputPointer", "solid_name input_name")):
         )
 
 
-class FanInInputPointer(namedtuple("_FanInInputPointer", "solid_name input_name fan_in_index")):
-    def __new__(cls, solid_name, input_name, fan_in_index):
+class FanInInputPointer(
+    NamedTuple(
+        "_FanInInputPointer", [("solid_name", str), ("input_name", str), ("fan_in_index", int)]
+    )
+):
+    def __new__(cls, solid_name: str, input_name: str, fan_in_index: int):
         return super(FanInInputPointer, cls).__new__(
             cls,
             check.str_param(solid_name, "solid_name"),
@@ -297,7 +309,12 @@ class FanInInputPointer(namedtuple("_FanInInputPointer", "solid_name input_name 
         )
 
 
-class InputMapping(namedtuple("_InputMapping", "definition maps_to")):
+class InputMapping(
+    NamedTuple(
+        "_InputMapping",
+        [("definition", InputDefinition), ("maps_to", Union[InputPointer, FanInInputPointer])],
+    )
+):
     """Defines an input mapping for a composite solid.
 
     Args:
@@ -306,7 +323,7 @@ class InputMapping(namedtuple("_InputMapping", "definition maps_to")):
         input_name (str): The name of the input to the child solid onto which to map the input.
     """
 
-    def __new__(cls, definition, maps_to):
+    def __new__(cls, definition: InputDefinition, maps_to: Union[InputPointer, FanInInputPointer]):
         return super(InputMapping, cls).__new__(
             cls,
             check.inst_param(definition, "definition", InputDefinition),
