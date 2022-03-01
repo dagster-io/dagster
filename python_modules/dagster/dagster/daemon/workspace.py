@@ -42,11 +42,9 @@ class BaseDaemonWorkspace(IWorkspace):
     def _load_workspace(self) -> Dict[str, WorkspaceLocationEntry]:
         pass
 
-    def get_location(self, origin) -> RepositoryLocation:
+    def get_location(self, location_name: str) -> RepositoryLocation:
         if self._location_entries == None:
             self._location_entries = self._load_workspace()
-
-        location_name = origin.location_name
 
         if location_name not in self._location_entries:
             raise DagsterRepositoryLocationLoadError(

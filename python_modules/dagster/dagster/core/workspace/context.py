@@ -101,8 +101,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
     def show_instance_config(self) -> bool:
         return True
 
-    def get_location(self, origin):
-        location_name = origin.location_name
+    def get_location(self, location_name: str):
         location_entry = self.get_location_entry(location_name)
         if not location_entry:
             raise DagsterInvariantViolationError(
@@ -112,7 +111,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         if location_entry.repository_location:
             return location_entry.repository_location
 
-        error_info = location_entry.load_error
+        error_info = cast(SerializableErrorInfo, location_entry.load_error)
         raise DagsterRepositoryLocationLoadError(
             f"Failure loading {location_name}: {error_info.to_string()}",
             load_error_infos=[error_info],
