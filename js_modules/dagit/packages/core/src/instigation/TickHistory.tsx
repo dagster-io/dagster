@@ -48,6 +48,14 @@ Chart.register(zoomPlugin);
 
 type InstigationTick = TickHistoryQuery_instigationStateOrError_InstigationState_ticks;
 
+const TRUNCATION_THRESHOLD = 100;
+const TRUNCATION_BUFFER = 5;
+
+const truncate = (str: string) =>
+  str.length > TRUNCATION_THRESHOLD
+    ? `${str.slice(0, TRUNCATION_THRESHOLD - TRUNCATION_BUFFER)}…`
+    : str;
+
 const PAGE_SIZE = 25;
 interface ShownStatusState {
   [InstigationTickStatus.SUCCESS]: boolean;
@@ -196,7 +204,7 @@ export const TicksTable = ({name, repoAddress}: {name: string; repoAddress: Repo
                     {tick.cursor ? (
                       <Box flex={{direction: 'row', alignItems: 'center'}}>
                         <Box style={{fontFamily: FontFamily.monospace, marginRight: 10}}>
-                          {tick.cursor}
+                          <>{truncate(tick.cursor || '')}</>
                         </Box>
                         <CopyButton
                           onClick={() => {
