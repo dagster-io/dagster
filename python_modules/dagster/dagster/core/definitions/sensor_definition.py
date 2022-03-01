@@ -218,7 +218,6 @@ class SensorDefinition:
             )
 
         targets: Optional[List[Union[RepoRelativeTarget, DirectTarget]]] = None
-        self._jobs: Optional[Sequence[Union[GraphDefinition, JobDefinition]]] = None
         if pipeline_name:
             targets = [
                 RepoRelativeTarget(
@@ -229,13 +228,10 @@ class SensorDefinition:
                     ),
                 )
             ]
-            self._jobs = None
         elif job:
             targets = [DirectTarget(job)]
-            self._jobs = [job]
         elif jobs:
             targets = [DirectTarget(job) for job in jobs]
-            self._jobs = jobs
 
         if name:
             self._name = check_valid_name(name)
@@ -314,7 +310,9 @@ class SensorDefinition:
 
     @property
     def jobs(self) -> Optional[Sequence[Union[GraphDefinition, JobDefinition]]]:
-        return self._jobs
+        if len(self._targets) > 0 and isinstance(self._targets[0], DirectTarget):
+            return [t.pipeline for t in self._targets]
+        raise DagsterInvalidDefinitionError("No jobs were provided to SensorDefinition.")
 
     def evaluate_tick(self, context: "SensorEvaluationContext") -> "SensorExecutionData":
         """Evaluate sensor using the provided context.

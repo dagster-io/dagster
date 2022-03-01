@@ -214,10 +214,8 @@ class ScheduleDefinition:
                 "Dagster recognizes cron expressions consisting of 5 space-separated fields."
             )
 
-        self._job: Optional[Union[GraphDefinition, PipelineDefinition]] = None
         if job is not None:
             self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
-            self._job = job
         else:
             self._target = RepoRelativeTarget(
                 pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
@@ -226,7 +224,6 @@ class ScheduleDefinition:
                     solid_selection, "solid_selection", of_type=str
                 ),
             )
-            self._job = None
 
         if name:
             self._name = check_valid_name(name)
@@ -421,7 +418,10 @@ class ScheduleDefinition:
 
     @property
     def job(self) -> Optional[Union[GraphDefinition, PipelineDefinition]]:
-        return self._job
+        if isinstance(self._target, DirectTarget):
+            print(self._target.pipeline)
+            return self._target.pipeline
+        raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
 
     def evaluate_tick(self, context: "ScheduleEvaluationContext") -> ScheduleExecutionData:
         """Evaluate schedule using the provided context.

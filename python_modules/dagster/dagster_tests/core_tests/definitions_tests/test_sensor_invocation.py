@@ -123,13 +123,6 @@ def test_sensor_w_no_job():
         )
 
 
-def test_direct_sensor_definition_instantiation():
-    with pytest.raises(
-        DagsterInvalidDefinitionError, match="Must provide evaluation_fn to SensorDefinition."
-    ):
-        SensorDefinition()
-
-
 def test_run_status_sensor():
     @run_status_sensor(pipeline_run_status=DagsterRunStatus.SUCCESS)
     def status_sensor(context):
