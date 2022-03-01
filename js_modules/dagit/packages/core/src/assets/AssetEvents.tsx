@@ -12,7 +12,6 @@ import {
 } from '@dagster-io/ui';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
-import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -20,6 +19,7 @@ import {useStateWithStorage} from '../hooks/useStateWithStorage';
 import {METADATA_ENTRY_FRAGMENT} from '../metadata/MetadataEntry';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {titleForRun} from '../runs/RunUtils';
+import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {RepositorySelector} from '../types/globalTypes';
 import {CurrentRunsBanner} from '../workspace/asset-graph/CurrentRunsBanner';
 import {LiveDataForNode} from '../workspace/asset-graph/Utils';
@@ -326,13 +326,11 @@ export const AssetEvents: React.FC<Props> = ({
                 : jobRunsThatDidntMaterializeAsset.jobNames[0]}{' '}
               ran{' '}
               <Link
-                to={`/instance/runs?${
-                  jobRunsThatDidntMaterializeAsset.jobNames.length > 1
-                    ? ''
-                    : qs.stringify({
-                        'q[]': `job:${jobRunsThatDidntMaterializeAsset.jobNames[0]}`,
-                      })
-                }`}
+                to={runsPathWithFilters(
+                  jobRunsThatDidntMaterializeAsset.jobNames.length === 1
+                    ? [{token: 'job', value: jobRunsThatDidntMaterializeAsset.jobNames[0]}]
+                    : [],
+                )}
               >
                 {jobRunsThatDidntMaterializeAsset.count} times
               </Link>{' '}

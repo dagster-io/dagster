@@ -38,6 +38,7 @@ import {
   successStatuses,
 } from '../runs/RunStatuses';
 import {DagsterTag} from '../runs/RunTag';
+import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -281,9 +282,12 @@ const BackfillRow = ({
   const history = useHistory();
   const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissions();
   const counts = React.useMemo(() => getProgressCounts(backfill), [backfill]);
-  const runsUrl = `/instance/runs?${qs.stringify({
-    q: [stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}])],
-  })}`;
+  const runsUrl = runsPathWithFilters([
+    {
+      token: 'tag',
+      value: `dagster/backfill=${backfill.backfillId}`,
+    },
+  ]);
 
   const repoAddress = backfill.partitionSet
     ? buildRepoAddress(
