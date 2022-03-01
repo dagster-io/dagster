@@ -1,0 +1,1005 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 14.1
+-- Dumped by pg_dump version 14.1
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET idle_in_transaction_session_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SELECT pg_catalog.set_config('search_path', '', false);
+SET check_function_bodies = false;
+SET xmloption = content;
+SET client_min_messages = warning;
+SET row_security = off;
+
+SET default_tablespace = '';
+
+SET default_table_access_method = heap;
+
+--
+-- Name: alembic_version; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.alembic_version (
+    version_num character varying(32) NOT NULL
+);
+
+
+ALTER TABLE public.alembic_version OWNER TO test;
+
+--
+-- Name: asset_keys; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.asset_keys (
+    id integer NOT NULL,
+    asset_key character varying(512),
+    last_materialization text,
+    last_run_id character varying(255),
+    asset_details text,
+    wipe_timestamp timestamp without time zone,
+    last_materialization_timestamp timestamp without time zone,
+    tags text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.asset_keys OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.asset_keys_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.asset_keys_id_seq OWNER TO test;
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.asset_keys_id_seq OWNED BY public.asset_keys.id;
+
+
+--
+-- Name: bulk_actions; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.bulk_actions (
+    id integer NOT NULL,
+    key character varying(32) NOT NULL,
+    status character varying(255) NOT NULL,
+    "timestamp" timestamp without time zone NOT NULL,
+    body text
+);
+
+
+ALTER TABLE public.bulk_actions OWNER TO test;
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.bulk_actions_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.bulk_actions_id_seq OWNER TO test;
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.bulk_actions_id_seq OWNED BY public.bulk_actions.id;
+
+
+--
+-- Name: daemon_heartbeats; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.daemon_heartbeats (
+    daemon_type character varying(255) NOT NULL,
+    daemon_id character varying(255),
+    "timestamp" timestamp without time zone NOT NULL,
+    body text
+);
+
+
+ALTER TABLE public.daemon_heartbeats OWNER TO test;
+
+--
+-- Name: event_logs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.event_logs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    event text NOT NULL,
+    dagster_event_type text,
+    "timestamp" timestamp without time zone,
+    step_key text,
+    asset_key text,
+    partition text
+);
+
+
+ALTER TABLE public.event_logs OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.event_logs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.event_logs_id_seq OWNER TO test;
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.event_logs_id_seq OWNED BY public.event_logs.id;
+
+
+--
+-- Name: instance_info; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.instance_info (
+    run_storage_id text
+);
+
+
+ALTER TABLE public.instance_info OWNER TO test;
+
+--
+-- Name: job_ticks; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.job_ticks (
+    id integer NOT NULL,
+    job_origin_id character varying(255),
+    status character varying(63),
+    type character varying(63),
+    "timestamp" timestamp without time zone,
+    tick_body text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.job_ticks OWNER TO test;
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.job_ticks_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.job_ticks_id_seq OWNER TO test;
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.job_ticks_id_seq OWNED BY public.job_ticks.id;
+
+
+--
+-- Name: jobs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.jobs (
+    id integer NOT NULL,
+    job_origin_id character varying(255),
+    repository_origin_id character varying(255),
+    status character varying(63),
+    job_type character varying(63),
+    job_body text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP
+);
+
+
+ALTER TABLE public.jobs OWNER TO test;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.jobs_id_seq OWNER TO test;
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.jobs_id_seq OWNED BY public.jobs.id;
+
+
+--
+-- Name: run_tags; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.run_tags (
+    id integer NOT NULL,
+    run_id character varying(255),
+    key text,
+    value text
+);
+
+
+ALTER TABLE public.run_tags OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.run_tags_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.run_tags_id_seq OWNER TO test;
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.run_tags_id_seq OWNED BY public.run_tags.id;
+
+
+--
+-- Name: runs; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.runs (
+    id integer NOT NULL,
+    run_id character varying(255),
+    snapshot_id character varying(255),
+    pipeline_name text,
+    mode text,
+    status character varying(63),
+    run_body text,
+    partition text,
+    partition_set text,
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    update_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    start_time double precision,
+    end_time double precision
+);
+
+
+ALTER TABLE public.runs OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.runs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.runs_id_seq OWNER TO test;
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.runs_id_seq OWNED BY public.runs.id;
+
+
+--
+-- Name: secondary_indexes; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.secondary_indexes (
+    id integer NOT NULL,
+    name character varying(512),
+    create_timestamp timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
+    migration_completed timestamp without time zone
+);
+
+
+ALTER TABLE public.secondary_indexes OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.secondary_indexes_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.secondary_indexes_id_seq OWNER TO test;
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.secondary_indexes_id_seq OWNED BY public.secondary_indexes.id;
+
+
+--
+-- Name: snapshots; Type: TABLE; Schema: public; Owner: test
+--
+
+CREATE TABLE public.snapshots (
+    id integer NOT NULL,
+    snapshot_id character varying(255) NOT NULL,
+    snapshot_body bytea NOT NULL,
+    snapshot_type character varying(63) NOT NULL
+);
+
+
+ALTER TABLE public.snapshots OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE; Schema: public; Owner: test
+--
+
+CREATE SEQUENCE public.snapshots_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER TABLE public.snapshots_id_seq OWNER TO test;
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: test
+--
+
+ALTER SEQUENCE public.snapshots_id_seq OWNED BY public.snapshots.id;
+
+
+--
+-- Name: asset_keys id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys ALTER COLUMN id SET DEFAULT nextval('public.asset_keys_id_seq'::regclass);
+
+
+--
+-- Name: bulk_actions id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions ALTER COLUMN id SET DEFAULT nextval('public.bulk_actions_id_seq'::regclass);
+
+
+--
+-- Name: event_logs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs ALTER COLUMN id SET DEFAULT nextval('public.event_logs_id_seq'::regclass);
+
+
+--
+-- Name: job_ticks id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.job_ticks ALTER COLUMN id SET DEFAULT nextval('public.job_ticks_id_seq'::regclass);
+
+
+--
+-- Name: jobs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs ALTER COLUMN id SET DEFAULT nextval('public.jobs_id_seq'::regclass);
+
+
+--
+-- Name: run_tags id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags ALTER COLUMN id SET DEFAULT nextval('public.run_tags_id_seq'::regclass);
+
+
+--
+-- Name: runs id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs ALTER COLUMN id SET DEFAULT nextval('public.runs_id_seq'::regclass);
+
+
+--
+-- Name: secondary_indexes id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes ALTER COLUMN id SET DEFAULT nextval('public.secondary_indexes_id_seq'::regclass);
+
+
+--
+-- Name: snapshots id; Type: DEFAULT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots ALTER COLUMN id SET DEFAULT nextval('public.snapshots_id_seq'::regclass);
+
+
+--
+-- Data for Name: alembic_version; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.alembic_version (version_num) FROM stdin;
+9c5f00e80ef2
+\.
+
+
+--
+-- Data for Name: asset_keys; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.asset_keys (id, asset_key, last_materialization, last_run_id, asset_details, wipe_timestamp, last_materialization_timestamp, tags, create_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: bulk_actions; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.bulk_actions (id, key, status, "timestamp", body) FROM stdin;
+\.
+
+
+--
+-- Data for Name: daemon_heartbeats; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.daemon_heartbeats (daemon_type, daemon_id, "timestamp", body) FROM stdin;
+\.
+
+
+--
+-- Data for Name: event_logs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.event_logs (id, run_id, event, dagster_event_type, "timestamp", step_key, asset_key, partition) FROM stdin;
+101	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_STARTING", "logging_tags": {}, "message": null, "pid": null, "pipeline_name": "hammer", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": null, "timestamp": 1646093507.573995, "user_message": ""}	PIPELINE_STARTING	2022-03-01 00:11:47.573995	\N	\N	\N
+102	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "cli_api_subprocess_init", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "18624"}, "label": "pid"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Started process for run (pid: 18624).", "pid": null, "pipeline_name": "hammer", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "Started process for run (pid: 18624).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": null, "timestamp": 1646093508.875825, "user_message": "Started process for run (pid: 18624)."}	ENGINE_EVENT	2022-03-01 00:11:48.875825	\N	\N	\N
+103	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_START", "logging_tags": {}, "message": "Started execution of run for \\"hammer\\".", "pid": 18624, "pipeline_name": "hammer", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18624 - RUN_START - Started execution of run for \\"hammer\\".", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": null, "timestamp": 1646093508.9422941, "user_message": "Started execution of run for \\"hammer\\"."}	PIPELINE_START	2022-03-01 00:11:48.942294	\N	\N	\N
+104	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "18624"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "['chase_giver', 'hammer_op', 'hammer_op_2', 'hammer_op_3', 'hammer_op_4', 'reducer']"}, "label": "step_keys"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Executing steps using multiprocess executor: parent process (pid: 18624)", "pid": 18624, "pipeline_name": "hammer", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18624 - ENGINE_EVENT - Executing steps using multiprocess executor: parent process (pid: 18624)", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": null, "timestamp": 1646093509.004906, "user_message": "Executing steps using multiprocess executor: parent process (pid: 18624)"}	ENGINE_EVENT	2022-03-01 00:11:49.004906	\N	\N	\N
+105	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "multiprocess_subprocess_init", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Launching subprocess for chase_giver", "pid": 18624, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "chase_giver", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}}, "step_key": "chase_giver", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18624 - chase_giver - ENGINE_EVENT - Launching subprocess for chase_giver", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093509.019113, "user_message": "Launching subprocess for chase_giver"}	ENGINE_EVENT	2022-03-01 00:11:49.019113	chase_giver	\N	\N
+106	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "multiprocess_subprocess_init", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "18642"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "chase_giver"}, "label": "step_key"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "[MultiprocessExecutor] Executing step chase_giver in subprocess", "pid": null, "pipeline_name": "hammer", "solid_handle": null, "step_handle": null, "step_key": "chase_giver", "step_kind_value": null}, "error_info": null, "level": 20, "message": "[MultiprocessExecutor] Executing step chase_giver in subprocess", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.149968, "user_message": "[MultiprocessExecutor] Executing step chase_giver in subprocess"}	ENGINE_EVENT	2022-03-01 00:11:50.149968	chase_giver	\N	\N
+107	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "resources", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Starting initialization of resources [io_manager].", "pid": 18642, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "chase_giver", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}}, "step_key": "chase_giver", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18642 - chase_giver - ENGINE_EVENT - Starting initialization of resources [io_manager].", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.1637728, "user_message": "Starting initialization of resources [io_manager]."}	ENGINE_EVENT	2022-03-01 00:11:50.163773	chase_giver	\N	\N
+108	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "resources", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Initialized in 0.07ms", "entry_data": {"__class__": "PythonArtifactMetadataEntryData", "module": "dagster.core.storage.fs_io_manager", "name": "PickledObjectFilesystemIOManager"}, "label": "io_manager"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished initialization of resources [io_manager].", "pid": 18642, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "chase_giver", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}}, "step_key": "chase_giver", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18642 - chase_giver - ENGINE_EVENT - Finished initialization of resources [io_manager].", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.1701849, "user_message": "Finished initialization of resources [io_manager]."}	ENGINE_EVENT	2022-03-01 00:11:50.170185	chase_giver	\N	\N
+109	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "chase_giver", "step_keys": ["chase_giver"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "chase_giver", "step_key": "chase_giver"}, "message": "Started capturing logs for step: chase_giver.", "pid": 18642, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "chase_giver", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}}, "step_key": "chase_giver", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18642 - chase_giver - LOGS_CAPTURED - Started capturing logs for step: chase_giver.", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.19203, "user_message": "Started capturing logs for step: chase_giver."}	LOGS_CAPTURED	2022-03-01 00:11:50.19203	chase_giver	\N	\N
+110	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "chase_giver", "step_key": "chase_giver"}, "message": "Started execution of step \\"chase_giver\\".", "pid": 18642, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "chase_giver", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}}, "step_key": "chase_giver", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18642 - chase_giver - STEP_START - Started execution of step \\"chase_giver\\".", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.2081122, "user_message": "Started execution of step \\"chase_giver\\"."}	STEP_START	2022-03-01 00:11:50.208112	chase_giver	\N	\N
+111	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "out_1", "step_key": "chase_giver"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "out_1", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "chase_giver", "step_key": "chase_giver"}, "message": "Yielded output \\"out_1\\" of type \\"Int\\". (Type check passed).", "pid": 18642, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "chase_giver", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}}, "step_key": "chase_giver", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18642 - chase_giver - STEP_OUTPUT - Yielded output \\"out_1\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.218816, "user_message": "Yielded output \\"out_1\\" of type \\"Int\\". (Type check passed)."}	STEP_OUTPUT	2022-03-01 00:11:50.218816	chase_giver	\N	\N
+112	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - chase_giver - Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/chase_giver/out_1", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.2268171, "user_message": "Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/chase_giver/out_1"}	\N	2022-03-01 00:11:50.226817	chase_giver	\N	\N
+125	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "multiprocess_subprocess_init", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Launching subprocess for hammer_op_2", "pid": 18624, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_2", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_2", "parent": null}}, "step_key": "hammer_op_2", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18624 - hammer_op_2 - ENGINE_EVENT - Launching subprocess for hammer_op_2", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_2", "timestamp": 1646093510.4806552, "user_message": "Launching subprocess for hammer_op_2"}	ENGINE_EVENT	2022-03-01 00:11:50.480655	hammer_op_2	\N	\N
+113	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "out_1"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "chase_giver", "step_key": "chase_giver"}, "message": "Handled output \\"out_1\\" using IO manager \\"io_manager\\"", "pid": 18642, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "chase_giver", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}}, "step_key": "chase_giver", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18642 - chase_giver - HANDLED_OUTPUT - Handled output \\"out_1\\" using IO manager \\"io_manager\\"", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.233869, "user_message": "Handled output \\"out_1\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2022-03-01 00:11:50.233869	chase_giver	\N	\N
+114	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "out_2", "step_key": "chase_giver"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "out_2", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "chase_giver", "step_key": "chase_giver"}, "message": "Yielded output \\"out_2\\" of type \\"Int\\". (Type check passed).", "pid": 18642, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "chase_giver", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}}, "step_key": "chase_giver", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18642 - chase_giver - STEP_OUTPUT - Yielded output \\"out_2\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.257045, "user_message": "Yielded output \\"out_2\\" of type \\"Int\\". (Type check passed)."}	STEP_OUTPUT	2022-03-01 00:11:50.257045	chase_giver	\N	\N
+115	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - chase_giver - Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/chase_giver/out_2", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.263604, "user_message": "Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/chase_giver/out_2"}	\N	2022-03-01 00:11:50.263604	chase_giver	\N	\N
+116	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "out_2"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "chase_giver", "step_key": "chase_giver"}, "message": "Handled output \\"out_2\\" using IO manager \\"io_manager\\"", "pid": 18642, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "chase_giver", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}}, "step_key": "chase_giver", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18642 - chase_giver - HANDLED_OUTPUT - Handled output \\"out_2\\" using IO manager \\"io_manager\\"", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.2700748, "user_message": "Handled output \\"out_2\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2022-03-01 00:11:50.270075	chase_giver	\N	\N
+117	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "out_3", "step_key": "chase_giver"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "out_3", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "chase_giver", "step_key": "chase_giver"}, "message": "Yielded output \\"out_3\\" of type \\"Int\\". (Type check passed).", "pid": 18642, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "chase_giver", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}}, "step_key": "chase_giver", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18642 - chase_giver - STEP_OUTPUT - Yielded output \\"out_3\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.2768729, "user_message": "Yielded output \\"out_3\\" of type \\"Int\\". (Type check passed)."}	STEP_OUTPUT	2022-03-01 00:11:50.276873	chase_giver	\N	\N
+118	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - chase_giver - Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/chase_giver/out_3", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.284266, "user_message": "Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/chase_giver/out_3"}	\N	2022-03-01 00:11:50.284266	chase_giver	\N	\N
+119	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "out_3"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "chase_giver", "step_key": "chase_giver"}, "message": "Handled output \\"out_3\\" using IO manager \\"io_manager\\"", "pid": 18642, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "chase_giver", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}}, "step_key": "chase_giver", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18642 - chase_giver - HANDLED_OUTPUT - Handled output \\"out_3\\" using IO manager \\"io_manager\\"", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.306315, "user_message": "Handled output \\"out_3\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2022-03-01 00:11:50.306315	chase_giver	\N	\N
+120	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "out_4", "step_key": "chase_giver"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "out_4", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "chase_giver", "step_key": "chase_giver"}, "message": "Yielded output \\"out_4\\" of type \\"Int\\". (Type check passed).", "pid": 18642, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "chase_giver", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}}, "step_key": "chase_giver", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18642 - chase_giver - STEP_OUTPUT - Yielded output \\"out_4\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.3148181, "user_message": "Yielded output \\"out_4\\" of type \\"Int\\". (Type check passed)."}	STEP_OUTPUT	2022-03-01 00:11:50.314818	chase_giver	\N	\N
+121	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - chase_giver - Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/chase_giver/out_4", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.323286, "user_message": "Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/chase_giver/out_4"}	\N	2022-03-01 00:11:50.323286	chase_giver	\N	\N
+122	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "out_4"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "chase_giver", "step_key": "chase_giver"}, "message": "Handled output \\"out_4\\" using IO manager \\"io_manager\\"", "pid": 18642, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "chase_giver", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}}, "step_key": "chase_giver", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18642 - chase_giver - HANDLED_OUTPUT - Handled output \\"out_4\\" using IO manager \\"io_manager\\"", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.329747, "user_message": "Handled output \\"out_4\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2022-03-01 00:11:50.329747	chase_giver	\N	\N
+123	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 135.52349600000002}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "chase_giver", "step_key": "chase_giver"}, "message": "Finished execution of step \\"chase_giver\\" in 135ms.", "pid": 18642, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "chase_giver", "solid_handle": {"__class__": "SolidHandle", "name": "chase_giver", "parent": null}}, "step_key": "chase_giver", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18642 - chase_giver - STEP_SUCCESS - Finished execution of step \\"chase_giver\\" in 135ms.", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "chase_giver", "timestamp": 1646093510.3531451, "user_message": "Finished execution of step \\"chase_giver\\" in 135ms."}	STEP_SUCCESS	2022-03-01 00:11:50.353145	chase_giver	\N	\N
+124	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "multiprocess_subprocess_init", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Launching subprocess for hammer_op", "pid": 18624, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "hammer_op", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op", "parent": null}}, "step_key": "hammer_op", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18624 - hammer_op - ENGINE_EVENT - Launching subprocess for hammer_op", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op", "timestamp": 1646093510.471489, "user_message": "Launching subprocess for hammer_op"}	ENGINE_EVENT	2022-03-01 00:11:50.471489	hammer_op	\N	\N
+126	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "multiprocess_subprocess_init", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Launching subprocess for hammer_op_3", "pid": 18624, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_3", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_3", "parent": null}}, "step_key": "hammer_op_3", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18624 - hammer_op_3 - ENGINE_EVENT - Launching subprocess for hammer_op_3", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_3", "timestamp": 1646093510.50443, "user_message": "Launching subprocess for hammer_op_3"}	ENGINE_EVENT	2022-03-01 00:11:50.50443	hammer_op_3	\N	\N
+127	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "multiprocess_subprocess_init", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Launching subprocess for hammer_op_4", "pid": 18624, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_4", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_4", "parent": null}}, "step_key": "hammer_op_4", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18624 - hammer_op_4 - ENGINE_EVENT - Launching subprocess for hammer_op_4", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_4", "timestamp": 1646093510.5109499, "user_message": "Launching subprocess for hammer_op_4"}	ENGINE_EVENT	2022-03-01 00:11:50.51095	hammer_op_4	\N	\N
+128	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "multiprocess_subprocess_init", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "18679"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "hammer_op"}, "label": "step_key"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "[MultiprocessExecutor] Executing step hammer_op in subprocess", "pid": null, "pipeline_name": "hammer", "solid_handle": null, "step_handle": null, "step_key": "hammer_op", "step_kind_value": null}, "error_info": null, "level": 20, "message": "[MultiprocessExecutor] Executing step hammer_op in subprocess", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op", "timestamp": 1646093511.8709261, "user_message": "[MultiprocessExecutor] Executing step hammer_op in subprocess"}	ENGINE_EVENT	2022-03-01 00:11:51.870926	hammer_op	\N	\N
+129	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "resources", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Starting initialization of resources [io_manager].", "pid": 18679, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "hammer_op", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op", "parent": null}}, "step_key": "hammer_op", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18679 - hammer_op - ENGINE_EVENT - Starting initialization of resources [io_manager].", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op", "timestamp": 1646093511.891984, "user_message": "Starting initialization of resources [io_manager]."}	ENGINE_EVENT	2022-03-01 00:11:51.891984	hammer_op	\N	\N
+130	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "resources", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Initialized in 0.08ms", "entry_data": {"__class__": "PythonArtifactMetadataEntryData", "module": "dagster.core.storage.fs_io_manager", "name": "PickledObjectFilesystemIOManager"}, "label": "io_manager"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished initialization of resources [io_manager].", "pid": 18679, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "hammer_op", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op", "parent": null}}, "step_key": "hammer_op", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18679 - hammer_op - ENGINE_EVENT - Finished initialization of resources [io_manager].", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op", "timestamp": 1646093511.909029, "user_message": "Finished initialization of resources [io_manager]."}	ENGINE_EVENT	2022-03-01 00:11:51.909029	hammer_op	\N	\N
+131	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "multiprocess_subprocess_init", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "18680"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "hammer_op_2"}, "label": "step_key"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "[MultiprocessExecutor] Executing step hammer_op_2 in subprocess", "pid": null, "pipeline_name": "hammer", "solid_handle": null, "step_handle": null, "step_key": "hammer_op_2", "step_kind_value": null}, "error_info": null, "level": 20, "message": "[MultiprocessExecutor] Executing step hammer_op_2 in subprocess", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_2", "timestamp": 1646093511.908872, "user_message": "[MultiprocessExecutor] Executing step hammer_op_2 in subprocess"}	ENGINE_EVENT	2022-03-01 00:11:51.908872	hammer_op_2	\N	\N
+167	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - hammer_op_2 - Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/hammer_op_2/result", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_2", "timestamp": 1646093513.228841, "user_message": "Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/hammer_op_2/result"}	\N	2022-03-01 00:11:53.228841	hammer_op_2	\N	\N
+132	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "resources", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Starting initialization of resources [io_manager].", "pid": 18680, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_2", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_2", "parent": null}}, "step_key": "hammer_op_2", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18680 - hammer_op_2 - ENGINE_EVENT - Starting initialization of resources [io_manager].", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_2", "timestamp": 1646093511.933311, "user_message": "Starting initialization of resources [io_manager]."}	ENGINE_EVENT	2022-03-01 00:11:51.933311	hammer_op_2	\N	\N
+133	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "hammer_op", "step_keys": ["hammer_op"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op", "step_key": "hammer_op"}, "message": "Started capturing logs for step: hammer_op.", "pid": 18679, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op", "parent": null}}, "step_key": "hammer_op", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18679 - hammer_op - LOGS_CAPTURED - Started capturing logs for step: hammer_op.", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op", "timestamp": 1646093511.939795, "user_message": "Started capturing logs for step: hammer_op."}	LOGS_CAPTURED	2022-03-01 00:11:51.939795	hammer_op	\N	\N
+134	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "resources", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Initialized in 0.12ms", "entry_data": {"__class__": "PythonArtifactMetadataEntryData", "module": "dagster.core.storage.fs_io_manager", "name": "PickledObjectFilesystemIOManager"}, "label": "io_manager"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished initialization of resources [io_manager].", "pid": 18680, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_2", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_2", "parent": null}}, "step_key": "hammer_op_2", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18680 - hammer_op_2 - ENGINE_EVENT - Finished initialization of resources [io_manager].", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_2", "timestamp": 1646093511.962753, "user_message": "Finished initialization of resources [io_manager]."}	ENGINE_EVENT	2022-03-01 00:11:51.962753	hammer_op_2	\N	\N
+135	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op", "step_key": "hammer_op"}, "message": "Started execution of step \\"hammer_op\\".", "pid": 18679, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op", "parent": null}}, "step_key": "hammer_op", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18679 - hammer_op - STEP_START - Started execution of step \\"hammer_op\\".", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op", "timestamp": 1646093511.964155, "user_message": "Started execution of step \\"hammer_op\\"."}	STEP_START	2022-03-01 00:11:51.964155	hammer_op	\N	\N
+136	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - hammer_op - Loading file from: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/chase_giver/out_1", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op", "timestamp": 1646093511.975567, "user_message": "Loading file from: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/chase_giver/out_1"}	\N	2022-03-01 00:11:51.975567	hammer_op	\N	\N
+137	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "multiprocess_subprocess_init", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "18681"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "hammer_op_3"}, "label": "step_key"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "[MultiprocessExecutor] Executing step hammer_op_3 in subprocess", "pid": null, "pipeline_name": "hammer", "solid_handle": null, "step_handle": null, "step_key": "hammer_op_3", "step_kind_value": null}, "error_info": null, "level": 20, "message": "[MultiprocessExecutor] Executing step hammer_op_3 in subprocess", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_3", "timestamp": 1646093511.986639, "user_message": "[MultiprocessExecutor] Executing step hammer_op_3 in subprocess"}	ENGINE_EVENT	2022-03-01 00:11:51.986639	hammer_op_3	\N	\N
+138	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "hammer_op_2", "step_keys": ["hammer_op_2"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_2", "step_key": "hammer_op_2"}, "message": "Started capturing logs for step: hammer_op_2.", "pid": 18680, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_2", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_2", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_2", "parent": null}}, "step_key": "hammer_op_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18680 - hammer_op_2 - LOGS_CAPTURED - Started capturing logs for step: hammer_op_2.", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_2", "timestamp": 1646093511.99565, "user_message": "Started capturing logs for step: hammer_op_2."}	LOGS_CAPTURED	2022-03-01 00:11:51.99565	hammer_op_2	\N	\N
+139	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "LoadedInputData", "input_name": "chase_duration", "manager_key": "io_manager", "upstream_output_name": "out_1", "upstream_step_key": "chase_giver"}, "event_type_value": "LOADED_INPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op", "step_key": "hammer_op"}, "message": "Loaded input \\"chase_duration\\" using input manager \\"io_manager\\", from output \\"out_1\\" of step \\"chase_giver\\"", "pid": 18679, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op", "parent": null}}, "step_key": "hammer_op", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18679 - hammer_op - LOADED_INPUT - Loaded input \\"chase_duration\\" using input manager \\"io_manager\\", from output \\"out_1\\" of step \\"chase_giver\\"", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op", "timestamp": 1646093512.005588, "user_message": "Loaded input \\"chase_duration\\" using input manager \\"io_manager\\", from output \\"out_1\\" of step \\"chase_giver\\""}	LOADED_INPUT	2022-03-01 00:11:52.005588	hammer_op	\N	\N
+140	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_2", "step_key": "hammer_op_2"}, "message": "Started execution of step \\"hammer_op_2\\".", "pid": 18680, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_2", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_2", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_2", "parent": null}}, "step_key": "hammer_op_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18680 - hammer_op_2 - STEP_START - Started execution of step \\"hammer_op_2\\".", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_2", "timestamp": 1646093512.016317, "user_message": "Started execution of step \\"hammer_op_2\\"."}	STEP_START	2022-03-01 00:11:52.016317	hammer_op_2	\N	\N
+141	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "chase_duration", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "chase_duration", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op", "step_key": "hammer_op"}, "message": "Got input \\"chase_duration\\" of type \\"Int\\". (Type check passed).", "pid": 18679, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op", "parent": null}}, "step_key": "hammer_op", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18679 - hammer_op - STEP_INPUT - Got input \\"chase_duration\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op", "timestamp": 1646093512.0192482, "user_message": "Got input \\"chase_duration\\" of type \\"Int\\". (Type check passed)."}	STEP_INPUT	2022-03-01 00:11:52.019248	hammer_op	\N	\N
+142	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "multiprocess_subprocess_init", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "18682"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "hammer_op_4"}, "label": "step_key"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "[MultiprocessExecutor] Executing step hammer_op_4 in subprocess", "pid": null, "pipeline_name": "hammer", "solid_handle": null, "step_handle": null, "step_key": "hammer_op_4", "step_kind_value": null}, "error_info": null, "level": 20, "message": "[MultiprocessExecutor] Executing step hammer_op_4 in subprocess", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_4", "timestamp": 1646093512.01175, "user_message": "[MultiprocessExecutor] Executing step hammer_op_4 in subprocess"}	ENGINE_EVENT	2022-03-01 00:11:52.01175	hammer_op_4	\N	\N
+143	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "resources", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Starting initialization of resources [io_manager].", "pid": 18681, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_3", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_3", "parent": null}}, "step_key": "hammer_op_3", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18681 - hammer_op_3 - ENGINE_EVENT - Starting initialization of resources [io_manager].", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_3", "timestamp": 1646093512.0291011, "user_message": "Starting initialization of resources [io_manager]."}	ENGINE_EVENT	2022-03-01 00:11:52.029101	hammer_op_3	\N	\N
+144	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - hammer_op_2 - Loading file from: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/chase_giver/out_2", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_2", "timestamp": 1646093512.03206, "user_message": "Loading file from: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/chase_giver/out_2"}	\N	2022-03-01 00:11:52.03206	hammer_op_2	\N	\N
+145	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "resources", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Starting initialization of resources [io_manager].", "pid": 18682, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_4", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_4", "parent": null}}, "step_key": "hammer_op_4", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18682 - hammer_op_4 - ENGINE_EVENT - Starting initialization of resources [io_manager].", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_4", "timestamp": 1646093512.042453, "user_message": "Starting initialization of resources [io_manager]."}	ENGINE_EVENT	2022-03-01 00:11:52.042453	hammer_op_4	\N	\N
+146	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "resources", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Initialized in 0.08ms", "entry_data": {"__class__": "PythonArtifactMetadataEntryData", "module": "dagster.core.storage.fs_io_manager", "name": "PickledObjectFilesystemIOManager"}, "label": "io_manager"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished initialization of resources [io_manager].", "pid": 18681, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_3", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_3", "parent": null}}, "step_key": "hammer_op_3", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18681 - hammer_op_3 - ENGINE_EVENT - Finished initialization of resources [io_manager].", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_3", "timestamp": 1646093512.0574038, "user_message": "Finished initialization of resources [io_manager]."}	ENGINE_EVENT	2022-03-01 00:11:52.057404	hammer_op_3	\N	\N
+147	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "resources", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Initialized in 0.08ms", "entry_data": {"__class__": "PythonArtifactMetadataEntryData", "module": "dagster.core.storage.fs_io_manager", "name": "PickledObjectFilesystemIOManager"}, "label": "io_manager"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished initialization of resources [io_manager].", "pid": 18682, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_4", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_4", "parent": null}}, "step_key": "hammer_op_4", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18682 - hammer_op_4 - ENGINE_EVENT - Finished initialization of resources [io_manager].", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_4", "timestamp": 1646093512.064249, "user_message": "Finished initialization of resources [io_manager]."}	ENGINE_EVENT	2022-03-01 00:11:52.064249	hammer_op_4	\N	\N
+148	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "LoadedInputData", "input_name": "chase_duration", "manager_key": "io_manager", "upstream_output_name": "out_2", "upstream_step_key": "chase_giver"}, "event_type_value": "LOADED_INPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_2", "step_key": "hammer_op_2"}, "message": "Loaded input \\"chase_duration\\" using input manager \\"io_manager\\", from output \\"out_2\\" of step \\"chase_giver\\"", "pid": 18680, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_2", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_2", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_2", "parent": null}}, "step_key": "hammer_op_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18680 - hammer_op_2 - LOADED_INPUT - Loaded input \\"chase_duration\\" using input manager \\"io_manager\\", from output \\"out_2\\" of step \\"chase_giver\\"", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_2", "timestamp": 1646093512.063784, "user_message": "Loaded input \\"chase_duration\\" using input manager \\"io_manager\\", from output \\"out_2\\" of step \\"chase_giver\\""}	LOADED_INPUT	2022-03-01 00:11:52.063784	hammer_op_2	\N	\N
+149	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "chase_duration", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "chase_duration", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_2", "step_key": "hammer_op_2"}, "message": "Got input \\"chase_duration\\" of type \\"Int\\". (Type check passed).", "pid": 18680, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_2", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_2", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_2", "parent": null}}, "step_key": "hammer_op_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18680 - hammer_op_2 - STEP_INPUT - Got input \\"chase_duration\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_2", "timestamp": 1646093512.074983, "user_message": "Got input \\"chase_duration\\" of type \\"Int\\". (Type check passed)."}	STEP_INPUT	2022-03-01 00:11:52.074983	hammer_op_2	\N	\N
+150	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "hammer_op_3", "step_keys": ["hammer_op_3"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_3", "step_key": "hammer_op_3"}, "message": "Started capturing logs for step: hammer_op_3.", "pid": 18681, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_3", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_3", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_3", "parent": null}}, "step_key": "hammer_op_3", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18681 - hammer_op_3 - LOGS_CAPTURED - Started capturing logs for step: hammer_op_3.", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_3", "timestamp": 1646093512.0927, "user_message": "Started capturing logs for step: hammer_op_3."}	LOGS_CAPTURED	2022-03-01 00:11:52.0927	hammer_op_3	\N	\N
+151	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "hammer_op_4", "step_keys": ["hammer_op_4"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_4", "step_key": "hammer_op_4"}, "message": "Started capturing logs for step: hammer_op_4.", "pid": 18682, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_4", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_4", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_4", "parent": null}}, "step_key": "hammer_op_4", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18682 - hammer_op_4 - LOGS_CAPTURED - Started capturing logs for step: hammer_op_4.", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_4", "timestamp": 1646093512.1040618, "user_message": "Started capturing logs for step: hammer_op_4."}	LOGS_CAPTURED	2022-03-01 00:11:52.104062	hammer_op_4	\N	\N
+152	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_3", "step_key": "hammer_op_3"}, "message": "Started execution of step \\"hammer_op_3\\".", "pid": 18681, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_3", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_3", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_3", "parent": null}}, "step_key": "hammer_op_3", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18681 - hammer_op_3 - STEP_START - Started execution of step \\"hammer_op_3\\".", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_3", "timestamp": 1646093512.1184058, "user_message": "Started execution of step \\"hammer_op_3\\"."}	STEP_START	2022-03-01 00:11:52.118406	hammer_op_3	\N	\N
+153	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_4", "step_key": "hammer_op_4"}, "message": "Started execution of step \\"hammer_op_4\\".", "pid": 18682, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_4", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_4", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_4", "parent": null}}, "step_key": "hammer_op_4", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18682 - hammer_op_4 - STEP_START - Started execution of step \\"hammer_op_4\\".", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_4", "timestamp": 1646093512.128704, "user_message": "Started execution of step \\"hammer_op_4\\"."}	STEP_START	2022-03-01 00:11:52.128704	hammer_op_4	\N	\N
+154	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - hammer_op_3 - Loading file from: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/chase_giver/out_3", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_3", "timestamp": 1646093512.153177, "user_message": "Loading file from: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/chase_giver/out_3"}	\N	2022-03-01 00:11:52.153177	hammer_op_3	\N	\N
+155	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "LoadedInputData", "input_name": "chase_duration", "manager_key": "io_manager", "upstream_output_name": "out_3", "upstream_step_key": "chase_giver"}, "event_type_value": "LOADED_INPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_3", "step_key": "hammer_op_3"}, "message": "Loaded input \\"chase_duration\\" using input manager \\"io_manager\\", from output \\"out_3\\" of step \\"chase_giver\\"", "pid": 18681, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_3", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_3", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_3", "parent": null}}, "step_key": "hammer_op_3", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18681 - hammer_op_3 - LOADED_INPUT - Loaded input \\"chase_duration\\" using input manager \\"io_manager\\", from output \\"out_3\\" of step \\"chase_giver\\"", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_3", "timestamp": 1646093512.1632771, "user_message": "Loaded input \\"chase_duration\\" using input manager \\"io_manager\\", from output \\"out_3\\" of step \\"chase_giver\\""}	LOADED_INPUT	2022-03-01 00:11:52.163277	hammer_op_3	\N	\N
+156	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - hammer_op_4 - Loading file from: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/chase_giver/out_4", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_4", "timestamp": 1646093512.162882, "user_message": "Loading file from: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/chase_giver/out_4"}	\N	2022-03-01 00:11:52.162882	hammer_op_4	\N	\N
+157	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "LoadedInputData", "input_name": "chase_duration", "manager_key": "io_manager", "upstream_output_name": "out_4", "upstream_step_key": "chase_giver"}, "event_type_value": "LOADED_INPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_4", "step_key": "hammer_op_4"}, "message": "Loaded input \\"chase_duration\\" using input manager \\"io_manager\\", from output \\"out_4\\" of step \\"chase_giver\\"", "pid": 18682, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_4", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_4", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_4", "parent": null}}, "step_key": "hammer_op_4", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18682 - hammer_op_4 - LOADED_INPUT - Loaded input \\"chase_duration\\" using input manager \\"io_manager\\", from output \\"out_4\\" of step \\"chase_giver\\"", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_4", "timestamp": 1646093512.1740549, "user_message": "Loaded input \\"chase_duration\\" using input manager \\"io_manager\\", from output \\"out_4\\" of step \\"chase_giver\\""}	LOADED_INPUT	2022-03-01 00:11:52.174055	hammer_op_4	\N	\N
+158	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "chase_duration", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "chase_duration", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_3", "step_key": "hammer_op_3"}, "message": "Got input \\"chase_duration\\" of type \\"Int\\". (Type check passed).", "pid": 18681, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_3", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_3", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_3", "parent": null}}, "step_key": "hammer_op_3", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18681 - hammer_op_3 - STEP_INPUT - Got input \\"chase_duration\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_3", "timestamp": 1646093512.1742961, "user_message": "Got input \\"chase_duration\\" of type \\"Int\\". (Type check passed)."}	STEP_INPUT	2022-03-01 00:11:52.174296	hammer_op_3	\N	\N
+159	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "chase_duration", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "chase_duration", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_4", "step_key": "hammer_op_4"}, "message": "Got input \\"chase_duration\\" of type \\"Int\\". (Type check passed).", "pid": 18682, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_4", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_4", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_4", "parent": null}}, "step_key": "hammer_op_4", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18682 - hammer_op_4 - STEP_INPUT - Got input \\"chase_duration\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_4", "timestamp": 1646093512.1830468, "user_message": "Got input \\"chase_duration\\" of type \\"Int\\". (Type check passed)."}	STEP_INPUT	2022-03-01 00:11:52.183047	hammer_op_4	\N	\N
+160	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 20, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - hammer_op - Hammered - start 1646093512 end 1646093513", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op", "timestamp": 1646093513.128961, "user_message": "Hammered - start 1646093512 end 1646093513"}	\N	2022-03-01 00:11:53.128961	hammer_op	\N	\N
+161	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "hammer_op"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op", "step_key": "hammer_op"}, "message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pid": 18679, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op", "parent": null}}, "step_key": "hammer_op", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18679 - hammer_op - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op", "timestamp": 1646093513.159112, "user_message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed)."}	STEP_OUTPUT	2022-03-01 00:11:53.159112	hammer_op	\N	\N
+162	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - hammer_op - Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/hammer_op/result", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op", "timestamp": 1646093513.1691678, "user_message": "Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/hammer_op/result"}	\N	2022-03-01 00:11:53.169168	hammer_op	\N	\N
+163	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op", "step_key": "hammer_op"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 18679, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op", "parent": null}}, "step_key": "hammer_op", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18679 - hammer_op - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op", "timestamp": 1646093513.181529, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2022-03-01 00:11:53.181529	hammer_op	\N	\N
+164	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 20, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - hammer_op_2 - Hammered - start 1646093512 end 1646093513", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_2", "timestamp": 1646093513.205484, "user_message": "Hammered - start 1646093512 end 1646093513"}	\N	2022-03-01 00:11:53.205484	hammer_op_2	\N	\N
+165	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 1177.648081}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op", "step_key": "hammer_op"}, "message": "Finished execution of step \\"hammer_op\\" in 1.18s.", "pid": 18679, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op", "parent": null}}, "step_key": "hammer_op", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18679 - hammer_op - STEP_SUCCESS - Finished execution of step \\"hammer_op\\" in 1.18s.", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op", "timestamp": 1646093513.209706, "user_message": "Finished execution of step \\"hammer_op\\" in 1.18s."}	STEP_SUCCESS	2022-03-01 00:11:53.209706	hammer_op	\N	\N
+166	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "hammer_op_2"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_2", "step_key": "hammer_op_2"}, "message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pid": 18680, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_2", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_2", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_2", "parent": null}}, "step_key": "hammer_op_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18680 - hammer_op_2 - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_2", "timestamp": 1646093513.217435, "user_message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed)."}	STEP_OUTPUT	2022-03-01 00:11:53.217435	hammer_op_2	\N	\N
+168	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_2", "step_key": "hammer_op_2"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 18680, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_2", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_2", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_2", "parent": null}}, "step_key": "hammer_op_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18680 - hammer_op_2 - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_2", "timestamp": 1646093513.255639, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2022-03-01 00:11:53.255639	hammer_op_2	\N	\N
+169	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 20, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - hammer_op_3 - Hammered - start 1646093512 end 1646093513", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_3", "timestamp": 1646093513.262233, "user_message": "Hammered - start 1646093512 end 1646093513"}	\N	2022-03-01 00:11:53.262233	hammer_op_3	\N	\N
+170	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 1154.0674069999998}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_2", "step_key": "hammer_op_2"}, "message": "Finished execution of step \\"hammer_op_2\\" in 1.15s.", "pid": 18680, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_2", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_2", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_2", "parent": null}}, "step_key": "hammer_op_2", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18680 - hammer_op_2 - STEP_SUCCESS - Finished execution of step \\"hammer_op_2\\" in 1.15s.", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_2", "timestamp": 1646093513.2658088, "user_message": "Finished execution of step \\"hammer_op_2\\" in 1.15s."}	STEP_SUCCESS	2022-03-01 00:11:53.265809	hammer_op_2	\N	\N
+171	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "hammer_op_3"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_3", "step_key": "hammer_op_3"}, "message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pid": 18681, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_3", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_3", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_3", "parent": null}}, "step_key": "hammer_op_3", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18681 - hammer_op_3 - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_3", "timestamp": 1646093513.276268, "user_message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed)."}	STEP_OUTPUT	2022-03-01 00:11:53.276268	hammer_op_3	\N	\N
+172	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - hammer_op_3 - Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/hammer_op_3/result", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_3", "timestamp": 1646093513.285193, "user_message": "Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/hammer_op_3/result"}	\N	2022-03-01 00:11:53.285193	hammer_op_3	\N	\N
+173	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 20, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - hammer_op_4 - Hammered - start 1646093512 end 1646093513", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_4", "timestamp": 1646093513.2892091, "user_message": "Hammered - start 1646093512 end 1646093513"}	\N	2022-03-01 00:11:53.289209	hammer_op_4	\N	\N
+174	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_3", "step_key": "hammer_op_3"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 18681, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_3", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_3", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_3", "parent": null}}, "step_key": "hammer_op_3", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18681 - hammer_op_3 - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_3", "timestamp": 1646093513.311082, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2022-03-01 00:11:53.311082	hammer_op_3	\N	\N
+175	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "hammer_op_4"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_4", "step_key": "hammer_op_4"}, "message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pid": 18682, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_4", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_4", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_4", "parent": null}}, "step_key": "hammer_op_4", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18682 - hammer_op_4 - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_4", "timestamp": 1646093513.314847, "user_message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed)."}	STEP_OUTPUT	2022-03-01 00:11:53.314847	hammer_op_4	\N	\N
+176	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 1139.1427970000002}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_3", "step_key": "hammer_op_3"}, "message": "Finished execution of step \\"hammer_op_3\\" in 1.14s.", "pid": 18681, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_3", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_3", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_3", "parent": null}}, "step_key": "hammer_op_3", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18681 - hammer_op_3 - STEP_SUCCESS - Finished execution of step \\"hammer_op_3\\" in 1.14s.", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_3", "timestamp": 1646093513.3226292, "user_message": "Finished execution of step \\"hammer_op_3\\" in 1.14s."}	STEP_SUCCESS	2022-03-01 00:11:53.322629	hammer_op_3	\N	\N
+177	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - hammer_op_4 - Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/hammer_op_4/result", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_4", "timestamp": 1646093513.328367, "user_message": "Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/hammer_op_4/result"}	\N	2022-03-01 00:11:53.328367	hammer_op_4	\N	\N
+178	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_4", "step_key": "hammer_op_4"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 18682, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_4", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_4", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_4", "parent": null}}, "step_key": "hammer_op_4", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18682 - hammer_op_4 - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_4", "timestamp": 1646093513.358664, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2022-03-01 00:11:53.358664	hammer_op_4	\N	\N
+179	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 1161.24738}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "hammer_op_4", "step_key": "hammer_op_4"}, "message": "Finished execution of step \\"hammer_op_4\\" in 1.16s.", "pid": 18682, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_4", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "hammer_op_4", "solid_handle": {"__class__": "SolidHandle", "name": "hammer_op_4", "parent": null}}, "step_key": "hammer_op_4", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18682 - hammer_op_4 - STEP_SUCCESS - Finished execution of step \\"hammer_op_4\\" in 1.16s.", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "hammer_op_4", "timestamp": 1646093513.3713841, "user_message": "Finished execution of step \\"hammer_op_4\\" in 1.16s."}	STEP_SUCCESS	2022-03-01 00:11:53.371384	hammer_op_4	\N	\N
+180	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "multiprocess_subprocess_init", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Launching subprocess for reducer", "pid": 18624, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "reducer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}}, "step_key": "reducer", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18624 - reducer - ENGINE_EVENT - Launching subprocess for reducer", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093513.5492532, "user_message": "Launching subprocess for reducer"}	ENGINE_EVENT	2022-03-01 00:11:53.549253	reducer	\N	\N
+181	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "multiprocess_subprocess_init", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "18784"}, "label": "pid"}, {"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "reducer"}, "label": "step_key"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "[MultiprocessExecutor] Executing step reducer in subprocess", "pid": null, "pipeline_name": "hammer", "solid_handle": null, "step_handle": null, "step_key": "reducer", "step_kind_value": null}, "error_info": null, "level": 20, "message": "[MultiprocessExecutor] Executing step reducer in subprocess", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093514.815524, "user_message": "[MultiprocessExecutor] Executing step reducer in subprocess"}	ENGINE_EVENT	2022-03-01 00:11:54.815524	reducer	\N	\N
+182	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": "resources", "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Starting initialization of resources [io_manager].", "pid": 18784, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "reducer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}}, "step_key": "reducer", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18784 - reducer - ENGINE_EVENT - Starting initialization of resources [io_manager].", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093514.860563, "user_message": "Starting initialization of resources [io_manager]."}	ENGINE_EVENT	2022-03-01 00:11:54.860563	reducer	\N	\N
+183	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": "resources", "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": "Initialized in 0.07ms", "entry_data": {"__class__": "PythonArtifactMetadataEntryData", "module": "dagster.core.storage.fs_io_manager", "name": "PickledObjectFilesystemIOManager"}, "label": "io_manager"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Finished initialization of resources [io_manager].", "pid": 18784, "pipeline_name": "hammer", "solid_handle": null, "step_handle": {"__class__": "StepHandle", "key": "reducer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}}, "step_key": "reducer", "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18784 - reducer - ENGINE_EVENT - Finished initialization of resources [io_manager].", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093514.867862, "user_message": "Finished initialization of resources [io_manager]."}	ENGINE_EVENT	2022-03-01 00:11:54.867862	reducer	\N	\N
+184	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "ComputeLogsCaptureData", "log_key": "reducer", "step_keys": ["reducer"]}, "event_type_value": "LOGS_CAPTURED", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "reducer", "step_key": "reducer"}, "message": "Started capturing logs for step: reducer.", "pid": 18784, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "reducer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}}, "step_key": "reducer", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18784 - reducer - LOGS_CAPTURED - Started capturing logs for step: reducer.", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093514.892257, "user_message": "Started capturing logs for step: reducer."}	LOGS_CAPTURED	2022-03-01 00:11:54.892257	reducer	\N	\N
+185	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "STEP_START", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "reducer", "step_key": "reducer"}, "message": "Started execution of step \\"reducer\\".", "pid": 18784, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "reducer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}}, "step_key": "reducer", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18784 - reducer - STEP_START - Started execution of step \\"reducer\\".", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093514.909466, "user_message": "Started execution of step \\"reducer\\"."}	STEP_START	2022-03-01 00:11:54.909466	reducer	\N	\N
+186	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - reducer - Loading file from: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/hammer_op/result", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093514.919647, "user_message": "Loading file from: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/hammer_op/result"}	\N	2022-03-01 00:11:54.919647	reducer	\N	\N
+187	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "LoadedInputData", "input_name": "in_1", "manager_key": "io_manager", "upstream_output_name": "result", "upstream_step_key": "hammer_op"}, "event_type_value": "LOADED_INPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "reducer", "step_key": "reducer"}, "message": "Loaded input \\"in_1\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"hammer_op\\"", "pid": 18784, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "reducer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}}, "step_key": "reducer", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18784 - reducer - LOADED_INPUT - Loaded input \\"in_1\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"hammer_op\\"", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093514.931401, "user_message": "Loaded input \\"in_1\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"hammer_op\\""}	LOADED_INPUT	2022-03-01 00:11:54.931401	reducer	\N	\N
+188	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - reducer - Loading file from: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/hammer_op_2/result", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093514.9570801, "user_message": "Loading file from: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/hammer_op_2/result"}	\N	2022-03-01 00:11:54.95708	reducer	\N	\N
+189	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "LoadedInputData", "input_name": "in_2", "manager_key": "io_manager", "upstream_output_name": "result", "upstream_step_key": "hammer_op_2"}, "event_type_value": "LOADED_INPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "reducer", "step_key": "reducer"}, "message": "Loaded input \\"in_2\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"hammer_op_2\\"", "pid": 18784, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "reducer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}}, "step_key": "reducer", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18784 - reducer - LOADED_INPUT - Loaded input \\"in_2\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"hammer_op_2\\"", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093514.9643662, "user_message": "Loaded input \\"in_2\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"hammer_op_2\\""}	LOADED_INPUT	2022-03-01 00:11:54.964366	reducer	\N	\N
+190	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - reducer - Loading file from: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/hammer_op_3/result", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093514.9719412, "user_message": "Loading file from: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/hammer_op_3/result"}	\N	2022-03-01 00:11:54.971941	reducer	\N	\N
+191	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "LoadedInputData", "input_name": "in_3", "manager_key": "io_manager", "upstream_output_name": "result", "upstream_step_key": "hammer_op_3"}, "event_type_value": "LOADED_INPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "reducer", "step_key": "reducer"}, "message": "Loaded input \\"in_3\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"hammer_op_3\\"", "pid": 18784, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "reducer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}}, "step_key": "reducer", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18784 - reducer - LOADED_INPUT - Loaded input \\"in_3\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"hammer_op_3\\"", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093514.979202, "user_message": "Loaded input \\"in_3\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"hammer_op_3\\""}	LOADED_INPUT	2022-03-01 00:11:54.979202	reducer	\N	\N
+192	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - reducer - Loading file from: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/hammer_op_4/result", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093515.003595, "user_message": "Loading file from: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/hammer_op_4/result"}	\N	2022-03-01 00:11:55.003595	reducer	\N	\N
+193	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "LoadedInputData", "input_name": "in_4", "manager_key": "io_manager", "upstream_output_name": "result", "upstream_step_key": "hammer_op_4"}, "event_type_value": "LOADED_INPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "reducer", "step_key": "reducer"}, "message": "Loaded input \\"in_4\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"hammer_op_4\\"", "pid": 18784, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "reducer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}}, "step_key": "reducer", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18784 - reducer - LOADED_INPUT - Loaded input \\"in_4\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"hammer_op_4\\"", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093515.010858, "user_message": "Loaded input \\"in_4\\" using input manager \\"io_manager\\", from output \\"result\\" of step \\"hammer_op_4\\""}	LOADED_INPUT	2022-03-01 00:11:55.010858	reducer	\N	\N
+194	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "in_1", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "in_1", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "reducer", "step_key": "reducer"}, "message": "Got input \\"in_1\\" of type \\"Int\\". (Type check passed).", "pid": 18784, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "reducer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}}, "step_key": "reducer", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18784 - reducer - STEP_INPUT - Got input \\"in_1\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093515.018649, "user_message": "Got input \\"in_1\\" of type \\"Int\\". (Type check passed)."}	STEP_INPUT	2022-03-01 00:11:55.018649	reducer	\N	\N
+195	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "in_2", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "in_2", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "reducer", "step_key": "reducer"}, "message": "Got input \\"in_2\\" of type \\"Int\\". (Type check passed).", "pid": 18784, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "reducer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}}, "step_key": "reducer", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18784 - reducer - STEP_INPUT - Got input \\"in_2\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093515.0278149, "user_message": "Got input \\"in_2\\" of type \\"Int\\". (Type check passed)."}	STEP_INPUT	2022-03-01 00:11:55.027815	reducer	\N	\N
+196	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "in_3", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "in_3", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "reducer", "step_key": "reducer"}, "message": "Got input \\"in_3\\" of type \\"Int\\". (Type check passed).", "pid": 18784, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "reducer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}}, "step_key": "reducer", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18784 - reducer - STEP_INPUT - Got input \\"in_3\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093515.051763, "user_message": "Got input \\"in_3\\" of type \\"Int\\". (Type check passed)."}	STEP_INPUT	2022-03-01 00:11:55.051763	reducer	\N	\N
+197	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepInputData", "input_name": "in_4", "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "in_4", "metadata_entries": [], "success": true}}, "event_type_value": "STEP_INPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "reducer", "step_key": "reducer"}, "message": "Got input \\"in_4\\" of type \\"Int\\". (Type check passed).", "pid": 18784, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "reducer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}}, "step_key": "reducer", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18784 - reducer - STEP_INPUT - Got input \\"in_4\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093515.060853, "user_message": "Got input \\"in_4\\" of type \\"Int\\". (Type check passed)."}	STEP_INPUT	2022-03-01 00:11:55.060853	reducer	\N	\N
+198	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepOutputData", "metadata_entries": [], "step_output_handle": {"__class__": "StepOutputHandle", "mapping_key": null, "output_name": "result", "step_key": "reducer"}, "type_check_data": {"__class__": "TypeCheckData", "description": null, "label": "result", "metadata_entries": [], "success": true}, "version": null}, "event_type_value": "STEP_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "reducer", "step_key": "reducer"}, "message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pid": 18784, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "reducer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}}, "step_key": "reducer", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18784 - reducer - STEP_OUTPUT - Yielded output \\"result\\" of type \\"Int\\". (Type check passed).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093515.070345, "user_message": "Yielded output \\"result\\" of type \\"Int\\". (Type check passed)."}	STEP_OUTPUT	2022-03-01 00:11:55.070345	reducer	\N	\N
+199	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": null, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - reducer - Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/reducer/result", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093515.078109, "user_message": "Writing file at: /Users/claire/dagster_home/storage/4b68eb18-e6d6-41d2-a489-b4884acc8003/reducer/result"}	\N	2022-03-01 00:11:55.078109	reducer	\N	\N
+200	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "HandledOutputData", "manager_key": "io_manager", "metadata_entries": [], "output_name": "result"}, "event_type_value": "HANDLED_OUTPUT", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "reducer", "step_key": "reducer"}, "message": "Handled output \\"result\\" using IO manager \\"io_manager\\"", "pid": 18784, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "reducer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}}, "step_key": "reducer", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18784 - reducer - HANDLED_OUTPUT - Handled output \\"result\\" using IO manager \\"io_manager\\"", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093515.1019, "user_message": "Handled output \\"result\\" using IO manager \\"io_manager\\""}	HANDLED_OUTPUT	2022-03-01 00:11:55.1019	reducer	\N	\N
+201	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "StepSuccessData", "duration_ms": 40.242548000000156}, "event_type_value": "STEP_SUCCESS", "logging_tags": {"pipeline_name": "hammer", "pipeline_tags": "{'.dagster/grpc_info': '{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}', 'dagster/solid_selection': '*'}", "resource_fn_name": "None", "resource_name": "None", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_name": "reducer", "step_key": "reducer"}, "message": "Finished execution of step \\"reducer\\" in 40ms.", "pid": 18784, "pipeline_name": "hammer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}, "step_handle": {"__class__": "StepHandle", "key": "reducer", "solid_handle": {"__class__": "SolidHandle", "name": "reducer", "parent": null}}, "step_key": "reducer", "step_kind_value": "COMPUTE"}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18784 - reducer - STEP_SUCCESS - Finished execution of step \\"reducer\\" in 40ms.", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": "reducer", "timestamp": 1646093515.109472, "user_message": "Finished execution of step \\"reducer\\" in 40ms."}	STEP_SUCCESS	2022-03-01 00:11:55.109472	reducer	\N	\N
+202	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": [{"__class__": "EventMetadataEntry", "description": null, "entry_data": {"__class__": "TextMetadataEntryData", "text": "18624"}, "label": "pid"}]}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Multiprocess executor: parent process exiting after 6.23s (pid: 18624)", "pid": 18624, "pipeline_name": "hammer", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18624 - ENGINE_EVENT - Multiprocess executor: parent process exiting after 6.23s (pid: 18624)", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": null, "timestamp": 1646093515.2444139, "user_message": "Multiprocess executor: parent process exiting after 6.23s (pid: 18624)"}	ENGINE_EVENT	2022-03-01 00:11:55.244414	\N	\N	\N
+203	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": null, "event_type_value": "PIPELINE_SUCCESS", "logging_tags": {}, "message": "Finished execution of run for \\"hammer\\".", "pid": 18624, "pipeline_name": "hammer", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 10, "message": "hammer - 4b68eb18-e6d6-41d2-a489-b4884acc8003 - 18624 - RUN_SUCCESS - Finished execution of run for \\"hammer\\".", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": null, "timestamp": 1646093515.25808, "user_message": "Finished execution of run for \\"hammer\\"."}	PIPELINE_SUCCESS	2022-03-01 00:11:55.25808	\N	\N	\N
+204	4b68eb18-e6d6-41d2-a489-b4884acc8003	{"__class__": "EventLogEntry", "dagster_event": {"__class__": "DagsterEvent", "event_specific_data": {"__class__": "EngineEventData", "error": null, "marker_end": null, "marker_start": null, "metadata_entries": []}, "event_type_value": "ENGINE_EVENT", "logging_tags": {}, "message": "Process for run exited (pid: 18624).", "pid": null, "pipeline_name": "hammer", "solid_handle": null, "step_handle": null, "step_key": null, "step_kind_value": null}, "error_info": null, "level": 20, "message": "Process for run exited (pid: 18624).", "pipeline_name": "hammer", "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "step_key": null, "timestamp": 1646093515.312393, "user_message": "Process for run exited (pid: 18624)."}	ENGINE_EVENT	2022-03-01 00:11:55.312393	\N	\N	\N
+\.
+
+
+--
+-- Data for Name: instance_info; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.instance_info (run_storage_id) FROM stdin;
+daaeca1e-8cef-45f1-9a61-126e447033d1
+\.
+
+
+--
+-- Data for Name: job_ticks; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.job_ticks (id, job_origin_id, status, type, "timestamp", tick_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: jobs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.jobs (id, job_origin_id, repository_origin_id, status, job_type, job_body, create_timestamp, update_timestamp) FROM stdin;
+\.
+
+
+--
+-- Data for Name: run_tags; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.run_tags (id, run_id, key, value) FROM stdin;
+7	4b68eb18-e6d6-41d2-a489-b4884acc8003	dagster/solid_selection	*
+8	4b68eb18-e6d6-41d2-a489-b4884acc8003	.dagster/grpc_info	{"host": "localhost", "socket": "/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33"}
+\.
+
+
+--
+-- Data for Name: runs; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.runs (id, run_id, snapshot_id, pipeline_name, mode, status, run_body, partition, partition_set, create_timestamp, update_timestamp, start_time, end_time) FROM stdin;
+7	4b68eb18-e6d6-41d2-a489-b4884acc8003	2e87e28e63f2b5215b9712024b2efd1c56cc0b16	hammer	\N	SUCCESS	{"__class__": "PipelineRun", "execution_plan_snapshot_id": "465b03d337999dd6cf49f031565ba3160e2edb62", "external_pipeline_origin": {"__class__": "ExternalPipelineOrigin", "external_repository_origin": {"__class__": "ExternalRepositoryOrigin", "repository_location_origin": {"__class__": "ManagedGrpcPythonEnvRepositoryLocationOrigin", "loadable_target_origin": {"__class__": "LoadableTargetOrigin", "attribute": null, "executable_path": "/Users/claire/.virtualenvs/dagster/bin/python", "module_name": null, "package_name": null, "python_file": "/Users/claire/dagster/python_modules/dagster-test/dagster_test/graph_job_op_toys/hammer.py", "working_directory": "/Users/claire/dagster"}, "location_name": "hammer.py"}, "repository_name": "__repository__hammer"}, "pipeline_name": "hammer"}, "mode": "default", "parent_run_id": null, "pipeline_code_origin": {"__class__": "PipelinePythonOrigin", "pipeline_name": "hammer", "repository_origin": {"__class__": "RepositoryPythonOrigin", "code_pointer": {"__class__": "FileCodePointer", "fn_name": "hammer_default_executor_job", "python_file": "/Users/claire/dagster/python_modules/dagster-test/dagster_test/graph_job_op_toys/hammer.py", "working_directory": "/Users/claire/dagster"}, "container_image": null, "entry_point": ["/Users/claire/.virtualenvs/dagster/bin/python", "-m", "dagster"], "executable_path": "/Users/claire/.virtualenvs/dagster/bin/python"}}, "pipeline_name": "hammer", "pipeline_snapshot_id": "2e87e28e63f2b5215b9712024b2efd1c56cc0b16", "root_run_id": null, "run_config": {}, "run_id": "4b68eb18-e6d6-41d2-a489-b4884acc8003", "solid_selection": null, "solids_to_execute": null, "status": {"__enum__": "PipelineRunStatus.SUCCESS"}, "step_keys_to_execute": null, "tags": {".dagster/grpc_info": "{\\"host\\": \\"localhost\\", \\"socket\\": \\"/var/folders/lr/mcmhlx2177953tcj5m7v8l3h0000gn/T/tmpba0t4o33\\"}", "dagster/solid_selection": "*"}}	\N	\N	2022-02-28 16:11:47.563594	2022-02-28 16:11:55.30331	1646093508.979182	1646093515.30331
+\.
+
+
+--
+-- Data for Name: secondary_indexes; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.secondary_indexes (id, name, create_timestamp, migration_completed) FROM stdin;
+1	asset_key_table	2022-02-17 15:35:44.46283	2022-02-17 15:35:44.459413
+2	asset_key_index_columns	2022-02-17 15:35:44.477242	2022-02-17 15:35:44.473698
+\.
+
+
+--
+-- Data for Name: snapshots; Type: TABLE DATA; Schema: public; Owner: test
+--
+
+COPY public.snapshots (id, snapshot_id, snapshot_body, snapshot_type) FROM stdin;
+4	2e87e28e63f2b5215b9712024b2efd1c56cc0b16	\\x789ced1deb6fdbb8fd5f11bc6f439b8a94284afd72c8fa58b375c9a1c961182e85c067ac55963c496e9a3be47f1fa9472cc796432b96eda42970d74a267fe4effd2029fe390a4316933c0fc3d15b6bf46b3415719488f3844cf3715a8c5e5923962632ba0a7336161312e6cd2f6fad3f17fbbe2bdb9d97cddafd491c870d0cfd3aa437e137715302384e6eba005ddc4ccb6968105ce42c8ba6459426aa41328b63f55224b349f89dc43391cf5fca48c4bcf57c157d1749989089d090f570ea6535fadd5394f07a1225c87b73f8a7faf9e8f8f43fa35bd536672426595877a9c72854ab704a3232d1783583ebe6c759466e8ecec7642a8ea04f5c2c5dca08f51d9723ee23f57f2810b33dea0ae24ac1b82068737a8c3e477961a5d2ea355c2f4ad6ef1a42f61cd788f25fbe1c6f44fbdf471b4ee4eb7d4eb9800b5b408e294608ba08d800216e53ae2061e8304ff514dca15be294f1705be6d426e30eca29e389b43955645172f5780e5460b647d93b784351ac1aa0a4c4dfd234ee41817ed856a3cdf1bd7b34c0f3fcddf1e7e32f2b105dd5ebbc6c51f6fbdbd9d9e7b257b785fd18a7a4d3176d9f08d570732acc9f0724c3c7cf67c7170fd0e124d92115f460731a344f0352e0e4f421fcabc6bf250ab1232d9aafcf452c5891664754208e804f9d40f81e711d8624148211891c9f01e9318c01a028d8611cb26839b630f58dc81ffe767a7276ba99d969b47df3a97dbdcf9d5265e63872db260e168e6f63ee6016482f60cc834180994b907409c09ef2d9ce41b0a7efdc07e7cf9d1dda7c6e4b0c52fa3c4791043808688001079030816d02b9efdb0ef37df59fe7b800731bc31e51eb00ece937f3c199531bc8cd67b6c49acafbcf7114b6ab03a4800781e635a11040db731d4421842e6652a9a90fbdc3b06dbd273f3883e651dbe693ab78d474b3257231209c41c27de072a0148f07ae8092608729a62ad6aad4030fc490df5702fda87f9e4395641617e1344bbf475c68ca14d94cb47e29a187240fff9ba74998179986f4e76de794a23cccc4ff665156029324ce35b426569069f62d17d977918d1aea37b25105ff88f812480838c58e605412a4b2331bd38008ce80ef202624105273f4f0b0cba7e43a598d18274e401c219050e926b5b90311a252c8007936f0039b48ae6cb31d8c6ebf3ea0431b0b97a9c27cf8fce1ddc5d9aa78ecc1ca466b520cfb08052acf560100553ec5673ef7b9e30b1f78be4315ce38a0fed393f8cb5126946110f9a59efba59a08a1b1e0e5d3ed6d5f8989123d1126f27cb5d828df401d0e75caeb4a47d0008ac056b195e23575998f84148120880dab0f97a309f9a1ab766c9665222934d2f62b6b18924cd43ca2b54411d0f599fa03395456984a1762a1242e285ff88e232151a2c7dd4d74c9506c77a94b804a0a3c4c04096cecdb8478384081fa97cd30a0dc671e12dca6f0e9e9525fd1e0515e4ad8634dec21fa8e5a7976e53d8c856b9712bfe7f4a29fc4378c5c2716f548066251cb5823151a4647a44491a362242e1d173a3ee036b7914abb1d4f05499c0501a381a7723ad85bda07c56b1ab16fb1788e9895c0ee23a6733e63d5dc7aaaba0dd5dc73ddec45355f547318d52c6b99c6bab9f51aec367473cf45d317dd7cd1cd6174b3aa631b2be7d60bf0db50ce3d17655f94f345398751ceba4c6eac9d5b2ff06f453b1194c4217a6c07f00041f528f4bca44344c0a1eb638cb07b58359617eddc9b761a0bbba95ced52d82594c2e39233cf26207031f1a52f3053be12131b40ea62db4394b92fc2fe22ec878ad94a57a4b7ee1aaba6b116ec42354b8ed894ba01726d09b0ed73a672495d870d58803010940441806c28c06185888316c3a3349c90845c752d1363d7112e0e6ce023c42874910a2438f71c474080a9648a9e0400821f968acd18602a12175f4ede5d84e79f8e7ffdf008b1e0010d28a01ec73674b4ef08b0208e2e0c32e43117631a00c77b7abb0780adffacd880f829bdb6687465e5e3741673ab180b6b9a464921328b8d492e2ca2b7d55a54fc327a5084ca0e611efdd1af18bb1907762a17d00584b97e20a54a6a31f039f55cd7a54460df0d24f53de241e1bae0c9c9c5e5e8e4f4e3d9e5a8a7d188d3ab3016df45dc95a90cb8ec7739e2e42a5782da7bf6e5df3d53accdc462b7c23ad83997271373dee7743a2b42b0c4ea8d3387c308cf5621079f3372ce7346cedd027266c66acbe7c2b663ac1c4a08051ef03c4a982452a502c80740a8e0d2411e005072ec38acc751af7d07e29773efa8b767359e56efe1d25caadeddb9b0be617b75ae7375c86eec9ecc04c898553b15a0e1ce0a3e596f97895c01dd955dd9f629c62d8985e9aee6672116a30f3fa671c4a2c29aa47c168bdc2a526b9a893825dc8a9232ad9bef033f7a3895abfb8635b8a5ea4ffbaca5a198983264b76242102340793d8c38f0904f71e023e4401c70ec63e679842873679301c4242471a4f2e5bc049d4ef5dfa33c8d23253fb73b7351f3945dfba3aa4a30842b324eeb0f36509bce8a2e35d8cc0c1aaa8ba960ee565d4c0bd9cfc2aa1a95fd49317e540dc198a43b6534b6990a0f0240190c08c5c0213e27d281d00d1c2f50698270a194c110874a0ec32e96c0ea4316ede311cdab1e87337a1fcf103f049b951d56da564ca864be8ac06560bbca9a424810d4072aa0c43c08840ac981ed02ef3037e1ab24e94a645dc74ea8507906423683b62da95e2f800248478511c0e6426f9a7701c2839fc5a9dca4d6e5ace6ed5c40c0ade6fc984c26220bd3e9d2ef5d5e76b15b08fb7674fa767437eba8d8376335febd4559ebf34a4e4b1fda8423a1d81a209f40c7c6c0c550f87e00b9ce3391503689f4afe418727abe0cf63844550e96ce32b61c3a6fb8fc65e6448ccdf56e9d88e992e1f38d16cc6264a3c5f4cd48ba5b469b7aa04362b4e931ccfbcebfb749e8c88f363e10692829a63cd9a9a4181fae3d244919d6244c48f64d39e42255134bf3ce05c961ddde62a8dadbe795d16fa7841b1f803493706359daa98473c7932ef4a8b2d20811ea11a802554e6da5b980234cb12b1c28fde75951025b358de5ae91a75a0f325e6e33137663b1daadb09b1e921ec89c9b91ce74923b259d806a7047321948a057e290a7ac198408079c31203c4984cf6d3ec42e8d61edc4de02e8a76a29b65c393616ac1d8bbbe107440e29f03371792b36551a867ded0ae2365ddfd30cf976adbdf51cad717a6de5335a677822b748262c960952087e64bdafc096eba9e5a7a68e2e937f8f45d25a4db5a2dcca4b5882bf52ff2ac2f96f61b3067b1dc5b1451560122b9aabc7626c09f53f91bdbd4cfe5a6dbb5d5c72b562fd9ddc485a0db216bdb1ea525ddda36aa95f16244a549650befd474a75b7a8b0ae8982a240aabe324b2716a97be8fecdc693645c14d3fced9b373c65f9d1f4a618a7c9519a5dbd71dec411cd4876f3a69d01ab418ec6c524fe8b1e54fc28f2d724e1aff38264c5eb89509d79fef0e272d93cac9aaf49870dbfb5656a150dedcf6eada2697dfb90ace2e00e5ec5221d07698cb720190a8529f9772a14c6a5f0a716196ebcf6067a97dae6eb35ab05c9389d1a7a61e9e1b5979e24b85be7e9389266babfe0e91360c5e6e89f8e04cb5ba87f3a122c6fb43e2012f48fbfcb45d98ed573d34cd0cc5b1afba55d79cbbe37508c1e0c8ceae7c58feeb7ae965828cd9ba2dbf3d3fb9a4ca77f5ff7f57dbd3edfec240fcb367aca2a5d6162cd6d41efab0e7a7ea74df3fbb7062d0035bb3ba805766d10c2a37c1a939bfb37032971a7b348251cc95c755a459e2e5ab7465db82ea84c7fb2e6eaa4c79c4b9ea884308b547cf44737bc4d3e41700fef65d6febee68a91be446e6e115843e5b5d78adc27734ba657537a2b372b0c45fa06d52eda775c6dd297f8775704aca1fefaeb4c1e43fe47dc9c3014fdef90ed62c0ca3b55fa92bfbe04600df1d7dda3f218d2f7be156128c29f246bc97e9a16e3959eb52fe91b80ebc9df6a65c482d3b38b4f8d675cc5837a32dd44ac1bac98651765ba428ebe849947106be8f24098f118c97ccc8d104309e71cdd955ca8821d31d5a1f38c15b36c6d8c23a622e1226137e74deb7688539636c228f99e32a21955411a2dd737ce75c393bb760d8fa3643a2bc272324dc7af152ff98d422762e1844ca70b817b35a44a06c28e5a45d5a0ab90a1783d2aebf54bc988f914ef753cd12d5a845ae8b8380f3ecb48b30fb985244b63cdef1696b3a9e28e507cab96bf3ac73e2b7ffe44121edf294edd65e9e87637616ebfde6e4ef685fac822ecc5d2c9cf4972b82792d7c59a9f93e8cebe88eefcc44477f7457477af448f92caacee8ad4f343c95dc6f6f6eb320d4c518107854a081f858c7358c8388f42c63d2c64dc7e0addaab32e426e1760ef54f9eb6d5702709591e97885a9d0fdf5b5dfe46a219c6d5298948bb2531769fea51abc17726dee511db45a0be673d9a405a8aacb87d5daa0eeb51c62ffa45fcc581a7b743116568d9fa5843c55a35bf562b655d1fe68f46a799dbb14c6e665dd5fb76b0e10ad65d897bad1102cdbe33ebe75a48d52ab3ea0a5f7e0e8dd2ef991f59bdeb823a358e4374a3826169d15567e1d152a2b2db7ee44c9eb8998a4d98d75ad37efe88cef9bd05fbbcbd2d9d5d8aa0e588a707e35d802ab5a9f462cb995a56911d674ee770c6b81e9730b706777a224d2b8e76b52db323a783f6fdace6b593a99a679a4309a5bb2850c75c5eb0ef07bb104836c23ef00584753f708d4917fd7ee661de12a2fd536c6ed3594c54a63178ab5636a61b8f60c7a95222fbbe83d4d65d566be3d4dc5399ca9d457e3358dc23bfb7e57da32c806f6e89a0ff14b21f7fdc4f59814161585fe7ae935b9d1969fa71651eeb7b052695d25248b950b48b36fcaf493a4fc484efb63a7bfb4f3ab6e15af43dfde02d491f7ae700a7506799866a70eb60f54ac0f277ce9f63403c95599da77666cdb00bfcac46f11fc2ab3bd45f0eea2aab552b8e7a368650a3a7ffc3f5bba63c9	PIPELINE
+5	465b03d337999dd6cf49f031565ba3160e2edb62	\\x789ced59db6e9b4010fd9588e7aa8a815cdad72a55a3aa4aa4b44f95b55ac3d85e0596ed5edaa691ffbdb3060238806582096a79849d397b76e670769c3c3a840411558a10e7fd8973f51b02a359c26f23caef38156a9d68e7cd8943a5664b1a68450448c5948610e3b534808bb0cd4a24e134060b139b4833822f1827422601207e1e64d118679ad188dcf3e417274a536dd3b889225c144c40c4381095ed4f98ddcb71e1f202dc4b38f796eee2cc9d9d2dde5dccdc53d75fb8b00c67c1d979109c2e66e77683a7d49f966dc2317f665f6b10e41e1e14d14946c86efcdd09d6540159310cb7e96b1ac72049222a0fc4ad3e7ad547df3e4a084d8020f36c3765e11f1b8a7c8701b6c8694984d1db689b8a1c6de40ead7bc66d252c1c7013a76816e4332ebcfd70f3e5f6dbd72b67839131681a524d09d3103fa12646e79bb451bad986e5c442bac28348a21f04908cd735df8a226f37e292997d81bd467968062aa359daa240be2da2ecc115c118d018b3a49182f455f880e02ca8be94f0c33059561ef6d844218951401205c5fe409e61aba0928885644d7918410d21bbfa295d2c1d66a7e6824ae03a53e706517baf9c3b55ae63e5bca9721d2be7ff1f959befc06637c94ed2f65668dc17178b6deb7df9283d7734b6d2a2ed13c0f31ba42dfa9a1fa69694666824b508e9698d0c6acef9512671211b1bb9a41c2780b22aece6a40dba43212b9775b58c7973d38bafb5c729eb023da64230becaaa928d2619ceb37b2f9f2b76fbbaeda3114a4ba07195455da38ec763be294d1595828d75a690a07088fc576caa45a34d26554939dca2aae97d739eece9f0326683ded006e58ec4a0da79d41b549a3459d4a01655a7d3bd26556a6f379bca00fa673e595587427aaf6255de48acaa9d4783557993550d6f55353add6f55de4badca3bce173659559742faaf6255fe48acaa9d478355f993550d6f55353add6f55fe4badca3fce17361eab623cfbd3475f06550076285afeef9fa12da9f868ca5e50fc821fc891f6d298efd14a87eebb7d77bffb0f9191761f4f348efe5b22475080d7b702bacf7763558037160578475180dfb702ba5f9b6355803f1605f83b6369a960d3483ac448daa8d0a671b49470f8285a4eee976d65049d6ffe0267296f29	EXECUTION_PLAN
+\.
+
+
+--
+-- Name: asset_keys_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.asset_keys_id_seq', 6, true);
+
+
+--
+-- Name: bulk_actions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.bulk_actions_id_seq', 1, false);
+
+
+--
+-- Name: event_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.event_logs_id_seq', 204, true);
+
+
+--
+-- Name: job_ticks_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.job_ticks_id_seq', 1, false);
+
+
+--
+-- Name: jobs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.jobs_id_seq', 1, false);
+
+
+--
+-- Name: run_tags_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.run_tags_id_seq', 8, true);
+
+
+--
+-- Name: runs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.runs_id_seq', 7, true);
+
+
+--
+-- Name: secondary_indexes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.secondary_indexes_id_seq', 2, true);
+
+
+--
+-- Name: snapshots_id_seq; Type: SEQUENCE SET; Schema: public; Owner: test
+--
+
+SELECT pg_catalog.setval('public.snapshots_id_seq', 5, true);
+
+
+--
+-- Name: alembic_version alembic_version_pkc; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.alembic_version
+    ADD CONSTRAINT alembic_version_pkc PRIMARY KEY (version_num);
+
+
+--
+-- Name: asset_keys asset_keys_asset_key_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_asset_key_key UNIQUE (asset_key);
+
+
+--
+-- Name: asset_keys asset_keys_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.asset_keys
+    ADD CONSTRAINT asset_keys_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: bulk_actions bulk_actions_key_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions
+    ADD CONSTRAINT bulk_actions_key_key UNIQUE (key);
+
+
+--
+-- Name: bulk_actions bulk_actions_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.bulk_actions
+    ADD CONSTRAINT bulk_actions_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: daemon_heartbeats daemon_heartbeats_daemon_type_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.daemon_heartbeats
+    ADD CONSTRAINT daemon_heartbeats_daemon_type_key UNIQUE (daemon_type);
+
+
+--
+-- Name: event_logs event_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.event_logs
+    ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: job_ticks job_ticks_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.job_ticks
+    ADD CONSTRAINT job_ticks_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: jobs jobs_job_origin_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_job_origin_id_key UNIQUE (job_origin_id);
+
+
+--
+-- Name: jobs jobs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.jobs
+    ADD CONSTRAINT jobs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: run_tags run_tags_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: runs runs_run_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT runs_run_id_key UNIQUE (run_id);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_name_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_name_key UNIQUE (name);
+
+
+--
+-- Name: secondary_indexes secondary_indexes_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.secondary_indexes
+    ADD CONSTRAINT secondary_indexes_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_pkey; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: snapshots snapshots_snapshot_id_key; Type: CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.snapshots
+    ADD CONSTRAINT snapshots_snapshot_id_key UNIQUE (snapshot_id);
+
+
+--
+-- Name: idx_asset_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_asset_key ON public.event_logs USING btree (asset_key);
+
+
+--
+-- Name: idx_asset_partition; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_asset_partition ON public.event_logs USING btree (asset_key, partition);
+
+
+--
+-- Name: idx_bulk_actions; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_bulk_actions ON public.bulk_actions USING btree (key);
+
+
+--
+-- Name: idx_bulk_actions_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_bulk_actions_status ON public.bulk_actions USING btree (status);
+
+
+--
+-- Name: idx_event_type; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_event_type ON public.event_logs USING btree (dagster_event_type, id);
+
+
+--
+-- Name: idx_job_tick_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_job_tick_status ON public.job_ticks USING btree (job_origin_id, status);
+
+
+--
+-- Name: idx_job_tick_timestamp; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_job_tick_timestamp ON public.job_ticks USING btree (job_origin_id, "timestamp");
+
+
+--
+-- Name: idx_run_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_id ON public.event_logs USING btree (run_id);
+
+
+--
+-- Name: idx_run_partitions; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_partitions ON public.runs USING btree (partition_set, partition);
+
+
+--
+-- Name: idx_run_range; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_range ON public.runs USING btree (status, update_timestamp, create_timestamp);
+
+
+--
+-- Name: idx_run_status; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_status ON public.runs USING btree (status);
+
+
+--
+-- Name: idx_run_tags; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_run_tags ON public.run_tags USING btree (key, value);
+
+
+--
+-- Name: idx_step_key; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX idx_step_key ON public.event_logs USING btree (step_key);
+
+
+--
+-- Name: ix_job_ticks_job_origin_id; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_job_ticks_job_origin_id ON public.job_ticks USING btree (job_origin_id);
+
+
+--
+-- Name: ix_jobs_job_type; Type: INDEX; Schema: public; Owner: test
+--
+
+CREATE INDEX ix_jobs_job_type ON public.jobs USING btree (job_type);
+
+
+--
+-- Name: runs fk_runs_snapshot_id_snapshots_snapshot_id; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.runs
+    ADD CONSTRAINT fk_runs_snapshot_id_snapshots_snapshot_id FOREIGN KEY (snapshot_id) REFERENCES public.snapshots(snapshot_id);
+
+
+--
+-- Name: run_tags run_tags_run_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: test
+--
+
+ALTER TABLE ONLY public.run_tags
+    ADD CONSTRAINT run_tags_run_id_fkey FOREIGN KEY (run_id) REFERENCES public.runs(run_id) ON DELETE CASCADE;
+
+
+--
+-- PostgreSQL database dump complete
+--
+
