@@ -11,7 +11,7 @@ from dagster.daemon.controller import (
     all_daemons_healthy,
     all_daemons_live,
     daemon_controller_from_instance,
-    get_daemon_status,
+    get_daemon_statuses,
 )
 from dagster.utils.error import SerializableErrorInfo
 
@@ -130,12 +130,12 @@ def test_thread_die_daemon(monkeypatch):
             while True:
                 now = pendulum.now("UTC")
 
-                status = get_daemon_status(
+                status = get_daemon_statuses(
                     instance,
-                    SchedulerDaemon.daemon_type(),
+                    [SchedulerDaemon.daemon_type()],
                     now.float_timestamp,
                     heartbeat_interval_seconds=heartbeat_interval_seconds,
-                )
+                )[SchedulerDaemon.daemon_type()]
 
                 if iteration_ran["ran"] and status.healthy:
                     try:
@@ -156,7 +156,7 @@ def test_thread_die_daemon(monkeypatch):
 def test_transient_heartbeat_failure(mocker):
     with instance_for_test() as instance:
         mocker.patch(
-            "dagster.daemon.controller.get_daemon_status",
+            "dagster.daemon.controller.get_daemon_statuses",
             side_effect=Exception("Transient heartbeat failure"),
         )
 
@@ -219,22 +219,22 @@ def test_error_daemon(monkeypatch):
             while True:
                 now = pendulum.now("UTC")
 
-                if get_daemon_status(
+                if get_daemon_statuses(
                     instance,
-                    SensorDaemon.daemon_type(),
+                    [SensorDaemon.daemon_type()],
                     heartbeat_interval_seconds=heartbeat_interval_seconds,
                     ignore_errors=True,
-                ).healthy:
+                )[SensorDaemon.daemon_type()].healthy:
                     # Despite error, daemon should still be running
                     controller.check_daemon_threads()
                     controller.check_daemon_heartbeats()
 
-                    status = get_daemon_status(
+                    status = get_daemon_statuses(
                         instance,
-                        SensorDaemon.daemon_type(),
+                        [SensorDaemon.daemon_type()],
                         now.float_timestamp,
                         heartbeat_interval_seconds=heartbeat_interval_seconds,
-                    )
+                    )[SensorDaemon.daemon_type()]
 
                     assert status.healthy == False
 
@@ -250,28 +250,28 @@ def test_error_daemon(monkeypatch):
                                 _get_error_number(error) for error in status.last_heartbeat.errors
                             ] == list(range(first_error_number, first_error_number - 5, -1))
 
-                            assert not get_daemon_status(
+                            assert not get_daemon_statuses(
                                 instance,
-                                SensorDaemon.daemon_type(),
+                                [SensorDaemon.daemon_type()],
                                 curr_time_seconds=now.float_timestamp,
                                 heartbeat_interval_seconds=heartbeat_interval_seconds,
-                            ).healthy
-                            assert get_daemon_status(
+                            )[SensorDaemon.daemon_type()].healthy
+                            assert get_daemon_statuses(
                                 instance,
-                                SensorDaemon.daemon_type(),
+                                [SensorDaemon.daemon_type()],
                                 curr_time_seconds=now.float_timestamp,
                                 heartbeat_interval_seconds=heartbeat_interval_seconds,
                                 ignore_errors=True,
-                            ).healthy
+                            )[SensorDaemon.daemon_type()].healthy
 
                             time.sleep(3)
 
-                            status = get_daemon_status(
+                            status = get_daemon_statuses(
                                 instance,
-                                SensorDaemon.daemon_type(),
+                                [SensorDaemon.daemon_type()],
                                 now.float_timestamp,
                                 heartbeat_interval_seconds=heartbeat_interval_seconds,
-                            )
+                            )[SensorDaemon.daemon_type()]
 
                             # Error count does not rise above 5, continues to increase
                             assert len(status.last_heartbeat.errors) == 5
@@ -297,12 +297,12 @@ def test_error_daemon(monkeypatch):
             while True:
                 now = pendulum.now("UTC")
 
-                status = get_daemon_status(
+                status = get_daemon_statuses(
                     instance,
-                    SensorDaemon.daemon_type(),
+                    [SensorDaemon.daemon_type()],
                     now.float_timestamp,
                     heartbeat_interval_seconds=heartbeat_interval_seconds,
-                )
+                )[SensorDaemon.daemon_type()]
 
                 # Error count does not rise above 5
                 if len(status.last_heartbeat.errors) == 0:
@@ -350,9 +350,9 @@ def test_multiple_error_daemon(monkeypatch):
                     controller.check_daemon_threads()
                     controller.check_daemon_heartbeats()
 
-                    status = get_daemon_status(
-                        instance, SensorDaemon.daemon_type(), now.float_timestamp
-                    )
+                    status = get_daemon_statuses(
+                        instance, [SensorDaemon.daemon_type()], now.float_timestamp
+                    )[SensorDaemon.daemon_type()]
 
                     if status.healthy == False and len(status.last_heartbeat.errors) == 2:
                         assert status.last_heartbeat.errors[0].message.strip() == "bizbuz"
@@ -397,12 +397,12 @@ def test_warn_multiple_daemons(capsys):
 
         init_time = pendulum.now("UTC")
 
-        status = get_daemon_status(
+        status = get_daemon_statuses(
             instance,
-            SensorDaemon.daemon_type(),
+            [SensorDaemon.daemon_type()],
             now.float_timestamp,
             heartbeat_interval_seconds=heartbeat_interval_seconds,
-        )
+        )[SensorDaemon.daemon_type()]
         last_heartbeat_time = status.last_heartbeat.timestamp
 
         # No warning when a second controller starts up again
@@ -414,12 +414,12 @@ def test_warn_multiple_daemons(capsys):
             while True:
                 now = pendulum.now("UTC")
 
-                status = get_daemon_status(
+                status = get_daemon_statuses(
                     instance,
-                    SensorDaemon.daemon_type(),
+                    [SensorDaemon.daemon_type()],
                     now.float_timestamp,
                     heartbeat_interval_seconds=heartbeat_interval_seconds,
-                )
+                )[SensorDaemon.daemon_type()]
 
                 if status.last_heartbeat and status.last_heartbeat.timestamp != last_heartbeat_time:
                     captured = capsys.readouterr()
@@ -431,12 +431,12 @@ def test_warn_multiple_daemons(capsys):
 
                 time.sleep(0.5)
 
-            status = get_daemon_status(
+            status = get_daemon_statuses(
                 instance,
-                SensorDaemon.daemon_type(),
+                [SensorDaemon.daemon_type()],
                 now.float_timestamp,
                 heartbeat_interval_seconds=heartbeat_interval_seconds,
-            )
+            )[SensorDaemon.daemon_type()]
             last_heartbeat_time = status.last_heartbeat.timestamp
 
             # Starting up a controller while one is running produces the warning though
