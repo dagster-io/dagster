@@ -52,6 +52,7 @@ export const INSTIGATION_STATE_FRAGMENT = gql`
     typeSpecificData {
       ... on SensorData {
         lastRunKey
+        lastCursor
       }
       ... on ScheduleData {
         cronSchedule

@@ -26,6 +26,7 @@ export interface InstigationStateFragment_repositoryOrigin {
 export interface InstigationStateFragment_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface InstigationStateFragment_typeSpecificData_ScheduleData {

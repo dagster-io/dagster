@@ -32,6 +32,7 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_reposi
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_typeSpecificData_ScheduleData {

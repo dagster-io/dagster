@@ -145,7 +145,6 @@ export const SensorDetails: React.FC<{
                     <TimestampDisplay timestamp={latestTick.timestamp} />
                     <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
                   </Box>
-                  {latestTick.cursor ? <>Cursor: {latestTick.cursor}</> : null}
                 </>
               ) : (
                 'Sensor has never run'
@@ -169,6 +168,14 @@ export const SensorDetails: React.FC<{
                   )}
                 </Group>
               </td>
+            </tr>
+          ) : null}
+          {sensor.sensorState.typeSpecificData &&
+          sensor.sensorState.typeSpecificData.__typename === 'SensorData' &&
+          sensor.sensorState.typeSpecificData.lastCursor ? (
+            <tr>
+              <td>Last cursor</td>
+              <td>{sensor.sensorState.typeSpecificData.lastCursor}</td>
             </tr>
           ) : null}
           <tr>
