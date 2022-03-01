@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Any, Tuple
 
 import numpy as np
 import pandas as pd
@@ -21,7 +21,7 @@ dbt_assets = load_assets_from_dbt_project(
 
 
 @asset(compute_kind="python")
-def order_forecast_model(daily_order_summary: pd.DataFrame) -> Tuple[Any, Any]:
+def order_forecast_model(daily_order_summary: pd.DataFrame) -> Any:
     """Model parameters that best fit the observed data"""
     df = daily_order_summary
     return tuple(
