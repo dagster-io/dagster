@@ -10,10 +10,10 @@ from dagster.seven.compat.pendulum import to_timezone
 
 
 def is_valid_cron_string(cron_string: str) -> bool:
-    # dagster only recognizes standard cron strings that contains 5 parts
     if not croniter.is_valid(cron_string):
         return False
     expanded, _ = croniter.expand(cron_string)
+    # dagster only recognizes cron strings that resolve to 5 parts (e.g. not seconds resolution)
     return len(expanded) == 5
 
 
