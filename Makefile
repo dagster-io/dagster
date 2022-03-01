@@ -31,19 +31,21 @@ check_black:
 	-black --check --fast \
     examples/docs_snippets
 
+# NOTE: We use `git ls-files` instead of isort's built-in recursive discovery
+# because it is much faster. 
 isort:
 	isort \
     --skip=examples/docs_snippets --skip=snapshots \
-    examples integration_tests helm python_modules .buildkite
+		`git ls-files {.buildkite,examples,integration_tests,helm,python_modules}/**/*.py`
 	isort \
-    examples/docs_snippets
+    `git ls-files examples/docs_snippets/**/*.py`
 
 check_isort:
 	-isort --check \
     --skip=examples/docs_snippets --skip=snapshots \
-    examples integration_tests helm python_modules .buildkite
+		`git ls-files {.buildkite,examples,integration_tests,helm,python_modules}/**/*.py`
 	-isort --check \
-    examples/docs_snippets
+    `git ls-files examples/docs_snippets/**/*.py`
 
 yamllint:
 	yamllint -c .yamllint.yaml --strict `git ls-files 'helm/**/*.yml' 'helm/**/*.yaml' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'`
