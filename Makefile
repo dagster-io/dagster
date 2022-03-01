@@ -31,21 +31,26 @@ check_black:
 	-black --check --fast \
     examples/docs_snippets
 
+
 # NOTE: We use `git ls-files` instead of isort's built-in recursive discovery
-# because it is much faster. 
+# because it is much faster. Note that we also need to skip files with `git
+# ls-files` (the `:!:` directives are exclued patterns). Even isort
+# `--skip`/`--filter-files` is very slow.
 isort:
 	isort \
-    --skip=examples/docs_snippets --skip=snapshots \
-		`git ls-files {.buildkite,examples,integration_tests,helm,python_modules}/**/*.py`
+    `git ls-files {.buildkite,examples,integration_tests,helm,python_modules}'/**/*.py' \
+      ':!:examples/docs_snippets' \
+      ':!:snapshots'`
 	isort \
-    `git ls-files examples/docs_snippets/**/*.py`
+   `git ls-files 'examples/docs_snippets/**/*.py'`
 
 check_isort:
 	-isort --check \
-    --skip=examples/docs_snippets --skip=snapshots \
-		`git ls-files {.buildkite,examples,integration_tests,helm,python_modules}/**/*.py`
+    `git ls-files {.buildkite,examples,integration_tests,helm,python_modules}'/**/*.py' \
+      ':!:examples/docs_snippets' \
+      ':!:snapshots'`
 	-isort --check \
-    `git ls-files examples/docs_snippets/**/*.py`
+    `git ls-files 'examples/docs_snippets/**/*.py'`
 
 yamllint:
 	yamllint -c .yamllint.yaml --strict `git ls-files 'helm/**/*.yml' 'helm/**/*.yaml' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'`

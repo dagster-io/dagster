@@ -9,8 +9,8 @@ from dagster.grpc.types import SensorExecutionArgs
 from dagster.serdes import deserialize_as
 
 if TYPE_CHECKING:
-    from dagster.grpc.client import DagsterGrpcClient
     from dagster.core.instance import DagsterInstance
+    from dagster.grpc.client import DagsterGrpcClient
 
 
 def sync_get_external_sensor_execution_data_ephemeral_grpc(
