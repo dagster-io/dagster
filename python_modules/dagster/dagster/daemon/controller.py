@@ -362,6 +362,7 @@ def get_daemon_statuses(
     )
 
     daemon_statuses_by_type = {}
+    heartbeats = instance.get_daemon_heartbeats()
 
     for daemon_type in daemon_types:
         # check if daemon is not required
@@ -371,7 +372,6 @@ def get_daemon_statuses(
             )
         else:
             # check if daemon has a heartbeat
-            heartbeats = instance.get_daemon_heartbeats()
             if daemon_type not in heartbeats:
                 daemon_statuses_by_type[daemon_type] = DaemonStatus(
                     daemon_type=daemon_type, required=True, healthy=False, last_heartbeat=None
