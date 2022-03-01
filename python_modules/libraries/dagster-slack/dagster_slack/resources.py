@@ -31,22 +31,20 @@ def slack_resource(context):
 
         import os
 
-        from dagster import solid, execute_pipeline, ModeDefinition
+        from dagster import job, op
         from dagster_slack import slack_resource
 
 
-        @solid(required_resource_keys={'slack'})
-        def slack_solid(context):
+        @op(required_resource_keys={'slack'})
+        def slack_op(context):
             context.resources.slack.chat_postMessage(channel='#noise', text=':wave: hey there!')
 
-        @pipeline(
-            mode_defs=[ModeDefinition(resource_defs={'slack': slack_resource})],
-        )
-        def slack_pipeline():
-            slack_solid()
+        @job(resource_defs={'slack': slack_resource})
+        def slack_job():
+            slack_op()
 
-        execute_pipeline(
-            slack_pipeline, {'resources': {'slack': {'config': {'token': os.getenv('SLACK_TOKEN')}}}}
+        slack_job.execute_in_process(
+            run_config={'resources': {'slack': {'config': {'token': os.getenv('SLACK_TOKEN')}}}}
         )
 
     """
