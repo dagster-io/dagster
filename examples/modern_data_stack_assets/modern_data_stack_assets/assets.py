@@ -21,7 +21,7 @@ dbt_assets = load_assets_from_dbt_project(
 
 
 @asset(compute_kind="python")
-def order_forecast_model(daily_order_summary: pd.DataFrame) -> Tuple[float, float]:
+def order_forecast_model(daily_order_summary: pd.DataFrame) -> Tuple[Any, Any]:
     """Model parameters that best fit the observed data"""
     df = daily_order_summary
     return tuple(

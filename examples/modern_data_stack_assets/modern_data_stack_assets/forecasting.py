@@ -7,7 +7,7 @@ from scipy import optimize
 from .constants import model_func
 
 
-def order_forecast_model(daily_order_summary: pd.DataFrame) -> Tuple[float, float]:
+def order_forecast_model(daily_order_summary: pd.DataFrame) -> Tuple[Any, Any]:
     """Model parameters that best fit the observed data"""
     df = daily_order_summary
     return optimize.curve_fit(
