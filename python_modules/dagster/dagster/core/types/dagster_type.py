@@ -519,7 +519,7 @@ class PythonObjectDagsterType(DagsterType):
             typing_type = t.Union[python_type]  # type: ignore
 
         else:
-            self.python_type = check.type_param(python_type, "python_type")  # type: ignore
+            self.python_type = check.class_param(python_type, "python_type")  # type: ignore
             self.type_str = cast(str, python_type.__name__)
             typing_type = self.python_type  # type: ignore
         name = check.opt_str_param(name, "name", self.type_str)
@@ -800,15 +800,16 @@ class TypeHintInferredDagsterType(DagsterType):
 
 def resolve_dagster_type(dagster_type: object) -> DagsterType:
     # circular dep
-    from .python_dict import PythonDict, Dict
-    from .python_set import PythonSet, DagsterSetApi
-    from .python_tuple import PythonTuple, DagsterTupleApi
-    from .transform_typing import transform_typing_type
     from dagster.primitive_mapping import (
-        remap_python_builtin_for_runtime,
         is_supported_runtime_python_builtin,
+        remap_python_builtin_for_runtime,
     )
     from dagster.utils.typing_api import is_typing_type
+
+    from .python_dict import Dict, PythonDict
+    from .python_set import DagsterSetApi, PythonSet
+    from .python_tuple import DagsterTupleApi, PythonTuple
+    from .transform_typing import transform_typing_type
 
     check.invariant(
         not (isinstance(dagster_type, type) and issubclass(dagster_type, ConfigType)),

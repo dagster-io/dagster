@@ -20,8 +20,8 @@ import {
   IExecutionSessionChanges,
   PipelineRunTag,
   SessionBase,
-  useStorage,
-} from '../app/LocalStorage';
+  useExecutionSessionStorage,
+} from '../app/ExecutionSessionStorage';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {ConfigEditor} from '../configeditor/ConfigEditor';
@@ -163,7 +163,11 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     return {};
   }, [isJob, partitionSets.results, presets]);
 
-  const [data, onSave] = useStorage(repoAddress.name || '', pipeline.name, initialDataForMode);
+  const [data, onSave] = useExecutionSessionStorage(
+    repoAddress.name || '',
+    pipeline.name,
+    initialDataForMode,
+  );
 
   const currentSession = data.sessions[data.current];
 

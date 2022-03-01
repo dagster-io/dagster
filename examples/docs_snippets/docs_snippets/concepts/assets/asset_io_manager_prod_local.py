@@ -20,7 +20,8 @@ prod_asset_group = AssetGroup(
 )
 
 local_asset_group = AssetGroup(
-    [upstream_asset, downstream_asset], resource_defs={"io_manager": fs_asset_io_manager}
+    [upstream_asset, downstream_asset],
+    resource_defs={"io_manager": fs_asset_io_manager},
 )
 
 # end_marker

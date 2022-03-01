@@ -3,6 +3,8 @@ import sys
 import tempfile
 from unittest import mock
 
+from dagster_azure.blob import AzureBlobComputeLogManager, FakeBlobServiceClient
+
 from dagster import DagsterEventType, graph, op
 from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -12,7 +14,6 @@ from dagster.core.storage.event_log import SqliteEventLogStorage
 from dagster.core.storage.root import LocalArtifactStorage
 from dagster.core.storage.runs import SqliteRunStorage
 from dagster.core.test_utils import environ
-from dagster_azure.blob import AzureBlobComputeLogManager, FakeBlobServiceClient
 
 HELLO_WORLD = "Hello World"
 SEPARATOR = os.linesep if (os.name == "nt" and sys.version_info < (3,)) else "\n"

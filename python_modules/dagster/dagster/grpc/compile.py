@@ -9,6 +9,8 @@ import shutil
 import subprocess
 import sys
 
+import pkg_resources
+
 from dagster.utils import file_relative_path, safe_tempfile_path
 
 PROTOS_DIR = file_relative_path(__file__, "protos")
@@ -16,10 +18,6 @@ PROTOS_DIR = file_relative_path(__file__, "protos")
 PROTOS_PATH = os.path.join(PROTOS_DIR, "api.proto")
 
 GENERATED_DIR = file_relative_path(__file__, "__generated__")
-
-GENERATED_PB2_PATH = os.path.join(GENERATED_DIR, "api_pb2.py")
-
-GENERATED_GRPC_PATH = os.path.join(GENERATED_DIR, "api_pb2_grpc.py")
 
 ISORT_SETTINGS_PATH = file_relative_path(__file__, "../../../../")
 
@@ -43,7 +41,11 @@ GENERATED_PB2_PYLINT_DIRECTIVE = [
 ]
 
 
-def protoc():
+def protoc(generated_dir: str):
+
+    generated_pb2_path = os.path.join(generated_dir, "api_pb2.py")
+    generated_grpc_path = os.path.join(generated_dir, "api_pb2_grpc.py")
+
     # python -m grpc_tools.protoc \
     #   -I protos --python_out __generated__ --grpc_python_out __generated__ protos/api.proto
     _res = subprocess.check_output(
@@ -54,9 +56,9 @@ def protoc():
             "-I",
             PROTOS_DIR,
             "--python_out",
-            GENERATED_DIR,
+            generated_dir,
             "--grpc_python_out",
-            GENERATED_DIR,
+            generated_dir,
             PROTOS_PATH,
         ]
     )
@@ -67,11 +69,11 @@ def protoc():
     #    See: https://github.com/grpc/grpc/issues/22914
     with safe_tempfile_path() as tempfile_path:
         shutil.copyfile(
-            GENERATED_GRPC_PATH,
+            generated_grpc_path,
             tempfile_path,
         )
         with open(tempfile_path, "r") as generated:
-            with open(GENERATED_GRPC_PATH, "w") as rewritten:
+            with open(generated_grpc_path, "w") as rewritten:
                 for line in GENERATED_HEADER:
                     rewritten.write(line)
 
@@ -86,11 +88,11 @@ def protoc():
 
     with safe_tempfile_path() as tempfile_path:
         shutil.copyfile(
-            GENERATED_PB2_PATH,
+            generated_pb2_path,
             tempfile_path,
         )
         with open(tempfile_path, "r") as generated:
-            with open(GENERATED_PB2_PATH, "w") as rewritten:
+            with open(generated_pb2_path, "w") as rewritten:
                 for line in GENERATED_HEADER:
                     rewritten.write(line)
 
@@ -100,38 +102,47 @@ def protoc():
                 for line in generated.readlines():
                     rewritten.write(line)
 
-    # We need to run black
-    _res = subprocess.check_output(
-        [
-            sys.executable,
-            "-m",
-            "black",
-            "-l",
-            "100",
-            "-t",
-            "py35",
-            "-t",
-            "py36",
-            "-t",
-            "py37",
-            "-t",
-            "py38",
-            GENERATED_DIR,
-        ]
-    )
+    installed_pkgs = {
+        # pylint: disable=not-an-iterable
+        pkg.key
+        for pkg in pkg_resources.working_set
+    }
 
-    # And, finally, we need to run isort
-    _res = subprocess.check_output(
-        [
-            "isort",
-            "--settings-path",
-            ISORT_SETTINGS_PATH,
-            "-y",
-            GENERATED_PB2_PATH,
-            GENERATED_GRPC_PATH,
-        ]
-    )
+    # Run black if it's available. This is under a conditional because black may not be available in
+    # a test environment.
+    if "black" in installed_pkgs:
+        _res = subprocess.check_output(
+            [
+                sys.executable,
+                "-m",
+                "black",
+                "-l",
+                "100",
+                "-t",
+                "py35",
+                "-t",
+                "py36",
+                "-t",
+                "py37",
+                "-t",
+                "py38",
+                generated_dir,
+            ]
+        )
+
+    # Run isort if it's available. This is under a conditional because isort may not be available in
+    # a test environment.
+    if "isort" in installed_pkgs:
+        _res = subprocess.check_output(
+            [
+                "isort",
+                "--settings-path",
+                ISORT_SETTINGS_PATH,
+                generated_pb2_path,
+                generated_grpc_path,
+            ]
+        )
 
 
 if __name__ == "__main__":
-    protoc()
+    protoc(sys.argv[1] if len(sys.argv) > 1 else GENERATED_DIR)

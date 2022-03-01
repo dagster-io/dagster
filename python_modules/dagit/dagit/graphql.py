@@ -4,8 +4,6 @@ from enum import Enum
 from typing import Any, AsyncGenerator, Dict, List, Union
 
 from dagit.templates.playground import TEMPLATE
-from dagster import check
-from dagster.seven import json
 from graphene import Schema
 from graphql.error import GraphQLError
 from graphql.error import format_error as format_graphql_error
@@ -21,6 +19,9 @@ from starlette.requests import HTTPConnection, Request
 from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from starlette.routing import BaseRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
+
+from dagster import check
+from dagster.seven import json
 
 
 class GraphQLWS(str, Enum):

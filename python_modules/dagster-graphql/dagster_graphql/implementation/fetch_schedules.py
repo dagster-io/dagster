@@ -1,8 +1,9 @@
+from graphql.execution.base import ResolveInfo
+
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, ScheduleSelector
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
-from graphql.execution.base import ResolveInfo
 
 from .utils import UserFacingGraphQLError, capture_error
 

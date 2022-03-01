@@ -4,6 +4,7 @@ import tempfile
 from difflib import SequenceMatcher
 
 from click.testing import CliRunner
+
 from dagster.cli.pipeline import pipeline_execute_command
 from dagster.core.definitions.reconstructable import get_ephemeral_repository_name
 from dagster.core.telemetry import (

@@ -4,11 +4,12 @@ import objgraph
 from dagit.graphql import GraphQLWS
 from dagit.version import __version__ as dagit_version
 from dagit.webserver import ROOT_ADDRESS_STATIC_RESOURCES
+from dagster_graphql.version import __version__ as dagster_graphql_version
+from starlette.testclient import TestClient
+
 from dagster import __version__ as dagster_version
 from dagster import job, op
 from dagster.seven import json
-from dagster_graphql.version import __version__ as dagster_graphql_version
-from starlette.testclient import TestClient
 
 EVENT_LOG_SUBSCRIPTION = """
 subscription PipelineRunLogsSubscription($runId: ID!) {

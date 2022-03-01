@@ -1,4 +1,5 @@
 import pytest
+
 from docs_snippets.integrations.dbt import (
     scope_dbt_asset_mats,
     scope_dbt_cli_config_exclude_models,

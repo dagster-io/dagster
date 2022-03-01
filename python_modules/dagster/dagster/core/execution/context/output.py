@@ -18,15 +18,15 @@ from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.plan.utils import build_resources_for_manager
 
 if TYPE_CHECKING:
+    from dagster.core.definitions import PipelineDefinition
+    from dagster.core.definitions.resource_definition import Resources
     from dagster.core.events import DagsterEvent
     from dagster.core.execution.context.system import StepExecutionContext
-    from dagster.core.types.dagster_type import DagsterType
-    from dagster.core.definitions import PipelineDefinition
+    from dagster.core.execution.plan.outputs import StepOutputHandle
+    from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.log_manager import DagsterLogManager
     from dagster.core.system_config.objects import ResolvedRunConfig
-    from dagster.core.definitions.resource_definition import Resources
-    from dagster.core.execution.plan.plan import ExecutionPlan
-    from dagster.core.execution.plan.outputs import StepOutputHandle
+    from dagster.core.types.dagster_type import DagsterType
 
 RUN_ID_PLACEHOLDER = "__EPHEMERAL_RUN_ID"
 
@@ -73,7 +73,7 @@ class OutputContext:
         step_context: Optional["StepExecutionContext"] = None,
         op_def: Optional["OpDefinition"] = None,
     ):
-        from dagster.core.definitions.resource_definition import Resources, IContainsGenerator
+        from dagster.core.definitions.resource_definition import IContainsGenerator, Resources
         from dagster.core.execution.build_resources import build_resources
 
         self._step_key = step_key
@@ -628,8 +628,8 @@ def build_output_context(
                 do_something
 
     """
-    from dagster.core.types.dagster_type import DagsterType
     from dagster.core.execution.context_creation_pipeline import initialize_console_manager
+    from dagster.core.types.dagster_type import DagsterType
 
     step_key = check.opt_str_param(step_key, "step_key")
     name = check.opt_str_param(name, "name")

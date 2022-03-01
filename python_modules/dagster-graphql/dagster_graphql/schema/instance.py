@@ -1,10 +1,11 @@
 import sys
 
 import graphene
+
 from dagster import check
 from dagster.core.instance import DagsterInstance, is_dagit_telemetry_enabled
 from dagster.core.launcher.base import RunLauncher
-from dagster.daemon.controller import get_daemon_status
+from dagster.daemon.controller import get_daemon_statuses
 from dagster.daemon.types import DaemonStatus
 
 from .errors import GraphenePythonError
@@ -76,14 +77,19 @@ class GrapheneDaemonHealth(graphene.ObjectType):
 
     def resolve_daemonStatus(self, _graphene_info, daemon_type):
         check.str_param(daemon_type, "daemon_type")
-        return GrapheneDaemonStatus(
-            get_daemon_status(self._instance, daemon_type, ignore_errors=True)
+        status_by_type = get_daemon_statuses(
+            self._instance, daemon_types=[daemon_type], ignore_errors=True
         )
+        return GrapheneDaemonStatus(status_by_type[daemon_type])
 
     def resolve_allDaemonStatuses(self, _graphene_info):
         return [
-            GrapheneDaemonStatus(get_daemon_status(self._instance, daemon_type, ignore_errors=True))
-            for daemon_type in self._instance.get_required_daemon_types()
+            GrapheneDaemonStatus(daemon_status)
+            for daemon_status in get_daemon_statuses(
+                self._instance,
+                daemon_types=self._instance.get_required_daemon_types(),
+                ignore_errors=True,
+            ).values()
         ]
 
 

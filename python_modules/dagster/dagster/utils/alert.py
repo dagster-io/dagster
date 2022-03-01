@@ -7,12 +7,12 @@ from dagster.core.definitions.sensor_definition import DefaultSensorStatus
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 if TYPE_CHECKING:
+    from dagster.core.definitions.graph_definition import GraphDefinition
+    from dagster.core.definitions.pipeline_definition import PipelineDefinition
     from dagster.core.definitions.run_status_sensor_definition import (
         PipelineFailureSensorContext,
         RunFailureSensorContext,
     )
-    from dagster.core.definitions.graph_definition import GraphDefinition
-    from dagster.core.definitions.pipeline_definition import PipelineDefinition
 
 
 def _default_failure_email_body(context) -> str:

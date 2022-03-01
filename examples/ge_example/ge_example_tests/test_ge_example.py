@@ -1,6 +1,7 @@
 import pytest
-from dagster.utils import file_relative_path
 from ge_example.ge_demo import payroll_data
+
+from dagster.utils import file_relative_path
 
 
 def test_pipeline_success():

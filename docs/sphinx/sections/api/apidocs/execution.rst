@@ -66,6 +66,7 @@ Contexts
 Job configuration
 -----------------
 
+.. autofunction:: validate_run_config
 .. _config_schema:
 
 Run Config Schema

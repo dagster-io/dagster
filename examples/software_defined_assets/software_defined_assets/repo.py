@@ -1,5 +1,6 @@
-from dagster import repository
 from software_defined_assets.spark_weather_job import spark_weather_job
+
+from dagster import repository
 
 
 @repository

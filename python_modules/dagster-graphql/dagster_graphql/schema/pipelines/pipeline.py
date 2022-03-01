@@ -1,9 +1,10 @@
 import graphene
 import yaml
+
 from dagster import check
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter, RunRecord
+from dagster.core.storage.pipeline_run import PipelineRunStatus, RunRecord, RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 from dagster.utils import datetime_as_float
 
@@ -361,9 +362,7 @@ class GrapheneRun(graphene.ObjectType):
 
     def _get_run_record(self, instance):
         if not self._run_record:
-            self._run_record = instance.get_run_records(PipelineRunsFilter(run_ids=[self.run_id]))[
-                0
-            ]
+            self._run_record = instance.get_run_records(RunsFilter(run_ids=[self.run_id]))[0]
         return self._run_record
 
     def resolve_startTime(self, graphene_info):
@@ -520,7 +519,7 @@ class GrapheneIPipelineSnapshotMixin:
         return self.get_represented_pipeline().solid_selection
 
     def resolve_runs(self, graphene_info, **kwargs):
-        runs_filter = PipelineRunsFilter(pipeline_name=self.get_represented_pipeline().name)
+        runs_filter = RunsFilter(pipeline_name=self.get_represented_pipeline().name)
         return get_runs(graphene_info, runs_filter, kwargs.get("cursor"), kwargs.get("limit"))
 
     def resolve_schedules(self, graphene_info):

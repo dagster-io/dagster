@@ -353,6 +353,16 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ModuleBuildSpec(
         "python_modules/libraries/dagster-dbt",
         extra_cmds_fn=dbt_extra_cmds_fn,
+        # dbt-core no longer supports python 3.6
+        supported_pythons=(
+            [
+                SupportedPython.V3_7,
+                SupportedPython.V3_8,
+                SupportedPython.V3_9,
+            ]
+            if (branch_name == "master" or is_release_branch(branch_name))
+            else [SupportedPython.V3_9]
+        ),
     ),
     ModuleBuildSpec(
         "python_modules/libraries/dagster-airflow",
@@ -628,16 +638,12 @@ def dagster_steps():
     steps += pylint_steps()
     steps += [
         StepBuilder(":isort:")
-        .run(
-            "pip install isort>=4.3.21",
-            "make isort",
-            "git diff --exit-code",
-        )
+        .run("pip install -e python_modules/dagster[isort]", "make check_isort")
         .on_integration_image(SupportedPython.V3_7)
         .build(),
         StepBuilder(":python-black:")
         # See: https://github.com/dagster-io/dagster/issues/1999
-        .run("pip install -e python_modules/dagster[test]", "make check_black")
+        .run("pip install -e python_modules/dagster[black]", "make check_black")
         .on_integration_image(SupportedPython.V3_7)
         .build(),
     ]

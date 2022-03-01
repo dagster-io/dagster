@@ -3,6 +3,7 @@
 import time
 
 import pytest
+
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import open_server_process
 from dagster.grpc.server_watcher import create_grpc_watch_thread

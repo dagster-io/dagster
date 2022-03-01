@@ -5,6 +5,9 @@ from contextlib import contextmanager
 from unittest.mock import patch
 
 import pytest
+from dagster_graphql import DagsterGraphQLClient
+from dagster_graphql.test.utils import execute_dagster_graphql
+
 from dagster import check, file_relative_path
 from dagster.core.instance import DagsterInstance, InstanceType
 from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
@@ -28,8 +31,6 @@ from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import merge_dicts
 from dagster.utils.test import FilesystemTestScheduler
 from dagster.utils.test.postgres_instance import TestPostgresInstance
-from dagster_graphql import DagsterGraphQLClient
-from dagster_graphql.test.utils import execute_dagster_graphql
 
 
 def get_main_loadable_target_origin():

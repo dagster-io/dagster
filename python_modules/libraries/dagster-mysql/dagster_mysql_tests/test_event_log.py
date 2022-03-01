@@ -2,12 +2,13 @@ import time
 
 import pytest
 import yaml
-from dagster.core.test_utils import instance_for_test
 from dagster_mysql.event_log import MySQLEventLogStorage
 from dagster_tests.core_tests.storage_tests.utils.event_log_storage import (
     TestEventLogStorage,
     create_test_event_log_record,
 )
+
+from dagster.core.test_utils import instance_for_test
 
 
 class TestMySQLEventLogStorage(TestEventLogStorage):

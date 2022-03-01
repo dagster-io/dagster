@@ -831,8 +831,8 @@ class ExecutionPlan(
         Returns:
             ExecutionPlan: Execution plan that runs only unmemoized steps.
         """
-        from ..build_resources import build_resources, initialize_console_manager
         from ...storage.memoizable_io_manager import MemoizableIOManager
+        from ..build_resources import build_resources, initialize_console_manager
         from ..resources_init import get_dependencies, resolve_resource_dependencies
 
         mode = resolved_run_config.mode

@@ -1,5 +1,5 @@
 # pylint: disable=redefined-outer-name
-from dagster import asset, build_assets_job
+from dagster import asset
 
 from ..lib import (
     AnomalousEventsDgType,
@@ -36,9 +36,3 @@ def sp500_bollinger_bands(sp500_prices):
 def sp500_anomalous_events(sp500_prices, sp500_bollinger_bands):
     """Anomalous events for the S&P 500 stock prices."""
     return compute_anomalous_events(sp500_prices, sp500_bollinger_bands)
-
-
-bollinger_analysis = build_assets_job(
-    "bollinger_analysis",
-    assets=[sp500_anomalous_events, sp500_bollinger_bands, sp500_prices],
-)

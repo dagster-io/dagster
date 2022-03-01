@@ -7,6 +7,7 @@ from contextlib import ExitStack
 
 import click
 import pendulum
+
 from dagster import __version__ as dagster_version
 from dagster.cli.workspace.cli_target import get_workspace_load_target, workspace_target_argument
 from dagster.core.instance import DagsterInstance
@@ -18,7 +19,7 @@ from dagster.daemon.controller import (
     all_daemons_live,
     daemon_controller_from_instance,
     debug_daemon_heartbeats,
-    get_daemon_status,
+    get_daemon_statuses,
 )
 from dagster.daemon.daemon import get_telemetry_daemon_session_id
 from dagster.utils.interrupts import capture_interrupts, raise_interrupts_as
@@ -106,8 +107,8 @@ def debug_heartbeat_command():
 )
 def debug_heartbeat_dump_command():
     with DagsterInstance.get() as instance:
-        for daemon_type in instance.get_required_daemon_types():
-            click.echo(get_daemon_status(instance, daemon_type))
+        for daemon_status in get_daemon_statuses(instance, instance.get_required_daemon_types()):
+            click.echo(daemon_status)
 
 
 @click.group(

@@ -2,6 +2,7 @@ from collections import namedtuple
 
 import boto3
 from botocore.exceptions import ClientError
+
 from dagster import Array, Field, Noneable, StringSource, check
 from dagster.core.events import EngineEventData, MetadataEntry
 from dagster.core.launcher.base import LaunchRunContext, RunLauncher
@@ -142,12 +143,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         # Set cpu or memory overrides
         # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task-cpu-memory-error.html
-        overrides = {}
+        cpu_and_memory_overrides = {}
         tags = self._get_run_tags(run.run_id)
         if tags.cpu:
-            overrides["cpu"] = tags.cpu
+            cpu_and_memory_overrides["cpu"] = tags.cpu
         if tags.memory:
-            overrides["memory"] = tags.memory
+            cpu_and_memory_overrides["memory"] = tags.memory
 
         # Run a task using the same network configuration as this processes's
         # task.
@@ -155,8 +156,16 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             taskDefinition=task_definition,
             cluster=metadata.cluster,
             overrides={
-                "containerOverrides": [{"name": self.container_name, "command": command}],
-                **overrides,
+                "containerOverrides": [
+                    {
+                        "name": self.container_name,
+                        "command": command,
+                        # containerOverrides expects cpu/memory as integers
+                        **{k: int(v) for k, v in cpu_and_memory_overrides.items()},
+                    }
+                ],
+                # taskOverrides expects cpu/memory as strings
+                **cpu_and_memory_overrides,
             },
             networkConfiguration={
                 "awsvpcConfiguration": {

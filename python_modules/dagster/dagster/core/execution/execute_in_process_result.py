@@ -37,7 +37,7 @@ class ExecuteInProcessResult:
     @property
     def success(self) -> bool:
         """bool: Whether execution was successful."""
-        return all([not event.is_failure for event in self._event_list])
+        return self._dagster_run.is_success
 
     @property
     def all_node_events(self) -> List[DagsterEvent]:

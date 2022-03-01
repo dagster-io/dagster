@@ -1,6 +1,7 @@
 from unittest.mock import MagicMock
 
 import sqlalchemy
+
 from dagster import resource
 
 

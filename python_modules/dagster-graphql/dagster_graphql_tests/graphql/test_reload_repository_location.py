@@ -1,6 +1,8 @@
 import sys
 from unittest import mock
 
+from dagster_graphql.test.utils import execute_dagster_graphql
+
 from dagster import file_relative_path, repository
 from dagster.core.code_pointer import CodePointer
 from dagster.core.host_representation import (
@@ -10,7 +12,6 @@ from dagster.core.host_representation import (
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.core.workspace.load import location_origins_from_yaml_paths
 from dagster.grpc.types import ListRepositoriesResponse
-from dagster_graphql.test.utils import execute_dagster_graphql
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 

@@ -2,8 +2,9 @@ from contextlib import contextmanager
 
 import sqlalchemy as db
 from alembic import op
-from dagster import check
 from sqlalchemy.engine import reflection
+
+from dagster import check
 
 
 def get_inspector():

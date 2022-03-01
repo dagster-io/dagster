@@ -5,6 +5,7 @@ from enum import Enum
 from typing import NamedTuple, Set
 
 import pytest
+
 from dagster import seven
 from dagster.check import ParameterCheckError, inst_param, set_param
 from dagster.serdes.errors import DeserializationError, SerdesUsageError, SerializationError

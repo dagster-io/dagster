@@ -3,8 +3,12 @@ import subprocess
 import sys
 import warnings
 from contextlib import contextmanager
+from typing import Iterator, Optional
 
 import grpc
+from grpc_health.v1 import health_pb2
+from grpc_health.v1.health_pb2_grpc import HealthStub
+
 from dagster import check, seven
 from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.events import EngineEventData
@@ -13,8 +17,6 @@ from dagster.core.instance import DagsterInstance
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
-from grpc_health.v1 import health_pb2
-from grpc_health.v1.health_pb2_grpc import HealthStub
 
 from .__generated__ import DagsterApiStub, api_pb2
 from .server import GrpcServerProcess
@@ -302,7 +304,7 @@ class DagsterGrpcClient:
 
         return "".join([chunk.serialized_chunk for chunk in chunks])
 
-    def external_notebook_data(self, notebook_path):
+    def external_notebook_data(self, notebook_path: str):
         check.str_param(notebook_path, "notebook_path")
         res = self._query(
             "ExternalNotebookData",
@@ -428,8 +430,11 @@ class EphemeralDagsterGrpcClient(DagsterGrpcClient):
 
 @contextmanager
 def ephemeral_grpc_api_client(
-    loadable_target_origin=None, force_port=False, max_retries=10, max_workers=None
-):
+    loadable_target_origin: Optional[LoadableTargetOrigin] = None,
+    force_port: bool = False,
+    max_retries: int = 10,
+    max_workers: Optional[int] = None,
+) -> Iterator[EphemeralDagsterGrpcClient]:
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
     check.bool_param(force_port, "force_port")
     check.int_param(max_retries, "max_retries")

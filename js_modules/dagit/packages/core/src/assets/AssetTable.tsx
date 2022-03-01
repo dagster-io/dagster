@@ -177,14 +177,18 @@ const AssetEntryRow: React.FC<{
       <td>
         {asset ? (
           <Box flex={{gap: 8, alignItems: 'center'}}>
-            <Link
-              to={instanceAssetsExplorerPathToURL({
-                opsQuery: `++"${tokenForAssetKey({path})}"++`,
-                opNames: [tokenForAssetKey({path})],
-              })}
-            >
-              <ButtonWIP disabled={!asset.definition?.opName}>View in Asset Graph</ButtonWIP>
-            </Link>
+            {asset.definition?.opName ? (
+              <Link
+                to={instanceAssetsExplorerPathToURL({
+                  opsQuery: `++"${tokenForAssetKey({path})}"++`,
+                  opNames: [tokenForAssetKey({path})],
+                })}
+              >
+                <ButtonWIP>View in Asset Graph</ButtonWIP>
+              </Link>
+            ) : (
+              <ButtonWIP disabled={true}>View in Asset Graph</ButtonWIP>
+            )}
             <Popover
               position="bottom-right"
               content={

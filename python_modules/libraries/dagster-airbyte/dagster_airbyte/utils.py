@@ -1,8 +1,9 @@
 from typing import Any, Dict, List
 
+from dagster_airbyte.types import AirbyteOutput
+
 from dagster import AssetMaterialization, MetadataValue
 from dagster.core.definitions.metadata.table import TableColumn, TableSchema
-from dagster_airbyte.types import AirbyteOutput
 
 
 def _materialization_for_stream(

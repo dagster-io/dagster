@@ -90,7 +90,9 @@ One common way to use this integration is to have the a step in your job run all
 from dagster import job
 from dagster_dbt import dbt_cli_resource, dbt_run_op
 
-my_dbt_resource = dbt_cli_resource.configured({"project_dir": "path/to/dbt/project"})
+my_dbt_resource = dbt_cli_resource.configured(
+    {"project_dir": "path/to/dbt/project"}
+)
 
 @job(resource_defs={"dbt": my_dbt_resource})
 def my_dbt_job():
@@ -174,7 +176,9 @@ One common use case would be to first run `dbt run` to update all of your models
 from dagster import job
 from dagster_dbt import dbt_cli_resource, dbt_run_op, dbt_test_op
 
-my_dbt_resource = dbt_cli_resource.configured({"project_dir": "path/to/dbt/project"})
+my_dbt_resource = dbt_cli_resource.configured(
+    {"project_dir": "path/to/dbt/project"}
+)
 
 @job(resource_defs={"dbt": my_dbt_resource})
 def my_dbt_job():
@@ -243,7 +247,9 @@ Note that the job above will NOT wait until the dbt RPC server has finished exec
 from dagster import job, op
 from dagster_dbt import dbt_rpc_sync_resource
 
-my_remote_sync_rpc = dbt_rpc_sync_resource.configured({"host": "80.80.80.80", "port": 8080})
+my_remote_sync_rpc = dbt_rpc_sync_resource.configured(
+    {"host": "80.80.80.80", "port": 8080}
+)
 
 @op(required_resource_keys={"dbt_sync"})
 def run_staging_models_and_wait(context):
@@ -263,17 +269,19 @@ For full documentation on all available config, [visit the API docs for dagster-
 `dagster_dbt` is configured to automatically create [Asset Materializations](/concepts/assets/asset-materializations) for each of your dbt models when you run the `run` command (via either the CLI or over RPC). These materializations are populated with metadata that is automatically parsed from the dbt response. The available metadata differs between dbt versions. If there's anything you would like to add to these materializations, you can explicitly invoke the underlying <PyObject module='dagster_dbt.utils' object='generate_materializations'/> utility function, and modify each of the resulting materializations like so:
 
 ```python file=/integrations/dbt.py startafter=start_marker_dbt_asset_mats endbefore=end_marker_dbt_asset_mats dedent=4
-from dagster import op, Output
+from dagster import op
 from dagster_dbt.utils import generate_materializations
 
 @op(required_resource_keys={"dbt"})
 def dbt_run_with_custom_assets(context):
     dbt_result = context.resources.dbt.run()
     for materialization in generate_materializations(dbt_result):
-        yield materialization._replace(
-            metadata_entries=[...]  # insert whatever metadata you want here
+        context.log_event(
+            materialization._replace(
+                metadata_entries=[...]  # insert whatever metadata you want here
+            )
         )
-    yield Output(dbt_result)
+    return dbt_result
 ```
 
 **dbt CLI: Set the dbt profile and target to load**

@@ -1,4 +1,5 @@
-# pylint: disable=unused-argument
+"""isort:skip_file"""
+# pylint: disable=unused-argument,reimported
 from dagster import (
     AssetMaterialization,
     ExpectationResult,
@@ -40,6 +41,7 @@ def flaky_operation():
 
 
 # start_op_output_0
+from dagster import Output, op
 
 
 @op
@@ -50,6 +52,7 @@ def my_simple_yield_op(context):
 # end_op_output_0
 
 # start_op_output_1
+from dagster import op
 
 
 @op
@@ -60,6 +63,7 @@ def my_simple_return_op(context):
 # end_op_output_1
 
 # start_op_output_2
+from dagster import Output, op
 
 
 @op(out={"my_output": Out(int)})
@@ -70,6 +74,7 @@ def my_named_yield_op(context):
 # end_op_output_2
 
 # start_op_output_3
+from dagster import MetadataValue, Output, op
 
 
 @op
@@ -89,27 +94,33 @@ def my_metadata_output(context):
 # end_op_output_3
 
 # start_metadata_expectation_op
+from dagster import ExpectationResult, MetadataValue, op
 
 
 @op
 def my_metadata_expectation_op(context, df):
     df = do_some_transform(df)
-    yield ExpectationResult(
-        success=len(df) > 0,
-        description="ensure dataframe has rows",
-        metadata={
-            "text_metadata": "Text-based metadata for this event",
-            "dashboard_url": MetadataValue.url("http://mycoolsite.com/url_for_my_data"),
-            "raw_count": len(df),
-            "size (bytes)": calculate_bytes(df),
-        },
+    context.log_event(
+        ExpectationResult(
+            success=len(df) > 0,
+            description="ensure dataframe has rows",
+            metadata={
+                "text_metadata": "Text-based metadata for this event",
+                "dashboard_url": MetadataValue.url(
+                    "http://mycoolsite.com/url_for_my_data"
+                ),
+                "raw_count": len(df),
+                "size (bytes)": calculate_bytes(df),
+            },
+        )
     )
-    yield Output(df)
+    return df
 
 
 # end_metadata_expectation_op
 
 # start_failure_op
+from dagster import Failure, op
 
 
 @op
@@ -130,6 +141,7 @@ def my_failure_op():
 # end_failure_op
 
 # start_failure_metadata_op
+from dagster import Failure, op
 
 
 @op
@@ -150,6 +162,7 @@ def my_failure_metadata_op():
 # end_failure_metadata_op
 
 # start_retry_op
+from dagster import RetryRequested, op
 
 
 @op
@@ -164,10 +177,32 @@ def my_retry_op():
 # end_retry_op
 
 # start_asset_op
+from dagster import AssetMaterialization, op
 
 
 @op
 def my_asset_op(context):
+    df = get_some_data()
+    store_to_s3(df)
+    context.log_event(
+        AssetMaterialization(
+            asset_key="s3.my_asset",
+            description="A df I stored in s3",
+        )
+    )
+
+    result = do_some_transform(df)
+    return result
+
+
+# end_asset_op
+
+# start_asset_op_yield
+from dagster import AssetMaterialization, Output, op
+
+
+@op
+def my_asset_op_yields():
     df = get_some_data()
     store_to_s3(df)
     yield AssetMaterialization(
@@ -179,4 +214,19 @@ def my_asset_op(context):
     yield Output(result)
 
 
-# end_asset_op
+# end_asset_op_yield
+
+# start_expectation_op
+from dagster import ExpectationResult, op
+
+
+@op
+def my_expectation_op(context, df):
+    do_some_transform(df)
+    context.log_event(
+        ExpectationResult(success=len(df) > 0, description="ensure dataframe has rows")
+    )
+    return df
+
+
+# end_expectation_op

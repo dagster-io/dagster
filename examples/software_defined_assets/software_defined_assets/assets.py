@@ -2,8 +2,9 @@
 
 # start_marker
 import pandas as pd
-from dagster import AssetKey, SourceAsset, asset
 from pandas import DataFrame
+
+from dagster import AssetKey, SourceAsset, asset
 
 sfo_q2_weather_sample = SourceAsset(
     key=AssetKey("sfo_q2_weather_sample"),

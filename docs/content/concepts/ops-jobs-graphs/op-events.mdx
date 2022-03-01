@@ -5,7 +5,7 @@ description: Within the body of an op, it is possible to communicate with the Da
 
 # Op Events and Exceptions
 
-Within the body of an op, it is possible to communicate with the Dagster framework either by yielding an event, or raising an exception. This page describes these different possibilities and the scenarios in which you might use them.
+Within the body of an op, it is possible to communicate with the Dagster framework either by yielding an event, logging an event, or raising an exception. This page describes these different possibilities and the scenarios in which you might use them.
 
 ## Relevant APIs
 
@@ -20,19 +20,15 @@ Within the body of an op, it is possible to communicate with the Dagster framewo
 
 ## Overview
 
-Within the body of an op, the op can yield a stream of structured events, consisting of several different types. These events will be processed by Dagster and recorded in the event log, along with some additional context about the op that emitted it.
+Within the body of an op, a stream of structured events can be yielded or logged. These events will be processed by Dagster and recorded in the event log, along with some additional context about the op that emitted it.
 
 It is also possible to raise Dagster-specific exceptions, which will indicate to the framework to halt the op execution entirely and perform some action.
 
 ### Event Metadata
 
-Often, it may be useful to attach some arbitrary information to an event or exception that is not captured by its basic parameters. Through the <PyObject object="EventMetadataEntry"/> object, we provide a consistent interface for specifying this metadata on a variety of events. Depending on the type of the data, these entries will be rendered in Dagit in a more useful format than a simple unstructured string.
+Often, it may be useful to attach some arbitrary information to an event or exception that is not captured by its basic parameters. Through the <PyObject object="MetadataEntry"/> and <PyObject object="MetadataValue"/> classes, we provide a consistent interface for specifying this metadata as a set of "entries". Individual entries are instances of the `MetadataEntry` class, which is a simple container for a string `label` and a typed `value`. The available value types are accessible through a static API defined on `MetadataValue`. These include simple datatypes (`MetadataValue.float`, `MetadataValue.int`, `MetadataValue.text`), as well as more complex information such as markdown and json (`MetadataValue.md`, `MetadataValue.json`). Depending on the type of its `value`, a `MetadataEntry` will be rendered in Dagit in a more useful format than a simple unstructured string.
 
-The <PyObject object="AssetMaterialization" />, <PyObject object="AssetObservation" />, <PyObject object="ExpectationResult" />, and <PyObject object="Failure" /> objects each accept a `metadata` parameter, which maps string labels to structured values. <PyObject object="Output"/> also accepts this parameter, although this functionality is currently experimental may change in the future.
-
-We provide support for a wide variety of potentially useful metadata types, including simple datatypes (`EventMetadataEntry.float`, `EventMetadataEntry.int`, `EventMetadataEntry.text`), as well as more complex information such as markdown and json (`EventMetadataEntry.md`, `EventMetadataEntry.json`).
-
-Check out the API Docs for <PyObject object="EventMetadataEntry"/> for more details.
+Metadata is attached to events at construction time. There are currently two available metadata specification keyword arguments on all event constructors: (1) `metadata` takes a dictionary mapping string `labels` to `MetadataValue` objects. Under the hood, this is resolved to a list of `MetadataEntry` objects. (2) `metadata_entries` takes a list of `MetadataEntry` objects directly. The `metadata_entries` argument is deprecated-- new code should use the `metadata` dictionary form.
 
 ## Events
 
@@ -45,6 +41,9 @@ Because returning a value from an op is such a fundamental part of creating a da
 For ops with a single output, you can simply return a value directly from the `compute_fn`. Internally, this will be converted to a Dagster <PyObject object="Output"/> event with the default output name `result`:
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_op_output_1 endbefore=end_op_output_1
+from dagster import op
+
+
 @op
 def my_simple_return_op(context):
     return 1
@@ -53,6 +52,9 @@ def my_simple_return_op(context):
 While this is perhaps the most intuitive way to return a value from a function, once you have multiple outputs defined on your op, or want to yield additional, non-output information from the body of your op, explicitly returning a value is no longer an option. In these cases, you'll want to explicitly yield <PyObject object="Output"/> events. With that in mind, the above example can be converted to the equivalent yield pattern like so:
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_op_output_0 endbefore=end_op_output_0
+from dagster import Output, op
+
+
 @op
 def my_simple_yield_op(context):
     yield Output(1)
@@ -61,6 +63,9 @@ def my_simple_yield_op(context):
 or, if you have a specific output name other than the default `result`:
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_op_output_2 endbefore=end_op_output_2
+from dagster import Output, op
+
+
 @op(out={"my_output": Out(int)})
 def my_named_yield_op(context):
     yield Output(1, output_name="my_output")
@@ -77,6 +82,9 @@ The <PyObject object="EventMetadata" /> class contains a set of static wrappers 
 The following example demonstrates how you might use this functionality:
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_op_output_3 endbefore=end_op_output_3
+from dagster import MetadataValue, Output, op
+
+
 @op
 def my_metadata_output(context):
     df = get_some_data()
@@ -101,8 +109,32 @@ to keep track of can be considered an asset.
 Generally, you'd want to send this event directly after you persist the asset to your external system. All <PyObject object="AssetMaterialization" /> events must define an `asset_key`, which is a unique identifier to describe the asset you are persisting.
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_asset_op endbefore=end_asset_op
+from dagster import AssetMaterialization, op
+
+
 @op
 def my_asset_op(context):
+    df = get_some_data()
+    store_to_s3(df)
+    context.log_event(
+        AssetMaterialization(
+            asset_key="s3.my_asset",
+            description="A df I stored in s3",
+        )
+    )
+
+    result = do_some_transform(df)
+    return result
+```
+
+Asset materializations can also be yielded:
+
+```python file=/concepts/solids_pipelines/op_events.py startafter=start_asset_op_yield endbefore=end_asset_op_yield
+from dagster import AssetMaterialization, Output, op
+
+
+@op
+def my_asset_op_yields():
     df = get_some_data()
     store_to_s3(df)
     yield AssetMaterialization(
@@ -114,6 +146,8 @@ def my_asset_op(context):
     yield Output(result)
 ```
 
+When yielding asset materializations, outputs must also be yielded via an <PyObject object="Output" />.
+
 To learn more about assets and how they are surfaced once you send this event, check out the [Asset Catalog](/concepts/dagit/dagit#assets) documentation.
 
 #### Attaching Metadata to Asset Materializations
@@ -121,24 +155,28 @@ To learn more about assets and how they are surfaced once you send this event, c
 Attaching metadata to Asset Materializations is an important way of tracking aspects of a given asset over time. This functions essentially identically to other events which accept a `metadata` parameter, allowing you to attach a set of structured labels and values to display.
 
 ```python file=concepts/assets/materialization_ops.py startafter=start_materialization_ops_marker_2 endbefore=end_materialization_ops_marker_2
-from dagster import op, AssetMaterialization, Output, MetadataValue
+from dagster import op, AssetMaterialization, MetadataValue
 
 
 @op
 def my_metadata_materialization_op(context):
     df = read_df()
     remote_storage_path = persist_to_storage(df)
-    yield AssetMaterialization(
-        asset_key="my_dataset",
-        description="Persisted result to storage",
-        metadata={
-            "text_metadata": "Text-based metadata for this event",
-            "path": MetadataValue.path(remote_storage_path),
-            "dashboard_url": MetadataValue.url("http://mycoolsite.com/url_for_my_data"),
-            "size (bytes)": calculate_bytes(df),
-        },
+    context.log_event(
+        AssetMaterialization(
+            asset_key="my_dataset",
+            description="Persisted result to storage",
+            metadata={
+                "text_metadata": "Text-based metadata for this event",
+                "path": MetadataValue.path(remote_storage_path),
+                "dashboard_url": MetadataValue.url(
+                    "http://mycoolsite.com/url_for_my_data"
+                ),
+                "size (bytes)": calculate_bytes(df),
+            },
+        )
     )
-    yield Output(remote_storage_path)
+    return remote_storage_path
 ```
 
 ### Asset Observations
@@ -147,17 +185,19 @@ def my_metadata_materialization_op(context):
 asset materializations, asset observations do not signify that an asset has been
 mutated.
 
-Within ops and assets, you can yield <PyObject object="AssetObservation" /> events at runtime. Similar to attaching metadata to asset materializations, asset observations accept a `metadata` parameter, allowing you to track specific properties of an asset over time.
+Within ops and assets, you can log or yield <PyObject object="AssetObservation" /> events at runtime. Similar to attaching metadata to asset materializations, asset observations accept a `metadata` parameter, allowing you to track specific properties of an asset over time.
 
 ```python file=/concepts/assets/observations.py startafter=start_observation_asset_marker_0 endbefore=end_observation_asset_marker_0
-from dagster import AssetObservation
+from dagster import AssetObservation, op
 
 
 @op
-def observation_op():
+def observation_op(context):
     df = read_df()
-    yield AssetObservation(asset_key="observation_asset", metadata={"num_rows": len(df)})
-    yield Output(5)
+    context.log_event(
+        AssetObservation(asset_key="observation_asset", metadata={"num_rows": len(df)})
+    )
+    return 5
 ```
 
 In the example above, an observation tracks the number of rows in an asset persisted to storage. This information can then be viewed on the [Asset Details](/concepts/dagit/dagit#asset-details) page.
@@ -166,37 +206,49 @@ To learn more about asset observations, check out the [Asset Observation](/conce
 
 ### Expectation Results
 
-Ops can emit structured events to represent the results of a data quality test. The data quality event class is the <PyObject object="ExpectationResult" />. To generate an expectation result, we can yield an <PyObject object="ExpectationResult" /> event in our op.
+Ops can emit structured events to represent the results of a data quality test. The data quality event class is the <PyObject object="ExpectationResult" />. To generate an expectation result, we can log or yield an <PyObject object="ExpectationResult" /> event in our op.
 
-```python
+```python file=/concepts/solids_pipelines/op_events.py startafter=start_expectation_op endbefore=end_expectation_op
+from dagster import ExpectationResult, op
+
+
 @op
 def my_expectation_op(context, df):
     do_some_transform(df)
-    yield ExpectationResult(success=len(df) > 0, description="ensure dataframe has rows")
-    yield Output(df)
+    context.log_event(
+        ExpectationResult(success=len(df) > 0, description="ensure dataframe has rows")
+    )
+    return df
 ```
 
 #### Attaching Metadata to Expectation Results
 
-Like many other event types in Dagster, there are a variety of types of metadata that can be associated with an expectation result event, all through the <PyObject object="EventMetadataEntry"/> class. Each expectation event optionally takes a list of metadata entries that are then displayed in the event log.
+Like many other event types in Dagster, there are a variety of types of metadata that can be associated with an expectation result event, all through the <PyObject object="MetadataEntry"/> class. Each expectation event optionally takes a list of metadata entries that are then displayed in the event log.
 
 This example shows metadata entries of different types attached to the same expectation result:
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_metadata_expectation_op endbefore=end_metadata_expectation_op
+from dagster import ExpectationResult, MetadataValue, op
+
+
 @op
 def my_metadata_expectation_op(context, df):
     df = do_some_transform(df)
-    yield ExpectationResult(
-        success=len(df) > 0,
-        description="ensure dataframe has rows",
-        metadata={
-            "text_metadata": "Text-based metadata for this event",
-            "dashboard_url": MetadataValue.url("http://mycoolsite.com/url_for_my_data"),
-            "raw_count": len(df),
-            "size (bytes)": calculate_bytes(df),
-        },
+    context.log_event(
+        ExpectationResult(
+            success=len(df) > 0,
+            description="ensure dataframe has rows",
+            metadata={
+                "text_metadata": "Text-based metadata for this event",
+                "dashboard_url": MetadataValue.url(
+                    "http://mycoolsite.com/url_for_my_data"
+                ),
+                "raw_count": len(df),
+                "size (bytes)": calculate_bytes(df),
+            },
+        )
     )
-    yield Output(df)
+    return df
 ```
 
 ## Exceptions
@@ -211,6 +263,9 @@ if, in the body of your op, you detect an issue that would not raise an error on
 its own, but would still cause problems if the execution were to continue.
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_failure_op endbefore=end_failure_op
+from dagster import Failure, op
+
+
 @op
 def my_failure_op():
     path = "/path/to/files"
@@ -228,9 +283,12 @@ def my_failure_op():
 
 #### Attaching Metadata to Failures
 
-As is the case with many Dagster-provided classes, you can attach a list <PyObject object="EventMetadataEntry"/> denoting an arbitrary set of metadata relevant to the failure.
+As is the case with many Dagster-provided classes, you can attach a list <PyObject object="MetadataEntry"/> denoting an arbitrary set of metadata relevant to the failure.
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_failure_metadata_op endbefore=end_failure_metadata_op
+from dagster import Failure, op
+
+
 @op
 def my_failure_metadata_op():
     path = "/path/to/files"
@@ -257,6 +315,9 @@ execution.
 You can configure the number of retries to be attempted with the `max_retries` parameter.
 
 ```python file=/concepts/solids_pipelines/op_events.py startafter=start_retry_op endbefore=end_retry_op
+from dagster import RetryRequested, op
+
+
 @op
 def my_retry_op():
     try:

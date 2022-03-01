@@ -2,6 +2,7 @@ import sys
 import time
 
 from celery.exceptions import TaskRevokedError
+
 from dagster import check
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEvent, EngineEventData

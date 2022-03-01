@@ -73,6 +73,7 @@ if __name__ == "__main__":
             "grpcio-health-checking>=1.32.0,<1.44.0",
             "packaging>=20.9",
             "pendulum",
+            "pep562",
             "protobuf>=3.13.0",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
             "python-dateutil",
             "pytz",
@@ -93,17 +94,13 @@ if __name__ == "__main__":
             "docker": ["docker"],
             "test": [
                 "astroid>=2.3.3,<2.5",
-                "black==20.8b1",
                 "coverage==5.3",
                 "docker",
-                "flake8>=3.7.8",
                 "freezegun>=0.3.15",
                 "grpcio-tools==1.32.0",
-                "isort>=4.3.21,<5",
                 "mock==3.0.5",
                 "objgraph",
                 "protobuf==3.13.0",  # without this, pip will install the most up-to-date protobuf
-                "pylint==2.6.0",
                 "pytest-cov==2.10.1",
                 "pytest-dependency==0.5.1",
                 "pytest-mock==3.3.1",
@@ -117,6 +114,14 @@ if __name__ == "__main__":
                 "tox-pip-version==0.0.7",
                 "tqdm==4.48.0",  # pylint crash 48.1+
                 "yamllint",
+                "flake8>=3.7.8",
+                "pylint==2.6.0",
+            ],
+            "black": [
+                "black==22.1.0",
+            ],
+            "isort": [
+                "isort==5.10.1",
             ],
             "mypy": [
                 "mypy==0.931",

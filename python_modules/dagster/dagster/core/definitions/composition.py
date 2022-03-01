@@ -49,11 +49,12 @@ from .utils import check_valid_name, validate_tags
 from .version_strategy import VersionStrategy
 
 if TYPE_CHECKING:
+    from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
     from dagster.core.instance import DagsterInstance
-    from .partition import PartitionedConfig, PartitionsDefinition
+
     from .executor_definition import ExecutorDefinition
     from .job_definition import JobDefinition
-    from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
+    from .partition import PartitionedConfig, PartitionsDefinition
 
 
 _composition_stack: List["InProgressCompositionContext"] = []
@@ -303,8 +304,8 @@ class PendingNodeInvocation:
             current_context().add_pending_invocation(self)
 
     def __call__(self, *args, **kwargs):
-        from .solid_invocation import solid_invocation_result
         from ..execution.context.invocation import UnboundSolidExecutionContext
+        from .solid_invocation import solid_invocation_result
 
         node_name = self.given_alias if self.given_alias else self.node_def.name
 
@@ -613,9 +614,10 @@ class PendingNodeInvocation:
 
         from dagster.core.execution.build_resources import wrap_resources_for_execution
         from dagster.core.execution.execute_in_process import core_execute_in_process
-        from .mode import ModeDefinition
-        from .job_definition import JobDefinition
+
         from .executor_definition import execute_in_process_executor
+        from .job_definition import JobDefinition
+        from .mode import ModeDefinition
 
         if len(self.node_def.input_defs) > 0:
             raise DagsterInvariantViolationError(

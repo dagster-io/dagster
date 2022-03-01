@@ -1,11 +1,12 @@
 import random
 
-from dagster import In, InputDefinition, MetadataValue, Out, Output, op
-from dagster.utils import file_relative_path
 from dagstermill import define_dagstermill_solid
 from hacker_news.ops.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame, Series
 from sklearn.decomposition import TruncatedSVD
+
+from dagster import In, InputDefinition, MetadataValue, Out, Output, op
+from dagster.utils import file_relative_path
 
 
 @op(out=Out(dagster_type=TruncatedSVD, metadata={"key": "recommender_model"}))

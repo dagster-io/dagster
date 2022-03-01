@@ -79,12 +79,13 @@ export const SidebarOpExecutionGraphs: React.FC<{
   return (
     <>
       <SidebarSection title="Execution Time">
-        <Box flex={{alignItems: 'center', justifyContent: 'center'}} style={{height: 170}}>
+        <Box flex={{alignItems: 'center', justifyContent: 'center'}}>
           {result.loading ? (
             <Spinner purpose="section" />
           ) : (
             <AssetValueGraph
               label="Step Execution Time"
+              yAxisLabel="Seconds"
               width="100%"
               data={executionTime}
               xHover={highlightedStartTime}

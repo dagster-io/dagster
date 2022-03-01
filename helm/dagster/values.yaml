@@ -632,7 +632,6 @@ postgresql:
 
   # Used by init container to check that db is running. (Even if enabled:false)
   image:
-    registry: "docker.io"
     repository: "library/postgres"
     tag: "9.6.21"
     pullPolicy: IfNotPresent
@@ -675,7 +674,6 @@ rabbitmq:
   enabled: false
 
   image:
-    registry: "docker.io"
     repository: "bitnami/rabbitmq"
     tag: "3.8.12"
     pullPolicy: IfNotPresent
@@ -691,7 +689,6 @@ rabbitmq:
   volumePermissions:
     enabled: true
     image:
-      registry: docker.io
       repository: bitnami/minideb
       tag: stretch
       pullPolicy: IfNotPresent

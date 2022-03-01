@@ -41,12 +41,18 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
 
   const setView = (view: 'flat' | 'graph' | 'directory') => {
     _setView(view);
-    if (view === 'flat' && prefixPath) {
+    if (view === 'flat' && prefixPath.length) {
       history.push('/instance/assets');
     } else if (cursor) {
       setCursor(undefined);
     }
   };
+
+  React.useEffect(() => {
+    if (view === 'flat' && prefixPath.length) {
+      _setView('directory');
+    }
+  }, [view, _setView, prefixPath]);
 
   const assetsQuery = useQuery<AssetCatalogTableQuery>(ASSET_CATALOG_TABLE_QUERY, {
     notifyOnNetworkStatusChange: true,
@@ -112,7 +118,7 @@ export const AssetsCatalogTable: React.FC<{prefixPath?: string[]}> = ({prefixPat
                     <AssetViewModeSwitch view={view} setView={setView} />
                     <RepoFilterButton />
                     <TextInput
-                      value={search}
+                      value={search || ''}
                       style={{width: '30vw', minWidth: 150, maxWidth: 400}}
                       placeholder="Search all asset_keys..."
                       onChange={(e: React.ChangeEvent<any>) => setSearch(e.target.value)}
@@ -230,7 +236,7 @@ const filterAssetsToRepos = (assets: Asset[], visibleRepos: DagsterRepoOption[])
   );
   return assets.filter(
     (a) =>
-      a.definition &&
+      !a.definition ||
       visibleRepoHashes.includes(
         buildRepoPath(a.definition.repository.name, a.definition.repository.location.name),
       ),

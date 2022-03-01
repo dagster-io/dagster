@@ -1,5 +1,6 @@
-from dagster import repository
 from src.pipelines import hello_world_pipeline
+
+from dagster import repository
 
 
 @repository

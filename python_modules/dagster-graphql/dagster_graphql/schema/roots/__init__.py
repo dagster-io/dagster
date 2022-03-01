@@ -18,9 +18,9 @@ def types():
         GrapheneTerminatePipelineExecutionSuccess,
         GrapheneTerminateRunFailure,
         GrapheneTerminateRunMutation,
+        GrapheneTerminateRunPolicy,
         GrapheneTerminateRunResult,
         GrapheneTerminateRunSuccess,
-        GrapheneTerminateRunPolicy,
     )
     from .pipeline import GraphenePipelineOrError
 

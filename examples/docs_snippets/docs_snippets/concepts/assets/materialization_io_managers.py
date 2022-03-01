@@ -1,3 +1,5 @@
+"""isort:skip_file"""
+# pylint: disable=reimported
 import os
 
 import pandas as pd
@@ -9,6 +11,9 @@ def read_csv(_path):
 
 
 # start_marker_0
+from dagster import AssetMaterialization, IOManager
+
+
 class PandasCsvIOManager(IOManager):
     def load_input(self, context):
         file_path = os.path.join("my_base_dir", context.step_key, context.name)
@@ -19,8 +24,11 @@ class PandasCsvIOManager(IOManager):
 
         obj.to_csv(file_path)
 
-        yield AssetMaterialization(
-            asset_key=AssetKey(file_path), description="Persisted result to storage."
+        context.log_event(
+            AssetMaterialization(
+                asset_key=AssetKey(file_path),
+                description="Persisted result to storage.",
+            )
         )
 
 
@@ -28,6 +36,9 @@ class PandasCsvIOManager(IOManager):
 
 
 # start_marker_1
+from dagster import AssetMaterialization, IOManager
+
+
 class PandasCsvIOManagerWithAsset(IOManager):
     def load_input(self, context):
         file_path = os.path.join("my_base_dir", context.step_key, context.name)
@@ -38,13 +49,15 @@ class PandasCsvIOManagerWithAsset(IOManager):
 
         obj.to_csv(file_path)
 
-        yield AssetMaterialization(
-            asset_key=AssetKey(file_path),
-            description="Persisted result to storage.",
-            metadata={
-                "number of rows": obj.shape[0],
-                "some_column mean": obj["some_column"].mean(),
-            },
+        context.log_event(
+            AssetMaterialization(
+                asset_key=AssetKey(file_path),
+                description="Persisted result to storage.",
+                metadata={
+                    "number of rows": obj.shape[0],
+                    "some_column mean": obj["some_column"].mean(),
+                },
+            )
         )
 
 
@@ -52,6 +65,9 @@ class PandasCsvIOManagerWithAsset(IOManager):
 
 
 # start_asset_def
+from dagster import AssetKey, IOManager, MetadataEntry
+
+
 class PandasCsvIOManagerWithOutputAsset(IOManager):
     def load_input(self, context):
         file_path = os.path.join("my_base_dir", context.step_key, context.name)
@@ -73,6 +89,9 @@ class PandasCsvIOManagerWithOutputAsset(IOManager):
 # end_asset_def
 
 # start_partitioned_asset_def
+from dagster import AssetKey, IOManager, MetadataEntry
+
+
 class PandasCsvIOManagerWithOutputAssetPartitions(IOManager):
     def load_input(self, context):
         file_path = os.path.join("my_base_dir", context.step_key, context.name)

@@ -1,14 +1,15 @@
 import time
 
 import pytest
-from dagster.core.scheduler import DagsterDaemonScheduler
-from dagster.daemon.daemon import SensorDaemon
-from dagster.daemon.types import DaemonHeartbeat
-from dagster.utils.error import SerializableErrorInfo
 from dagster_graphql.test.utils import execute_dagster_graphql
 from dagster_graphql_tests.graphql.graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
 )
+
+from dagster.core.scheduler import DagsterDaemonScheduler
+from dagster.daemon.daemon import SensorDaemon
+from dagster.daemon.types import DaemonHeartbeat
+from dagster.utils.error import SerializableErrorInfo
 
 INDIVIDUAL_DAEMON_QUERY = """
 query InstanceDetailSummaryQuery {

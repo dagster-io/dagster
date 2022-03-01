@@ -1,1 +1,2 @@
+from .resources import secretsmanager_resource, secretsmanager_secrets_resource
 from .secrets import get_secrets_from_arns, get_tagged_secrets

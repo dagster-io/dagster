@@ -1,15 +1,16 @@
 from functools import lru_cache
 
 import graphene
+from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.schema.logs.events import GrapheneRunStepStats
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+
 from dagster import check
 from dagster.core.definitions import NodeHandle
 from dagster.core.host_representation import RepresentedPipeline
 from dagster.core.host_representation.historical import HistoricalPipeline
 from dagster.core.snap import CompositeSolidDefSnap, DependencyStructureIndex, SolidDefSnap
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
-from dagster_graphql.implementation.events import iterate_metadata_entries
-from dagster_graphql.schema.logs.events import GrapheneRunStepStats
-from dagster_graphql.schema.metadata import GrapheneMetadataEntry
+from dagster.core.storage.pipeline_run import RunsFilter
 
 from .config_types import GrapheneConfigTypeField
 from .dagster_types import GrapheneDagsterType, to_dagster_type
@@ -406,7 +407,7 @@ class ISolidDefinitionMixin:
         else:
             repo_handle = self._represented_pipeline.repository_handle
             origin = repo_handle.repository_location_origin
-            location = graphene_info.context.get_location(origin)
+            location = graphene_info.context.get_location(origin.location_name)
             ext_repo = location.get_repository(repo_handle.repository_name)
             nodes = [
                 node
@@ -564,7 +565,7 @@ class GrapheneSolidHandle(graphene.ObjectType):
             )
 
         instance = _graphene_info.context.instance
-        runs_filter = PipelineRunsFilter(pipeline_name=self._solid.get_pipeline_name())
+        runs_filter = RunsFilter(pipeline_name=self._solid.get_pipeline_name())
         runs = instance.get_runs(runs_filter, limit=limit)
         nodes = []
         for run in runs:

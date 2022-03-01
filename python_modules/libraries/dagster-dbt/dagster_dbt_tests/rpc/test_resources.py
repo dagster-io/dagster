@@ -1,6 +1,5 @@
 import pytest
 import responses
-from dagster import ModeDefinition, execute_solid, solid
 from dagster_dbt import (
     DbtRpcOutput,
     DbtRpcResource,
@@ -9,6 +8,8 @@ from dagster_dbt import (
     dbt_rpc_sync_resource,
     local_dbt_rpc_resource,
 )
+
+from dagster import ModeDefinition, execute_solid, solid
 
 
 def test_url(client):

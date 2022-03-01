@@ -1,7 +1,8 @@
 import graphene
+
 from dagster import check
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
+from dagster.core.storage.pipeline_run import RunsFilter
 
 from .errors import (
     GrapheneInvalidOutputError,
@@ -115,7 +116,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
     def resolve_runs(self, graphene_info, **kwargs):
         from .pipelines.pipeline import GrapheneRun
 
-        filters = PipelineRunsFilter.for_backfill(self._backfill_job.backfill_id)
+        filters = RunsFilter.for_backfill(self._backfill_job.backfill_id)
         return [
             GrapheneRun(record)
             for record in graphene_info.context.instance.get_run_records(
@@ -125,7 +126,7 @@ class GraphenePartitionBackfill(graphene.ObjectType):
         ]
 
     def resolve_numRequested(self, graphene_info):
-        filters = PipelineRunsFilter.for_backfill(self._backfill_job.backfill_id)
+        filters = RunsFilter.for_backfill(self._backfill_job.backfill_id)
         run_count = graphene_info.context.instance.get_runs_count(filters)
         if self._backfill_job.status == BulkActionStatus.COMPLETED:
             return len(self._backfill_job.partition_names)

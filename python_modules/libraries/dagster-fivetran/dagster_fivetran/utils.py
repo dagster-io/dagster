@@ -1,7 +1,8 @@
 from typing import Any, Dict, List
 
-from dagster import AssetMaterialization, MetadataValue
 from dagster_fivetran.types import FivetranOutput
+
+from dagster import AssetMaterialization, MetadataValue
 
 
 def get_fivetran_connector_url(connector_details: Dict[str, Any]) -> str:

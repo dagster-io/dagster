@@ -1,6 +1,7 @@
 from typing import List
 
 import pytest
+
 from dagster import (
     ConfigMapping,
     DynamicOut,

@@ -2,6 +2,18 @@ import os
 from unittest import mock
 
 import pytest
+from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+from dagster_azure.adls2 import adls2_pickle_io_manager, adls2_resource
+from dagster_databricks import (
+    DatabricksRunLifeCycleState,
+    DatabricksRunResultState,
+    databricks_pyspark_step_launcher,
+)
+from dagster_databricks.databricks import DatabricksRunState
+from dagster_pyspark import DataFrame, pyspark_resource
+from pyspark.sql import Row
+from pyspark.sql.types import IntegerType, StringType, StructField, StructType
+
 from dagster import (
     InputDefinition,
     ModeDefinition,
@@ -15,17 +27,6 @@ from dagster import (
 from dagster.core.definitions.no_step_launcher import no_step_launcher
 from dagster.core.test_utils import instance_for_test
 from dagster.utils.merger import deep_merge_dicts
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
-from dagster_azure.adls2 import adls2_pickle_io_manager, adls2_resource
-from dagster_databricks import (
-    DatabricksRunLifeCycleState,
-    DatabricksRunResultState,
-    databricks_pyspark_step_launcher,
-)
-from dagster_databricks.databricks import DatabricksRunState
-from dagster_pyspark import DataFrame, pyspark_resource
-from pyspark.sql import Row
-from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 S3_BUCKET = "dagster-databricks-tests"
 ADLS2_STORAGE_ACCOUNT = "dagsterdatabrickstests"
@@ -182,7 +183,8 @@ def test_pyspark_databricks(
             for record in instance.get_event_records()
             if record.event_log_entry.step_key == "do_nothing_solid"
         ]
-
+    config = BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG.copy()
+    config.pop("local_pipeline_package_path")
     result = execute_pipeline(
         pipeline=reconstructable(define_do_nothing_pipe),
         mode="test",
@@ -190,8 +192,15 @@ def test_pyspark_databricks(
             "resources": {
                 "pyspark_step_launcher": {
                     "config": deep_merge_dicts(
-                        BASE_DATABRICKS_PYSPARK_STEP_LAUNCHER_CONFIG,
-                        {"databricks_host": "", "databricks_token": "", "poll_interval_sec": 0.1},
+                        config,
+                        {
+                            "databricks_host": "",
+                            "databricks_token": "",
+                            "poll_interval_sec": 0.1,
+                            "local_dagster_job_package_path": os.path.abspath(
+                                os.path.dirname(__file__)
+                            ),
+                        },
                     ),
                 },
             },

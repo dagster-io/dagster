@@ -1,9 +1,4 @@
 import graphene
-from dagster import check
-from dagster.core.host_representation import ExternalPartitionSet, RepositoryHandle
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
-from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster.utils import merge_dicts
 from dagster_graphql.implementation.fetch_partition_sets import (
     get_partition_by_name,
     get_partition_config,
@@ -12,6 +7,12 @@ from dagster_graphql.implementation.fetch_partition_sets import (
     get_partitions,
 )
 from dagster_graphql.implementation.fetch_runs import get_runs
+
+from dagster import check
+from dagster.core.host_representation import ExternalPartitionSet, RepositoryHandle
+from dagster.core.storage.pipeline_run import RunsFilter
+from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster.utils import merge_dicts
 
 from .errors import (
     GraphenePartitionSetNotFoundError,
@@ -132,14 +133,14 @@ class GraphenePartition(graphene.ObjectType):
         }
         if filters is not None:
             filters = filters.to_selector()
-            runs_filter = PipelineRunsFilter(
+            runs_filter = RunsFilter(
                 run_ids=filters.run_ids,
-                pipeline_name=filters.pipeline_name,
+                pipeline_name=filters.job_name,
                 statuses=filters.statuses,
                 tags=merge_dicts(filters.tags, partition_tags),
             )
         else:
-            runs_filter = PipelineRunsFilter(tags=partition_tags)
+            runs_filter = RunsFilter(tags=partition_tags)
 
         return get_runs(
             graphene_info, runs_filter, cursor=kwargs.get("cursor"), limit=kwargs.get("limit")

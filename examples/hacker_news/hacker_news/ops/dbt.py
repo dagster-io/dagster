@@ -1,5 +1,6 @@
-from dagster import Out, Output, op
 from dagster_dbt import DbtCliOutput
+
+from dagster import Out, Output, op
 
 
 @op(

@@ -5,6 +5,7 @@ import time
 from contextlib import contextmanager
 
 import pendulum
+
 from dagster import (
     Any,
     DefaultScheduleStatus,
@@ -36,7 +37,7 @@ from dagster.core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, SCHEDULED_EXECUTION_TIME_TAG
 from dagster.core.test_utils import (
     create_test_daemon_workspace,
@@ -1156,9 +1157,7 @@ def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_re
         assert instance.get_runs_count() == 3
         wait_for_all_runs_to_start(instance)
 
-        good_schedule_runs = instance.get_runs(
-            filters=PipelineRunsFilter.for_schedule(good_schedule)
-        )
+        good_schedule_runs = instance.get_runs(filters=RunsFilter.for_schedule(good_schedule))
         assert len(good_schedule_runs) == 2
         validate_run_started(
             instance,
@@ -1177,7 +1176,7 @@ def test_bad_schedules_mixed_with_good_schedule(instance, workspace, external_re
             [good_schedule_runs[0].run_id],
         )
 
-        bad_schedule_runs = instance.get_runs(filters=PipelineRunsFilter.for_schedule(bad_schedule))
+        bad_schedule_runs = instance.get_runs(filters=RunsFilter.for_schedule(bad_schedule))
         assert len(bad_schedule_runs) == 1
         validate_run_started(
             instance,
@@ -1799,7 +1798,7 @@ def test_grpc_server_down(instance):
             with _grpc_server_external_repo(port) as external_repo:
                 external_schedule = external_repo.get_external_schedule("simple_schedule")
                 instance.start_schedule(external_schedule)
-                workspace.get_location(location_origin)
+                workspace.get_location(location_origin.location_name)
 
             # Server is no longer running, ticks fail but indicate it will resume once it is reachable
             for _trial in range(3):

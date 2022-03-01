@@ -1,4 +1,4 @@
-from abc import abstractmethod, abstractproperty
+from abc import abstractmethod
 from enum import Enum
 from typing import (
     TYPE_CHECKING,
@@ -7,6 +7,7 @@ from typing import (
     List,
     NamedTuple,
     Optional,
+    Sequence,
     Set,
     Type,
     Union,
@@ -56,16 +57,47 @@ def is_executable_step(step: Union["ExecutionStep", "UnresolvedMappedExecutionSt
 
 
 class IExecutionStep:
-    @abstractproperty
-    def handle(self):
+    @property
+    @abstractmethod
+    def handle(self) -> Union[StepHandle, UnresolvedStepHandle, ResolvedFromDynamicStepHandle]:
         pass
 
-    @abstractproperty
-    def key(self):
+    @property
+    @abstractmethod
+    def key(self) -> str:
         pass
 
-    @abstractproperty
-    def solid_handle(self):
+    @property
+    @abstractmethod
+    def solid_handle(self) -> "NodeHandle":
+        pass
+
+    @property
+    @abstractmethod
+    def kind(self) -> StepKind:
+        pass
+
+    @property
+    @abstractmethod
+    def tags(self) -> Optional[Dict[str, str]]:
+        pass
+
+    @property
+    @abstractmethod
+    def step_inputs(
+        self,
+    ) -> Sequence[Union[StepInput, UnresolvedCollectStepInput, UnresolvedMappedStepInput]]:
+        pass
+
+    @property
+    @abstractmethod
+    def step_outputs(self) -> Sequence[StepOutput]:
+        pass
+
+    @abstractmethod
+    def step_input_named(
+        self, name: str
+    ) -> Union[StepInput, UnresolvedCollectStepInput, UnresolvedMappedStepInput]:
         pass
 
     @abstractmethod
@@ -100,7 +132,7 @@ class ExecutionStep(
         step_outputs: List[StepOutput],
         tags: Optional[Dict[str, str]],
         logging_tags: Optional[Dict[str, str]] = None,
-        key: str = None,
+        key: Optional[str] = None,
     ):
         return super(ExecutionStep, cls).__new__(
             cls,
@@ -383,12 +415,12 @@ class UnresolvedCollectExecutionStep(
         return StepKind.UNRESOLVED_COLLECT
 
     @property
-    def step_outputs(self) -> List[StepOutput]:
-        return list(self.step_output_dict.values())
-
-    @property
     def step_inputs(self) -> List[Union[StepInput, UnresolvedCollectStepInput]]:
         return list(self.step_input_dict.values())
+
+    @property
+    def step_outputs(self) -> List[StepOutput]:
+        return list(self.step_output_dict.values())
 
     def step_input_named(self, name: str) -> Union[StepInput, UnresolvedCollectStepInput]:
         check.str_param(name, "name")

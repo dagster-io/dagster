@@ -1,10 +1,11 @@
-from dagster import check
-from dagster.core.storage.compute_log_manager import ComputeIOType
-from dagster.core.storage.pipeline_run import PipelineRunStatus, PipelineRunsFilter
-from dagster.serdes import serialize_dagster_namedtuple
-from dagster.utils.error import serializable_error_info_from_exc_info
 from graphql.execution.base import ResolveInfo
 from rx import Observable
+
+from dagster import check
+from dagster.core.storage.compute_log_manager import ComputeIOType
+from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster.serdes import serialize_dagster_namedtuple
+from dagster.utils.error import serializable_error_info_from_exc_info
 
 from ..external import ExternalPipeline, ensure_valid_config, get_external_pipeline_or_raise
 from ..fetch_runs import is_config_valid
@@ -24,7 +25,7 @@ def _force_mark_as_canceled(graphene_info, run_id):
 
     instance = graphene_info.context.instance
 
-    reloaded_record = instance.get_run_records(PipelineRunsFilter(run_ids=[run_id]))[0]
+    reloaded_record = instance.get_run_records(RunsFilter(run_ids=[run_id]))[0]
 
     if not reloaded_record.pipeline_run.is_finished:
         message = (
@@ -32,7 +33,7 @@ def _force_mark_as_canceled(graphene_info, run_id):
             "computational resources created by the run may not have been fully cleaned up."
         )
         instance.report_run_canceled(reloaded_record.pipeline_run, message=message)
-        reloaded_record = instance.get_run_records(PipelineRunsFilter(run_ids=[run_id]))[0]
+        reloaded_record = instance.get_run_records(RunsFilter(run_ids=[run_id]))[0]
 
     return GrapheneTerminateRunSuccess(GrapheneRun(reloaded_record))
 
@@ -43,15 +44,15 @@ def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.roots.mutation import (
         GrapheneTerminateRunFailure,
-        GrapheneTerminateRunSuccess,
         GrapheneTerminateRunPolicy,
+        GrapheneTerminateRunSuccess,
     )
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
     check.str_param(run_id, "run_id")
 
     instance = graphene_info.context.instance
-    records = instance.get_run_records(PipelineRunsFilter(run_ids=[run_id]))
+    records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
 
     force_mark_as_canceled = (
         terminate_policy == GrapheneTerminateRunPolicy.MARK_AS_CANCELED_IMMEDIATELY
@@ -125,7 +126,7 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
     check.str_param(run_id, "run_id")
     check.opt_int_param(after, "after")
     instance = graphene_info.context.instance
-    records = instance.get_run_records(PipelineRunsFilter(run_ids=[run_id]))
+    records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
 
     if not records:
 

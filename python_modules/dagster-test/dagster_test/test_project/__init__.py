@@ -40,7 +40,7 @@ IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 
 def cleanup_memoized_results(pipeline_def, mode_str, instance, run_config):
     # Clean up any memoized outputs from the s3 bucket
-    from dagster_aws.s3 import s3_resource, s3_pickle_io_manager
+    from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
     execution_plan = create_execution_plan(
         pipeline_def, run_config=run_config, instance_ref=instance.get_ref(), mode=mode_str

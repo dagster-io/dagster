@@ -29,6 +29,7 @@ from typing import (
     Tuple,
     Type,
     TypeVar,
+    Union,
     cast,
     overload,
 )
@@ -158,7 +159,7 @@ def whitelist_for_serdes(
         check.class_param(__cls, "__cls")
         return _whitelist_for_serdes(whitelist_map=_WHITELIST_MAP)(__cls)
     else:  # decorator passed params
-        check.opt_subclass_param(serializer, "serializer", Serializer)
+        check.opt_class_param(serializer, "serializer", superclass=Serializer)
         serializer = cast(Type[Serializer], serializer)
         return _whitelist_for_serdes(
             whitelist_map=_WHITELIST_MAP, serializer=serializer, storage_name=storage_name
@@ -432,14 +433,25 @@ def deserialize_json_to_dagster_namedtuple(
 
 
 T = TypeVar("T")
+U = TypeVar("U")
 
 
+@overload
+def deserialize_as(json_str: str, cls: Tuple[Type[T], Type[U]]) -> Union[T, U]:
+    pass
+
+
+@overload
 def deserialize_as(json_str: str, cls: Type[T]) -> T:
+    pass
+
+
+def deserialize_as(json_str: str, cls: Union[Type[T], Tuple[Type[T], Type[U]]]) -> Union[T, U]:
     """Deserialize a json encoded string to a specific namedtuple class."""
     val = deserialize_json_to_dagster_namedtuple(json_str)
-    if isinstance(val, cls):
-        return val
-    check.failed(f"Deserialized object was not expected target type {cls}, got {type(val)}")
+    if not isinstance(val, cls):
+        check.failed(f"Deserialized object was not expected target type {cls}, got {type(val)}")
+    return cast(Union[T, U], val)
 
 
 def opt_deserialize_as(json_str: Optional[str], cls: Type[T]) -> Optional[T]:
@@ -654,7 +666,7 @@ def _root(val: Any) -> str:
 
 
 def replace_storage_keys(storage_dict: Dict[str, Any], key_mapping: Dict[str, str]):
-    """ returns a version of the storage dict that replaces all the keys """
+    """returns a version of the storage dict that replaces all the keys"""
     result = {}
     for key, value in storage_dict.items():
         if key not in key_mapping:

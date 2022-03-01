@@ -3,6 +3,7 @@ from contextlib import ExitStack
 
 import pytest
 import yaml
+
 from dagster import DagsterInstance
 from dagster.core.host_representation import GrpcServerRepositoryLocation
 from dagster.core.workspace import WorkspaceProcessContext

@@ -1,11 +1,12 @@
 import os
 
-from dagster.utils import merge_dicts
-from dagster.utils.yaml_utils import merge_yamls
 from dagster_k8s.test import wait_for_job_and_get_raw_logs
 from dagster_k8s_test_infra.integration_utils import image_pull_policy, launch_run_over_graphql
 from dagster_test.test_project import get_test_project_environments_path
 from marks import mark_daemon
+
+from dagster.utils import merge_dicts
+from dagster.utils.yaml_utils import merge_yamls
 
 
 def get_celery_engine_config(dagster_docker_image, job_namespace):

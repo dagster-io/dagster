@@ -176,7 +176,7 @@ def user_code_error_boundary(error_cls, msg_fn, log_manager=None, **kwargs):
 
     """
     check.callable_param(msg_fn, "msg_fn")
-    check.subclass_param(error_cls, "error_cls", DagsterUserCodeExecutionError)
+    check.class_param(error_cls, "error_cls", superclass=DagsterUserCodeExecutionError)
 
     with raise_execution_interrupts():
         if log_manager:
@@ -477,7 +477,7 @@ class DagsterTypeCheckDidNotPass(DagsterError):
     """
 
     def __init__(self, description=None, metadata_entries=None, dagster_type=None):
-        from dagster import MetadataEntry, DagsterType
+        from dagster import DagsterType, MetadataEntry
 
         super(DagsterTypeCheckDidNotPass, self).__init__(description)
         self.description = check.opt_str_param(description, "description")

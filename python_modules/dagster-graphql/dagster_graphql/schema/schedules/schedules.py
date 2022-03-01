@@ -1,8 +1,9 @@
 import graphene
+from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
+
 from dagster import check
 from dagster.core.host_representation import ExternalSchedule
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
-from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 
 from ..errors import (
     GraphenePythonError,

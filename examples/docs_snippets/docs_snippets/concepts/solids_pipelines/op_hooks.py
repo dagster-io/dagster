@@ -71,7 +71,9 @@ notif_all_prod = slack_notif_all.to_job(
 )
 
 notif_all_dev = slack_notif_all.to_job(
-    name="notif_all_dev", resource_defs={"slack": slack_resource}, hooks={slack_message_on_failure}
+    name="notif_all_dev",
+    resource_defs={"slack": slack_resource},
+    hooks={slack_message_on_failure},
 )
 
 
@@ -102,7 +104,9 @@ if __name__ == "__main__":
         "r",
     ) as fd:
         run_config = yaml.safe_load(fd.read())
-    result = notif_all_dev.execute_in_process(run_config=run_config, raise_on_error=False)
+    result = notif_all_dev.execute_in_process(
+        run_config=run_config, raise_on_error=False
+    )
 # end_repo_main
 
 

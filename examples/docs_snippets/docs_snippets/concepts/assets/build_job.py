@@ -26,5 +26,7 @@ downstream_assets = asset_group.build_job(
     name="my_asset_job", selection=["upstream", "downstream_1"]
 )
 
-upstream_and_downstream_1 = asset_group.build_job(name="my_asset_job", selection="*downstream_1")
+upstream_and_downstream_1 = asset_group.build_job(
+    name="my_asset_job", selection="*downstream_1"
+)
 # end_marker

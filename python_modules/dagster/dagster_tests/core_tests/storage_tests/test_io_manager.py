@@ -4,6 +4,7 @@ import time
 
 import mock
 import pytest
+
 from dagster import (
     AssetKey,
     AssetMaterialization,

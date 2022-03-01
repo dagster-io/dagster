@@ -1,6 +1,7 @@
-from dagster import check
-from dagster.core.storage.pipeline_run import PipelineRunsFilter
 from graphql.execution.base import ResolveInfo
+
+from dagster import check
+from dagster.core.storage.pipeline_run import RunsFilter
 
 from ..external import get_external_pipeline_or_raise
 from ..utils import ExecutionMetadata, ExecutionParams, capture_error
@@ -49,8 +50,6 @@ def _launch_pipeline_execution(graphene_info, execution_params, is_reexecuted=Fa
     check.bool_param(is_reexecuted, "is_reexecuted")
 
     run = do_launch(graphene_info, execution_params, is_reexecuted)
-    records = graphene_info.context.instance.get_run_records(
-        PipelineRunsFilter(run_ids=[run.run_id])
-    )
+    records = graphene_info.context.instance.get_run_records(RunsFilter(run_ids=[run.run_id]))
 
     return GrapheneLaunchRunSuccess(run=GrapheneRun(records[0]))

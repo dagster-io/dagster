@@ -3,7 +3,7 @@ import inspect
 import os
 import sys
 from abc import ABC, abstractmethod
-from collections import namedtuple
+from typing import List, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.errors import DagsterImportError, DagsterInvariantViolationError
@@ -147,15 +147,18 @@ def load_python_module(module_name, working_directory, remove_from_path_fn=None)
 
 @whitelist_for_serdes
 class FileCodePointer(
-    namedtuple("_FileCodePointer", "python_file fn_name working_directory"), CodePointer
+    NamedTuple(
+        "_FileCodePointer",
+        [("python_file", str), ("fn_name", str), ("working_directory", Optional[str])],
+    ),
+    CodePointer,
 ):
-    def __new__(cls, python_file, fn_name, working_directory=None):
-        check.opt_str_param(working_directory, "working_directory")
+    def __new__(cls, python_file: str, fn_name: str, working_directory: Optional[str] = None):
         return super(FileCodePointer, cls).__new__(
             cls,
             check.str_param(python_file, "python_file"),
             check.str_param(fn_name, "fn_name"),
-            working_directory,
+            check.opt_str_param(working_directory, "working_directory"),
         )
 
     def load_target(self):
@@ -180,9 +183,13 @@ class FileCodePointer(
 
 @whitelist_for_serdes
 class ModuleCodePointer(
-    namedtuple("_ModuleCodePointer", "module fn_name working_directory"), CodePointer
+    NamedTuple(
+        "_ModuleCodePointer",
+        [("module", str), ("fn_name", str), ("working_directory", Optional[str])],
+    ),
+    CodePointer,
 ):
-    def __new__(cls, module, fn_name, working_directory=None):
+    def __new__(cls, module: str, fn_name: str, working_directory: Optional[str] = None):
         return super(ModuleCodePointer, cls).__new__(
             cls,
             check.str_param(module, "module"),
@@ -207,9 +214,13 @@ class ModuleCodePointer(
 
 @whitelist_for_serdes
 class PackageCodePointer(
-    namedtuple("_PackageCodePointer", "module attribute working_directory"), CodePointer
+    NamedTuple(
+        "_PackageCodePointer",
+        [("module", str), ("attribute", str), ("working_directory", Optional[str])],
+    ),
+    CodePointer,
 ):
-    def __new__(cls, module, attribute, working_directory=None):
+    def __new__(cls, module: str, attribute: str, working_directory: Optional[str] = None):
         return super(PackageCodePointer, cls).__new__(
             cls,
             check.str_param(module, "module"),
@@ -244,12 +255,22 @@ def get_python_file_from_target(target):
 
 @whitelist_for_serdes
 class CustomPointer(
-    namedtuple(
-        "_CustomPointer", "reconstructor_pointer reconstructable_args reconstructable_kwargs"
+    NamedTuple(
+        "_CustomPointer",
+        [
+            ("reconstructor_pointer", ModuleCodePointer),
+            ("reconstructable_args", List[object]),
+            ("reconstructable_kwargs", List[List]),
+        ],
     ),
     CodePointer,
 ):
-    def __new__(cls, reconstructor_pointer, reconstructable_args, reconstructable_kwargs):
+    def __new__(
+        cls,
+        reconstructor_pointer: ModuleCodePointer,
+        reconstructable_args: List[object],
+        reconstructable_kwargs: List[List],
+    ):
         check.inst_param(reconstructor_pointer, "reconstructor_pointer", ModuleCodePointer)
         # These are lists rather than tuples to circumvent the tuple serdes machinery -- since these
         # are user-provided, they aren't whitelisted for serdes.

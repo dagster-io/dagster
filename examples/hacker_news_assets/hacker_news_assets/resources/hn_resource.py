@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional
 
 import requests
+
 from dagster import resource
 from dagster.utils import file_relative_path
 

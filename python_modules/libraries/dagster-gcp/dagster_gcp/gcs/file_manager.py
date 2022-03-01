@@ -2,6 +2,8 @@ import io
 import uuid
 from contextlib import contextmanager
 
+from google.cloud import storage  # type: ignore
+
 from dagster import check, usable_as_dagster_type
 from dagster.core.storage.file_manager import (
     FileHandle,
@@ -9,7 +11,6 @@ from dagster.core.storage.file_manager import (
     TempfileManager,
     check_file_like_obj,
 )
-from google.cloud import storage  # type: ignore
 
 
 @usable_as_dagster_type

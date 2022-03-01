@@ -9,7 +9,9 @@ class MyIOManager(IOManager):
         self.storage_dict[(context.step_key, context.name)] = obj
 
     def load_input(self, context):
-        return self.storage_dict[(context.upstream_output.step_key, context.upstream_output.name)]
+        return self.storage_dict[
+            (context.upstream_output.step_key, context.upstream_output.name)
+        ]
 
 
 @io_manager
@@ -28,5 +30,7 @@ def test_my_io_manager_load_input():
     manager = my_io_manager(None)
     manager.storage_dict[("123", "abc")] = 5
 
-    context = build_input_context(upstream_output=build_output_context(name="abc", step_key="123"))
+    context = build_input_context(
+        upstream_output=build_output_context(name="abc", step_key="123")
+    )
     assert manager.load_input(context) == 5

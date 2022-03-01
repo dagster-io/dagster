@@ -22,7 +22,7 @@ Consider the following job which has three ops, one of which fails half of the t
 ```python file=/guides/dagster/reexecution/unreliable_job.py
 from random import random
 
-from dagster import graph, op
+from dagster import in_process_executor, job, op
 
 
 @op
@@ -44,7 +44,7 @@ def end(_num: int):
     pass
 
 
-@graph
+@job(executor_def=in_process_executor)
 def unreliable_job():
     end(unreliable(start()))
 ```
@@ -81,13 +81,16 @@ Re-execution can be triggered via the API as well.
 Again, let's revist the job `unreliable_job`, which has a op named `unreliable`.
 
 ```python file=/guides/dagster/reexecution/reexecution_api.py endbefore=end_initial_execution_marker
-from dagster import DagsterInstance, execute_pipeline, reexecute_pipeline
+from dagster import DagsterInstance, reexecute_pipeline
+
 from docs_snippets.guides.dagster.reexecution.unreliable_job import unreliable_job
 
 instance = DagsterInstance.ephemeral()
 
 # Initial execution
-job_execution_result = execute_pipeline(unreliable_job, instance=instance)
+job_execution_result = unreliable_job.execute_in_process(
+    instance=instance, raise_on_error=False
+)
 
 if not job_execution_result.success:
     # re-execute the entire job

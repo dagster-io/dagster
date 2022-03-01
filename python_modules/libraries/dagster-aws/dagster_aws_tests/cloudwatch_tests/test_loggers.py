@@ -3,9 +3,10 @@ import json
 
 import boto3
 import pytest
-from dagster import job, op
 from dagster_aws.cloudwatch import cloudwatch_logger
 from moto import mock_logs
+
+from dagster import job, op
 
 
 @op

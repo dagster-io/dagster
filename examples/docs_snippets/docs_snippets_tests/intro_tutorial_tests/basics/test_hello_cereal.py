@@ -1,4 +1,6 @@
-from docs_snippets.intro_tutorial.basics.single_solid_pipeline.hello_cereal import hello_cereal_job
+from docs_snippets.intro_tutorial.basics.single_solid_pipeline.hello_cereal import (
+    hello_cereal_job,
+)
 from docs_snippets.intro_tutorial.test_util import patch_cereal_requests
 
 

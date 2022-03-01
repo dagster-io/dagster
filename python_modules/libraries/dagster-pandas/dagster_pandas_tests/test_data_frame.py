@@ -1,4 +1,13 @@
 import pytest
+from dagster_pandas.constraints import (
+    ColumnDTypeInSetConstraint,
+    InRangeColumnConstraint,
+    NonNullableColumnConstraint,
+)
+from dagster_pandas.data_frame import _execute_summary_stats, create_dagster_pandas_dataframe_type
+from dagster_pandas.validation import PandasColumn
+from pandas import DataFrame, read_csv
+
 from dagster import (
     AssetMaterialization,
     DagsterInvariantViolationError,
@@ -16,14 +25,6 @@ from dagster import (
     op,
 )
 from dagster.utils import safe_tempfile_path
-from dagster_pandas.constraints import (
-    ColumnDTypeInSetConstraint,
-    InRangeColumnConstraint,
-    NonNullableColumnConstraint,
-)
-from dagster_pandas.data_frame import _execute_summary_stats, create_dagster_pandas_dataframe_type
-from dagster_pandas.validation import PandasColumn
-from pandas import DataFrame, read_csv
 
 
 def test_create_pandas_dataframe_dagster_type():

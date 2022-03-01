@@ -2,6 +2,7 @@ import os
 import sys
 
 import pytest
+
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
 from dagster.core.code_pointer import CodePointer
 from dagster.core.definitions.reconstructable import repository_def_from_pointer

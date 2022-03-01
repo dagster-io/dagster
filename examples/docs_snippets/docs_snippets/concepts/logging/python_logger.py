@@ -3,12 +3,10 @@ from dagster import repository
 
 def scope_logged_job():
 
-    from dagster import graph
-
     # start_python_logger
-
     import logging
-    from dagster import op
+
+    from dagster import graph, op
 
     @op
     def ambitious_op():
@@ -31,11 +29,8 @@ def scope_logged_job():
 
 def scope_logged_job2():
 
-    from dagster import graph
-
     # start_get_logger
-
-    from dagster import get_dagster_logger, op
+    from dagster import get_dagster_logger, graph, op
 
     @op
     def ambitious_op():

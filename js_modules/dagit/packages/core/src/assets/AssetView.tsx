@@ -143,7 +143,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             style={{height: 390}}
             flex={{direction: 'row', justifyContent: 'center', alignItems: 'center'}}
           >
-            <Spinner purpose="section" />
+            <Spinner purpose="page" />
           </Box>
         ) : params.asOf ? (
           <Box

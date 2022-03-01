@@ -2,8 +2,10 @@ import datetime
 import os
 import sys
 import time
+from typing import cast
 
 import pendulum
+
 from dagster import check
 from dagster.core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster.core.errors import DagsterUserCodeUnreachableError
@@ -18,7 +20,7 @@ from dagster.core.scheduler.instigation import (
     TickStatus,
 )
 from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG, check_tags
 from dagster.core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
 from dagster.core.workspace import IWorkspace
@@ -245,21 +247,22 @@ def launch_scheduled_runs_for_schedule(
     external_schedule: ExternalSchedule,
     schedule_state: InstigatorState,
     workspace,
-    end_datetime_utc,
+    end_datetime_utc: datetime.datetime,
     max_catchup_runs,
     max_tick_retries,
     debug_crash_flags=None,
     log_verbose_checks=True,
 ):
-    check.inst_param(instance, "instance", DagsterInstance)
-    check.opt_inst_param(schedule_state, "schedule_state", InstigatorState)
-    check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
+    instance = check.inst_param(instance, "instance", DagsterInstance)
+    schedule_state = check.opt_inst_param(schedule_state, "schedule_state", InstigatorState)
+    end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
 
     instigator_origin_id = external_schedule.get_external_origin_id()
     ticks = instance.get_ticks(instigator_origin_id, limit=1)
     latest_tick = ticks[0] if ticks else None
 
-    start_timestamp_utc = schedule_state.instigator_data.start_timestamp if schedule_state else None
+    instigator_data = cast(ScheduleInstigatorData, schedule_state.instigator_data)
+    start_timestamp_utc = instigator_data.start_timestamp if schedule_state else None
 
     if latest_tick:
         if latest_tick.status == TickStatus.STARTED or (
@@ -279,7 +282,7 @@ def launch_scheduled_runs_for_schedule(
                 else latest_tick.timestamp + 1
             )
     else:
-        start_timestamp_utc = schedule_state.instigator_data.start_timestamp
+        start_timestamp_utc = instigator_data.start_timestamp
 
     schedule_name = external_schedule.name
 
@@ -418,7 +421,7 @@ def _schedule_runs_at_time(
     )
 
     repo_location = workspace.get_location(
-        schedule_origin.external_repository_origin.repository_location_origin
+        schedule_origin.external_repository_origin.repository_location_origin.location_name
     )
 
     external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
@@ -504,7 +507,7 @@ def _get_existing_run_for_request(instance, external_schedule, schedule_time, ru
     )
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key
-    runs_filter = PipelineRunsFilter(tags=tags)
+    runs_filter = RunsFilter(tags=tags)
     existing_runs = instance.get_runs(runs_filter)
     if not len(existing_runs):
         return None

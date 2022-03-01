@@ -2,8 +2,9 @@ import concurrent.futures
 import tempfile
 import time
 
-from dagster import execute_pipeline
 from user_in_loop.user_in_loop.repo import user_in_the_loop_pipeline
+
+from dagster import execute_pipeline
 
 
 def run_pipeline(path_to_dir):

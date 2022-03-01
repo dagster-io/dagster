@@ -1,5 +1,4 @@
-from collections import namedtuple
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Optional
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, NamedTuple, Optional
 
 from dagster import check
 
@@ -12,7 +11,15 @@ if TYPE_CHECKING:
 
 
 class HookDefinition(
-    namedtuple("_HookDefinition", "name hook_fn required_resource_keys decorated_fn")
+    NamedTuple(
+        "_HookDefinition",
+        [
+            ("name", str),
+            ("hook_fn", Callable),
+            ("required_resource_keys", AbstractSet[str]),
+            ("decorated_fn", Callable),
+        ],
+    )
 ):
     """Define a hook which can be triggered during a op execution (e.g. a callback on the step
     execution failure event during a op execution).
@@ -38,7 +45,7 @@ class HookDefinition(
             required_resource_keys=frozenset(
                 check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
             ),
-            decorated_fn=check.opt_callable_param(decorated_fn, "decorated_fn"),
+            decorated_fn=check.callable_param(decorated_fn, "decorated_fn"),
         )
 
     def __call__(self, *args, **kwargs):
@@ -62,10 +69,10 @@ class HookDefinition(
                     foo(bar())
 
         """
-        from .pipeline_definition import PipelineDefinition
-        from .graph_definition import GraphDefinition
         from ..execution.context.hook import HookContext
+        from .graph_definition import GraphDefinition
         from .hook_invocation import hook_invocation_result
+        from .pipeline_definition import PipelineDefinition
 
         if len(args) > 0 and isinstance(args[0], (PipelineDefinition, GraphDefinition)):
             # when it decorates a pipeline, we apply this hook to all the solid invocations within

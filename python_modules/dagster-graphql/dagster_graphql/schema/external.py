@@ -1,4 +1,11 @@
 import graphene
+from dagster_graphql.implementation.fetch_runs import (
+    get_asset_run_stats_by_step,
+    get_in_progress_runs_by_step,
+)
+from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
+from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
+
 from dagster import DagsterInstance, check
 from dagster.core.host_representation import (
     ExternalRepository,
@@ -7,12 +14,6 @@ from dagster.core.host_representation import (
     RepositoryLocation,
 )
 from dagster.core.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
-from dagster_graphql.implementation.fetch_runs import (
-    get_asset_run_stats_by_step,
-    get_in_progress_runs_by_step,
-)
-from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
-from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 
 from .asset_graph import GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError

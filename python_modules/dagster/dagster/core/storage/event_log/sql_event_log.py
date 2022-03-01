@@ -6,6 +6,7 @@ from typing import Dict, Iterable, List, Mapping, Optional, Sequence, cast
 
 import pendulum
 import sqlalchemy as db
+
 from dagster import check, seven
 from dagster.core.assets import AssetDetails
 from dagster.core.definitions.events import AssetKey, AssetMaterialization
@@ -289,7 +290,12 @@ class SqlEventLogStorage(EventLogStorage):
                     db.func.max(SqlEventLogStorageTable.c.timestamp).label("last_event_timestamp"),
                 ]
             )
-            .where(SqlEventLogStorageTable.c.run_id == run_id)
+            .where(
+                db.and_(
+                    SqlEventLogStorageTable.c.run_id == run_id,
+                    SqlEventLogStorageTable.c.dagster_event_type != None,
+                )
+            )
             .group_by("dagster_event_type")
         )
 
@@ -301,9 +307,9 @@ class SqlEventLogStorage(EventLogStorage):
             times = {}
             for result in results:
                 (dagster_event_type, n_events_of_type, last_event_timestamp) = result
-                if dagster_event_type:
-                    counts[dagster_event_type] = n_events_of_type
-                    times[dagster_event_type] = last_event_timestamp
+                check.invariant(dagster_event_type is not None)
+                counts[dagster_event_type] = n_events_of_type
+                times[dagster_event_type] = last_event_timestamp
 
             enqueued_time = times.get(DagsterEventType.PIPELINE_ENQUEUED.value, None)
             launch_time = times.get(DagsterEventType.PIPELINE_STARTING.value, None)

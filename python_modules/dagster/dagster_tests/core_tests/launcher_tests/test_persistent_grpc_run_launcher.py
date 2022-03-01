@@ -2,6 +2,12 @@ import sys
 import time
 
 import pytest
+from dagster_tests.core_tests.launcher_tests.test_default_run_launcher import (
+    math_diamond,
+    sleepy_pipeline,
+    slow_pipeline,
+)
+
 from dagster import file_relative_path, seven
 from dagster.core.errors import DagsterLaunchFailedError
 from dagster.core.storage.pipeline_run import PipelineRunStatus
@@ -12,11 +18,6 @@ from dagster.core.workspace.context import WorkspaceProcessContext
 from dagster.core.workspace.load_target import GrpcServerTarget, PythonFileTarget
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import find_free_port, merge_dicts
-from dagster_tests.core_tests.launcher_tests.test_default_run_launcher import (
-    math_diamond,
-    sleepy_pipeline,
-    slow_pipeline,
-)
 
 
 def test_run_always_finishes():  # pylint: disable=redefined-outer-name

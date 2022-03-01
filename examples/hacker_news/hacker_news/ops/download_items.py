@@ -1,9 +1,10 @@
 from typing import Tuple
 
-from dagster import Out, Output, op
 from pandas import DataFrame
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql.types import ArrayType, DoubleType, LongType, StringType, StructField, StructType
+
+from dagster import Out, Output, op
 
 HN_ACTION_SCHEMA = StructType(
     [

@@ -3,8 +3,9 @@ from unittest import mock
 
 import pytest
 from botocore import exceptions
-from dagster import DagsterResourceFunctionError, In, Out, build_op_context, configured, job, op
 from dagster_aws.s3 import S3FileHandle, S3FileManager, s3_file_manager, s3_resource
+
+from dagster import DagsterResourceFunctionError, In, Out, build_op_context, configured, job, op
 
 
 def test_s3_file_manager_write(mock_s3_resource, mock_s3_bucket):

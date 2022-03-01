@@ -4,6 +4,7 @@ import time
 from collections import namedtuple
 
 import pendulum
+
 from dagster import check, seven
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
@@ -17,17 +18,16 @@ from dagster.core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, PipelineRunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster.core.storage.tags import RUN_KEY_TAG, check_tags
 from dagster.core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster.core.workspace import IWorkspace
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 
-RECORDED_TICK_STATES = [TickStatus.SUCCESS, TickStatus.FAILURE]
-FULFILLED_TICK_STATES = [TickStatus.SKIPPED, TickStatus.SUCCESS]
-
 MIN_INTERVAL_LOOP_TIME = 5
+
+FINISHED_TICK_STATES = [TickStatus.SKIPPED, TickStatus.SUCCESS, TickStatus.FAILURE]
 
 
 class DagsterSensorDaemonError(DagsterError):
@@ -45,6 +45,8 @@ class SensorLaunchContext:
         self._logger = logger
         self._state = state
         self._tick = tick
+
+        self._should_update_cursor_on_failure = False
 
     @property
     def status(self):
@@ -88,31 +90,49 @@ class SensorLaunchContext:
     def add_run(self, run_id, run_key=None):
         self._tick = self._tick.with_run(run_id, run_key)
 
+    def set_should_update_cursor_on_failure(self, should_update_cursor_on_failure: bool):
+        self._should_update_cursor_on_failure = should_update_cursor_on_failure
+
     def _write(self):
         self._instance.update_tick(self._tick)
-        if self._tick.status in FULFILLED_TICK_STATES:
-            last_run_key = (
-                self._state.instigator_data.last_run_key if self._state.instigator_data else None
-            )
-            if self._tick.run_keys:
-                last_run_key = self._tick.run_keys[-1]
-            self._instance.update_instigator_state(
-                self._state.with_data(
-                    SensorInstigatorData(
-                        last_tick_timestamp=self._tick.timestamp,
-                        last_run_key=last_run_key,
-                        min_interval=self._external_sensor.min_interval_seconds,
-                        cursor=self._tick.cursor,
-                    )
+
+        if self._tick.status not in FINISHED_TICK_STATES:
+            return
+
+        should_update_cursor_and_last_run_key = (
+            self._tick.status != TickStatus.FAILURE
+        ) or self._should_update_cursor_on_failure
+
+        last_run_key = (
+            self._state.instigator_data.last_run_key if self._state.instigator_data else None
+        )
+        if self._tick.run_keys and should_update_cursor_and_last_run_key:
+            last_run_key = self._tick.run_keys[-1]
+
+        cursor = self._state.instigator_data.cursor if self._state.instigator_data else None
+        if should_update_cursor_and_last_run_key:
+            cursor = self._tick.cursor
+
+        self._instance.update_instigator_state(
+            self._state.with_data(
+                SensorInstigatorData(
+                    last_tick_timestamp=self._tick.timestamp,
+                    last_run_key=last_run_key,
+                    min_interval=self._external_sensor.min_interval_seconds,
+                    cursor=cursor,
                 )
             )
+        )
 
     def __enter__(self):
         return self
 
     def __exit__(self, exception_type, exception_value, traceback):
+        if exception_type and isinstance(exception_value, KeyboardInterrupt):
+            return
+
         # Log the error if the failure wasn't an interrupt or the daemon generator stopping
-        if exception_value and not isinstance(exception_value, (KeyboardInterrupt, GeneratorExit)):
+        if exception_value and not isinstance(exception_value, GeneratorExit):
             error_data = serializable_error_info_from_exc_info(sys.exc_info())
             self.update_state(TickStatus.FAILURE, error=error_data)
 
@@ -320,7 +340,7 @@ def _evaluate_sensor(
     sensor_origin = external_sensor.get_external_origin()
     repository_handle = external_sensor.handle.repository_handle
     repo_location = workspace.get_location(
-        sensor_origin.external_repository_origin.repository_location_origin
+        sensor_origin.external_repository_origin.repository_location_origin.location_name
     )
 
     sensor_runtime_data = repo_location.get_external_sensor_execution_data(
@@ -348,6 +368,9 @@ def _evaluate_sensor(
                         cursor=sensor_runtime_data.cursor,
                         error=pipeline_run_reaction.error,
                     )
+                    # Since run status sensors have side effects that we don't want to repeat,
+                    # we still want to update the cursor, even though the tick failed
+                    context.set_should_update_cursor_on_failure(True)
                 else:
                     # log to the original pipeline run
                     message = (
@@ -474,7 +497,7 @@ def _get_or_create_sensor_run(
         )
 
     existing_runs = instance.get_runs(
-        PipelineRunsFilter(
+        RunsFilter(
             tags=merge_dicts(
                 PipelineRun.tags_for_sensor(external_sensor),
                 {RUN_KEY_TAG: run_request.run_key},
