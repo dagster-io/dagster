@@ -18,6 +18,7 @@ setup(
         "dagster",
         "dagster-airbyte",
         "dagster-dbt",
+        "dagster-postgres",
         "pandas",
         "numpy",
         "scipy",

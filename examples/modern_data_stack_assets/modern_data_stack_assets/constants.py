@@ -8,7 +8,7 @@ def model_func(x, a, b):
     return a * np.exp(b * (x / 10**18 - 1.6095))
 
 
-AIRBYTE_CONNECTION_ID = "<your airbyte connection id>"
+AIRBYTE_CONNECTION_ID = "your_airbyte_connection_id"
 AIRBYTE_CONFIG = {"host": "localhost", "port": "8000"}
 DBT_PROJECT_DIR = file_relative_path(__file__, "../mds_dbt")
 DBT_PROFILES_DIR = file_relative_path(__file__, "../mds_dbt/config")
