@@ -19,30 +19,29 @@ import {
 import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import * as React from 'react';
-import {useCopyToClipboard} from '../app/browser';
 import styled from 'styled-components/macro';
 
-import {TickTag} from './InstigationTick';
+import {SharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {useCopyToClipboard} from '../app/browser';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
+import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {HistoricalTickTimeline} from './HistoricalTickTimeline';
-import {TICK_TAG_FRAGMENT} from './InstigationTick';
+import {TickTag, TICK_TAG_FRAGMENT} from './InstigationTick';
+import {RunStatusLink, RUN_STATUS_FRAGMENT} from './InstigationUtils';
 import {LiveTickTimeline} from './LiveTickTimeline';
 import {TickDetailsDialog} from './TickDetailsDialog';
+import {RunStatusFragment} from './types/RunStatusFragment';
 import {
   TickHistoryQuery,
   TickHistoryQueryVariables,
   TickHistoryQuery_instigationStateOrError_InstigationState_ticks,
 } from './types/TickHistoryQuery';
-import {TimestampDisplay} from '../schedules/TimestampDisplay';
-import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
-import {RunStatusLink, RUN_STATUS_FRAGMENT} from './InstigationUtils';
-import {RunStatusFragment} from './types/RunStatusFragment';
-import {SharedToaster} from '../app/DomUtils';
 
 Chart.register(zoomPlugin);
 
@@ -260,7 +259,7 @@ export const TickHistoryTimeline = ({
 }: {
   name: string;
   repoAddress: RepoAddress;
-  onHighlightRunIds: (runIds: string[]) => void;
+  onHighlightRunIds?: (runIds: string[]) => void;
   showRecent?: boolean;
 }) => {
   const [selectedTab, setSelectedTab] = useQueryPersistedState<string>({
@@ -351,7 +350,7 @@ export const TickHistoryTimeline = ({
       pausePolling(false);
     }
     if (tick?.runIds) {
-      onHighlightRunIds(tick.runIds);
+      onHighlightRunIds && onHighlightRunIds(tick.runIds);
       pausePolling(true);
     }
   };

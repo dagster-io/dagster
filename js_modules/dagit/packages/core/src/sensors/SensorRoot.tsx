@@ -13,7 +13,6 @@ import {RepoAddress} from '../workspace/types';
 import {SensorDetails} from './SensorDetails';
 import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';
-import {SensorPreviousRuns, NoTargetSensorPreviousRuns} from './SensorPreviousRuns';
 import {SensorRootQuery} from './types/SensorRootQuery';
 
 const INTERVAL = 15 * 1000;
@@ -22,7 +21,6 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
   const {sensorName} = useParams<{sensorName: string}>();
   useDocumentTitle(`Sensor: ${sensorName}`);
 
-  const [selectedRunIds, setSelectedRunIds] = React.useState<string[]>([]);
   const sensorSelector = {
     ...repoAddressToSelector(repoAddress),
     sensorName,
@@ -75,7 +73,6 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
               repoAddress={repoAddress}
               name={sensorOrError.name}
               showRecent={true}
-              onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
             />
             <TicksTable repoAddress={repoAddress} name={sensorOrError.name} />
           </Page>

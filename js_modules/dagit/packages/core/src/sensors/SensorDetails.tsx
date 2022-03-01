@@ -14,7 +14,10 @@ import {
   FontFamily,
 } from '@dagster-io/ui';
 import * as React from 'react';
+import styled from 'styled-components/macro';
 
+import {SharedToaster} from '../app/DomUtils';
+import {useCopyToClipboard} from '../app/browser';
 import {AssetLink} from '../assets/AssetLink';
 import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -24,9 +27,6 @@ import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
-import {SharedToaster} from '../app/DomUtils';
-import {useCopyToClipboard} from '../app/browser';
-import styled from 'styled-components/macro';
 import {SensorSwitch} from './SensorSwitch';
 import {SensorFragment} from './types/SensorFragment';
 

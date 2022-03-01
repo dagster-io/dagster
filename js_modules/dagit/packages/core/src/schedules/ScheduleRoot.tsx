@@ -6,20 +6,14 @@ import {useParams} from 'react-router-dom';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable, TickHistoryTimeline} from '../instigation/TickHistory';
-import {DagsterTag} from '../runs/RunTag';
 import {Loading} from '../ui/Loading';
-import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from '../workspace/PreviousRunsSection';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
 import {ScheduleDetails} from './ScheduleDetails';
 import {SCHEDULE_FRAGMENT} from './ScheduleUtils';
 import {SchedulerInfo} from './SchedulerInfo';
-import {PreviousRunsForScheduleQuery} from './types/PreviousRunsForScheduleQuery';
-import {
-  ScheduleRootQuery,
-  ScheduleRootQuery_scheduleOrError_Schedule as Schedule,
-} from './types/ScheduleRootQuery';
+import {ScheduleRootQuery} from './types/ScheduleRootQuery';
 
 interface Props {
   repoAddress: RepoAddress;
@@ -29,11 +23,10 @@ const INTERVAL = 15 * 1000;
 
 export const ScheduleRoot: React.FC<Props> = (props) => {
   const {repoAddress} = props;
-  const {scheduleName, runTab} = useParams<{scheduleName: string; runTab?: string}>();
+  const {scheduleName} = useParams<{scheduleName: string}>();
 
   useDocumentTitle(`Schedule: ${scheduleName}`);
 
-  const [selectedRunIds, setSelectedRunIds] = React.useState<string[]>([]);
   const scheduleSelector = {
     ...repoAddressToSelector(repoAddress),
     scheduleName,
@@ -81,49 +74,12 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
             >
               <SchedulerInfo daemonHealth={instance.daemonHealth} />
             </Box>
-            <TickHistoryTimeline
-              repoAddress={repoAddress}
-              name={scheduleOrError.name}
-              onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
-            />
+            <TickHistoryTimeline repoAddress={repoAddress} name={scheduleOrError.name} />
             <TicksTable repoAddress={repoAddress} name={scheduleName} />
           </Page>
         );
       }}
     </Loading>
-  );
-};
-
-const RUNS_LIMIT = 20;
-
-interface SchedulePreviousRunsProps {
-  repoAddress: RepoAddress;
-  runTab?: string;
-  schedule: Schedule;
-  highlightedIds: string[];
-}
-
-const SchedulePreviousRuns: React.FC<SchedulePreviousRunsProps> = (props) => {
-  const {schedule, highlightedIds} = props;
-  const {data, loading} = useQuery<PreviousRunsForScheduleQuery>(PREVIOUS_RUNS_FOR_SCHEDULE_QUERY, {
-    fetchPolicy: 'cache-and-network',
-    variables: {
-      limit: RUNS_LIMIT,
-      filter: {
-        pipelineName: schedule.pipelineName,
-        tags: [{key: DagsterTag.ScheduleName, value: schedule.name}],
-      },
-    },
-    partialRefetch: true,
-    pollInterval: 15 * 1000,
-  });
-
-  return (
-    <PreviousRunsSection
-      loading={loading}
-      data={data?.pipelineRunsOrError}
-      highlightedIds={highlightedIds}
-    />
   );
 };
 
@@ -149,14 +105,4 @@ const SCHEDULE_ROOT_QUERY = gql`
 
   ${SCHEDULE_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
-`;
-
-const PREVIOUS_RUNS_FOR_SCHEDULE_QUERY = gql`
-  query PreviousRunsForScheduleQuery($filter: RunsFilter, $limit: Int) {
-    pipelineRunsOrError(filter: $filter, limit: $limit) {
-      __typename
-      ...PreviousRunsFragment
-    }
-  }
-  ${PREVIOUS_RUNS_FRAGMENT}
 `;
