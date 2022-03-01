@@ -13,10 +13,14 @@ import {
   Tabs,
   Subheading,
   FontFamily,
+  IconWIP,
+  IconWrapper,
 } from '@dagster-io/ui';
 import {Chart} from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
 import * as React from 'react';
+import {useCopyToClipboard} from '../app/browser';
+import styled from 'styled-components/macro';
 
 import {TickTag} from './InstigationTick';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
@@ -38,6 +42,7 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {RunStatusLink, RUN_STATUS_FRAGMENT} from './InstigationUtils';
 import {RunStatusFragment} from './types/RunStatusFragment';
+import {SharedToaster} from '../app/DomUtils';
 
 Chart.register(zoomPlugin);
 
@@ -99,6 +104,7 @@ export const TicksTable = ({name, repoAddress}: {name: string; repoAddress: Repo
   const [shownStates, setShownStates] = React.useState<ShownStatusState>(
     DEFAULT_SHOWN_STATUS_STATE,
   );
+  const copyToClipboard = useCopyToClipboard();
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
   const statuses = Object.keys(shownStates)
     .filter((status) => shownStates[status])
@@ -188,7 +194,22 @@ export const TicksTable = ({name, repoAddress}: {name: string; repoAddress: Repo
                 {instigationType === InstigationType.SENSOR ? (
                   <td style={{width: 120}}>
                     {tick.cursor ? (
-                      <span style={{fontFamily: FontFamily.monospace}}>{tick.cursor}</span>
+                      <Box flex={{direction: 'row', alignItems: 'center'}}>
+                        <Box style={{fontFamily: FontFamily.monospace, marginRight: 10}}>
+                          {tick.cursor}
+                        </Box>
+                        <CopyButton
+                          onClick={() => {
+                            copyToClipboard(tick.cursor || '');
+                            SharedToaster.show({
+                              message: <div>Copied value</div>,
+                              intent: 'success',
+                            });
+                          }}
+                        >
+                          <IconWIP name="assignment" />
+                        </CopyButton>
+                      </Box>
                     ) : (
                       <>&mdash;</>
                     )}
@@ -429,4 +450,26 @@ const JOB_TICK_HISTORY_QUERY = gql`
   ${PYTHON_ERROR_FRAGMENT}
   ${TICK_TAG_FRAGMENT}
   ${RUN_STATUS_FRAGMENT}
+`;
+
+const CopyButton = styled.button`
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 8px;
+  margin: -6px;
+  outline: none;
+
+  ${IconWrapper} {
+    background-color: ${ColorsWIP.Gray600};
+    transition: background-color 100ms;
+  }
+
+  :hover ${IconWrapper} {
+    background-color: ${ColorsWIP.Gray800};
+  }
+
+  :focus ${IconWrapper} {
+    background-color: ${ColorsWIP.Link};
+  }
 `;

@@ -8,6 +8,10 @@ import {
   RefreshableCountdown,
   TagWIP,
   Heading,
+  ColorsWIP,
+  IconWIP,
+  IconWrapper,
+  FontFamily,
 } from '@dagster-io/ui';
 import * as React from 'react';
 
@@ -20,6 +24,9 @@ import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
+import {SharedToaster} from '../app/DomUtils';
+import {useCopyToClipboard} from '../app/browser';
+import styled from 'styled-components/macro';
 import {SensorSwitch} from './SensorSwitch';
 import {SensorFragment} from './types/SensorFragment';
 
@@ -92,6 +99,12 @@ export const SensorDetails: React.FC<{
     }
     return targetCount > 1 ? 'Jobs' : 'Job';
   }, [anyPipelines, targetCount]);
+
+  const copyToClipboard = useCopyToClipboard();
+  const cursor =
+    sensor.sensorState.typeSpecificData &&
+    sensor.sensorState.typeSpecificData.__typename === 'SensorData' &&
+    sensor.sensorState.typeSpecificData.lastCursor;
 
   return (
     <>
@@ -170,12 +183,25 @@ export const SensorDetails: React.FC<{
               </td>
             </tr>
           ) : null}
-          {sensor.sensorState.typeSpecificData &&
-          sensor.sensorState.typeSpecificData.__typename === 'SensorData' &&
-          sensor.sensorState.typeSpecificData.lastCursor ? (
+          {cursor ? (
             <tr>
               <td>Last cursor</td>
-              <td>{sensor.sensorState.typeSpecificData.lastCursor}</td>
+              <td>
+                <Box flex={{direction: 'row', alignItems: 'center'}}>
+                  <Box style={{fontFamily: FontFamily.monospace, marginRight: 10}}>{cursor}</Box>
+                  <CopyButton
+                    onClick={() => {
+                      copyToClipboard(cursor || '');
+                      SharedToaster.show({
+                        message: <div>Copied value</div>,
+                        intent: 'success',
+                      });
+                    }}
+                  >
+                    <IconWIP name="assignment" />
+                  </CopyButton>
+                </Box>
+              </td>
             </tr>
           ) : null}
           <tr>
@@ -199,3 +225,25 @@ export const SensorDetails: React.FC<{
     </>
   );
 };
+
+const CopyButton = styled.button`
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  padding: 8px;
+  margin: -6px;
+  outline: none;
+
+  ${IconWrapper} {
+    background-color: ${ColorsWIP.Gray600};
+    transition: background-color 100ms;
+  }
+
+  :hover ${IconWrapper} {
+    background-color: ${ColorsWIP.Gray800};
+  }
+
+  :focus ${IconWrapper} {
+    background-color: ${ColorsWIP.Link};
+  }
+`;

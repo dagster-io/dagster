@@ -5,7 +5,7 @@ import {useParams} from 'react-router-dom';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {TickHistoryTimeline} from '../instigation/TickHistory';
+import {TicksTable, TickHistoryTimeline} from '../instigation/TickHistory';
 import {DagsterTag} from '../runs/RunTag';
 import {Loading} from '../ui/Loading';
 import {PreviousRunsSection, PREVIOUS_RUNS_FRAGMENT} from '../workspace/PreviousRunsSection';
@@ -86,12 +86,7 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
               name={scheduleOrError.name}
               onHighlightRunIds={(runIds: string[]) => setSelectedRunIds(runIds)}
             />
-            <SchedulePreviousRuns
-              repoAddress={repoAddress}
-              schedule={scheduleOrError}
-              highlightedIds={selectedRunIds}
-              runTab={runTab}
-            />
+            <TicksTable repoAddress={repoAddress} name={scheduleName} />
           </Page>
         );
       }}
