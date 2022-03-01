@@ -1,6 +1,8 @@
 AWS (dagster-aws)
 =================
 
+Utilities for interfacing with AWS with Dagster.
+
 .. currentmodule:: dagster_aws
 
 S3
@@ -84,7 +86,9 @@ CloudWatch
   :annotation: LoggerDefinition
 
 SecretsManager
---
+--------------
+
+Resources which surface SecretsManager secrets for use in Dagster resources and jobs. 
 
 .. autoconfigurable:: dagster_aws.secretsmanager.secretsmanager_resource
   :annotation: ResourceDefinition
