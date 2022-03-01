@@ -421,5 +421,11 @@ def test_0_14_1_add_last_observation_timestamp_col(hostname, conn_string):
                 target_fd.write(template)
 
         instance = DagsterInstance.from_config(tempdir)
+        storage = instance._event_storage
 
-        pass
+        # Ensure that fetching asset keys works
+        storage.all_asset_keys()
+
+        # Ensure that fetching asset keys still works
+        instance.upgrade()
+        storage.all_asset_keys()

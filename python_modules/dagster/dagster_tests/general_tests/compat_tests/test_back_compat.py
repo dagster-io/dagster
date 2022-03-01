@@ -613,7 +613,7 @@ def test_start_time_end_time():
 
 def test_last_observation_timestamp():
     src_dir = file_relative_path(
-        __file__, "snapshot_0_13_14_pre_add_last_observation_timestamp_col/sqlite"
+        __file__, "snapshot_0_14_1_pre_add_last_observation_timestamp_col/sqlite"
     )
 
     with copy_directory(src_dir) as test_dir:
