@@ -419,7 +419,6 @@ class ScheduleDefinition:
     @property
     def job(self) -> Optional[Union[GraphDefinition, PipelineDefinition]]:
         if isinstance(self._target, DirectTarget):
-            print(self._target.pipeline)
             return self._target.pipeline
         raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
 
