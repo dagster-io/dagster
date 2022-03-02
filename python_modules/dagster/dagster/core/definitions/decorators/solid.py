@@ -379,14 +379,14 @@ def resolve_checked_solid_fn_inputs(
     for input_def in explicit_input_defs:
         if input_def.name in inferred_props:
             # combine any information missing on the explicit def that can be inferred
-            input_defs.append(input_def.combine_with_inferred(inferred_props[input_def.name]))
+            input_defs.append(input_def.combine_with_inferred(inferred_props[input_def.name], decorator_name=decorator_name))
         else:
             # pass through those that don't have any inference info, such as Nothing type inputs
             input_defs.append(input_def)
 
     # build defs from the inferred props for those without explicit entries
     input_defs.extend(
-        InputDefinition.create_from_inferred(inferred)
+        InputDefinition.create_from_inferred(inferred, decorator_name=decorator_name)
         for inferred in inferred_props.values()
         if inferred.name in inputs_to_infer
     )
