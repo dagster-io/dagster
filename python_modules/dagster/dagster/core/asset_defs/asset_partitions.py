@@ -1,5 +1,6 @@
 from dagster import check
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 
 from .asset import AssetsDefinition
@@ -7,7 +8,7 @@ from .asset import AssetsDefinition
 
 def get_upstream_partitions_for_partition_range(
     downstream_assets_def: AssetsDefinition,
-    upstream_assets_def: AssetsDefinition,
+    upstream_partitions_def: PartitionsDefinition,
     upstream_asset_key: AssetKey,
     downstream_partition_key_range: PartitionKeyRange,
 ) -> PartitionKeyRange:
@@ -18,14 +19,14 @@ def get_upstream_partitions_for_partition_range(
     if downstream_assets_def.partitions_def is None:
         check.failed("downstream asset is not partitioned")
 
-    if upstream_assets_def.partitions_def is None:
+    if upstream_partitions_def is None:
         check.failed("upstream asset is not partitioned")
 
     downstream_partition_mapping = downstream_assets_def.get_partition_mapping(upstream_asset_key)
     return downstream_partition_mapping.get_upstream_partitions_for_partition_range(
         downstream_partition_key_range,
         downstream_assets_def.partitions_def,
-        upstream_assets_def.partitions_def,
+        upstream_partitions_def,
     )
 
 

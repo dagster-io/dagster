@@ -297,6 +297,7 @@ def build_input_context(
     resource_config: Optional[Dict[str, Any]] = None,
     resources: Optional[Dict[str, Any]] = None,
     op_def: Optional[OpDefinition] = None,
+    step_context: Optional["StepExecutionContext"] = None,
 ) -> "InputContext":
     """Builds input context from provided parameters.
 
@@ -320,6 +321,7 @@ def build_input_context(
             definition.
         asset_key (Optional[AssetKey]): The asset key attached to the InputDefinition.
         op_def (Optional[OpDefinition]): The definition of the op that's loading the input.
+        step_context (Optional[StepExecutionContext]): For internal use.
 
     Examples:
 
@@ -331,6 +333,7 @@ def build_input_context(
                 do_something
     """
     from dagster.core.execution.context.output import OutputContext
+    from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.execution.context_creation_pipeline import initialize_console_manager
     from dagster.core.types.dagster_type import DagsterType
 
@@ -341,6 +344,7 @@ def build_input_context(
     resource_config = check.opt_dict_param(resource_config, "resource_config", key_type=str)
     resources = check.opt_dict_param(resources, "resources", key_type=str)
     op_def = check.opt_inst_param(op_def, "op_def", OpDefinition)
+    step_context = check.opt_inst_param(step_context, "step_context", StepExecutionContext)
 
     return InputContext(
         name=name,
@@ -352,6 +356,6 @@ def build_input_context(
         log_manager=initialize_console_manager(None),
         resource_config=resource_config,
         resources=resources,
-        step_context=None,
+        step_context=step_context,
         op_def=op_def,
     )
