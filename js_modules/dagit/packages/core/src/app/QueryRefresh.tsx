@@ -5,6 +5,7 @@ import * as React from 'react';
 import {useDocumentVisibility} from '../hooks/useDocumentVisibility';
 
 export const FIFTEEN_SECONDS = 15 * 1000;
+export const ONE_MONTH = 30 * 24 * 60 * 60 * 1000;
 
 export interface QueryRefreshState {
   nextFireMs: number | null | undefined;
@@ -12,6 +13,7 @@ export interface QueryRefreshState {
   networkStatus: NetworkStatus;
   refetch: ObservableQuery['refetch'];
 }
+
 /**
  * The default pollInterval feature of Apollo's useQuery is fine, but we want to add two features:
  *
@@ -32,14 +34,18 @@ export function useQueryRefreshAtInterval(queryResult: QueryResult<any, any>, in
   const queryResultRef = React.useRef(queryResult);
   queryResultRef.current = queryResult;
 
+  // Sanity check - don't use this hook alongside a useQuery pollInterval
   if (queryResult.networkStatus === NetworkStatus.poll) {
     throw new Error(
       'useQueryRefreshAtInterval is meant to replace useQuery({pollInterval}). Remove the pollInterval!',
     );
   }
 
-  const documentVisible = useDocumentVisibility();
+  // If the page is in the background when our refresh timer fires, we set
+  // documentVisiblityDidInterrupt = true. When the document becomes visible again,
+  // this effect triggers an immediate out-of-interval refresh.
   const documentVisiblityDidInterrupt = React.useRef(false);
+  const documentVisible = useDocumentVisibility();
 
   React.useEffect(() => {
     if (documentVisible && documentVisiblityDidInterrupt.current) {
@@ -51,13 +57,18 @@ export function useQueryRefreshAtInterval(queryResult: QueryResult<any, any>, in
   React.useEffect(() => {
     clearTimeout(timer.current);
 
+    // If the query has just transitioned to a `loading` state, capture the current
+    // time so we can compute the elapsed time when the query completes, and exit.
     if (queryResult.loading) {
       loadingStartMs.current = loadingStartMs.current || Date.now();
       return;
     }
 
+    // If the query is no longer `loading`, determine elapsed time and decide
+    // when to refresh. If the query took > 1/4 the desired interval, delay
+    // the next tick to give the server some slack.
     const queryDurationMs = loadingStartMs.current ? Date.now() - loadingStartMs.current : 0;
-    const adjustedIntervalMs = Math.max(intervalMs, queryDurationMs * 3);
+    const adjustedIntervalMs = Math.max(intervalMs, queryDurationMs * 4);
 
     // To test that the UI reflects the next fire date correctly, try this:
     // const adjustedIntervalMs = Math.max(3, Math.random() * 30) * 1000;
@@ -65,8 +76,11 @@ export function useQueryRefreshAtInterval(queryResult: QueryResult<any, any>, in
     setNextFireMs(Date.now() + adjustedIntervalMs);
     loadingStartMs.current = undefined;
 
+    // Schedule the next refretch
     timer.current = window.setTimeout(() => {
       if (document.hidden) {
+        // If the document is no longer visible, mark that we have skipped an update rather
+        // then updating in the background. We'll refresh when we return to the foreground.
         documentVisiblityDidInterrupt.current = true;
         return;
       }
@@ -78,10 +92,14 @@ export function useQueryRefreshAtInterval(queryResult: QueryResult<any, any>, in
     };
   }, [queryResult.loading, intervalMs]);
 
+  // Expose the next fire time both as a unix timstamp and as a "seconds" interval
+  // so the <QueryRefreshCountdown> can display the number easily.
   const nextFireDelay = React.useMemo(() => (nextFireMs ? nextFireMs - Date.now() : -1), [
     nextFireMs,
   ]);
 
+  // Memoize the returned object so components passed the entire QueryRefreshState
+  // can be memoized / pure components.
   return React.useMemo<QueryRefreshState>(
     () => ({
       nextFireMs,

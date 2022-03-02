@@ -8,6 +8,7 @@ import styled from 'styled-components/macro';
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {
   FIFTEEN_SECONDS,
+  ONE_MONTH,
   QueryRefreshCountdown,
   useQueryRefreshAtInterval,
 } from '../app/QueryRefresh';
@@ -51,10 +52,12 @@ export const PartitionProgress = (props: Props) => {
       limit: 100000,
     },
   });
-  const refreshState = useQueryRefreshAtInterval(
-    queryResult,
-    shouldPoll ? FIFTEEN_SECONDS : 1000000,
-  );
+
+  // Technically we still poll if you disable polling on this page, just very very slowly.
+  // The useQueryRefreshAtInterval hook is already complex enough, don't want to add a
+  // "disabled: true" option.
+  const refreshInterval = shouldPoll ? FIFTEEN_SECONDS : ONE_MONTH;
+  const refreshState = useQueryRefreshAtInterval(queryResult, refreshInterval);
   const {data, refetch} = queryResult;
 
   const results: PartitionProgressQuery_partitionBackfillOrError_PartitionBackfill | null = React.useMemo(() => {
