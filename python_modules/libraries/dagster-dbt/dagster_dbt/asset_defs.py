@@ -9,6 +9,7 @@ from dagster_dbt.utils import generate_materializations
 
 from dagster import (
     AssetKey,
+    MetadataValue,
     Out,
     Output,
     SolidExecutionContext,
@@ -16,7 +17,6 @@ from dagster import (
     TableSchema,
     check,
     get_dagster_logger,
-    MetadataValue,
 )
 from dagster.core.asset_defs import AssetsDefinition, multi_asset
 

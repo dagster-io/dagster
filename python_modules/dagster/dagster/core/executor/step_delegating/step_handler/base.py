@@ -1,4 +1,4 @@
-from abc import abstractmethod, ABC
+from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 
 from dagster import DagsterEvent, DagsterInstance, check
