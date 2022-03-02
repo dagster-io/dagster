@@ -79,26 +79,33 @@ def request_retry_local_external_step_launcher(context):
     return RequestRetryLocalExternalStepLauncher(**context.resource_config)
 
 
-def define_dynamic_job():
+def _define_dynamic_job(launch_initial, launch_final):
     from typing import List
 
-    @op(required_resource_keys={"first_step_launcher"}, out=DynamicOut(int))
+    initial_launcher = (
+        local_external_step_launcher if launch_initial else ResourceDefinition.mock_resource()
+    )
+    final_launcher = (
+        local_external_step_launcher if launch_final else ResourceDefinition.mock_resource()
+    )
+
+    @op(required_resource_keys={"initial_launcher"}, out=DynamicOut(int))
     def dynamic_outs():
         for i in range(0, 3):
             yield DynamicOutput(value=i, mapping_key=f"num_{i}")
 
-    @op(required_resource_keys={"second_step_launcher"})
+    @op
     def increment(i):
         return i + 1
 
-    @op
+    @op(required_resource_keys={"final_launcher"})
     def total(ins: List[int]):
         return sum(ins)
 
     @job(
         resource_defs={
-            "first_step_launcher": local_external_step_launcher,
-            "second_step_launcher": local_external_step_launcher,
+            "initial_launcher": initial_launcher,
+            "final_launcher": final_launcher,
             "io_manager": fs_io_manager,
         }
     )
@@ -140,6 +147,18 @@ def _define_basic_job(launch_initial, launch_final):
         combine(op1(), op2())
 
     return my_job
+
+
+def define_dynamic_job_all_launched():
+    return _define_dynamic_job(True, True)
+
+
+def define_dynamic_job_first_launched():
+    return _define_dynamic_job(True, False)
+
+
+def define_dynamic_job_last_launched():
+    return _define_dynamic_job(False, True)
 
 
 def define_basic_job_all_launched():
@@ -300,17 +319,25 @@ def test_pipeline(mode):
         assert result.result_for_solid("add_one").output_value() == 3
 
 
-def test_dynamic_job():
+@pytest.mark.parametrize(
+    "job_fn",
+    [
+        define_dynamic_job_all_launched,
+        define_dynamic_job_first_launched,
+        define_dynamic_job_last_launched,
+    ],
+)
+def test_dynamic_job(job_fn):
     with tempfile.TemporaryDirectory() as tmpdir:
         with instance_for_test() as instance:
             result = execute_pipeline(
-                pipeline=reconstructable(define_dynamic_job),
+                pipeline=reconstructable(job_fn),
                 run_config={
                     "resources": {
-                        "first_step_launcher": {
+                        "initial_launcher": {
                             "config": {"scratch_dir": tmpdir},
                         },
-                        "second_step_launcher": {
+                        "final_launcher": {
                             "config": {"scratch_dir": tmpdir},
                         },
                         "io_manager": {"config": {"base_dir": tmpdir}},
@@ -318,7 +345,7 @@ def test_dynamic_job():
                 },
                 instance=instance,
             )
-            assert result.result_for_solid("total").output_value() == 6
+            assert result.output_for_solid("total") == 6
 
 
 @pytest.mark.skip(
