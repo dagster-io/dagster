@@ -34,7 +34,7 @@ SecondaryIndexMigrationTable = db.Table(
 
 # As of the following PR, we update last_materialization_timestamp to store the timestamp
 # of the latest asset observation or materialization that has occurred.
-# TODO: Add link to PR here
+# https://github.com/dagster-io/dagster/pull/6885
 AssetKeyTable = db.Table(
     "asset_keys",
     SqlEventLogStorageMetadata,
