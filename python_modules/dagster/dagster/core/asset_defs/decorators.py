@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Set, Union, cast, overload
 
 from dagster import check
@@ -11,7 +12,7 @@ from dagster.core.definitions.output import Out
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterType
-from dagster.utils.backcompat import experimental_decorator
+from dagster.utils.backcompat import ExperimentalWarning, experimental_decorator
 
 from .asset import AssetsDefinition
 from .asset_in import AssetIn
@@ -105,10 +106,11 @@ def asset(
                 return my_upstream_asset + 1
     """
     if callable(name):
-        return _Asset()(name)
+        asset_def = _Asset()(name)
+        return asset_def
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
-        return _Asset(
+        asset_def = _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             namespace=namespace,
             ins=ins,
@@ -122,6 +124,7 @@ def asset(
             partitions_def=partitions_def,
             partition_mappings=partition_mappings,
         )(fn)
+        return asset_def
 
     return inner
 
@@ -176,20 +179,22 @@ class _Asset:
             asset_partitions_def=self.partitions_def,
             asset_partitions=partition_fn,
         )
-        op = _Op(
-            name="__".join(out_asset_key.path),
-            description=self.description,
-            ins=asset_ins,
-            out=out,
-            required_resource_keys=self.required_resource_keys,
-            tags={"kind": self.compute_kind} if self.compute_kind else None,
-            config_schema={
-                "assets": {
-                    "input_partitions": Field(dict, is_required=False),
-                    "output_partitions": Field(dict, is_required=False),
-                }
-            },
-        )(fn)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+            op = _Op(
+                name="__".join(out_asset_key.path),
+                description=self.description,
+                ins=asset_ins,
+                out=out,
+                required_resource_keys=self.required_resource_keys,
+                tags={"kind": self.compute_kind} if self.compute_kind else None,
+                config_schema={
+                    "assets": {
+                        "input_partitions": Field(dict, is_required=False),
+                        "output_partitions": Field(dict, is_required=False),
+                    }
+                },
+            )(fn)
 
         return AssetsDefinition(
             input_names_by_asset_key={
@@ -255,14 +260,16 @@ def multi_asset(
         asset_ins = build_asset_ins(fn, None, ins or {}, non_argument_deps)
         asset_outs = build_asset_outs(op_name, outs, asset_ins, internal_asset_deps or {})
 
-        op = _Op(
-            name=op_name,
-            description=description,
-            ins=asset_ins,
-            out=asset_outs,
-            required_resource_keys=required_resource_keys,
-            tags={"kind": compute_kind} if compute_kind else None,
-        )(fn)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+            op = _Op(
+                name=op_name,
+                description=description,
+                ins=asset_ins,
+                out=asset_outs,
+                required_resource_keys=required_resource_keys,
+                tags={"kind": compute_kind} if compute_kind else None,
+            )(fn)
 
         return AssetsDefinition(
             input_names_by_asset_key={
