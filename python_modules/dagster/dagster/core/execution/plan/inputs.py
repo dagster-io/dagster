@@ -1,5 +1,5 @@
 import hashlib
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, NamedTuple, Optional, Set, Union, cast
 
 from dagster import check
@@ -102,11 +102,13 @@ class StepInputSource(ABC):
     def get_input_def(self, pipeline_def: PipelineDefinition) -> InputDefinition:
         return pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def solid_handle(self) -> NodeHandle:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def input_name(self) -> str:
         pass
 

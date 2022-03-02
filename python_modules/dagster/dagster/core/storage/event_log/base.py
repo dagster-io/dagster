@@ -1,5 +1,5 @@
 import warnings
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import (
     Callable,
@@ -195,7 +195,8 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     def end_watch(self, run_id: str, handler: Callable):
         """Call this method to stop watching."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_persistent(self) -> bool:
         """bool: Whether the storage is persistent."""
 

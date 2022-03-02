@@ -2,7 +2,7 @@ import io
 import os
 import shutil
 import uuid
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import BinaryIO, TextIO, Union
 
@@ -31,7 +31,8 @@ class FileHandle(ABC):
     such as S3.
     """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def path_desc(self) -> str:
         """A representation of the file path for display purposes only."""
         raise NotImplementedError()
