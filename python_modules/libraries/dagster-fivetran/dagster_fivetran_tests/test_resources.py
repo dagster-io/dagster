@@ -10,6 +10,7 @@ from .utils import (
     DEFAULT_CONNECTOR_ID,
     get_complex_sample_connector_schema_config,
     get_sample_connector_response,
+    get_sample_resync_response,
     get_sample_sync_response,
     get_sample_update_response,
 )
@@ -260,3 +261,60 @@ def test_sync_and_poll_invalid(data, match):
                 json=get_sample_sync_response(),
             )
             ft_resource.sync_and_poll(DEFAULT_CONNECTOR_ID, poll_interval=0.1)
+
+
+@pytest.mark.parametrize(
+    "n_polls, succeed_at_end",
+    [(0, True), (0, False), (4, True), (4, False), (30, True)],
+)
+def test_resync_and_poll(n_polls, succeed_at_end):
+
+    ft_resource = fivetran_resource(
+        build_init_resource_context(
+            config={
+                "api_key": "some_key",
+                "api_secret": "some_secret",
+            }
+        )
+    )
+    api_prefix = f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}"
+
+    final_data = (
+        {"succeeded_at": "2021-01-01T02:00:00.0Z"}
+        if succeed_at_end
+        else {"failed_at": "2021-01-01T02:00:00.0Z"}
+    )
+
+    def _mock_interaction():
+
+        with responses.RequestsMock() as rsps:
+            rsps.add(
+                rsps.GET,
+                f"{ft_resource.api_base_url}{DEFAULT_CONNECTOR_ID}/schemas",
+                json=get_complex_sample_connector_schema_config(),
+            )
+            rsps.add(rsps.PATCH, api_prefix, json=get_sample_update_response())
+            rsps.add(
+                rsps.POST, f"{api_prefix}/schemas/tables/resync", json=get_sample_resync_response()
+            )
+            # initial state
+            rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
+            # n polls before updating
+            for _ in range(n_polls):
+                rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response())
+            # final state will be updated
+            rsps.add(rsps.GET, api_prefix, json=get_sample_connector_response(data=final_data))
+            return ft_resource.resync_and_poll(
+                DEFAULT_CONNECTOR_ID,
+                resync_parameters={"xyz1": ["abc1", "abc2"]},
+                poll_interval=0.1,
+            )
+
+    if succeed_at_end:
+        assert _mock_interaction() == FivetranOutput(
+            connector_details=get_sample_connector_response(data=final_data)["data"],
+            schema_config=get_complex_sample_connector_schema_config()["data"],
+        )
+    else:
+        with pytest.raises(Failure, match="failed!"):
+            _mock_interaction()
