@@ -302,7 +302,7 @@ def resolve_checked_solid_fn_inputs(
     Returns the resolved set of InputDefinitions.
 
     Args:
-        decorator_name (str): Name of the decorator that is wrapping the solid function.
+        decorator_name (str): Name of the decorator that is wrapping the op/solid function.
         fn_name (str): Name of the decorated function.
         compute_fn (DecoratedSolidFunction): The decorated function, wrapped in the
             DecoratedSolidFunction wrapper.
