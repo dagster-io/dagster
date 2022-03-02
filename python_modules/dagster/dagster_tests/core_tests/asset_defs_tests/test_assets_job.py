@@ -19,7 +19,7 @@ from dagster.utils import safe_tempfile_path
 
 
 def test_single_asset_pipeline():
-    @asset(name="asset1")
+    @asset
     def asset1():
         return 1
 

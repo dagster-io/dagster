@@ -106,11 +106,10 @@ def asset(
                 return my_upstream_asset + 1
     """
     if callable(name):
-        asset_def = _Asset()(name)
-        return asset_def
+        return _Asset()(name)
 
     def inner(fn: Callable[..., Any]) -> AssetsDefinition:
-        asset_def = _Asset(
+        return _Asset(
             name=cast(Optional[str], name),  # (mypy bug that it can't infer name is Optional[str])
             namespace=namespace,
             ins=ins,
@@ -124,7 +123,6 @@ def asset(
             partitions_def=partitions_def,
             partition_mappings=partition_mappings,
         )(fn)
-        return asset_def
 
     return inner
 
