@@ -1,14 +1,5 @@
 import {gql} from '@apollo/client';
-import {
-  Box,
-  Checkbox,
-  ColorsWIP,
-  IconWIP,
-  NonIdealState,
-  Table,
-  Mono,
-  TokenizingFieldValue,
-} from '@dagster-io/ui';
+import {Box, Checkbox, ColorsWIP, IconWIP, NonIdealState, Table, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -33,11 +24,12 @@ import {canceledStatuses, queuedStatuses} from './RunStatuses';
 import {RunStepKeysAssetList} from './RunStepKeysAssetList';
 import {RunTags} from './RunTags';
 import {RunElapsed, RunTime, RUN_TIME_FRAGMENT, titleForRun} from './RunUtils';
+import {RunFilterToken} from './RunsFilterInput';
 import {RunTableRunFragment} from './types/RunTableRunFragment';
 
 interface RunTableProps {
   runs: RunTableRunFragment[];
-  onSetFilter: (search: TokenizingFieldValue[]) => void;
+  onSetFilter: (search: RunFilterToken[]) => void;
   nonIdealState?: React.ReactNode;
   actionBarComponents?: React.ReactNode;
   highlightedIds?: string[];
@@ -180,7 +172,7 @@ export const RUN_TABLE_RUN_FRAGMENT = gql`
 const RunRow: React.FC<{
   run: RunTableRunFragment;
   canTerminateOrDelete: boolean;
-  onSetFilter: (search: TokenizingFieldValue[]) => void;
+  onSetFilter: (search: RunFilterToken[]) => void;
   checked?: boolean;
   onToggleChecked?: (values: {checked: boolean; shiftKey: boolean}) => void;
   additionalColumns?: React.ReactNode[];

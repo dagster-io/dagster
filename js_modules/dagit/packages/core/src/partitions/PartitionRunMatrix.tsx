@@ -10,7 +10,6 @@ import {
   MenuLink,
   MenuWIP,
   Popover,
-  TokenizingFieldValue,
   FontFamily,
 } from '@dagster-io/ui';
 import qs from 'qs';
@@ -21,6 +20,7 @@ import {OptionsContainer, OptionsDivider} from '../gantt/VizComponents';
 import {useViewport} from '../gantt/useViewport';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
+import {RunFilterToken} from '../runs/RunsFilterInput';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
@@ -72,16 +72,16 @@ interface PartitionRunMatrixProps {
   pipelineName: string;
   partitions: PartitionRuns[];
   repoAddress: RepoAddress;
-  runTags: TokenizingFieldValue[];
-  setRunTags: (val: TokenizingFieldValue[]) => void;
+  runFilters: RunFilterToken[];
+  setRunFilters: (val: RunFilterToken[]) => void;
   stepQuery: string;
   setStepQuery: (val: string) => void;
 }
 
-const _backfillIdFromTags = (runTags: TokenizingFieldValue[]) => {
-  const [backfillId] = runTags
-    .filter((_) => _.token === 'tag' && _.value.startsWith('dagster/backfill='))
-    .map((_) => _.value.split('=')[1]);
+const _backfillIdFromTags = (runFilters: RunFilterToken[]) => {
+  const [backfillId] = runFilters
+    .filter(({token, value}) => token === 'tag' && value.startsWith('dagster/backfill='))
+    .map(({value}) => value.split('=')[1]);
   return backfillId;
 };
 
@@ -220,15 +220,15 @@ export const PartitionRunMatrix: React.FC<PartitionRunMatrixProps> = (props) => 
             (a, b) => [...a, ...b.runs],
             [] as {tags: {key: string; value: string}[]}[],
           )}
-          onChange={props.setRunTags}
-          tokens={props.runTags}
+          onChange={props.setRunFilters}
+          tokens={props.runFilters}
         />
-        {props.runTags.length && _backfillIdFromTags(props.runTags) ? (
+        {props.runFilters.length && _backfillIdFromTags(props.runFilters) ? (
           <Box flex={{grow: 1}} margin={{left: 12, right: 8}}>
             <PartitionProgress
               pipelineName={props.pipelineName}
               repoAddress={props.repoAddress}
-              backfillId={_backfillIdFromTags(props.runTags)}
+              backfillId={_backfillIdFromTags(props.runFilters)}
             />
           </Box>
         ) : null}

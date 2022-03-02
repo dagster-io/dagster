@@ -92,7 +92,7 @@ export const RunsRoot = () => {
 
   const setStatusFilter = (statuses: RunStatus[]) => {
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
-    const statusTokens = statuses.map((status) => ({token: 'status', value: status}));
+    const statusTokens = statuses.map((status) => ({token: 'status' as const, value: status}));
     setFilterTokens([...statusTokens, ...tokensMinusStatus]);
     setShowScheduled(false);
   };

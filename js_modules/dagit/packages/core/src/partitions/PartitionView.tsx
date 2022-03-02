@@ -44,7 +44,7 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
   onChangePartitionSet,
   repoAddress,
 }) => {
-  const [runTags, setRunTags] = useQueryPersistedRunFilters(RunTagsSupportedTokens);
+  const [runFilters, setRunFilters] = useQueryPersistedRunFilters(RunTagsSupportedTokens);
   const [stepQuery = '', setStepQuery] = useQueryPersistedState<string>({queryKey: 'stepQuery'});
   const [showBackfillSetup, setShowBackfillSetup] = React.useState(false);
   const [blockDialog, setBlockDialog] = React.useState(false);
@@ -60,7 +60,7 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
     setPageSize,
   } = useChunkedPartitionsQuery(
     partitionSet.name,
-    runTags,
+    runFilters,
     repoAddress,
     // only query by job name if there is only one partition set
     isJob && partitionSets.length === 1 ? pipelineName : undefined,
@@ -114,7 +114,7 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
             onCancel={() => setShowBackfillSetup(false)}
             onLaunch={(backfillId, stepQuery) => {
               setStepQuery(stepQuery);
-              setRunTags([{token: 'tag', value: `dagster/backfill=${backfillId}`}]);
+              setRunFilters([{token: 'tag', value: `dagster/backfill=${backfillId}`}]);
               setShowBackfillSetup(false);
             }}
             onSubmit={onSubmit}
@@ -155,8 +155,8 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
           partitions={partitions}
           pipelineName={pipelineName}
           repoAddress={repoAddress}
-          runTags={runTags}
-          setRunTags={setRunTags}
+          runFilters={runFilters}
+          setRunFilters={setRunFilters}
           stepQuery={stepQuery}
           setStepQuery={setStepQuery}
         />

@@ -23,6 +23,7 @@ import {
   IStepMetadata,
   IStepState,
 } from '../runs/RunMetadataProvider';
+import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {StepSelection} from '../runs/StepSelection';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 
@@ -808,7 +809,11 @@ export const QueuedState = ({runId}: {runId: string}) => (
           icon="arrow_forward"
           title="Run Queued"
           description="This run is queued for execution and will start soon."
-          action={<Link to="/instance/runs?q=status%3AQUEUED">View queued runs</Link>}
+          action={
+            <Link to={runsPathWithFilters([{token: 'status', value: 'QUEUED'}])}>
+              View queued runs
+            </Link>
+          }
         />
       }
       firstInitialPercent={70}
