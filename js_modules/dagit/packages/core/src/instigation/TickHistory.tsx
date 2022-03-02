@@ -67,7 +67,7 @@ const DEFAULT_SHOWN_STATUS_STATE = {
   [InstigationTickStatus.SUCCESS]: true,
   [InstigationTickStatus.FAILURE]: true,
   [InstigationTickStatus.STARTED]: true,
-  [InstigationTickStatus.SKIPPED]: true,
+  [InstigationTickStatus.SKIPPED]: false,
 };
 const STATUS_TEXT_MAP = {
   [InstigationTickStatus.SUCCESS]: 'Requested',
@@ -108,9 +108,25 @@ const TABS = [
 const MILLIS_PER_DAY = 86400 * 1000;
 
 export const TicksTable = ({name, repoAddress}: {name: string; repoAddress: RepoAddress}) => {
-  const [shownStates, setShownStates] = React.useState<ShownStatusState>(
-    DEFAULT_SHOWN_STATUS_STATE,
-  );
+  const [shownStates, setShownStates] = useQueryPersistedState<ShownStatusState>({
+    encode: (states) => {
+      const queryState = {};
+      Object.keys(states).map((state) => {
+        queryState[state.toLowerCase()] = String(states[state]);
+      });
+      return queryState;
+    },
+    decode: (queryState) => {
+      const status: ShownStatusState = {...DEFAULT_SHOWN_STATUS_STATE};
+      Object.keys(DEFAULT_SHOWN_STATUS_STATE).forEach((state) => {
+        if (state.toLowerCase() in queryState) {
+          status[state] = !(queryState[state.toLowerCase()] === 'false');
+        }
+      });
+
+      return status;
+    },
+  });
   const copyToClipboard = useCopyToClipboard();
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
   const statuses = Object.keys(shownStates)
@@ -193,7 +209,10 @@ export const TicksTable = ({name, repoAddress}: {name: string; repoAddress: Repo
             {ticks.map((tick) => (
               <tr key={tick.id}>
                 <td>
-                  <TimestampDisplay timestamp={tick.timestamp} />
+                  <TimestampDisplay
+                    timestamp={tick.timestamp}
+                    timeFormat={{showTimezone: false, showSeconds: true}}
+                  />
                 </td>
                 <td>
                   <TickTag tick={tick} />
@@ -271,9 +290,12 @@ export const TickHistoryTimeline = ({
     decode: (qs) => (qs['time'] ? Number(qs['time']) : undefined),
   });
 
-  const [shownStates, setShownStates] = React.useState<ShownStatusState>(
-    DEFAULT_SHOWN_STATUS_STATE,
-  );
+  const [shownStates, setShownStates] = React.useState<ShownStatusState>({
+    [InstigationTickStatus.SUCCESS]: true,
+    [InstigationTickStatus.FAILURE]: true,
+    [InstigationTickStatus.STARTED]: true,
+    [InstigationTickStatus.SKIPPED]: true,
+  });
   const [pollingPaused, pausePolling] = React.useState<boolean>(false);
 
   React.useEffect(() => {
