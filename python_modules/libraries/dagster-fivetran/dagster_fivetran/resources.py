@@ -238,7 +238,7 @@ class FivetranResource:
         )
         connector_details = self.get_connector_details(connector_id)
         self._log.info(
-            f"Sync initialized for connector_id={connector_id}. View this sync in the Fivetran UI: "
+            f"Sync initialized for connector_id={connector_id}. View this resync in the Fivetran UI: "
             + get_fivetran_connector_url(connector_details)
         )
         return connector_details
