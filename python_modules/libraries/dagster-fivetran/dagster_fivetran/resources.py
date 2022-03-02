@@ -2,7 +2,7 @@ import datetime
 import json
 import logging
 import time
-from typing import Any, Dict, Tuple
+from typing import Any, Dict, List, Tuple
 from urllib.parse import urljoin
 
 import requests
@@ -211,6 +211,38 @@ class FivetranResource:
         )
         return connector_details
 
+    def start_resync(
+        self, connector_id: str, resync_parameters: Dict[str, List[str]]
+    ) -> Dict[str, Any]:
+        """
+        Initiates a historical sync of all data for multiple schema tables within a Fivetran connector.
+
+        Args:
+            connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
+                "Setup" tab of a given connector in the Fivetran UI.
+            resync_parameters (Dict[str, List[str]]): The resync parameters to send to the Fivetran API.
+                An example payload can be found here: https://fivetran.com/docs/rest-api/connectors#request_6
+
+        Returns:
+            Dict[str, Any]: Parsed json data representing the connector details API response after
+                the resync is started.
+        """
+        if self._disable_schedule_on_trigger:
+            self._log.info("Disabling Fivetran sync schedule.")
+            self.update_schedule_type(connector_id, "manual")
+        self._assert_syncable_connector(connector_id)
+        self.make_request(
+            method="POST",
+            endpoint=f"{connector_id}/schemas/tables/resync",
+            data=json.dumps(resync_parameters),
+        )
+        connector_details = self.get_connector_details(connector_id)
+        self._log.info(
+            f"Sync initialized for connector_id={connector_id}. View this sync in the Fivetran UI: "
+            + get_fivetran_connector_url(connector_details)
+        )
+        return connector_details
+
     def poll_sync(
         self,
         connector_id: str,
@@ -293,6 +325,41 @@ class FivetranResource:
         schema_config = self.get_connector_schema_config(connector_id)
         init_last_sync_timestamp, _, _ = self.get_connector_sync_status(connector_id)
         self.start_sync(connector_id)
+        final_details = self.poll_sync(
+            connector_id,
+            init_last_sync_timestamp,
+            poll_interval=poll_interval,
+            poll_timeout=poll_timeout,
+        )
+        return FivetranOutput(connector_details=final_details, schema_config=schema_config)
+
+    def resync_and_poll(
+        self,
+        connector_id: str,
+        resync_parameters: Dict[str, List[str]],
+        poll_interval: float = DEFAULT_POLL_INTERVAL,
+        poll_timeout: float = None,
+    ) -> FivetranOutput:
+        """
+        Initializes a historical resync operation for the given connector, and polls until it completes.
+
+        Args:
+            connector_id (str): The Fivetran Connector ID. You can retrieve this value from the
+                "Setup" tab of a given connector in the Fivetran UI.
+            resync_parameters (Dict[str, List[str]]): The payload to send to the Fivetran API.
+                This should be a dictionary with schema names as the keys and a list of tables
+                to resync as the values.
+            poll_interval (float): The time (in seconds) that will be waited between successive polls.
+            poll_timeout (float): The maximum time that will waited before this operation is timed
+                out. By default, this will never time out.
+
+        Returns:
+            :py:class:`~FivetranOutput`:
+                Object containing details about the connector and the tables it updates
+        """
+        schema_config = self.get_connector_schema_config(connector_id)
+        init_last_sync_timestamp, _, _ = self.get_connector_sync_status(connector_id)
+        self.start_resync(connector_id, resync_parameters)
         final_details = self.poll_sync(
             connector_id,
             init_last_sync_timestamp,
