@@ -20,7 +20,7 @@ export const ColorsWIP = {
   Blue500: 'rgba(79, 67, 221, 1)',
   Blue200: 'rgba(185, 180, 241, 1)',
   Blue100: 'rgba(211, 209,237,1)',
-  Blue50: 'rgba(14, 12, 167, 0.08)',
+  Blue50: 'rgba(236,236,248, 1)',
   Red700: 'rgba(165, 9, 6, 1)',
   Red500: 'rgba(221, 84, 72, 1)',
   Red200: 'rgba(241, 187, 182, 1)',
