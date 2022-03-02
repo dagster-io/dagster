@@ -1,4 +1,4 @@
-from abc import abstractmethod, abstractproperty
+from abc import abstractmethod
 from typing import TYPE_CHECKING, Mapping, Sequence
 
 from dagster import check
@@ -45,11 +45,13 @@ class NodeDefinition(NamedConfigurableDefinition):
             else list(map(lambda inp: inp.name, input_defs))
         )
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def node_type_str(self):
         raise NotImplementedError()
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_graph_job_op_node(self) -> bool:
         raise NotImplementedError()
 

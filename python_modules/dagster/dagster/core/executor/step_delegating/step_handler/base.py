@@ -1,4 +1,4 @@
-import abc
+from abc import abstractmethod, ABC
 from typing import Dict, List, Optional
 
 from dagster import DagsterEvent, DagsterInstance, check
@@ -44,19 +44,20 @@ class StepHandlerContext:
         return self._instance
 
 
-class StepHandler(abc.ABC):  # pylint: disable=no-init
-    @abc.abstractproperty
+class StepHandler(ABC):  # pylint: disable=no-init
+    @property
+    @abstractmethod
     def name(self) -> str:
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def launch_step(self, step_handler_context: StepHandlerContext) -> List[DagsterEvent]:
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def check_step_health(self, step_handler_context: StepHandlerContext) -> List[DagsterEvent]:
         pass
 
-    @abc.abstractmethod
+    @abstractmethod
     def terminate_step(self, step_handler_context: StepHandlerContext) -> List[DagsterEvent]:
         pass

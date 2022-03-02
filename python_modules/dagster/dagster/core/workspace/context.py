@@ -2,7 +2,7 @@ import sys
 import threading
 import time
 import warnings
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from collections import OrderedDict
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
@@ -343,7 +343,8 @@ class IWorkspaceProcessContext(ABC):
     def version(self) -> str:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def location_state_events(self) -> "Subject":
         pass
 
@@ -358,7 +359,8 @@ class IWorkspaceProcessContext(ABC):
     def reload_workspace(self) -> None:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def instance(self):
         pass
 

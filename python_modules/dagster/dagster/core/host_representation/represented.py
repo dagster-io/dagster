@@ -1,4 +1,4 @@
-from abc import ABC, abstractproperty
+from abc import ABC, abstractmethod
 
 from dagster import check
 
@@ -33,11 +33,13 @@ class RepresentedPipeline(ABC):
 
     # Snapshot things
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def computed_pipeline_snapshot_id(self):
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def identifying_pipeline_snapshot_id(self):
         pass
 
