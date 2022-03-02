@@ -42,7 +42,15 @@ def _table_data_to_materialization(
 def generate_materializations(fivetran_output: FivetranOutput, asset_key_prefix: List[str]):
     for schema in fivetran_output.schema_config["schemas"].values():
         schema_name = schema["name_in_destination"]
-        schema_prefix = fivetran_output.connector_details.get("config", {}).get("schema_prefix")
+        schema_prefix = next(
+            item
+            for item in (
+                fivetran_output.connector_details.get("schema"),
+                fivetran_output.connector_details.get("config", {}).get("schema_prefix"),
+                fivetran_output.connector_details.get("config", {}).get("schema"),
+            )
+            if item is not None
+        )
         if schema_prefix:
             schema_name = f"{schema_prefix}_{schema_name}"
         if not schema["enabled"]:
