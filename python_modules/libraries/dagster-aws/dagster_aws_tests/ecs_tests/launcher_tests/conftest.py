@@ -4,7 +4,6 @@ from contextlib import contextmanager
 
 import boto3
 import pytest
-
 from dagster import ExperimentalWarning
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 from dagster.core.test_utils import in_process_test_workspace, instance_for_test
@@ -34,7 +33,8 @@ def task_definition(ecs, image, environment):
     return ecs.register_task_definition(
         family="dagster",
         containerDefinitions=[
-            {"name": "dagster", "image": image, "environment": environment, "entryPoint": ["ls"]}
+            {"name": "dagster", "image": image, "environment": environment, "entryPoint": ["ls"]},
+            {"name": "other", "image": image, "entryPoint": ["ls"]}
         ],
         networkMode="awsvpc",
         memory="512",
