@@ -49,14 +49,16 @@ const FinalRedirectOrLoadingRoot = () => {
     return <Redirect to="/workspace" />;
   }
 
-  // If we have exactly one job, route to the job's overview / graph tab
-  const reposWithJob = allRepos.filter((r) =>
-    r.repository.pipelines.some((p) => p.name !== __ASSET_GROUP),
-  );
-  if (reposWithJob.length === 1) {
-    const repo = reposWithJob[0];
-    const job = repo.repository.pipelines.filter((p) => p.name !== __ASSET_GROUP)[0];
-    return (
+  const reposWithAJob = allRepos.filter((r) => r.repository.pipelines.length > 0);
+
+  // If we have exactly one job, route to it's overview / graph tab or
+  // to the asset graph if it's an __ASSET_GROUP job.
+  if (reposWithAJob.length === 1 && reposWithAJob[0].repository.pipelines.length === 1) {
+    const repo = reposWithAJob[0];
+    const job = repo.repository.pipelines[0];
+    return job.name === __ASSET_GROUP ? (
+      <Redirect to="/instance/asset-graph" />
+    ) : (
       <Redirect
         to={workspacePipelinePath({
           repoName: repo.repository.name,
@@ -69,7 +71,7 @@ const FinalRedirectOrLoadingRoot = () => {
   }
 
   // If we have more than one job, route to the instance overview
-  if (reposWithJob.length > 1) {
+  if (reposWithAJob.length > 1) {
     return <Redirect to="/instance" />;
   }
 

@@ -6,10 +6,11 @@ function twoDigit(v: number) {
   return `${v < 10 ? '0' : ''}${v}`;
 }
 
-function indexesOf(string: string, regex: RegExp) {
+function indexesOf(string: string, search: RegExp | string) {
   const indexes: number[] = [];
+  const regexp = new RegExp(search, 'g');
   let match = null;
-  while ((match = regex.exec(string))) {
+  while ((match = regexp.exec(string))) {
     indexes.push(match.index);
   }
   return indexes;
