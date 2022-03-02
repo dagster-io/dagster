@@ -11,7 +11,7 @@ export default {
   component: RunTimeline,
 } as Meta;
 
-const generateRuns = (runCount: number, range: [number, number]) => {
+export const generateRuns = (runCount: number, range: [number, number]) => {
   const [start, end] = range;
   const now = Date.now();
   return [...new Array(6)]
