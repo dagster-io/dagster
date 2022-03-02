@@ -108,12 +108,23 @@ class SqlEventLogStorage(EventLogStorage):
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return
 
-        if event.dagster_event.event_type == DagsterEventType.ASSET_OBSERVATION:
+        # The AssetKeyTable contains a `last_materialization_timestamp` column that is exclusively
+        # used to determine if an asset exists (last materialization timestamp > wipe timestamp).
+        # This column is used nowhere else, and as of AssetObservation creation, we want to extend
+        # this functionality to ensure that assets with observation OR materialization timestamp
+        # > wipe timestamp display in Dagit.
+
+        # As of the following PR, we update last_materialization_timestamp to store the timestamp
+        # of the latest asset observation or materialization that has occurred.
+        # TODO: Add link to PR here
+        if event.dagster_event.is_asset_observation:
             self.store_asset_observation(event)
-        elif event.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
+        elif event.dagster_event.is_step_materialization:
             self.store_asset_materialization(event)
 
     def store_asset_observation(self, event):
+        # last_materialization_timestamp is updated upon observation or materialization
+        # See store_asset method above for more details
         if self.has_asset_key_index_cols():
             insert_statement = AssetKeyTable.insert().values(
                 asset_key=event.dagster_event.asset_key.to_string(),
@@ -141,6 +152,9 @@ class SqlEventLogStorage(EventLogStorage):
         # to `last_materialization_event`, for clarity.  For now, we should do some back-compat.
         #
         # https://github.com/dagster-io/dagster/issues/3945
+
+        # last_materialization_timestamp is updated upon observation or materialization
+        # See store_asset method above for more details
         if self.has_asset_key_index_cols():
             materialization = event.dagster_event.step_materialization_data.materialization
             insert_statement = (
@@ -204,12 +218,12 @@ class SqlEventLogStorage(EventLogStorage):
 
         if (
             event.is_dagster_event
-            and event.dagster_event.is_step_materialization
+            and (
+                event.dagster_event.is_step_materialization
+                or event.dagster_event.is_asset_observation
+            )
             and event.dagster_event.asset_key
         ):
-            # Currently, only materializations are stored in the asset catalog.
-            # We will store observations after adding a column migration to
-            # store latest asset observation timestamp in the asset key table.
             self.store_asset(event)
 
     def get_logs_for_run_by_log_id(

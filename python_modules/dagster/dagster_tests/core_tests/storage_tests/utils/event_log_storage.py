@@ -23,6 +23,7 @@ from dagster import (
     resource,
     seven,
     solid,
+    job,
 )
 from dagster.core.definitions import ExpectationResult
 from dagster.core.definitions.dependency import NodeHandle
@@ -1961,3 +1962,22 @@ class TestEventLogStorage:
             )
 
             assert len(records) == 1
+
+    def test_last_asset_materialization_updates_on_observation(self, storage):
+
+        key = AssetKey("hello")
+
+        @op
+        def my_op():
+            yield AssetObservation(key)
+            yield Output(5)
+
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            events, _ = _synthesize_events(lambda: my_op(), instance=instance)
+            for event in events:
+                storage.store_event(event)
+
+            assert [key] == storage.all_asset_keys()

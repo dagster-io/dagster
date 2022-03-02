@@ -241,10 +241,10 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             with self.index_connection() as conn:
                 conn.execute(insert_event_statement)
 
-            if event.dagster_event.is_step_materialization:
-                # Currently, only materializations are stored in the asset catalog.
-                # We will store observations after adding a column migration to
-                # store latest asset observation timestamp in the asset key table.
+            if (
+                event.dagster_event.is_step_materialization
+                or event.dagster_event.is_asset_observation
+            ):
                 self.store_asset(event)
 
     def get_event_records(

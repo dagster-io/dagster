@@ -122,17 +122,9 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
         MySQLEventLogStorage.wipe_storage(conn_string)
         return MySQLEventLogStorage(conn_string)
 
-    def store_asset(self, event):
-        check.inst_param(event, "event", EventLogEntry)
-        if not event.is_dagster_event or not event.dagster_event.asset_key:
-            return
-
-        if event.dagster_event.event_type == DagsterEventType.ASSET_OBSERVATION:
-            self.store_asset_observation(event)
-        elif event.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
-            self.store_asset_materialization(event)
-
     def store_asset_observation(self, event):
+        # last_materialization_timestamp is updated upon observation or materialization
+        # See store_asset method in SqlEventLogStorage for more details
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
             with self.index_connection() as conn:
                 conn.execute(
@@ -147,6 +139,8 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                 )
 
     def store_asset_materialization(self, event):
+        # last_materialization_timestamp is updated upon observation or materialization
+        # See store_asset method in SqlEventLogStorage for more details
         materialization = event.dagster_event.step_materialization_data.materialization
 
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
