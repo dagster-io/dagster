@@ -108,7 +108,28 @@ class SqlEventLogStorage(EventLogStorage):
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return
 
-        materialization = event.dagster_event.step_materialization_data.materialization
+        if event.dagster_event.event_type == DagsterEventType.ASSET_OBSERVATION:
+            self.store_asset_observation(event)
+        elif event.dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
+            self.store_asset_materialization(event)
+
+    def store_asset_observation(self, event):
+        if self.has_asset_key_index_cols():
+            insert_statement = AssetKeyTable.insert().values(
+                asset_key=event.dagster_event.asset_key.to_string(),
+                last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
+            )
+            update_statement = AssetKeyTable.update().values(
+                last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
+            )
+
+        with self.index_connection() as conn:
+            try:
+                conn.execute(insert_statement)
+            except db.exc.IntegrityError:
+                conn.execute(update_statement)
+
+    def store_asset_materialization(self, event):
         # We switched to storing the entire event record of the last materialization instead of just
         # the AssetMaterialization object, so that we have access to metadata like timestamp,
         # pipeline, run_id, etc.
@@ -121,6 +142,7 @@ class SqlEventLogStorage(EventLogStorage):
         #
         # https://github.com/dagster-io/dagster/issues/3945
         if self.has_asset_key_index_cols():
+            materialization = event.dagster_event.step_materialization_data.materialization
             insert_statement = (
                 AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
                     asset_key=event.dagster_event.asset_key.to_string(),
