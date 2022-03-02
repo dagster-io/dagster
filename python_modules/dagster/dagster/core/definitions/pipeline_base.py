@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, FrozenSet, List, Optional
 
 from dagster import check
@@ -25,7 +25,8 @@ class IPipeline(ABC):
     def subset_for_execution(self, solid_selection: List[str]) -> "IPipeline":
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def solids_to_execute(self) -> Optional[FrozenSet[str]]:
         pass
 

@@ -18,6 +18,7 @@ from typing import (
 )
 
 from dagster import check
+from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.utils import merge_dicts
 
 from ..definitions.executor_definition import ExecutorDefinition
@@ -85,8 +86,6 @@ class AssetGroup(
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
     ):
-        from dagster.core.definitions.graph_definition import default_job_io_manager
-
         check.list_param(assets, "assets", of_type=AssetsDefinition)
         source_assets = check.opt_list_param(source_assets, "source_assets", of_type=SourceAsset)
         resource_defs = check.opt_dict_param(
@@ -106,7 +105,7 @@ class AssetGroup(
             )
         # In the case of collisions, merge_dicts takes values from the dictionary latest in the list, so we place the user provided resource defs after the defaults.
         resource_defs = merge_dicts(
-            {"root_manager": root_manager, "io_manager": default_job_io_manager},
+            {"root_manager": root_manager, "io_manager": fs_asset_io_manager},
             resource_defs,
         )
 

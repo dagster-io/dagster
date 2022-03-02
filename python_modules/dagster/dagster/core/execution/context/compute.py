@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from dagster import check
@@ -36,35 +36,43 @@ class AbstractComputeExecutionContext(ABC):  # pylint: disable=no-init
     def get_tag(self, key: str) -> Optional[str]:
         """Implement this method to get a logging tag."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def run_id(self) -> str:
         """The run id for the context."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def solid_def(self) -> SolidDefinition:
         """The solid definition corresponding to the execution step being executed."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def solid(self) -> Node:
         """The solid corresponding to the execution step being executed."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def pipeline_def(self) -> PipelineDefinition:
         """The pipeline being executed."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def pipeline_run(self) -> PipelineRun:
         """The PipelineRun object corresponding to the execution."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def resources(self) -> Any:
         """Resources available in the execution context."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def log(self) -> DagsterLogManager:
         """The log manager available in the execution context."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def solid_config(self) -> Any:
         """The parsed config specific to this solid."""
 

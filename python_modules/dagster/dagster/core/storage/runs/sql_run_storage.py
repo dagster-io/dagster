@@ -67,6 +67,13 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         out-of-date instance of the storage up to date.
         """
 
+    @property
+    def supports_bucket_queries(self):
+        # This is a temporary stopgap until we can either pin SQLAlchemy>=1.4.0 (blocked by airflow
+        # compat issues) or switch the bucketing query to use backwards-compatible syntax (that
+        # avoids calling `.subquery` on a select statement).
+        return db.__version__ >= "1.4.0"
+
     def fetchall(self, query):
         with self.connect() as conn:
             result_proxy = conn.execute(query)
