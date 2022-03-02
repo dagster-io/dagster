@@ -41,7 +41,7 @@ class JobSelector(
             "opSelection": self.op_selection,
         }
 
-    def with_op_selection(self, solid_selection):
+    def with_op_selection(self, op_selection):
         check.invariant(
             self.op_selection is None,
             f"Can not invoke with_op_selection when op_selection={op_selection} is already set"
