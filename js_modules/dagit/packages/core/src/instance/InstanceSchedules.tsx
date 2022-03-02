@@ -11,6 +11,7 @@ import {
 import * as React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSchedules} from '../instigation/Unloadable';
 import {SCHEDULE_FRAGMENT} from '../schedules/ScheduleUtils';
@@ -25,20 +26,18 @@ import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceSchedulesQuery} from './types/InstanceSchedulesQuery';
 
-const POLL_INTERVAL = 15000;
-
 export const InstanceSchedules = React.memo(() => {
   const queryData = useQuery<InstanceSchedulesQuery>(INSTANCE_SCHEDULES_QUERY, {
     fetchPolicy: 'cache-and-network',
-    pollInterval: POLL_INTERVAL,
     notifyOnNetworkStatusChange: true,
   });
+  const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);
 
   return (
     <>
       <PageHeader
         title={<Heading>Instance status</Heading>}
-        tabs={<InstanceTabs tab="schedules" queryData={queryData} />}
+        tabs={<InstanceTabs tab="schedules" refreshState={refreshState} />}
       />
       <Loading queryResult={queryData} allowStaleData={true}>
         {(data) => <AllSchedules data={data} />}

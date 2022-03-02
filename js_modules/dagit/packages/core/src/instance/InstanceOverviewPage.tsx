@@ -18,7 +18,7 @@ import {
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {QueryCountdown} from '../app/QueryCountdown';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {ScheduleOrSensorTag} from '../nav/JobMetadata';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -100,22 +100,20 @@ const initialState: State = {
   searchValue: '',
 };
 
-const POLL_INTERVAL = 15 * 1000;
-
 export const InstanceOverviewPage = () => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
 
   const queryResult = useQuery<InstanceOverviewInitialQuery>(INSTANCE_OVERVIEW_INITIAL_QUERY, {
     fetchPolicy: 'network-only',
-    pollInterval: POLL_INTERVAL,
     notifyOnNetworkStatusChange: true,
   });
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {data, loading} = queryResult;
 
   const [retrieveLastTenRuns, {data: lastTenRunsData}] = useLazyQuery<LastTenRunsPerJobQuery>(
     LAST_TEN_RUNS_PER_JOB_QUERY,
-    {fetchPolicy: 'network-only', pollInterval: POLL_INTERVAL},
+    {fetchPolicy: 'network-only', pollInterval: FIFTEEN_SECONDS},
   );
 
   const {searchValue} = state;
@@ -284,8 +282,7 @@ export const InstanceOverviewPage = () => {
     <>
       <PageHeader
         title={<Heading>Instance status</Heading>}
-        tabs={<InstanceTabs tab="overview" />}
-        right={<QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />}
+        tabs={<InstanceTabs tab="overview" refreshState={refreshState} />}
       />
       <Box
         padding={{horizontal: 24, top: 16}}

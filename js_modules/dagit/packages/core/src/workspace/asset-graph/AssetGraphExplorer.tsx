@@ -1,4 +1,4 @@
-import {gql, QueryResult, useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Checkbox, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import _, {flatMap, uniq, uniqBy, without} from 'lodash';
 import React, {useRef} from 'react';
@@ -6,7 +6,12 @@ import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery, GraphQueryItem} from '../../app/GraphQueryImpl';
-import {QueryCountdown} from '../../app/QueryCountdown';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  QueryRefreshState,
+  useQueryRefreshAtInterval,
+} from '../../app/QueryRefresh';
 import {tokenForAssetKey} from '../../app/Util';
 import {AssetKey} from '../../assets/types';
 import {SVGViewport} from '../../graph/SVGViewport';
@@ -126,9 +131,10 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
         },
       },
       notifyOnNetworkStatusChange: true,
-      pollInterval: 5 * 1000,
     },
   );
+
+  const liveDataRefreshState = useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS);
 
   const liveDataByNode = React.useMemo(() => {
     if (!liveResult.data || !assetGraphData) {
@@ -172,7 +178,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
             assetGraphData={assetGraphData}
             graphQueryItems={graphQueryItems}
             applyingEmptyDefault={applyingEmptyDefault}
-            liveDataQueryResult={liveResult}
+            liveDataRefreshState={liveDataRefreshState}
             liveDataByNode={liveDataByNode}
             {...props}
           />
@@ -188,7 +194,7 @@ const AssetGraphExplorerWithData: React.FC<
     assetGraphData: GraphData;
     graphQueryItems: GraphQueryItem[];
     liveDataByNode: LiveData;
-    liveDataQueryResult: QueryResult<any>;
+    liveDataRefreshState: QueryRefreshState;
     applyingEmptyDefault: boolean;
   } & Props
 > = (props) => {
@@ -198,7 +204,7 @@ const AssetGraphExplorerWithData: React.FC<
     setOptions,
     explorerPath,
     onChangeExplorerPath,
-    liveDataQueryResult,
+    liveDataRefreshState,
     liveDataByNode,
     assetGraphData,
     graphQueryItems,
@@ -393,7 +399,7 @@ const AssetGraphExplorerWithData: React.FC<
             style={{position: 'absolute', right: 12, top: 12}}
           >
             <Box flex={{alignItems: 'center', gap: 12}}>
-              <QueryCountdown pollInterval={5 * 1000} queryResult={liveDataQueryResult} />
+              <QueryRefreshCountdown refreshState={liveDataRefreshState} />
 
               <LaunchAssetExecutionButton
                 title={titleForLaunch(selectedGraphNodes, liveDataByNode)}

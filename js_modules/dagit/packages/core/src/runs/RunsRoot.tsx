@@ -17,7 +17,11 @@ import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {QueryCountdown} from '../app/QueryCountdown';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 import {RunStatus} from '../types/globalTypes';
@@ -35,7 +39,7 @@ import {
 } from './RunsFilterInput';
 import {QueueDaemonStatusQuery} from './types/QueueDaemonStatusQuery';
 import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRootQuery';
-import {POLL_INTERVAL, useCursorPaginatedQuery} from './useCursorPaginatedQuery';
+import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 
 const PAGE_SIZE = 25;
 
@@ -86,6 +90,7 @@ export const RunsRoot = () => {
     query: RUNS_ROOT_QUERY,
     pageSize: PAGE_SIZE,
   });
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   const selectedTab = showScheduled ? 'scheduled' : selectedTabId(filterTokens);
   const staticStatusTags = selectedTab !== 'all';
@@ -162,7 +167,7 @@ export const RunsRoot = () => {
               <Tab title="Scheduled" onClick={() => setShowScheduled(true)} id="scheduled" />
             </Tabs>
             <Box padding={{bottom: 8}}>
-              <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
+              <QueryRefreshCountdown refreshState={refreshState} />
             </Box>
           </Box>
         }

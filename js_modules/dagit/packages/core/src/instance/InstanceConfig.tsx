@@ -14,6 +14,8 @@ import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled, {createGlobalStyle, css} from 'styled-components/macro';
 
+import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
+
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceConfigQuery} from './types/InstanceConfigQuery';
 
@@ -40,10 +42,12 @@ const YamlShimStyle = createGlobalStyle`
 
 export const InstanceConfig = React.memo(() => {
   const history = useHistory();
-  const {data} = useQuery<InstanceConfigQuery>(INSTANCE_CONFIG_QUERY, {
+  const queryResult = useQuery<InstanceConfigQuery>(INSTANCE_CONFIG_QUERY, {
     fetchPolicy: 'cache-and-network',
   });
   const [hash, setHash] = React.useState(() => document.location.hash);
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  const {data} = queryResult;
 
   React.useEffect(() => {
     // Once data has finished loading and rendering, scroll to hash
@@ -80,7 +84,10 @@ export const InstanceConfig = React.memo(() => {
 
   return (
     <>
-      <PageHeader title={<Heading>Instance status</Heading>} tabs={<InstanceTabs tab="config" />} />
+      <PageHeader
+        title={<Heading>Instance status</Heading>}
+        tabs={<InstanceTabs tab="config" refreshState={refreshState} />}
+      />
       <Box
         padding={{vertical: 16, horizontal: 24}}
         border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}

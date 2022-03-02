@@ -28,6 +28,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {
@@ -85,13 +86,14 @@ export const InstanceBackfills = () => {
         ? result.partitionBackfillsOrError.results
         : [],
   });
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   useDocumentTitle('Backfills');
 
   return (
     <>
       <PageHeader
         title={<Heading>Instance status</Heading>}
-        tabs={<InstanceTabs tab="backfills" queryData={queryData} />}
+        tabs={<InstanceTabs tab="backfills" refreshState={refreshState} />}
       />
       <Loading queryResult={queryResult} allowStaleData={true}>
         {({partitionBackfillsOrError}) => {
