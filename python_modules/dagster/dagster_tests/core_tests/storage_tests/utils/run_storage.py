@@ -38,6 +38,7 @@ from dagster.core.storage.tags import (
     PARENT_RUN_ID_TAG,
     PARTITION_NAME_TAG,
     PARTITION_SET_TAG,
+    REPOSITORY_NAME_TAG,
     ROOT_RUN_ID_TAG,
 )
 from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
@@ -80,15 +81,20 @@ class TestRunStorage:
         return True
 
     @staticmethod
-    def fake_repo_target():
+    def fake_repo_target(repo_name=None):
+        name = repo_name or "fake_repo_name"
         return ExternalRepositoryOrigin(
             ManagedGrpcPythonEnvRepositoryLocationOrigin(
                 LoadableTargetOrigin(
                     executable_path=sys.executable, module_name="fake", attribute="fake"
                 ),
             ),
-            "fake_repo_name",
+            name,
         )
+
+    @classmethod
+    def fake_job_origin(cls, job_name, repo_name=None):
+        return cls.fake_repo_target(repo_name).get_pipeline_origin(job_name)
 
     @classmethod
     def fake_partition_set_origin(cls, partition_set_name):
@@ -104,6 +110,7 @@ class TestRunStorage:
         parent_run_id=None,
         root_run_id=None,
         pipeline_snapshot_id=None,
+        external_pipeline_origin=None,
     ):
         return DagsterRun(
             pipeline_name=pipeline_name,
@@ -115,6 +122,7 @@ class TestRunStorage:
             root_run_id=root_run_id,
             parent_run_id=parent_run_id,
             pipeline_snapshot_id=pipeline_snapshot_id,
+            external_pipeline_origin=external_pipeline_origin,
         )
 
     def test_basic_storage(self, storage):
@@ -166,6 +174,31 @@ class TestRunStorage:
         some_runs = storage.get_runs(RunsFilter(pipeline_name="some_pipeline"))
         assert len(some_runs) == 1
         assert some_runs[0].run_id == one
+
+    def test_fetch_by_repo(self, storage):
+        assert storage
+        self._skip_in_memory(storage)
+
+        one = make_new_run_id()
+        two = make_new_run_id()
+        job_name = "some_job"
+
+        origin_one = self.fake_job_origin(job_name, "fake_repo_one")
+        origin_two = self.fake_job_origin(job_name, "fake_repo_two")
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=one, pipeline_name=job_name, external_pipeline_origin=origin_one
+            )
+        )
+        storage.add_run(
+            TestRunStorage.build_run(
+                run_id=two, pipeline_name=job_name, external_pipeline_origin=origin_two
+            )
+        )
+        one_runs = storage.get_runs(RunsFilter(tags={REPOSITORY_NAME_TAG: "fake_repo_one"}))
+        assert len(one_runs) == 1
+        two_runs = storage.get_runs(RunsFilter(tags={REPOSITORY_NAME_TAG: "fake_repo_two"}))
+        assert len(two_runs) == 1
 
     def test_fetch_by_snapshot_id(self, storage):
         assert storage
