@@ -1981,3 +1981,14 @@ class TestEventLogStorage:
                 storage.store_event(event)
 
             assert [key] == storage.all_asset_keys()
+
+            if self.can_wipe():
+                storage.wipe_asset(key)
+
+                assert len(storage.all_asset_keys()) == 0
+
+                events, _ = _synthesize_events(lambda: my_op(), instance=instance)
+                for event in events:
+                    storage.store_event(event)
+
+                assert [key] == storage.all_asset_keys()

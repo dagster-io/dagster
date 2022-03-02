@@ -1,7 +1,6 @@
 import sqlalchemy as db
 
-from dagster import check, seven, DagsterEventType
-from dagster.core.events.log import EventLogEntry
+from dagster import check, seven
 from dagster.core.storage.event_log import (
     AssetKeyTable,
     SqlEventLogStorage,
