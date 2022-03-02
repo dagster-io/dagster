@@ -14,6 +14,7 @@ def model_func(x, a, b):
     return a * np.exp(b * (x / 10**18 - 1.6095))
 
 
+<<<<<<< HEAD
 PG_SOURCE_CONFIG = {
     "username": "postgres",
     "password": "password",
@@ -30,6 +31,9 @@ PG_DESTINATION_CONFIG = {
 }
 
 
+=======
+AIRBYTE_CONNECTION_ID = "15722450-ae59-4c65-a784-953808d7812c"
+>>>>>>> working implementation for fixing step launcher re-execution issues
 AIRBYTE_CONFIG = {"host": "localhost", "port": "8000"}
 DBT_PROJECT_DIR = file_relative_path(__file__, "../mds_dbt")
 DBT_PROFILES_DIR = file_relative_path(__file__, "../mds_dbt/config")

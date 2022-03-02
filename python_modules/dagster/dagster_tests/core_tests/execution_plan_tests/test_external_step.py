@@ -348,10 +348,6 @@ def test_dynamic_job(job_fn):
             assert result.output_for_solid("total") == 6
 
 
-@pytest.mark.skip(
-    reason="Reexecution will fail with step launchers because it relies on querying event log "
-    "storage which is not present on the external step"
-)
 @pytest.mark.parametrize(
     "job_fn",
     [

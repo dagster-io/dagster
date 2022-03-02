@@ -12,7 +12,7 @@ from dagster.core.definitions.reconstructable import (
 )
 from dagster.core.definitions.step_launcher import StepLauncher, StepRunRef
 from dagster.core.errors import raise_execution_interrupts
-from dagster.core.events import DagsterEvent
+from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context.system import StepExecutionContext
 from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
@@ -102,6 +102,46 @@ def _module_in_package_dir(file_path: str, package_dir: str) -> str:
     return ".".join(without_extension.split(os.sep))
 
 
+def _upstream_events_and_runs(step_context: StepExecutionContext):
+    "Grabs the minimal set of output events and runs to inform a remote instance of how to load each output."
+    step_inputs = step_context.step.step_inputs
+    upstream_output_handles = set().union(
+        *(step_input.source.step_output_handle_dependencies for step_input in step_inputs)
+    )
+    current_run = step_context.pipeline_run
+    events = []
+    runs = []
+    while True:
+        runs.append(current_run)
+        # note: this would cost N db calls where N = number of parent runs
+        step_output_records = step_context.instance.all_logs(
+            current_run.run_id, of_type=DagsterEventType.STEP_OUTPUT
+        )
+        # if the parent run has yielded an StepOutput event for the given step output,
+        # we find the source run id
+        for r in step_output_records:
+            output_handle = r.dagster_event.step_output_data.step_output_handle
+            # if this output matches one of the required step outputs, add it to the list of
+            # required events
+            if output_handle in upstream_output_handles:
+                events.append(r)
+                upstream_output_handles.remove(output_handle)
+        # found all the necessary events
+        if not upstream_output_handles:
+            break
+
+        if current_run.parent_run_id is None:
+            step_context.log.warn(
+                f"Could not find outputs in the logs for output handles: {upstream_output_handles}"
+            )
+            break
+
+        # else, keep looking backwards
+        current_run = step_context.instance.get_run_by_id(current_run.parent_run_id)
+
+    return events, runs
+
+
 def step_context_to_step_run_ref(
     step_context: StepExecutionContext,
     prior_attempts_count: int,
@@ -149,8 +189,7 @@ def step_context_to_step_run_ref(
                 solids_to_execute=recon_pipeline.solids_to_execute,
             )
 
-    parent_run_id = step_context.pipeline_run.parent_run_id
-    parent_run = step_context.instance.get_run_by_id(parent_run_id) if parent_run_id else None
+    upstream_output_logs, runs = _upstream_events_and_runs(step_context)
     return StepRunRef(
         run_config=step_context.run_config,
         pipeline_run=step_context.pipeline_run,
@@ -160,7 +199,8 @@ def step_context_to_step_run_ref(
         recon_pipeline=recon_pipeline,  # type: ignore
         prior_attempts_count=prior_attempts_count,
         known_state=step_context.execution_plan.known_state,
-        parent_run=parent_run,
+        run_group=runs,
+        upstream_output_logs=upstream_output_logs,
     )
 
 
@@ -180,11 +220,14 @@ def external_instance_from_step_run_ref(
         DagsterInstance: A DagsterInstance that can be used to execute an external step.
     """
     instance = DagsterInstance.ephemeral()
-    # re-execution expects the parent run to be available on the instance, so add these
-    if step_run_ref.parent_run:
+    # re-execution expects the parent run(s) to be available on the instance, so add these
+    for run in step_run_ref.run_group or []:
         # remove the pipeline_snapshot_id, as this instance doesn't have any snapshots
-        instance.add_run(step_run_ref.pipeline_run._replace(pipeline_snapshot_id=None))
-        instance.add_run(step_run_ref.parent_run._replace(pipeline_snapshot_id=None))
+        instance.add_run(run._replace(pipeline_snapshot_id=None))
+    # the can_load() function on the step context currently depends on reading output events
+    # from the instance, so we make sure the remote instance has the relevant events
+    for entry in step_run_ref.upstream_output_logs or []:
+        instance.handle_new_event(entry)
     if event_listener_fn:
         instance.add_event_listener(step_run_ref.run_id, event_listener_fn)
     return instance
