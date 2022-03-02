@@ -8,7 +8,7 @@ from dagster.config.validate import validate_config
 from dagster.core.definitions import create_run_config_schema
 from dagster.core.errors import DagsterRunNotFoundError
 from dagster.core.execution.stats import StepEventStatus
-from dagster.core.host_representation import PipelineSelector
+from dagster.core.host_representation import JobSelector
 from dagster.core.storage.pipeline_run import PipelineRun, RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
 from dagster.utils import utc_datetime_from_timestamp
@@ -318,7 +318,7 @@ def validate_pipeline_config(graphene_info, selector, run_config, mode):
     from ..schema.pipelines.config import GraphenePipelineConfigValidationValid
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(selector, "selector", PipelineSelector)
+    check.inst_param(selector, "selector", JobSelector)
     check.opt_str_param(mode, "mode")
 
     external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)
@@ -331,7 +331,7 @@ def get_execution_plan(graphene_info, selector, run_config, mode):
     from ..schema.execution import GrapheneExecutionPlan
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(selector, "selector", PipelineSelector)
+    check.inst_param(selector, "selector", JobSelector)
     check.opt_str_param(mode, "mode")
 
     external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)

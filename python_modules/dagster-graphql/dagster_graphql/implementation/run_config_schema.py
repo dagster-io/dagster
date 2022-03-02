@@ -5,7 +5,7 @@ from dagster.config.validate import validate_config_from_snap
 from dagster.core.host_representation import RepresentedPipeline
 
 from .external import get_external_pipeline_or_raise
-from .utils import PipelineSelector, UserFacingGraphQLError, capture_error
+from .utils import JobSelector, UserFacingGraphQLError, capture_error
 
 
 @capture_error
@@ -14,7 +14,7 @@ def resolve_run_config_schema_or_error(graphene_info, selector, mode):
     from ..schema.run_config import GrapheneRunConfigSchema
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(selector, "selector", PipelineSelector)
+    check.inst_param(selector, "selector", JobSelector)
     check.opt_str_param(mode, "mode")
 
     external_pipeline = get_external_pipeline_or_raise(graphene_info, selector)

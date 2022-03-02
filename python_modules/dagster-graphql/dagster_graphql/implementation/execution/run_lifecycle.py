@@ -71,13 +71,13 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
         pipeline_snapshot=external_pipeline.pipeline_snapshot,
         execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
         parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
-        pipeline_name=execution_params.selector.pipeline_name,
+        pipeline_name=execution_params.selector.job_name,
         run_id=execution_params.execution_metadata.run_id
         if execution_params.execution_metadata.run_id
         else make_new_run_id(),
-        solid_selection=execution_params.selector.solid_selection,
-        solids_to_execute=frozenset(execution_params.selector.solid_selection)
-        if execution_params.selector.solid_selection
+        solid_selection=execution_params.selector.op_selection,
+        solids_to_execute=frozenset(execution_params.selector.op_selection)
+        if execution_params.selector.op_selection
         else None,
         run_config=execution_params.run_config,
         mode=mode,

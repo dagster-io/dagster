@@ -9,7 +9,7 @@ import pendulum
 from dagster import check
 from dagster.core.definitions.schedule_definition import DefaultScheduleStatus
 from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.core.host_representation import ExternalSchedule, PipelineSelector
+from dagster.core.host_representation import ExternalSchedule, JobSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
     InstigatorState,
@@ -413,11 +413,11 @@ def _schedule_runs_at_time(
     schedule_origin = external_schedule.get_external_origin()
     repository_handle = external_schedule.handle.repository_handle
 
-    pipeline_selector = PipelineSelector(
+    pipeline_selector = JobSelector(
         location_name=schedule_origin.external_repository_origin.repository_location_origin.location_name,
         repository_name=schedule_origin.external_repository_origin.repository_name,
-        pipeline_name=external_schedule.pipeline_name,
-        solid_selection=external_schedule.solid_selection,
+        job_name=external_schedule.pipeline_name,
+        op_selection=external_schedule.solid_selection,
     )
 
     repo_location = workspace.get_location(

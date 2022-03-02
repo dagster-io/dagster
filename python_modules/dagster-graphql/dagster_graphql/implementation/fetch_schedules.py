@@ -2,7 +2,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.host_representation import PipelineSelector, RepositorySelector, ScheduleSelector
+from dagster.core.host_representation import JobSelector, RepositorySelector, ScheduleSelector
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
 from .utils import UserFacingGraphQLError, capture_error
@@ -91,7 +91,7 @@ def get_schedules_for_pipeline(graphene_info, pipeline_selector):
     from ..schema.schedules import GrapheneSchedule
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(pipeline_selector, "pipeline_selector", PipelineSelector)
+    check.inst_param(pipeline_selector, "pipeline_selector", JobSelector)
 
     location = graphene_info.context.get_repository_location(pipeline_selector.location_name)
     repository = location.get_repository(pipeline_selector.repository_name)
@@ -99,7 +99,7 @@ def get_schedules_for_pipeline(graphene_info, pipeline_selector):
 
     results = []
     for external_schedule in external_schedules:
-        if external_schedule.pipeline_name != pipeline_selector.pipeline_name:
+        if external_schedule.pipeline_name != pipeline_selector.job_name:
             continue
 
         schedule_state = graphene_info.context.instance.get_instigator_state(

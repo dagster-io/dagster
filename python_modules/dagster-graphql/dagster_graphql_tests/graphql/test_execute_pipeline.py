@@ -198,7 +198,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
             },
         )
 
-        # while illegally defining selector.solid_selection
+        # while illegally defining selector.op_selection
         assert not result.errors
         assert result.data
         assert (
@@ -207,7 +207,7 @@ class TestExecutePipeline(ExecutingGraphQLContextTestMatrix):
         )
         assert (
             result.data["launchPipelineExecution"]["message"]
-            == "Invalid ExecutionParams. Cannot define selector.solid_selection when using a preset."
+            == "Invalid ExecutionParams. Cannot define selector.op_selection when using a preset."
         )
 
         # while illegally defining runConfigData

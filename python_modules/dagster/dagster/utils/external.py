@@ -1,7 +1,7 @@
 from dagster import check
 from dagster.core.host_representation import RepositoryLocation
 from dagster.core.host_representation.origin import ExternalPipelineOrigin
-from dagster.core.host_representation.selector import PipelineSelector
+from dagster.core.host_representation.selector import JobSelector
 
 
 def external_pipeline_from_location(repo_location, external_pipeline_origin, solid_selection):
@@ -19,11 +19,11 @@ def external_pipeline_from_location(repo_location, external_pipeline_origin, sol
     )
     external_repo = repo_location.get_repository(repo_name)
 
-    pipeline_selector = PipelineSelector(
+    selector = JobSelector(
         location_name=repo_location.name,
         repository_name=external_repo.name,
-        pipeline_name=pipeline_name,
-        solid_selection=solid_selection,
+        job_name=pipeline_name,
+        op_selection=solid_selection,
     )
 
-    return repo_location.get_external_pipeline(pipeline_selector)
+    return repo_location.get_external_pipeline(selector)

@@ -4,7 +4,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.config.validate import validate_config_from_snap
-from dagster.core.host_representation import ExternalPipeline, PipelineSelector, RepositorySelector
+from dagster.core.host_representation import ExternalPipeline, JobSelector, RepositorySelector
 from dagster.core.workspace.context import BaseWorkspaceRequestContext
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -15,7 +15,7 @@ def get_full_external_pipeline_or_raise(graphene_info, selector):
     from ..schema.errors import GraphenePipelineNotFoundError
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(selector, "selector", PipelineSelector)
+    check.inst_param(selector, "selector", JobSelector)
 
     if not graphene_info.context.has_external_pipeline(selector):
         raise UserFacingGraphQLError(GraphenePipelineNotFoundError(selector=selector))
@@ -25,11 +25,11 @@ def get_full_external_pipeline_or_raise(graphene_info, selector):
 
 def get_external_pipeline_or_raise(graphene_info, selector):
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(selector, "selector", PipelineSelector)
+    check.inst_param(selector, "selector", JobSelector)
 
     full_pipeline = get_full_external_pipeline_or_raise(graphene_info, selector)
 
-    if selector.solid_selection is None:
+    if selector.op_selection is None:
         return full_pipeline
 
     return get_subset_external_pipeline(graphene_info.context, selector)
@@ -39,7 +39,7 @@ def get_subset_external_pipeline(context, selector):
     from ..schema.pipelines.pipeline import GraphenePipeline
     from ..schema.pipelines.pipeline_errors import GrapheneInvalidSubsetError
 
-    check.inst_param(selector, "selector", PipelineSelector)
+    check.inst_param(selector, "selector", JobSelector)
 
     repository_location = context.get_repository_location(selector.location_name)
 

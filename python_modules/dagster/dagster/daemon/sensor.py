@@ -9,7 +9,7 @@ from dagster import check, seven
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
 from dagster.core.errors import DagsterError
-from dagster.core.host_representation import PipelineSelector
+from dagster.core.host_representation import JobSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.scheduler.instigation import (
     InstigatorState,
@@ -409,13 +409,13 @@ def _evaluate_sensor(
 
         target_data = external_sensor.get_target_data(run_request.job_name)
 
-        pipeline_selector = PipelineSelector(
+        selector = JobSelector(
             location_name=repo_location.name,
             repository_name=sensor_origin.external_repository_origin.repository_name,
-            pipeline_name=target_data.pipeline_name,
-            solid_selection=target_data.solid_selection,
+            job_name=target_data.pipeline_name,
+            op_selection=target_data.solid_selection,
         )
-        external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
+        external_pipeline = repo_location.get_external_pipeline(selector)
         run = _get_or_create_sensor_run(
             context,
             instance,

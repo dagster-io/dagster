@@ -4,14 +4,14 @@ from dagster import check
 from dagster.core.storage.pipeline_run import PipelineRun
 
 from .external import get_external_pipeline_or_raise, get_full_external_pipeline_or_raise
-from .utils import PipelineSelector, UserFacingGraphQLError, capture_error
+from .utils import JobSelector, UserFacingGraphQLError, capture_error
 
 
 @capture_error
 def get_pipeline_snapshot_or_error_from_pipeline_selector(graphene_info, pipeline_selector):
     from ..schema.pipelines.snapshot import GraphenePipelineSnapshot
 
-    check.inst_param(pipeline_selector, "pipeline_selector", PipelineSelector)
+    check.inst_param(pipeline_selector, "pipeline_selector", JobSelector)
     return GraphenePipelineSnapshot(
         get_full_external_pipeline_or_raise(graphene_info, pipeline_selector)
     )
@@ -75,6 +75,6 @@ def get_pipeline_from_selector(graphene_info, selector):
     from ..schema.pipelines.pipeline import GraphenePipeline
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(selector, "selector", PipelineSelector)
+    check.inst_param(selector, "selector", JobSelector)
 
     return GraphenePipeline(get_external_pipeline_or_raise(graphene_info, selector))

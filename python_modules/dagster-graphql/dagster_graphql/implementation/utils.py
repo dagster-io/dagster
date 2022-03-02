@@ -4,7 +4,7 @@ from collections import namedtuple
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
-from dagster.core.host_representation import GraphSelector, PipelineSelector
+from dagster.core.host_representation import GraphSelector, JobSelector
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -62,7 +62,7 @@ class UserFacingGraphQLError(Exception):
 
 
 def pipeline_selector_from_graphql(data):
-    return PipelineSelector(
+    return JobSelector(
         location_name=data["repositoryLocationName"],
         repository_name=data["repositoryName"],
         pipeline_name=data.get("pipelineName") or data.get("jobName"),
@@ -90,7 +90,7 @@ class ExecutionParams(
 
         return super(ExecutionParams, cls).__new__(
             cls,
-            selector=check.inst_param(selector, "selector", PipelineSelector),
+            selector=check.inst_param(selector, "selector", JobSelector),
             run_config=run_config,
             mode=check.opt_str_param(mode, "mode"),
             execution_metadata=check.inst_param(

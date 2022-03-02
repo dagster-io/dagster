@@ -2,7 +2,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.host_representation import PipelineSelector, RepositorySelector, SensorSelector
+from dagster.core.host_representation import JobSelector, RepositorySelector, SensorSelector
 from dagster.core.scheduler.instigation import InstigatorState
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
@@ -132,7 +132,7 @@ def get_sensors_for_pipeline(graphene_info, pipeline_selector):
     from ..schema.sensors import GrapheneSensor
 
     check.inst_param(graphene_info, "graphene_info", ResolveInfo)
-    check.inst_param(pipeline_selector, "pipeline_selector", PipelineSelector)
+    check.inst_param(pipeline_selector, "pipeline_selector", JobSelector)
 
     location = graphene_info.context.get_repository_location(pipeline_selector.location_name)
     repository = location.get_repository(pipeline_selector.repository_name)
@@ -140,7 +140,7 @@ def get_sensors_for_pipeline(graphene_info, pipeline_selector):
 
     results = []
     for external_sensor in external_sensors:
-        if pipeline_selector.pipeline_name not in [
+        if pipeline_selector.job_name not in [
             target.pipeline_name for target in external_sensor.get_external_targets()
         ]:
             continue

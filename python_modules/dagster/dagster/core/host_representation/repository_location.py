@@ -59,7 +59,7 @@ from dagster.seven.compat.pendulum import PendulumDateTime
 from dagster.utils import merge_dicts
 from dagster.utils.hosted_user_process import external_repo_from_def
 
-from .selector import PipelineSelector
+from .selector import JobSelector
 
 if TYPE_CHECKING:
     from dagster.core.definitions.schedule_definition import ScheduleExecutionData
@@ -126,14 +126,14 @@ class RepositoryLocation(AbstractContextManager):
     ) -> ExternalExecutionPlan:
         pass
 
-    def get_external_pipeline(self, selector: PipelineSelector) -> ExternalPipeline:
+    def get_external_pipeline(self, selector: JobSelector) -> ExternalPipeline:
         """Return the ExternalPipeline for a specific pipeline. Subclasses only
         need to implement get_subset_external_pipeline_result to handle the case where
         a solid selection is specified, which requires access to the underlying PipelineDefinition
         to generate the subsetted pipeline snapshot."""
-        if not selector.solid_selection:
+        if not selector.op_selection:
             return self.get_repository(selector.repository_name).get_full_external_pipeline(
-                selector.pipeline_name
+                selector.job_name
             )
 
         repo_handle = self.get_repository(selector.repository_name).handle
@@ -144,7 +144,7 @@ class RepositoryLocation(AbstractContextManager):
 
     @abstractmethod
     def get_subset_external_pipeline_result(
-        self, selector: PipelineSelector
+        self, selector: JobSelector
     ) -> ExternalPipelineSubsetResult:
         """Returns a snapshot about an ExternalPipeline with a solid selection, which requires
         access to the underlying PipelineDefinition. Callsites should likely use
@@ -324,12 +324,12 @@ class InProcessRepositoryLocation(RepositoryLocation):
         return self._repositories
 
     def get_subset_external_pipeline_result(
-        self, selector: PipelineSelector
+        self, selector: JobSelector
     ) -> ExternalPipelineSubsetResult:
-        check.inst_param(selector, "selector", PipelineSelector)
+        check.inst_param(selector, "selector", JobSelector)
         check.invariant(
             selector.location_name == self.name,
-            "PipelineSelector location_name mismatch, got {selector.location_name} expected {self.name}".format(
+            "JobSelector location_name mismatch, got {selector.location_name} expected {self.name}".format(
                 self=self, selector=selector
             ),
         )
@@ -337,7 +337,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         from dagster.grpc.impl import get_external_pipeline_subset_result
 
         return get_external_pipeline_subset_result(
-            self.get_reconstructable_pipeline(selector.pipeline_name), selector.solid_selection
+            self.get_reconstructable_pipeline(selector.job_name), selector.op_selection
         )
 
     def get_external_execution_plan(
@@ -675,20 +675,20 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         return ExternalExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)
 
     def get_subset_external_pipeline_result(
-        self, selector: PipelineSelector
+        self, selector: JobSelector
     ) -> "ExternalPipelineSubsetResult":
-        check.inst_param(selector, "selector", PipelineSelector)
+        check.inst_param(selector, "selector", JobSelector)
         check.invariant(
             selector.location_name == self.name,
-            "PipelineSelector location_name mismatch, got {selector.location_name} expected {self.name}".format(
+            "JobSelector location_name mismatch, got {selector.location_name} expected {self.name}".format(
                 self=self, selector=selector
             ),
         )
 
         external_repository = self.get_repository(selector.repository_name)
-        pipeline_handle = PipelineHandle(selector.pipeline_name, external_repository.handle)
+        pipeline_handle = PipelineHandle(selector.job_name, external_repository.handle)
         return sync_get_external_pipeline_subset_grpc(
-            self.client, pipeline_handle.get_external_origin(), selector.solid_selection
+            self.client, pipeline_handle.get_external_origin(), selector.op_selection
         )
 
     def get_external_partition_config(

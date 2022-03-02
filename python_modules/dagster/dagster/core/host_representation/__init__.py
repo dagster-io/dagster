@@ -56,7 +56,7 @@ from .represented import RepresentedPipeline
 from .selector import (
     GraphSelector,
     InstigationSelector,
-    PipelineSelector,
+    JobSelector,
     RepositorySelector,
     ScheduleSelector,
     SensorSelector,

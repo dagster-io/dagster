@@ -3,14 +3,14 @@ from typing import List, NamedTuple, Optional
 from dagster import check
 
 
-class PipelineSelector(
+class JobSelector(
     NamedTuple(
         "_PipelineSelector",
         [
             ("location_name", str),
             ("repository_name", str),
-            ("pipeline_name", str),
-            ("solid_selection", Optional[List[str]]),
+            ("job_name", str),
+            ("op_selection", Optional[List[str]]),
         ],
     )
 ):
@@ -22,34 +22,32 @@ class PipelineSelector(
         cls,
         location_name: str,
         repository_name: str,
-        pipeline_name: str,
-        solid_selection: Optional[List[str]],
+        job_name: str,
+        op_selection: Optional[List[str]],
     ):
-        return super(PipelineSelector, cls).__new__(
+        return super(JobSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
             repository_name=check.str_param(repository_name, "repository_name"),
-            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
-            solid_selection=check.opt_nullable_list_param(solid_selection, "solid_selection", str),
+            job_name=check.str_param(job_name, "job_name"),
+            op_selection=check.opt_nullable_list_param(op_selection, "op_selection", str),
         )
 
     def to_graphql_input(self):
         return {
             "repositoryLocationName": self.location_name,
             "repositoryName": self.repository_name,
-            "pipelineName": self.pipeline_name,
-            "solidSelection": self.solid_selection,
+            "jobName": self.job_name,
+            "opSelection": self.op_selection,
         }
 
-    def with_solid_selection(self, solid_selection):
+    def with_op_selection(self, solid_selection):
         check.invariant(
-            self.solid_selection is None,
-            "Can not invoke with_solid_selection when solid_selection={} is already set".format(
-                solid_selection
-            ),
+            self.op_selection is None,
+            f"Can not invoke with_op_selection when op_selection={op_selection} is already set"
         )
-        return PipelineSelector(
-            self.location_name, self.repository_name, self.pipeline_name, solid_selection
+        return JobSelector(
+            self.location_name, self.repository_name, self.job_name, op_selection
         )
 
 

@@ -5,7 +5,7 @@ from dagster.core.host_representation.origin import (
     ExternalRepositoryOrigin,
     RepositoryLocationOrigin,
 )
-from dagster.core.host_representation.selector import PipelineSelector
+from dagster.core.host_representation.selector import JobSelector
 from dagster.core.origin import RepositoryPythonOrigin
 
 if TYPE_CHECKING:
@@ -77,7 +77,7 @@ class PipelineHandle(
         return self.repository_handle.get_python_origin().get_pipeline_origin(self.pipeline_name)
 
     def to_selector(self):
-        return PipelineSelector(self.location_name, self.repository_name, self.pipeline_name, None)
+        return JobSelector(self.location_name, self.repository_name, self.pipeline_name, None)
 
 
 class InstigatorHandle(

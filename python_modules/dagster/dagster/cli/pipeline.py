@@ -36,7 +36,7 @@ from dagster.core.host_representation import (
     RepositoryLocation,
 )
 from dagster.core.host_representation.external_data import ExternalPartitionSetExecutionParamData
-from dagster.core.host_representation.selector import PipelineSelector
+from dagster.core.host_representation.selector import JobSelector
 from dagster.core.instance import DagsterInstance
 from dagster.core.snap import PipelineSnapshot, SolidInvocationSnap
 from dagster.core.storage.tags import MEMOIZED_RUN_TAG
@@ -504,14 +504,14 @@ def _create_external_pipeline_run(
     )
 
     pipeline_name = external_pipeline.name
-    pipeline_selector = PipelineSelector(
+    selector = JobSelector(
         location_name=repo_location.name,
         repository_name=external_repo.name,
-        pipeline_name=pipeline_name,
-        solid_selection=solid_selection,
+        job_name=pipeline_name,
+        op_selection=solid_selection,
     )
 
-    external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
+    external_pipeline = repo_location.get_external_pipeline(selector)
 
     pipeline_mode = mode or external_pipeline.get_default_mode_name()
 
