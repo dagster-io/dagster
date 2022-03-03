@@ -8,11 +8,17 @@ from dagster_graphql.test.utils import (
 )
 
 from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus
+from dagster.core.scheduler.instigation import (
+    InstigatorState,
+    InstigatorStatus,
+    TickData,
+    TickStatus,
+)
 from dagster.core.test_utils import create_test_daemon_workspace
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.sensor import execute_sensor_iteration
 from dagster.utils import Counter, traced_counter
+from dagster.utils.error import SerializableErrorInfo
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,
@@ -195,6 +201,29 @@ query RepositorySensorsQuery($repositorySelector: RepositorySelector!) {
             }
         }
     }
+}
+"""
+
+GET_TICKS_QUERY = """
+query TicksQuery($sensorSelector: SensorSelector!, $statuses: [InstigationTickStatus!]) {
+  sensorOrError(sensorSelector: $sensorSelector) {
+    __typename
+    ... on PythonError {
+      message
+      stack
+    }
+    ... on Sensor {
+      id
+      sensorState {
+        id
+        ticks(statuses: $statuses) {
+          id
+          status
+          timestamp
+        }
+      }
+    }
+  }
 }
 """
 
@@ -461,3 +490,89 @@ def test_repository_batching(graphql_context):
     # 2) `all_instigator_state` is fetched to instantiate GrapheneSensor
     assert counts.get("DagsterInstance.get_run_records") == 1
     assert counts.get("DagsterInstance.all_instigator_state") == 1
+
+
+def test_sensor_ticks_filtered(graphql_context):
+    external_repository = graphql_context.get_repository_location(
+        main_repo_location_name()
+    ).get_repository(main_repo_name())
+
+    sensor_name = "always_no_config_sensor"
+    external_sensor = external_repository.get_external_sensor(sensor_name)
+    sensor_selector = infer_sensor_selector(graphql_context, sensor_name)
+
+    # turn the sensor on
+    graphql_context.instance.add_instigator_state(
+        InstigatorState(
+            external_sensor.get_external_origin(), InstigatorType.SENSOR, InstigatorStatus.RUNNING
+        )
+    )
+
+    now = pendulum.now("US/Central")
+    with pendulum.test(now):
+        _create_tick(graphql_context)  # create a success tick
+
+    # create a started tick
+    graphql_context.instance.create_tick(
+        TickData(
+            instigator_origin_id=external_sensor.get_external_origin().get_id(),
+            instigator_name=sensor_name,
+            instigator_type=InstigatorType.SENSOR,
+            status=TickStatus.STARTED,
+            timestamp=now.timestamp(),
+        )
+    )
+
+    # create a skipped tick
+    graphql_context.instance.create_tick(
+        TickData(
+            instigator_origin_id=external_sensor.get_external_origin().get_id(),
+            instigator_name=sensor_name,
+            instigator_type=InstigatorType.SENSOR,
+            status=TickStatus.SKIPPED,
+            timestamp=now.timestamp(),
+        )
+    )
+
+    # create a failed tick
+    graphql_context.instance.create_tick(
+        TickData(
+            instigator_origin_id=external_sensor.get_external_origin().get_id(),
+            instigator_name=sensor_name,
+            instigator_type=InstigatorType.SENSOR,
+            status=TickStatus.FAILURE,
+            timestamp=now.timestamp(),
+            error=SerializableErrorInfo(message="foobar", stack=[], cls_name=None, cause=None),
+        )
+    )
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_TICKS_QUERY,
+        variables={"sensorSelector": sensor_selector},
+    )
+    assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 4
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_TICKS_QUERY,
+        variables={"sensorSelector": sensor_selector, "statuses": ["STARTED"]},
+    )
+    assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
+    assert result.data["sensorOrError"]["sensorState"]["ticks"][0]["status"] == "STARTED"
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_TICKS_QUERY,
+        variables={"sensorSelector": sensor_selector, "statuses": ["FAILURE"]},
+    )
+    assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
+    assert result.data["sensorOrError"]["sensorState"]["ticks"][0]["status"] == "FAILURE"
+
+    result = execute_dagster_graphql(
+        graphql_context,
+        GET_TICKS_QUERY,
+        variables={"sensorSelector": sensor_selector, "statuses": ["SKIPPED"]},
+    )
+    assert len(result.data["sensorOrError"]["sensorState"]["ticks"]) == 1
+    assert result.data["sensorOrError"]["sensorState"]["ticks"][0]["status"] == "SKIPPED"

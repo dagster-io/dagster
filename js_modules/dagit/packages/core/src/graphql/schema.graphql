@@ -1140,7 +1140,13 @@ type InstigationState {
   runs(limit: Int): [Run!]!
   runsCount: Int!
   tick(timestamp: Float): InstigationTick
-  ticks(dayRange: Int, dayOffset: Int, limit: Int): [InstigationTick!]!
+  ticks(
+    dayRange: Int
+    dayOffset: Int
+    limit: Int
+    cursor: String
+    statuses: [InstigationTickStatus!]
+  ): [InstigationTick!]!
   nextTick: FutureInstigationTick
   runningCount: Int!
 }
@@ -1160,6 +1166,7 @@ union InstigationTypeSpecificData = SensorData | ScheduleData
 type SensorData {
   lastTickTimestamp: Float
   lastRunKey: String
+  lastCursor: String
 }
 
 type ScheduleData {

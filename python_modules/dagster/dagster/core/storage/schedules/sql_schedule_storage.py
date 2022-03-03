@@ -120,10 +120,11 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
             )
 
-    def _add_filter_limit(self, query, before=None, after=None, limit=None):
+    def _add_filter_limit(self, query, before=None, after=None, limit=None, statuses=None):
         check.opt_float_param(before, "before")
         check.opt_float_param(after, "after")
         check.opt_int_param(limit, "limit")
+        check.opt_list_param(statuses, "statuses", of_type=TickStatus)
 
         if before:
             query = query.where(JobTickTable.c.timestamp < utc_datetime_from_timestamp(before))
@@ -131,13 +132,16 @@ class SqlScheduleStorage(ScheduleStorage):
             query = query.where(JobTickTable.c.timestamp > utc_datetime_from_timestamp(after))
         if limit:
             query = query.limit(limit)
+        if statuses:
+            query = query.where(JobTickTable.c.status.in_([status.value for status in statuses]))
         return query
 
-    def get_ticks(self, origin_id, before=None, after=None, limit=None):
+    def get_ticks(self, origin_id, before=None, after=None, limit=None, statuses=None):
         check.str_param(origin_id, "origin_id")
         check.opt_float_param(before, "before")
         check.opt_float_param(after, "after")
         check.opt_int_param(limit, "limit")
+        check.opt_list_param(statuses, "statuses", of_type=TickStatus)
 
         query = (
             db.select([JobTickTable.c.id, JobTickTable.c.tick_body])
@@ -146,7 +150,9 @@ class SqlScheduleStorage(ScheduleStorage):
             .order_by(JobTickTable.c.timestamp.desc())
         )
 
-        query = self._add_filter_limit(query, before=before, after=after, limit=limit)
+        query = self._add_filter_limit(
+            query, before=before, after=after, limit=limit, statuses=statuses
+        )
 
         rows = self.execute(query)
         return list(

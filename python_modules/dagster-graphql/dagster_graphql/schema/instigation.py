@@ -13,6 +13,7 @@ from dagster.core.scheduler.instigation import (
     InstigatorType,
     ScheduleInstigatorData,
     SensorInstigatorData,
+    TickStatus,
 )
 from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
@@ -57,6 +58,7 @@ class GrapheneInstigationTickStatus(graphene.Enum):
 class GrapheneSensorData(graphene.ObjectType):
     lastTickTimestamp = graphene.Float()
     lastRunKey = graphene.String()
+    lastCursor = graphene.String()
 
     class Meta:
         name = "SensorData"
@@ -66,6 +68,7 @@ class GrapheneSensorData(graphene.ObjectType):
         super().__init__(
             lastTickTimestamp=instigator_data.last_tick_timestamp,
             lastRunKey=instigator_data.last_run_key,
+            lastCursor=instigator_data.cursor,
         )
 
 
@@ -270,6 +273,8 @@ class GrapheneInstigationState(graphene.ObjectType):
         dayRange=graphene.Int(),
         dayOffset=graphene.Int(),
         limit=graphene.Int(),
+        cursor=graphene.String(),
+        statuses=graphene.List(graphene.NonNull(GrapheneInstigationTickStatus)),
     )
     nextTick = graphene.Field(GrapheneFutureInstigationTick)
     runningCount = graphene.NonNull(graphene.Int)  # remove with cron scheduler
@@ -360,17 +365,35 @@ class GrapheneInstigationState(graphene.ObjectType):
         )
         return GrapheneInstigationTick(graphene_info, matches[0]) if matches else None
 
-    def resolve_ticks(self, graphene_info, dayRange=None, dayOffset=None, limit=None):
-        before = pendulum.now("UTC").subtract(days=dayOffset).timestamp() if dayOffset else None
+    def resolve_ticks(
+        self, graphene_info, dayRange=None, dayOffset=None, limit=None, cursor=None, statuses=None
+    ):
+        before = None
+        if dayOffset:
+            before = pendulum.now("UTC").subtract(days=dayOffset).timestamp()
+        elif cursor:
+            parts = cursor.split(":")
+            if parts:
+                try:
+                    before = float(parts[-1])
+                except (ValueError, IndexError):
+                    pass
+
         after = (
             pendulum.now("UTC").subtract(days=dayRange + (dayOffset or 0)).timestamp()
             if dayRange
             else None
         )
+        if statuses:
+            statuses = [TickStatus(status) for status in statuses]
         return [
             GrapheneInstigationTick(graphene_info, tick)
             for tick in graphene_info.context.instance.get_ticks(
-                self._instigator_state.instigator_origin_id, before=before, after=after, limit=limit
+                self._instigator_state.instigator_origin_id,
+                before=before,
+                after=after,
+                limit=limit,
+                statuses=statuses,
             )
         ]
 
