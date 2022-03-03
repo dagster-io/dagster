@@ -224,7 +224,9 @@ class InputDefinition:
         return InputMapping(self, maps_to)
 
     @staticmethod
-    def create_from_inferred(inferred: InferredInputProps, decorator_name: str) -> "InputDefinition":
+    def create_from_inferred(
+        inferred: InferredInputProps, decorator_name: str
+    ) -> "InputDefinition":
         return InputDefinition(
             name=inferred.name,
             dagster_type=_checked_inferred_type(inferred, decorator_name),
@@ -232,7 +234,9 @@ class InputDefinition:
             default_value=inferred.default_value,
         )
 
-    def combine_with_inferred(self, inferred: InferredInputProps, decorator_name: str) -> "InputDefinition":
+    def combine_with_inferred(
+        self, inferred: InferredInputProps, decorator_name: str
+    ) -> "InputDefinition":
         """
         Return a new InputDefinition that merges this ones properties with those inferred from type signature.
         This can update: dagster_type, description, and default_value if they are not set.
@@ -281,7 +285,7 @@ def _checked_inferred_type(inferred: InferredInputProps, decorator_name: str) ->
         raise DagsterInvalidDefinitionError(
             f"Input parameter {inferred.name} is annotated with {resolved_type.display_name} "
             "which is a type that represents passing no data. This type must be used "
-            f"via InputDefinition and no parameter should be included in the {decorator_name} function."
+            f"via InputDefinition and no parameter should be included in the {decorator_name} decorated function."
         )
     return resolved_type
 
