@@ -1,10 +1,12 @@
-from typing import NamedTuple, Optional, Union
+from typing import Any, Dict, NamedTuple, Optional, Union
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.events import DagsterEvent
 from dagster.core.utils import coerce_valid_log_level
-from dagster.serdes import (
+from dagster.serdes.serdes import (
+    DefaultNamedTupleSerializer,
+    WhitelistMap,
     deserialize_json_to_dagster_namedtuple,
     register_serdes_tuple_fallbacks,
     serialize_dagster_namedtuple,
@@ -19,7 +21,21 @@ from dagster.utils.log import (
 )
 
 
-@whitelist_for_serdes
+class EventLogEntrySerializer(DefaultNamedTupleSerializer):
+    @classmethod
+    def value_to_storage_dict(
+        cls,
+        value: NamedTuple,
+        whitelist_map: WhitelistMap,
+        descent_path: str,
+    ) -> Dict[str, Any]:
+        storage_dict = super().value_to_storage_dict(value, whitelist_map, descent_path)
+        # include an empty string for the message field to allow older versions of dagster to load the events
+        storage_dict["message"] = ""
+        return storage_dict
+
+
+@whitelist_for_serdes(serializer=EventLogEntrySerializer)
 class EventLogEntry(
     NamedTuple(
         "_EventLogEntry",

@@ -497,7 +497,7 @@ def unpack_inner_value(val: Any, whitelist_map: WhitelistMap, descent_path: str)
         )
         if not whitelist_map.has_tuple_entry(lookup_name):
             name_str = (
-                '"klass_name"'
+                f'"{klass_name}"'
                 if klass_name == lookup_name
                 else f'"{klass_name}" (mapped to: "{lookup_name}")'
             )
