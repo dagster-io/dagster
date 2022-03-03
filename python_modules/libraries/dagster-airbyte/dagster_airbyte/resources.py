@@ -7,7 +7,15 @@ import requests
 from dagster_airbyte.types import AirbyteOutput
 from requests.exceptions import RequestException
 
-from dagster import Failure, Field, StringSource, __version__, get_dagster_logger, resource
+from dagster import (
+    Failure,
+    Field,
+    StringSource,
+    __version__,
+    get_dagster_logger,
+    resource,
+    MetadataValue,
+)
 
 DEFAULT_POLL_INTERVAL_SECONDS = 10
 
@@ -74,18 +82,22 @@ class AirbyteResource:
                     url=self.api_base_url + endpoint,
                     headers=headers,
                     json=data,
-                    timeout=5,
+                    timeout=15,
                 )
                 response.raise_for_status()
                 return response.json()
             except RequestException as e:
                 self._log.error("Request to Airbyte API failed: %s", e)
                 if num_retries == self._request_max_retries:
+                    error = e
                     break
                 num_retries += 1
                 time.sleep(self._request_retry_delay)
 
-        raise Failure("Exceeded max number of retries.")
+        raise Failure(
+            "Exceeded max number of retries.",
+            metadata={"msg": MetadataValue.json(error.response.json())},
+        )
 
     def start_sync(self, connection_id: str) -> dict:
         return self.make_request(endpoint="/connections/sync", data={"connectionId": connection_id})
