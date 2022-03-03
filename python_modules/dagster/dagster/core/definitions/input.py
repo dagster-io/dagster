@@ -396,7 +396,7 @@ class In(
     ):
         return super(In, cls).__new__(
             cls,
-            dagster_type=check.inst_param(dagster_type, "dagster_type", (type, DagsterType)),
+            dagster_type=check.opt_inst_param(dagster_type, "dagster_type", (type, DagsterType)),
             description=check.opt_str_param(description, "description"),
             default_value=default_value,
             root_manager_key=check.opt_str_param(root_manager_key, "root_manager_key"),
