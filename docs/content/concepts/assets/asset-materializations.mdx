@@ -5,6 +5,8 @@ description: Dagster provides functionality to record and track changes to exter
 
 # Asset Materializations
 
+In most cases, you should be able to work with assets using <PyObject object="asset" decorator />, but there may be situations where you want to create an asset in the body of a <PyObject object="op" decorator />. You can do this using <PyObject object="AssetMaterialization" /> events.
+
 "Asset" is Dagster's word for an entity, external to ops, that is mutated or created by an op. An asset might be a table in a database that an op appends to, an ML model in a model store that an op overwrites, or even a slack channel that an op writes messages to.
 
 Op outputs often correspond to assets. For example, an op might be responsible for recreating a table, and one of its outputs might be a dataframe containing the contents of that table.
@@ -330,3 +332,6 @@ src="/images/concepts/assets/asset-lineage.png"
 width={1607}
 height={1031}
 />
+
+## Software-defined assets vs Asset Materializations
+In this section we'll go over some differences between software-defined assets and asset materializations and the different use cases for each.
