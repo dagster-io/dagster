@@ -147,10 +147,17 @@ export interface ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses {
   lastHeartbeatTime: number | null;
 }
 
+export interface ScheduleRootQuery_instance_daemonHealth_daemonStatus {
+  __typename: "DaemonStatus";
+  id: string;
+  healthy: boolean | null;
+}
+
 export interface ScheduleRootQuery_instance_daemonHealth {
   __typename: "DaemonHealth";
   id: string;
   allDaemonStatuses: ScheduleRootQuery_instance_daemonHealth_allDaemonStatuses[];
+  daemonStatus: ScheduleRootQuery_instance_daemonHealth_daemonStatus;
 }
 
 export interface ScheduleRootQuery_instance {

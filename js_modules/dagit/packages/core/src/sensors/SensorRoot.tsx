@@ -6,6 +6,7 @@ import {useParams} from 'react-router-dom';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable, TickHistoryTimeline} from '../instigation/TickHistory';
+import {InstigationStatus} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -63,17 +64,15 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
               countdownStatus={countdownStatus}
               onRefresh={() => onRefresh()}
             />
-            <Box
-              padding={{vertical: 16, horizontal: 24}}
-              border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
-            >
-              <SensorInfo daemonHealth={instance.daemonHealth} />
-            </Box>
-            <TickHistoryTimeline
-              repoAddress={repoAddress}
-              name={sensorOrError.name}
-              showRecent={true}
-            />
+            {!instance.daemonHealth.daemonStatus.healthy ? (
+              <Box padding={{vertical: 16, horizontal: 24}}>
+                <SensorInfo daemonHealth={instance.daemonHealth} />
+              </Box>
+            ) : null}
+            {instance.daemonHealth.daemonStatus.healthy &&
+            sensorOrError.sensorState.status === InstigationStatus.RUNNING ? (
+              <TickHistoryTimeline repoAddress={repoAddress} name={sensorOrError.name} />
+            ) : null}
             <TicksTable repoAddress={repoAddress} name={sensorOrError.name} />
           </Page>
         );

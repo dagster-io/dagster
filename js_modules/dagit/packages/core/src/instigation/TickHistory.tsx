@@ -8,9 +8,7 @@ import {
   CursorHistoryControls,
   NonIdealState,
   Spinner,
-  Tab,
   Table,
-  Tabs,
   Subheading,
   FontFamily,
   IconWIP,
@@ -31,7 +29,6 @@ import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 
-import {HistoricalTickTimeline} from './HistoricalTickTimeline';
 import {TickTag, TICK_TAG_FRAGMENT} from './InstigationTick';
 import {RunStatusLink, RUN_STATUS_FRAGMENT} from './InstigationUtils';
 import {LiveTickTimeline} from './LiveTickTimeline';
@@ -75,37 +72,6 @@ const STATUS_TEXT_MAP = {
   [InstigationTickStatus.STARTED]: 'Started',
   [InstigationTickStatus.SKIPPED]: 'Skipped',
 };
-
-const TABS = [
-  {
-    id: 'recent',
-    label: 'Recent',
-    range: 1,
-  },
-  {
-    id: '1d',
-    label: '1 day',
-    range: 1,
-  },
-  {
-    id: '7d',
-    label: '7 days',
-    range: 7,
-  },
-  {
-    id: '14d',
-    label: '14 days',
-    range: 14,
-  },
-  {
-    id: '30d',
-    label: '30 days',
-    range: 30,
-  },
-  {id: 'all', label: 'All'},
-];
-
-const MILLIS_PER_DAY = 86400 * 1000;
 
 export const TicksTable = ({name, repoAddress}: {name: string; repoAddress: RepoAddress}) => {
   const [shownStates, setShownStates] = useQueryPersistedState<ShownStatusState>({
@@ -274,58 +240,28 @@ export const TickHistoryTimeline = ({
   name,
   repoAddress,
   onHighlightRunIds,
-  showRecent,
 }: {
   name: string;
   repoAddress: RepoAddress;
   onHighlightRunIds?: (runIds: string[]) => void;
-  showRecent?: boolean;
 }) => {
-  const [selectedTab, setSelectedTab] = useQueryPersistedState<string>({
-    queryKey: 'tab',
-    defaults: {tab: 'recent'},
-  });
   const [selectedTime, setSelectedTime] = useQueryPersistedState<number | undefined>({
     encode: (timestamp) => ({time: timestamp}),
     decode: (qs) => (qs['time'] ? Number(qs['time']) : undefined),
   });
 
-  const [shownStates, setShownStates] = React.useState<ShownStatusState>({
-    [InstigationTickStatus.SUCCESS]: true,
-    [InstigationTickStatus.FAILURE]: true,
-    [InstigationTickStatus.STARTED]: true,
-    [InstigationTickStatus.SKIPPED]: true,
-  });
   const [pollingPaused, pausePolling] = React.useState<boolean>(false);
 
-  React.useEffect(() => {
-    if (!showRecent && selectedTab === 'recent') {
-      setSelectedTab('1d');
-    }
-  }, [setSelectedTab, selectedTab, showRecent]);
-
   const instigationSelector = {...repoAddressToSelector(repoAddress), name};
-  const selectedRange = TABS.find((x) => x.id === selectedTab)?.range;
   const {data} = useQuery<TickHistoryQuery, TickHistoryQueryVariables>(JOB_TICK_HISTORY_QUERY, {
     variables: {
       instigationSelector,
-      dayRange: selectedRange,
-      limit: selectedTab === 'recent' ? 15 : undefined,
+      limit: 15,
     },
     fetchPolicy: 'cache-and-network',
     partialRefetch: true,
-    pollInterval: selectedTab === 'recent' && !pollingPaused ? 1000 : 0,
+    pollInterval: !pollingPaused ? 1000 : 0,
   });
-
-  const tabs = (
-    <Tabs selectedTabId={selectedTab} onChange={setSelectedTab}>
-      {TABS.map((tab) =>
-        tab.id === 'recent' && !showRecent ? null : (
-          <Tab id={tab.id} key={tab.id} title={tab.label} />
-        ),
-      ).filter(Boolean)}
-    </Tabs>
-  );
 
   if (!data) {
     return (
@@ -334,8 +270,7 @@ export const TickHistoryTimeline = ({
           padding={{top: 16, horizontal: 24}}
           border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
         >
-          <Subheading>Tick Timeline</Subheading>
-          {tabs}
+          <Subheading>Recent ticks</Subheading>
         </Box>
         <Box padding={{vertical: 64}}>
           <Spinner purpose="section" />
@@ -348,22 +283,8 @@ export const TickHistoryTimeline = ({
     return <PythonErrorInfo error={data.instigationStateOrError} />;
   }
 
-  const {ticks, nextTick, instigationType} = data.instigationStateOrError;
-  const displayedTicks = ticks.filter((tick) =>
-    tick.status === InstigationTickStatus.SKIPPED
-      ? instigationType === InstigationType.SCHEDULE && shownStates[tick.status]
-      : shownStates[tick.status],
-  );
-  const StatusFilter = ({status}: {status: InstigationTickStatus}) => (
-    <Checkbox
-      label={STATUS_TEXT_MAP[status]}
-      checked={shownStates[status]}
-      disabled={!ticks.filter((tick) => tick.status === status).length}
-      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-        setShownStates({...shownStates, [status]: e.target.checked});
-      }}
-    />
-  );
+  const {ticks, nextTick} = data.instigationStateOrError;
+
   const onTickClick = (tick?: InstigationTick) => {
     setSelectedTime(tick ? tick.timestamp : undefined);
   };
@@ -377,8 +298,6 @@ export const TickHistoryTimeline = ({
     }
   };
 
-  const now = Date.now();
-
   return (
     <>
       <TickDetailsDialog
@@ -386,51 +305,16 @@ export const TickHistoryTimeline = ({
         instigationSelector={instigationSelector}
         onClose={() => onTickClick(undefined)}
       />
-      <Box padding={{top: 16, horizontal: 24}}>
-        <Subheading>Tick Timeline</Subheading>
-        <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
-          {tabs}
-          {ticks.length ? (
-            <Box flex={{direction: 'row', gap: 16}}>
-              <StatusFilter status={InstigationTickStatus.SUCCESS} />
-              <StatusFilter status={InstigationTickStatus.FAILURE} />
-              {instigationType === InstigationType.SCHEDULE ? (
-                <StatusFilter status={InstigationTickStatus.SKIPPED} />
-              ) : null}
-            </Box>
-          ) : null}
-        </Box>
+      <Box padding={{vertical: 16, horizontal: 24}}>
+        <Subheading>Recent ticks</Subheading>
       </Box>
-      <Box padding={{bottom: 16}} border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}>
-        {showRecent && selectedTab === 'recent' ? (
-          <LiveTickTimeline
-            ticks={ticks}
-            nextTick={nextTick}
-            onHoverTick={onTickHover}
-            onSelectTick={onTickClick}
-          />
-        ) : displayedTicks.length ? (
-          <HistoricalTickTimeline
-            ticks={displayedTicks}
-            selectedTick={displayedTicks.find((t) => t.timestamp === selectedTime)}
-            onSelectTick={onTickClick}
-            onHoverTick={onTickHover}
-            selectedTab={selectedTab}
-            maxBounds={
-              selectedTab === 'all'
-                ? undefined
-                : {min: now - (selectedRange || 0) * MILLIS_PER_DAY, max: Date.now()}
-            }
-          />
-        ) : (
-          <Box padding={{vertical: 32}} flex={{justifyContent: 'center'}}>
-            <NonIdealState
-              icon="no-results"
-              title="No ticks to display"
-              description="There are no ticks within this timeframe."
-            />
-          </Box>
-        )}
+      <Box border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}>
+        <LiveTickTimeline
+          ticks={ticks}
+          nextTick={nextTick}
+          onHoverTick={onTickHover}
+          onSelectTick={onTickClick}
+        />
       </Box>
     </>
   );

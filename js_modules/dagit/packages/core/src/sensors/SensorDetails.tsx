@@ -8,15 +8,9 @@ import {
   RefreshableCountdown,
   TagWIP,
   Heading,
-  ColorsWIP,
-  IconWIP,
-  IconWrapper,
   FontFamily,
 } from '@dagster-io/ui';
 import * as React from 'react';
-import styled from 'styled-components/macro';
-
-import {SharedToaster} from '../app/DomUtils';
 import {useCopyToClipboard} from '../app/browser';
 import {AssetLink} from '../assets/AssetLink';
 import {TickTag} from '../instigation/InstigationTick';
@@ -185,21 +179,10 @@ export const SensorDetails: React.FC<{
           ) : null}
           {cursor ? (
             <tr>
-              <td>Last cursor</td>
+              <td>Cursor</td>
               <td>
                 <Box flex={{direction: 'row', alignItems: 'center'}}>
                   <Box style={{fontFamily: FontFamily.monospace, marginRight: 10}}>{cursor}</Box>
-                  <CopyButton
-                    onClick={() => {
-                      copyToClipboard(cursor || '');
-                      SharedToaster.show({
-                        message: <div>Copied value</div>,
-                        intent: 'success',
-                      });
-                    }}
-                  >
-                    <IconWIP name="assignment" />
-                  </CopyButton>
                 </Box>
               </td>
             </tr>
@@ -225,25 +208,3 @@ export const SensorDetails: React.FC<{
     </>
   );
 };
-
-const CopyButton = styled.button`
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  padding: 8px;
-  margin: -6px;
-  outline: none;
-
-  ${IconWrapper} {
-    background-color: ${ColorsWIP.Gray600};
-    transition: background-color 100ms;
-  }
-
-  :hover ${IconWrapper} {
-    background-color: ${ColorsWIP.Gray800};
-  }
-
-  :focus ${IconWrapper} {
-    background-color: ${ColorsWIP.Link};
-  }
-`;

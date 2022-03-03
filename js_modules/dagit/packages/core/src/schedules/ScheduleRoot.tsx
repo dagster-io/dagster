@@ -5,7 +5,7 @@ import {useParams} from 'react-router-dom';
 
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
-import {TicksTable, TickHistoryTimeline} from '../instigation/TickHistory';
+import {TicksTable} from '../instigation/TickHistory';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
@@ -68,13 +68,11 @@ export const ScheduleRoot: React.FC<Props> = (props) => {
               countdownStatus={countdownStatus}
               onRefresh={() => onRefresh()}
             />
-            <Box
-              padding={{vertical: 16, horizontal: 24}}
-              border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
-            >
-              <SchedulerInfo daemonHealth={instance.daemonHealth} />
-            </Box>
-            <TickHistoryTimeline repoAddress={repoAddress} name={scheduleOrError.name} />
+            {!instance.daemonHealth.daemonStatus.healthy ? (
+              <Box padding={{vertical: 16, horizontal: 24}}>
+                <SchedulerInfo daemonHealth={instance.daemonHealth} />
+              </Box>
+            ) : null}
             <TicksTable repoAddress={repoAddress} name={scheduleName} />
           </Page>
         );
@@ -100,6 +98,12 @@ const SCHEDULE_ROOT_QUERY = gql`
     }
     instance {
       ...InstanceHealthFragment
+      daemonHealth {
+        daemonStatus(daemonType: "SCHEDULE") {
+          id
+          healthy
+        }
+      }
     }
   }
 
