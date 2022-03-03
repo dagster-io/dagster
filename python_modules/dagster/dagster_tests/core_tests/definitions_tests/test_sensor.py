@@ -1,9 +1,6 @@
 import pytest
 
-from dagster import (
-    graph,
-    SensorDefinition,
-)
+from dagster import SensorDefinition, graph
 from dagster.core.errors import DagsterInvalidDefinitionError
 
 
@@ -16,13 +13,24 @@ def test_jobs_attr():
         pass
 
     sensor = SensorDefinition(evaluation_fn=eval_fn, job=my_graph)
-    assert sensor.jobs[0].name == my_graph.name
+    assert sensor.job.name == my_graph.name
 
     sensor = SensorDefinition(evaluation_fn=eval_fn, pipeline_name="my_pipeline")
     with pytest.raises(
         DagsterInvalidDefinitionError, match="No jobs were provided to SensorDefinition."
     ):
-        sensor.jobs()
+        _ = sensor.job
+
+    @graph
+    def my_second_graph():
+        pass
+
+    sensor = SensorDefinition(evaluation_fn=eval_fn, jobs=[my_graph, my_second_graph])
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="Job property not available when SensorDefinition has multiple jobs.",
+    ):
+        _ = sensor.job
 
 
 def test_direct_sensor_definition_instantiation():

@@ -309,9 +309,13 @@ class SensorDefinition:
         return self._targets
 
     @property
-    def jobs(self) -> Optional[Sequence[Union[GraphDefinition, JobDefinition]]]:
-        if len(self._targets) > 0 and isinstance(self._targets[0], DirectTarget):
-            return [t.pipeline for t in self._targets]
+    def job(self) -> Optional[Sequence[Union[GraphDefinition, JobDefinition]]]:
+        if len(self._targets) == 1 and isinstance(self._targets[0], DirectTarget):
+            return self._targets[0].pipeline
+        elif len(self._targets) > 1:
+            raise DagsterInvalidDefinitionError(
+                "Job property not available when SensorDefinition has multiple jobs."
+            )
         raise DagsterInvalidDefinitionError("No jobs were provided to SensorDefinition.")
 
     def evaluate_tick(self, context: "SensorEvaluationContext") -> "SensorExecutionData":
