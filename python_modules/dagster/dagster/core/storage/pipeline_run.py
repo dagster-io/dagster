@@ -275,8 +275,8 @@ class PipelineRun(
             ("run_id", str),
             ("run_config", Dict[str, object]),
             ("mode", Optional[str]),
-            ("solid_selection", List[str]),
-            ("solids_to_execute", AbstractSet[str]),
+            ("solid_selection", Optional[List[str]]),
+            ("solids_to_execute", Optional[AbstractSet[str]]),
             ("step_keys_to_execute", Optional[List[str]]),
             ("status", PipelineRunStatus),
             ("tags", Dict[str, str]),
@@ -320,10 +320,10 @@ class PipelineRun(
             ),
         )
         # a frozenset which contains the names of the solids to execute
-        solids_to_execute = check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
+        solids_to_execute = check.opt_nullable_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         # a list of solid queries provided by the user
         # possible to be None when only solids_to_execute is set by the user directly
-        solid_selection = check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+        solid_selection = check.opt_nullable_list_param(solid_selection, "solid_selection", of_type=str)
         check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
         # Placing this with the other imports causes a cyclic import

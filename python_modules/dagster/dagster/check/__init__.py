@@ -805,6 +805,24 @@ def opt_set_param(obj: object, param_name: str, of_type: TypeOrTupleOfTypes = No
     return _check_set_items(obj, of_type)
 
 
+def opt_nullable_set_param(obj: object, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None) -> Optional[AbstractSet]:
+    """Ensures argument obj is a set or None. Returns Noen if input is None.
+    and returns it.
+
+    If the of_type argument is provided, also ensures that list items conform to the type specified
+    by of_type.
+    """
+    if obj is None:
+        return None
+    elif not isinstance(obj, (frozenset, set)):
+        raise _param_type_mismatch_exception(obj, (frozenset, set), param_name)
+    elif not of_type:
+        return obj
+
+    return _check_set_items(obj, of_type)
+
+
+
 def _check_set_items(obj_set: AbstractSet, of_type: TypeOrTupleOfTypes) -> AbstractSet:
     for obj in obj_set:
 
