@@ -149,8 +149,8 @@ const JobGraphLink: React.FC<{
   return (
     <Link
       to={instanceAssetsExplorerPathToURL({
-        opNames: [token],
-        opsQuery: direction === 'upstream' ? `*${token}` : `${token}*`,
+        opNames: [],
+        opsQuery: direction === 'upstream' ? `*"${token}"` : `"${token}"*`,
       })}
     >
       <Box flex={{gap: 4, alignItems: 'center'}}>
