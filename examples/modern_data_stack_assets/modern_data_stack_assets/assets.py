@@ -48,6 +48,6 @@ analytics_assets = AssetGroup(
     resource_defs={
         "airbyte": airbyte_resource.configured(AIRBYTE_CONFIG),
         "dbt": dbt_cli_resource.configured(DBT_CONFIG),
-        "pandas_io_manager": pandas_io_manager.configured(PG_CONFIG),
+        "pandas_io_manager": pandas_io_manager.configured(PANDAS_IO_CONFIG),
     },
 ).build_job("Assets")
