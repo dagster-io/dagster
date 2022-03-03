@@ -19,7 +19,7 @@ def test_jobs_attr():
     with pytest.raises(
         DagsterInvalidDefinitionError, match="No jobs were provided to SensorDefinition."
     ):
-        _ = sensor.job
+        sensor.job
 
     @graph
     def my_second_graph():
@@ -30,7 +30,7 @@ def test_jobs_attr():
         DagsterInvalidDefinitionError,
         match="Job property not available when SensorDefinition has multiple jobs.",
     ):
-        _ = sensor.job
+        sensor.job
 
 
 def test_direct_sensor_definition_instantiation():
