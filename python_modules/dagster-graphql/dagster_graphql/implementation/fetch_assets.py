@@ -1,7 +1,12 @@
+from typing import TYPE_CHECKING, Mapping
+
 from dagster import AssetKey, DagsterEventType, EventRecordsFilter, check, seven
 from dagster.core.events import ASSET_EVENTS
 
 from .utils import capture_error
+
+if TYPE_CHECKING:
+    from ..schema.asset_graph import GrapheneAssetNode
 
 
 def _normalize_asset_cursor_str(cursor_string):
@@ -51,26 +56,32 @@ def get_assets(graphene_info, prefix=None, cursor=None, limit=None):
     )
 
 
-def get_asset_nodes_by_asset_key(graphene_info):
+def get_asset_nodes_by_asset_key(graphene_info) -> Mapping[AssetKey, "GrapheneAssetNode"]:
+    """
+    If multiple repositories have asset nodes for the same asset key, chooses the asset node that
+    has an op.
+    """
+
     from ..schema.asset_graph import GrapheneAssetNode
 
-    return {
-        external_asset_node.asset_key: GrapheneAssetNode(location, repository, external_asset_node)
-        for location in graphene_info.context.repository_locations
-        for repository in location.get_repositories().values()
-        for external_asset_node in repository.get_external_asset_nodes()
-    }
+    asset_nodes_by_asset_key = {}
+    for location in graphene_info.context.repository_locations:
+        for repository in location.get_repositories().values():
+            for external_asset_node in repository.get_external_asset_nodes():
+                preexisting_node = asset_nodes_by_asset_key.get(external_asset_node.asset_key)
+                if (
+                    preexisting_node is None
+                    or preexisting_node.get_external_asset_node().op_name is None
+                ):
+                    asset_nodes_by_asset_key[external_asset_node.asset_key] = GrapheneAssetNode(
+                        location, repository, external_asset_node
+                    )
+
+    return asset_nodes_by_asset_key
 
 
 def get_asset_nodes(graphene_info):
-    from ..schema.asset_graph import GrapheneAssetNode
-
-    return [
-        GrapheneAssetNode(location, repository, external_asset_node)
-        for location in graphene_info.context.repository_locations
-        for repository in location.get_repositories().values()
-        for external_asset_node in repository.get_external_asset_nodes()
-    ]
+    return get_asset_nodes_by_asset_key(graphene_info).values()
 
 
 def get_asset_node(graphene_info, asset_key):

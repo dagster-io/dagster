@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 
 from dagster.core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,
@@ -7,7 +7,8 @@ from dagster.core.definitions.resource_definition import ResourceDefinition
 
 
 class IOutputManagerDefinition:
-    @abstractproperty
+    @property
+    @abstractmethod
     def output_config_schema(self):
         """The schema for per-output configuration for outputs that are managed by this
         manager"""

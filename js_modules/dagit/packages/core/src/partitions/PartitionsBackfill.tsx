@@ -407,10 +407,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
           <strong>Tags</strong>
           {tags.length ? (
             <div style={{border: `1px solid ${ColorsWIP.Gray300}`, borderRadius: 8, padding: 3}}>
-              <TagContainer
-                tags={{fromSession: tags}}
-                onRequestEdit={() => setTagEditorOpen(true)}
-              />
+              <TagContainer tagsFromSession={tags} onRequestEdit={() => setTagEditorOpen(true)} />
             </div>
           ) : (
             <div>

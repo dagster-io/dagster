@@ -1,0 +1,23 @@
+mds_dbt:
+  target: prod
+  outputs:
+    prod:
+      type: postgres
+      host: localhost
+      port: 5432
+      user: postgres
+      pass: password
+      dbname: postgres_replica
+      schema: public
+      threads: 2
+      keepalives_idle: 0
+    skip_airbyte:
+      type: postgres
+      host: localhost
+      port: 5432
+      user: postgres
+      pass: password
+      dbname: postgres
+      schema: public
+      threads: 2
+      keepalives_idle: 0

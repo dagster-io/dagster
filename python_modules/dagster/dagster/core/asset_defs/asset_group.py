@@ -14,11 +14,13 @@ from typing import (
     Optional,
     Sequence,
     Set,
+    Tuple,
     Union,
     cast,
 )
 
 from dagster import check
+from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import ExperimentalWarning
 
@@ -87,8 +89,6 @@ class AssetGroup(
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
     ):
-        from dagster.core.definitions.graph_definition import default_job_io_manager
-
         check.list_param(assets, "assets", of_type=AssetsDefinition)
         source_assets = check.opt_list_param(source_assets, "source_assets", of_type=SourceAsset)
         resource_defs = check.opt_dict_param(
@@ -108,7 +108,7 @@ class AssetGroup(
             )
         # In the case of collisions, merge_dicts takes values from the dictionary latest in the list, so we place the user provided resource defs after the defaults.
         resource_defs = merge_dicts(
-            {"root_manager": root_manager, "io_manager": default_job_io_manager},
+            {"root_manager": root_manager, "io_manager": fs_asset_io_manager},
             resource_defs,
         )
 
@@ -315,8 +315,8 @@ class AssetGroup(
         executor_def: Optional[ExecutorDefinition] = None,
     ) -> "AssetGroup":
         """
-        Constructs an AssetGroup that includes all asset definitions in all sub-modules of the
-        given package module.
+        Constructs an AssetGroup that includes all asset definitions and source assets in all
+        sub-modules of the given package module.
 
         A package module is the result of importing a package.
 
@@ -330,15 +330,12 @@ class AssetGroup(
         Returns:
             AssetGroup: An asset group with all the assets in the package.
         """
-        assets = set()
-        source_assets = set()
+        assets: Set[AssetsDefinition] = set()
+        source_assets: Set[SourceAsset] = set()
         for module in _find_modules_in_package(package_module):
-            for attr in dir(module):
-                value = getattr(module, attr)
-                if isinstance(value, AssetsDefinition):
-                    assets.add(value)
-                if isinstance(value, SourceAsset):
-                    source_assets.add(value)
+            module_assets, module_source_assets = _find_assets_in_module(module)
+            assets.update(module_assets)
+            source_assets.update(module_source_assets)
 
         return AssetGroup(
             assets=list(assets),
@@ -354,8 +351,8 @@ class AssetGroup(
         executor_def: Optional[ExecutorDefinition] = None,
     ) -> "AssetGroup":
         """
-        Constructs an AssetGroup that includes all asset definitions in all sub-modules of the
-        given package.
+        Constructs an AssetGroup that includes all asset definitions and source assets in all
+        sub-modules of the given package.
 
         Args:
             package_name (str): The name of a Python package to look for assets inside.
@@ -371,6 +368,59 @@ class AssetGroup(
         return AssetGroup.from_package_module(
             package_module, resource_defs=resource_defs, executor_def=executor_def
         )
+
+    @staticmethod
+    def from_modules(
+        modules: Sequence[ModuleType],
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        executor_def: Optional[ExecutorDefinition] = None,
+    ) -> "AssetGroup":
+        """
+        Constructs an AssetGroup that includes all asset definitions and source assets in the given
+        module.
+
+        Args:
+            modules (Sequence[ModuleType]): The Python modules to look for assets inside.
+            resource_defs (Optional[Mapping[str, ResourceDefinition]]): A dictionary of resource
+                definitions to include on the returned asset group.
+            executor_def (Optional[ExecutorDefinition]): An executor to include on the returned
+                asset group.
+
+        Returns:
+            AssetGroup: An asset group with all the assets defined in the given modules.
+        """
+        assets: Set[AssetsDefinition] = set()
+        source_assets: Set[SourceAsset] = set()
+        for module in modules:
+            module_assets, module_source_assets = _find_assets_in_module(module)
+            assets.update(module_assets)
+            source_assets.update(module_source_assets)
+
+        return AssetGroup(
+            assets=list(assets),
+            source_assets=list(source_assets),
+            resource_defs=resource_defs,
+            executor_def=executor_def,
+        )
+
+
+def _find_assets_in_module(
+    module: ModuleType,
+) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset]]:
+    """
+    Finds assets in the given module and adds them to the given sets of assets and source assets.
+    """
+    assets: List[AssetsDefinition] = []
+    source_assets: List[SourceAsset] = []
+
+    for attr in dir(module):
+        value = getattr(module, attr)
+        if isinstance(value, AssetsDefinition):
+            assets.append(value)
+        if isinstance(value, SourceAsset):
+            source_assets.append(value)
+
+    return assets, source_assets
 
 
 def _find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]:

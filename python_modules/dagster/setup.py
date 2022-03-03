@@ -118,7 +118,7 @@ if __name__ == "__main__":
                 "pylint==2.6.0",
             ],
             "black": [
-                "black==22.1.0",
+                "black[jupyter]==22.1.0",
             ],
             "isort": [
                 "isort==5.10.1",

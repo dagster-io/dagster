@@ -88,7 +88,7 @@ def asset(
             the asset, e.g. "dbt" or "spark". It will be displayed in Dagit as a badge on the asset.
         dagster_type (Optional[DagsterType]): Allows specifying type validation functions that
             will be executed on the output of the decorated function after it runs.
-        partitions_def (Optional[PartitionsDefiniition]): Defines the set of partition keys that
+        partitions_def (Optional[PartitionsDefinition]): Defines the set of partition keys that
             compose the asset.
         partition_mappings (Optional[Mapping[str, PartitionMapping]]): Defines how to map partition
             keys for this asset to partition keys of upstream assets. Each key in the dictionary

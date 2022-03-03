@@ -1,0 +1,36 @@
+version: 2
+
+models:
+  - name: daily_order_summary
+    description: "Daily metrics for orders placed on this platform."
+    columns:
+      - name: order_date
+        description: "The UTC day for which these orders were aggregated."
+        data_type: "date"
+      - name: total_value
+        description: "The total value of all orders placed on this day."
+        data_type: "float"
+      - name: num_orders
+        description: "The total number of orders placed on this day."
+        data_type: "int"
+  - name: orders_cleaned
+    description: "Filtered version of the raw orders data."
+    columns:
+      - name: "user_id"
+        description: "Platform id of the user that placed this order."
+        data_type: "int"
+      - name: "order_time"
+        description: "The timestamp (in UTC) that this order was placed."
+        data_type: "timestamp"
+      - name: "order_value"
+        description: "The dollar amount that this order was placed for."
+        data_type: "float"
+  - name: users_augmented
+    description: "Raw users data augmented with backend data."
+    columns:
+      - name: "user_id"
+        description: "Platform id for this user."
+        data_type: "int"
+      - name: "is_spam"
+        description: "True if this user has been marked as a fraudulent account."
+        data_type: "bool"

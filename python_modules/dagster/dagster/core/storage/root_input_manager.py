@@ -1,4 +1,4 @@
-from abc import abstractmethod, abstractproperty
+from abc import abstractmethod
 from functools import update_wrapper
 
 from dagster import check
@@ -12,7 +12,8 @@ from dagster.utils.backcompat import experimental
 
 
 class IInputManagerDefinition:
-    @abstractproperty
+    @property
+    @abstractmethod
     def input_config_schema(self):
         """The schema for per-input configuration for inputs that are managed by this
         input manager"""

@@ -28,6 +28,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {
@@ -38,6 +39,7 @@ import {
   successStatuses,
 } from '../runs/RunStatuses';
 import {DagsterTag} from '../runs/RunTag';
+import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -84,13 +86,14 @@ export const InstanceBackfills = () => {
         ? result.partitionBackfillsOrError.results
         : [],
   });
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   useDocumentTitle('Backfills');
 
   return (
     <>
       <PageHeader
         title={<Heading>Instance status</Heading>}
-        tabs={<InstanceTabs tab="backfills" queryData={queryData} />}
+        tabs={<InstanceTabs tab="backfills" refreshState={refreshState} />}
       />
       <Loading queryResult={queryResult} allowStaleData={true}>
         {({partitionBackfillsOrError}) => {
@@ -281,9 +284,12 @@ const BackfillRow = ({
   const history = useHistory();
   const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissions();
   const counts = React.useMemo(() => getProgressCounts(backfill), [backfill]);
-  const runsUrl = `/instance/runs?${qs.stringify({
-    q: [stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}])],
-  })}`;
+  const runsUrl = runsPathWithFilters([
+    {
+      token: 'tag',
+      value: `dagster/backfill=${backfill.backfillId}`,
+    },
+  ]);
 
   const repoAddress = backfill.partitionSet
     ? buildRepoAddress(

@@ -1,6 +1,6 @@
 import logging
 import sys
-from abc import ABC, abstractproperty
+from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import (
     TYPE_CHECKING,
@@ -181,7 +181,8 @@ class ExecutionContextManager(Generic[TContextType], ABC):
             generator=event_generator, object_cls=self.context_type, require_object=raise_on_error
         )
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def context_type(self) -> Type[TContextType]:
         pass
 

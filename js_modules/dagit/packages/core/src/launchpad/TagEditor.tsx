@@ -26,10 +26,8 @@ interface ITagEditorProps {
 }
 
 interface ITagContainerProps {
-  tags: {
-    fromDefinition?: PipelineRunTag[];
-    fromSession?: PipelineRunTag[];
-  };
+  tagsFromDefinition?: PipelineRunTag[];
+  tagsFromSession: PipelineRunTag[];
   onRequestEdit: () => void;
 }
 
@@ -43,6 +41,14 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
   const [editState, setEditState] = React.useState(() =>
     tagsFromSession.length ? tagsFromSession : [{key: '', value: ''}],
   );
+
+  // Reset the edit state when you close and re-open the modal, or when
+  // tagsFromSession change while the modal is closed.
+  React.useEffect(() => {
+    if (!open) {
+      setEditState(tagsFromSession.length ? tagsFromSession : [{key: '', value: ''}]);
+    }
+  }, [tagsFromSession, open]);
 
   const toSave: PipelineRunTag[] = editState
     .map((tag: PipelineRunTag) => ({
@@ -176,26 +182,31 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
   );
 };
 
-export const TagContainer = ({tags, onRequestEdit}: ITagContainerProps) => {
-  const {fromDefinition = [], fromSession = []} = tags;
+export const TagContainer = ({
+  tagsFromSession,
+  tagsFromDefinition,
+  onRequestEdit,
+}: ITagContainerProps) => {
   return (
     <Container>
       <TagList>
-        {fromDefinition.map((tag, idx) => {
-          const {key} = tag;
-          const anyOverride = fromSession.some((sessionTag) => sessionTag.key === key);
-          if (anyOverride) {
-            return (
-              <Tooltip key={key} content="Overriden by custom tag value" placement="top">
-                <span style={{opacity: 0.2}}>
-                  <RunTag tag={tag} key={idx} />
-                </span>
-              </Tooltip>
-            );
-          }
-          return <RunTag tag={tag} key={idx} />;
-        })}
-        {fromSession.map((tag, idx) => (
+        {tagsFromDefinition
+          ? tagsFromDefinition.map((tag, idx) => {
+              const {key} = tag;
+              const anyOverride = tagsFromSession.some((sessionTag) => sessionTag.key === key);
+              if (anyOverride) {
+                return (
+                  <Tooltip key={key} content="Overriden by custom tag value" placement="top">
+                    <span style={{opacity: 0.2}}>
+                      <RunTag tag={tag} key={idx} />
+                    </span>
+                  </Tooltip>
+                );
+              }
+              return <RunTag tag={tag} key={idx} />;
+            })
+          : undefined}
+        {tagsFromSession.map((tag, idx) => (
           <RunTag tag={tag} key={idx} />
         ))}
       </TagList>
