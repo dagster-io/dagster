@@ -2,9 +2,11 @@
 import os
 import re
 import sqlite3
+import time
 from collections import namedtuple
 from enum import Enum
 from gzip import GzipFile
+from typing import NamedTuple, Optional, Union
 
 import pytest
 
@@ -38,6 +40,7 @@ from dagster.serdes.serdes import (
     serialize_dagster_namedtuple,
     serialize_value,
 )
+from dagster.utils.error import SerializableErrorInfo
 from dagster.utils.test import copy_directory
 
 
@@ -713,3 +716,71 @@ def test_schedule_namedtuple_job_instigator_backcompat():
                     assert tick.tick_data
                     assert tick.instigator_type
                     assert tick.instigator_name
+
+
+def test_legacy_event_log_load():
+    # ensure EventLogEntry 0.14.3+ can still be loaded by older dagster versions
+    # to avoid downgrades etc from creating operational issues
+    legacy_env = WhitelistMap.create()
+
+    # snapshot of EventLogEntry pre commit ea19544
+    @_whitelist_for_serdes(
+        whitelist_map=legacy_env,
+        storage_name="EventLogEntry",  # use this to avoid collision with current EventLogEntry
+    )
+    class OldEventLogEntry(
+        NamedTuple(
+            "_OldEventLogEntry",
+            [
+                ("error_info", Optional[SerializableErrorInfo]),
+                ("message", str),
+                ("level", Union[str, int]),
+                ("user_message", str),
+                ("run_id", str),
+                ("timestamp", float),
+                ("step_key", Optional[str]),
+                ("pipeline_name", Optional[str]),
+                ("dagster_event", Optional[DagsterEvent]),
+            ],
+        )
+    ):
+        def __new__(
+            cls,
+            error_info,
+            message,
+            level,
+            user_message,
+            run_id,
+            timestamp,
+            step_key=None,
+            pipeline_name=None,
+            dagster_event=None,
+            job_name=None,
+        ):
+            pipeline_name = pipeline_name or job_name
+            return super().__new__(
+                cls,
+                check.opt_inst_param(error_info, "error_info", SerializableErrorInfo),
+                check.str_param(message, "message"),
+                level,  # coerce_valid_log_level call omitted
+                check.str_param(user_message, "user_message"),
+                check.str_param(run_id, "run_id"),
+                check.float_param(timestamp, "timestamp"),
+                check.opt_str_param(step_key, "step_key"),
+                check.opt_str_param(pipeline_name, "pipeline_name"),
+                check.opt_inst_param(dagster_event, "dagster_event", DagsterEvent),
+            )
+
+    # current event log entry
+    new_event = EventLogEntry(
+        user_message="test 1 2 3",
+        error_info=None,
+        level="debug",
+        run_id="fake_run_id",
+        timestamp=time.time(),
+    )
+
+    storage_str = serialize_dagster_namedtuple(new_event)
+
+    result = _deserialize_json(storage_str, legacy_env)
+    assert result.message is not None
