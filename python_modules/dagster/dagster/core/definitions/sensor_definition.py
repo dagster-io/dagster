@@ -30,6 +30,7 @@ from ..decorator_utils import get_function_params
 from .events import AssetKey
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
+from .pipeline_definition import PipelineDefinition
 from .mode import DEFAULT_MODE_NAME
 from .run_request import PipelineRunReaction, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
@@ -309,14 +310,15 @@ class SensorDefinition:
         return self._targets
 
     @property
-    def job(self) -> Optional[Sequence[Union[GraphDefinition, JobDefinition]]]:
-        if len(self._targets) == 1 and isinstance(self._targets[0], DirectTarget):
-            return self._targets[0].pipeline
-        elif len(self._targets) > 1:
-            raise DagsterInvalidDefinitionError(
-                "Job property not available when SensorDefinition has multiple jobs."
-            )
-        raise DagsterInvalidDefinitionError("No jobs were provided to SensorDefinition.")
+    def job(self) -> PipelineDefinition:
+        if self._targets:
+            if len(self._targets) == 1 and isinstance(self._targets[0], DirectTarget):
+                return self._targets[0].pipeline
+            elif len(self._targets) > 1:
+                raise DagsterInvalidDefinitionError(
+                    "Job property not available when SensorDefinition has multiple jobs."
+                )
+        raise DagsterInvalidDefinitionError("No job was provided to SensorDefinition.")
 
     def evaluate_tick(self, context: "SensorEvaluationContext") -> "SensorExecutionData":
         """Evaluate sensor using the provided context.
