@@ -13,6 +13,8 @@
 * [dagster-dbt] `load_assets_from_dbt_project` will now attach schema information to the generated assets if it is available in the dbt project (`schema.yml`).
 * [examples] Added an [example](https://github.com/dagster-io/dagster/tree/master/examples/modern_data_stack_assets) that demonstrates using Software Defined Assets with Airbyte, dbt, and custom Python.
 * The default io manager used in the `AssetGroup` api is now the `fs_asset_io_manager`.
+* It's now possible to build a job where partitioned assets depend on partitioned assets that are maintained outside the job, and for those upstream partitions to show up on the context in the op and IOManager load_input function.
+* `SourceAsset`s can now be partitioned, by setting the `partitions_def` argument.
 
 ### Bugfixes
 
