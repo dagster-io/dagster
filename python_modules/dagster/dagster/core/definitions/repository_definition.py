@@ -577,6 +577,10 @@ class CachingRepositoryData(RepositoryData):
                             target_type=definition.target_type, target=definition.describe_target()
                         )
                     )
+                if definition.name == AssetGroup.all_assets_job_name():
+                    raise DagsterInvalidDefinitionError(
+                        f"Attempted to provide job called {AssetGroup.all_assets_job_name()} to repository, which is a reserved name. Please rename the job."
+                    )
                 pipelines_or_jobs[definition.name] = definition
             elif isinstance(definition, PartitionSetDefinition):
                 if definition.name in partition_sets:
@@ -627,8 +631,12 @@ class CachingRepositoryData(RepositoryData):
 
             elif isinstance(definition, AssetGroup):
                 asset_group = definition
-                pipelines_or_jobs[asset_group.all_assets_job_name] = build_assets_job(
-                    asset_group.all_assets_job_name,
+                if asset_group.all_assets_job_name() in pipelines_or_jobs:
+                    raise DagsterInvalidDefinitionError(
+                        "When constructing repository, attempted to pass multiple AssetGroups. There can only be one AssetGroup per repository."
+                    )
+                pipelines_or_jobs[asset_group.all_assets_job_name()] = build_assets_job(
+                    asset_group.all_assets_job_name(),
                     assets=asset_group.assets,
                     source_assets=asset_group.source_assets,
                     resource_defs=asset_group.resource_defs,

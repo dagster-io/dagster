@@ -122,8 +122,8 @@ class AssetGroup(
             executor_def=executor_def,
         )
 
-    @property
-    def all_assets_job_name(self) -> str:
+    @staticmethod
+    def all_assets_job_name() -> str:
         """The name of the mega-job that the provided list of assets is coerced into."""
         return "__ASSET_GROUP"
 

@@ -6,8 +6,10 @@ from dagster import (
     IOManager,
     Out,
     fs_asset_io_manager,
+    graph,
     in_process_executor,
     io_manager,
+    job,
     mem_io_manager,
     repository,
     resource,
@@ -36,7 +38,7 @@ def test_asset_group_from_list():
 
     assert len(the_repo.get_all_jobs()) == 1
     asset_group_underlying_job = the_repo.get_all_jobs()[0]
-    assert asset_group_underlying_job.name == group.all_assets_job_name
+    assert asset_group_underlying_job.name == group.all_assets_job_name()
 
     result = asset_group_underlying_job.execute_in_process()
     assert result.success
@@ -71,7 +73,7 @@ def test_asset_group_source_asset():
         return [group]
 
     asset_group_underlying_job = the_repo.get_all_jobs()[0]
-    assert asset_group_underlying_job.name == group.all_assets_job_name
+    assert asset_group_underlying_job.name == group.all_assets_job_name()
 
     result = asset_group_underlying_job.execute_in_process()
     assert result.success
@@ -93,7 +95,7 @@ def test_asset_group_with_resources():
         return [group]
 
     asset_group_underlying_job = the_repo.get_all_jobs()[0]
-    assert asset_group_underlying_job.name == group.all_assets_job_name
+    assert asset_group_underlying_job.name == group.all_assets_job_name()
 
     result = asset_group_underlying_job.execute_in_process()
     assert result.success
@@ -375,3 +377,32 @@ def test_default_io_manager():
         group.resource_defs["io_manager"]  # pylint: disable=comparison-with-callable
         == fs_asset_io_manager
     )
+    assert group.resource_defs["io_manager"] == fs_asset_io_manager
+
+
+def test_repo_with_multiple_asset_groups():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="When constructing repository, attempted to pass multiple "
+        "AssetGroups. There can only be one AssetGroup per repository.",
+    ):
+
+        @repository
+        def the_repo():
+            return [AssetGroup(assets=[]), AssetGroup(assets=[])]
+
+
+def test_job_with_reserved_name():
+    @graph
+    def the_graph():
+        pass
+
+    the_job = the_graph.to_job(name=AssetGroup.all_assets_job_name())
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=f"Attempted to provide job called {AssetGroup.all_assets_job_name()} to repository, which is a reserved name.",
+    ):
+
+        @repository
+        def the_repo():
+            return [the_job]
