@@ -4,7 +4,7 @@
 
 ### New
 
-* Run status sensors can now be invoked in unit tests. Added `build_run_sensor_status_context` to help build context objects for run status sensors
+* Run status sensors can now be invoked in unit tests. Added `build_run_status_sensor_context` to help build context objects for run status sensors
 
 ### Bugfixes
 
