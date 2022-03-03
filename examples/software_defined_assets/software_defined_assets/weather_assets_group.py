@@ -1,5 +1,6 @@
-"""
-Defines a job that computes the weather assets.
+"""isort:skip_file
+
+Defines a group of weather assets.
 
 Data is locally stored in csv files on the local filesystem.
 """
@@ -8,10 +9,7 @@ import os
 import pandas as pd
 from pandas import DataFrame
 
-from dagster import AssetKey, IOManager, IOManagerDefinition, build_assets_job
-
-from .assets import daily_temperature_highs, hottest_dates, sfo_q2_weather_sample
-
+from dagster import AssetGroup, AssetKey, IOManager, IOManagerDefinition
 
 # io_manager_start
 class LocalFileSystemIOManager(IOManager):
@@ -34,13 +32,15 @@ class LocalFileSystemIOManager(IOManager):
 
 # io_manager_end
 
-# build_assets_job_start
-weather_job = build_assets_job(
-    "weather",
-    assets=[daily_temperature_highs, hottest_dates],
-    source_assets=[sfo_q2_weather_sample],
+# asset_group_start
+# imports the module called "assets" from the package containing the current module
+# the "assets" module contains the asset definitions
+from . import assets
+
+weather_assets = AssetGroup.from_modules(
+    modules=[assets],
     resource_defs={
         "io_manager": IOManagerDefinition.hardcoded_io_manager(LocalFileSystemIOManager())
     },
 )
-# build_assets_job_end
+# asset_group_end

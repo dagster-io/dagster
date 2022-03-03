@@ -1,5 +1,6 @@
-"""
-Defines a job that computes the weather assets.
+"""isort:skip_file
+
+Defines a group of the weather assets.
 
 Data is stored in Parquet files using the "Hadoop-style" layout in which each table corresponds to a
 directory, and each file within the directory contains some of the rows.
@@ -16,11 +17,7 @@ from pandas import DataFrame as PandasDF
 from pyspark.sql import DataFrame as SparkDF
 from pyspark.sql import SparkSession
 
-from dagster import AssetKey, IOManager, IOManagerDefinition, build_assets_job, check
-
-from .assets import daily_temperature_highs, hottest_dates, sfo_q2_weather_sample
-from .spark_asset import daily_temperature_high_diffs
-
+from dagster import AssetGroup, AssetKey, IOManager, IOManagerDefinition, check
 
 # io_manager_start
 class LocalFileSystemIOManager(IOManager):
@@ -81,15 +78,13 @@ class LocalFileSystemIOManager(IOManager):
 
 # io_manager_end
 
-# build_assets_job_start
+# asset_group_start
+from . import assets, spark_asset
 
-spark_weather_job = build_assets_job(
-    "spark_weather",
-    assets=[daily_temperature_highs, hottest_dates, daily_temperature_high_diffs],
-    source_assets=[sfo_q2_weather_sample],
+spark_weather_assets = AssetGroup.from_modules(
+    modules=[assets, spark_asset],
     resource_defs={
         "io_manager": IOManagerDefinition.hardcoded_io_manager(LocalFileSystemIOManager())
     },
 )
-
-# build_assets_job_end
+# asset_group_end
