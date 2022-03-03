@@ -75,23 +75,26 @@ export const TickTag: React.FC<{
         return <TagWIP intent="danger">Failure</TagWIP>;
       } else {
         const error = tick.error;
+        const showError = () =>
+          showCustomAlert({
+            title: instigationType
+              ? instigationType === InstigationType.SCHEDULE
+                ? 'Schedule Response'
+                : 'Sensor Response'
+              : 'Python Error',
+            body: <PythonErrorInfo error={error} />,
+          });
         return (
-          <LinkButton
-            onClick={() =>
-              showCustomAlert({
-                title: instigationType
-                  ? instigationType === InstigationType.SCHEDULE
-                    ? 'Schedule Response'
-                    : 'Sensor Response'
-                  : 'Python Error',
-                body: <PythonErrorInfo error={error} />,
-              })
-            }
-          >
-            <TagWIP minimal={true} intent="danger">
-              Failure
-            </TagWIP>
-          </LinkButton>
+          <>
+            <LinkButton onClick={showError}>
+              <TagWIP minimal={true} intent="danger">
+                Failure
+              </TagWIP>
+            </LinkButton>
+            <ButtonLink onClick={showError} style={{marginLeft: 8, fontSize: 14}}>
+              View error
+            </ButtonLink>
+          </>
         );
       }
     default:
