@@ -7,7 +7,7 @@ This is an example of how to use the Software-Defined Asset APIs alongside Moder
 
 ## Python
 
-To install the python dependencies for this example, run:
+To install this example and its python dependencies, run:
 
 ```
 $ pip install -e .
@@ -19,7 +19,9 @@ Once you've done this, you can run:
 $ dagit -m modern_data_stack_assets
 ```
 
-To view this example in Dagster's UI, Dagit. If you want to run this job successfully, you'll need to do a bit of extra setup, described below.
+To view this example in Dagster's UI, Dagit.
+
+If you try to kick off a run immediately, it will fail, as there is no source data to ingest/transform, nor is there an active Airbyte connection. To get everything set up properly, read on.
 
 ## Local Postgres
 
@@ -55,7 +57,7 @@ There's a script provided that should handle this all for you, which you can run
 $ python -m modern_data_stack_assets.setup_airbyte
 ```
 
-At the end of this output you should see something like:
+At the end of this output, you should see something like:
 
 ```
 Created Airbyte Connection: c90cb8a5-c516-4c1a-b243-33dfe2cfb9e8
