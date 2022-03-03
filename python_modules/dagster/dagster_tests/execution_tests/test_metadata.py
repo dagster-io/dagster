@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from dagster import (
@@ -7,6 +9,7 @@ from dagster import (
     FloatMetadataValue,
     IntMetadataValue,
     MetadataValue,
+    PathMetadataValue,
     PythonArtifactMetadataValue,
     TextMetadataValue,
     UrlMetadataValue,
@@ -57,6 +60,7 @@ def test_metadata_asset_materialization():
                 "int": 22,
                 "url": MetadataValue.url("http://fake.com"),
                 "float": 0.1,
+                "path": MetadataValue.path(Path("/a/b.csv")),
                 "python": MetadataValue.python_artifact(MetadataValue),
             },
         )
@@ -75,7 +79,7 @@ def test_metadata_asset_materialization():
     )
     assert len(materialization_events) == 1
     materialization = materialization_events[0].event_specific_data.materialization
-    assert len(materialization.metadata_entries) == 5
+    assert len(materialization.metadata_entries) == 6
     entry_map = {
         entry.label: entry.entry_data.__class__ for entry in materialization.metadata_entries
     }
@@ -83,6 +87,7 @@ def test_metadata_asset_materialization():
     assert entry_map["int"] == IntMetadataValue
     assert entry_map["url"] == UrlMetadataValue
     assert entry_map["float"] == FloatMetadataValue
+    assert entry_map["path"] == PathMetadataValue
     assert entry_map["python"] == PythonArtifactMetadataValue
 
 

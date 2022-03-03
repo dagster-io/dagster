@@ -1,3 +1,5 @@
+from os import fspath, PathLike
+
 import inspect
 from typing import (
     AbstractSet,
@@ -873,6 +875,24 @@ def opt_str_param(obj: object, param_name: str, default: Optional[str] = None) -
     if obj is not None and not isinstance(obj, str):
         raise _param_type_mismatch_exception(obj, str, param_name)
     return default if obj is None else obj
+
+
+def path_param(obj: object, param_name: str) -> str:
+    try:
+        return fspath(obj)
+    except TypeError:
+        raise _param_type_mismatch_exception(obj, (str, PathLike), param_name)
+
+
+def opt_path_param(
+    obj: object, param_name: str, default: Optional[Union[str, PathLike]] = None
+) -> Optional[str]:
+    try:
+        return fspath(obj)
+    except TypeError:
+        if obj is not None:
+            raise _param_type_mismatch_exception(obj, (str, PathLike), param_name)
+        return default
 
 
 def opt_nonempty_str_param(
