@@ -349,10 +349,29 @@ def test_asset_group_from_package_module():
     }
 
 
+def test_asset_group_from_modules():
+    from . import asset_package
+    from .asset_package import module_with_assets
+
+    collection = AssetGroup.from_modules([asset_package, module_with_assets])
+    assert {asset.op.name for asset in collection.assets} == {
+        "little_richard",
+        "chuck_berry",
+        "miles_davis",
+    }
+    assert len(collection.assets) == 3
+    assert {source_asset.key for source_asset in collection.source_assets} == {
+        AssetKey("elvis_presley")
+    }
+
+
 def test_default_io_manager():
     @asset
     def asset_foo():
         return "foo"
 
     group = AssetGroup(assets=[asset_foo])
-    assert group.resource_defs["io_manager"] == fs_asset_io_manager
+    assert (
+        group.resource_defs["io_manager"]  # pylint: disable=comparison-with-callable
+        == fs_asset_io_manager
+    )
