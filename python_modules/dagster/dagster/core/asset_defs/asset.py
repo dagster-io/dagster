@@ -64,7 +64,7 @@ class AssetsDefinition:
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         return self._partitions_def
 
-    def subset(self, asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
+    def subset(self, asset_keys: AbstractSet[AssetKey], all_keys) -> "AssetsDefinition":
         if not self.can_subset:
             raise "TODO"
         assert asset_keys <= self.asset_keys
@@ -72,11 +72,12 @@ class AssetsDefinition:
         for asset_key in asset_keys:
             required_asset_keys.update(self.upstream_assets(asset_key))
         required_input_asset_keys = set(self.input_defs_by_asset_key.keys()).intersection(
-            required_asset_keys - asset_keys
+            all_keys
+            # required_asset_keys - asset_keys
         )
 
         new_op = copy.copy(self.op)
-        new_op._name = hex(
+        new_op._name = self.op.name + hex(
             int(
                 "".join(
                     (

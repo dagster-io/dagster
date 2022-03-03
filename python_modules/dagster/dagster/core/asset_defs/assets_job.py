@@ -208,7 +208,6 @@ def build_op_deps(
 ) -> Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]:
     op_outputs_by_asset: Dict[AssetKey, Tuple[OpDefinition, str]] = {}
     for multi_asset_def in multi_asset_defs:
-        print(multi_asset_def.output_defs_by_asset_key)
         for asset_key, output_def in multi_asset_def.output_defs_by_asset_key.items():
             if asset_key in op_outputs_by_asset:
                 raise DagsterInvalidDefinitionError(
@@ -216,8 +215,6 @@ def build_op_deps(
                 )
 
             op_outputs_by_asset[asset_key] = (multi_asset_def.op, output_def.name)
-
-    print(op_outputs_by_asset)
 
     op_deps: Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]] = {}
     for multi_asset_def in multi_asset_defs:

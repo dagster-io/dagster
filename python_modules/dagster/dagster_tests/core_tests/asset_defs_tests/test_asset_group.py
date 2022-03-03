@@ -211,12 +211,26 @@ def asset_aware_io_manager():
     return io_manager_obj, _asset_aware
 
 
-def test_asset_group_build_sliced_subset_job():
+@pytest.mark.parametrize(
+    "selection,expected_assets",
+    [
+        ("*", "start_asset,a,b,c,d,e,f,final_asset"),
+        ("a", "a"),
+        ("b+", "b,c,d"),
+        ("+f", "f,d,e"),
+        ("++f", "f,d,e,c,a,b"),
+        ("start_asset*", "start_asset,a,d,f,final_asset"),
+        (["+a", "b+"], "start_asset,a,b,c,d"),
+        (["*c", "final_asset"], "b,c,final_asset"),
+    ],
+)
+def test_asset_group_build_sliced_subset_job(selection, expected_assets):
     @asset
     def start_asset():
         return "foo"
 
     @multi_asset(
+        non_argument_deps={AssetKey("start_asset")},
         outs={"a": Out(), "b": Out(), "c": Out()},
         internal_asset_deps={
             "a": {AssetKey("start_asset")},
@@ -225,65 +239,42 @@ def test_asset_group_build_sliced_subset_job():
         },
         can_subset=True,
     )
-    def middle_asset(context, start_asset):
+    def abc_assets(context):
         selected_assets = context.op_config.get("selected_assets", ["a", "b", "c"])
         for a in selected_assets:
             yield Output(a, a)
 
-    @asset
-    def final_asset(a):
-        return "foo"
+    @multi_asset(
+        non_argument_deps={AssetKey("a"), AssetKey("b"), AssetKey("c")},
+        outs={"d": Out(), "e": Out(), "f": Out()},
+        internal_asset_deps={
+            "d": {AssetKey("a"), AssetKey("b")},
+            "e": {AssetKey("c")},
+            "f": {AssetKey("d"), AssetKey("e")},
+        },
+        can_subset=True,
+    )
+    def def_assets(context):
+        selected_assets = context.op_config.get("selected_assets", ["d", "e", "f"])
+        for a in selected_assets:
+            yield Output(a, a)
 
-    def _asset_keys_for_node(result, node_name):
-        return set((am.asset_key for am in result.asset_materializations_for_node(node_name)))
+    @asset
+    def final_asset(a, d):
+        return "foo"
 
     _, io_manager_def = asset_aware_io_manager()
     group = AssetGroup(
-        [start_asset, middle_asset, final_asset],
+        [start_asset, abc_assets, def_assets, final_asset],
         resource_defs={"io_manager": io_manager_def},
     )
 
-    full_job = group.build_job("full", selection="*")
-    result = full_job.execute_in_process()
+    result = group.build_job("assets_job", selection=selection).execute_in_process()
+    expected_asset_keys = set((AssetKey(a) for a in expected_assets.split(",")))
 
-    assert result.success
-    assert _asset_keys_for_node(result, "start_asset") == {AssetKey("start_asset")}
-    assert _asset_keys_for_node(result, "middle_asset") == {
-        AssetKey("a"),
-        AssetKey("b"),
-        AssetKey("c"),
-    }
-    assert _asset_keys_for_node(result, "final_asset") == {AssetKey("final_asset")}
+    actual_asset_keys = set((mat.asset_key for mat in result.all_asset_materializations))
 
-    slice_job = group.build_job("full", selection="start_asset*")
-    result = slice_job.execute_in_process()
-    assert result.success
-    assert _asset_keys_for_node(result, "start_asset") == {AssetKey("start_asset")}
-    assert _asset_keys_for_node(result, "middle_asset") == {AssetKey("a")}
-    assert _asset_keys_for_node(result, "final_asset") == {AssetKey("final_asset")}
-
-    slice_job = group.build_job("full", selection="*final_asset")
-    result = slice_job.execute_in_process()
-    assert result.success
-    assert _asset_keys_for_node(result, "start_asset") == {AssetKey("start_asset")}
-    assert _asset_keys_for_node(result, "middle_asset") == {AssetKey("a")}
-    assert _asset_keys_for_node(result, "final_asset") == {AssetKey("final_asset")}
-
-    slice_job = group.build_job("full", selection="b*")
-    result = slice_job.execute_in_process()
-    assert _asset_keys_for_node(result, "middle_asset") == {AssetKey("b"), AssetKey("c")}
-
-    slice_job = group.build_job("full", selection="a+")
-    result = slice_job.execute_in_process()
-    assert _asset_keys_for_node(result, "middle_asset") == {AssetKey("a")}
-    assert _asset_keys_for_node(result, "final_asset") == {AssetKey("final_asset")}
-
-    slice_job = group.build_job("full", selection="+a")
-    result = slice_job.execute_in_process()
-    assert _asset_keys_for_node(result, "start_asset") == {AssetKey("start_asset")}
-    assert _asset_keys_for_node(result, "middle_asset") == {AssetKey("a")}
-
-    assert False
+    assert expected_asset_keys == actual_asset_keys
 
 
 def test_asset_group_build_subset_job():

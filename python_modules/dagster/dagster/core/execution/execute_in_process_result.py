@@ -58,6 +58,14 @@ class ExecuteInProcessResult:
         return self._event_list
 
     @property
+    def all_asset_materializations(self) -> List[Union[Materialization, AssetMaterialization]]:
+        return [
+            cast(StepMaterializationData, event.event_specific_data).materialization
+            for event in self.all_events
+            if event.event_type_value == DagsterEventType.ASSET_MATERIALIZATION.value
+        ]
+
+    @property
     def run_id(self) -> str:
         """str: The run id for the executed run"""
         return self._dagster_run.run_id
