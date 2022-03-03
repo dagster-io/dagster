@@ -65,8 +65,8 @@ def pipeline_selector_from_graphql(data):
     return JobSelector(
         location_name=data["repositoryLocationName"],
         repository_name=data["repositoryName"],
-        pipeline_name=data.get("pipelineName") or data.get("jobName"),
-        solid_selection=data.get("solidSelection"),
+        job_name=data.get("pipelineName") or data.get("jobName"),
+        op_selection=data.get("solidSelection"),
     )
 
 
