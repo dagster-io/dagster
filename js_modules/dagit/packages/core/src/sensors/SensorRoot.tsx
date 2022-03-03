@@ -1,5 +1,5 @@
 import {gql, NetworkStatus, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, Page} from '@dagster-io/ui';
+import {Box, Tab, Tabs, Page} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
@@ -14,6 +14,7 @@ import {RepoAddress} from '../workspace/types';
 import {SensorDetails} from './SensorDetails';
 import {SENSOR_FRAGMENT} from './SensorFragment';
 import {SensorInfo} from './SensorInfo';
+import {SensorPreviousRuns} from './SensorPreviousRuns';
 import {SensorRootQuery} from './types/SensorRootQuery';
 
 const INTERVAL = 15 * 1000;
@@ -27,6 +28,7 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
     sensorName,
   };
 
+  const [selectedTab, setSelectedTab] = React.useState<string>('ticks');
   const queryResult = useQuery<SensorRootQuery>(SENSOR_ROOT_QUERY, {
     variables: {
       sensorSelector,
@@ -46,13 +48,22 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
   };
 
   const countdownStatus = networkStatus === NetworkStatus.ready ? 'counting' : 'idle';
-
+  const tabs = (
+    <Tabs selectedTabId={selectedTab} onChange={setSelectedTab}>
+      <Tab id="ticks" title="Tick history" />
+      <Tab id="runs" title="Run history" />
+    </Tabs>
+  );
   return (
     <Loading queryResult={queryResult} allowStaleData={true}>
       {({sensorOrError, instance}) => {
         if (sensorOrError.__typename !== 'Sensor') {
           return null;
         }
+        const showDaemonWarning = !instance.daemonHealth.daemonStatus.healthy;
+        const showLiveTicks =
+          instance.daemonHealth.daemonStatus.healthy &&
+          sensorOrError.sensorState.status === InstigationStatus.RUNNING;
 
         return (
           <Page>
@@ -64,16 +75,19 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
               countdownStatus={countdownStatus}
               onRefresh={() => onRefresh()}
             />
-            {!instance.daemonHealth.daemonStatus.healthy ? (
+            {showDaemonWarning ? (
               <Box padding={{vertical: 16, horizontal: 24}}>
                 <SensorInfo daemonHealth={instance.daemonHealth} />
               </Box>
             ) : null}
-            {instance.daemonHealth.daemonStatus.healthy &&
-            sensorOrError.sensorState.status === InstigationStatus.RUNNING ? (
+            {showLiveTicks ? (
               <TickHistoryTimeline repoAddress={repoAddress} name={sensorOrError.name} />
             ) : null}
-            <TicksTable repoAddress={repoAddress} name={sensorOrError.name} />
+            {selectedTab === 'ticks' ? (
+              <TicksTable tabs={tabs} repoAddress={repoAddress} name={sensorOrError.name} />
+            ) : (
+              <SensorPreviousRuns repoAddress={repoAddress} sensor={sensorOrError} tabs={tabs} />
+            )}
           </Page>
         );
       }}

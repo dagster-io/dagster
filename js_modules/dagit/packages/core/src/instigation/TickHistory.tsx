@@ -73,7 +73,15 @@ const STATUS_TEXT_MAP = {
   [InstigationTickStatus.SKIPPED]: 'Skipped',
 };
 
-export const TicksTable = ({name, repoAddress}: {name: string; repoAddress: RepoAddress}) => {
+export const TicksTable = ({
+  name,
+  repoAddress,
+  tabs,
+}: {
+  name: string;
+  repoAddress: RepoAddress;
+  tabs?: React.ReactElement;
+}) => {
   const [shownStates, setShownStates] = useQueryPersistedState<ShownStatusState>({
     encode: (states) => {
       const queryState = {};
@@ -145,12 +153,9 @@ export const TicksTable = ({name, repoAddress}: {name: string; repoAddress: Repo
 
   return (
     <>
-      <Box
-        padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
-      >
-        <Subheading>Tick History</Subheading>
-        <Box flex={{direction: 'row', justifyContent: 'flex-end'}}>
+      <Box margin={{vertical: 8, horizontal: 24}}>
+        <Box flex={{direction: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+          {tabs}
           <Box flex={{direction: 'row', gap: 16}}>
             <StatusFilter status={InstigationTickStatus.STARTED} />
             <StatusFilter status={InstigationTickStatus.SUCCESS} />
