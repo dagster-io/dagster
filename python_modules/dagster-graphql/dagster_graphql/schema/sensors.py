@@ -171,6 +171,24 @@ class GrapheneStopSensorMutation(graphene.Mutation):
         return stop_sensor(graphene_info, job_origin_id)
 
 
+class GrapheneSetSensorCursorMutation(graphene.Mutation):
+    Output = graphene.NonNull(GrapheneSensorOrError)
+
+    class Arguments:
+        sensor_selector = graphene.NonNull(GrapheneSensorSelector)
+        cursor = graphene.String()
+
+    class Meta:
+        name = "SetSensorCursorMutation"
+
+    @capture_error
+    @check_permission(Permissions.START_SENSOR)
+    def mutate(self, graphene_info, sensor_selector, cursor):
+        return set_sensor_cursor(
+            graphene_info, SensorSelector.from_graphql_input(sensor_selector), cursor
+        )
+
+
 types = [
     GrapheneSensor,
     GrapheneSensorOrError,
@@ -180,4 +198,5 @@ types = [
     GrapheneStopSensorMutationResult,
     GrapheneStopSensorMutationResultOrError,
     GrapheneStopSensorMutation,
+    GrapheneSetSensorCursorMutation,
 ]

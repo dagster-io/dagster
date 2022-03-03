@@ -3,7 +3,7 @@ from graphql.execution.base import ResolveInfo
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation import PipelineSelector, RepositorySelector, SensorSelector
-from dagster.core.scheduler.instigation import InstigatorState
+from dagster.core.scheduler.instigation import InstigatorState, SensorInstigatorData
 from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
 from .utils import UserFacingGraphQLError, capture_error
@@ -190,3 +190,36 @@ def get_sensor_next_tick(graphene_info, sensor_state):
     if next_timestamp < get_timestamp_from_utc_datetime(get_current_datetime_in_utc()):
         return None
     return GrapheneFutureInstigationTick(sensor_state, next_timestamp)
+
+
+@capture_error
+def set_sensor_cursor(graphene_info, selector, cursor):
+    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+    check.inst_param(selector, "selector", SensorSelector)
+    check.opt_str_param(cursor, "cursor")
+
+    from ..schema.errors import GrapheneSensorNotFoundError
+
+    location = graphene_info.context.get_repository_location(selector.location_name)
+    repository = location.get_repository(selector.repository_name)
+
+    if not repository.has_external_sensor(selector.sensor_name):
+        raise UserFacingGraphQLError(GrapheneSensorNotFoundError(selector.sensor_name))
+    instance = graphene_info.context.instance
+    external_sensor = repository.get_external_sensor(selector.sensor_name)
+    stored_state = instance.get_instigator_state(external_sensor.get_external_origin_id())
+    sensor_state = external_sensor.get_current_instigator_state(stored_state)
+    updated_state = sensor_state.with_data(
+        SensorInstigatorData(
+            last_tick_timestamp=sensor_state.instigator_data.last_tick_timestamp,
+            last_run_key=sensor_state.instigator_data.last_run_key,
+            min_interval=external_sensor.min_interval_seconds,
+            cursor=cursor,
+        )
+    )
+    if not stored_state:
+        instance.add_instigator_state(updated_state)
+    else:
+        instance.update_instigator_state(updated_state)
+
+    return GrapheneSensor(external_sensor, updated_state)
