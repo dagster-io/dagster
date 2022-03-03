@@ -16,6 +16,7 @@ setup(
     package_data={"modern_data_stack_assets": ["mds_dbt/*"]},
     install_requires=[
         "dagster",
+        "dagit",
         "dagster-airbyte",
         "dagster-dbt",
         "dagster-postgres",
