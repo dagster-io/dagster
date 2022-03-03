@@ -1,5 +1,49 @@
 # Changelog
 
+# 0.14.3
+
+### New
+
+* When using an executor that runs each op in its own process, exceptions in the Dagster system code that result in the op process failing will now be surfaced in the event log.
+* Introduced new SecretsManager resources to the dagster-aws package to enable loading secrets into Jobs more easily. For more information, see[the documentation](https://docs.dagster.io/_apidocs/libraries/dagster-aws#secretsmanager).
+* Daemon heartbeats are now processed in a batch request to the database.
+* Job definitions now contain a method called `run_request_for_partition`, which returns a `RunRequest` that can be returned in a sensor or schedule evaluation function to launch a run for a particular partition for that job.  See [our documentation](https://docs.dagster.io/concepts/partitions-schedules-sensors/partitions#creating-schedules-from-partitioned-jobs) for more information.
+* Renamed the filter class from `PipelineRunsFilter` => `RunsFilter`.
+* Assets can now be directly invoked for unit testing.
+* [dagster-dbt] `load_assets_from_dbt_project` will now attach schema information to the generated assets if it is available in the dbt project (`schema.yml`).
+* [examples] Added an [example](https://github.com/dagster-io/dagster/tree/master/examples/modern_data_stack_assets) that demonstrates using Software Defined Assets with Airbyte, dbt, and custom Python.
+* The default io manager used in the `AssetGroup` api is now the `fs_asset_io_manager`.
+
+### Bugfixes
+
+* Fixed an issue where run status sensors would sometimes fire multiple times for the same run if the sensor function raised an error.
+* [ECS] Previously, setting cpu/memory tags on a job would override the ECS task’s cpu/memory, but not individual containers. If you were using a custom task definition that explicitly sets a container’s cpu/memory, the container would not resize even if you resized the task. Now, setting cpu/memory tags on a job overrides both the ECS task’s cpu/memory and the container's cpu/memory.
+* [ECS] Previously, if the EcsRunLauncher launched a run from a task with multiple containers - for example if both dagit and daemon were running in the same task - then the run would be launched with too many containers. Now, the EcsRunLauncher only launches tasks with a single container.
+* Fixed an issue where the run status of job invoked through `execute_in_process` was not updated properly.
+* Fixed some storage queries that were incompatible with versions of `SQLAlchemy<1.4.0`.
+* [dagster-dbt] Fixed issue where `load_assets_from_dbt_project` would fail if models were organized into subdirectories.
+* [dagster-dbt] Fixed issue where `load_assets_from_dbt_project` would fail if seeds or snapshots were present in the project.
+
+### Community Contributions
+
+* [dagster-fivetran] A new fivetran_resync_op (along with a corresponding resync_and_poll method on the fivetran_resource) allows you to kick off Fivetran resyncs using Dagster (thanks [@dwallace0723](https://github.com/dwallace0723)!)
+* [dagster-shell] Fixed an issue where large log output could cause operations to hang (thanks [@kbd](https://github.com/kbd)!)
+
+* [documentation] Fixed export message with dagster home path (thanks [@proteusiq](https://github.com/Proteusiq))!
+* [documentation] Remove duplicate entries under integrations (thanks [@kahnwong](https://github.com/kahnwong))!
+
+### UI
+
+* Added a small toggle to the right of each graph on the asset details page, allowing them to be toggled on and off.
+* Full asset paths are now displayed on the asset details page.
+
+### Documentation
+
+* Added API doc entries for `validate_run_config`.
+* Fixed the example code for the `reexecute_pipeline` API.
+* `TableRecord`, `TableSchema` and its constituents are now documented in the API docs.
+* Docs now correctly use new metadata names `MetadataEntry` and `MetadataValue` instead of old ones.
+
 # 0.14.2
 
 ### New
