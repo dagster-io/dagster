@@ -119,7 +119,7 @@ export const PartitionHealthSummary: React.FC<{
             <div
               key={s.startIdx}
               style={{
-                left: indexToPct(s.startIdx),
+                left: `min(calc(100% - 2px), ${indexToPct(s.startIdx)})`,
                 width: indexToPct(s.endIdx - s.startIdx + 1),
                 position: 'absolute',
                 top: 0,
@@ -144,7 +144,7 @@ export const PartitionHealthSummary: React.FC<{
           <div
             key={s.startIdx}
             style={{
-              left: indexToPct(s.startIdx),
+              left: `min(calc(100% - 2px), ${indexToPct(s.startIdx)})`,
               width: indexToPct(s.endIdx - s.startIdx + 1),
               minWidth: s.status ? 2 : undefined,
               position: 'absolute',
