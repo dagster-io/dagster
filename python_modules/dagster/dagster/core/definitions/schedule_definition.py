@@ -416,6 +416,12 @@ class ScheduleDefinition:
     def execution_timezone(self) -> Optional[str]:
         return self._execution_timezone
 
+    @property
+    def job(self) -> PipelineDefinition:
+        if isinstance(self._target, DirectTarget):
+            return self._target.pipeline
+        raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
+
     def evaluate_tick(self, context: "ScheduleEvaluationContext") -> ScheduleExecutionData:
         """Evaluate schedule using the provided context.
 
