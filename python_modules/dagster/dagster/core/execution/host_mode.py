@@ -186,7 +186,7 @@ def execute_run_host_mode(
 
     if pipeline_run.solids_to_execute:
         pipeline = pipeline.subset_for_execution_from_existing_pipeline(
-            pipeline_run.solids_to_execute
+            frozenset(pipeline_run.solids_to_execute)
         )
 
     execution_plan_snapshot = instance.get_execution_plan_snapshot(

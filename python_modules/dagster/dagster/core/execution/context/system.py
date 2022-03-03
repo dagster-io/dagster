@@ -89,11 +89,11 @@ class IPlanContext(ABC):
         return self.pipeline_run.run_config
 
     @property
-    def pipeline_name(self) -> str:
+    def pipeline_name(self) -> Optional[str]:
         return self.pipeline_run.pipeline_name
 
     @property
-    def job_name(self) -> str:
+    def job_name(self) -> Optional[str]:
         return self.pipeline_name
 
     @property
@@ -623,7 +623,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def _should_load_from_previous_runs(self, step_output_handle: StepOutputHandle) -> bool:
         return (  # this is re-execution
-            self.pipeline_run.parent_run_id
+            self.pipeline_run.parent_run_id is not None
             # we are not re-executing the entire pipeline
             and self.pipeline_run.step_keys_to_execute is not None
             # this step is not being executed

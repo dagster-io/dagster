@@ -1,5 +1,5 @@
 import warnings
-from typing import AbstractSet, Any, Dict, Optional, Set, Union
+from typing import AbstractSet, Any, Dict, Optional, Set, Union, cast
 
 from dagster import check
 
@@ -81,7 +81,7 @@ class HookContext:
 
     @property
     def job_name(self) -> str:
-        return self._step_execution_context.job_name
+        return cast(str, self._step_execution_context.job_name)
 
     @property
     def run_id(self) -> str:

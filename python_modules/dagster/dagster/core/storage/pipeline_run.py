@@ -1,8 +1,7 @@
 import warnings
-from collections import namedtuple
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, List, NamedTuple, Optional, Type
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, NamedTuple, Optional, Type
 
 from dagster import check
 from dagster.core.origin import PipelinePythonOrigin
@@ -27,6 +26,9 @@ from .tags import (
     SCHEDULE_NAME_TAG,
     SENSOR_NAME_TAG,
 )
+
+if TYPE_CHECKING:
+    from dagster.core.host_representation.origin import ExternalPipelineOrigin
 
 
 class DagsterRunStatusSerializer(EnumSerializer):
@@ -83,25 +85,32 @@ NON_IN_PROGRESS_RUN_STATUSES = [
 
 @whitelist_for_serdes
 class PipelineRunStatsSnapshot(
-    namedtuple(
+    NamedTuple(
         "_PipelineRunStatsSnapshot",
-        (
-            "run_id steps_succeeded steps_failed materializations "
-            "expectations enqueued_time launch_time start_time end_time"
-        ),
+        [
+            ("run_id", str),
+            ("steps_succeeded", int),
+            ("steps_failed", int),
+            ("materializations", int),
+            ("expectations", int),
+            ("enqueued_time", Optional[float]),
+            ("launch_time", Optional[float]),
+            ("start_time", Optional[float]),
+            ("end_time", Optional[float]),
+        ],
     )
 ):
     def __new__(
         cls,
-        run_id,
-        steps_succeeded,
-        steps_failed,
-        materializations,
-        expectations,
-        enqueued_time,
-        launch_time,
-        start_time,
-        end_time,
+        run_id: str,
+        steps_succeeded: int,
+        steps_failed: int,
+        materializations: int,
+        expectations: int,
+        enqueued_time: Optional[float],
+        launch_time: Optional[float],
+        start_time: Optional[float],
+        end_time: Optional[float],
     ):
         return super(PipelineRunStatsSnapshot, cls).__new__(
             cls,
@@ -259,14 +268,25 @@ def pipeline_run_from_storage(
 
 
 class PipelineRun(
-    namedtuple(
+    NamedTuple(
         "_PipelineRun",
-        (
-            "pipeline_name run_id run_config mode solid_selection solids_to_execute "
-            "step_keys_to_execute status tags root_run_id parent_run_id "
-            "pipeline_snapshot_id execution_plan_snapshot_id external_pipeline_origin "
-            "pipeline_code_origin"
-        ),
+        [
+            ("pipeline_name", Optional[str]),
+            ("run_id", str),
+            ("run_config", Dict[str, object]),
+            ("mode", Optional[str]),
+            ("solid_selection", List[str]),
+            ("solids_to_execute", AbstractSet[str]),
+            ("step_keys_to_execute", Optional[List[str]]),
+            ("status", PipelineRunStatus),
+            ("tags", Dict[str, str]),
+            ("root_run_id", Optional[str]),
+            ("parent_run_id", Optional[str]),
+            ("pipeline_snapshot_id", Optional[str]),
+            ("execution_plan_snapshot_id", Optional[str]),
+            ("external_pipeline_origin", Optional["ExternalPipelineOrigin"]),
+            ("pipeline_code_origin", Optional[PipelinePythonOrigin]),
+        ],
     )
 ):
     """Serializable internal representation of a pipeline run, as stored in a
@@ -275,25 +295,21 @@ class PipelineRun(
 
     def __new__(
         cls,
-        pipeline_name=None,
-        run_id=None,
-        run_config=None,
-        mode=None,
-        solid_selection=None,
-        solids_to_execute=None,
-        step_keys_to_execute=None,
-        status=None,
-        tags=None,
-        root_run_id=None,
-        parent_run_id=None,
-        pipeline_snapshot_id=None,
-        execution_plan_snapshot_id=None,
-        # An ExternalPipelineOrigin that can be used to recreate the RepositoryLocation and
-        # ExternalPipeline that was used to submit this run
-        external_pipeline_origin=None,
-        # A PipelinePythonOrigin with information about where to find the pipeline definition in
-        # code. Most run launchers will pass this origin as an argument to the run worker process.
-        pipeline_code_origin=None,
+        pipeline_name: Optional[str] = None,
+        run_id: Optional[str] = None,
+        run_config: Optional[Dict[str, object]] = None,
+        mode: Optional[str] = None,
+        solid_selection: Optional[List[str]] = None,
+        solids_to_execute: Optional[AbstractSet[str]] = None,
+        step_keys_to_execute: Optional[List[str]] = None,
+        status: Optional[PipelineRunStatus] = None,
+        tags: Optional[Dict[str, str]] = None,
+        root_run_id: Optional[str] = None,
+        parent_run_id: Optional[str] = None,
+        pipeline_snapshot_id: Optional[str] = None,
+        execution_plan_snapshot_id: Optional[str] = None,
+        external_pipeline_origin: Optional["ExternalPipelineOrigin"] = None,
+        pipeline_code_origin: Optional[PipelinePythonOrigin] = None,
     ):
         check.invariant(
             (root_run_id is not None and parent_run_id is not None)
@@ -304,10 +320,10 @@ class PipelineRun(
             ),
         )
         # a frozenset which contains the names of the solids to execute
-        check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
+        solids_to_execute = check.opt_set_param(solids_to_execute, "solids_to_execute", of_type=str)
         # a list of solid queries provided by the user
         # possible to be None when only solids_to_execute is set by the user directly
-        check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+        solid_selection = check.opt_list_param(solid_selection, "solid_selection", of_type=str)
         check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
 
         # Placing this with the other imports causes a cyclic import

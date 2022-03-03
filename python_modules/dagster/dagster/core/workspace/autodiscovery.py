@@ -1,5 +1,5 @@
 import inspect
-from collections import namedtuple
+from typing import NamedTuple
 
 from dagster import (
     DagsterInvariantViolationError,
@@ -11,7 +11,7 @@ from dagster import (
 from dagster.core.asset_defs import AssetGroup
 from dagster.core.code_pointer import load_python_file, load_python_module
 
-LoadableTarget = namedtuple("LoadableTarget", "attribute target_definition")
+LoadableTarget = NamedTuple("LoadableTarget", [("attribute", str), ("target_definition", object)])
 
 
 def loadable_targets_from_python_file(python_file, working_directory=None):

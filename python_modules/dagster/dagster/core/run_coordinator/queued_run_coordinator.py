@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Any, Dict, List, NamedTuple, Optional, cast
 
 from dagster import DagsterEvent, DagsterEventType, IntSource, String, check
 from dagster.builtins import Bool
@@ -120,7 +120,7 @@ class QueuedRunCoordinator(RunCoordinator, ConfigurableClass):
 
         enqueued_event = DagsterEvent(
             event_type_value=DagsterEventType.PIPELINE_ENQUEUED.value,
-            pipeline_name=pipeline_run.pipeline_name,
+            pipeline_name=cast(str, pipeline_run.pipeline_name),
         )
         event_record = EventLogEntry(
             user_message="",

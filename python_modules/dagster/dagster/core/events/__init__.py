@@ -302,7 +302,7 @@ class DagsterEvent(
 
         event = DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
-            pipeline_name=step_context.pipeline_name,
+            pipeline_name=cast(str, step_context.pipeline_name),
             step_handle=step_context.step.handle,
             solid_handle=step_context.step.solid_handle,
             step_kind_value=step_context.step.kind.value,
@@ -330,7 +330,7 @@ class DagsterEvent(
 
         event = DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
-            pipeline_name=pipeline_context.pipeline_name,
+            pipeline_name=cast(str, pipeline_context.pipeline_name),
             message=check.opt_str_param(message, "message"),
             event_specific_data=_validate_event_specific_data(event_type, event_specific_data),
             step_handle=step_handle,
@@ -1085,7 +1085,7 @@ class DagsterEvent(
 
         event = DagsterEvent(
             event_type_value=event_type.value,
-            pipeline_name=step_context.pipeline_name,
+            pipeline_name=cast(str, step_context.pipeline_name),
             step_handle=step_context.step.handle,
             solid_handle=step_context.step.solid_handle,
             step_kind_value=step_context.step.kind.value,
@@ -1109,7 +1109,7 @@ class DagsterEvent(
 
         event = DagsterEvent(
             event_type_value=event_type.value,
-            pipeline_name=step_context.pipeline_name,
+            pipeline_name=cast(str, step_context.pipeline_name),
             step_handle=step_context.step.handle,
             solid_handle=step_context.step.solid_handle,
             step_kind_value=step_context.step.kind.value,
@@ -1134,7 +1134,7 @@ class DagsterEvent(
 
         event = DagsterEvent(
             event_type_value=event_type.value,
-            pipeline_name=step_context.pipeline_name,
+            pipeline_name=cast(str, step_context.pipeline_name),
             step_handle=step_context.step.handle,
             solid_handle=step_context.step.solid_handle,
             step_kind_value=step_context.step.kind.value,

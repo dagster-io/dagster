@@ -1,5 +1,5 @@
-from collections import namedtuple
 from enum import Enum
+from typing import Dict, List, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.execution.plan.resume_retry import get_retry_steps_from_parent_run
@@ -45,26 +45,34 @@ class BulkActionStatus(Enum):
 
 @whitelist_for_serdes
 class PartitionBackfill(
-    namedtuple(
+    NamedTuple(
         "_PartitionBackfill",
-        (
-            "backfill_id partition_set_origin status partition_names from_failure "
-            "reexecution_steps tags backfill_timestamp last_submitted_partition_name error"
-        ),
+        [
+            ("backfill_id", str),
+            ("partition_set_origin", ExternalPartitionSetOrigin),
+            ("status", BulkActionStatus),
+            ("partition_names", List[str]),
+            ("from_failure", bool),
+            ("reexecution_steps", List[str]),
+            ("tags", Dict[str, str]),
+            ("backfill_timestamp", float),
+            ("last_submitted_partition_name", Optional[str]),
+            ("error", Optional[SerializableErrorInfo]),
+        ],
     ),
 ):
     def __new__(
         cls,
-        backfill_id,
-        partition_set_origin,
-        status,
-        partition_names,
-        from_failure,
-        reexecution_steps,
-        tags,
-        backfill_timestamp,
-        last_submitted_partition_name=None,
-        error=None,
+        backfill_id: str,
+        partition_set_origin: ExternalPartitionSetOrigin,
+        status: BulkActionStatus,
+        partition_names: List[str],
+        from_failure: bool,
+        reexecution_steps: List[str],
+        tags: Dict[str, str],
+        backfill_timestamp: float,
+        last_submitted_partition_name: Optional[str] = None,
+        error: Optional[SerializableErrorInfo] = None,
     ):
         return super(PartitionBackfill, cls).__new__(
             cls,

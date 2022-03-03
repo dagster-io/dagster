@@ -1,5 +1,5 @@
 from collections import OrderedDict, defaultdict
-from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union, cast
 
 from dagster import check
 from dagster.core.errors import (
@@ -113,9 +113,9 @@ class InMemoryRunStorage(RunStorage):
 
     def get_runs(
         self,
-        filters: RunsFilter = None,
-        cursor: str = None,
-        limit: int = None,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[PipelineRun]:
         check.opt_inst_param(filters, "filters", RunsFilter)
@@ -290,10 +290,13 @@ class InMemoryRunStorage(RunStorage):
         for curr_run in self._runs.values():
             if curr_run.root_run_id == root_run.run_id:
                 run_group.append(curr_run)
-        return (root_run.root_run_id, run_group)
+        return (cast(str, root_run.root_run_id), run_group)
 
     def get_run_groups(
-        self, filters: RunsFilter = None, cursor: str = None, limit: int = None
+        self,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         runs = self.get_runs(filters=filters, cursor=cursor, limit=limit)
         root_run_id_to_group: Dict[str, Dict[str, PipelineRun]] = defaultdict(dict)

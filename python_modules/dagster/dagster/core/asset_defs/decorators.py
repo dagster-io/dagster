@@ -1,4 +1,16 @@
-from typing import Any, Callable, Dict, Mapping, Optional, Sequence, Set, Union, cast, overload
+from typing import (
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    Mapping,
+    Optional,
+    Sequence,
+    Set,
+    Union,
+    cast,
+    overload,
+)
 
 from dagster import check
 from dagster.builtins import Nothing
@@ -191,15 +203,19 @@ class _Asset:
             },
         )(fn)
 
+        # NOTE: we can `cast` below because we know the Ins returned by `build_asset_ins` always
+        # have a plain AssetKey asset key. Dynamic asset keys will be deprecated in 0.15.0, when
+        # they are gone we can remove this cast.
         return AssetsDefinition(
             input_names_by_asset_key={
-                in_def.asset_key: input_name for input_name, in_def in asset_ins.items()
+                cast(AssetKey, in_def.asset_key): input_name
+                for input_name, in_def in asset_ins.items()
             },
             output_names_by_asset_key={out_asset_key: "result"},
             op=op,
             partitions_def=self.partitions_def,
             partition_mappings={
-                asset_ins[input_name].asset_key: partition_mapping
+                cast(AssetKey, asset_ins[input_name].asset_key): partition_mapping
                 for input_name, partition_mapping in self.partition_mappings.items()
             }
             if self.partition_mappings
@@ -264,12 +280,16 @@ def multi_asset(
             tags={"kind": compute_kind} if compute_kind else None,
         )(fn)
 
+        # NOTE: we can `cast` below because we know the Ins returned by `build_asset_ins` always
+        # have a plain AssetKey asset key. Dynamic asset keys will be deprecated in 0.15.0, when
+        # they are gone we can remove this cast.
         return AssetsDefinition(
             input_names_by_asset_key={
-                in_def.asset_key: input_name for input_name, in_def in asset_ins.items()
+                cast(AssetKey, in_def.asset_key): input_name
+                for input_name, in_def in asset_ins.items()
             },
             output_names_by_asset_key={
-                out_def.asset_key: output_name for output_name, out_def in asset_outs.items()  # type: ignore
+                cast(AssetKey, out_def.asset_key): output_name for output_name, out_def in asset_outs.items()  # type: ignore
             },
             op=op,
         )
@@ -331,7 +351,7 @@ def build_asset_ins(
     fn: Callable,
     asset_namespace: Optional[Sequence[str]],
     asset_ins: Mapping[str, AssetIn],
-    non_argument_deps: Optional[Set[AssetKey]],
+    non_argument_deps: Optional[AbstractSet[AssetKey]],
 ) -> Dict[str, In]:
 
     non_argument_deps = check.opt_set_param(non_argument_deps, "non_argument_deps", AssetKey)
@@ -381,6 +401,7 @@ def build_asset_ins(
     for asset_key in non_argument_deps:
         stringified_asset_key = "_".join(asset_key.path)
         if stringified_asset_key:
-            ins[stringified_asset_key] = In(dagster_type=Nothing, asset_key=asset_key)
+            # cast due to mypy bug-- doesn't understand Nothing is a type
+            ins[stringified_asset_key] = In(dagster_type=cast(type, Nothing), asset_key=asset_key)
 
     return ins

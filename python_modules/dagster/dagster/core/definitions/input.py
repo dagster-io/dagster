@@ -1,5 +1,5 @@
-from collections import namedtuple
-from typing import NamedTuple, Optional, Set, Union
+from types import FunctionType
+from typing import TYPE_CHECKING, Any, Callable, Mapping, NamedTuple, Optional, Set, Type, Union
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -14,6 +14,9 @@ from dagster.utils.backcompat import experimental_arg_warning
 
 from .inference import InferredInputProps
 from .utils import NoValueSentinel, check_valid_name
+
+if TYPE_CHECKING:
+    from dagster.core.execution.context.input import InputContext
 
 
 # unfortunately since type_check functions need TypeCheckContext which is only available
@@ -344,10 +347,17 @@ class InputMapping(
 
 
 class In(
-    namedtuple(
+    NamedTuple(
         "_In",
-        "dagster_type description default_value root_manager_key metadata "
-        "asset_key asset_partitions",
+        [
+            ("dagster_type", Optional[Union[type, DagsterType]]),
+            ("description", Optional[str]),
+            ("default_value", Any),
+            ("root_manager_key", Optional[str]),
+            ("metadata", Optional[Mapping[str, Any]]),
+            ("asset_key", Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]]),
+            ("asset_partitions", Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]]),
+        ],
     )
 ):
     """
@@ -376,23 +386,25 @@ class In(
 
     def __new__(
         cls,
-        dagster_type=NoValueSentinel,
-        description=None,
-        default_value=NoValueSentinel,
-        root_manager_key=None,
-        metadata=None,
-        asset_key=None,
-        asset_partitions=None,
+        dagster_type: Optional[Union[Type, DagsterType]] = NoValueSentinel,
+        description: Optional[str] = None,
+        default_value: Any = NoValueSentinel,
+        root_manager_key: Optional[str] = None,
+        metadata: Optional[Mapping[str, Any]] = None,
+        asset_key: Optional[Union[AssetKey, Callable[["InputContext"], AssetKey]]] = None,
+        asset_partitions: Optional[Union[Set[str], Callable[["InputContext"], Set[str]]]] = None,
     ):
         return super(In, cls).__new__(
             cls,
-            dagster_type=dagster_type,
-            description=description,
+            dagster_type=check.inst_param(dagster_type, "dagster_type", (type, DagsterType)),
+            description=check.opt_str_param(description, "description"),
             default_value=default_value,
-            root_manager_key=root_manager_key,
-            metadata=metadata,
-            asset_key=asset_key,
-            asset_partitions=asset_partitions,
+            root_manager_key=check.opt_str_param(root_manager_key, "root_manager_key"),
+            metadata=check.opt_dict_param(metadata, "metadata", key_type=str),
+            asset_key=check.opt_inst_param(asset_key, "asset_key", (AssetKey, FunctionType)),
+            asset_partitions=check.opt_inst_param(
+                asset_partitions, "asset_partitions", (Set[str], FunctionType)
+            ),
         )
 
     @staticmethod

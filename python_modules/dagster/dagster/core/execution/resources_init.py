@@ -253,7 +253,7 @@ def resource_initialization_event_generator(
                     error = dagster_user_error
             if error and emit_persistent_events:
                 yield DagsterEvent.resource_teardown_failure(
-                    cast(PipelineRun, pipeline_run).pipeline_name,
+                    cast(str, cast(PipelineRun, pipeline_run).pipeline_name),
                     cast(ExecutionPlan, execution_plan),
                     resource_log_manager,
                     resource_keys_to_init,
