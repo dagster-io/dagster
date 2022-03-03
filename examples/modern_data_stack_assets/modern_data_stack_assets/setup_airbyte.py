@@ -37,7 +37,7 @@ def _create_ab_source(client: AirbyteResource) -> str:
         "/sources/create",
         data={
             "sourceDefinitionId": source_definition_id,
-            "connectionConfiguration": {**PG_SOURCE_CONFIG, "ssl": False},
+            "connectionConfiguration": dict(**PG_SOURCE_CONFIG, ssl=False),
             "workspaceId": workspace_id,
             "name": "Source Database",
         },
@@ -65,7 +65,7 @@ def _create_ab_destination(client: AirbyteResource) -> str:
         "/destinations/create",
         data={
             "destinationDefinitionId": destination_definition_id,
-            "connectionConfiguration": {**PG_DESTINATION_CONFIG, "schema": "public", "ssl": False},
+            "connectionConfiguration": dict(**PG_DESTINATION_CONFIG, schema="public", ssl=False),
             "workspaceId": workspace_id,
             "name": "Destination Database",
         },
