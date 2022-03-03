@@ -34,7 +34,7 @@ def task_definition(ecs, image, environment):
         family="dagster",
         containerDefinitions=[
             {"name": "dagster", "image": image, "environment": environment, "entryPoint": ["ls"]},
-            {"name": "other", "image": image, "entryPoint": ["ls"]}
+            {"name": "other", "image": image, "entryPoint": ["ls"]},
         ],
         networkMode="awsvpc",
         memory="512",
