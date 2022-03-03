@@ -183,6 +183,49 @@ mutation($jobOriginId: String!) {
 }
 """
 
+GET_SENSOR_CURSOR_QUERY = """
+query SensorCursorQuery($sensorSelector: SensorSelector!) {
+  sensorOrError(sensorSelector: $sensorSelector) {
+    __typename
+    ... on Sensor {
+      sensorState {
+        id
+        status
+        typeSpecificData {
+          ... on SensorData {
+            lastCursor
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
+SET_SENSOR_CURSOR_MUTATION = """
+mutation($sensorSelector: SensorSelector!, $cursor: String) {
+  setSensorCursor(sensorSelector: $sensorSelector, cursor: $cursor) {
+    __typename
+    ... on PythonError {
+      message
+      className
+      stack
+    }
+    ... on Sensor {
+      id
+      sensorState {
+        status
+        typeSpecificData {
+          ... on SensorData {
+            lastCursor
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
 REPOSITORY_SENSORS_QUERY = """
 query RepositorySensorsQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
@@ -295,6 +338,38 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             result.data["stopSensor"]["instigationState"]["status"]
             == InstigatorStatus.STOPPED.value
         )
+
+    def test_set_cursor(self, graphql_context):
+        def get_cursor(selector):
+            result = execute_dagster_graphql(
+                graphql_context,
+                GET_SENSOR_CURSOR_QUERY,
+                variables={"sensorSelector": selector},
+            )
+            assert result.data
+            assert result.data["sensorOrError"]["__typename"] == "Sensor"
+            sensor = result.data["sensorOrError"]
+            return sensor["sensorState"]["typeSpecificData"]["lastCursor"]
+
+        def set_cursor(selector, cursor):
+            result = execute_dagster_graphql(
+                graphql_context,
+                SET_SENSOR_CURSOR_MUTATION,
+                variables={"sensorSelector": selector, "cursor": cursor},
+            )
+            print(result.data)
+            assert result.data
+            assert result.data["setSensorCursor"]["__typename"] == "Sensor"
+            sensor = result.data["setSensorCursor"]
+            return sensor["sensorState"]["typeSpecificData"]["lastCursor"]
+
+        sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
+
+        assert get_cursor(sensor_selector) is None
+        set_cursor(sensor_selector, "new cursor value")
+        assert get_cursor(sensor_selector) == "new cursor value"
+        set_cursor(sensor_selector, None)
+        assert get_cursor(sensor_selector) is None
 
     def test_start_sensor_with_default_status(self, graphql_context):
         sensor_selector = infer_sensor_selector(graphql_context, "running_in_code_sensor")

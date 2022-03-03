@@ -7,7 +7,12 @@ from dagster.core.host_representation import ExternalSensor, ExternalTargetData,
 from dagster.core.scheduler.instigation import InstigatorState
 from dagster.core.workspace.permissions import Permissions
 
-from ..implementation.fetch_sensors import get_sensor_next_tick, start_sensor, stop_sensor
+from ..implementation.fetch_sensors import (
+    get_sensor_next_tick,
+    set_sensor_cursor,
+    start_sensor,
+    stop_sensor,
+)
 from .asset_key import GrapheneAssetKey
 from .errors import (
     GraphenePythonError,
@@ -182,8 +187,8 @@ class GrapheneSetSensorCursorMutation(graphene.Mutation):
         name = "SetSensorCursorMutation"
 
     @capture_error
-    @check_permission(Permissions.START_SENSOR)
-    def mutate(self, graphene_info, sensor_selector, cursor):
+    @check_permission(Permissions.SET_SENSOR_CURSOR)
+    def mutate(self, graphene_info, sensor_selector, cursor=None):
         return set_sensor_cursor(
             graphene_info, SensorSelector.from_graphql_input(sensor_selector), cursor
         )

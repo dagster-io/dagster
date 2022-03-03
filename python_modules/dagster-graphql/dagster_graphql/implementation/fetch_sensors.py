@@ -199,6 +199,7 @@ def set_sensor_cursor(graphene_info, selector, cursor):
     check.opt_str_param(cursor, "cursor")
 
     from ..schema.errors import GrapheneSensorNotFoundError
+    from ..schema.sensors import GrapheneSensor
 
     location = graphene_info.context.get_repository_location(selector.location_name)
     repository = location.get_repository(selector.repository_name)
