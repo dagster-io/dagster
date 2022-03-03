@@ -9,6 +9,7 @@ import {
   SplitPanelContainer,
 } from '@dagster-io/ui';
 import merge from 'deepmerge';
+import {uniqBy} from 'lodash';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 import * as yaml from 'yaml';
@@ -170,6 +171,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
   );
 
   const currentSession = data.sessions[data.current];
+  const tagsFromSession = React.useMemo(() => currentSession.tags || [], [currentSession]);
 
   const pipelineSelector = {
     ...repoAddressToSelector(repoAddress),
@@ -224,25 +226,6 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
   };
 
   const onRemoveExtraPaths = (paths: string[]) => {
-    const deletePropertyPath = (obj: any, path: string) => {
-      const parts = path.split('.');
-
-      // Here we iterate through the parts of the path to get to
-      // the second to last nested object. This is so we can call `delete` using
-      // this object and the last part of the path.
-      for (let i = 0; i < parts.length - 1; i++) {
-        obj = obj[parts[i]];
-        if (typeof obj === 'undefined') {
-          return;
-        }
-      }
-
-      const lastKey = parts.pop();
-      if (lastKey) {
-        delete obj[lastKey];
-      }
-    };
-
     let runConfigData = {};
     try {
       // Note: parsing `` returns null rather than an empty object,
@@ -252,9 +235,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
       for (const path of paths) {
         deletePropertyPath(runConfigData, path);
       }
-
-      const runConfigYaml = yaml.stringify(runConfigData);
-      onSaveSession({runConfigYaml});
+      onSaveSession({runConfigYaml: yaml.stringify(runConfigData)});
     } catch (err) {
       showCustomAlert({title: 'Invalid YAML', body: YAML_SYNTAX_INVALID});
       return;
@@ -286,7 +267,6 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
       return;
     }
 
-    const tags = currentSession.tags || [];
     let runConfigData = {};
     try {
       // Note: parsing `` returns null rather than an empty object,
@@ -303,27 +283,35 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
         selector: pipelineSelector,
         mode: currentSession.mode || 'default',
         executionMetadata: {
-          tags: [
-            ...tags.map((tag) => ({key: tag.key, value: tag.value})),
-            // pass solid selection query via tags
-            // clean up https://github.com/dagster-io/dagster/issues/2495
-            ...(currentSession.solidSelectionQuery
-              ? [
-                  {
-                    key: DagsterTag.SolidSelection,
-                    value: currentSession.solidSelectionQuery,
-                  },
-                ]
-              : []),
-            ...(currentSession?.base?.['presetName']
-              ? [
-                  {
-                    key: DagsterTag.PresetName,
-                    value: currentSession?.base?.['presetName'],
-                  },
-                ]
-              : []),
-          ],
+          tags: uniqBy(
+            [
+              // pass solid selection query via tags
+              // clean up https://github.com/dagster-io/dagster/issues/2495
+              ...(currentSession.solidSelectionQuery
+                ? [
+                    {
+                      key: DagsterTag.SolidSelection,
+                      value: currentSession.solidSelectionQuery,
+                    },
+                  ]
+                : []),
+              ...(currentSession?.base?.['presetName']
+                ? [
+                    {
+                      key: DagsterTag.PresetName,
+                      value: currentSession?.base?.['presetName'],
+                    },
+                  ]
+                : []),
+
+              ...tagsFromSession.map(onlyKeyAndValue),
+
+              // note, we apply these last - uniqBy uses the first value it sees for
+              // each key, so these can be overridden in the session
+              ...pipeline.tags.map(onlyKeyAndValue),
+            ],
+            (tag) => tag.key,
+          ),
         },
       },
     };
@@ -375,14 +363,6 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
   };
 
   const onSelectPreset = async (preset: Preset) => {
-    const tagsDict: {[key: string]: string} = [...(pipeline?.tags || []), ...preset.tags].reduce(
-      (tags, kv) => {
-        tags[kv.key] = kv.value;
-        return tags;
-      },
-      {},
-    );
-
     onSaveSession({
       base: {presetName: preset.name},
       name: preset.name,
@@ -390,7 +370,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
       solidSelection: preset.solidSelection,
       solidSelectionQuery: preset.solidSelection === null ? '*' : preset.solidSelection.join(','),
       mode: preset.mode,
-      tags: Object.entries(tagsDict).map(([key, value]) => ({key, value})),
+      tags: preset.tags.map(onlyKeyAndValue),
       needsRefresh: false,
     });
   };
@@ -424,14 +404,13 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
 
       const {partition} = data.partitionSetOrError;
 
-      let tags;
+      let tags: {key: string; value: string}[] = [];
       if (partition.tagsOrError.__typename === 'PythonError') {
-        tags = (pipeline?.tags || []).slice();
         showCustomAlert({
           body: <PythonErrorInfo error={partition.tagsOrError} />,
         });
       } else {
-        tags = [...(pipeline?.tags || []), ...partition.tagsOrError.results];
+        tags = [...partition.tagsOrError.results];
       }
 
       let runConfigYaml;
@@ -518,13 +497,6 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     tagEditorOpen,
   } = state;
 
-  const tagsFromDefinition: PipelineRunTag[] = React.useMemo(() => pipeline.tags || [], [pipeline]);
-  const tagsFromSession = React.useMemo(() => currentSession.tags || [], [currentSession]);
-  const allTags = React.useMemo(
-    () => ({fromDefinition: tagsFromDefinition, fromSession: tagsFromSession}),
-    [tagsFromDefinition, tagsFromSession],
-  );
-
   const refreshableSessionBase = React.useMemo(() => {
     const {base, needsRefresh} = currentSession;
     if (
@@ -587,7 +559,7 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
                 </>
               )}
               <TagEditor
-                tagsFromDefinition={tagsFromDefinition}
+                tagsFromDefinition={pipeline.tags}
                 tagsFromSession={tagsFromSession}
                 onChange={saveTags}
                 open={tagEditorOpen}
@@ -617,12 +589,16 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
               <SessionSettingsSpacer />
               <SecondPanelToggle axis="horizontal" container={editorSplitPanelContainer} />
             </SessionSettingsBar>
-            {allTags.fromDefinition.length || allTags.fromSession.length ? (
+            {pipeline.tags.length || tagsFromSession.length ? (
               <Box
                 padding={{vertical: 8, left: 12, right: 0}}
                 border={{side: 'bottom', width: 1, color: ColorsWIP.Gray200}}
               >
-                <TagContainer tags={allTags} onRequestEdit={openTagEditor} />
+                <TagContainer
+                  tagsFromDefinition={pipeline.tags}
+                  tagsFromSession={tagsFromSession}
+                  onRequestEdit={openTagEditor}
+                />
               </Box>
             ) : null}
             {refreshableSessionBase ? (
@@ -710,6 +686,28 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
 // Imported via React.lazy, which requires a default export.
 // eslint-disable-next-line import/no-default-export
 export default LaunchpadSessionContainer;
+
+// This helper removes __typename, which prevents tags from being passed back to GraphQL
+const onlyKeyAndValue = ({key, value}: {key: string; value: string}) => ({key, value});
+
+const deletePropertyPath = (obj: any, path: string) => {
+  const parts = path.split('.');
+
+  // Here we iterate through the parts of the path to get to
+  // the second to last nested object. This is so we can call `delete` using
+  // this object and the last part of the path.
+  for (let i = 0; i < parts.length - 1; i++) {
+    obj = obj[parts[i]];
+    if (typeof obj === 'undefined') {
+      return;
+    }
+  }
+
+  const lastKey = parts.pop();
+  if (lastKey) {
+    delete obj[lastKey];
+  }
+};
 
 const PREVIEW_CONFIG_QUERY = gql`
   query PreviewConfigQuery(

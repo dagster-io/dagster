@@ -4,7 +4,7 @@ Not every property on these should be exposed to random Jane or Joe dagster user
 so we have a different layer of objects that encode the explicit public API
 in the user_context module
 """
-from abc import ABC, abstractproperty
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -67,7 +67,8 @@ class IPlanContext(ABC):
     The information available via this interface is accessible to the system throughout a run.
     """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def plan_data(self) -> "PlanData":
         raise NotImplementedError()
 
@@ -111,7 +112,8 @@ class IPlanContext(ABC):
     def execution_plan(self):
         return self.plan_data.execution_plan
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
         raise NotImplementedError()
 
@@ -163,11 +165,13 @@ class ExecutionData(NamedTuple):
 class IStepContext(IPlanContext):
     """Interface to represent data to be available during either step orchestration or execution."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def step(self) -> ExecutionStep:
         raise NotImplementedError()
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def solid_handle(self) -> "NodeHandle":
         raise NotImplementedError()
 

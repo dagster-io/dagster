@@ -38,19 +38,19 @@ check_black:
 # `--skip`/`--filter-files` is very slow.
 isort:
 	isort \
-    `git ls-files {.buildkite,examples,integration_tests,helm,python_modules}'/**/*.py' \
+    `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' 'helm/*.py' 'python_modules/*.py' \
       ':!:examples/docs_snippets' \
       ':!:snapshots'`
 	isort \
-   `git ls-files 'examples/docs_snippets/**/*.py'`
+   `git ls-files 'examples/docs_snippets/*.py'`
 
 check_isort:
 	-isort --check \
-    `git ls-files {.buildkite,examples,integration_tests,helm,python_modules}'/**/*.py' \
+    `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' 'helm/*.py' 'python_modules/*.py' \
       ':!:examples/docs_snippets' \
       ':!:snapshots'`
 	-isort --check \
-    `git ls-files 'examples/docs_snippets/**/*.py'`
+    `git ls-files 'examples/docs_snippets/*.py'`
 
 yamllint:
 	yamllint -c .yamllint.yaml --strict `git ls-files 'helm/**/*.yml' 'helm/**/*.yaml' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'`

@@ -74,8 +74,7 @@ def default_ecs_task_definition(
     # and the command will fail
     # https://aws.amazon.com/blogs/opensource/demystifying-entrypoint-cmd-docker/
     container_definitions = task_definition["containerDefinitions"]
-    container_definitions.remove(metadata.container_definition)
-    container_definitions.append(
+    container_definitions = [
         merge_dicts(
             {
                 **metadata.container_definition,
@@ -87,7 +86,7 @@ def default_ecs_task_definition(
             environment_dict,
             secrets_dict,
         )
-    )
+    ]
     task_definition = {
         **task_definition,
         "family": "dagster-run",

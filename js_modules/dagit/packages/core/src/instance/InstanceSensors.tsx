@@ -3,6 +3,7 @@ import {Box, ColorsWIP, NonIdealState, PageHeader, Heading, Subheading} from '@d
 import * as React from 'react';
 
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {useQueryRefreshAtInterval, FIFTEEN_SECONDS} from '../app/QueryRefresh';
 import {INSTIGATION_STATE_FRAGMENT} from '../instigation/InstigationUtils';
 import {UnloadableSensors} from '../instigation/Unloadable';
 import {SENSOR_FRAGMENT} from '../sensors/SensorFragment';
@@ -17,20 +18,18 @@ import {INSTANCE_HEALTH_FRAGMENT} from './InstanceHealthFragment';
 import {InstanceTabs} from './InstanceTabs';
 import {InstanceSensorsQuery} from './types/InstanceSensorsQuery';
 
-const POLL_INTERVAL = 15000;
-
 export const InstanceSensors = React.memo(() => {
   const queryData = useQuery<InstanceSensorsQuery>(INSTANCE_SENSORS_QUERY, {
     fetchPolicy: 'cache-and-network',
-    pollInterval: POLL_INTERVAL,
     notifyOnNetworkStatusChange: true,
   });
+  const refreshState = useQueryRefreshAtInterval(queryData, FIFTEEN_SECONDS);
 
   return (
     <>
       <PageHeader
         title={<Heading>Instance status</Heading>}
-        tabs={<InstanceTabs tab="sensors" queryData={queryData} />}
+        tabs={<InstanceTabs tab="sensors" refreshState={refreshState} />}
       />
       <Loading queryResult={queryData} allowStaleData={true}>
         {(data) => <AllSensors data={data} />}

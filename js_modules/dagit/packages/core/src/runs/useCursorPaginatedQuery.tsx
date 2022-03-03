@@ -10,8 +10,6 @@ interface CursorPaginationQueryVariables {
   limit?: number | null;
 }
 
-export const POLL_INTERVAL = 15 * 1000;
-
 /**
  * This is a React hook that makes it easier to build paginated list views based on a GraphQL
  * query. It is intended to be used in place of Apollo's `useQuery` and assumes that the query
@@ -42,7 +40,6 @@ export function useCursorPaginatedQuery<T, TVars extends CursorPaginationQueryVa
 
   const queryResult = useQuery<T, TVars>(options.query, {
     fetchPolicy: 'cache-and-network',
-    pollInterval: POLL_INTERVAL,
     partialRefetch: true,
     variables: queryVars,
     notifyOnNetworkStatusChange: true,
