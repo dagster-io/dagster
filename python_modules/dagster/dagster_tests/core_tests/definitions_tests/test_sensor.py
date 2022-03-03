@@ -17,7 +17,7 @@ def test_jobs_attr():
 
     sensor = SensorDefinition(evaluation_fn=eval_fn, pipeline_name="my_pipeline")
     with pytest.raises(
-        DagsterInvalidDefinitionError, match="No jobs were provided to SensorDefinition."
+        DagsterInvalidDefinitionError, match="No job was provided to SensorDefinition."
     ):
         sensor.job
 
