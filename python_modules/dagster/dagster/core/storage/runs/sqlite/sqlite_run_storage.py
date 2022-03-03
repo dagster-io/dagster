@@ -122,8 +122,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
     @property
     def supports_bucket_queries(self):
         return (
-            super().supports_bucket_queries and
-            get_sqlite_version() > MINIMUM_SQLITE_BUCKET_VERSION
+            super().supports_bucket_queries and get_sqlite_version() > MINIMUM_SQLITE_BUCKET_VERSION
         )
 
     def upgrade(self):

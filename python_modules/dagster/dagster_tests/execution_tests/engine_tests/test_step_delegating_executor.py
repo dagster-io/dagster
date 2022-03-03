@@ -22,6 +22,7 @@ class TestStepHandler(StepHandler):
     check_step_health_count = 0  # type: ignore
     terminate_step_count = 0  # type: ignore
     verify_step_count = 0  # type: ignore
+    mock_can_launch_step_counter = 0  # type: ignore
 
     @property
     def name(self):
@@ -56,6 +57,7 @@ class TestStepHandler(StepHandler):
         cls.check_step_health_count = 0
         cls.terminate_step_count = 0
         cls.verify_step_count = 0
+        cls.mock_can_launch_step_counter = 0
 
     @classmethod
     def wait_for_processes(cls):
@@ -218,6 +220,35 @@ def test_execute_intervals():
     assert TestStepHandler.terminate_step_count == 0
     # every step should get checked at least once
     assert TestStepHandler.check_step_health_count >= 3
+
+
+def test_check_can_launch_step(monkeypatch):
+    TestStepHandler.reset()
+
+    # block the first attempted step launch
+    def mock_can_launch_step(_step):
+        TestStepHandler.mock_can_launch_step_counter += 1
+        return TestStepHandler.mock_can_launch_step_counter > 1
+
+    with instance_for_test() as instance:
+        monkeypatch.setattr(instance, "check_can_launch_step", mock_can_launch_step)
+        result = execute_pipeline(
+            reconstructable(foo_pipline),
+            instance=instance,
+            run_config={"execution": {"test_step_delegating_executor": {"config": {}}}},
+        )
+        TestStepHandler.wait_for_processes()
+
+    assert any(
+        [
+            "Starting execution with step handler TestStepHandler" in event
+            for event in result.event_list
+        ]
+    )
+    assert any(["Steps blocked by concurrency limits" in event for event in result.event_list])
+    assert result.success
+    assert TestStepHandler.saw_baz_solid
+    assert TestStepHandler.verify_step_count == 0
 
 
 @executor(

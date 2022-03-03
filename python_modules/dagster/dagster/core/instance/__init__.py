@@ -77,6 +77,7 @@ if TYPE_CHECKING:
     from dagster.core.debug import DebugRunPayload
     from dagster.core.events import DagsterEvent, DagsterEventType
     from dagster.core.events.log import EventLogEntry
+    from dagster.core.execution.plan.step import ExecutionStep
     from dagster.core.execution.stats import RunStepKeyStatsSnapshot
     from dagster.core.host_representation import HistoricalPipeline
     from dagster.core.launcher import RunLauncher
@@ -1861,6 +1862,9 @@ records = instance.get_event_records(
         Gate on an experimental feature to start a thread that monitors for if the run should be canceled.
         """
         return False
+
+    def check_can_launch_step(self, _step: "ExecutionStep") -> bool:
+        return True
 
 
 def is_dagit_telemetry_enabled(instance):

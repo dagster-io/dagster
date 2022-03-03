@@ -86,6 +86,9 @@ class StepDelegatingExecutor(Executor):
         )
 
         with execution_plan.start(retry_mode=self.retries) as active_execution:
+            # Steps that have all deps satisfied, but have not been launched yet. Some steps may
+            # be blocked by concurrency limits.
+            steps_waiting_for_launch: Dict[str, ExecutionStep] = {}
             running_steps: Dict[str, ExecutionStep] = {}
 
             if plan_context.resume_from_failure:
@@ -212,13 +215,37 @@ class StepDelegatingExecutor(Executor):
                         )
 
                 for step in active_execution.get_steps_to_execute():
-                    running_steps[step.key] = step
-                    self._log_new_events(
-                        self._step_handler.launch_step(
-                            self._get_step_handler_context(plan_context, [step], active_execution)
-                        ),
+                    steps_waiting_for_launch[step.key] = step
+
+                launched_steps = []
+                for step in steps_waiting_for_launch.values():
+                    if plan_context.instance.check_can_launch_step(step):
+                        launched_steps.append(step.key)
+                        running_steps[step.key] = step
+                        self._log_new_events(
+                            self._step_handler.launch_step(
+                                self._get_step_handler_context(
+                                    plan_context, [step], active_execution
+                                )
+                            ),
+                            plan_context,
+                            running_steps,
+                        )
+
+                for step_key in launched_steps:
+                    del steps_waiting_for_launch[step_key]
+
+                if steps_waiting_for_launch:
+                    yield DagsterEvent.engine_event(
                         plan_context,
-                        running_steps,
+                        f"Steps blocked by concurrency limits",
+                        EngineEventData(
+                            metadata_entries=[
+                                MetadataEntry.text(
+                                    str(steps_waiting_for_launch.keys()), "blocked_steps"
+                                )
+                            ]
+                        ),
                     )
 
                 time.sleep(self._sleep_seconds)
