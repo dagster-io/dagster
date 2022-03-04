@@ -1,7 +1,7 @@
 import copy
 import os
 import subprocess
-from typing import Dict
+from typing import Dict, Optional
 
 import click
 import nbformat

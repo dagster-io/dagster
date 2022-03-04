@@ -2,7 +2,7 @@ import datetime
 import json
 import logging
 import time
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, Optional, cast
 from urllib.parse import urljoin
 
 import requests
