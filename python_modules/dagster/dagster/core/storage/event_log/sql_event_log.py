@@ -1163,9 +1163,10 @@ class SqlEventLogStorage(EventLogStorage):
 
         return materialization_count_by_partition
 
+
 def _get_from_row(row, column):
-    """ utility function for extracting a column from a sqlalchemy row proxy, since '_asdict' is not
-    supported in sqlalchemy 1.3 """
+    """utility function for extracting a column from a sqlalchemy row proxy, since '_asdict' is not
+    supported in sqlalchemy 1.3"""
     if not row.has_key(column):
         return None
     return row[column]
