@@ -1041,10 +1041,17 @@ def do_composition(
         ]
 
         if len(mappings) == 0:
+            if decorator_name in {"@op", "@graph"}:
+                invocation_name = "op/graph"
+            else:
+                invocation_name = "solid"
             raise DagsterInvalidDefinitionError(
                 "{decorator_name} '{graph_name}' has unmapped input '{input_name}'. "
-                "Remove it or pass it to the appropriate solid invocation.".format(
-                    decorator_name=decorator_name, graph_name=graph_name, input_name=defn.name
+                "Remove it or pass it to the appropriate {invocation_name} invocation.".format(
+                    decorator_name=decorator_name,
+                    graph_name=graph_name,
+                    input_name=defn.name,
+                    invocation_name=invocation_name,
                 )
             )
 
