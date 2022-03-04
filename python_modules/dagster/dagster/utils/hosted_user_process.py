@@ -32,6 +32,7 @@ def recon_repository_from_origin(origin):
         origin.container_image,
         origin.executable_path,
         origin.entry_point,
+        origin.container_context,
     )
 
 

@@ -235,6 +235,10 @@ class RepositoryLocation(AbstractContextManager):
         pass
 
     @property
+    def container_context(self) -> Optional[Dict[str, Any]]:
+        return None
+
+    @property
     @abstractmethod
     def entry_point(self) -> Optional[List[str]]:
         pass
@@ -256,6 +260,7 @@ class RepositoryLocation(AbstractContextManager):
             code_pointer=code_pointer,
             container_image=self.container_image,
             entry_point=self.entry_point,
+            container_context=self.container_context,
         )
 
 

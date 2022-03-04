@@ -113,12 +113,13 @@ def build_and_tag_test_image(tag):
     return subprocess.check_output(["./build.sh", base_python, tag], cwd=get_test_repo_path())
 
 
-def get_test_project_recon_pipeline(pipeline_name, container_image=None):
+def get_test_project_recon_pipeline(pipeline_name, container_image=None, container_context=None):
     return ReOriginatedReconstructablePipelineForTest(
         ReconstructableRepository.for_file(
             file_relative_path(__file__, "test_pipelines/repo.py"),
             "define_demo_execution_repo",
             container_image=container_image,
+            container_context=container_context,
         ).get_reconstructable_pipeline(pipeline_name)
     )
 
@@ -154,17 +155,15 @@ class ReOriginatedReconstructablePipelineForTest(ReconstructablePipeline):
                 ),
                 container_image=self.repository.container_image,
                 entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
+                container_context=self.repository.container_context,
             ),
         )
 
 
 class ReOriginatedExternalPipelineForTest(ExternalPipeline):
-    def __init__(
-        self,
-        external_pipeline,
-        container_image=None,
-    ):
+    def __init__(self, external_pipeline, container_image=None, container_context=None):
         self._container_image = container_image
+        self._container_context = container_context
         super(ReOriginatedExternalPipelineForTest, self).__init__(
             external_pipeline.external_pipeline_data,
             external_pipeline.repository_handle,
@@ -188,6 +187,7 @@ class ReOriginatedExternalPipelineForTest(ExternalPipeline):
                 ),
                 container_image=self._container_image,
                 entry_point=DEFAULT_DAGSTER_ENTRY_POINT,
+                container_context=self._container_context,
             ),
         )
 
