@@ -62,7 +62,7 @@ class JobDefinition(PipelineDefinition):
         name: Optional[str] = None,
         description: Optional[str] = None,
         preset_defs: Optional[List[PresetDefinition]] = None,
-        tags: Dict[str, Any] = None,
+        tags: Optional[Dict[str, Any]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,

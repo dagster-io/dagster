@@ -128,7 +128,7 @@ class FileManager(ABC):  # pylint: disable=no-init
 
     @abstractmethod
     def write(
-        self, file_obj: Union[TextIO, BinaryIO], mode: str = "wb", ext: str = None
+        self, file_obj: Union[TextIO, BinaryIO], mode: str = "wb", ext: Optional[str] = None
     ) -> FileHandle:
         """Write the bytes contained within the given file object into the file manager.
 
@@ -145,7 +145,7 @@ class FileManager(ABC):  # pylint: disable=no-init
         raise NotImplementedError()
 
     @abstractmethod
-    def write_data(self, data: bytes, ext: str = None) -> FileHandle:
+    def write_data(self, data: bytes, ext: Optional[str] = None) -> FileHandle:
         """Write raw bytes into the file manager.
 
         Args:

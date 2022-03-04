@@ -199,7 +199,7 @@ def op(
 
 
 def op(
-    name: Union[Callable[..., Any], Optional[str]] = None,
+    name: Optional[Union[Callable[..., Any], str]] = None,
     description: Optional[str] = None,
     ins: Optional[Dict[str, In]] = None,
     out: Optional[Union[Out, Dict[str, Out]]] = None,

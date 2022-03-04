@@ -89,7 +89,7 @@ class DbtCliResource(DbtResource):
         )
 
     def compile(
-        self, models: List[str] = None, exclude: List[str] = None, **kwargs
+        self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
     ) -> DbtCliOutput:
         """
         Run the ``compile`` command on a dbt project. kwargs are passed in as additional parameters.
@@ -104,7 +104,7 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("compile", models=models, exclude=exclude, **kwargs)
 
-    def run(self, models: List[str] = None, exclude: List[str] = None, **kwargs) -> DbtCliOutput:
+    def run(self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs) -> DbtCliOutput:
         """
         Run the ``run`` command on a dbt project. kwargs are passed in as additional parameters.
 
@@ -119,7 +119,7 @@ class DbtCliResource(DbtResource):
         return self.cli("run", models=models, exclude=exclude, **kwargs)
 
     def snapshot(
-        self, select: List[str] = None, exclude: List[str] = None, **kwargs
+        self, select: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
     ) -> DbtCliOutput:
         """
         Run the ``snapshot`` command on a dbt project. kwargs are passed in as additional parameters.
@@ -136,8 +136,8 @@ class DbtCliResource(DbtResource):
 
     def test(
         self,
-        models: List[str] = None,
-        exclude: List[str] = None,
+        models: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
         data: bool = True,
         schema: bool = True,
         **kwargs,
@@ -163,7 +163,7 @@ class DbtCliResource(DbtResource):
         return self.cli("test", models=models, exclude=exclude, data=data, schema=schema, **kwargs)
 
     def seed(
-        self, show: bool = False, select: List[str] = None, exclude: List[str] = None, **kwargs
+        self, show: bool = False, select: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
     ) -> DbtCliOutput:
         """
         Run the ``seed`` command on a dbt project. kwargs are passed in as additional parameters.
@@ -182,9 +182,9 @@ class DbtCliResource(DbtResource):
 
     def ls(
         self,
-        select: List[str] = None,
-        models: List[str] = None,
-        exclude: List[str] = None,
+        select: Optional[List[str]] = None,
+        models: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
         **kwargs,
     ) -> DbtCliOutput:
         """
@@ -201,7 +201,7 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("ls", select=select, models=models, exclude=exclude, **kwargs)
 
-    def freshness(self, select: List[str] = None, **kwargs) -> DbtCliOutput:
+    def freshness(self, select: Optional[List[str]] = None, **kwargs) -> DbtCliOutput:
         """
         Run the ``source snapshot-freshness`` command on a dbt project. kwargs are passed in as additional parameters.
 

@@ -63,7 +63,7 @@ class DbtCloudResourceV2:
         return urljoin(self._dbt_cloud_host, DBT_ACCOUNTS_PATH)
 
     def make_request(
-        self, method: str, endpoint: str, data: Dict[str, Any] = None, return_text: bool = False
+        self, method: str, endpoint: str, data: Optional[Dict[str, Any]] = None, return_text: bool = False
     ) -> Dict[str, Any]:
         """
         Creates and sends a request to the desired dbt Cloud API endpoint.
@@ -177,7 +177,7 @@ class DbtCloudResourceV2:
         )
         return resp
 
-    def get_run(self, run_id: int, include_related: List[str] = None) -> Dict[str, Any]:
+    def get_run(self, run_id: int, include_related: Optional[List[str]] = None) -> Dict[str, Any]:
         """
         Gets details about a specific job run.
 
@@ -231,7 +231,7 @@ class DbtCloudResourceV2:
         self._log.info(f"Cancelling run with id '{run_id}'")
         return self.make_request("POST", f"{self._account_id}/runs/{run_id}/cancel/")
 
-    def list_run_artifacts(self, run_id: int, step: int = None) -> List[str]:
+    def list_run_artifacts(self, run_id: int, step: Optional[int] = None) -> List[str]:
         """
         Lists the paths of the available run artifacts from a completed dbt Cloud run.
 
@@ -256,7 +256,7 @@ class DbtCloudResourceV2:
             ),
         )
 
-    def get_run_artifact(self, run_id: int, path: str, step: int = None) -> str:
+    def get_run_artifact(self, run_id: int, path: str, step: Optional[int] = None) -> str:
         """
         The string contents of a run artifact from a dbt Cloud run.
 
@@ -280,7 +280,7 @@ class DbtCloudResourceV2:
             return_text=True,
         )["text"]
 
-    def get_manifest(self, run_id: int, step: int = None) -> Dict[str, Any]:
+    def get_manifest(self, run_id: int, step: Optional[int] = None) -> Dict[str, Any]:
         """
         The parsed contents of a manifest.json file created by a completed run.
 
@@ -297,7 +297,7 @@ class DbtCloudResourceV2:
         """
         return json.loads(self.get_run_artifact(run_id, "manifest.json", step=step))
 
-    def get_run_results(self, run_id: int, step: int = None) -> Dict[str, Any]:
+    def get_run_results(self, run_id: int, step: Optional[int] = None) -> Dict[str, Any]:
         """
         The parsed contents of a run_results.json file created by a completed run.
 
@@ -318,8 +318,8 @@ class DbtCloudResourceV2:
         self,
         run_id: int,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
-        poll_timeout: float = None,
-        href: str = None,
+        poll_timeout: Optional[float] = None,
+        href: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Polls a dbt Cloud job run until it completes. Will raise a `dagster.Failure` exception if the
@@ -384,7 +384,7 @@ class DbtCloudResourceV2:
         self,
         job_id: int,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
-        poll_timeout: float = None,
+        poll_timeout: Optional[float] = None,
     ) -> DbtCloudOutput:
         """
         Runs a dbt Cloud job and polls until it completes. Will raise a `dagster.Failure` exception

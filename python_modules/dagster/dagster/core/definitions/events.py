@@ -468,7 +468,7 @@ class Materialization(
 
     def __new__(
         cls,
-        label: str = None,
+        label: Optional[str] = None,
         description: Optional[str] = None,
         metadata_entries: Optional[List[MetadataEntry]] = None,
         asset_key: Optional[Union[str, AssetKey]] = None,

@@ -57,7 +57,7 @@ class PresetDefinition(
         run_config: Optional[Dict[str, object]] = None,
         solid_selection: Optional[List[str]] = None,
         mode: Optional[str] = None,
-        tags: Dict[str, object] = None,
+        tags: Optional[Dict[str, object]] = None,
     ):
 
         return super(PresetDefinition, cls).__new__(

@@ -150,7 +150,7 @@ class PipelineDefinition:
         ] = None,
         mode_defs: Optional[List[ModeDefinition]] = None,
         preset_defs: Optional[List[PresetDefinition]] = None,
-        tags: Dict[str, Any] = None,
+        tags: Optional[Dict[str, Any]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         solid_retry_policy: Optional[RetryPolicy] = None,
         graph_def=None,

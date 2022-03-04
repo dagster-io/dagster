@@ -56,7 +56,7 @@ class FivetranResource:
     def api_base_url(self) -> str:
         return urljoin(FIVETRAN_API_BASE, FIVETRAN_CONNECTOR_PATH)
 
-    def make_request(self, method: str, endpoint: str, data: str = None) -> Dict[str, Any]:
+    def make_request(self, method: str, endpoint: str, data: Optional[str] = None) -> Dict[str, Any]:
         """
         Creates and sends a request to the desired Fivetran Connector API endpoint.
 
@@ -151,7 +151,7 @@ class FivetranResource:
         )
 
     def update_connector(
-        self, connector_id: str, properties: Dict[str, Any] = None
+        self, connector_id: str, properties: Optional[Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
         Updates properties of a Fivetran Connector.
@@ -167,7 +167,7 @@ class FivetranResource:
         """
         return self.make_request(method="PATCH", endpoint=connector_id, data=json.dumps(properties))
 
-    def update_schedule_type(self, connector_id: str, schedule_type: str = None) -> Dict[str, Any]:
+    def update_schedule_type(self, connector_id: str, schedule_type: Optional[str] = None) -> Dict[str, Any]:
         """
         Updates the schedule type property of the connector to either "auto" or "manual".
 
@@ -248,7 +248,7 @@ class FivetranResource:
         connector_id: str,
         initial_last_sync_completion: datetime.datetime,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
-        poll_timeout: float = None,
+        poll_timeout: Optional[float] = None,
     ) -> Dict[str, Any]:
         """
         Given a Fivetran connector and the timestamp at which the previous sync completed, poll
@@ -306,7 +306,7 @@ class FivetranResource:
         self,
         connector_id: str,
         poll_interval: float = DEFAULT_POLL_INTERVAL,
-        poll_timeout: float = None,
+        poll_timeout: Optional[float] = None,
     ) -> FivetranOutput:
         """
         Initializes a sync operation for the given connector, and polls until it completes.
@@ -338,7 +338,7 @@ class FivetranResource:
         connector_id: str,
         resync_parameters: Dict[str, List[str]],
         poll_interval: float = DEFAULT_POLL_INTERVAL,
-        poll_timeout: float = None,
+        poll_timeout: Optional[float] = None,
     ) -> FivetranOutput:
         """
         Initializes a historical resync operation for the given connector, and polls until it completes.

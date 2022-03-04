@@ -49,7 +49,7 @@ class RetryMode(Enum):
 
 
 class RetryState:
-    def __init__(self, previous_attempts: Dict[str, int] = None):
+    def __init__(self, previous_attempts: Optional[Dict[str, int]] = None):
         self._attempts = defaultdict(int)
         for key, val in check.opt_dict_param(
             previous_attempts, "previous_attempts", key_type=str, value_type=int

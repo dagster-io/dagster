@@ -58,7 +58,7 @@ def _timing_to_metadata(timings: List[Dict[str, Any]]) -> List[MetadataEntry]:
 
 
 def result_to_materialization(
-    result: Dict[str, Any], asset_key_prefix: List[str] = None, docs_url: str = None
+    result: Dict[str, Any], asset_key_prefix: Optional[List[str]] = None, docs_url: Optional[str] = None
 ) -> Optional[AssetMaterialization]:
     """
     This is a hacky solution that attempts to consolidate parsing many of the potential formats

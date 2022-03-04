@@ -143,7 +143,7 @@ class InMemoryRunStorage(RunStorage):
             results.append(run)
         return results
 
-    def get_runs_count(self, filters: RunsFilter = None) -> int:
+    def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
         check.opt_inst_param(filters, "filters", RunsFilter)
 
         return len(self.get_runs(filters))
@@ -178,11 +178,11 @@ class InMemoryRunStorage(RunStorage):
 
     def get_run_records(
         self,
-        filters: RunsFilter = None,
-        limit: int = None,
-        order_by: str = None,
+        filters: Optional[RunsFilter] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[str] = None,
         ascending: bool = False,
-        cursor: str = None,
+        cursor: Optional[str] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
         check.opt_inst_param(filters, "filters", RunsFilter)
@@ -346,7 +346,7 @@ class InMemoryRunStorage(RunStorage):
         )
 
     def get_backfills(
-        self, status: BulkActionStatus = None, cursor: str = None, limit: int = None
+        self, status: Optional[BulkActionStatus] = None, cursor: Optional[str] = None, limit: Optional[int] = None
     ) -> List[PartitionBackfill]:
         check.opt_inst_param(status, "status", BulkActionStatus)
         backfills = [

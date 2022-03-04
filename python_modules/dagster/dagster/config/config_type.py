@@ -223,7 +223,7 @@ class EnumValue:
     """
 
     def __init__(
-        self, config_value: str, python_value: object = None, description: Optional[str] = None
+        self, config_value: str, python_value: Optional[object] = None, description: Optional[str] = None
     ):
         self.config_value = check.str_param(config_value, "config_value")
         self.python_value = config_value if python_value is None else python_value

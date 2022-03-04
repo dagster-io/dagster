@@ -1061,31 +1061,31 @@ class DagsterInstance:
     @traced
     def get_runs(
         self,
-        filters: RunsFilter = None,
-        cursor: str = None,
-        limit: int = None,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> Iterable[PipelineRun]:
         return self._run_storage.get_runs(filters, cursor, limit, bucket_by)
 
     @traced
-    def get_runs_count(self, filters: RunsFilter = None) -> int:
+    def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
         return self._run_storage.get_runs_count(filters)
 
     @traced
     def get_run_groups(
-        self, filters: RunsFilter = None, cursor: str = None, limit: int = None
+        self, filters: Optional[RunsFilter] = None, cursor: Optional[str] = None, limit: Optional[int] = None
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
 
     @traced
     def get_run_records(
         self,
-        filters: RunsFilter = None,
-        limit: int = None,
-        order_by: str = None,
+        filters: Optional[RunsFilter] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[str] = None,
         ascending: bool = False,
-        cursor: str = None,
+        cursor: Optional[str] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
@@ -1123,7 +1123,7 @@ class DagsterInstance:
         self,
         run_id,
         cursor,
-        of_type: "DagsterEventType" = None,
+        of_type: Optional["DagsterEventType"] = None,
         limit: Optional[int] = None,
     ):
         return self._event_storage.get_logs_for_run(
@@ -1134,7 +1134,7 @@ class DagsterInstance:
         )
 
     @traced
-    def all_logs(self, run_id, of_type: Union["DagsterEventType", Set["DagsterEventType"]] = None):
+    def all_logs(self, run_id, of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None):
         return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
 
     def watch_event_logs(self, run_id, cursor, cb):

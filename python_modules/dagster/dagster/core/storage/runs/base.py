@@ -50,9 +50,9 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     @abstractmethod
     def get_runs(
         self,
-        filters: RunsFilter = None,
-        cursor: str = None,
-        limit: int = None,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> Iterable[PipelineRun]:
         """Return all the runs present in the storage that match the given filters.
@@ -69,7 +69,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
         """
 
     @abstractmethod
-    def get_runs_count(self, filters: RunsFilter = None) -> int:
+    def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
         """Return the number of runs present in the storage that match the given filters.
 
         Args:
@@ -99,7 +99,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def get_run_groups(
-        self, filters: RunsFilter = None, cursor: str = None, limit: int = None
+        self, filters: Optional[RunsFilter] = None, cursor: Optional[str] = None, limit: Optional[int] = None
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         """Return all of the run groups present in the storage that include rows matching the
         given filter.
@@ -147,11 +147,11 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     @abstractmethod
     def get_run_records(
         self,
-        filters: RunsFilter = None,
-        limit: int = None,
-        order_by: str = None,
+        filters: Optional[RunsFilter] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[str] = None,
         ascending: bool = False,
-        cursor: str = None,
+        cursor: Optional[str] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
@@ -319,10 +319,10 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     def supports_bucket_queries(self):
         return True
 
-    def migrate(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+    def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
         """Call this method to run any required data migrations"""
 
-    def optimize(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+    def optimize(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
         """Call this method to run any optional data migrations for optimized reads"""
 
     def dispose(self):
@@ -353,7 +353,7 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     # Backfill storage
     @abstractmethod
     def get_backfills(
-        self, status: BulkActionStatus = None, cursor: str = None, limit: int = None
+        self, status: Optional[BulkActionStatus] = None, cursor: Optional[str] = None, limit: Optional[int] = None
     ) -> List[PartitionBackfill]:
         """Get a list of partition backfills"""
 
