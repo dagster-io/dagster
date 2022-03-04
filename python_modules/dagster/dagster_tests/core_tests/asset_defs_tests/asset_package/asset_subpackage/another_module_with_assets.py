@@ -1,4 +1,6 @@
-from dagster import asset
+from dagster import AssetKey, SourceAsset, asset
+
+elvis_presley = SourceAsset(key=AssetKey("patsy_cline"))
 
 
 @asset

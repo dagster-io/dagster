@@ -1,6 +1,7 @@
 import os
 import pkgutil
 import re
+from collections import OrderedDict
 from importlib import import_module
 from types import ModuleType
 from typing import (
@@ -367,16 +368,18 @@ class AssetGroup(
         Returns:
             AssetGroup: An asset group with all the assets in the package.
         """
-        assets: Set[AssetsDefinition] = set()
-        source_assets: Set[SourceAsset] = set()
+        assets: Dict[AssetsDefinition, None] = OrderedDict()
+        source_assets: Dict[SourceAsset, None] = OrderedDict()
         for module in _find_modules_in_package(package_module):
             module_assets, module_source_assets = _find_assets_in_module(module)
-            assets.update(module_assets)
-            source_assets.update(module_source_assets)
+            for a in module_assets:
+                assets[a] = None
+            for a in module_source_assets:
+                source_assets[a] = None
 
         return AssetGroup(
-            assets=list(assets),
-            source_assets=list(source_assets),
+            assets=list(assets.keys()),
+            source_assets=list(source_assets.keys()),
             resource_defs=resource_defs,
             executor_def=executor_def,
         )
@@ -426,16 +429,18 @@ class AssetGroup(
         Returns:
             AssetGroup: An asset group with all the assets defined in the given modules.
         """
-        assets: Set[AssetsDefinition] = set()
-        source_assets: Set[SourceAsset] = set()
+        assets: Dict[AssetsDefinition, None] = OrderedDict()
+        source_assets: Dict[SourceAsset, None] = OrderedDict()
         for module in modules:
             module_assets, module_source_assets = _find_assets_in_module(module)
-            assets.update(module_assets)
-            source_assets.update(module_source_assets)
+            for a in module_assets:
+                assets[a] = None
+            for a in module_source_assets:
+                source_assets[a] = None
 
         return AssetGroup(
-            assets=list(assets),
-            source_assets=list(source_assets),
+            assets=list(assets.keys()),
+            source_assets=list(source_assets.keys()),
             resource_defs=resource_defs,
             executor_def=executor_def,
         )
