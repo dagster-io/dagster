@@ -1,6 +1,7 @@
-from dagster import job
 from dagster_gcp.gcs.io_manager import gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource
+
+from dagster import job
 
 
 @job(

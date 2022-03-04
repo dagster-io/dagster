@@ -26,8 +26,9 @@ First, run `pip install dagster-dask`.
 Then, create a job with the dask executor:
 
 ```python file=/deploying/dask_hello_world.py startafter=start_local_job_marker endbefore=end_local_job_marker
-from dagster import job, op
 from dagster_dask import dask_executor
+
+from dagster import job, op
 
 
 @op
@@ -58,10 +59,11 @@ If you want to use a Dask cluster for distributed execution, you will first need
 You'll also need an IO manager that uses persistent shared storage, which should be attached to the job along with any resources on which it depends. Here, we use the <PyObject module="dagster_aws.s3" object="s3_pickle_io_manager"/>:
 
 ```python file=/deploying/dask_hello_world_distributed.py startafter=start_distributed_job_marker endbefore=end_distributed_job_marker
-from dagster import job, op
 from dagster_aws.s3.io_manager import s3_pickle_io_manager
 from dagster_aws.s3.resources import s3_resource
 from dagster_dask import dask_executor
+
+from dagster import job, op
 
 
 @op
