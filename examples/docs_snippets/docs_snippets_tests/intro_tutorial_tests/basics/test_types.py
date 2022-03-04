@@ -3,7 +3,6 @@ from collections import OrderedDict
 
 from dagster import execute_solid
 from dagster.utils import script_relative_path
-
 from docs_snippets.intro_tutorial.basics.e04_quality.custom_types_2 import (
     sort_by_calories,
 )
