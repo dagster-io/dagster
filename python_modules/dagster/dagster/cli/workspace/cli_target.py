@@ -31,6 +31,7 @@ from dagster.utils.hosted_user_process import recon_repository_from_origin
 
 if TYPE_CHECKING:
     from dagster.core.workspace.context import WorkspaceProcessContext
+from dagster.core.host_representation.external import ExternalPipeline
 
 WORKSPACE_TARGET_WARNING = "Can only use ONE of --workspace/-w, --python-file/-f, --module-name/-m, --grpc-port, --grpc-socket."
 
@@ -474,7 +475,7 @@ def get_pipeline_or_job_python_origin_from_kwargs(kwargs, using_job_op_graph_api
     return PipelinePythonOrigin(pipeline_name, repository_origin=repository_origin)
 
 
-def _get_code_pointer_dict_from_kwargs(kwargs):
+def _get_code_pointer_dict_from_kwargs(kwargs: Dict[str, object]) -> Dict[str, CodePointer]:
     python_file = kwargs.get("python_file")
     module_name = kwargs.get("module_name")
     package_name = kwargs.get("package_name")
@@ -524,8 +525,8 @@ def get_working_directory_from_kwargs(kwargs: Dict[str, object]) -> Optional[str
     return check.opt_str_elem(kwargs, "working_directory") or os.getcwd()
 
 
-def get_repository_python_origin_from_kwargs(kwargs):
-    provided_repo_name = kwargs.get("repository")
+def get_repository_python_origin_from_kwargs(kwargs: Dict[str, object]) -> RepositoryPythonOrigin:
+    provided_repo_name = cast(str, kwargs.get("repository"))
 
     if not (kwargs.get("python_file") or kwargs.get("module_name") or kwargs.get("package_name")):
         raise click.UsageError("Must specify a python file or module name")
@@ -637,7 +638,9 @@ def get_repository_location_from_workspace(
     return workspace.get_repository_location(provided_location_name)
 
 
-def get_external_repository_from_repo_location(repo_location, provided_repo_name):
+def get_external_repository_from_repo_location(
+    repo_location: RepositoryLocation, provided_repo_name: Optional[str]
+) -> ExternalRepository:
     check.inst_param(repo_location, "repo_location", RepositoryLocation)
     check.opt_str_param(provided_repo_name, "provided_repo_name")
 
@@ -681,8 +684,10 @@ def get_external_repository_from_kwargs(instance, version, kwargs):
 
 
 def get_external_pipeline_or_job_from_external_repo(
-    external_repo, provided_pipeline_or_job_name, using_job_op_graph_apis=False
-):
+    external_repo: ExternalRepository,
+    provided_pipeline_or_job_name: Optional[str],
+    using_job_op_graph_apis: bool = False,
+) -> ExternalPipeline:
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.opt_str_param(provided_pipeline_or_job_name, "provided_pipeline_or_job_name")
 

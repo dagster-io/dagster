@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import textwrap
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, cast
 
 import click
 import pendulum
@@ -115,7 +116,7 @@ def execute_list_command(cli_args, print_fn, using_job_op_graph_apis=False):
                     print_fn("    " + solid_name)
 
 
-def format_description(desc, indent):
+def format_description(desc: str, indent: str):
     check.str_param(desc, "desc")
     check.str_param(indent, "indent")
     desc = re.sub(r"\s+", " ", desc)
@@ -194,7 +195,11 @@ def execute_print_command(instance, verbose, cli_args, print_fn, using_job_op_gr
             )
 
 
-def print_solids_or_ops(pipeline_snapshot, print_fn, using_job_op_graph_apis=False):
+def print_solids_or_ops(
+    pipeline_snapshot: PipelineSnapshot,
+    print_fn: Callable[..., Any],
+    using_job_op_graph_apis: bool = False,
+):
     check.inst_param(pipeline_snapshot, "pipeline", PipelineSnapshot)
     check.callable_param(print_fn, "print_fn")
 
@@ -207,7 +212,11 @@ def print_solids_or_ops(pipeline_snapshot, print_fn, using_job_op_graph_apis=Fal
             printer.line(f"{'Op' if using_job_op_graph_apis else 'Solid'}: {solid.solid_name}")
 
 
-def print_pipeline_or_job(pipeline_snapshot, print_fn, using_job_op_graph_apis=False):
+def print_pipeline_or_job(
+    pipeline_snapshot: PipelineSnapshot,
+    print_fn: Callable[..., Any],
+    using_job_op_graph_apis: bool = False,
+):
     check.inst_param(pipeline_snapshot, "pipeline", PipelineSnapshot)
     check.callable_param(print_fn, "print_fn")
     printer = IndentingPrinter(indent_level=2, printer=print_fn)
@@ -228,7 +237,12 @@ def print_description(printer, desc):
                 printer.line(format_description(desc, printer.current_indent_str))
 
 
-def print_solid_or_op(printer, pipeline_snapshot, solid_invocation_snap, using_job_op_graph_apis):
+def print_solid_or_op(
+    printer: IndentingPrinter,
+    pipeline_snapshot: PipelineSnapshot,
+    solid_invocation_snap: SolidInvocationSnap,
+    using_job_op_graph_apis: bool,
+) -> None:
     check.inst_param(pipeline_snapshot, "pipeline_snapshot", PipelineSnapshot)
     check.inst_param(solid_invocation_snap, "solid_invocation_snap", SolidInvocationSnap)
     printer.line(
@@ -269,10 +283,12 @@ def pipeline_list_versions_command(**kwargs):
         execute_list_versions_command(instance, kwargs)
 
 
-def execute_list_versions_command(instance, kwargs):
+def execute_list_versions_command(instance: DagsterInstance, kwargs: Dict[str, Any]) -> None:
     check.inst_param(instance, "instance", DagsterInstance)
 
-    config = list(check.opt_tuple_param(kwargs.get("config"), "config", default=(), of_type=str))
+    config = list(
+        check.opt_tuple_param(kwargs.get("config"), "config", default=tuple(), of_type=str)
+    )
     preset = kwargs.get("preset")
     mode = kwargs.get("mode")
 
@@ -357,12 +373,14 @@ def pipeline_execute_command(**kwargs):
 
 
 @telemetry_wrapper
-def execute_execute_command(instance, kwargs, using_job_op_graph_apis=False):
+def execute_execute_command(
+    instance: DagsterInstance, kwargs: Dict[str, object], using_job_op_graph_apis: bool = False
+):
     check.inst_param(instance, "instance", DagsterInstance)
 
     config = list(check.opt_tuple_param(kwargs.get("config"), "config", default=(), of_type=str))
-    preset = kwargs.get("preset")
-    mode = kwargs.get("mode")
+    preset = cast(Optional[str], kwargs.get("preset"))
+    mode = cast(Optional[str], kwargs.get("mode"))
 
     if preset and config:
         raise click.UsageError("Can not use --preset with --config.")
@@ -380,14 +398,19 @@ def execute_execute_command(instance, kwargs, using_job_op_graph_apis=False):
     return result
 
 
-def get_run_config_from_file_list(file_list):
+def get_run_config_from_file_list(file_list: Optional[List[str]]):
     check.opt_list_param(file_list, "file_list", of_type=str)
     return load_yaml_from_glob_list(file_list) if file_list else {}
 
 
 def _check_execute_external_pipeline_args(
-    external_pipeline, run_config, mode, preset, tags, solid_selection
-):
+    external_pipeline: ExternalPipeline,
+    run_config: Dict[str, object],
+    mode: Optional[str],
+    preset: Optional[str],
+    tags: Optional[Mapping[str, object]],
+    solid_selection: Optional[List[str]],
+) -> Tuple[Dict[str, object], str, Mapping[str, object], Optional[List[str]]]:
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
     run_config = check.opt_dict_param(run_config, "run_config")
     check.opt_str_param(mode, "mode")
@@ -471,22 +494,22 @@ def _check_execute_external_pipeline_args(
 
 
 def _create_external_pipeline_run(
-    instance,
-    repo_location,
-    external_repo,
-    external_pipeline,
-    run_config,
-    mode,
-    preset,
-    tags,
-    solid_selection,
-    run_id,
+    instance: DagsterInstance,
+    repo_location: RepositoryLocation,
+    external_repo: ExternalRepository,
+    external_pipeline: ExternalPipeline,
+    run_config: Dict[str, object],
+    mode: Optional[str],
+    preset: Optional[str],
+    tags: Optional[Mapping[str, object]],
+    solid_selection: Optional[List[str]],
+    run_id: Optional[str],
 ):
     check.inst_param(instance, "instance", DagsterInstance)
     check.inst_param(repo_location, "repo_location", RepositoryLocation)
     check.inst_param(external_repo, "external_repo", ExternalRepository)
     check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-    check.opt_dict_param(run_config, "run_config")
+    check.opt_dict_param(run_config, "run_config", key_type=str)
 
     check.opt_str_param(mode, "mode")
     check.opt_str_param(preset, "preset")
@@ -546,13 +569,13 @@ def _create_external_pipeline_run(
 
 
 def do_execute_command(
-    pipeline,
-    instance,
-    config,
-    mode=None,
-    tags=None,
-    solid_selection=None,
-    preset=None,
+    pipeline: IPipeline,
+    instance: DagsterInstance,
+    config: Optional[List[str]],
+    mode: Optional[str] = None,
+    tags: Optional[Dict[str, object]] = None,
+    solid_selection: Optional[List[str]] = None,
+    preset: Optional[str] = None,
 ):
     check.inst_param(pipeline, "pipeline", IPipeline)
     check.inst_param(instance, "instance", DagsterInstance)
@@ -615,19 +638,23 @@ def pipeline_launch_command(**kwargs):
 
 
 @telemetry_wrapper
-def execute_launch_command(instance, kwargs, using_job_op_graph_apis=False):
-    preset = kwargs.get("preset")
-    mode = kwargs.get("mode")
+def execute_launch_command(
+    instance: DagsterInstance, kwargs: Dict[str, object], using_job_op_graph_apis: bool = False
+):
+    preset = cast(Optional[str], kwargs.get("preset"))
+    mode = cast(Optional[str], kwargs.get("mode"))
     check.inst_param(instance, "instance", DagsterInstance)
     config = get_config_from_args(kwargs)
 
     with get_workspace_from_kwargs(instance, version=dagster_version, kwargs=kwargs) as workspace:
         repo_location = get_repository_location_from_workspace(workspace, kwargs.get("location"))
         external_repo = get_external_repository_from_repo_location(
-            repo_location, kwargs.get("repository")
+            repo_location, cast(Optional[str], kwargs.get("repository"))
         )
         external_pipeline = get_external_pipeline_or_job_from_external_repo(
-            external_repo, kwargs.get("pipeline_or_job"), using_job_op_graph_apis
+            external_repo,
+            cast(Optional[str], kwargs.get("pipeline_or_job")),
+            using_job_op_graph_apis,
         )
 
         log_external_repo_stats(
@@ -654,7 +681,7 @@ def execute_launch_command(instance, kwargs, using_job_op_graph_apis=False):
             preset=preset,
             tags=run_tags,
             solid_selection=solid_selection,
-            run_id=kwargs.get("run_id"),
+            run_id=cast(Optional[str], kwargs.get("run_id")),
         )
 
         return instance.submit_run(pipeline_run.run_id, workspace)
@@ -681,7 +708,9 @@ def execute_scaffold_command(cli_args, print_fn, using_job_op_graph_apis=False):
     do_scaffold_command(pipeline.get_definition(), print_fn, skip_non_required)
 
 
-def do_scaffold_command(pipeline_def, printer, skip_non_required):
+def do_scaffold_command(
+    pipeline_def: PipelineDefinition, printer: Callable[..., Any], skip_non_required: bool
+):
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     check.callable_param(printer, "printer")
     check.bool_param(skip_non_required, "skip_non_required")
@@ -722,23 +751,22 @@ def gen_partition_names_from_args(partition_names, kwargs):
     return partition_names[start:end]
 
 
-def get_config_from_args(kwargs):
-    config_files = kwargs.get("config")
-    config_json = kwargs.get("config_json")
+def get_config_from_args(kwargs: Dict[str, object]) -> Dict[str, object]:
 
-    if not config_files and not config_json:
+    if not "config" in kwargs and not "config_json" in kwargs:
         return {}
 
-    if config_files and config_json:
+    elif "config_files" in kwargs and "config_json" in kwargs:
         raise click.UsageError("Cannot specify both -c / --config and --config-json")
 
-    if config_files:
+    elif "config_files" in kwargs:
         config_file_list = list(
-            check.opt_tuple_param(kwargs.get("config"), "config", default=(), of_type=str)
+            check.opt_tuple_param(kwargs.get("config"), "config", default=tuple(), of_type=str)
         )
         return get_run_config_from_file_list(config_file_list)
 
-    if config_json:
+    elif "config_json" in kwargs:
+        config_json = cast(str, kwargs.get("config_json"))
         try:
             return json.loads(config_json)
 
@@ -749,6 +777,8 @@ def get_config_from_args(kwargs):
                     serializable_error_info_from_exc_info(sys.exc_info()).to_string(),
                 )
             )
+    else:
+        check.failed("Should not reach here")
 
 
 def get_tags_from_args(kwargs):

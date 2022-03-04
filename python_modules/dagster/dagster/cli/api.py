@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from typing import Any, Callable, Optional
 
 import click
 
@@ -9,8 +10,9 @@ from dagster.cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
 )
+from dagster.core.definitions.reconstructable import ReconstructablePipeline
 from dagster.core.errors import DagsterExecutionInterruptedError
-from dagster.core.events import DagsterEventType, EngineEventData
+from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.core.execution.run_cancellation_thread import start_run_cancellation_thread
 from dagster.core.instance import DagsterInstance
@@ -77,18 +79,19 @@ def execute_run_command(input_json):
 
 
 def _execute_run_command_body(
-    recon_pipeline, pipeline_run_id, instance, write_stream_fn, set_exit_code_on_failure
-):
+    recon_pipeline: ReconstructablePipeline,
+    pipeline_run_id: str,
+    instance: DagsterInstance,
+    write_stream_fn: Callable[[DagsterEvent], Any],
+    set_exit_code_on_failure: bool,
+) -> int:
     if instance.should_start_background_run_thread:
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
             instance, pipeline_run_id
         )
 
-    pipeline_run = instance.get_run_by_id(pipeline_run_id)
-
-    check.inst(
-        pipeline_run,
-        PipelineRun,
+    pipeline_run: PipelineRun = check.not_none(
+        instance.get_run_by_id(pipeline_run_id),
         "Pipeline run with id '{}' not found for run execution.".format(pipeline_run_id),
     )
 
@@ -171,7 +174,11 @@ def resume_run_command(input_json):
 
 
 def _resume_run_command_body(
-    recon_pipeline, pipeline_run_id, instance, write_stream_fn, set_exit_code_on_failure
+    recon_pipeline: ReconstructablePipeline,
+    pipeline_run_id: Optional[str],
+    instance: DagsterInstance,
+    write_stream_fn: Callable[[DagsterEvent], Any],
+    set_exit_code_on_failure: bool,
 ):
     if instance.should_start_background_run_thread:
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(

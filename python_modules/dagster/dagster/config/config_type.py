@@ -1,3 +1,4 @@
+import typing
 from enum import Enum as PythonEnum
 from typing import Dict, List, Optional
 
@@ -56,11 +57,11 @@ class ConfigType:
 
     def __init__(
         self,
-        key,
-        kind,
-        given_name=None,
-        description=None,
-        type_params=None,
+        key: str,
+        kind: ConfigTypeKind,
+        given_name: Optional[str] = None,
+        description: Optional[str] = None,
+        type_params: Optional[List["ConfigType"]] = None,
     ):
 
         self.key: str = check.str_param(key, "key")
@@ -78,7 +79,7 @@ class ConfigType:
         return self._description
 
     @staticmethod
-    def from_builtin_enum(builtin_enum) -> "ConfigType":
+    def from_builtin_enum(builtin_enum: typing.Any) -> "ConfigType":
         check.invariant(BuiltinEnum.contains(builtin_enum), "param must be member of BuiltinEnum")
         return _CONFIG_MAP[builtin_enum]
 
@@ -105,10 +106,12 @@ class ConfigScalarKind(PythonEnum):
 
 
 class ConfigScalar(ConfigType):
-    def __init__(self, key, given_name, scalar_kind, **kwargs):
+    def __init__(
+        self, key: str, given_name: Optional[str], scalar_kind: ConfigScalarKind, **kwargs: object
+    ):
         self.scalar_kind = check.inst_param(scalar_kind, "scalar_kind", ConfigScalarKind)
         super(ConfigScalar, self).__init__(
-            key, given_name=given_name, kind=ConfigTypeKind.SCALAR, **kwargs
+            key, kind=ConfigTypeKind.SCALAR, given_name=given_name, **kwargs  # type: ignore
         )
 
 
@@ -219,7 +222,9 @@ class EnumValue:
 
     """
 
-    def __init__(self, config_value, python_value=None, description=None):
+    def __init__(
+        self, config_value: str, python_value: object = None, description: Optional[str] = None
+    ):
         self.config_value = check.str_param(config_value, "config_value")
         self.python_value = config_value if python_value is None else python_value
         self.description = check.opt_str_param(description, "description")
@@ -254,7 +259,7 @@ class Enum(ConfigType):
             # ...
     """
 
-    def __init__(self, name, enum_values):
+    def __init__(self, name: str, enum_values: List[EnumValue]):
         check.str_param(name, "name")
         super(Enum, self).__init__(key=name, given_name=name, kind=ConfigTypeKind.ENUM)
         self.enum_values = check.list_param(enum_values, "enum_values", of_type=EnumValue)
@@ -270,7 +275,7 @@ class Enum(ConfigType):
     def is_valid_config_enum_value(self, config_value):
         return config_value in self._valid_config_values
 
-    def post_process(self, value):
+    def post_process(self, value: typing.Any) -> typing.Any:
         if isinstance(value, PythonEnum):
             value = value.name
 
@@ -359,10 +364,7 @@ class ScalarUnion(ConfigType):
     """
 
     def __init__(
-        self,
-        scalar_type,
-        non_scalar_schema,
-        _key=None,
+        self, scalar_type: typing.Any, non_scalar_schema: typing.Any, _key: Optional[str] = None
     ):
         from .field import resolve_to_config_type
 
@@ -414,7 +416,7 @@ _CONFIG_MAP_BY_NAME: Dict[str, ConfigType] = {
 ALL_CONFIG_BUILTINS = set(_CONFIG_MAP.values())
 
 
-def get_builtin_scalar_by_name(type_name):
+def get_builtin_scalar_by_name(type_name: str):
     if type_name not in _CONFIG_MAP_BY_NAME:
         check.failed("Scalar {} is not supported".format(type_name))
     return _CONFIG_MAP_BY_NAME[type_name]
