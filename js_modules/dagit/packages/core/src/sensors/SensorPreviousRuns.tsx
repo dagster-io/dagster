@@ -2,8 +2,8 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, ColorsWIP, Group, NonIdealState, Subheading} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {DagsterTag} from '../runs/RunTag';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
+import {DagsterTag} from '../runs/RunTag';
 import {RepoAddress} from '../workspace/types';
 
 import {PreviousRunsForSensorQuery} from './types/PreviousRunsForSensorQuery';

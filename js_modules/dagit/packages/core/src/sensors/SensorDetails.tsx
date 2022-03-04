@@ -12,6 +12,7 @@ import {
   FontFamily,
 } from '@dagster-io/ui';
 import * as React from 'react';
+
 import {AssetLink} from '../assets/AssetLink';
 import {TickTag} from '../instigation/InstigationTick';
 import {RepositoryLink} from '../nav/RepositoryLink';
@@ -20,8 +21,8 @@ import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
-import {EditCursorDialog} from './EditCursorDialog';
 
+import {EditCursorDialog} from './EditCursorDialog';
 import {SensorSwitch} from './SensorSwitch';
 import {SensorFragment} from './types/SensorFragment';
 

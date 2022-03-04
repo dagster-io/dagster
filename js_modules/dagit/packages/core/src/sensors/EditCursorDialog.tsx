@@ -1,11 +1,12 @@
 import {gql, useMutation} from '@apollo/client';
-import {SharedToaster} from '../app/DomUtils';
-import 'chartjs-adapter-date-fns';
-import {ButtonWIP, DialogBody, DialogFooter, DialogWIP, Group, IconWIP} from '@dagster-io/ui';
+import {TextArea} from '@blueprintjs/core';
+import {ButtonWIP, DialogBody, DialogFooter, DialogWIP} from '@dagster-io/ui';
 import * as React from 'react';
 
+import 'chartjs-adapter-date-fns';
+
+import {SharedToaster} from '../app/DomUtils';
 import {SensorSelector} from '../types/globalTypes';
-import {TextArea} from '@blueprintjs/core';
 
 export const EditCursorDialog: React.FC<{
   cursor: string;
@@ -66,6 +67,7 @@ const SET_CURSOR_MUTATION = gql`
       ... on Sensor {
         id
         sensorState {
+          id
           status
           typeSpecificData {
             ... on SensorData {
