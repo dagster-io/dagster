@@ -600,7 +600,7 @@ def pylint_steps():
                 -e python_modules/libraries/dagster-celery \
                 -e python_modules/libraries/dagster-dask \
             """,
-            "pylint -j 0 `git ls-files %s` --rcfile=.pylintrc" % " ".join(base_paths_ext),
+            "pylint -j 0 `git ls-files %s` --rcfile=pyproject.toml" % " ".join(base_paths_ext),
         )
         .on_integration_image(SupportedPython.V3_7)
         .build()
