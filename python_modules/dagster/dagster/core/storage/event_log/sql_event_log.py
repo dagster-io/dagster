@@ -14,6 +14,7 @@ from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.stats import build_run_step_stats_from_events
+from dagster.core.storage.sql import db_subquery
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.errors import DeserializationError
 from dagster.utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
@@ -721,7 +722,7 @@ class SqlEventLogStorage(EventLogStorage):
                 to_backcompat_fetch.add(asset_key)
 
         if to_backcompat_fetch:
-            latest_event_subquery = (
+            latest_event_subquery = db_subquery(
                 db.select(
                     [
                         SqlEventLogStorageTable.c.asset_key,

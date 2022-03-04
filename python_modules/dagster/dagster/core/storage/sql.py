@@ -117,6 +117,12 @@ def run_migrations_offline(context, config, target_metadata):
         context.run_migrations()
 
 
+def db_subquery(query):
+    if db.__version__ >= "1.4.0":
+        return query.subquery()
+    else:
+        return query.alias()
+
 def run_migrations_online(context, config, target_metadata):
     """Run migrations in 'online' mode.
 
