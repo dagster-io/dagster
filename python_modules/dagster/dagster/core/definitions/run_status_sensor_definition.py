@@ -501,6 +501,7 @@ class RunStatusSensorDefinition(SensorDefinition):
                 # * update cursor and job state
                 yield PipelineRunReaction(
                     pipeline_run=pipeline_run,
+                    run_status=pipeline_run_status,
                     error=serializable_error,
                 )
 

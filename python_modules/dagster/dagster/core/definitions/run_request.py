@@ -2,7 +2,7 @@ from enum import Enum
 from typing import Any, Mapping, NamedTuple, Optional
 
 from dagster import check
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes.serdes import register_serdes_enum_fallbacks, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo
 
@@ -85,7 +85,11 @@ class RunRequest(
 class PipelineRunReaction(
     NamedTuple(
         "_PipelineRunReaction",
-        [("pipeline_run", Optional[PipelineRun]), ("error", Optional[SerializableErrorInfo])],
+        [
+            ("pipeline_run", Optional[PipelineRun]),
+            ("error", Optional[SerializableErrorInfo]),
+            ("run_status", Optional[PipelineRunStatus]),
+        ],
     )
 ):
     """
@@ -93,15 +97,20 @@ class PipelineRunReaction(
     back to the run.
 
     Attributes:
-        pipeline_run (PipelineRun): The pipeline run that originates this reaction.
+        pipeline_run (Optional[PipelineRun]): The pipeline run that originates this reaction.
         error (Optional[SerializableErrorInfo]): user code execution error.
+        run_status: (Optional[PipelineRunStatus]): The run status that triggered the reaction.
     """
 
     def __new__(
-        cls, pipeline_run: Optional[PipelineRun], error: Optional[SerializableErrorInfo] = None
+        cls,
+        pipeline_run: Optional[PipelineRun],
+        error: Optional[SerializableErrorInfo] = None,
+        run_status: Optional[PipelineRunStatus] = None,
     ):
         return super(PipelineRunReaction, cls).__new__(
             cls,
             pipeline_run=check.opt_inst_param(pipeline_run, "pipeline_run", PipelineRun),
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
+            run_status=check.opt_inst_param(run_status, "run_status", PipelineRunStatus),
         )
