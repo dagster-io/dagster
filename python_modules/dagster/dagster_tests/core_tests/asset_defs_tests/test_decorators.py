@@ -14,6 +14,7 @@ from dagster import (
 )
 from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
+from dagster.utils.backcompat import ExperimentalWarning
 
 
 @pytest.fixture(autouse=True)
@@ -327,43 +328,43 @@ def test_invoking_asset_with_context():
     assert out == 1
 
 
-# def test_asset_key_warning_caught():
-#     with pytest.warns(
-#         ExperimentalWarning,
-#         match='"asset" is an experimental decorator. It may break in future versions, even between '
-#         'dot releases.'
-#     ) as record:
-#         @asset
-#         def my_asset():
-#             pass
+def test_asset_key_warning_caught():
+    with pytest.warns(
+        ExperimentalWarning,
+        match='"asset" is an experimental decorator. It may break in future versions, even between '
+        'dot releases.'
+    ) as record:
+        @asset
+        def my_asset():
+            pass
 
-#         asset_job = build_assets_job("my_job", [my_asset])
-#         asset_job.execute_in_process()
+        asset_job = build_assets_job("my_job", [my_asset])
+        asset_job.execute_in_process()
 
-#         raises_warning = False
-#         for w in record:
-#             if "asset_key" in w.message.args[0]:
-#                 raises_warning = True
-#                 break
+        raises_warning = False
+        for w in record:
+            if "asset_key" in w.message.args[0]:
+                raises_warning = True
+                break
 
-#         assert not raises_warning
+        assert not raises_warning
 
-#     with pytest.warns(
-#         ExperimentalWarning,
-#         match='"asset" is an experimental decorator. It may break in future versions, even between '
-#         'dot releases.'
-#     ) as record:
-#         @multi_asset
-#         def my_multi_asset():
-#             pass
+    with pytest.warns(
+        ExperimentalWarning,
+        match='"asset" is an experimental decorator. It may break in future versions, even between '
+        'dot releases.'
+    ) as record:
+        @multi_asset
+        def my_multi_asset():
+            pass
 
-#         multi_asset_job = build_assets_job("my_multi_job", [my_multi_asset])
-#         multi_asset_job.execute_in_process()
+        multi_asset_job = build_assets_job("my_multi_job", [my_multi_asset])
+        multi_asset_job.execute_in_process()
 
-#         raises_warning = False
-#         for w in record:
-#             if "asset_key" in w.message.args[0]:
-#                 raises_warning = True
-#                 break
+        raises_warning = False
+        for w in record:
+            if "asset_key" in w.message.args[0]:
+                raises_warning = True
+                break
 
-#         assert not raises_warning
+        assert not raises_warning
