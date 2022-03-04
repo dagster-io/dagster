@@ -640,8 +640,8 @@ class CachingRepositoryData(RepositoryData):
                     )
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore", category=ExperimentalWarning)
-                    pipelines_or_jobs[asset_group.all_assets_job_name] = build_assets_job(
-                        asset_group.all_assets_job_name,
+                    pipelines_or_jobs[asset_group.all_assets_job_name()] = build_assets_job(
+                        asset_group.all_assets_job_name(),
                         assets=asset_group.assets,
                         source_assets=asset_group.source_assets,
                         resource_defs=asset_group.resource_defs,

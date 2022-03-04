@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 
 from dagster import (
@@ -12,6 +14,20 @@ from dagster import (
 )
 from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
+
+
+@pytest.fixture(autouse=True)
+def check_experimental_warnings():
+    with warnings.catch_warnings(record=True) as record:
+        yield
+
+        raises_warning = False
+        for w in record:
+            if "asset_key" in w.message.args[0]:
+                raises_warning = True
+                break
+
+        assert not raises_warning
 
 
 def test_asset_no_decorator_args():
@@ -309,3 +325,45 @@ def test_invoking_asset_with_context():
     ctx = build_op_context()
     out = asset_with_context(ctx, 1)
     assert out == 1
+
+
+# def test_asset_key_warning_caught():
+#     with pytest.warns(
+#         ExperimentalWarning,
+#         match='"asset" is an experimental decorator. It may break in future versions, even between '
+#         'dot releases.'
+#     ) as record:
+#         @asset
+#         def my_asset():
+#             pass
+
+#         asset_job = build_assets_job("my_job", [my_asset])
+#         asset_job.execute_in_process()
+
+#         raises_warning = False
+#         for w in record:
+#             if "asset_key" in w.message.args[0]:
+#                 raises_warning = True
+#                 break
+
+#         assert not raises_warning
+
+#     with pytest.warns(
+#         ExperimentalWarning,
+#         match='"asset" is an experimental decorator. It may break in future versions, even between '
+#         'dot releases.'
+#     ) as record:
+#         @multi_asset
+#         def my_multi_asset():
+#             pass
+
+#         multi_asset_job = build_assets_job("my_multi_job", [my_multi_asset])
+#         multi_asset_job.execute_in_process()
+
+#         raises_warning = False
+#         for w in record:
+#             if "asset_key" in w.message.args[0]:
+#                 raises_warning = True
+#                 break
+
+#         assert not raises_warning

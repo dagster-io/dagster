@@ -11,7 +11,7 @@ AIRBYTE_CONNECTION_ID = "your_airbyte_connection_id"
 
 
 def model_func(x, a, b):
-    return a * np.exp(b * (x / 10 ** 18 - 1.6095))
+    return a * np.exp(b * (x / 10**18 - 1.6095))
 
 
 PG_SOURCE_CONFIG = {
