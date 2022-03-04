@@ -372,10 +372,18 @@ def _evaluate_sensor(
                     # we still want to update the cursor, even though the tick failed
                     context.set_should_update_cursor_on_failure(True)
                 else:
+                    # Use status from the PipelineRunReaction object if it is from a new enough
+                    # version (0.14.4) to be set (the status on the PipelineRun object itself
+                    # may have since changed)
+                    status = (
+                        pipeline_run_reaction.run_status.value
+                        if pipeline_run_reaction.run_status
+                        else pipeline_run_reaction.pipeline_run.status.value
+                    )
                     # log to the original pipeline run
                     message = (
                         f'Sensor "{external_sensor.name}" acted on run status '
-                        f"{pipeline_run_reaction.pipeline_run.status.value} of run {origin_run_id}."
+                        f"{status} of run {origin_run_id}."
                     )
                     instance.report_engine_event(
                         message=message, pipeline_run=pipeline_run_reaction.pipeline_run
