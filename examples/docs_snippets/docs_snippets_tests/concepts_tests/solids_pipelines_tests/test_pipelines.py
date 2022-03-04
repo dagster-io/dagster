@@ -1,5 +1,12 @@
 from docs_snippets.concepts.solids_pipelines.branching_pipeline import branching
 from docs_snippets.concepts.solids_pipelines.dep_dsl import define_dep_dsl_graph
+from docs_snippets.concepts.solids_pipelines.dynamic import (
+    chained,
+    dynamic_graph,
+    multiple,
+    naive,
+    other_arg,
+)
 from docs_snippets.concepts.solids_pipelines.dynamic_pipeline.dynamic_pipeline import (
     process_directory,
 )
@@ -70,3 +77,12 @@ def test_dep_dsl():
         run_config={"ops": {"A": {"inputs": {"num": 0}}}}
     )
     assert result.success
+
+
+def test_dynamic_examples():
+
+    assert naive.execute_in_process().success
+    assert dynamic_graph.execute_in_process().success
+    assert chained.execute_in_process().success
+    assert other_arg.execute_in_process().success
+    assert multiple.execute_in_process().success
