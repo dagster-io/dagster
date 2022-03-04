@@ -738,7 +738,6 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                 )
                 .group_by(SqlEventLogStorageTable.c.asset_key)
-                .subquery()
             )
             backcompat_query = db.select(
                 [SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.event]
@@ -906,10 +905,10 @@ class SqlEventLogStorage(EventLogStorage):
             return False
 
         for row in rows:
-            row_dict = row._asdict()
-            if not row_dict.get("last_materialization_timestamp"):
+            if not _get_from_row(row, "last_materialization_timestamp"):
                 return False
-            if row_dict.get("asset_details") and not row_dict.get("wipe_timestamp"):
+
+            if _get_from_row(row, "asset_details") and not _get_from_row(row, "wipe_timestamp"):
                 return False
 
         return True
@@ -1163,3 +1162,10 @@ class SqlEventLogStorage(EventLogStorage):
                 materialization_count_by_partition[asset_key][row[1]] = row[2]
 
         return materialization_count_by_partition
+
+def _get_from_row(row, column):
+    """ utility function for extracting a column from a sqlalchemy row proxy, since '_asdict' is not
+    supported in sqlalchemy 1.3 """
+    if not row.has_key(column):
+        return None
+    return row[column]
