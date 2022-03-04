@@ -689,8 +689,8 @@ class RetryRequested(Exception):
             def flakes():
                 try:
                     flakey_operation()
-                except:
-                    raise RetryRequested(max_retries=3)
+                except Exception as e:
+                    raise RetryRequested(max_retries=3) from e
     """
 
     def __init__(

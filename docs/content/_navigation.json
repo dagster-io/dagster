@@ -119,6 +119,10 @@
           {
             "title": "Op Hooks",
             "path": "/concepts/ops-jobs-graphs/op-hooks"
+          },
+          {
+            "title": "Op Retries",
+            "path": "/concepts/ops-jobs-graphs/op-retries"
           }
         ]
       },
