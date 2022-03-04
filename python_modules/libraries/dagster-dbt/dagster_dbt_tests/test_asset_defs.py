@@ -7,7 +7,7 @@ from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_fr
 from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError
 from dagster_dbt.types import DbtOutput
 
-from dagster import AssetKey, MetadataEntry, ResourceDefinition
+from dagster import AssetKey, MetadataEntry, ResourceDefinition, AssetGroup, asset
 from dagster.core.asset_defs import build_assets_job
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 from dagster.utils import file_relative_path
@@ -122,6 +122,71 @@ def test_basic(
         if event.event_type_value == "ASSET_MATERIALIZATION"
     ]
     assert len(materializations) == 4
+
+
+@pytest.mark.parametrize(
+    "job_selection,config_selection,expected_asset_names",
+    [
+        (
+            "*",
+            None,
+            "sort_by_calories,sort_cold_cereals_by_calories,sort_hot_cereals_by_calories,least_caloric,hanger1,hanger2",
+        ),
+        (
+            "sort_by_calories+",
+            None,
+            "sort_by_calories,least_caloric,sort_cold_cereals_by_calories,sort_hot_cereals_by_calories,hanger1",
+        ),
+        ("*hanger2", None, "hanger2,least_caloric,sort_by_calories"),
+        (
+            None,
+            "sort_cold_cereals_by_calories,least_caloric",
+            "sort_cold_cereals_by_calories,least_caloric,hanger2",
+        ),
+        ("*hanger2", "least_caloric,hanger2", "least_caloric,hanger2"),
+    ],
+)
+def test_asset_group_and_config_selection(
+    dbt_build,
+    conn_string,
+    test_project_dir,
+    dbt_config_dir,
+    job_selection,
+    config_selection,
+    expected_asset_names,
+):  # pylint: disable=unused-argument
+
+    dbt_assets = load_assets_from_dbt_project(test_project_dir, dbt_config_dir)
+
+    @asset
+    def hanger1(sort_by_calories):
+        return None
+
+    @asset
+    def hanger2(least_caloric):
+        return None
+
+    result = (
+        AssetGroup(
+            dbt_assets + [hanger1, hanger2],
+            resource_defs={
+                "dbt": dbt_cli_resource.configured(
+                    {"project_dir": test_project_dir, "profiles_dir": dbt_config_dir}
+                )
+            },
+        )
+        .build_job(name="dbt_job", selection=job_selection)
+        .execute_in_process(
+            run_config={"selected_assets": config_selection.split(",")}
+            if config_selection
+            else None
+        )
+    )
+
+    assert result.success
+    all_keys = set((mat.asset_key for mat in result.all_asset_materializations))
+    expected_keys = set((AssetKey(name) for name in expected_asset_names.split(",")))
+    assert all_keys == expected_keys
 
 
 def test_select_from_project(

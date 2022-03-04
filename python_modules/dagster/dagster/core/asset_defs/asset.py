@@ -18,7 +18,6 @@ class AssetsDefinition:
         partitions_def: Optional[PartitionsDefinition] = None,
         partition_mappings: Optional[Mapping[AssetKey, PartitionMapping]] = None,
         can_subset: bool = False,
-        subset=None,
     ):
         self._op = op
         self._input_defs_by_asset_key = {
@@ -33,7 +32,6 @@ class AssetsDefinition:
         self._partitions_def = partitions_def
         self._partition_mappings = partition_mappings or {}
         self._can_subset = can_subset
-        self._subset = subset
 
     @property
     def can_subset(self) -> bool:
@@ -48,9 +46,7 @@ class AssetsDefinition:
 
     @property
     def asset_keys(self) -> AbstractSet[AssetKey]:
-        if self._subset is None:
-            return self._output_defs_by_asset_key.keys()
-        return self._subset
+        return self._output_defs_by_asset_key.keys()
 
     @property
     def output_defs_by_asset_key(self):
@@ -64,42 +60,53 @@ class AssetsDefinition:
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         return self._partitions_def
 
-    def subset(self, asset_keys: AbstractSet[AssetKey], all_keys) -> "AssetsDefinition":
+    def subset_for(self, all_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
+        """
+        Create a subset of this multi-asset that will only materialize the assets in the input set,
+        and whose operation will also only depend on the assets in the input set.
+        """
         if not self.can_subset:
-            raise "TODO"
-        assert asset_keys <= self.asset_keys
-        required_asset_keys = set()
-        for asset_key in asset_keys:
-            required_asset_keys.update(self.upstream_assets(asset_key))
-        required_input_asset_keys = set(self.input_defs_by_asset_key.keys()).intersection(
-            all_keys
-            # required_asset_keys - asset_keys
-        )
+            raise "TODO: can't subset but tried to"
+        # asset keys that the operation will be expected to produce
+        required_output_asset_keys = all_asset_keys.intersection(self.asset_keys)
+        if not required_output_asset_keys:
+            raise "TODO: no assets in this set are required, so why subset?"
+        required_input_asset_keys = all_asset_keys.intersection(self.input_defs_by_asset_key.keys())
 
-        new_op = copy.copy(self.op)
-        new_op._name = self.op.name + hex(
+        # can't have different ops with the same name, so create a deterministic way of generating
+        # a new name from the asset keys
+        name_modifier = hex(
             int(
                 "".join(
                     (
-                        "1" if od.hardcoded_asset_key in asset_keys else "0"
-                        for od in self.op.output_defs
+                        "1" if ak in required_output_asset_keys else "0"
+                        for ak in sorted(self.asset_keys)
                     )
                 ),
                 2,
             )
         )
-        new_op._input_defs = [self.input_defs_by_asset_key[ak] for ak in required_input_asset_keys]
-        new_op._input_dict = {id.name: id for id in new_op.input_defs}
-        new_op._output_defs = [self.output_defs_by_asset_key[ak] for ak in asset_keys]
-        new_op._output_dict = {od.name: od for od in new_op.output_defs}
+        # create a new op to carry out this modified operation
+        new_op = OpDefinition(
+            name=self.op.name + name_modifier,
+            input_defs=[self.input_defs_by_asset_key[ak] for ak in required_input_asset_keys],
+            output_defs=[self.output_defs_by_asset_key[ak] for ak in required_output_asset_keys],
+            compute_fn=self.op.compute_fn,
+            config_schema=self.op.config_schema,
+            description=self.op.description,
+            tags=self.op.tags,
+            required_resource_keys=self.op.required_resource_keys,
+            version=self.op.version,
+            retry_policy=self.op.retry_policy,
+        )
+
         return AssetsDefinition(
             {ak: self.input_defs_by_asset_key[ak].name for ak in required_input_asset_keys},
-            {ak: self.output_defs_by_asset_key[ak].name for ak in asset_keys},
+            {ak: self.output_defs_by_asset_key[ak].name for ak in required_output_asset_keys},
             new_op,
             self.partitions_def,
             self._partition_mappings,
             self.can_subset,
-            asset_keys,
         )
 
     def upstream_assets(self, asset_key) -> AbstractSet[AssetKey]:

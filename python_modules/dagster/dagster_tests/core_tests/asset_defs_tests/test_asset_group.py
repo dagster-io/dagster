@@ -215,16 +215,15 @@ def asset_aware_io_manager():
 @pytest.mark.parametrize(
     "job_selection,config_selection,expected_assets",
     [
-        # ("*", None, "start_asset,a,b,c,d,e,f,final_asset"),
-        # ("a", None, "a"),
-        # ("b+", None, "b,c,d"),
-        # ("+f", None, "f,d,e"),
-        # ("++f", None, "f,d,e,c,a,b"),
-        # ("start_asset*", None, "start_asset,a,d,f,final_asset"),
-        # (["+a", "b+"], None, "start_asset,a,b,c,d"),
-        # (["*c", "final_asset"], None, "b,c,final_asset"),
-        # ("*", "start_asset,b,c", "start_asset,b,c"),
-        ("+++f", "d,a,e,start_asset", "d,a,e,start_asset"),
+        ("*", None, "start_asset,a,b,c,d,e,f,final_asset"),
+        ("a", None, "a"),
+        ("b+", None, "b,c,d"),
+        ("+f", None, "f,d,e"),
+        ("++f", None, "f,d,e,c,a,b"),
+        ("start_asset*", None, "start_asset,a,d,f,final_asset"),
+        (["+a", "b+"], None, "start_asset,a,b,c,d"),
+        (["*c", "final_asset"], None, "b,c,final_asset"),
+        ("*", "start_asset,b,c", "start_asset,b,c"),
     ],
 )
 def test_asset_group_build_sliced_subset_job(
