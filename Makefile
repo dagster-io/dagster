@@ -45,11 +45,11 @@ isort:
    `git ls-files 'examples/docs_snippets/*.py'`
 
 check_isort:
-	isort --check --show-config -vv \
+	isort --check --diff -vv \
     `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' 'helm/*.py' 'python_modules/*.py' \
       ':!:examples/docs_snippets' \
       ':!:snapshots'`
-	isort --check --show-config \
+	isort --check --diff \
     `git ls-files 'examples/docs_snippets/*.py'`
 
 yamllint:
