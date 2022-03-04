@@ -459,7 +459,7 @@ class TestScheduleStorage:
             status,
             current_time,
             [run_id] if run_id else [],
-            error,
+            error=error,
         )
 
     def test_create_sensor_tick(self, storage):
@@ -587,3 +587,36 @@ class TestScheduleStorage:
 
         ticks = storage.get_ticks("my_sensor")
         assert len(ticks) == 2
+
+    def test_ticks_filtered(self, storage):
+        storage.create_tick(self.build_sensor_tick(time.time(), status=TickStatus.STARTED))
+        storage.create_tick(self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS))
+        storage.create_tick(self.build_sensor_tick(time.time(), status=TickStatus.SKIPPED))
+        storage.create_tick(
+            self.build_sensor_tick(
+                time.time(),
+                status=TickStatus.FAILURE,
+                error=SerializableErrorInfo(message="foobar", stack=[], cls_name=None, cause=None),
+            )
+        )
+
+        ticks = storage.get_ticks("my_sensor")
+        assert len(ticks) == 4
+
+        started = storage.get_ticks("my_sensor", statuses=[TickStatus.STARTED])
+        assert len(started) == 1
+
+        successes = storage.get_ticks("my_sensor", statuses=[TickStatus.SUCCESS])
+        assert len(successes) == 1
+
+        skips = storage.get_ticks("my_sensor", statuses=[TickStatus.SKIPPED])
+        assert len(skips) == 1
+
+        failures = storage.get_ticks("my_sensor", statuses=[TickStatus.FAILURE])
+        assert len(failures) == 1
+
+        # everything but skips
+        non_skips = storage.get_ticks(
+            "my_sensor", statuses=[TickStatus.STARTED, TickStatus.SUCCESS, TickStatus.FAILURE]
+        )
+        assert len(non_skips) == 3
