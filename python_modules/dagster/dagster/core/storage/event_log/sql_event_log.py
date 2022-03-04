@@ -14,7 +14,6 @@ from dagster.core.errors import DagsterEventLogInvalidForRun
 from dagster.core.events import DagsterEventType
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.stats import build_run_step_stats_from_events
-from dagster.core.storage.sql import db_subquery
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.serdes.errors import DeserializationError
 from dagster.utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
@@ -722,7 +721,7 @@ class SqlEventLogStorage(EventLogStorage):
                 to_backcompat_fetch.add(asset_key)
 
         if to_backcompat_fetch:
-            latest_event_subquery = db_subquery(
+            latest_event_subquery = (
                 db.select(
                     [
                         SqlEventLogStorageTable.c.asset_key,
@@ -739,15 +738,17 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                 )
                 .group_by(SqlEventLogStorageTable.c.asset_key)
+                .alias('latest_materializations')
             )
             backcompat_query = db.select(
                 [SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.event]
-            ).join(
-                latest_event_subquery,
-                db.and_(
-                    SqlEventLogStorageTable.c.asset_key == latest_event_subquery.c.asset_key,
-                    SqlEventLogStorageTable.c.timestamp == latest_event_subquery.c.timestamp,
-                ),
+            ).select_from(
+                latest_event_subquery.join(SqlEventLogStorageTable,
+                    db.and_(
+                        SqlEventLogStorageTable.c.asset_key == latest_event_subquery.c.asset_key,
+                        SqlEventLogStorageTable.c.timestamp == latest_event_subquery.c.timestamp,
+                    ),
+                )
             )
             with self.index_connection() as conn:
                 event_rows = conn.execute(backcompat_query).fetchall()
