@@ -74,7 +74,7 @@ class AirbyteResource:
                     url=self.api_base_url + endpoint,
                     headers=headers,
                     json=data,
-                    timeout=5,
+                    timeout=15,
                 )
                 response.raise_for_status()
                 return response.json()

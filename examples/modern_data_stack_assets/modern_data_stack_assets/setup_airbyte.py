@@ -91,6 +91,7 @@ def setup_airbyte():
             "sourceId": source_id,
             "destinationId": destination_id,
             "syncCatalog": source_catalog,
+            "prefix": "",
             "status": "active",
         },
     )["connectionId"]

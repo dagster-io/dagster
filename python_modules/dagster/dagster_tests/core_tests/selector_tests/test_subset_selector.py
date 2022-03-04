@@ -5,6 +5,7 @@ from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvali
 from dagster.core.selector.subset_selector import (
     MAX_NUM,
     Traverser,
+    clause_to_subset,
     generate_dep_graph,
     parse_clause,
     parse_solid_selection,
@@ -151,6 +152,42 @@ step_deps = {
     "multiply_two": {"add_nums"},
     "add_one": {"multiply_two"},
 }
+
+
+@pytest.mark.parametrize(
+    "clause,expected_subset",
+    [
+        ("a", "a"),
+        ("b+", "b,c,d"),
+        ("+f", "f,d,e"),
+        ("++f", "f,d,e,c,a,b"),
+        ("+++final", "final,a,d,start,b"),
+        ("b++", "b,c,d,e,f,final"),
+        ("start*", "start,a,d,f,final"),
+    ],
+)
+def test_clause_to_subset(clause, expected_subset):
+    graph = {
+        "upstream": {
+            "start": set(),
+            "a": {"start"},
+            "b": set(),
+            "c": {"b"},
+            "d": {"a", "b"},
+            "e": {"c"},
+            "f": {"e", "d"},
+            "final": {"a", "d"},
+        },
+        "downstream": {
+            "start": {"a"},
+            "b": {"c", "d"},
+            "a": {"final", "d"},
+            "c": {"e"},
+            "d": {"final", "f"},
+            "e": {"f"},
+        },
+    }
+    assert set(clause_to_subset(graph, clause)) == set(expected_subset.split(","))
 
 
 def test_parse_step_selection_single():
