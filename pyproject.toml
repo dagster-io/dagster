@@ -30,6 +30,10 @@ target-version = ['py36', 'py37', 'py38', 'py39', 'py310']
 
 [tool.isort]
 
+# Ensures isort classifies imports from `dagster` as first-party in all environments. Without this
+# there can be differences between buildkite and local dev.
+known_first_party = ['dagster']
+
 # Sets a variety of default options for parentheses etc that are compatible with black.
 profile = "black"
 
