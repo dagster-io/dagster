@@ -25,10 +25,10 @@ black:
     examples/docs_snippets
 
 check_black:
-	-black --check --fast \
+	black --check --fast \
     --extend-exclude="examples/docs_snippets|snapshots" \
     examples integration_tests helm python_modules .buildkite
-	-black --check --fast \
+	black --check --fast \
     examples/docs_snippets
 
 
@@ -45,11 +45,11 @@ isort:
    `git ls-files 'examples/docs_snippets/*.py'`
 
 check_isort:
-	-isort --check \
+	isort --check \
     `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' 'helm/*.py' 'python_modules/*.py' \
       ':!:examples/docs_snippets' \
       ':!:snapshots'`
-	-isort --check \
+	isort --check \
     `git ls-files 'examples/docs_snippets/*.py'`
 
 yamllint:

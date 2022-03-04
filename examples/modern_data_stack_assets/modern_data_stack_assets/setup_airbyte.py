@@ -6,12 +6,12 @@ import random
 
 import numpy as np
 import pandas as pd
-from dagster import check
-from dagster_postgres.utils import get_conn_string
 from dagster_airbyte import AirbyteResource
+from dagster_postgres.utils import get_conn_string
 
-from .constants import PG_SOURCE_CONFIG, PG_DESTINATION_CONFIG
+from dagster import check
 
+from .constants import PG_DESTINATION_CONFIG, PG_SOURCE_CONFIG
 
 # configures the number of records for each table
 N_USERS = 100
@@ -104,8 +104,8 @@ def _random_dates():
     start = pd.to_datetime("2021-01-01")
     end = pd.to_datetime("2022-01-01")
 
-    start_u = start.value // 10 ** 9
-    end_u = end.value // 10 ** 9
+    start_u = start.value // 10**9
+    end_u = end.value // 10**9
 
     dist = np.random.standard_exponential(size=N_ORDERS) / 10
 

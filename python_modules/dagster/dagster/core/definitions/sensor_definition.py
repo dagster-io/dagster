@@ -30,8 +30,8 @@ from ..decorator_utils import get_function_params
 from .events import AssetKey
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
-from .pipeline_definition import PipelineDefinition
 from .mode import DEFAULT_MODE_NAME
+from .pipeline_definition import PipelineDefinition
 from .run_request import PipelineRunReaction, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
