@@ -162,7 +162,6 @@ class ModuleBuildSpec(
                 StepBuilder(f":mypy: {package}")
                 .run(
                     "pip install -e python_modules/dagster[mypy]",
-                    "mkdir -p .mypy_cache",
                     # mypy raises an error for missing stubs. We try to specify them in
                     # dependencies, but inclusion of `--install-types
                     # --non-interactive` will cause mypy to automatically download any missing ones.
