@@ -183,13 +183,13 @@ class S3ComputeLogManager(ComputeLogManager, ConfigurableClass):
             return
 
         key = self._bucket_key(run_id, key, io_type)
-        with open(path, "rb", encoding="utf8") as data:
+        with open(path, "rb") as data:
             self._s3_session.upload_fileobj(data, self._s3_bucket, key)
 
     def _download_to_local(self, run_id, key, io_type):
         path = self.get_local_path(run_id, key, io_type)
         ensure_dir(os.path.dirname(path))
-        with open(path, "wb", encoding="utf8") as fileobj:
+        with open(path, "wb") as fileobj:
             self._s3_session.download_fileobj(
                 self._s3_bucket, self._bucket_key(run_id, key, io_type), fileobj
             )

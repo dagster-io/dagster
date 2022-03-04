@@ -219,7 +219,7 @@ def test_in_pipeline_manager_with_resources():
         ) as manager:
             assert "list" in manager.context.resources._asdict()
 
-            with open(path, "rb", encoding="utf8") as fd:
+            with open(path, "rb") as fd:
                 messages = pickle.load(fd)
 
             messages = [message.split(": ") for message in messages]
@@ -229,7 +229,7 @@ def test_in_pipeline_manager_with_resources():
 
             manager.teardown_resources()
 
-            with open(path, "rb", encoding="utf8") as fd:
+            with open(path, "rb") as fd:
                 messages = pickle.load(fd)
 
             messages = [message.split(": ") for message in messages]

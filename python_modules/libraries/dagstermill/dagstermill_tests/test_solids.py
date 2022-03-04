@@ -349,7 +349,7 @@ def test_resources_notebook():
             # Expect something like:
             # ['e8d636: Opened', 'e8d636: Hello, solid!', '9d438e: Opened',
             #  '9d438e: Hello, notebook!', '9d438e: Closed', 'e8d636: Closed']
-            with open(path, "rb", encoding="utf8") as fd:
+            with open(path, "rb") as fd:
                 messages = pickle.load(fd)
 
             messages = [message.split(": ") for message in messages]
@@ -387,7 +387,7 @@ def test_resources_notebook_with_exception():
             # Expect something like:
             # ['e8d636: Opened', 'e8d636: Hello, solid!', '9d438e: Opened',
             #  '9d438e: Hello, notebook!', '9d438e: Closed', 'e8d636: Closed']
-            with open(path, "rb", encoding="utf8") as fd:
+            with open(path, "rb") as fd:
                 messages = pickle.load(fd)
 
             messages = [message.split(": ") for message in messages]

@@ -25,7 +25,7 @@ def get_temp_file_handle_with_data(data):
 @contextmanager
 def get_temp_file_name_with_data(data):
     with get_temp_file_name() as temp_file:
-        with open(temp_file, "wb", encoding="utf8") as ff:
+        with open(temp_file, "wb") as ff:
             ff.write(data)
 
         yield temp_file

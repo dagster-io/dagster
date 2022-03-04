@@ -58,7 +58,7 @@ def redirect_stream(to_stream=os.devnull, from_stream=sys.stdout):
         try:
             os.dup2(_fileno(to_stream), from_fd)
         except ValueError:
-            with open(to_stream, "wb", encoding="utf8") as to_file:
+            with open(to_stream, "wb") as to_file:
                 os.dup2(to_file.fileno(), from_fd)
         try:
             yield from_stream

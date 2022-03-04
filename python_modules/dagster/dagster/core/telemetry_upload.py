@@ -113,7 +113,7 @@ def _upload_logs(dagster_log_dir, log_size, dagster_log_queue_dir, raise_errors)
             success = False
 
             while not success and retry_num <= max_retries:
-                with open(curr_full_path, "rb", encoding="utf8") as curr_file:
+                with open(curr_full_path, "rb") as curr_file:
                     byte = curr_file.read()
 
                     data = zlib.compress(byte, zlib.Z_BEST_COMPRESSION)

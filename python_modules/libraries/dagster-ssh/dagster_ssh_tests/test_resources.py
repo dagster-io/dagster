@@ -251,6 +251,6 @@ def test_ssh_sftp(sftpserver):
         )
         assert result.success
 
-    with open(readme_file, "rb", encoding="utf8") as f:
+    with open(readme_file, "rb") as f:
         contents = f.read()
         assert b"hello, world" in contents

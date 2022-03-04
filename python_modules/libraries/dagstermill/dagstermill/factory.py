@@ -236,7 +236,7 @@ def _dm_compute(
             )
             if output_notebook_name is not None:
                 # yield output notebook binary stream as a solid output
-                with open(executed_notebook_path, "rb", encoding="utf8") as fd:
+                with open(executed_notebook_path, "rb") as fd:
                     yield Output(fd.read(), output_notebook_name)
 
             else:
@@ -245,7 +245,7 @@ def _dm_compute(
                 try:
                     # use binary mode when when moving the file since certain file_managers such as S3
                     # may try to hash the contents
-                    with open(executed_notebook_path, "rb", encoding="utf8") as fd:
+                    with open(executed_notebook_path, "rb") as fd:
                         executed_notebook_file_handle = step_context.resources.file_manager.write(
                             fd, mode="wb", ext="ipynb"
                         )
@@ -298,7 +298,7 @@ def _dm_compute(
 
             for key, value in output_nb.scraps.items():
                 if key.startswith("event-"):
-                    with open(value.data, "rb", encoding="utf8") as fd:
+                    with open(value.data, "rb") as fd:
                         event = pickle.loads(fd.read())
                         if isinstance(event, (Failure, RetryRequested)):
                             raise event

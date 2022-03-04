@@ -112,7 +112,7 @@ def test_depends_on_adls2_resource_file_manager(storage_account, file_system):
     def accept_file(context, file_handle):
         local_path = context.resources.file_manager.copy_handle_to_local_temp(file_handle)
         assert isinstance(local_path, str)
-        assert open(local_path, "rb", encoding="utf8").read() == bar_bytes
+        assert open(local_path, "rb").read() == bar_bytes
 
     adls2_fake_resource = FakeADLS2Resource(storage_account)
     adls2_fake_file_manager = ADLS2FileManager(

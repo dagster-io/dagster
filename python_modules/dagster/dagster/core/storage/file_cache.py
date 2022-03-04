@@ -46,7 +46,7 @@ class FSFileCache(FileCache):
 
     def write_file_object(self, file_key, source_file_object):
         target_file = self.get_full_path(file_key)
-        with open(target_file, "wb", encoding="utf8") as dest_file_object:
+        with open(target_file, "wb") as dest_file_object:
             shutil.copyfileobj(source_file_object, dest_file_object)
         return LocalFileHandle(target_file)
 

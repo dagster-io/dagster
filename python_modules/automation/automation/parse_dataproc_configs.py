@@ -129,11 +129,11 @@ class ParsedConfig(namedtuple("_ParsedConfig", "name configs enums")):
     def write_configs(self, base_path):
         configs_filename = "configs_%s.py" % self.name
         print("Writing", configs_filename)  # pylint: disable=print-call
-        with open(os.path.join(base_path, configs_filename), "wb", encoding="utf8") as f:
+        with open(os.path.join(base_path, configs_filename), "wb") as f:
             f.write(self.configs)
 
         enums_filename = "types_%s.py" % self.name
-        with open(os.path.join(base_path, enums_filename), "wb", encoding="utf8") as f:
+        with open(os.path.join(base_path, enums_filename), "wb") as f:
             f.write(self.enums)
 
 

@@ -316,7 +316,7 @@ def hello(context) -> str:
 
 @solid(config_schema=Field(String))
 def unpickle(context) -> Any:
-    with open(context.solid_config, "rb", encoding="utf8") as fd:
+    with open(context.solid_config, "rb") as fd:
         return pickle.load(fd)
 
 
@@ -420,7 +420,7 @@ def test_hello():
 def test_unpickle():
     with tempfile.TemporaryDirectory() as tmpdir:
         filename = os.path.join(tmpdir, "foo.pickle")
-        with open(filename, "wb", encoding="utf8") as f:
+        with open(filename, "wb") as f:
             pickle.dump("foo", f)
         res = execute_solid(unpickle, run_config={"solids": {"unpickle": {"config": filename}}})
         assert res.output_value() == "foo"

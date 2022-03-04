@@ -163,13 +163,13 @@ class GCSComputeLogManager(ComputeLogManager, ConfigurableClass):
     def _upload_from_local(self, run_id, key, io_type):
         path = self.get_local_path(run_id, key, io_type)
         ensure_file(path)
-        with open(path, "rb", encoding="utf8") as data:
+        with open(path, "rb") as data:
             self._bucket.blob(self._bucket_key(run_id, key, io_type)).upload_from_file(data)
 
     def _download_to_local(self, run_id, key, io_type):
         path = self.get_local_path(run_id, key, io_type)
         ensure_dir(os.path.dirname(path))
-        with open(path, "wb", encoding="utf8") as fileobj:
+        with open(path, "wb") as fileobj:
             self._bucket.blob(self._bucket_key(run_id, key, io_type)).download_to_file(fileobj)
 
     def _bucket_key(self, run_id, key, io_type):

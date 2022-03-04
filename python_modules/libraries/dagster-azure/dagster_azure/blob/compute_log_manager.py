@@ -177,7 +177,7 @@ class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
         path = self.get_local_path(run_id, key, io_type)
         ensure_file(path)
         key = self._blob_key(run_id, key, io_type)
-        with open(path, "rb", encoding="utf8") as data:
+        with open(path, "rb") as data:
             blob = self._container_client.get_blob_client(key)
             blob.upload_blob(data)
 
@@ -185,7 +185,7 @@ class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
         path = self.get_local_path(run_id, key, io_type)
         ensure_dir(os.path.dirname(path))
         key = self._blob_key(run_id, key, io_type)
-        with open(path, "wb", encoding="utf8") as fileobj:
+        with open(path, "wb") as fileobj:
             blob = self._container_client.get_blob_client(key)
             blob.download_blob().readinto(fileobj)
 

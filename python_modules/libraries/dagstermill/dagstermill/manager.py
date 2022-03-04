@@ -345,7 +345,7 @@ class Manager:
 
         event_id = "event-{event_uuid}".format(event_uuid=str(uuid.uuid4()))
         out_file_path = os.path.join(self.marshal_dir, event_id)
-        with open(out_file_path, "wb", encoding="utf8") as fd:
+        with open(out_file_path, "wb") as fd:
             fd.write(pickle.dumps(dagster_event, PICKLE_PROTOCOL))
 
         scrapbook.glue(event_id, out_file_path)

@@ -106,5 +106,5 @@ def test_yes_output_notebook_yes_io_manager():
         assert os.path.exists(output_path)
 
         assert result.result_for_solid("load_notebook").success
-        with open(output_path, "rb", encoding="utf8") as f:
+        with open(output_path, "rb") as f:
             assert f.read() == result.result_for_solid("load_notebook").output_value()

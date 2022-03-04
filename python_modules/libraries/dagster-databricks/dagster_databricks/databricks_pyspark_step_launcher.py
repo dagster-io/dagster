@@ -289,7 +289,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
 
         log.info("Uploading main file to DBFS")
         main_local_path = self._main_file_local_path()
-        with open(main_local_path, "rb", encoding="utf8") as infile:
+        with open(main_local_path, "rb") as infile:
             self.databricks_runner.client.put_file(
                 infile, self._dbfs_path(run_id, step_key, self._main_file_name()), overwrite=True
             )
@@ -299,7 +299,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
             # Zip and upload package containing dagster job
             zip_local_path = os.path.join(temp_dir, CODE_ZIP_NAME)
             build_pyspark_zip(zip_local_path, self.local_dagster_job_package_path)
-            with open(zip_local_path, "rb", encoding="utf8") as infile:
+            with open(zip_local_path, "rb") as infile:
                 self.databricks_runner.client.put_file(
                     infile, self._dbfs_path(run_id, step_key, CODE_ZIP_NAME), overwrite=True
                 )

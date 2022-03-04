@@ -165,7 +165,7 @@ def scaffold(module_name, pipeline_name, output_path, config, preset, job_name):
 
     click.echo("Wrote DAG scaffold to file: %s" % dag_file)
 
-    with open(dag_file, "wb", encoding="utf8") as f:
+    with open(dag_file, "wb") as f:
         f.write(file_contents)
 
 

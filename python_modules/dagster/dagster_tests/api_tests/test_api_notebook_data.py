@@ -13,5 +13,5 @@ def test_external_notebook_grpc(instance):
             api_client, notebook_path=notebook_path
         )
         assert isinstance(content, bytes)
-        with open(notebook_path, "rb", encoding="utf8") as f:
+        with open(notebook_path, "rb") as f:
             assert content == f.read()

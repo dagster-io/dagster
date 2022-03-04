@@ -39,7 +39,7 @@ def load_type_input_schema_dict(value):
             value_dict = seven.json.load(ff)
             return value_dict["value"]
     elif file_type == "pickle":
-        with open(file_options["path"], "rb", encoding="utf8") as ff:
+        with open(file_options["path"], "rb") as ff:
             return pickle.load(ff)
     else:
         check.failed("Unsupported key {key}".format(key=file_type))
@@ -105,7 +105,7 @@ def define_builtin_scalar_output_schema(scalar_name):
             return AssetMaterialization.file(json_file_path)
         elif file_type == "pickle":
             pickle_file_path = file_options["path"]
-            with open(pickle_file_path, "wb", encoding="utf8") as ff:
+            with open(pickle_file_path, "wb") as ff:
                 pickle.dump(runtime_value, ff)
             return AssetMaterialization.file(pickle_file_path)
         else:

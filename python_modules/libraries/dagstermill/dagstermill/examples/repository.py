@@ -356,12 +356,12 @@ class FilePickleList:
         self.write()
 
     def read(self):
-        with open(self.path, "rb", encoding="utf8") as fd:
+        with open(self.path, "rb") as fd:
             self.list = pickle.load(fd)
             return self.list
 
     def write(self):
-        with open(self.path, "wb", encoding="utf8") as fd:
+        with open(self.path, "wb") as fd:
             pickle.dump(self.list, fd, protocol=PICKLE_PROTOCOL)
 
     def close(self):

@@ -59,5 +59,5 @@ class S3FakeSession:
 
     def download_file(self, Bucket, Key, Filename, *args, **kwargs):
         self.mock_extras.download_file(*args, **kwargs)
-        with open(Filename, "wb", encoding="utf8") as ff:
+        with open(Filename, "wb") as ff:
             ff.write(self._get_byte_stream(Bucket, Key).read())
