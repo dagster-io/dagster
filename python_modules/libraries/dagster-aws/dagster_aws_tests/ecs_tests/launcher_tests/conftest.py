@@ -34,8 +34,23 @@ def task_definition(ecs, image, environment):
     return ecs.register_task_definition(
         family="dagster",
         containerDefinitions=[
-            {"name": "dagster", "image": image, "environment": environment, "entryPoint": ["ls"]},
-            {"name": "other", "image": image, "entryPoint": ["ls"]},
+            {
+                "name": "dagster",
+                "image": image,
+                "environment": environment,
+                "entryPoint": ["ls"],
+                "dependsOn": [
+                    {
+                        "containerName": "other",
+                        "condition": "SUCCESS",
+                    },
+                ],
+            },
+            {
+                "name": "other",
+                "image": image,
+                "entryPoint": ["ls"],
+            },
         ],
         networkMode="awsvpc",
         memory="512",
