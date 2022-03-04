@@ -218,7 +218,7 @@ class SqlEventLogStorage(EventLogStorage):
             .order_by(SqlEventLogStorageTable.c.id.asc())
         )
         if dagster_event_types:
-            query = query.filter(
+            query = query.where(
                 SqlEventLogStorageTable.c.dagster_event_type.in_(
                     [dagster_event_type.value for dagster_event_type in dagster_event_types]
                 )
