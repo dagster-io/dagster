@@ -169,10 +169,6 @@ def parse_clause(clause):
     up_depth = _get_depth(ancestor_part)
     down_depth = _get_depth(descendant_part)
 
-    print("CLAUSE")
-    print(clause)
-    print(up_depth, item_name, down_depth)
-
     return (up_depth, item_name, down_depth)
 
 
@@ -269,7 +265,6 @@ def parse_asset_selection(asset_defs, asset_selection):
         return ret
 
     graph = generate_asset_dep_graph(asset_defs)
-    print(graph)
     assets_set = set()
 
     # loop over clauses
@@ -283,7 +278,6 @@ def parse_asset_selection(asset_defs, asset_selection):
             )
         assets_set.update(subset)
 
-    print(assets_set)
     from dagster import AssetKey
 
     return frozenset((AssetKey(name.split(".")) for name in assets_set))

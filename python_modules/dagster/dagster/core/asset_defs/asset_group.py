@@ -220,7 +220,7 @@ class AssetGroup(
         if selection:
             selected_asset_keys = parse_asset_selection(self.assets, selection)
 
-            included_assets, excluded_assets = self._selected_asset_defs(selected_asset_keys)
+            included_assets, excluded_assets = self._subset_asset_defs(selected_asset_keys)
         else:
             selected_asset_keys = set()
             for asset in self.assets:
@@ -250,7 +250,6 @@ class AssetGroup(
         job_selected_asset_keys = {".".join(ak.path) for ak in job_selected_asset_keys}
 
         def _asset_selection(config):
-            print(config)
             config_selected_asset_keys = set(config.get("selected_assets", []))
             op_config = {}
             for asset in included_assets:
@@ -267,21 +266,15 @@ class AssetGroup(
                         else list(asset_keys_for_op)
                     }
                 }
-                if asset.op.name == "_def_asset":
-                    continue
-                    op_config[asset.op.name]["inputs"] = {
-                        "c": None,
-                        "b": None,
-                    }
-            print(op_config)
             return {"ops": op_config}
 
+        # TODO: want to preserve the original config schema (i.e. resources, executor)
         return ConfigMapping(
             config_fn=_asset_selection,
             config_schema={"selected_assets": Field(list, is_required=False)},
         )
 
-    def _selected_asset_defs(self, selected_asset_keys):
+    def _subset_asset_defs(self, selected_asset_keys):
         included_assets = set()
         excluded_assets = set()
         for asset in self.assets:

@@ -109,14 +109,6 @@ class AssetsDefinition:
             self.can_subset,
         )
 
-    def upstream_assets(self, asset_key) -> AbstractSet[AssetKey]:
-        output_def = self.output_defs_by_asset_key[asset_key]
-        asset_deps = (output_def.metadata or {}).get(".dagster/asset_deps")
-        if asset_deps is not None:
-            return asset_deps
-        # if no deps specified, assume depends on all inputs and no outputs
-        return set(self.input_defs_by_asset_key.keys())
-
     def get_partition_mapping(self, in_asset_key: AssetKey) -> PartitionMapping:
         if self._partitions_def is None:
             check.failed("Asset is not partitioned")
