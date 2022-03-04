@@ -49,7 +49,6 @@ def api_cli():
 def execute_run_command(input_json):
     with capture_interrupts():
         args = deserialize_as(input_json, ExecuteRunArgs)
-        recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
 
         with (
             DagsterInstance.from_ref(args.instance_ref)
@@ -62,7 +61,6 @@ def execute_run_command(input_json):
                 buffer.append(serialize_dagster_namedtuple(event))
 
             return_code = _execute_run_command_body(
-                recon_pipeline,
                 args.pipeline_run_id,
                 instance,
                 send_to_buffer,
@@ -76,9 +74,7 @@ def execute_run_command(input_json):
                 sys.exit(return_code)
 
 
-def _execute_run_command_body(
-    recon_pipeline, pipeline_run_id, instance, write_stream_fn, set_exit_code_on_failure
-):
+def _execute_run_command_body(pipeline_run_id, instance, write_stream_fn, set_exit_code_on_failure):
     if instance.should_start_background_run_thread:
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
             instance, pipeline_run_id
@@ -91,6 +87,8 @@ def _execute_run_command_body(
         PipelineRun,
         "Pipeline run with id '{}' not found for run execution.".format(pipeline_run_id),
     )
+
+    recon_pipeline = recon_pipeline_from_origin(pipeline_run.pipeline_code_origin)
 
     pid = os.getpid()
     instance.report_engine_event(
@@ -143,7 +141,6 @@ def _execute_run_command_body(
 def resume_run_command(input_json):
     with capture_interrupts():
         args = deserialize_as(input_json, ResumeRunArgs)
-        recon_pipeline = recon_pipeline_from_origin(args.pipeline_origin)
 
         with (
             DagsterInstance.from_ref(args.instance_ref)
@@ -156,7 +153,6 @@ def resume_run_command(input_json):
                 buffer.append(serialize_dagster_namedtuple(event))
 
             return_code = _resume_run_command_body(
-                recon_pipeline,
                 args.pipeline_run_id,
                 instance,
                 send_to_buffer,
@@ -170,9 +166,7 @@ def resume_run_command(input_json):
                 sys.exit(return_code)
 
 
-def _resume_run_command_body(
-    recon_pipeline, pipeline_run_id, instance, write_stream_fn, set_exit_code_on_failure
-):
+def _resume_run_command_body(pipeline_run_id, instance, write_stream_fn, set_exit_code_on_failure):
     if instance.should_start_background_run_thread:
         cancellation_thread, cancellation_thread_shutdown_event = start_run_cancellation_thread(
             instance, pipeline_run_id
@@ -183,6 +177,8 @@ def _resume_run_command_body(
         PipelineRun,
         "Pipeline run with id '{}' not found for run execution.".format(pipeline_run_id),
     )
+
+    recon_pipeline = recon_pipeline_from_origin(pipeline_run.pipeline_code_origin)
 
     pid = os.getpid()
     instance.report_engine_event(
@@ -342,7 +338,7 @@ def _execute_step_command_body(
                 return
 
         recon_pipeline = recon_pipeline_from_origin(
-            args.pipeline_origin
+            pipeline_run.pipeline_code_origin
         ).subset_for_execution_from_existing_pipeline(pipeline_run.solids_to_execute)
 
         execution_plan = create_execution_plan(

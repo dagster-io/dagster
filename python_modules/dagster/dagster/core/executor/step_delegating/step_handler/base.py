@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 
 from dagster import DagsterEvent, DagsterInstance, check
+from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.types import ExecuteStepArgs
 
@@ -34,6 +35,10 @@ class StepHandlerContext:
             self._pipeline_run = run
 
         return self._pipeline_run
+
+    @property
+    def pipeline_origin(self) -> PipelinePythonOrigin:
+        return self.pipeline_run.pipeline_code_origin
 
     @property
     def step_tags(self) -> Dict[str, Dict[str, str]]:
