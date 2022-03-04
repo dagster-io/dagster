@@ -211,53 +211,100 @@ def asset_aware_io_manager():
     return io_manager_obj, _asset_aware
 
 
+@pytest.mark.parametrize("use_non_arg_deps", [True, False])
 @pytest.mark.parametrize(
-    "selection,expected_assets",
+    "job_selection,config_selection,expected_assets",
     [
-        ("*", "start_asset,a,b,c,d,e,f,final_asset"),
-        ("a", "a"),
-        ("b+", "b,c,d"),
-        ("+f", "f,d,e"),
-        ("++f", "f,d,e,c,a,b"),
-        ("start_asset*", "start_asset,a,d,f,final_asset"),
-        (["+a", "b+"], "start_asset,a,b,c,d"),
-        (["*c", "final_asset"], "b,c,final_asset"),
+        # ("*", None, "start_asset,a,b,c,d,e,f,final_asset"),
+        # ("a", None, "a"),
+        # ("b+", None, "b,c,d"),
+        # ("+f", None, "f,d,e"),
+        # ("++f", None, "f,d,e,c,a,b"),
+        # ("start_asset*", None, "start_asset,a,d,f,final_asset"),
+        # (["+a", "b+"], None, "start_asset,a,b,c,d"),
+        # (["*c", "final_asset"], None, "b,c,final_asset"),
+        # ("*", "start_asset,b,c", "start_asset,b,c"),
+        ("+++f", "d,a,e,start_asset", "d,a,e,start_asset"),
     ],
 )
-def test_asset_group_build_sliced_subset_job(selection, expected_assets):
+def test_asset_group_build_sliced_subset_job(
+    use_non_arg_deps, job_selection, config_selection, expected_assets
+):
     @asset
     def start_asset():
         return "foo"
 
-    @multi_asset(
-        non_argument_deps={AssetKey("start_asset")},
-        outs={"a": Out(), "b": Out(), "c": Out()},
-        internal_asset_deps={
-            "a": {AssetKey("start_asset")},
-            "b": set(),
-            "c": {AssetKey("b")},
-        },
-        can_subset=True,
-    )
-    def abc_assets(context):
-        selected_assets = context.op_config.get("selected_assets", ["a", "b", "c"])
-        for a in selected_assets:
-            yield Output(a, a)
+    def _get_abc_assets():
+        props = dict(
+            non_argument_deps={AssetKey("start_asset")} if use_non_arg_deps else None,
+            outs={
+                "a": Out(is_required=False),
+                "b": Out(is_required=False),
+                "c": Out(is_required=False),
+            },
+            internal_asset_deps={
+                "a": {AssetKey("start_asset")},
+                "b": set(),
+                "c": {AssetKey("b")},
+            },
+            can_subset=True,
+        )
 
-    @multi_asset(
-        non_argument_deps={AssetKey("a"), AssetKey("b"), AssetKey("c")},
-        outs={"d": Out(), "e": Out(), "f": Out()},
-        internal_asset_deps={
-            "d": {AssetKey("a"), AssetKey("b")},
-            "e": {AssetKey("c")},
-            "f": {AssetKey("d"), AssetKey("e")},
-        },
-        can_subset=True,
-    )
-    def def_assets(context):
-        selected_assets = context.op_config.get("selected_assets", ["d", "e", "f"])
-        for a in selected_assets:
-            yield Output(a, a)
+        def abc_iter(context):
+            selected_assets = context.op_config.get("selected_assets", ["a", "b", "c"])
+            for a in selected_assets:
+                yield Output(a, a)
+
+        if use_non_arg_deps:
+
+            @multi_asset(**props)
+            def _abc_asset(context):
+                return abc_iter(context)
+
+        else:
+
+            @multi_asset(**props)
+            def _abc_asset(context, start_asset=None):
+                return abc_iter(context)
+
+        return _abc_asset
+
+    def _get_def_assets():
+        props = dict(
+            non_argument_deps={AssetKey("a"), AssetKey("b"), AssetKey("c")}
+            if use_non_arg_deps
+            else None,
+            outs={
+                "d": Out(is_required=False),
+                "e": Out(is_required=False),
+                "f": Out(is_required=False),
+            },
+            internal_asset_deps={
+                "d": {AssetKey("a"), AssetKey("b")},
+                "e": {AssetKey("c")},
+                "f": {AssetKey("d"), AssetKey("e")},
+            },
+            can_subset=True,
+        )
+
+        def def_iter(context):
+            selected_assets = context.op_config.get("selected_assets", ["d", "e", "f"])
+            for a in selected_assets:
+                yield Output(a, a)
+
+        if use_non_arg_deps:
+
+            @multi_asset(**props)
+            def _def_asset(context):
+                return def_iter(context)
+
+        else:
+
+            @multi_asset(**props)
+            def _def_asset(context, a=None, b=None, c=None):
+                return def_iter(context)
+
+        return _def_asset
 
     @asset
     def final_asset(a, d):
@@ -265,11 +312,13 @@ def test_asset_group_build_sliced_subset_job(selection, expected_assets):
 
     _, io_manager_def = asset_aware_io_manager()
     group = AssetGroup(
-        [start_asset, abc_assets, def_assets, final_asset],
+        [start_asset, _get_abc_assets(), _get_def_assets(), final_asset],
         resource_defs={"io_manager": io_manager_def},
     )
 
-    result = group.build_job("assets_job", selection=selection).execute_in_process()
+    result = group.build_job("assets_job", selection=job_selection).execute_in_process(
+        run_config={"selected_assets": config_selection.split(",")} if config_selection else None
+    )
     expected_asset_keys = set((AssetKey(a) for a in expected_assets.split(",")))
 
     actual_asset_keys = set((mat.asset_key for mat in result.all_asset_materializations))
@@ -346,25 +395,23 @@ def test_asset_group_build_subset_job():
 
     test_both_plus = group.build_job(name="test_both_plus", selection=["+o1+", "o2"])
 
-    assert len(test_both_plus.all_node_defs) == 4
+    assert len(test_both_plus.all_node_defs) == 3
     assert set([node.name for node in test_both_plus.all_node_defs]) == {
         "follows_o1",
-        "follows_o2",
         "middle_asset",
         "start_asset",
     }
 
     result = test_both_plus.execute_in_process()
     assert result.success
-    assert result.output_for_node("follows_o2") == "foo"
+    assert result.output_for_node("follows_o1") == "foo"
 
     test_selection_with_overlap = group.build_job(
         name="test_multi_asset_multi_selection", selection=["o1", "o2+"]
     )
 
-    assert len(test_selection_with_overlap.all_node_defs) == 3
+    assert len(test_selection_with_overlap.all_node_defs) == 2
     assert set([node.name for node in test_selection_with_overlap.all_node_defs]) == {
-        "follows_o1",
         "follows_o2",
         "middle_asset",
     }

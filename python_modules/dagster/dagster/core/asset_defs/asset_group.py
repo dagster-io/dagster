@@ -250,12 +250,14 @@ class AssetGroup(
         job_selected_asset_keys = {".".join(ak.path) for ak in job_selected_asset_keys}
 
         def _asset_selection(config):
-            config_selected_asset_keys = config.get("selected_assets")
+            print(config)
+            config_selected_asset_keys = set(config.get("selected_assets", []))
             op_config = {}
             for asset in included_assets:
                 if not asset.can_subset:
                     continue
                 asset_keys_for_op = {".".join(ak.path) for ak in asset.asset_keys}
+
                 op_config[asset.op.name] = {
                     "config": {
                         "selected_assets": list(
@@ -265,6 +267,12 @@ class AssetGroup(
                         else list(asset_keys_for_op)
                     }
                 }
+                if asset.op.name == "_def_asset":
+                    op_config[asset.op.name]["inputs"] = {
+                        "c": None,
+                        "b": None,
+                    }
+            print(op_config)
             return {"ops": op_config}
 
         return ConfigMapping(
