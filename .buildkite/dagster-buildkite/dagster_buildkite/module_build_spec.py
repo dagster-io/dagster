@@ -161,7 +161,7 @@ class ModuleBuildSpec(
             tests.append(
                 StepBuilder(f":mypy: {package}")
                 .run(
-                    "pip install -e python_modules/dagster[lint]",
+                    "pip install -e python_modules/dagster[mypy]",
                     "mkdir -p .mypy_cache",
                     # mypy raises an error for missing stubs. We try to specify them in
                     # dependencies, but inclusion of `--install-types
