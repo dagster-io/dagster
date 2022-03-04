@@ -335,9 +335,7 @@ class InMemoryRunStorage(RunStorage):
         )
 
     def get_daemon_heartbeats(self) -> Dict[str, DaemonHeartbeat]:
-        raise NotImplementedError(
-            "The dagster daemon lives in a separate process. It cannot use in memory storage."
-        )
+        return {}
 
     def wipe_daemon_heartbeats(self):
         raise NotImplementedError(
