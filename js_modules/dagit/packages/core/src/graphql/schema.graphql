@@ -1767,6 +1767,7 @@ type DagitMutation {
   startSchedule(scheduleSelector: ScheduleSelector!): ScheduleMutationResult!
   stopRunningSchedule(scheduleOriginId: String!): ScheduleMutationResult!
   startSensor(sensorSelector: SensorSelector!): SensorOrError!
+  setSensorCursor(cursor: String, sensorSelector: SensorSelector!): SensorOrError!
   stopSensor(jobOriginId: String!): StopSensorMutationResultOrError!
   terminatePipelineExecution(
     runId: String!
@@ -2443,6 +2444,10 @@ type RunGroups {
 
 type StopSensorMutation {
   Output: StopSensorMutationResultOrError!
+}
+
+type SetSensorCursorMutation {
+  Output: SensorOrError!
 }
 
 type CompositeSolidDefinition implements ISolidDefinition & SolidContainer {

@@ -357,7 +357,6 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
                 SET_SENSOR_CURSOR_MUTATION,
                 variables={"sensorSelector": selector, "cursor": cursor},
             )
-            print(result.data)
             assert result.data
             assert result.data["setSensorCursor"]["__typename"] == "Sensor"
             sensor = result.data["setSensorCursor"]
