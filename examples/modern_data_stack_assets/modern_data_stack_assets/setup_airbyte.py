@@ -59,6 +59,18 @@ def _create_ab_destination(client: AirbyteResource) -> str:
     if not postgres_definitions:
         raise check.CheckError("Expected at least one Postgres destination definition.")
     destination_definition_id = postgres_definitions[0]["destinationDefinitionId"]
+    import json
+
+    print(
+        json.dumps(
+            client.make_request(
+                "/destination_definition_specifications/get",
+                data={"destinationDefinitionId": destination_definition_id},
+            ),
+            indent=4,
+        )
+    )
+    exit()
 
     # create Postgres destination
     destination_id = client.make_request(
@@ -76,7 +88,7 @@ def _create_ab_destination(client: AirbyteResource) -> str:
 
 def setup_airbyte():
     client = AirbyteResource(host="localhost", port="8000", use_https=False)
-    source_id = _create_ab_source(client)
+    # source_id = _create_ab_source(client)
     destination_id = _create_ab_destination(client)
 
     source_catalog = client.make_request("/sources/discover_schema", data={"sourceId": source_id})[

@@ -6,7 +6,7 @@ from dagster.utils import file_relative_path
 # =========================================================================
 # To get this value, run `python -m modern_data_stack_assets.setup_airbyte`
 # and grab the connection id that it prints
-AIRBYTE_CONNECTION_ID = "your_airbyte_connection_id"
+AIRBYTE_CONNECTION_ID = "ea55748b-22eb-47c5-a9b2-24b30b04add9"
 # =========================================================================
 
 
