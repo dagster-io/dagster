@@ -195,7 +195,7 @@ def step_run_ref_to_step_context(
 ) -> StepExecutionContext:
     check.inst_param(instance, "instance", DagsterInstance)
     pipeline = step_run_ref.recon_pipeline.subset_for_execution_from_existing_pipeline(
-        frozenset(step_run_ref.pipeline_run.solids_to_execute)
+        frozenset(step_run_ref.pipeline_run.solids_to_execute or set())
     )
 
     execution_plan = create_execution_plan(
