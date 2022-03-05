@@ -60,7 +60,7 @@ def test_unzip_file_handle_on_fake_s3():
     def write_zipped_file_to_s3_store(context):
         with get_temp_file_name() as zip_file_name:
             write_zip_file_to_disk(zip_file_name, "an_archive_member", foo_bytes)
-            with open(zip_file_name, "rb", encoding="utf8") as ff:
+            with open(zip_file_name, "rb") as ff:
                 s3_file_handle = context.resources.file_manager.write_data(ff.read())
                 return s3_file_handle
 

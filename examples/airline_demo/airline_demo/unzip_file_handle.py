@@ -21,5 +21,5 @@ def unzip_file_handle(
             # boto requires a file object with seek(), but zip_file.open() would return a
             # stream without seek(), so stage on the local filesystem first
             local_extracted_path = zip_file.extract(archive_member)
-            with open(local_extracted_path, "rb", encoding="utf8") as local_extracted_file:
+            with open(local_extracted_path, "rb") as local_extracted_file:
                 return context.resources.file_manager.write(local_extracted_file)
