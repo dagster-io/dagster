@@ -110,7 +110,7 @@ def _core_resource_initialization_event_generator(
     pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
 ):
 
-    pipeline_name = ''
+    pipeline_name = ""
     contains_generator = False
     if emit_persistent_events:
         check.invariant(

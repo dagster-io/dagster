@@ -184,7 +184,7 @@ def create_run_for_test(
 
 def register_managed_run_for_test(
     instance,
-    pipeline_name=None,
+    pipeline_name="dummy",
     run_id=None,
     run_config=None,
     mode=None,

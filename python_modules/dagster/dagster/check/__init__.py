@@ -805,7 +805,9 @@ def opt_set_param(obj: object, param_name: str, of_type: TypeOrTupleOfTypes = No
     return _check_set_items(obj, of_type)
 
 
-def opt_nullable_set_param(obj: object, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None) -> Optional[AbstractSet]:
+def opt_nullable_set_param(
+    obj: object, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
+) -> Optional[AbstractSet]:
     """Ensures argument obj is a set or None. Returns None if input is None.
     and returns it.
 
@@ -820,7 +822,6 @@ def opt_nullable_set_param(obj: object, param_name: str, of_type: Optional[TypeO
         return obj
 
     return _check_set_items(obj, of_type)
-
 
 
 def _check_set_items(obj_set: AbstractSet, of_type: TypeOrTupleOfTypes) -> AbstractSet:
