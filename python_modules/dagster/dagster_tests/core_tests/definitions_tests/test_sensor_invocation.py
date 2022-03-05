@@ -7,7 +7,6 @@ from dagster import (
     DagsterInvariantViolationError,
     DagsterRunStatus,
     RunRequest,
-    SensorDefinition,
     SensorEvaluationContext,
     SensorExecutionContext,
     build_run_status_sensor_context,

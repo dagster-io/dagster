@@ -39,4 +39,4 @@ def test_jobs_attr():
     with pytest.raises(
         DagsterInvalidDefinitionError, match="No job was provided to ScheduleDefinition."
     ):
-        schedule.job
+        schedule.job  # pylint: disable=pointless-statement

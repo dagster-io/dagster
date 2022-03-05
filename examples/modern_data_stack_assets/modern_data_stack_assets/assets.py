@@ -1,4 +1,3 @@
-# pylint: disable=redefined-outer-name
 from typing import Any, Tuple
 
 import numpy as np
