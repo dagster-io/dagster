@@ -1,0 +1,44 @@
+# start_marker_runs
+
+run_storage:
+ module: dagster_mssql.run_storage
+ class: MSSQLRunStorage
+ config:
+  mssql_db:
+   username: { username }
+   password: { password }
+   hostname: { hostname }
+   db_name: { database }
+   port: { port }
+
+# end_marker_runs
+
+# start_marker_event_log
+
+event_log_storage:
+ module: dagster_mssql.event_log
+ class: MSSQLEventLogStorage
+ config:
+  mssql_db:
+   username: { username }
+   password: { password }
+   hostname: { hostname }
+   db_name: { db_name }
+   port: { port }
+
+# end_marker_event_log
+
+# start_marker_schedules
+
+schedule_storage:
+ module: dagster_mssql.schedule_storage
+ class: MSSQLScheduleStorage
+ config:
+  mssql_db:
+   username: { username }
+   password: { password }
+   hostname: { hostname }
+   db_name: { db_name }
+   port: { port }
+
+# end_marker_schedules
