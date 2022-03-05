@@ -590,7 +590,9 @@ def list_param(obj: object, param_name: str, of_type: Optional[TypeOrTupleOfType
     return _check_list_items(obj, of_type)
 
 
-def opt_list_param(obj: object, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None) -> List:
+def opt_list_param(
+    obj: object, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
+) -> List:
     """Ensures argument obj is a list or None; in the latter case, instantiates an empty list
     and returns it.
 
@@ -778,7 +780,9 @@ def opt_numeric_param(
 # ########################
 
 
-def set_param(obj: object, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None) -> AbstractSet:
+def set_param(
+    obj: object, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
+) -> AbstractSet:
     if not isinstance(obj, (frozenset, set)):
         raise _param_type_mismatch_exception(obj, (frozenset, set), param_name)
 
@@ -788,7 +792,9 @@ def set_param(obj: object, param_name: str, of_type: Optional[TypeOrTupleOfTypes
     return _check_set_items(obj, of_type)
 
 
-def opt_set_param(obj: object, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None) -> AbstractSet:
+def opt_set_param(
+    obj: object, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
+) -> AbstractSet:
     """Ensures argument obj is a set or None; in the latter case, instantiates an empty set
     and returns it.
 

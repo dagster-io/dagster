@@ -56,7 +56,9 @@ class FivetranResource:
     def api_base_url(self) -> str:
         return urljoin(FIVETRAN_API_BASE, FIVETRAN_CONNECTOR_PATH)
 
-    def make_request(self, method: str, endpoint: str, data: Optional[str] = None) -> Dict[str, Any]:
+    def make_request(
+        self, method: str, endpoint: str, data: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Creates and sends a request to the desired Fivetran Connector API endpoint.
 
@@ -167,7 +169,9 @@ class FivetranResource:
         """
         return self.make_request(method="PATCH", endpoint=connector_id, data=json.dumps(properties))
 
-    def update_schedule_type(self, connector_id: str, schedule_type: Optional[str] = None) -> Dict[str, Any]:
+    def update_schedule_type(
+        self, connector_id: str, schedule_type: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Updates the schedule type property of the connector to either "auto" or "manual".
 

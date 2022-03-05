@@ -52,7 +52,9 @@ def remove_none_entries(ddict: dict) -> dict:
     return {k: v for k, v in ddict.items() if v is not None}
 
 
-def def_config_field(configurable_def: ConfigurableDefinition, is_required: Optional[bool] = None) -> Field:
+def def_config_field(
+    configurable_def: ConfigurableDefinition, is_required: Optional[bool] = None
+) -> Field:
     return Field(
         Shape(
             {"config": configurable_def.config_field} if configurable_def.has_config_field else {}

@@ -63,7 +63,11 @@ class DbtCloudResourceV2:
         return urljoin(self._dbt_cloud_host, DBT_ACCOUNTS_PATH)
 
     def make_request(
-        self, method: str, endpoint: str, data: Optional[Dict[str, Any]] = None, return_text: bool = False
+        self,
+        method: str,
+        endpoint: str,
+        data: Optional[Dict[str, Any]] = None,
+        return_text: bool = False,
     ) -> Dict[str, Any]:
         """
         Creates and sends a request to the desired dbt Cloud API endpoint.

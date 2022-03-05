@@ -1074,7 +1074,10 @@ class DagsterInstance:
 
     @traced
     def get_run_groups(
-        self, filters: Optional[RunsFilter] = None, cursor: Optional[str] = None, limit: Optional[int] = None
+        self,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
 
@@ -1134,7 +1137,9 @@ class DagsterInstance:
         )
 
     @traced
-    def all_logs(self, run_id, of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None):
+    def all_logs(
+        self, run_id, of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None
+    ):
         return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
 
     def watch_event_logs(self, run_id, cursor, cb):

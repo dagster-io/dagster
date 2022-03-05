@@ -50,7 +50,9 @@ class DbtResource:
         return self._logger
 
     @abstractmethod
-    def compile(self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs) -> DbtOutput:
+    def compile(
+        self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+    ) -> DbtOutput:
         """
         Run the ``compile`` command on a dbt project. kwargs are passed in as additional parameters.
 
@@ -63,7 +65,9 @@ class DbtResource:
         """
 
     @abstractmethod
-    def run(self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs) -> DbtOutput:
+    def run(
+        self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+    ) -> DbtOutput:
         """
         Run the ``run`` command on a dbt project. kwargs are passed in as additional parameters.
 
@@ -76,7 +80,9 @@ class DbtResource:
         """
 
     @abstractmethod
-    def snapshot(self, select: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs) -> DbtOutput:
+    def snapshot(
+        self, select: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+    ) -> DbtOutput:
         """
         Run the ``snapshot`` command on a dbt project. kwargs are passed in as additional parameters.
 
@@ -112,7 +118,11 @@ class DbtResource:
 
     @abstractmethod
     def seed(
-        self, show: bool = False, select: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+        self,
+        show: bool = False,
+        select: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+        **kwargs,
     ) -> DbtOutput:
         """
         Run the ``seed`` command on a dbt project. kwargs are passed in as additional parameters.

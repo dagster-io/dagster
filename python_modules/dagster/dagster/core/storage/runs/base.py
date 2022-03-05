@@ -99,7 +99,10 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
 
     @abstractmethod
     def get_run_groups(
-        self, filters: Optional[RunsFilter] = None, cursor: Optional[str] = None, limit: Optional[int] = None
+        self,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         """Return all of the run groups present in the storage that include rows matching the
         given filter.
@@ -353,7 +356,10 @@ class RunStorage(ABC, MayHaveInstanceWeakref):
     # Backfill storage
     @abstractmethod
     def get_backfills(
-        self, status: Optional[BulkActionStatus] = None, cursor: Optional[str] = None, limit: Optional[int] = None
+        self,
+        status: Optional[BulkActionStatus] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> List[PartitionBackfill]:
         """Get a list of partition backfills"""
 

@@ -104,7 +104,9 @@ class DbtCliResource(DbtResource):
         """
         return self.cli("compile", models=models, exclude=exclude, **kwargs)
 
-    def run(self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs) -> DbtCliOutput:
+    def run(
+        self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+    ) -> DbtCliOutput:
         """
         Run the ``run`` command on a dbt project. kwargs are passed in as additional parameters.
 
@@ -163,7 +165,11 @@ class DbtCliResource(DbtResource):
         return self.cli("test", models=models, exclude=exclude, data=data, schema=schema, **kwargs)
 
     def seed(
-        self, show: bool = False, select: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+        self,
+        show: bool = False,
+        select: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+        **kwargs,
     ) -> DbtCliOutput:
         """
         Run the ``seed`` command on a dbt project. kwargs are passed in as additional parameters.

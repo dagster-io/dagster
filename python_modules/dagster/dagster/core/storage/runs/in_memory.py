@@ -346,7 +346,10 @@ class InMemoryRunStorage(RunStorage):
         )
 
     def get_backfills(
-        self, status: Optional[BulkActionStatus] = None, cursor: Optional[str] = None, limit: Optional[int] = None
+        self,
+        status: Optional[BulkActionStatus] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> List[PartitionBackfill]:
         check.opt_inst_param(status, "status", BulkActionStatus)
         backfills = [

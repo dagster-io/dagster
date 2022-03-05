@@ -103,7 +103,9 @@ class DbtRpcResource(DbtResource):
         """
         return self._post(data)
 
-    def _default_request(self, method: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def _default_request(
+        self, method: str, params: Optional[Dict[str, Any]] = None
+    ) -> Dict[str, Any]:
         """Constructs a standard HTTP request body, to be sent to a dbt RPC server.
 
         Args:
@@ -266,7 +268,9 @@ class DbtRpcResource(DbtResource):
 
         return self._get_result(data=json.dumps(data))
 
-    def run(self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs) -> DbtRpcOutput:
+    def run(
+        self, models: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+    ) -> DbtRpcOutput:
         """Sends a request with the method ``run`` to the dbt RPC server, and returns the response.
         For more details, see the dbt docs for the RPC method `run
         <https://docs.getdbt.com/reference/commands/rpc/#run-models>`_.
@@ -332,7 +336,11 @@ class DbtRpcResource(DbtResource):
         return self._get_result(data=json.dumps(data))
 
     def seed(
-        self, show: bool = False, select: Optional[List[str]] = None, exclude: Optional[List[str]] = None, **kwargs
+        self,
+        show: bool = False,
+        select: Optional[List[str]] = None,
+        exclude: Optional[List[str]] = None,
+        **kwargs,
     ) -> DbtRpcOutput:
         """Sends a request with the method ``seed`` to the dbt RPC server, and returns the response.
         For more details, see the dbt docs for the RPC method `seed
