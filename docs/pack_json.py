@@ -8,13 +8,13 @@ from dagster.utils import file_relative_path
 
 
 def read_json(filename):
-    with open(filename) as f:
+    with open(filename, encoding="utf8") as f:
         data = json.load(f)
         return data
 
 
 def write_json(filename, data):
-    with open(filename, "w") as f:
+    with open(filename, "w", encoding="utf8") as f:
         json.dump(data, f, sort_keys=True)
 
 
