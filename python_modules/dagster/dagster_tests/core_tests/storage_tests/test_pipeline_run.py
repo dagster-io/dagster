@@ -43,16 +43,17 @@ def test_queued_pipeline_origin_check():
     )
 
     PipelineRun(
+        pipeline_name="foo",
         status=PipelineRunStatus.QUEUED,
         external_pipeline_origin=fake_pipeline_origin,
         pipeline_code_origin=fake_code_origin,
     )
 
     with pytest.raises(check.CheckError):
-        PipelineRun(status=PipelineRunStatus.QUEUED)
+        PipelineRun(pipeline_name="foo", status=PipelineRunStatus.QUEUED)
 
     with pytest.raises(check.CheckError):
-        PipelineRun().with_status(PipelineRunStatus.QUEUED)
+        PipelineRun(pipeline_name="foo").with_status(PipelineRunStatus.QUEUED)
 
 
 def test_in_progress_statuses():
