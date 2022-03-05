@@ -41,7 +41,7 @@ from .hook_definition import HookDefinition
 from .inference import infer_output_props
 from .input import InputDefinition, InputMapping
 from .logger_definition import LoggerDefinition
-from .output import OutputDefinition, OutputMapping
+from .output import DynamicOut, DynamicOutputDefinition, OutputDefinition, OutputMapping
 from .policy import RetryPolicy
 from .resource_definition import ResourceDefinition
 from .solid_definition import NodeDefinition, SolidDefinition
@@ -710,6 +710,38 @@ class InvokedSolidOutputHandle:
                 cls=self.__class__.__name__,
                 out=self.output_name,
                 described_node=self.describe_node(),
+            )
+        )
+
+    def map(self, fn):
+        raise DagsterInvariantViolationError(
+            "In {source} {name}, attempted to call map method for {cls}, but can only "
+            "call map method on {invoked_solid_dynamic_output_wrapper_cls}. Consider adding one "
+            "of the following arguments to your op or solid definition:\n"
+            "- out={dynamic_out_cls}(...)\n"
+            "- output_defs=[{dynamic_outout_definition_cls}(...)]\n".format(
+                source=current_context().source,
+                name=current_context().name,
+                cls=self.__class__.__name__,
+                invoked_solid_dynamic_output_wrapper_cls=InvokedSolidDynamicOutputWrapper.__class__.__name__,
+                dynamic_out_cls=DynamicOut.__class__.__name__,
+                dynamic_output_definition_cls=DynamicOutputDefinition.__class__.__name__,
+            )
+        )
+
+    def collect(self):
+        raise DagsterInvariantViolationError(
+            "In {source} {name}, attempted to call collect method for {cls}, but can only "
+            "call collect method on {invoked_solid_dynamic_output_wrapper_cls}. Consider adding one "
+            "of the following arguments to your op or solid definition:\n"
+            "- out={dynamic_out_cls}(...)\n"
+            "- output_defs=[{dynamic_outout_definition_cls}(...)]\n".format(
+                source=current_context().source,
+                name=current_context().name,
+                cls=self.__class__.__name__,
+                invoked_solid_dynamic_output_wrapper_cls=InvokedSolidDynamicOutputWrapper.__class__.__name__,
+                dynamic_out_cls=DynamicOut.__class__.__name__,
+                dynamic_output_definition_cls=DynamicOutputDefinition.__class__.__name__,
             )
         )
 

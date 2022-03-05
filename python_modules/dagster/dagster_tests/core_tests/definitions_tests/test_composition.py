@@ -1,3 +1,4 @@
+from typing import List
 import warnings
 
 import pytest
@@ -945,6 +946,44 @@ def test_with_hooks_on_invoked_solid_fails():
         @pipeline
         def _bad_hooks_pipeline():
             yield_1_solid().with_hooks({a_hook})
+
+def test_map_on_invoked_solid_fails():
+    @solid
+    def dynamic_output_solid(_):
+        yield DynamicOutput(1, "1")
+        yield DynamicOutput(2, "2")
+
+    @solid
+    def yield_x_solid(x: int):
+        return x 
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="attempted to call map method for InvokedSolidOutputHandle.",
+    ):
+
+        @pipeline
+        def _bad_map_pipeline():
+            dynamic_output_solid().map(yield_x_solid)
+
+def test_collect_on_invoked_solid_fails():
+    @solid
+    def yield_1_solid(_):
+        return 1
+
+
+    @solid
+    def yield_x_solid(x: int):
+        return x 
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="attempted to call collect method for InvokedSolidOutputHandle.",
+    ):
+
+        @pipeline
+        def _bad_collect_pipeline():
+            yield_1_solid().collect(yield_x_solid)
 
 
 def test_iterating_over_dynamic_outputs_fails():
