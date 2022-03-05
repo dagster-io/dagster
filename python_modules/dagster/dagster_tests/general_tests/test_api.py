@@ -14,7 +14,7 @@ def test_all():
         if (
             not exported.startswith("_")
             and not inspect.ismodule(getattr(dagster, exported))
-            and not exported in dagster._DEPRECATED   # pylint: disable=protected-access
+            and not exported in dagster._DEPRECATED  # pylint: disable=protected-access
         ):
             assert exported in dagster.__all__
 

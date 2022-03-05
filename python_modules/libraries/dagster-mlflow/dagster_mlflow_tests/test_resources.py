@@ -153,7 +153,9 @@ def test_mlflow_meta_not_overloading():
     over_list = ["log_params"]
     for methods in over_list:
         # then: the function signature is not the same as the mlflow one
-        assert getattr(MlFlow, methods) != getattr(mlflow, methods)   # pylint: disable=comparison-with-callable
+        assert getattr(MlFlow, methods) != getattr(
+            mlflow, methods
+        )  # pylint: disable=comparison-with-callable
 
 
 def test_mlflow_meta_overloading():
