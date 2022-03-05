@@ -147,7 +147,7 @@ def cleanup_test_instance(instance):
 
 def create_run_for_test(
     instance,
-    pipeline_name='dummy',
+    pipeline_name="dummy",
     run_id=None,
     run_config=None,
     mode=None,
