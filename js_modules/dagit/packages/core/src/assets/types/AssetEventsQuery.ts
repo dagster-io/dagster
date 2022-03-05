@@ -202,11 +202,11 @@ export type AssetEventsQuery_assetOrError_Asset_assetObservations_metadataEntrie
 export interface AssetEventsQuery_assetOrError_Asset_assetObservations {
   __typename: "ObservationEvent";
   partition: string | null;
-  runOrError: AssetEventsQuery_assetOrError_Asset_assetObservations_runOrError;
+  runOrError: AssetEventsQuery_assetOrError_Asset_assetObservations_runOrError | null;
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: AssetEventsQuery_assetOrError_Asset_assetObservations_stepStats;
+  stepStats: AssetEventsQuery_assetOrError_Asset_assetObservations_stepStats | null;
   label: string;
   description: string | null;
   metadataEntries: AssetEventsQuery_assetOrError_Asset_assetObservations_metadataEntries[];
@@ -401,7 +401,7 @@ export interface AssetEventsQuery_assetOrError_Asset_assetMaterializations_asset
 export interface AssetEventsQuery_assetOrError_Asset_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
-  runOrError: AssetEventsQuery_assetOrError_Asset_assetMaterializations_runOrError;
+  runOrError: AssetEventsQuery_assetOrError_Asset_assetMaterializations_runOrError | null;
   runId: string;
   timestamp: string;
   stepKey: string | null;

@@ -240,13 +240,13 @@ export interface AssetGraphLiveQuery_assetNodes_assetMaterializations_stepStats 
 export interface AssetGraphLiveQuery_assetNodes_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
-  runOrError: AssetGraphLiveQuery_assetNodes_assetMaterializations_runOrError;
+  runOrError: AssetGraphLiveQuery_assetNodes_assetMaterializations_runOrError | null;
   runId: string;
   timestamp: string;
   stepKey: string | null;
   metadataEntries: AssetGraphLiveQuery_assetNodes_assetMaterializations_metadataEntries[];
   assetLineage: AssetGraphLiveQuery_assetNodes_assetMaterializations_assetLineage[];
-  stepStats: AssetGraphLiveQuery_assetNodes_assetMaterializations_stepStats;
+  stepStats: AssetGraphLiveQuery_assetNodes_assetMaterializations_stepStats | null;
 }
 
 export interface AssetGraphLiveQuery_assetNodes {

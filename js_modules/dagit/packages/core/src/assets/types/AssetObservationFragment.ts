@@ -193,11 +193,11 @@ export type AssetObservationFragment_metadataEntries = AssetObservationFragment_
 export interface AssetObservationFragment {
   __typename: "ObservationEvent";
   partition: string | null;
-  runOrError: AssetObservationFragment_runOrError;
+  runOrError: AssetObservationFragment_runOrError | null;
   runId: string;
   timestamp: string;
   stepKey: string | null;
-  stepStats: AssetObservationFragment_stepStats;
+  stepStats: AssetObservationFragment_stepStats | null;
   label: string;
   description: string | null;
   metadataEntries: AssetObservationFragment_metadataEntries[];

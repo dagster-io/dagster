@@ -223,13 +223,13 @@ export interface AssetNodeDefinitionFragment_assetMaterializations_stepStats {
 export interface AssetNodeDefinitionFragment_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
-  runOrError: AssetNodeDefinitionFragment_assetMaterializations_runOrError;
+  runOrError: AssetNodeDefinitionFragment_assetMaterializations_runOrError | null;
   runId: string;
   timestamp: string;
   stepKey: string | null;
   metadataEntries: AssetNodeDefinitionFragment_assetMaterializations_metadataEntries[];
   assetLineage: AssetNodeDefinitionFragment_assetMaterializations_assetLineage[];
-  stepStats: AssetNodeDefinitionFragment_assetMaterializations_stepStats;
+  stepStats: AssetNodeDefinitionFragment_assetMaterializations_stepStats | null;
 }
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_PathMetadataEntry {
@@ -2757,13 +2757,13 @@ export interface AssetNodeDefinitionFragment_dependencies_asset_assetMaterializa
 export interface AssetNodeDefinitionFragment_dependencies_asset_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
-  runOrError: AssetNodeDefinitionFragment_dependencies_asset_assetMaterializations_runOrError;
+  runOrError: AssetNodeDefinitionFragment_dependencies_asset_assetMaterializations_runOrError | null;
   runId: string;
   timestamp: string;
   stepKey: string | null;
   metadataEntries: AssetNodeDefinitionFragment_dependencies_asset_assetMaterializations_metadataEntries[];
   assetLineage: AssetNodeDefinitionFragment_dependencies_asset_assetMaterializations_assetLineage[];
-  stepStats: AssetNodeDefinitionFragment_dependencies_asset_assetMaterializations_stepStats;
+  stepStats: AssetNodeDefinitionFragment_dependencies_asset_assetMaterializations_stepStats | null;
 }
 
 export interface AssetNodeDefinitionFragment_dependencies_asset {
@@ -2997,13 +2997,13 @@ export interface AssetNodeDefinitionFragment_dependedBy_asset_assetMaterializati
 export interface AssetNodeDefinitionFragment_dependedBy_asset_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
-  runOrError: AssetNodeDefinitionFragment_dependedBy_asset_assetMaterializations_runOrError;
+  runOrError: AssetNodeDefinitionFragment_dependedBy_asset_assetMaterializations_runOrError | null;
   runId: string;
   timestamp: string;
   stepKey: string | null;
   metadataEntries: AssetNodeDefinitionFragment_dependedBy_asset_assetMaterializations_metadataEntries[];
   assetLineage: AssetNodeDefinitionFragment_dependedBy_asset_assetMaterializations_assetLineage[];
-  stepStats: AssetNodeDefinitionFragment_dependedBy_asset_assetMaterializations_stepStats;
+  stepStats: AssetNodeDefinitionFragment_dependedBy_asset_assetMaterializations_stepStats | null;
 }
 
 export interface AssetNodeDefinitionFragment_dependedBy_asset {

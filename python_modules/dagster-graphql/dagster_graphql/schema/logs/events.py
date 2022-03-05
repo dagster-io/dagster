@@ -287,8 +287,8 @@ def _construct_asset_event_metadata_params(event, metadata):
 
 class AssetEventMixin:
     assetKey = graphene.Field(GrapheneAssetKey)
-    runOrError = graphene.NonNull("dagster_graphql.schema.pipelines.pipeline.GrapheneRunOrError")
-    stepStats = graphene.NonNull(lambda: GrapheneRunStepStats)
+    runOrError = graphene.Field("dagster_graphql.schema.pipelines.pipeline.GrapheneRunOrError")
+    stepStats = graphene.Field(lambda: GrapheneRunStepStats)
     partition = graphene.Field(graphene.String)
 
     def __init__(self, event, metadata):
@@ -304,13 +304,17 @@ class AssetEventMixin:
         return GrapheneAssetKey(path=asset_key.path)
 
     def resolve_runOrError(self, graphene_info):
-        return get_run_by_id(graphene_info, self._event.run_id)
+        if self._event.run_id:
+            return get_run_by_id(graphene_info, self._event.run_id)
+        return None
 
     def resolve_stepStats(self, graphene_info):
-        run_id = self.runId  # pylint: disable=no-member
-        step_key = self.stepKey  # pylint: disable=no-member
-        stats = get_step_stats(graphene_info, run_id, step_keys=[step_key])
-        return stats[0]
+        if self.runId and self.stepKey:
+            run_id = self.runId  # pylint: disable=no-member
+            step_key = self.stepKey  # pylint: disable=no-member
+            stats = get_step_stats(graphene_info, run_id, step_keys=[step_key])
+            return stats[0]
+        return None
 
     def resolve_metadataEntries(self, _graphene_info):
         from ...implementation.events import _to_metadata_entries

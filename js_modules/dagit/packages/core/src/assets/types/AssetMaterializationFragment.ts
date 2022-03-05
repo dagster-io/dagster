@@ -198,7 +198,7 @@ export interface AssetMaterializationFragment_assetLineage {
 export interface AssetMaterializationFragment {
   __typename: "MaterializationEvent";
   partition: string | null;
-  runOrError: AssetMaterializationFragment_runOrError;
+  runOrError: AssetMaterializationFragment_runOrError | null;
   runId: string;
   timestamp: string;
   stepKey: string | null;

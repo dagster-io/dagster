@@ -255,8 +255,8 @@ type MaterializationEvent implements MessageEvent & StepEvent & DisplayableEvent
   description: String
   metadataEntries: [MetadataEntry!]!
   assetKey: AssetKey
-  runOrError: RunOrError!
-  stepStats: RunStepStats!
+  runOrError: RunOrError
+  stepStats: RunStepStats
   partition: String
   assetLineage: [AssetLineageInfo!]!
 }
@@ -581,8 +581,8 @@ type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
   description: String
   metadataEntries: [MetadataEntry!]!
   assetKey: AssetKey
-  runOrError: RunOrError!
-  stepStats: RunStepStats!
+  runOrError: RunOrError
+  stepStats: RunStepStats
   partition: String
 }
 

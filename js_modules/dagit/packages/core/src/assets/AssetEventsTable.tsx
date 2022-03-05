@@ -176,7 +176,7 @@ const EventGroupRow: React.FC<{
     ? {paddingLeft: 4, borderLeft: `4px solid ${ColorsWIP.HighlightGreen}`}
     : {paddingLeft: 8};
 
-  const run = latest?.runOrError.__typename === 'Run' ? latest.runOrError : undefined;
+  const run = latest?.runOrError && latest?.runOrError.__typename === 'Run' ? latest.runOrError : undefined;
   const repositoryOrigin = run?.repositoryOrigin;
   const repoAddress = repositoryOrigin
     ? buildRepoAddress(repositoryOrigin.repositoryName, repositoryOrigin.repositoryLocationName)

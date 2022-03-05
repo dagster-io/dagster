@@ -210,13 +210,13 @@ export interface AssetNodeLiveFragment_assetMaterializations_stepStats {
 export interface AssetNodeLiveFragment_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
-  runOrError: AssetNodeLiveFragment_assetMaterializations_runOrError;
+  runOrError: AssetNodeLiveFragment_assetMaterializations_runOrError | null;
   runId: string;
   timestamp: string;
   stepKey: string | null;
   metadataEntries: AssetNodeLiveFragment_assetMaterializations_metadataEntries[];
   assetLineage: AssetNodeLiveFragment_assetMaterializations_assetLineage[];
-  stepStats: AssetNodeLiveFragment_assetMaterializations_stepStats;
+  stepStats: AssetNodeLiveFragment_assetMaterializations_stepStats | null;
 }
 
 export interface AssetNodeLiveFragment {

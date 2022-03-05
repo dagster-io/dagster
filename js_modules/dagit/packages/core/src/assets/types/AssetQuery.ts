@@ -237,13 +237,13 @@ export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations_
 export interface AssetQuery_assetOrError_Asset_definition_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
-  runOrError: AssetQuery_assetOrError_Asset_definition_assetMaterializations_runOrError;
+  runOrError: AssetQuery_assetOrError_Asset_definition_assetMaterializations_runOrError | null;
   runId: string;
   timestamp: string;
   stepKey: string | null;
   metadataEntries: AssetQuery_assetOrError_Asset_definition_assetMaterializations_metadataEntries[];
   assetLineage: AssetQuery_assetOrError_Asset_definition_assetMaterializations_assetLineage[];
-  stepStats: AssetQuery_assetOrError_Asset_definition_assetMaterializations_stepStats;
+  stepStats: AssetQuery_assetOrError_Asset_definition_assetMaterializations_stepStats | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_op_outputDefinitions_metadataEntries_PathMetadataEntry {
@@ -2771,13 +2771,13 @@ export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_ass
 export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
-  runOrError: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_runOrError;
+  runOrError: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_runOrError | null;
   runId: string;
   timestamp: string;
   stepKey: string | null;
   metadataEntries: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_metadataEntries[];
   assetLineage: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_assetLineage[];
-  stepStats: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_stepStats;
+  stepStats: AssetQuery_assetOrError_Asset_definition_dependencies_asset_assetMaterializations_stepStats | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_dependencies_asset {
@@ -3011,13 +3011,13 @@ export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_asset
 export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations {
   __typename: "MaterializationEvent";
   partition: string | null;
-  runOrError: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_runOrError;
+  runOrError: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_runOrError | null;
   runId: string;
   timestamp: string;
   stepKey: string | null;
   metadataEntries: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_metadataEntries[];
   assetLineage: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_assetLineage[];
-  stepStats: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_stepStats;
+  stepStats: AssetQuery_assetOrError_Asset_definition_dependedBy_asset_assetMaterializations_stepStats | null;
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_dependedBy_asset {

@@ -195,7 +195,7 @@ export interface LatestMaterializationMetadataFragment_assetLineage {
 export interface LatestMaterializationMetadataFragment {
   __typename: "MaterializationEvent";
   partition: string | null;
-  runOrError: LatestMaterializationMetadataFragment_runOrError;
+  runOrError: LatestMaterializationMetadataFragment_runOrError | null;
   runId: string;
   timestamp: string;
   stepKey: string | null;
