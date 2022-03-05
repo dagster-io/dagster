@@ -47,7 +47,7 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
         # the output notebook itself is stored at output_file_path
         output_notebook_path = self._get_path(context)
         mkdir_p(os.path.dirname(output_notebook_path))
-        with open(output_notebook_path, self.write_mode, encoding="utf8") as dest_file_obj:
+        with open(output_notebook_path, self.write_mode) as dest_file_obj:
             dest_file_obj.write(obj)
         yield MetadataEntry("path", value=MetadataValue.path(output_notebook_path))
 
@@ -55,7 +55,7 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
         check.inst_param(context, "context", InputContext)
         # pass output notebook to downstream solids as File Object
         with open(
-            self._get_path(context.upstream_output), self.read_mode, encoding="utf8"
+            self._get_path(context.upstream_output), self.read_mode
         ) as file_obj:
             return file_obj.read()
 
