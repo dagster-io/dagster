@@ -886,7 +886,7 @@ class TestEventLogStorage:
             pytest.skip("This test is for SQL-backed Event Log behavior")
         _logs = []
 
-        def mock_log(msg, **_kwargs):
+        def mock_log(msg, *_args, **_kwargs):
             _logs.append(msg)
 
         asset_key = AssetKey("asset_one")

@@ -19,7 +19,7 @@ def _reconstruct_from_file(hostname, conn_string, path, _username="root", _passw
     subprocess.check_call(f"mysql -uroot -h{hostname} test < {path}", shell=True, env=env)
 
 
-def test_0_13_17_mysql_convert_float_cols(hostname, _conn_string):
+def test_0_13_17_mysql_convert_float_cols(hostname):
     _reconstruct_from_file(
         hostname,
         conn_string,
