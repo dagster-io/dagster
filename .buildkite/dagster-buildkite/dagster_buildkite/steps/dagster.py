@@ -584,7 +584,7 @@ def coverage_step():
 
 
 def pylint_steps():
-    base_paths = [".buildkite", "bin", "docs/next/src"]
+    base_paths = [".buildkite", "scripts", "docs"]
     base_paths_ext = ['"%s/**.py"' % p for p in base_paths]
 
     return [
@@ -600,7 +600,7 @@ def pylint_steps():
                 -e python_modules/libraries/dagster-celery \
                 -e python_modules/libraries/dagster-dask \
             """,
-            "pylint -j 0 `git ls-files %s` --rcfile=pyproject.toml" % " ".join(base_paths_ext),
+            "pylint -j 0 --rcfile=pyproject.toml `git ls-files %s`" % " ".join(base_paths_ext),
         )
         .on_integration_image(SupportedPython.V3_7)
         .build()
