@@ -163,7 +163,7 @@ class LocalFileSystemIOManager(IOManager):
         if isinstance(obj, PandasDF):
             directory = self._get_fs_path(context.asset_key)
             os.makedirs(directory, exist_ok=True)
-            open(os.path.join(directory, "_SUCCESS"), "wb", encoding="utf8").close()
+            open(os.path.join(directory, "_SUCCESS"), "wb").close()
             csv_path = os.path.join(directory, "part-00000.csv")
             obj.to_csv(csv_path)
         elif isinstance(obj, SparkDF):
