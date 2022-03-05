@@ -54,9 +54,7 @@ class LocalOutputNotebookIOManager(OutputNotebookIOManager):
     def load_input(self, context) -> bytes:
         check.inst_param(context, "context", InputContext)
         # pass output notebook to downstream solids as File Object
-        with open(
-            self._get_path(context.upstream_output), self.read_mode
-        ) as file_obj:
+        with open(self._get_path(context.upstream_output), self.read_mode) as file_obj:
             return file_obj.read()
 
 

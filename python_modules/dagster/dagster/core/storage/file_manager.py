@@ -265,7 +265,8 @@ class LocalFileManager(FileManager):
         check.str_param(mode, "mode")
         check.param_invariant(mode in {"r", "rb"}, "mode")
 
-        with open(file_handle.path, mode) as file_obj:
+        encoding = None if mode == "rb" else "utf8"
+        with open(file_handle.path, mode, encoding=encoding) as file_obj:
             yield file_obj
 
     def read_data(self, file_handle):
@@ -286,7 +287,8 @@ class LocalFileManager(FileManager):
             self.base_dir, str(uuid.uuid4()) + (("." + ext) if ext is not None else "")
         )
 
-        with open(dest_file_path, mode) as dest_file_obj:
+        encoding = None if "b" in mode else "utf8"
+        with open(dest_file_path, mode, encoding=encoding) as dest_file_obj:
             shutil.copyfileobj(file_obj, dest_file_obj)
             return LocalFileHandle(dest_file_path)
 
