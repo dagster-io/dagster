@@ -806,7 +806,7 @@ def opt_set_param(obj: object, param_name: str, of_type: TypeOrTupleOfTypes = No
 
 
 def opt_nullable_set_param(obj: object, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None) -> Optional[AbstractSet]:
-    """Ensures argument obj is a set or None. Returns Noen if input is None.
+    """Ensures argument obj is a set or None. Returns None if input is None.
     and returns it.
 
     If the of_type argument is provided, also ensures that list items conform to the type specified
