@@ -78,7 +78,7 @@ def test_logging_no_loggers_registered():
 def test_logging_basic():
     with _setup_logger("test") as (captured_results, logger):
 
-        dl = DagsterLogManager.create(loggers=[logger], pipeline_run=PipelineRun(run_id="123"))
+        dl = DagsterLogManager.create(loggers=[logger], pipeline_run=PipelineRun(pipeline_name="pipeline", run_id="123"))
         dl.debug("test")
         dl.info("test")
         dl.warning("test")
@@ -91,7 +91,7 @@ def test_logging_basic():
 def test_logging_custom_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
 
-        dl = DagsterLogManager.create(loggers=[logger], pipeline_run=PipelineRun(run_id="123"))
+        dl = DagsterLogManager.create(loggers=[logger], pipeline_run=PipelineRun(pipeline_name="pipeline", run_id="123"))
         with pytest.raises(AttributeError):
             dl.foo("test")  # pylint: disable=no-member
 
@@ -99,14 +99,14 @@ def test_logging_custom_log_levels():
 def test_logging_integer_log_levels():
     with _setup_logger("test", {"FOO": 3}) as (_captured_results, logger):
 
-        dl = DagsterLogManager.create(loggers=[logger], pipeline_run=PipelineRun(run_id="123"))
+        dl = DagsterLogManager.create(loggers=[logger], pipeline_run=PipelineRun(pipeline_name="pipeline", run_id="123"))
         dl.log(3, "test")  # pylint: disable=no-member
 
 
 def test_logging_bad_custom_log_levels():
     with _setup_logger("test") as (_, logger):
 
-        dl = DagsterLogManager.create(loggers=[logger], pipeline_run=PipelineRun(run_id="123"))
+        dl = DagsterLogManager.create(loggers=[logger], pipeline_run=PipelineRun(pipeline_name="pipeline", run_id="123"))
         with pytest.raises(check.CheckError):
             dl.log(level="test", msg="foobar")
 
@@ -169,7 +169,7 @@ def _setup_test_two_handler_log_mgr():
     return DagsterLogManager.create(
         loggers=[],
         handlers=[test_info_handler, test_warn_handler],
-        pipeline_run=PipelineRun(run_id="123"),
+        pipeline_run=PipelineRun(pipeline_name="pipeline", run_id="123"),
     )
 
 
