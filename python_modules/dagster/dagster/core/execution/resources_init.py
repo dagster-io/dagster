@@ -110,7 +110,7 @@ def _core_resource_initialization_event_generator(
     pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
 ):
 
-    pipeline_name = None
+    pipeline_name = ''
     contains_generator = False
     if emit_persistent_events:
         check.invariant(
@@ -124,7 +124,7 @@ def _core_resource_initialization_event_generator(
     try:
         if emit_persistent_events and resource_keys_to_init:
             yield DagsterEvent.resource_init_start(
-                cast(str, pipeline_name),
+                pipeline_name,
                 cast(ExecutionPlan, execution_plan),
                 resource_log_manager,
                 resource_keys_to_init,
@@ -169,7 +169,7 @@ def _core_resource_initialization_event_generator(
 
         if emit_persistent_events and resource_keys_to_init:
             yield DagsterEvent.resource_init_success(
-                cast(str, pipeline_name),
+                pipeline_name,
                 cast(ExecutionPlan, execution_plan),
                 resource_log_manager,
                 resource_instances,
@@ -181,7 +181,7 @@ def _core_resource_initialization_event_generator(
         # resource_keys_to_init cannot be empty
         if emit_persistent_events:
             yield DagsterEvent.resource_init_failure(
-                cast(str, pipeline_name),
+                pipeline_name,
                 cast(ExecutionPlan, execution_plan),
                 resource_log_manager,
                 resource_keys_to_init,

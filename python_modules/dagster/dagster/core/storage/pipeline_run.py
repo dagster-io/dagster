@@ -271,7 +271,7 @@ class PipelineRun(
     NamedTuple(
         "_PipelineRun",
         [
-            ("pipeline_name", Optional[str]),
+            ("pipeline_name", str),
             ("run_id", str),
             ("run_config", Dict[str, object]),
             ("mode", Optional[str]),
@@ -295,7 +295,7 @@ class PipelineRun(
 
     def __new__(
         cls,
-        pipeline_name: Optional[str] = None,
+        pipeline_name: str,
         run_id: Optional[str] = None,
         run_config: Optional[Dict[str, object]] = None,
         mode: Optional[str] = None,
@@ -343,7 +343,7 @@ class PipelineRun(
 
         return super(PipelineRun, cls).__new__(
             cls,
-            pipeline_name=check.opt_str_param(pipeline_name, "pipeline_name"),
+            pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             run_id=check.str_param(run_id, "run_id"),
             run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
             mode=check.opt_str_param(mode, "mode"),

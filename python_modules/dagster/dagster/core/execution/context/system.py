@@ -89,11 +89,11 @@ class IPlanContext(ABC):
         return self.pipeline_run.run_config
 
     @property
-    def pipeline_name(self) -> Optional[str]:
+    def pipeline_name(self) -> str:
         return self.pipeline_run.pipeline_name
 
     @property
-    def job_name(self) -> Optional[str]:
+    def job_name(self) -> str:
         return self.pipeline_name
 
     @property

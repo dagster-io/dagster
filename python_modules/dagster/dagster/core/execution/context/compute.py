@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Iterator, List, Mapping, Optional, cast
+from typing import Any, Dict, Iterator, List, Mapping, Optional
 
 from dagster import check
 from dagster.core.definitions.dependency import Node, NodeHandle
@@ -181,7 +181,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
     @property
     def pipeline_name(self) -> str:
         """str: The name of the currently executing pipeline."""
-        return cast(str, self._step_execution_context.pipeline_name)
+        return self._step_execution_context.pipeline_name
 
     @property
     def mode_def(self) -> ModeDefinition:
