@@ -15,7 +15,10 @@ from dagster.core.definitions import (
     MetadataEntry,
     NodeHandle,
 )
-from dagster.core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
+from dagster.core.definitions.events import (
+    AssetLineageInfo,
+    ObjectStoreOperationType,
+)
 from dagster.core.errors import DagsterError, HookExecutionError
 from dagster.core.execution.context.hook import HookContext
 from dagster.core.execution.context.system import (
@@ -363,10 +366,24 @@ class DagsterEvent(
         log_resource_event(log_manager, event)
         return event
 
+    @staticmethod
+    def from_sensor(
+        sensor_name: str,
+        message: Optional[str] = None,
+        event_specific_data: Optional["AssetObservationData"] = None,
+    ) -> "DagsterEvent":
+        return DagsterEvent(
+            DagsterEventType.ASSET_OBSERVATION.value,
+            message=check.opt_str_param(message, "message"),
+            event_specific_data=_validate_event_specific_data(
+                DagsterEventType.ASSET_OBSERVATION, event_specific_data
+            ),
+        )
+
     def __new__(
         cls,
         event_type_value: str,
-        pipeline_name: str,
+        pipeline_name: Optional[str] = None,
         step_handle: Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]] = None,
         solid_handle: Optional[NodeHandle] = None,
         step_kind_value: Optional[str] = None,
@@ -393,7 +410,7 @@ class DagsterEvent(
         return super(DagsterEvent, cls).__new__(
             cls,
             check.str_param(event_type_value, "event_type_value"),
-            check.str_param(pipeline_name, "pipeline_name"),
+            check.opt_str_param(pipeline_name, "pipeline_name"),
             check.opt_inst_param(
                 step_handle, "step_handle", (StepHandle, ResolvedFromDynamicStepHandle)
             ),

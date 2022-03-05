@@ -12,7 +12,7 @@ from dagster.core.definitions.sensor_definition import (
 from dagster.core.errors import DagsterInvariantViolationError
 
 from ...errors import DagsterInvariantViolationError
-from ..events import AssetKey
+from ..events import AssetKey, AssetObservation
 from ..graph_definition import GraphDefinition
 from ..job_definition import JobDefinition
 from ..sensor_definition import (
@@ -41,7 +41,12 @@ def sensor(
     [
         Callable[
             [SensorEvaluationContext],
-            Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+            Union[
+                Generator[Union[RunRequest, SkipReason], None, None],
+                RunRequest,
+                SkipReason,
+                AssetObservation,
+            ],
         ]
     ],
     SensorDefinition,

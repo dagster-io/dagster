@@ -1,3 +1,5 @@
+import logging
+import time
 import inspect
 from contextlib import ExitStack
 from enum import Enum
@@ -329,6 +331,9 @@ class SensorDefinition:
             SensorExecutionData: Contains list of run requests, or skip message if present.
 
         """
+        from dagster.core.events import DagsterEvent, AssetObservationData
+        from dagster.core.definitions.events import AssetObservation
+        from dagster.core.events.log import EventLogEntry
 
         check.inst_param(context, "context", SensorEvaluationContext)
         result = list(ensure_gen(self._evaluation_fn(context)))
@@ -337,11 +342,14 @@ class SensorDefinition:
 
         run_requests: List[RunRequest]
         pipeline_run_reactions: List[PipelineRunReaction]
+
+        observations: List[AssetObservation]
         if not result or result == [None]:
             run_requests = []
             pipeline_run_reactions = []
             skip_message = "Sensor function returned an empty result"
         elif len(result) == 1:
+            # if only yields observation raise error
             item = result[0]
             check.inst(item, (SkipReason, RunRequest, PipelineRunReaction))
             run_requests = [item] if isinstance(item, RunRequest) else []
@@ -350,7 +358,11 @@ class SensorDefinition:
             )
             skip_message = item.skip_message if isinstance(item, SkipReason) else None
         else:
-            check.is_list(result, (SkipReason, RunRequest, PipelineRunReaction))
+            check.is_list(result, (SkipReason, RunRequest, PipelineRunReaction, AssetObservation))
+
+            observations = [item for item in result if isinstance(item, AssetObservation)]
+            result = [item for item in result if not isinstance(item, AssetObservation)]
+
             has_skip = any(map(lambda x: isinstance(x, SkipReason), result))
             has_run_request = any(map(lambda x: isinstance(x, RunRequest), result))
             has_run_reaction = any(map(lambda x: isinstance(x, PipelineRunReaction), result))
@@ -379,6 +391,23 @@ class SensorDefinition:
                 pipeline_run_reactions = cast(List[PipelineRunReaction], result)
 
         self.check_valid_run_requests(run_requests)
+
+        for observation in observations:
+            observation_event = DagsterEvent.from_sensor(
+                self._name,
+                f"Yielded observation event from sensor {self._name}",
+                AssetObservationData(observation),
+            )
+
+            event_record = EventLogEntry(
+                user_message="",
+                error_info=None,
+                run_id="",
+                level=logging.INFO,
+                timestamp=time.time(),
+                dagster_event=observation_event,
+            )
+            context.instance.store_event(event_record)
 
         return SensorExecutionData(
             run_requests,
