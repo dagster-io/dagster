@@ -584,6 +584,7 @@ type ObservationEvent implements MessageEvent & StepEvent & DisplayableEvent {
   runOrError: RunOrError
   stepStats: RunStepStats
   partition: String
+  sensorName: String
 }
 
 union DagsterRunEvent =

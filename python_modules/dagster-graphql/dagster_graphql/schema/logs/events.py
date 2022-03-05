@@ -371,9 +371,14 @@ class GrapheneObservationEvent(graphene.ObjectType, AssetEventMixin):
         interfaces = (GrapheneMessageEvent, GrapheneStepEvent, GrapheneDisplayableEvent)
         name = "ObservationEvent"
 
+    sensorName = graphene.Field(graphene.String)
+
     def __init__(self, event):
         observation = event.dagster_event.asset_observation_data.asset_observation
-        super().__init__(**_construct_asset_event_metadata_params(event, observation))
+        super().__init__(
+            sensorName=event.dagster_event.sensor_name,
+            **_construct_asset_event_metadata_params(event, observation),
+        )
         AssetEventMixin.__init__(
             self,
             event=event,

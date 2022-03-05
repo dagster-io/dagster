@@ -275,6 +275,7 @@ class DagsterEvent(
             ("event_specific_data", Optional["EventSpecificData"]),
             ("message", Optional[str]),
             ("pid", Optional[int]),
+            ("sensor_name", Optional[str]),
             ("step_key", Optional[str]),
         ],
     )
@@ -375,6 +376,7 @@ class DagsterEvent(
         return DagsterEvent(
             DagsterEventType.ASSET_OBSERVATION.value,
             message=check.opt_str_param(message, "message"),
+            sensor_name=sensor_name,
             event_specific_data=_validate_event_specific_data(
                 DagsterEventType.ASSET_OBSERVATION, event_specific_data
             ),
@@ -391,6 +393,7 @@ class DagsterEvent(
         event_specific_data: Optional["EventSpecificData"] = None,
         message: Optional[str] = None,
         pid: Optional[int] = None,
+        sensor_name: Optional[str] = None,
         # legacy
         step_key: Optional[str] = None,
     ):
@@ -420,6 +423,7 @@ class DagsterEvent(
             _validate_event_specific_data(DagsterEventType(event_type_value), event_specific_data),
             check.opt_str_param(message, "message"),
             check.opt_int_param(pid, "pid"),
+            check.opt_str_param(sensor_name, "sensor_name"),
             check.opt_str_param(step_key, "step_key"),
         )
 
