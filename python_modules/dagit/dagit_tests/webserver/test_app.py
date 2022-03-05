@@ -74,7 +74,7 @@ def test_static_resources(test_client: TestClient):
 # https://graphql.org/learn/serving-over-http/
 
 
-def test_graphql_get(instance, test_client: TestClient):   # pylint: disable=unused-argument
+def test_graphql_get(instance, test_client: TestClient):  # pylint: disable=unused-argument
     # base case
     response = test_client.get(
         "/graphql",
