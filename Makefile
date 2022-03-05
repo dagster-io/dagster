@@ -4,17 +4,9 @@
 #   exit status. Prefix the command with "-" to instruct make to continue to the next command
 #   regardless of the preceding command's exit status.
 
+# `is_darwin` is boolean that tells us whether we're on macOS
 uname := $(shell uname -s)
 is_darwin := $(filter Darwin,$(uname))
-
-# NOTE: Pylint parallelism is controlled by the `-j` option ("jobs"). Setting `-j 0` will make
-# pylint use many jobs. As of 2022-02-22, certain custom plugins, including our Dagster pylint
-# plugin `dagster.utils.linter`,  cannot be used with multiple jobs on macOS (i.e. Darwin). See:
-#   https://pylint.pycqa.org/en/latest/user_guide/run.html#parallel-execution
-#   https://github.com/PyCQA/pylint/issues/4874
-pylint:
-	pylint -j $(if $(is_darwin),1,0) \
-    `git ls-files {.buildkite,examples,integration_tests,helm,python_modules}'/**/*.py'`
 
 
 # NOTE: See pyproject.toml [tool.black] for majority of black config. Only include/exclude options
@@ -58,6 +50,18 @@ check_isort:
       ':!:snapshots'`
 	isort --check \
     `git ls-files 'examples/docs_snippets/*.py'`
+
+# NOTE: Pylint parallelism is controlled by the `-j` option ("jobs"). Setting `-j 0` will make
+# pylint use many jobs. As of 2022-02-22, certain custom plugins, including our Dagster pylint
+# plugin `dagster.utils.linter`,  cannot be used with multiple jobs on macOS (i.e. Darwin). See:
+#   https://pylint.pycqa.org/en/latest/user_guide/run.html#parallel-execution
+#   https://github.com/PyCQA/pylint/issues/4874
+pylint:
+	pylint -j $(if $(is_darwin),1,0) \
+    `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' \
+      'helm/*.py' 'python_modules/*.py' 'scripts/*.py' \
+      ':!:vendor' \
+      ':!:snapshots'`
 
 yamllint:
 	yamllint -c .yamllint.yaml --strict \

@@ -17,7 +17,7 @@ from dagster import (
     run_status_sensor,
     sensor,
 )
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvalidInvocationError
+from dagster.core.errors import DagsterInvalidInvocationError
 from dagster.core.test_utils import instance_for_test
 
 

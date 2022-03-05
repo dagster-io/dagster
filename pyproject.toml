@@ -51,22 +51,22 @@ line_length=100
 #   https://pylint.pycqa.org/en/latest/
 # [Rule/options reference]
 #   https://pylint.pycqa.org/en/latest/technical_reference/features.html 
+#   This is a comprehensive reference of all Pylint checkers/rules and seems to be one of the only
+#   docs pages that's actually maintained.
+# [Changelog]
+#   https://pylint.pycqa.org/en/latest/whatsnew/index.html
+#   Often contains up-to-date info that corrects incorrect stuff in the older docs.
+# [Github issues]
+#   https://github.com/PyCQA/pylint/issues
+#   Best places to find workarounds or discussion/explanation of weird behavior.
 
 # NOTE (2022-02-26): Pylint's docs are generally terrible, and googling often takes you on a wild
 # goose chase. The docs are frequently wrong, and stay wrong for years even when many people point
 # out the issue. If you encounter confusing behavior or want to figure out how something works, you
 # can't trust the most obvious source-- for instance, the "Configuration" page in the docs seems to
 # include a random set of info and doesn't even mention config files. For that, you have to look at
-# the "Running pylint" page. To get accurate info, you may have to look through one or more of the
-# following sources:
-#
-# [Features page] https://pylint.pycqa.org/en/latest/technical_reference/features.html
-#   This is a comprehensive reference of all Pylint checkers/rules and seems to be one of the only
-#   docs pages that's actually maintained.
-# [Changelog] https://pylint.pycqa.org/en/latest/whatsnew/index.html
-#   Often contains up-to-date info that corrects incorrect stuff in the older docs.
-# [Github issues] https://github.com/PyCQA/pylint/issues
-#   Best places to find workarounds or discussion/explanation of weird behavior.
+# the "Running pylint" page. To get accurate info, you may have to look through
+# the Rule/option reference, Changelog, and Github issues linked above.
 
 # NOTE (2022-02-26): Running pylint in parallel (i.e. -j/--jobs option != 1) currently will not work
 # (with Dagster's configuration) on some platforms (specifically macOS, maybe others). This is
@@ -77,7 +77,7 @@ line_length=100
 #   https://github.com/PyCQA/pylint/issues/4874
 
 # Pylint has many options that are divvied up by category. Each [SECTION] below corresponds to a
-# section in this doc:
+# section in the "Rule/options reference" doc.
 
 [tool.pylint.master]
 # As of pylint v2.12.2, `ignore` and `ignore-patterns` are broken and do not correctly filter

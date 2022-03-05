@@ -309,10 +309,10 @@ if DAGSTER_PANDAS_PRESENT and SKLEARN_PRESENT and MATPLOTLIB_PRESENT:
 
     @pipeline(mode_defs=default_mode_defs)
     def tutorial_pipeline():
-        df, _ = clean_data()
+        dfr, _ = clean_data()
         # FIXME get better names for these
-        tutorial_LR(df)
-        tutorial_RF(df)
+        tutorial_LR(dfr)
+        tutorial_RF(dfr)
 
 
 @solid("resource_solid", required_resource_keys={"list"})
@@ -491,9 +491,9 @@ def fan_in(a, b):
     ]
 )
 def fan_in_notebook_pipeline():
-    a, _ = yield_something.alias("solid_1")()
-    b, _ = yield_something.alias("solid_2")()
-    fan_in(a, b)
+    val_a, _ = yield_something.alias("solid_1")()
+    val_b, _ = yield_something.alias("solid_2")()
+    fan_in(val_a, val_b)
 
 
 @pipeline(
@@ -506,9 +506,9 @@ def fan_in_notebook_pipeline():
     ]
 )
 def fan_in_notebook_pipeline_in_mem():
-    a, _ = yield_something.alias("solid_1")()
-    b, _ = yield_something.alias("solid_2")()
-    fan_in(a, b)
+    val_a, _ = yield_something.alias("solid_1")()
+    val_b, _ = yield_something.alias("solid_2")()
+    fan_in(val_a, val_b)
 
 
 @composite_solid
