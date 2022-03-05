@@ -753,20 +753,23 @@ def gen_partition_names_from_args(partition_names, kwargs):
 
 def get_config_from_args(kwargs: Dict[str, object]) -> Dict[str, object]:
 
-    if not "config" in kwargs and not "config_json" in kwargs:
+    config = kwargs.get("config")  # files
+    config_json = kwargs.get("config_json")
+
+    if not config and not config_json:
         return {}
 
-    elif "config_files" in kwargs and "config_json" in kwargs:
+    elif config and config_json:
         raise click.UsageError("Cannot specify both -c / --config and --config-json")
 
-    elif "config_files" in kwargs:
+    elif config:
         config_file_list = list(
-            check.opt_tuple_param(kwargs.get("config"), "config", default=tuple(), of_type=str)
+            check.opt_tuple_param(config, "config", default=tuple(), of_type=str)
         )
         return get_run_config_from_file_list(config_file_list)
 
-    elif "config_json" in kwargs:
-        config_json = cast(str, kwargs.get("config_json"))
+    elif config_json:
+        config_json = cast(str, config_json)
         try:
             return json.loads(config_json)
 
@@ -778,7 +781,7 @@ def get_config_from_args(kwargs: Dict[str, object]) -> Dict[str, object]:
                 )
             )
     else:
-        check.failed("Should not reach here")
+        check.failed("Unhandled case getting config from kwargs")
 
 
 def get_tags_from_args(kwargs):
