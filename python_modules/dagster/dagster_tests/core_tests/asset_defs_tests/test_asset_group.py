@@ -9,7 +9,6 @@ from dagster import (
     graph,
     in_process_executor,
     io_manager,
-    job,
     mem_io_manager,
     repository,
     resource,
@@ -323,15 +322,19 @@ def test_asset_group_from_package_name():
     from . import asset_package
 
     collection = AssetGroup.from_package_name(asset_package.__name__)
-    assert len(collection.assets) == 4
+    assert len(collection.assets) == 6
     assert {asset.op.name for asset in collection.assets} == {
         "little_richard",
         "miles_davis",
         "chuck_berry",
         "bb_king",
+        "james_brown",
+        "fats_domino",
     }
     assert {source_asset.key for source_asset in collection.source_assets} == {
-        AssetKey("elvis_presley")
+        AssetKey("elvis_presley"),
+        AssetKey("buddy_holly"),
+        AssetKey("jerry_lee_lewis"),
     }
 
 
@@ -339,15 +342,19 @@ def test_asset_group_from_package_module():
     from . import asset_package
 
     collection = AssetGroup.from_package_module(asset_package)
-    assert len(collection.assets) == 4
+    assert len(collection.assets) == 6
     assert {asset.op.name for asset in collection.assets} == {
         "little_richard",
         "miles_davis",
         "chuck_berry",
         "bb_king",
+        "james_brown",
+        "fats_domino",
     }
     assert {source_asset.key for source_asset in collection.source_assets} == {
-        AssetKey("elvis_presley")
+        AssetKey("elvis_presley"),
+        AssetKey("buddy_holly"),
+        AssetKey("jerry_lee_lewis"),
     }
 
 
@@ -360,10 +367,14 @@ def test_asset_group_from_modules():
         "little_richard",
         "chuck_berry",
         "miles_davis",
+        "james_brown",
+        "fats_domino",
     }
-    assert len(collection.assets) == 3
+    assert len(collection.assets) == 5
     assert {source_asset.key for source_asset in collection.source_assets} == {
-        AssetKey("elvis_presley")
+        AssetKey("elvis_presley"),
+        AssetKey("buddy_holly"),
+        AssetKey("jerry_lee_lewis"),
     }
 
 
@@ -377,7 +388,6 @@ def test_default_io_manager():
         group.resource_defs["io_manager"]  # pylint: disable=comparison-with-callable
         == fs_asset_io_manager
     )
-    assert group.resource_defs["io_manager"] == fs_asset_io_manager
 
 
 def test_repo_with_multiple_asset_groups():
@@ -388,7 +398,7 @@ def test_repo_with_multiple_asset_groups():
     ):
 
         @repository
-        def the_repo():
+        def the_repo():  # pylint: disable=unused-variable
             return [AssetGroup(assets=[]), AssetGroup(assets=[])]
 
 
@@ -404,5 +414,5 @@ def test_job_with_reserved_name():
     ):
 
         @repository
-        def the_repo():
+        def the_repo():  # pylint: disable=unused-variable
             return [the_job]
