@@ -51,6 +51,7 @@ def main(quiet):
         "-e python_modules/dagit",
         "-e python_modules/automation",
         "-e python_modules/libraries/dagster-pandas",
+        "-e python_modules/libraries/dagster-pandera",
         "-e python_modules/libraries/dagster-aws[test]",
         "-e python_modules/libraries/dagster-celery",
         "-e python_modules/libraries/dagster-celery-docker",
