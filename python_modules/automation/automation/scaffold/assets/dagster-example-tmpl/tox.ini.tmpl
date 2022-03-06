@@ -7,7 +7,7 @@ pip_version = pip==21.3.1
 passenv = CI_* COVERALLS_REPO_TOKEN BUILDKITE
 deps =
   -e ../../python_modules/dagster[test]
-whitelist_externals =
+allowlist_externals =
   /bin/bash
   echo
 commands =
@@ -18,4 +18,4 @@ commands =
 [testenv:pylint]
 basepython = python
 commands =
-  /bin/bash -c 'cd .. && pylint -j 0 --rcfile=../pyproject.toml {{EXAMPLE_NAME}}/'
+  /bin/bash -c 'cd .. && pylint -j {env:PYLINT_JOBS:0} --rcfile=../.pylintrc {{EXAMPLE_NAME}}/'
