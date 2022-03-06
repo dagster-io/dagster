@@ -606,6 +606,22 @@ def pylint_steps():
         .build()
     ]
 
+def isort_steps():
+    return [
+        StepBuilder(":isort:")
+        .run("pip install -e python_modules/dagster[isort]", "make check_isort")
+        .on_integration_image(SupportedPython.V3_7)
+        .build(),
+    ]
+
+def black_steps():
+    return [
+        StepBuilder(":python-black:")
+        # See: https://github.com/dagster-io/dagster/issues/1999
+        .run("pip install -e python_modules/dagster[black]", "make check_black")
+        .on_integration_image(SupportedPython.V3_7)
+        .build(),
+    ]
 
 def schema_checks(version=SupportedPython.V3_8):
     return [
@@ -649,18 +665,11 @@ def dagster_steps():
     steps = []
     steps += publish_test_images()
 
+    # NOTE: these `pylint_steps` only cover misc python code, there are also package-specific pylint
+    # steps
     steps += pylint_steps()
-    steps += [
-        StepBuilder(":isort:")
-        .run("pip install -e python_modules/dagster[isort]", "make check_isort")
-        .on_integration_image(SupportedPython.V3_7)
-        .build(),
-        StepBuilder(":python-black:")
-        # See: https://github.com/dagster-io/dagster/issues/1999
-        .run("pip install -e python_modules/dagster[black]", "make check_black")
-        .on_integration_image(SupportedPython.V3_7)
-        .build(),
-    ]
+    steps += isort_steps()
+    steps += black_steps()
 
     for m in DAGSTER_PACKAGES_WITH_CUSTOM_TESTS:
         steps += m.get_tox_build_steps()
