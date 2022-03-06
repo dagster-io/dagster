@@ -67,13 +67,6 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         out-of-date instance of the storage up to date.
         """
 
-    @property
-    def supports_bucket_queries(self):
-        # This is a temporary stopgap until we can either pin SQLAlchemy>=1.4.0 (blocked by airflow
-        # compat issues) or switch the bucketing query to use backwards-compatible syntax (that
-        # avoids calling `.subquery` on a select statement).
-        return db.__version__ >= "1.4.0"
-
     def fetchall(self, query):
         with self.connect() as conn:
             result_proxy = conn.execute(query)
@@ -315,8 +308,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
 
             base_query = self._add_filters_to_query(base_query, filters)
-            subquery = base_query.subquery()
-            query = db.select(subquery).order_by(subquery.c.rank.asc())
+            subquery = base_query.alias("subquery")
+            # select all the columns minus the rank column
+            subquery_columns = [getattr(subquery.c, column) for column in columns]
+            query = db.select(subquery_columns).order_by(subquery.c.rank.asc())
             if bucket_by.bucket_limit:
                 query = query.where(subquery.c.rank <= bucket_by.bucket_limit)
         else:
