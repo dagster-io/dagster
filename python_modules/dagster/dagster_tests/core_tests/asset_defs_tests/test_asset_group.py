@@ -378,6 +378,24 @@ def test_asset_group_from_modules():
     }
 
 
+@asset
+def asset_in_current_module():
+    pass
+
+
+source_asset_in_current_module = SourceAsset(AssetKey("source_asset_in_current_module"))
+
+
+def test_asset_group_from_current_module():
+    group = AssetGroup.from_current_module()
+    assert {asset.op.name for asset in group.assets} == {"asset_in_current_module"}
+    assert len(group.assets) == 1
+    assert {source_asset.key for source_asset in group.source_assets} == {
+        AssetKey("source_asset_in_current_module")
+    }
+    assert len(group.source_assets) == 1
+
+
 def test_default_io_manager():
     @asset
     def asset_foo():
