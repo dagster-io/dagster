@@ -2,6 +2,7 @@ import sys
 
 import graphene
 import pendulum
+import warnings
 import yaml
 
 from dagster import check
@@ -377,7 +378,7 @@ class GrapheneInstigationState(graphene.ObjectType):
                 try:
                     before = float(parts[-1])
                 except (ValueError, IndexError):
-                    pass
+                    warnings.warn(f"Invalid cursor for {self.name} ticks: {cursor}")
 
         after = (
             pendulum.now("UTC").subtract(days=dayRange + (dayOffset or 0)).timestamp()
