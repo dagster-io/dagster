@@ -449,6 +449,7 @@ const JobSection = (props: JobSectionProps) => {
         <tbody>
           {jobs.map(({job, repoAddress, runs, schedules, sensors}) => {
             const jobKey = makeJobKey(repoAddress, job.name);
+            const repoAddressString = repoAddressAsString(repoAddress);
             return (
               <tr key={jobKey}>
                 <td>
@@ -469,12 +470,12 @@ const JobSection = (props: JobSectionProps) => {
                         {!job.isJob ? <LegacyPipelineTag /> : null}
                       </Box>
                       <Body color={ColorsWIP.Gray400} style={{fontFamily: FontFamily.monospace}}>
-                        {repoAddressAsString(repoAddress)}
+                        {repoAddressString}
                       </Body>
                     </Box>
                     {runs ? (
                       <Box margin={{top: 4}}>
-                        <RunStatusPezList fade runs={runs} />
+                        <RunStatusPezList fade runs={runs} repoAddress={repoAddressString} />
                       </Box>
                     ) : null}
                   </Box>
