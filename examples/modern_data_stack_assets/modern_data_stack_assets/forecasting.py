@@ -15,6 +15,7 @@ def order_forecast_model(daily_order_summary: pd.DataFrame) -> Tuple[Any, Any]:
     )[0]
 
 
+# pylint: disable=redefined-outer-name
 def predicted_orders(
     daily_order_summary: pd.DataFrame, order_forecast_model: Tuple[float, float]
 ) -> pd.DataFrame:
