@@ -39,6 +39,14 @@ def solid_events_for_type(result, solid_name, event_type):
     ]
 
 
+def test_metadata_entry_construction():
+    entry_1 = MetadataEntry("foo", value=MetadataValue.text("bar"))
+    entry_2 = MetadataEntry("foo", entry_data=MetadataValue.text("bar"))
+    assert entry_1.value == MetadataValue.text("bar")
+    assert entry_2.value == MetadataValue.text("bar")
+    assert entry_1 == entry_2
+
+
 def test_metadata_asset_materialization():
     @solid(output_defs=[])
     def the_solid(_context):
@@ -166,7 +174,8 @@ def test_bad_json_metadata_value():
         execute_pipeline(the_pipeline)
 
     assert str(exc_info.value) == (
-        'Could not resolve the metadata value for "bad" to a JSON serializable value. '
+        'Could not resolve the metadata value for "bad" to a known type. '
+        "Value is a dictionary but is not JSON serializable. "
         "Consider wrapping the value with the appropriate MetadataValue type."
     )
 
