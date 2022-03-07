@@ -1,4 +1,4 @@
-from typing import Dict, NamedTuple
+from typing import Dict, NamedTuple, Optional
 
 from dagster import check
 from dagster.serdes import whitelist_for_serdes

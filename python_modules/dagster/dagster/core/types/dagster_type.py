@@ -84,17 +84,17 @@ class DagsterType:
     def __init__(
         self,
         type_check_fn: TypeCheckFn,
-        key: Optional[t.Optional[str]] = None,
-        name: Optional[t.Optional[str]] = None,
+        key: t.Optional[str] = None,
+        name: t.Optional[str] = None,
         is_builtin: bool = False,
-        description: Optional[t.Optional[str]] = None,
-        loader: Optional[t.Optional[DagsterTypeLoader]] = None,
-        materializer: Optional[t.Optional[DagsterTypeMaterializer]] = None,
-        required_resource_keys: Optional[t.Set[str]] = None,
+        description: t.Optional[str] = None,
+        loader: t.Optional[DagsterTypeLoader] = None,
+        materializer: t.Optional[DagsterTypeMaterializer] = None,
+        required_resource_keys: t.Optional[t.Set[str]] = None,
         kind: DagsterTypeKind = DagsterTypeKind.REGULAR,
-        typing_type: Optional[t.Any] = None,
-        metadata_entries: Optional[t.Optional[t.List[MetadataEntry]]] = None,
-        metadata: Optional[t.Optional[t.Dict[str, RawMetadataValue]]] = None,
+        typing_type: t.Any = None,
+        metadata_entries: t.Optional[t.List[MetadataEntry]] = None,
+        metadata: t.Optional[t.Dict[str, RawMetadataValue]] = None,
     ):
         check.opt_str_param(key, "key")
         check.opt_str_param(name, "name")
@@ -356,10 +356,10 @@ class Anyish(DagsterType):
         self,
         key: t.Optional[str],
         name: t.Optional[str],
-        loader: Optional[t.Optional[DagsterTypeLoader]] = None,
-        materializer: Optional[t.Optional[DagsterTypeMaterializer]] = None,
+        loader: t.Optional[DagsterTypeLoader] = None,
+        materializer: t.Optional[DagsterTypeMaterializer] = None,
         is_builtin: bool = False,
-        description: Optional[t.Optional[str]] = None,
+        description: t.Optional[str] = None,
     ):
         super(Anyish, self).__init__(
             key=key,
@@ -398,9 +398,9 @@ class _Any(Anyish):
 
 def create_any_type(
     name: str,
-    loader: Optional[t.Optional[DagsterTypeLoader]] = None,
-    materializer: Optional[t.Optional[DagsterTypeMaterializer]] = None,
-    description: Optional[t.Optional[str]] = None,
+    loader: t.Optional[DagsterTypeLoader] = None,
+    materializer: t.Optional[DagsterTypeMaterializer] = None,
+    description: t.Optional[str] = None,
 ) -> Anyish:
     return Anyish(
         key=name,
@@ -505,8 +505,8 @@ class PythonObjectDagsterType(DagsterType):
     def __init__(
         self,
         python_type: t.Union[t.Type, t.Tuple[t.Type, ...]],
-        key: Optional[t.Optional[str]] = None,
-        name: Optional[t.Optional[str]] = None,
+        key: t.Optional[str] = None,
+        name: t.Optional[str] = None,
         **kwargs,
     ):
         if isinstance(python_type, tuple):
@@ -696,7 +696,7 @@ def _List(inner_type):
 
 
 class Stringish(DagsterType):
-    def __init__(self, key: Optional[t.Optional[str]] = None, name: Optional[t.Optional[str]] = None, **kwargs):
+    def __init__(self, key: t.Optional[str] = None, name: t.Optional[str] = None, **kwargs):
         name = check.opt_str_param(name, "name", type(self).__name__)
         key = check.opt_str_param(key, "key", name)
         super(Stringish, self).__init__(

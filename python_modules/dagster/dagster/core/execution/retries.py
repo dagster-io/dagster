@@ -1,6 +1,6 @@
 from collections import defaultdict
 from enum import Enum
-from typing import Dict
+from typing import Dict, Optional
 
 from dagster import Field, Selector, check
 from dagster.serdes.serdes import whitelist_for_serdes

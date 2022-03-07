@@ -4,7 +4,7 @@ import shutil
 import uuid
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import BinaryIO, TextIO, Union
+from typing import BinaryIO, Optional, TextIO, Union
 
 from dagster import check
 from dagster.config import Field
