@@ -39,7 +39,7 @@ export const AssetNodeDefinition: React.FC<{
       <AssetDefinedInMultipleReposNotice assetId={assetNode.id} loadedFromRepo={repoAddress} />
       <Box flex={{direction: 'row'}}>
         <Box
-          style={{flex: 1}}
+          style={{flex: 1, minWidth: 0}}
           flex={{direction: 'column'}}
           border={{side: 'right', width: 1, color: ColorsWIP.KeylineGray}}
         >
@@ -96,7 +96,7 @@ export const AssetNodeDefinition: React.FC<{
           </Box>
           <AssetNodeList items={assetNode.dependedBy} liveDataByNode={liveDataByNode} />
         </Box>
-        <Box style={{flex: 0.5}} flex={{direction: 'column'}}>
+        <Box style={{flex: 0.5, minWidth: 0}} flex={{direction: 'column'}}>
           <Box
             padding={{vertical: 16, horizontal: 24}}
             border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
@@ -178,7 +178,7 @@ const DefinitionLocation: React.FC<{
           />
         </Mono>
       ))}
-    {displayNameForAssetKey(assetNode.assetKey) !== assetNode.opName && (
+    {displayNameForAssetKey(assetNode.assetKey) !== assetNode.opName && assetNode.opName && (
       <Box flex={{gap: 6, alignItems: 'center'}}>
         <IconWIP name="op" size={16} />
         <Mono>{assetNode.opName}</Mono>
@@ -186,7 +186,7 @@ const DefinitionLocation: React.FC<{
     )}
 
     {assetNode.jobNames.length === 0 && !assetNode.opName && (
-      <Caption style={{marginTop: 2}}>Foreign Asset</Caption>
+      <Caption style={{lineHeight: '16px', marginTop: 2}}>Source Asset</Caption>
     )}
   </Box>
 );

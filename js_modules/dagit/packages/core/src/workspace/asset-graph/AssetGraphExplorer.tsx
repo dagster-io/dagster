@@ -237,7 +237,7 @@ const AssetGraphExplorerWithData: React.FC<
         clicked = {opName: node.definition.opName, jobName: explorerPath.pipelineName};
       } else {
         // The asset's definition was not provided in our query for job.assetNodes. This means
-        // it's in another job or is a foreign asset not defined in the repository at all.
+        // it's in another job or is a source asset not defined in the repository at all.
         clicked = await findAssetInWorkspace(assetKey);
       }
 

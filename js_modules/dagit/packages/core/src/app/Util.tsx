@@ -6,6 +6,30 @@ function twoDigit(v: number) {
   return `${v < 10 ? '0' : ''}${v}`;
 }
 
+function indexesOf(string: string, search: RegExp | string) {
+  const indexes: number[] = [];
+  const regexp = new RegExp(search, 'g');
+  let match = null;
+  while ((match = regexp.exec(string))) {
+    indexes.push(match.index);
+  }
+  return indexes;
+}
+
+export const withMiddleTruncation = (text: string, options: {maxLength: number}) => {
+  const overflowLength = text.length - options.maxLength;
+  if (overflowLength <= 0) {
+    return text;
+  }
+  let breakpoint = Math.floor(text.length / 2);
+  const breakpoints = text.includes('__') ? indexesOf(text, /__/g) : indexesOf(text, /[_>\.-]/g);
+  if (breakpoints.length > 0) {
+    breakpoint = breakpoints[Math.floor(breakpoints.length / 2)];
+  }
+
+  return `${text.substring(0, breakpoint - (overflowLength + 1))}…${text.substring(breakpoint)}`;
+};
+
 export const formatElapsedTime = (msec: number) => {
   if (msec < 10000) {
     return `${(msec / 1000).toLocaleString(navigator.language, {
