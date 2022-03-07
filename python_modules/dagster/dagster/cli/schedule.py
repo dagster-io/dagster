@@ -1,5 +1,6 @@
 import glob
 import os
+from typing import Optional, Sequence, Union
 
 import click
 
@@ -112,7 +113,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
         )
 
 
-def check_repo_and_scheduler(repository, instance):
+def check_repo_and_scheduler(repository: ExternalRepository, instance: DagsterInstance) -> None:
     check.inst_param(repository, "repository", ExternalRepository)
     check.inst_param(instance, "instance", DagsterInstance)
 
@@ -217,7 +218,7 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
                 print_fn(f"Cron Schedule: {external_schedule.cron_schedule}")
 
 
-def extract_schedule_name(schedule_name):
+def extract_schedule_name(schedule_name: Optional[Union[str, Sequence[str]]]) -> Optional[str]:
     if schedule_name and not isinstance(schedule_name, str):
         if len(schedule_name) == 1:
             return schedule_name[0]
@@ -227,6 +228,7 @@ def extract_schedule_name(schedule_name):
                     schedule_name=repr(schedule_name)
                 )
             )
+    return None
 
 
 @schedule_cli.command(name="start", help="Start an existing schedule.")

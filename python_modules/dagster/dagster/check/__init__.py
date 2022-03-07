@@ -907,7 +907,7 @@ def opt_str_elem(ddict: Dict, key: str) -> Optional[str]:
 def tuple_param(
     obj: object,
     param_name: str,
-    of_type: TypeOrTupleOfTypes = None,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
     of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
 ) -> Tuple:
     """Ensure param is a tuple and is of a specified type. `of_type` defines a variadic tuple type--
@@ -927,11 +927,33 @@ def tuple_param(
     return _check_tuple_items(obj, of_type, of_shape)
 
 
+@overload
 def opt_tuple_param(
     obj: object,
     param_name: str,
-    default: Tuple = None,
-    of_type: TypeOrTupleOfTypes = None,
+    default: Tuple,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
+    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
+) -> Tuple:
+    ...
+
+
+@overload
+def opt_tuple_param(
+    obj: object,
+    param_name: str,
+    default: None = ...,
+    of_type: TypeOrTupleOfTypes = ...,
+    of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = ...,
+) -> Optional[Tuple]:
+    ...
+
+
+def opt_tuple_param(
+    obj: object,
+    param_name: str,
+    default: Optional[Tuple] = None,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
     of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
 ) -> Optional[Tuple]:
     """Ensure optional param is a tuple and is of a specified type. `default` is returned if `obj`
@@ -957,9 +979,9 @@ def opt_tuple_param(
 
 def is_tuple(
     obj: object,
-    of_type: TypeOrTupleOfTypes = None,
+    of_type: Optional[TypeOrTupleOfTypes] = None,
     of_shape: Optional[Tuple[TypeOrTupleOfTypes, ...]] = None,
-    desc: str = None,
+    desc: Optional[str] = None,
 ) -> Tuple:
     """Ensure target is a tuple and is of a specified type. `of_type` defines a variadic tuple
     type-- `obj` may be of any length, but each element must match the `of_type` argmument.
@@ -1090,7 +1112,10 @@ def _element_check_error(
 
 
 def _param_type_mismatch_exception(
-    obj: object, ttype: TypeOrTupleOfTypes, param_name: str, additional_message: str = None
+    obj: object,
+    ttype: TypeOrTupleOfTypes,
+    param_name: str,
+    additional_message: Optional[str] = None,
 ) -> ParameterCheckError:
     additional_message = " " + additional_message if additional_message else ""
     if isinstance(ttype, tuple):
@@ -1119,7 +1144,9 @@ def _param_class_mismatch_exception(
     )
 
 
-def _type_mismatch_error(obj: object, ttype: TypeOrTupleOfTypes, desc: str = None) -> CheckError:
+def _type_mismatch_error(
+    obj: object, ttype: TypeOrTupleOfTypes, desc: Optional[str] = None
+) -> CheckError:
     type_message = (
         f"not one of {sorted([t.__name__ for t in ttype])}"
         if isinstance(ttype, tuple)
@@ -1138,7 +1165,7 @@ def _param_not_callable_exception(obj: Any, param_name: str) -> ParameterCheckEr
     )
 
 
-def _param_invariant_exception(param_name: str, desc: str = None) -> ParameterCheckError:
+def _param_invariant_exception(param_name: str, desc: Optional[str] = None) -> ParameterCheckError:
     return ParameterCheckError(
         f"Invariant violation for parameter {param_name}. Description: {desc}"
     )

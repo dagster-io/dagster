@@ -82,7 +82,7 @@ class PipelineIndex:
     def has_solid_invocation(self, solid_name):
         return self.dep_structure_index.has_invocation(solid_name)
 
-    def get_default_mode_name(self):
+    def get_default_mode_name(self) -> str:
         return self.pipeline_snapshot.mode_def_snaps[0].name
 
     def has_mode_def(self, name):
