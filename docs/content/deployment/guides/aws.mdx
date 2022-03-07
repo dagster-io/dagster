@@ -120,16 +120,19 @@ run_launcher:
 
 Any secret tagged with `my-tag-name` will be included in the environment.
 
-Additionally, you can pass specific secret ARNs:
+Additionally, you can pass specific secrets using the [same structure as the ECS API](https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html):
 
 ```yaml
 run_launcher:
   module: "dagster_aws.ecs"
   class: "EcsRunLauncher"
   config:
-    secrets_tag: "my-tag-name"
-    secrets:
-      - "arn:aws:secretsmanager:us-east-1:1234567890:secret:MY_SECRET"
+    - name: "MY_API_TOKEN"
+      valueFrom: arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO/token
+    - name: "MY_PASSWORD"
+      valueFrom: arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO/password
+  ]
+}
 ```
 
 Any secret tagged with `my-tag-name` will be included in the environment. `MY_SECRET` will also be included in the environment.
