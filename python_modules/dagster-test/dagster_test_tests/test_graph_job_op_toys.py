@@ -12,6 +12,7 @@ from dagster_test.graph_job_op_toys.hammer import hammer
 from dagster_test.graph_job_op_toys.log_spew import log_spew
 from dagster_test.graph_job_op_toys.longitudinal import IntentionalRandomFailure, longitudinal
 from dagster_test.graph_job_op_toys.many_events import many_events
+from dagster_test.graph_job_op_toys.partitioned_assets import partitioned_asset_group
 from dagster_test.graph_job_op_toys.pyspark_assets.pyspark_assets_job import (
     dir_resources,
     pyspark_assets,
@@ -299,3 +300,11 @@ def test_retry_job(executor_def):
 
 def test_software_defined_assets_job():
     assert software_defined_assets.build_job("all_assets").execute_in_process().success
+
+
+def test_partitioned_assets():
+    assert (
+        partitioned_asset_group.build_job("all_assets")
+        .execute_in_process(partition_key="2020-02-01")
+        .success
+    )
