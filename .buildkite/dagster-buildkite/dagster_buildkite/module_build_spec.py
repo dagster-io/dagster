@@ -11,6 +11,10 @@ MYPY_EXCLUDES = [
     "python_modules/libraries/dagster-dbt",
     "python_modules/libraries/dagster-docker",
     "examples/docs_snippets",
+    "integration_tests/test_suites/backcompat-test-suite",
+    "integration_tests/test_suites/celery-k8s-integration-test-suite",
+    "integration_tests/test_suites/daemon-test-suite",
+    "integration_tests/test_suites/k8s-integration-test-suite",
 ]
 
 
