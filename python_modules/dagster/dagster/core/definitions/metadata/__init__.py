@@ -734,11 +734,10 @@ def deprecated_metadata_entry_constructor(fn):
                 r"\n\s*",
                 " ",
                 """
-            As of 0.14.0, the recommended way to supply metadata is to pass a `Dict[str,
-            MetadataValue]` to the `metadata` keyword argument (rather than a `List[MetadataEntry]`
-            to `metadata_entries`. If you need to construct a `MetadataEntry` directly, you should
-            do so using calling the constructor and passing a `MetadataValue`:
-            `MetadataEntry(label="foo", value=MetadataValue.text("bar")",
+            The recommended way to supply metadata is to pass a `Dict[str,
+            MetadataValue]` to the `metadata` keyword argument. To construct `MetadataEntry`
+            directly, call constructor and pass a `MetadataValue`: `MetadataEntry(label="foo",
+            value=MetadataValue.text("bar")",
             """,
             ),
         )
@@ -749,6 +748,10 @@ def deprecated_metadata_entry_constructor(fn):
 
 # NOTE: This would better be implemented as a generic with `MetadataValue` set as a
 # typevar, but as of 2022-01-25 mypy does not support generics on NamedTuple.
+#
+# NOTE: This currently stores value in the `entry_data` NamedTuple attribute. In the next release,
+# we will change the name of the NamedTuple property to `value`, and need to implement custom
+# serialization so that it continues to be saved as `entry_data` for backcompat purposes.
 @whitelist_for_serdes(storage_name="EventMetadataEntry")
 class MetadataEntry(
     NamedTuple(
