@@ -7,9 +7,6 @@
 pylint:
 	pylint -j 0 `git ls-files '*.py'` --rcfile=.pylintrc
 
-update_doc_snapshot:
-	pytest docs --snapshot-update
-
 # NOTE: See pyproject.toml [tool.black] for majority of black config. Only include/exclude options
 # and format targets should be specified here. Note there are separate pyproject.toml for the root
 # and examples/docs_snippets.
@@ -53,7 +50,8 @@ check_isort:
     `git ls-files 'examples/docs_snippets/*.py'`
 
 yamllint:
-	yamllint -c .yamllint.yaml --strict `git ls-files 'helm/**/*.yml' 'helm/**/*.yaml' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'`
+	yamllint -c .yamllint.yaml --strict \
+    `git ls-files 'helm/*.yml' 'helm/*.yaml' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'`
 
 install_dev_python_modules:
 	python scripts/install_dev_python_modules.py -qqq
