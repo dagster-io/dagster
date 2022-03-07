@@ -19,8 +19,8 @@ def sync_get_external_pipeline_subset_grpc(
     from dagster.grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
-    check.inst_param(pipeline_origin, "pipeline_origin", ExternalPipelineOrigin)
-    check.opt_list_param(solid_selection, "solid_selection", of_type=str)
+    pipeline_origin = check.inst_param(pipeline_origin, "pipeline_origin", ExternalPipelineOrigin)
+    solid_selection = check.opt_list_param(solid_selection, "solid_selection", of_type=str)
 
     result = deserialize_as(
         api_client.external_pipeline_subset(

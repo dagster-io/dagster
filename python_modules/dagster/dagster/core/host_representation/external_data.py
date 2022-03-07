@@ -5,7 +5,7 @@ business logic or clever indexing. Use the classes in external.py
 for that.
 """
 from abc import ABC, abstractmethod
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from datetime import datetime
 from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple
 
@@ -55,8 +55,8 @@ class ExternalRepositoryData(
         external_pipeline_datas: Sequence["ExternalPipelineData"],
         external_schedule_datas: Sequence["ExternalScheduleData"],
         external_partition_set_datas: Sequence["ExternalPartitionSetData"],
-        external_sensor_datas: Sequence["ExternalSensorData"] = None,
-        external_asset_graph_data: Sequence["ExternalAssetNode"] = None,
+        external_sensor_datas: Optional[Sequence["ExternalSensorData"]] = None,
+        external_asset_graph_data: Optional[Sequence["ExternalAssetNode"]] = None,
     ):
         return super(ExternalRepositoryData, cls).__new__(
             cls,
@@ -353,7 +353,7 @@ class ExternalSensorData(
         mode: Optional[str] = None,
         min_interval: Optional[int] = None,
         description: Optional[str] = None,
-        target_dict: Dict[str, ExternalTargetData] = None,
+        target_dict: Optional[Dict[str, ExternalTargetData]] = None,
         metadata: Optional[ExternalSensorMetadata] = None,
         default_status: Optional[DefaultSensorStatus] = None,
     ):
@@ -391,8 +391,10 @@ class ExternalSensorData(
 
 
 @whitelist_for_serdes
-class ExternalSensorExecutionErrorData(namedtuple("_ExternalSensorExecutionErrorData", "error")):
-    def __new__(cls, error):
+class ExternalSensorExecutionErrorData(
+    NamedTuple("_ExternalSensorExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
+):
+    def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExternalSensorExecutionErrorData, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -400,8 +402,17 @@ class ExternalSensorExecutionErrorData(namedtuple("_ExternalSensorExecutionError
 
 
 @whitelist_for_serdes
-class ExternalExecutionParamsData(namedtuple("_ExternalExecutionParamsData", "run_config tags")):
-    def __new__(cls, run_config=None, tags=None):
+class ExternalExecutionParamsData(
+    NamedTuple(
+        "_ExternalExecutionParamsData",
+        [("run_config", Dict[object, object]), ("tags", Dict[str, str])],
+    )
+):
+    def __new__(
+        cls,
+        run_config: Optional[Dict[object, object]] = None,
+        tags: Optional[Dict[str, str]] = None,
+    ):
         return super(ExternalExecutionParamsData, cls).__new__(
             cls,
             run_config=check.opt_dict_param(run_config, "run_config"),
@@ -410,8 +421,10 @@ class ExternalExecutionParamsData(namedtuple("_ExternalExecutionParamsData", "ru
 
 
 @whitelist_for_serdes
-class ExternalExecutionParamsErrorData(namedtuple("_ExternalExecutionParamsErrorData", "error")):
-    def __new__(cls, error):
+class ExternalExecutionParamsErrorData(
+    NamedTuple("_ExternalExecutionParamsErrorData", [("error", Optional[SerializableErrorInfo])])
+):
+    def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExternalExecutionParamsErrorData, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -427,11 +440,25 @@ class ExternalPartitionsDefinitionData(ABC):
 @whitelist_for_serdes
 class ExternalTimeWindowPartitionsDefinitionData(
     ExternalPartitionsDefinitionData,
-    namedtuple(
-        "_ExternalTimeWindowPartitionsDefinitionData", "schedule_type start timezone fmt end_offset"
+    NamedTuple(
+        "_ExternalTimeWindowPartitionsDefinitionData",
+        [
+            ("schedule_type", ScheduleType),
+            ("start", float),
+            ("timezone", Optional[str]),
+            ("fmt", str),
+            ("end_offset", int),
+        ],
     ),
 ):
-    def __new__(cls, schedule_type, start, timezone, fmt, end_offset):
+    def __new__(
+        cls,
+        schedule_type: ScheduleType,
+        start: float,
+        timezone: Optional[str],
+        fmt: str,
+        end_offset: int,
+    ):
         return super(ExternalTimeWindowPartitionsDefinitionData, cls).__new__(
             cls,
             schedule_type=check.inst_param(schedule_type, "schedule_type", ScheduleType),
@@ -454,9 +481,9 @@ class ExternalTimeWindowPartitionsDefinitionData(
 @whitelist_for_serdes
 class ExternalStaticPartitionsDefinitionData(
     ExternalPartitionsDefinitionData,
-    namedtuple("_ExternalStaticPartitionsDefinitionData", "partition_keys"),
+    NamedTuple("_ExternalStaticPartitionsDefinitionData", [("partition_keys", List[str])]),
 ):
-    def __new__(cls, partition_keys):
+    def __new__(cls, partition_keys: List[str]):
         return super(ExternalStaticPartitionsDefinitionData, cls).__new__(
             cls, partition_keys=check.list_param(partition_keys, "partition_keys", str)
         )
@@ -467,9 +494,23 @@ class ExternalStaticPartitionsDefinitionData(
 
 @whitelist_for_serdes
 class ExternalPartitionSetData(
-    namedtuple("_ExternalPartitionSetData", "name pipeline_name solid_selection mode")
+    NamedTuple(
+        "_ExternalPartitionSetData",
+        [
+            ("name", str),
+            ("pipeline_name", str),
+            ("solid_selection", Optional[List[str]]),
+            ("mode", Optional[str]),
+        ],
+    )
 ):
-    def __new__(cls, name, pipeline_name, solid_selection, mode):
+    def __new__(
+        cls,
+        name: str,
+        pipeline_name: str,
+        solid_selection: Optional[List[str]],
+        mode: Optional[str],
+    ):
         return super(ExternalPartitionSetData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -480,8 +521,10 @@ class ExternalPartitionSetData(
 
 
 @whitelist_for_serdes
-class ExternalPartitionNamesData(namedtuple("_ExternalPartitionNamesData", "partition_names")):
-    def __new__(cls, partition_names=None):
+class ExternalPartitionNamesData(
+    NamedTuple("_ExternalPartitionNamesData", [("partition_names", List[str])])
+):
+    def __new__(cls, partition_names: Optional[List[str]] = None):
         return super(ExternalPartitionNamesData, cls).__new__(
             cls,
             partition_names=check.opt_list_param(partition_names, "partition_names", str),
@@ -489,8 +532,12 @@ class ExternalPartitionNamesData(namedtuple("_ExternalPartitionNamesData", "part
 
 
 @whitelist_for_serdes
-class ExternalPartitionConfigData(namedtuple("_ExternalPartitionConfigData", "name run_config")):
-    def __new__(cls, name, run_config=None):
+class ExternalPartitionConfigData(
+    NamedTuple(
+        "_ExternalPartitionConfigData", [("name", str), ("run_config", Dict[object, object])]
+    )
+):
+    def __new__(cls, name: str, run_config: Optional[Dict[object, object]] = None):
         return super(ExternalPartitionConfigData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -499,8 +546,10 @@ class ExternalPartitionConfigData(namedtuple("_ExternalPartitionConfigData", "na
 
 
 @whitelist_for_serdes
-class ExternalPartitionTagsData(namedtuple("_ExternalPartitionTagsData", "name tags")):
-    def __new__(cls, name, tags=None):
+class ExternalPartitionTagsData(
+    NamedTuple("_ExternalPartitionTagsData", [("name", str), ("tags", Dict[object, object])])
+):
+    def __new__(cls, name: str, tags: Optional[Dict[object, object]] = None):
         return super(ExternalPartitionTagsData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -510,9 +559,12 @@ class ExternalPartitionTagsData(namedtuple("_ExternalPartitionTagsData", "name t
 
 @whitelist_for_serdes
 class ExternalPartitionExecutionParamData(
-    namedtuple("_ExternalPartitionExecutionParamData", "name tags run_config")
+    NamedTuple(
+        "_ExternalPartitionExecutionParamData",
+        [("name", str), ("tags", Dict[object, object]), ("run_config", Dict[object, object])],
+    )
 ):
-    def __new__(cls, name, tags, run_config):
+    def __new__(cls, name: str, tags: Dict[object, object], run_config: Dict[object, object]):
         return super(ExternalPartitionExecutionParamData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
@@ -523,9 +575,12 @@ class ExternalPartitionExecutionParamData(
 
 @whitelist_for_serdes
 class ExternalPartitionSetExecutionParamData(
-    namedtuple("_ExternalPartitionSetExecutionParamData", "partition_data")
+    NamedTuple(
+        "_ExternalPartitionSetExecutionParamData",
+        [("partition_data", List[ExternalPartitionExecutionParamData])],
+    )
 ):
-    def __new__(cls, partition_data):
+    def __new__(cls, partition_data: List[ExternalPartitionExecutionParamData]):
         return super(ExternalPartitionSetExecutionParamData, cls).__new__(
             cls,
             partition_data=check.list_param(
@@ -536,9 +591,9 @@ class ExternalPartitionSetExecutionParamData(
 
 @whitelist_for_serdes
 class ExternalPartitionExecutionErrorData(
-    namedtuple("_ExternalPartitionExecutionErrorData", "error")
+    NamedTuple("_ExternalPartitionExecutionErrorData", [("error", Optional[SerializableErrorInfo])])
 ):
-    def __new__(cls, error):
+    def __new__(cls, error: Optional[SerializableErrorInfo]):
         return super(ExternalPartitionExecutionErrorData, cls).__new__(
             cls,
             error=check.opt_inst_param(error, "error", SerializableErrorInfo),
@@ -547,7 +602,14 @@ class ExternalPartitionExecutionErrorData(
 
 @whitelist_for_serdes
 class ExternalAssetDependency(
-    namedtuple("_ExternalAssetDependency", "upstream_asset_key input_name output_name")
+    NamedTuple(
+        "_ExternalAssetDependency",
+        [
+            ("upstream_asset_key", AssetKey),
+            ("input_name", Optional[str]),
+            ("output_name", Optional[str]),
+        ],
+    )
 ):
     """A definition of a directed edge in the logical asset graph.
 
@@ -555,7 +617,12 @@ class ExternalAssetDependency(
     that depends on it.
     """
 
-    def __new__(cls, upstream_asset_key: AssetKey, input_name: str = None, output_name: str = None):
+    def __new__(
+        cls,
+        upstream_asset_key: AssetKey,
+        input_name: Optional[str] = None,
+        output_name: Optional[str] = None,
+    ):
         check.invariant(
             (input_name is None) ^ (output_name is None),
             "When constructing ExternalAssetDependency, exactly one of `input_name` and "
@@ -572,7 +639,14 @@ class ExternalAssetDependency(
 
 @whitelist_for_serdes
 class ExternalAssetDependedBy(
-    namedtuple("_ExternalAssetDependedBy", "downstream_asset_key input_name output_name")
+    NamedTuple(
+        "_ExternalAssetDependedBy",
+        [
+            ("downstream_asset_key", AssetKey),
+            ("input_name", Optional[str]),
+            ("output_name", Optional[str]),
+        ],
+    )
 ):
     """A definition of a directed edge in the logical asset graph.
 
@@ -581,7 +655,10 @@ class ExternalAssetDependedBy(
     """
 
     def __new__(
-        cls, downstream_asset_key: AssetKey, input_name: str = None, output_name: str = None
+        cls,
+        downstream_asset_key: AssetKey,
+        input_name: Optional[str] = None,
+        output_name: Optional[str] = None,
     ):
         check.invariant(
             (input_name is None) ^ (output_name is None),
@@ -599,9 +676,19 @@ class ExternalAssetDependedBy(
 
 @whitelist_for_serdes
 class ExternalAssetNode(
-    namedtuple(
+    NamedTuple(
         "_ExternalAssetNode",
-        "asset_key dependencies depended_by op_name op_description job_names partitions_def_data output_name output_description",
+        [
+            ("asset_key", AssetKey),
+            ("dependencies", List[ExternalAssetDependency]),
+            ("depended_by", List[ExternalAssetDependedBy]),
+            ("op_name", Optional[str]),
+            ("op_description", Optional[str]),
+            ("job_names", List[str]),
+            ("partitions_def_data", Optional[ExternalPartitionsDefinitionData]),
+            ("output_name", Optional[str]),
+            ("output_description", Optional[str]),
+        ],
     )
 ):
     """A definition of a node in the logical asset graph.
@@ -623,15 +710,23 @@ class ExternalAssetNode(
     ):
         return super(ExternalAssetNode, cls).__new__(
             cls,
-            asset_key=asset_key,
-            dependencies=dependencies,
-            depended_by=depended_by,
-            op_name=op_name,
-            op_description=op_description or output_description,
-            job_names=job_names,
-            partitions_def_data=partitions_def_data,
-            output_name=output_name,
-            output_description=output_description,
+            asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
+            dependencies=check.opt_list_param(
+                dependencies, "dependencies", of_type=ExternalAssetDependency
+            ),
+            depended_by=check.opt_list_param(
+                depended_by, "depended_by", of_type=ExternalAssetDependedBy
+            ),
+            op_name=check.opt_str_param(op_name, "op_name"),
+            op_description=check.opt_str_param(
+                op_description or output_description, "op_description"
+            ),
+            job_names=check.opt_list_param(job_names, "job_names", of_type=str),
+            partitions_def_data=check.opt_inst_param(
+                partitions_def_data, "partitions_def_data", ExternalPartitionsDefinitionData
+            ),
+            output_name=check.opt_str_param(output_name, "output_name"),
+            output_description=check.opt_str_param(output_description, "output_description"),
         )
 
 

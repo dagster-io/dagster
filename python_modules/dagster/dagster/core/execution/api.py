@@ -118,7 +118,7 @@ def execute_run_iterator(
             # note that when we receive the solids to execute via PipelineRun, it won't support
             # solid selection query syntax
             pipeline = pipeline.subset_for_execution_from_existing_pipeline(
-                pipeline_run.solids_to_execute
+                frozenset(pipeline_run.solids_to_execute)
             )
 
     execution_plan = _get_execution_plan_from_run(pipeline, pipeline_run, instance)
@@ -211,7 +211,7 @@ def execute_run(
             # note that when we receive the solids to execute via PipelineRun, it won't support
             # solid selection query syntax
             pipeline = pipeline.subset_for_execution_from_existing_pipeline(
-                pipeline_run.solids_to_execute
+                frozenset(pipeline_run.solids_to_execute)
             )
 
     execution_plan = _get_execution_plan_from_run(pipeline, pipeline_run, instance)
@@ -737,7 +737,7 @@ def create_execution_plan(
     run_config: Optional[dict] = None,
     mode: Optional[str] = None,
     step_keys_to_execute: Optional[List[str]] = None,
-    known_state: KnownExecutionState = None,
+    known_state: Optional[KnownExecutionState] = None,
     instance_ref: Optional[InstanceRef] = None,
     tags: Optional[Dict[str, str]] = None,
 ) -> ExecutionPlan:

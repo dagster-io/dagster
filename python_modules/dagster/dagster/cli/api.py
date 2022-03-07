@@ -335,7 +335,7 @@ def _execute_step_command_body(
             success = verify_step(
                 instance,
                 pipeline_run,
-                args.known_state.get_retry_state(),
+                check.not_none(args.known_state).get_retry_state(),
                 args.step_keys_to_execute,
             )
             if not success:
