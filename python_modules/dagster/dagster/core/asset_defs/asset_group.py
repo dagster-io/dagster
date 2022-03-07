@@ -454,8 +454,15 @@ def _find_assets_in_module(
         value = getattr(module, attr)
         if isinstance(value, AssetsDefinition):
             assets.append(value)
-        if isinstance(value, SourceAsset):
+        elif isinstance(value, SourceAsset):
             source_assets.append(value)
+        elif isinstance(value, list):
+            if all(isinstance(el, (AssetsDefinition, SourceAsset)) for el in value):
+                for el in value:
+                    if isinstance(el, AssetsDefinition):
+                        assets.append(el)
+                    elif isinstance(el, SourceAsset):
+                        source_assets.append(el)
 
     return assets, source_assets
 
