@@ -108,7 +108,7 @@ def repository(name: Optional[str] = ..., description: Optional[str] = ...) -> _
 
 
 def repository(
-    name: Union[Optional[str], Callable[..., Any]] = None, description: Optional[str] = None
+    name: Optional[Union[str, Callable[..., Any]]] = None, description: Optional[str] = None
 ) -> Union[RepositoryDefinition, _Repository]:
     """Create a repository from the decorated function.
 

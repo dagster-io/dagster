@@ -38,7 +38,7 @@ def build_assets_job(
     source_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]] = None,
     resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
-    config: Union[ConfigMapping, Dict[str, Any], PartitionedConfig] = None,
+    config: Optional[Union[ConfigMapping, Dict[str, Any], PartitionedConfig]] = None,
     tags: Optional[Dict[str, Any]] = None,
     executor_def: Optional[ExecutorDefinition] = None,
 ) -> JobDefinition:

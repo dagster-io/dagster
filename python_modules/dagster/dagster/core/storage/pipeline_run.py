@@ -490,10 +490,10 @@ class RunsFilter(
 ):
     def __new__(
         cls,
-        run_ids: List[str] = None,
+        run_ids: Optional[List[str]] = None,
         job_name: Optional[str] = None,
-        statuses: List[PipelineRunStatus] = None,
-        tags: Dict[str, str] = None,
+        statuses: Optional[List[PipelineRunStatus]] = None,
+        tags: Optional[Dict[str, str]] = None,
         snapshot_id: Optional[str] = None,
         updated_after: Optional[datetime] = None,
         mode: Optional[str] = None,

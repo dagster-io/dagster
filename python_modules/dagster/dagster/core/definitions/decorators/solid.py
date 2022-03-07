@@ -155,7 +155,7 @@ def solid(
 
 
 def solid(
-    name: Union[Callable[..., Any], Optional[str]] = None,
+    name: Optional[Union[Callable[..., Any], str]] = None,
     description: Optional[str] = None,
     input_defs: Optional[Sequence[InputDefinition]] = None,
     output_defs: Optional[Sequence[OutputDefinition]] = None,
@@ -405,7 +405,7 @@ def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
 
 
 def lambda_solid(
-    name: Union[Optional[str], Callable[..., Any]] = None,
+    name: Optional[Union[str, Callable[..., Any]]] = None,
     description: Optional[str] = None,
     input_defs: Optional[List[InputDefinition]] = None,
     output_def: Optional[OutputDefinition] = None,

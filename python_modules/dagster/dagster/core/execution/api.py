@@ -447,7 +447,7 @@ def reexecute_pipeline(
     mode: Optional[str] = None,
     preset: Optional[str] = None,
     tags: Optional[Dict[str, Any]] = None,
-    instance: DagsterInstance = None,
+    instance: Optional[DagsterInstance] = None,
     raise_on_error: bool = True,
 ) -> PipelineExecutionResult:
     """Reexecute an existing pipeline run.
@@ -549,7 +549,7 @@ def reexecute_pipeline_iterator(
     mode: Optional[str] = None,
     preset: Optional[str] = None,
     tags: Optional[Dict[str, Any]] = None,
-    instance: DagsterInstance = None,
+    instance: Optional[DagsterInstance] = None,
 ) -> Iterator[DagsterEvent]:
     """Reexecute a pipeline iteratively.
 
