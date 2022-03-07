@@ -738,12 +738,13 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                 )
                 .group_by(SqlEventLogStorageTable.c.asset_key)
-                .alias('latest_materializations')
+                .alias("latest_materializations")
             )
             backcompat_query = db.select(
                 [SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.event]
             ).select_from(
-                latest_event_subquery.join(SqlEventLogStorageTable,
+                latest_event_subquery.join(
+                    SqlEventLogStorageTable,
                     db.and_(
                         SqlEventLogStorageTable.c.asset_key == latest_event_subquery.c.asset_key,
                         SqlEventLogStorageTable.c.timestamp == latest_event_subquery.c.timestamp,
