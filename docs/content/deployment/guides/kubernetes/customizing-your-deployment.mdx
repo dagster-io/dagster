@@ -172,11 +172,11 @@ If you do not use a Kubernetes distribution that supports the [TTL Controller](h
 
 Delete dagster [Jobs](https://kubernetes.io/docs/concepts/workloads/controllers/job/) older than one day
 
-    kubectl get job | grep -e dagster-run -e dagster-job | awk 'match($4,/[0-9]+d/) {print $1}' | xargs kubectl delete job
+    kubectl get job | grep -e dagster-run -e dagster-step | awk 'match($4,/[0-9]+d/) {print $1}' | xargs kubectl delete job
 
 Delete completed [Pods](https://kubernetes.io/docs/concepts/workloads/pods/) older than one day
 
-    kubectl get pod | grep -e dagster-run -e dagster-job | awk 'match($3,/Completed/) {print $0}' | awk 'match($5,/[0-9]+d/) {print $1}' | xargs kubectl delete pod
+    kubectl get pod | grep -e dagster-run -e dagster-step | awk 'match($3,/Completed/) {print $0}' | awk 'match($5,/[0-9]+d/) {print $1}' | xargs kubectl delete pod
 
 ## Conclusion
 

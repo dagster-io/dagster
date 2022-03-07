@@ -360,11 +360,11 @@ def create_k8s_job_task(celery_app, **task_kwargs):
 
         if retry_state.get_attempt_count(step_key):
             attempt_number = retry_state.get_attempt_count(step_key)
-            job_name = "dagster-job-%s-%d" % (k8s_name_key, attempt_number)
-            pod_name = "dagster-job-%s-%d" % (k8s_name_key, attempt_number)
+            job_name = "dagster-step-%s-%d" % (k8s_name_key, attempt_number)
+            pod_name = "dagster-step-%s-%d" % (k8s_name_key, attempt_number)
         else:
-            job_name = "dagster-job-%s" % (k8s_name_key)
-            pod_name = "dagster-job-%s" % (k8s_name_key)
+            job_name = "dagster-step-%s" % (k8s_name_key)
+            pod_name = "dagster-step-%s" % (k8s_name_key)
 
         args = execute_step_args.get_command_args()
 
