@@ -98,7 +98,7 @@ def build_spec_backcompat_suite():
     backcompat_build_steps = []
     for tox_env_suffix, release_mapping in tox_env_suffix_map.items():
         backcompat_build_steps += ModuleBuildSpec(
-            os.path.join("integration_tests", "test_suites", "backcompat_test_suite"),
+            os.path.join("integration_tests", "test_suites", "backcompat-test-suite"),
             extra_cmds_fn=backcompat_suite_extra_cmds_fn(release_mapping),
             tox_env_suffixes=[tox_env_suffix],
             buildkite_label="backcompat_tests",
@@ -117,7 +117,7 @@ def build_spec_celery_k8s_suite():
         "-markmonitoring",
     ]
     directory = os.path.join(
-        "integration_tests", "test_suites", "celery_k8s_integration_test_suite"
+        "integration_tests", "test_suites", "celery_k8s_integration-test-suite"
     )
     return build_steps_integration_suite(directory, tox_env_suffixes, upload_coverage=True)
 
@@ -126,7 +126,7 @@ def daemon_extra_cmds_fn(version):
     return [
         "export DAGSTER_DOCKER_IMAGE_TAG=$${BUILDKITE_BUILD_ID}-" + version,
         'export DAGSTER_DOCKER_REPOSITORY="$${AWS_ACCOUNT_ID}.dkr.ecr.us-west-2.amazonaws.com"',
-        "pushd integration_tests/test_suites/daemon_test_suite/monitoring_daemon_tests/",
+        "pushd integration_tests/test_suites/daemon-test-suite/monitoring_daemon_tests/",
         "docker-compose up -d --remove-orphans",
         network_buildkite_container("postgres"),
         connect_sibling_docker_container(
@@ -140,7 +140,7 @@ def daemon_extra_cmds_fn(version):
 
 def build_spec_daemon_suite():
     tox_env_suffixes = None
-    directory = os.path.join("integration_tests", "test_suites", "daemon_test_suite")
+    directory = os.path.join("integration_tests", "test_suites", "daemon-test-suite")
     return build_steps_integration_suite(
         directory, tox_env_suffixes, upload_coverage=False, extra_commands_fn=daemon_extra_cmds_fn
     )
@@ -148,7 +148,7 @@ def build_spec_daemon_suite():
 
 def build_spec_k8s_suite():
     tox_env_suffixes = ["-default"]
-    directory = os.path.join("integration_tests", "test_suites", "k8s_integration_test_suite")
+    directory = os.path.join("integration_tests", "test_suites", "k8s_integration-test-suite")
     return build_steps_integration_suite(directory, tox_env_suffixes, upload_coverage=True)
 
 
