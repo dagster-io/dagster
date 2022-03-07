@@ -88,6 +88,8 @@ export const PartitionHealthSummary: React.FC<{
   }
 
   const {spans, keys, indexToPct} = assetData;
+  const highestIndex = spans.map((s) => s.endIdx).reduce((prev, cur) => Math.max(prev, cur), 0);
+
   const selectedSpans = selected
     ? assembleIntoSpans(keys, (key) => selected.includes(key)).filter((s) => s.status)
     : [];
@@ -117,7 +119,7 @@ export const PartitionHealthSummary: React.FC<{
             <div
               key={s.startIdx}
               style={{
-                left: indexToPct(s.startIdx),
+                left: `min(calc(100% - 2px), ${indexToPct(s.startIdx)})`,
                 width: indexToPct(s.endIdx - s.startIdx + 1),
                 position: 'absolute',
                 top: 0,
@@ -142,11 +144,11 @@ export const PartitionHealthSummary: React.FC<{
           <div
             key={s.startIdx}
             style={{
-              left: indexToPct(s.startIdx),
+              left: `min(calc(100% - 2px), ${indexToPct(s.startIdx)})`,
               width: indexToPct(s.endIdx - s.startIdx + 1),
-              minWidth: 2,
+              minWidth: s.status ? 2 : undefined,
               position: 'absolute',
-              zIndex: s.status === false ? 2 : 1,
+              zIndex: s.startIdx === 0 || s.endIdx === highestIndex ? 3 : s.status ? 2 : 1, //End-caps, then statuses, then missing
               top: 0,
             }}
           >
