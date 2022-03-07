@@ -877,24 +877,6 @@ def opt_str_param(obj: object, param_name: str, default: Optional[str] = None) -
     return default if obj is None else obj
 
 
-def path_param(obj: object, param_name: str) -> str:
-    try:
-        return fspath(obj)
-    except TypeError:
-        raise _param_type_mismatch_exception(obj, (str, PathLike), param_name)
-
-
-def opt_path_param(
-    obj: object, param_name: str, default: Optional[Union[str, PathLike]] = None
-) -> Optional[str]:
-    try:
-        return fspath(obj)
-    except TypeError:
-        if obj is not None:
-            raise _param_type_mismatch_exception(obj, (str, PathLike), param_name)
-        return default
-
-
 def opt_nonempty_str_param(
     obj: object, param_name: str, default: Optional[str] = None
 ) -> Optional[str]:
@@ -1068,6 +1050,43 @@ def _check_tuple_items(
                 )
 
     return obj_tuple
+
+
+# ########################
+# ##### PATH
+# ########################
+
+
+def path_param(obj: object, param_name: str) -> str:
+    try:
+        return fspath(obj)
+    except TypeError:
+        raise _param_type_mismatch_exception(obj, (str, PathLike), param_name)
+
+
+@overload
+def opt_path_param(obj: object, param_name: str, default: Union[str, PathLike]) -> str:
+    ...
+
+
+@overload
+def opt_path_param(obj: object, param_name: str) -> Optional[str]:
+    ...
+
+
+def opt_path_param(
+    obj: object, param_name: str, default: Optional[Union[str, PathLike]] = None
+) -> Optional[str]:
+    try:
+        return fspath(obj)
+    except TypeError:
+        if obj is not None:
+            raise _param_type_mismatch_exception(obj, (str, PathLike), param_name)
+
+        if obj is None and default is None:
+            return default
+
+        return fspath(default)
 
 
 # ###################################################################################################

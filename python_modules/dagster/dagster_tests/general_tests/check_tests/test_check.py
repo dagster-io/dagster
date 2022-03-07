@@ -464,35 +464,6 @@ def test_opt_str_param():
         check.opt_str_param(1, "str_param")
 
 
-def test_path_param():
-    from pathlib import Path
-
-    assert check.path_param("/a/b.csv", "path_param") == "/a/b.csv"
-    assert check.path_param(Path("/a/b.csv"), "path_param") == "/a/b.csv"
-
-    with pytest.raises(ParameterCheckError):
-        check.path_param(None, "path_param")
-
-    with pytest.raises(ParameterCheckError):
-        check.path_param(0, "path_param")
-
-    with pytest.raises(ParameterCheckError):
-        check.path_param(1, "path_param")
-
-
-def test_opt_path_param():
-    from pathlib import Path
-
-    assert check.opt_path_param("/a/b.csv", "path_param") == "/a/b.csv"
-    assert check.opt_path_param(Path("/a/b.csv"), "path_param") == "/a/b.csv"
-
-    with pytest.raises(ParameterCheckError):
-        check.opt_path_param(0, "path_param")
-
-    with pytest.raises(ParameterCheckError):
-        check.opt_path_param(1, "path_param")
-
-
 def test_opt_nonempty_str_param():
     assert check.opt_nonempty_str_param("a", "str_param") == "a"
     assert check.opt_nonempty_str_param("", "str_param") is None
@@ -506,6 +477,32 @@ def test_opt_nonempty_str_param():
 
     with pytest.raises(ParameterCheckError):
         check.opt_nonempty_str_param(1, "str_param")
+
+
+def test_path_param():
+    from pathlib import Path
+
+    assert check.path_param("/a/b.csv", "path_param") == "/a/b.csv"
+    assert check.path_param(Path("/a/b.csv"), "path_param") == "/a/b.csv"
+
+    with pytest.raises(ParameterCheckError):
+        check.path_param(None, "path_param")
+
+    with pytest.raises(ParameterCheckError):
+        check.path_param(0, "path_param")
+
+
+def test_opt_path_param():
+    from pathlib import Path
+
+    assert check.opt_path_param("/a/b.csv", "path_param") == "/a/b.csv"
+    assert check.opt_path_param(Path("/a/b.csv"), "path_param") == "/a/b.csv"
+    assert check.opt_path_param(None, "path_param") is None
+    assert check.opt_path_param(None, "path_param", "/a/b/c.csv") == "/a/b/c.csv"
+    assert check.opt_path_param(None, "path_param", Path("/a/b/c.csv")) == "/a/b/c.csv"
+
+    with pytest.raises(ParameterCheckError):
+        check.opt_path_param(0, "path_param")
 
 
 def test_bool_param():

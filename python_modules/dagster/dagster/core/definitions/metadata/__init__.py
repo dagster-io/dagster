@@ -496,12 +496,12 @@ class UrlMetadataValue(  # type: ignore
 
 @whitelist_for_serdes(storage_name="PathMetadataEntryData")
 class PathMetadataValue(  # type: ignore
-    NamedTuple("_PathMetadataValue", [("path", Optional[Union[str, os.PathLike]])]), MetadataValue
+    NamedTuple("_PathMetadataValue", [("path", Optional[str])]), MetadataValue
 ):
     """Container class for path metadata entry data.
 
     Args:
-        path (Optional[str]): The path as a string.
+        path (Optional[str]): The path as a string or conforming to os.PathLike.
     """
 
     def __new__(cls, path: Optional[Union[str, os.PathLike]]):
