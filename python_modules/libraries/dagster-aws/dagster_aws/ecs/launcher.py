@@ -1,3 +1,4 @@
+import warnings
 from collections import namedtuple
 
 import boto3
@@ -37,6 +38,12 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         self.secrets = secrets or []
         if all(isinstance(secret, str) for secret in self.secrets):
+            warnings.warn(
+                "Setting secrets as a list of ARNs is deprecated. "
+                "Secrets should instead follow the same structure as the ECS API: "
+                "https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html",
+                DeprecationWarning,
+            )
             self.secrets = get_secrets_from_arns(self.secrets_manager, self.secrets)
         else:
             self.secrets = {secret["name"]: secret["valueFrom"] for secret in self.secrets}

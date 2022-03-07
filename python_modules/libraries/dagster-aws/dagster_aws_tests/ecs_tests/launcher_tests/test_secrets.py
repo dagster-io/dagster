@@ -115,8 +115,9 @@ def test_secrets_backcompat(
 ):
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
 
-    with instance_cm({"secrets": [configured_secret.arn]}) as instance:
-        launch_run(instance)
+    with pytest.warns(DeprecationWarning, match="Setting secrets as a list of ARNs is deprecated"):
+        with instance_cm({"secrets": [configured_secret.arn]}) as instance:
+            launch_run(instance)
 
     # A new task definition is created
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
