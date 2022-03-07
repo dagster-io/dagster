@@ -39,6 +39,14 @@ def solid_events_for_type(result, solid_name, event_type):
     ]
 
 
+def test_metadata_entry_construction():
+    entry_1 = MetadataEntry("foo", value=MetadataValue.text("bar"))
+    entry_2 = MetadataEntry("foo", entry_data=MetadataValue.text("bar"))
+    assert entry_1.value == MetadataValue.text("bar")
+    assert entry_2.value == MetadataValue.text("bar")
+    assert entry_1 == entry_2
+
+
 def test_metadata_asset_materialization():
     @solid(output_defs=[])
     def the_solid(_context):
