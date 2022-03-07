@@ -47,25 +47,31 @@ def configured_secret(secrets_manager):
 
 
 @pytest.fixture
-def instance(instance_cm, configured_secret):
-    config = {"secrets": [configured_secret.arn]}
-    with instance_cm(config) as dagster_instance:
-        yield dagster_instance
+def launch_run(pipeline, external_pipeline, workspace):
+    def _launch_run(instance):
+        run = instance.create_run_for_pipeline(
+            pipeline,
+            external_pipeline_origin=external_pipeline.get_external_origin(),
+            pipeline_code_origin=external_pipeline.get_python_origin(),
+        )
+        instance.launch_run(run.run_id, workspace)
 
-
-@pytest.fixture
-def instance_empty_secrets_tag(instance_cm, configured_secret):
-    config = {"secrets_tag": None}
-    with instance_cm(config) as dagster_instance:
-        yield dagster_instance
+    return _launch_run
 
 
 def test_secrets(
-    ecs, secrets_manager, instance, workspace, run, tagged_secret, other_secret, configured_secret
+    ecs,
+    secrets_manager,
+    instance_cm,
+    launch_run,
+    tagged_secret,
+    other_secret,
+    configured_secret,
 ):
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
 
-    instance.launch_run(run.run_id, workspace)
+    with instance_cm({"secrets": [configured_secret.arn]}) as instance:
+        launch_run(instance)
 
     # A new task definition is created
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
@@ -86,19 +92,18 @@ def test_secrets(
 
 
 def test_empty_secrets(
-    ecs, secrets_manager, instance_empty_secrets_tag, workspace, pipeline, external_pipeline
+    ecs,
+    secrets_manager,
+    instance_cm,
+    launch_run,
 ):
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
 
-    run = instance_empty_secrets_tag.create_run_for_pipeline(
-        pipeline,
-        external_pipeline_origin=external_pipeline.get_external_origin(),
-        pipeline_code_origin=external_pipeline.get_python_origin(),
-    )
+    with instance_cm({"secrets_tag": None}) as instance:
+        m = MagicMock()
+        with patch.object(instance.run_launcher, "secrets_manager", new=m):
+            launch_run(instance)
 
-    m = MagicMock()
-    with patch.object(instance_empty_secrets_tag.run_launcher, "secrets_manager", new=m):
-        instance_empty_secrets_tag.launch_run(run.run_id, workspace)
         m.get_paginator.assert_not_called()
         m.describe_secret.assert_not_called()
 
