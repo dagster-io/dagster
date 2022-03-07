@@ -3,7 +3,7 @@ from collections import namedtuple
 import boto3
 from botocore.exceptions import ClientError
 
-from dagster import Array, Field, Noneable, StringSource, check
+from dagster import Array, Field, Noneable, ScalarUnion, StringSource, check
 from dagster.core.events import EngineEventData, MetadataEntry
 from dagster.core.launcher.base import LaunchRunContext, RunLauncher
 from dagster.grpc.types import ExecuteRunArgs
@@ -34,7 +34,13 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         self.task_definition = task_definition
         self.container_name = container_name
+
         self.secrets = secrets or []
+        if all(isinstance(secret, str) for secret in self.secrets):
+            self.secrets = get_secrets_from_arns(self.secrets_manager, self.secrets)
+        else:
+            self.secrets = {secret["name"]: secret["valueFrom"] for secret in self.secrets}
+
         self.secrets_tag = secrets_tag
 
         if self.task_definition:
@@ -75,11 +81,17 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 ),
             ),
             "secrets": Field(
-                Array(StringSource),
+                Array(
+                    ScalarUnion(
+                        scalar_type=str,
+                        non_scalar_schema={"name": StringSource, "valueFrom": StringSource},
+                    )
+                ),
                 is_required=False,
                 description=(
-                    "An array of AWS Secrets Manager secrets arns. These secrets will "
-                    "be mounted as environment variabls in the container."
+                    "An array of AWS Secrets Manager secrets. These secrets will "
+                    "be mounted as environment variabls in the container. See "
+                    "https://docs.aws.amazon.com/AmazonECS/latest/APIReference/API_Secret.html."
                 ),
             ),
             "secrets_tag": Field(
@@ -262,7 +274,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     if self.secrets_tag
                     else {}
                 ),
-                get_secrets_from_arns(self.secrets_manager, self.secrets),
+                self.secrets,
             ),
         )
 

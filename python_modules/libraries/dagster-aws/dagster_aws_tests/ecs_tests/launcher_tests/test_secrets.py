@@ -1,6 +1,7 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
+import json
 from collections import namedtuple
 from unittest.mock import MagicMock, patch
 
@@ -40,7 +41,7 @@ def configured_secret(secrets_manager):
     name = "configured_secret"
     arn = secrets_manager.create_secret(
         Name=name,
-        SecretString="hello",
+        SecretString=json.dumps({"hello": "world"}),
     )["ARN"]
 
     yield Secret(name, arn)
@@ -60,6 +61,50 @@ def launch_run(pipeline, external_pipeline, workspace):
 
 
 def test_secrets(
+    ecs,
+    secrets_manager,
+    instance_cm,
+    launch_run,
+    tagged_secret,
+    other_secret,
+    configured_secret,
+):
+    initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+
+    config = {
+        "secrets": [
+            {
+                "name": "HELLO",
+                "valueFrom": configured_secret.arn + "/hello",
+            }
+        ],
+    }
+
+    with instance_cm(config) as instance:
+        launch_run(instance)
+
+    # A new task definition is created
+    task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    assert len(task_definitions) == len(initial_task_definitions) + 1
+    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
+    task_definition = task_definition["taskDefinition"]
+
+    # It includes tagged secrets
+    secrets = task_definition["containerDefinitions"][0]["secrets"]
+    assert {"name": tagged_secret.name, "valueFrom": tagged_secret.arn} in secrets
+
+    # And configured secrets
+    assert {
+        "name": "HELLO",
+        "valueFrom": configured_secret.arn + "/hello",
+    } in secrets
+
+    # But no other secrets
+    assert len(secrets) == 2
+
+
+def test_secrets_backcompat(
     ecs,
     secrets_manager,
     instance_cm,
