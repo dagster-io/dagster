@@ -145,9 +145,12 @@ def cleanup_test_instance(instance):
     instance.run_launcher.join()
 
 
+TEST_PIPELINE_NAME = "_test_pipeline_"
+
+
 def create_run_for_test(
     instance,
-    pipeline_name="dummy",
+    pipeline_name=TEST_PIPELINE_NAME,
     run_id=None,
     run_config=None,
     mode=None,
@@ -184,7 +187,7 @@ def create_run_for_test(
 
 def register_managed_run_for_test(
     instance,
-    pipeline_name="dummy",
+    pipeline_name=TEST_PIPELINE_NAME,
     run_id=None,
     run_config=None,
     mode=None,

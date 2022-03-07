@@ -110,7 +110,7 @@ def _core_resource_initialization_event_generator(
     pipeline_def_for_backwards_compat: Optional[PipelineDefinition],
 ):
 
-    pipeline_name = ""
+    pipeline_name = ""  # Must be initialized to a string to satisfy typechecker
     contains_generator = False
     if emit_persistent_events:
         check.invariant(
@@ -253,7 +253,7 @@ def resource_initialization_event_generator(
                     error = dagster_user_error
             if error and emit_persistent_events:
                 yield DagsterEvent.resource_teardown_failure(
-                    cast(str, cast(PipelineRun, pipeline_run).pipeline_name),
+                    cast(PipelineRun, pipeline_run).pipeline_name,
                     cast(ExecutionPlan, execution_plan),
                     resource_log_manager,
                     resource_keys_to_init,
