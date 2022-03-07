@@ -117,7 +117,7 @@ def build_spec_celery_k8s_suite():
         "-markmonitoring",
     ]
     directory = os.path.join(
-        "integration_tests", "test_suites", "celery_k8s_integration-test-suite"
+        "integration_tests", "test_suites", "celery-k8s-integration-test-suite"
     )
     return build_steps_integration_suite(directory, tox_env_suffixes, upload_coverage=True)
 
@@ -148,7 +148,7 @@ def build_spec_daemon_suite():
 
 def build_spec_k8s_suite():
     tox_env_suffixes = ["-default"]
-    directory = os.path.join("integration_tests", "test_suites", "k8s_integration-test-suite")
+    directory = os.path.join("integration_tests", "test_suites", "k8s-integration-test-suite")
     return build_steps_integration_suite(directory, tox_env_suffixes, upload_coverage=True)
 
 
