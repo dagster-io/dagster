@@ -773,7 +773,7 @@ def get_config_from_args(kwargs: Dict[str, str]) -> Dict[str, object]:
         try:
             return json.loads(config_json)
 
-        except JSONDecodeError as e:
+        except JSONDecodeError:
             raise click.UsageError(
                 "Invalid JSON-string given for `--config-json`: {}\n\n{}".format(
                     config_json,
