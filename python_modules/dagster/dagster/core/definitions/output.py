@@ -1,21 +1,22 @@
 import warnings
 from typing import (
     TYPE_CHECKING,
+    AbstractSet,
     Any,
     Callable,
-    Dict,
     NamedTuple,
     Optional,
-    Set,
+    Sequence,
     Type,
     TypeVar,
     Union,
 )
 
 from dagster import check
-from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.metadata import MetadataEntry, normalize_metadata
+from dagster.core.definitions.events import AssetKey, DynamicAssetKey
+from dagster.core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
+from dagster.core.execution.context.output import OutputContext
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster.utils.backcompat import experimental_arg_warning
 
@@ -27,10 +28,6 @@ if TYPE_CHECKING:
     from dagster.core.definitions.partition import PartitionsDefinition
 
 TOut = TypeVar("TOut", bound="OutputDefinition")
-
-
-class NoNameSentinel:
-    pass
 
 
 class OutputDefinition:
@@ -64,35 +61,39 @@ class OutputDefinition:
             partitions from the OutputContext) which should be associated with this OutputDefinition.
     """
 
+    dagster_type: DagsterType
+    name: str
+    description: Optional[str]
+    is_required: bool
+    io_manager_key: str
+    metadata_entries: Sequence[MetadataEntry]
+    asset_partitions_def: Optional[PartitionsDefinition]
+
     def __init__(
         self,
         dagster_type=None,
-        name=None,
-        description=None,
-        is_required=None,
-        io_manager_key=None,
-        metadata=None,
-        asset_key=None,
-        asset_partitions=None,
-        asset_partitions_def=None
+        name: Optional[str]=None,
+        description: Optional[str]=None,
+        is_required: bool=True,
+        io_manager_key: str = "io_manager",
+        metadata: Optional[MetadataUserInput]=None,
+        asset_key: Optional[Union[AssetKey, DynamicAssetKey]] = None,
+        asset_partitions: Optional[Union[AbstractSet[str], Callable[[OutputContext], AbstractSet[str]]]]=None,
+        asset_partitions_def: Optional[PartitionsDefinition]=None
         # make sure new parameters are updated in combine_with_inferred below
     ):
         from dagster.core.definitions.partition import PartitionsDefinition
 
-        self._name = (
-            check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))
-            if name is not NoNameSentinel
-            else None
-        )
+        self.name = check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))
         self._type_not_set = dagster_type is None
-        self._dagster_type = resolve_dagster_type(dagster_type)
-        self._description = check.opt_str_param(description, "description")
-        self._is_required = check.opt_bool_param(is_required, "is_required", default=True)
-        self._manager_key = check.opt_str_param(
-            io_manager_key, "io_manager_key", default="io_manager"
+        self.dagster_type = resolve_dagster_type(dagster_type)
+        self.description = check.opt_str_param(description, "description")
+        self.is_required = check.bool_param(is_required, "is_required")
+        self.io_manager_key = check.str_param(
+            io_manager_key, "io_manager_key",
         )
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
-        self._metadata_entries = check.is_list(
+        self.metadata_entries = check.is_list(
             normalize_metadata(self._metadata, [], allow_invalid=True), MetadataEntry
         )
 
@@ -127,53 +128,25 @@ class OutputDefinition:
 
         if asset_partitions_def:
             experimental_arg_warning("asset_partitions_def", "OutputDefinition.__init__")
-        self._asset_partitions_def = check.opt_inst_param(
+        self.asset_partitions_def = check.opt_inst_param(
             asset_partitions_def, "asset_partition_def", PartitionsDefinition
         )
 
     @property
-    def name(self):
-        return self._name
+    def optional(self) -> bool:
+        return not self.is_required
 
     @property
-    def dagster_type(self):
-        return self._dagster_type
-
-    @property
-    def description(self):
-        return self._description
-
-    @property
-    def optional(self):
-        return not self._is_required
-
-    @property
-    def is_required(self):
-        return self._is_required
-
-    @property
-    def io_manager_key(self):
-        return self._manager_key
-
-    @property
-    def metadata(self):
+    def metadata(self) -> MetadataUserInput:
         return self._metadata
 
     @property
-    def metadata_entries(self):
-        return self._metadata_entries
-
-    @property
-    def is_dynamic(self):
+    def is_dynamic(self) -> bool:
         return False
 
     @property
-    def is_asset(self):
+    def is_asset(self) -> bool:
         return self._asset_key is not None
-
-    @property
-    def asset_partitions_def(self):
-        return self._asset_partitions_def
 
     @property
     def hardcoded_asset_key(self) -> Optional[AssetKey]:
@@ -195,7 +168,7 @@ class OutputDefinition:
         else:
             return self.hardcoded_asset_key
 
-    def get_asset_partitions(self, context) -> Optional[Set[str]]:
+    def get_asset_partitions(self, context) -> Optional[AbstractSet[str]]:
         """Get the set of partitions associated with this OutputDefinition for the given
         :py:class:`OutputContext` (if any).
 
@@ -234,24 +207,24 @@ class OutputDefinition:
         )
 
     def combine_with_inferred(self: TOut, inferred: InferredOutputProps) -> TOut:
-        dagster_type = self._dagster_type
+        dagster_type = self.dagster_type
         if self._type_not_set:
             dagster_type = _checked_inferred_type(inferred.annotation)
-        if self._description is None:
+        if self.description is None:
             description = inferred.description
         else:
             description = self.description
 
         return self.__class__(
-            name=self._name,
+            name=self.name,
             dagster_type=dagster_type,
             description=description,
-            is_required=self._is_required,
-            io_manager_key=self._manager_key,
+            is_required=self.is_required,
+            io_manager_key=self.io_manager_key,
             metadata=self._metadata,
             asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
-            asset_partitions_def=self._asset_partitions_def,
+            asset_partitions_def=self.asset_partitions_def,
         )
 
 
@@ -342,11 +315,14 @@ class Out(
         [
             ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
             ("description", Optional[str]),
-            ("is_required", Optional[bool]),
-            ("io_manager_key", Optional[str]),
-            ("metadata", Optional[Dict[str, Any]]),
-            ("asset_key", Optional[Union[AssetKey, Callable[..., AssetKey]]]),
-            ("asset_partitions", Optional[Union[Set[str], Callable[..., Set[str]]]]),
+            ("is_required", bool),
+            ("io_manager_key", str),
+            ("metadata", Optional[MetadataUserInput]),
+            ("asset_key", Optional[Union[AssetKey, DynamicAssetKey]]),
+            (
+                "asset_partitions",
+                Optional[Union[AbstractSet[str], Callable[[OutputContext], AbstractSet[str]]]],
+            ),
             ("asset_partitions_def", Optional["PartitionsDefinition"]),
         ],
     )
@@ -366,7 +342,7 @@ class Out(
             The type of this output. Should only be set if the correct type can not
             be inferred directly from the type signature of the decorated function.
         description (Optional[str]): Human-readable description of the output.
-        is_required (Optional[bool]): Whether the presence of this field is required. (default: True)
+        is_required (bool): Whether the presence of this field is required. (default: True)
         io_manager_key (Optional[str]): The resource key of the output manager used for this output.
             (default: "io_manager").
         metadata (Optional[Dict[str, Any]]): A dict of the metadata for the output.
@@ -382,14 +358,16 @@ class Out(
 
     def __new__(
         cls,
-        dagster_type=NoValueSentinel,
-        description=None,
-        is_required=None,
-        io_manager_key=None,
-        metadata=None,
-        asset_key=None,
-        asset_partitions=None,
-        asset_partitions_def=None,
+        dagster_type: Union[DagsterType, Type[NoValueSentinel]] = NoValueSentinel,
+        description: Optional[str] = None,
+        is_required: bool = True,
+        io_manager_key: str = 'io_manager',
+        metadata: Optional[MetadataUserInput] = None,
+        asset_key: Optional[AssetKey] = None,
+        asset_partitions: Optional[
+            Union[AbstractSet[str], Callable[[OutputContext], AbstractSet[str]]]
+        ] = None,
+        asset_partitions_def: Optional[PartitionsDefinition] = None,
         # make sure new parameters are updated in combine_with_inferred below
     ):
         if asset_partitions_def:
@@ -398,7 +376,7 @@ class Out(
             cls,
             dagster_type=dagster_type,
             description=description,
-            is_required=is_required,
+            is_required=check.bool_param(is_required, "is_required"),
             io_manager_key=io_manager_key,
             metadata=metadata,
             asset_key=asset_key,
@@ -414,9 +392,9 @@ class Out(
             is_required=output_def.is_required,
             io_manager_key=output_def.io_manager_key,
             metadata=output_def.metadata,
-            asset_key=output_def._asset_key,  # pylint: disable=protected-access
+            asset_key=output_def._asset_key,  # type: ignore # pylint: disable=protected-access
             asset_partitions=output_def._asset_partitions_fn,  # pylint: disable=protected-access
-            asset_partitions_def=output_def._asset_partitions_def,  # pylint: disable=protected-access
+            asset_partitions_def=output_def.asset_partitions_def,  # pylint: disable=protected-access
         )
 
     def to_definition(self, annotation_type: type, name: Optional[str]) -> "OutputDefinition":

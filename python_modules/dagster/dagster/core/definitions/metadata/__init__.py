@@ -1,7 +1,19 @@
 import functools
 import os
 import re
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Sequence, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidMetadata
@@ -26,6 +38,8 @@ RawMetadataValue = Union[
     list,
     str,
 ]
+
+MetadataUserInput = Mapping[str, RawMetadataValue]
 
 
 def last_file_comp(path: str) -> str:
