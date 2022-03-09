@@ -1,7 +1,7 @@
 import re
 import warnings
 from enum import Enum
-from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
+from typing import AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union, cast
 
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidAssetKey
@@ -34,7 +34,7 @@ def parse_asset_key_string(s: str) -> List[str]:
 
 
 @whitelist_for_serdes
-class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str]])])):
+class AssetKey(NamedTuple("_AssetKey", [("path", Tuple[str])])):
     """Object representing the structure of an asset key.  Takes in a sanitized string, list of
     strings, or tuple of strings.
 
@@ -66,17 +66,15 @@ class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str
             )
 
     Args:
-        path (Union[str, List[str], Tuple[str, ...]]): String, list of strings, or tuple of strings.  A list of strings
+        path (Sequence[str]): String, list of strings, or tuple of strings.  A list of strings
             represent the hierarchical structure of the asset_key.
     """
 
-    def __new__(cls, path: Optional[Union[str, List[str], Tuple[str, ...]]] = None):
+    def __new__(cls, path: Sequence[str]):
         if isinstance(path, str):
-            path = [path]
-        elif isinstance(path, list):
-            path = check.list_param(path, "path", of_type=str)
+            path = (path,)
         else:
-            path = check.tuple_param(path, "path", of_type=str)
+            path = tuple(check.sequence_param(path, "path", of_type=str))
 
         return super(AssetKey, cls).__new__(cls, path=path)
 
@@ -87,7 +85,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str
         return "AssetKey({})".format(self.path)
 
     def __hash__(self):
-        return hash(tuple(self.path))
+        return hash(self.path)
 
     def __eq__(self, other):
         if not isinstance(other, AssetKey):
@@ -123,9 +121,9 @@ class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str
         return seven.json.dumps(path)[:-2]  # strip trailing '"]' from json string
 
     @staticmethod
-    def from_graphql_input(asset_key: Dict[str, List[str]]) -> Optional["AssetKey"]:
+    def from_graphql_input(asset_key: Mapping[str, List[str]]) -> Optional["AssetKey"]:
         if asset_key and asset_key.get("path"):
-            return AssetKey(asset_key.get("path"))
+            return AssetKey(asset_key["path"])
         return None
 
 
