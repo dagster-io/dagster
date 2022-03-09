@@ -1,7 +1,7 @@
 import functools
 import os
 import re
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Sequence, Union, cast
 
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidMetadata
@@ -38,10 +38,10 @@ def last_file_comp(path: str) -> str:
 
 
 def normalize_metadata(
-    metadata: Dict[str, RawMetadataValue],
-    metadata_entries: List[Union["MetadataEntry", "PartitionMetadataEntry"]],
+    metadata: Mapping[str, RawMetadataValue],
+    metadata_entries: Sequence[Union["MetadataEntry", "PartitionMetadataEntry"]],
     allow_invalid: bool = False,
-) -> List[Union["MetadataEntry", "PartitionMetadataEntry"]]:
+) -> Sequence[Union["MetadataEntry", "PartitionMetadataEntry"]]:
     if metadata and metadata_entries:
         raise DagsterInvalidMetadata(
             "Attempted to provide both `metadata` and `metadata_entries` arguments to an event. "
@@ -55,7 +55,7 @@ def normalize_metadata(
             additional_warn_txt="Use argument `metadata` instead. The `MetadataEntry` `description` attribute is also deprecated-- argument `metadata` takes a label: value dictionary.",
             stacklevel=4,  # to get the caller of `normalize_metadata`
         )
-        return check.list_param(
+        return check.sequence_param(
             metadata_entries, "metadata_entries", (MetadataEntry, PartitionMetadataEntry)
         )
 
