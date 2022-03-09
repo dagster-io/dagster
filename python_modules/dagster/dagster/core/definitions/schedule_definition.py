@@ -11,6 +11,7 @@ from dagster.seven import funcsigs
 
 from ...serdes import whitelist_for_serdes
 from ...utils import ensure_gen, merge_dicts
+from ...utils.backcompat import deprecation_warning
 from ...utils.schedules import is_valid_cron_string
 from ..decorator_utils import get_function_params
 from ..errors import (
@@ -145,7 +146,8 @@ class ScheduleDefinition:
             "_schedule".
         cron_schedule (str): A valid cron string specifying when the schedule will run, e.g.,
             '45 23 * * 6' for a schedule that runs at 11:45 PM every Saturday.
-        pipeline_name (Optional[str]): (legacy) The name of the pipeline to execute when the schedule runs.
+        pipeline_name (Optional[str]): DEPRECATED. The name of the pipeline to execute when the schedule runs.
+            Prefer to pass a contructed job to the job parameter instead.
         execution_fn (Callable[ScheduleEvaluationContext]): The core evaluation function for the
             schedule, which is run at an interval to determine whether a run should be launched or
             not. Takes a :py:class:`~dagster.ScheduleEvaluationContext`.
@@ -164,9 +166,11 @@ class ScheduleDefinition:
             function that generates tags to attach to the schedules runs. Takes a
             :py:class:`~dagster.ScheduleEvaluationContext` and returns a dictionary of tags (string
             key-value pairs). You may set only one of ``tags``, ``tags_fn``, and ``execution_fn``.
-        solid_selection (Optional[List[str]]): A list of solid subselection (including single
+        solid_selection (Optional[List[str]]): DEPRECATED A list of solid subselection (including single
             solid names) to execute when the schedule runs. e.g. ``['*some_solid+', 'other_solid']``
-        mode (Optional[str]): (legacy) The mode to apply when executing this schedule. (default: 'default')
+            Prefer to pass a contructed job to the job parameter instead.
+        mode (Optional[str]): DEPRECATED The mode to apply when executing this schedule. (default: 'default')
+            Prefer to pass a contructed job to the job parameter instead.
         should_execute (Optional[Callable[[ScheduleEvaluationContext], bool]]): A function that runs
             at schedule execution time to determine whether a schedule should execute or skip. Takes
             a :py:class:`~dagster.ScheduleEvaluationContext` and returns a boolean (``True`` if the
@@ -217,6 +221,12 @@ class ScheduleDefinition:
         if job is not None:
             self._target: Union[DirectTarget, RepoRelativeTarget] = DirectTarget(job)
         else:
+            deprecation_warning(
+                'Using "pipeline_name", "mode", or "solid_selection"',
+                breaking_version="1.0",
+                additional_warn_txt="Pass a constructed job to argument `job` instead.",
+                # stacklevel=4,  # to get the caller of `normalize_metadata`
+            )
             self._target = RepoRelativeTarget(
                 pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
                 mode=check.opt_str_param(mode, "mode") or DEFAULT_MODE_NAME,
