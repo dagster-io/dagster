@@ -1,4 +1,6 @@
 from abc import abstractmethod
+from collections import defaultdict
+from typing import Iterable, Mapping, Optional, Sequence
 
 import sqlalchemy as db
 
@@ -135,6 +137,61 @@ class SqlScheduleStorage(ScheduleStorage):
         if statuses:
             query = query.where(JobTickTable.c.status.in_([status.value for status in statuses]))
         return query
+
+    @property
+    def supports_batch_queries(self):
+        return True
+
+    def get_batch_ticks(
+        self,
+        origin_ids: Sequence[str],
+        limit: Optional[int] = None,
+        statuses: Optional[Sequence[TickStatus]] = None,
+    ) -> Mapping[str, Iterable[InstigatorTick]]:
+        check.list_param(origin_ids, "origin_ids", of_type=str)
+        check.opt_int_param(limit, "limit")
+        check.opt_list_param(statuses, "statuses", of_type=TickStatus)
+
+        bucket_rank_column = (
+            db.func.rank()
+            .over(
+                order_by=db.desc(JobTickTable.c.timestamp),
+                partition_by=JobTickTable.c.job_origin_id,
+            )
+            .label("rank")
+        )
+        subquery = (
+            db.select(
+                [
+                    JobTickTable.c.id,
+                    JobTickTable.c.job_origin_id,
+                    JobTickTable.c.tick_body,
+                    bucket_rank_column,
+                ]
+            )
+            .select_from(JobTickTable)
+            .where(JobTickTable.c.job_origin_id.in_(origin_ids))
+            .alias("subquery")
+        )
+        if statuses:
+            subquery = subquery.where(
+                JobTickTable.c.status.in_([status.value for status in statuses])
+            )
+
+        query = (
+            db.select([subquery.c.id, subquery.c.job_origin_id, subquery.c.tick_body])
+            .order_by(subquery.c.rank.asc())
+            .where(subquery.c.rank <= limit)
+        )
+
+        rows = self.execute(query)
+        results = defaultdict(list)
+        for row in rows:
+            tick_id = row[0]
+            origin_id = row[1]
+            tick_data = deserialize_json_to_dagster_namedtuple(row[2])
+            results[origin_id].append(InstigatorTick(tick_id, tick_data))
+        return results
 
     def get_ticks(self, origin_id, before=None, after=None, limit=None, statuses=None):
         check.str_param(origin_id, "origin_id")
