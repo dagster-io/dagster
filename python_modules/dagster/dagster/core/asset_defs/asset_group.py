@@ -20,6 +20,7 @@ from typing import (
 )
 
 from dagster import check
+from dagster.core.definitions.events import AssetKey
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.utils import merge_dicts
 
@@ -370,16 +371,8 @@ class AssetGroup(
         Returns:
             AssetGroup: An asset group with all the assets in the package.
         """
-        assets: Set[AssetsDefinition] = set()
-        source_assets: Set[SourceAsset] = set()
-        for module in _find_modules_in_package(package_module):
-            module_assets, module_source_assets = _find_assets_in_module(module)
-            assets.update(module_assets)
-            source_assets.update(module_source_assets)
-
-        return AssetGroup(
-            assets=list(assets),
-            source_assets=list(source_assets),
+        return AssetGroup.from_modules(
+            _find_modules_in_package(package_module),
             resource_defs=resource_defs,
             executor_def=executor_def,
         )
@@ -411,16 +404,16 @@ class AssetGroup(
 
     @staticmethod
     def from_modules(
-        modules: Sequence[ModuleType],
+        modules: Iterable[ModuleType],
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
     ) -> "AssetGroup":
         """
         Constructs an AssetGroup that includes all asset definitions and source assets in the given
-        module.
+        modules.
 
         Args:
-            modules (Sequence[ModuleType]): The Python modules to look for assets inside.
+            modules (Iterable[ModuleType]): The Python modules to look for assets inside.
             resource_defs (Optional[Mapping[str, ResourceDefinition]]): A dictionary of resource
                 definitions to include on the returned asset group.
             executor_def (Optional[ExecutorDefinition]): An executor to include on the returned
@@ -429,16 +422,33 @@ class AssetGroup(
         Returns:
             AssetGroup: An asset group with all the assets defined in the given modules.
         """
-        assets: Set[AssetsDefinition] = set()
-        source_assets: Set[SourceAsset] = set()
+        asset_ids: Set[int] = set()
+        asset_keys: Set[AssetKey] = set()
+        source_assets: List[SourceAsset] = []
+        assets: List[AssetsDefinition] = []
         for module in modules:
             module_assets, module_source_assets = _find_assets_in_module(module)
-            assets.update(module_assets)
-            source_assets.update(module_source_assets)
+            all_assets: List[Union[AssetsDefinition, SourceAsset]] = [
+                *module_assets,
+                *module_source_assets,
+            ]
+            for asset in all_assets:
+                if not id(asset) in asset_ids:
+                    asset_ids.add(id(asset))
+                    keys = asset.asset_keys if isinstance(asset, AssetsDefinition) else [asset.key]
+                    for key in keys:
+                        if key in asset_keys:
+                            raise DagsterInvalidDefinitionError(
+                                f"Asset key {key} is defined multiple times in module {module.__name__}"
+                            )
+                    if isinstance(asset, SourceAsset):
+                        source_assets.append(asset)
+                    else:
+                        assets.append(asset)
 
         return AssetGroup(
-            assets=list(assets),
-            source_assets=list(source_assets),
+            assets=assets,
+            source_assets=source_assets,
             resource_defs=resource_defs,
             executor_def=executor_def,
         )
