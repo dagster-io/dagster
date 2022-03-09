@@ -261,7 +261,7 @@ interface OpListProps {
   onClickOp: (name: string) => void;
 }
 
-const OpList: React.FunctionComponent<OpListProps> = (props) => {
+const OpList: React.FC<OpListProps> = (props) => {
   const {items, selected} = props;
   const cache = React.useRef(new CellMeasurerCache({defaultHeight: 60, fixedWidth: true}));
 

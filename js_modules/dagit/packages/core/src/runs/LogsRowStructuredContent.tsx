@@ -251,7 +251,7 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
 
 // Structured Content Renderers
 
-const DefaultContent: React.FunctionComponent<{
+const DefaultContent: React.FC<{
   message: string;
   eventType?: string;
   eventColor?: string;
@@ -289,7 +289,7 @@ const DefaultContent: React.FunctionComponent<{
   );
 };
 
-const FailureContent: React.FunctionComponent<{
+const FailureContent: React.FC<{
   message?: string;
   eventType: string;
   error?: PythonErrorFragment | null;

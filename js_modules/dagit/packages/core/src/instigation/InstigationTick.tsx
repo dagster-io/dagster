@@ -27,7 +27,7 @@ import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
 import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/LaunchedRunListQuery';
 import {TickTagFragment} from './types/TickTagFragment';
 
-export const TickTag: React.FunctionComponent<{
+export const TickTag: React.FC<{
   tick: TickTagFragment;
   instigationType?: InstigationType;
 }> = ({tick, instigationType}) => {
@@ -99,7 +99,7 @@ export const TickTag: React.FunctionComponent<{
   }
 };
 
-export const RunList: React.FunctionComponent<{
+export const RunList: React.FC<{
   runIds: string[];
 }> = ({runIds}) => {
   const {data, loading} = useQuery<LaunchedRunListQuery, LaunchedRunListQueryVariables>(
@@ -133,7 +133,7 @@ export const RunList: React.FunctionComponent<{
   );
 };
 
-export const FailedRunList: React.FunctionComponent<{
+export const FailedRunList: React.FC<{
   originRunIds?: string[];
 }> = ({originRunIds}) => {
   if (!originRunIds || !originRunIds.length) {

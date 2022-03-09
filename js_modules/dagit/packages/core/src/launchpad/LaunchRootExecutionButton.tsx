@@ -22,9 +22,7 @@ interface LaunchRootExecutionButtonProps {
   icon?: IconName;
 }
 
-export const LaunchRootExecutionButton: React.FunctionComponent<LaunchRootExecutionButtonProps> = (
-  props,
-) => {
+export const LaunchRootExecutionButton: React.FC<LaunchRootExecutionButtonProps> = (props) => {
   const {canLaunchPipelineExecution} = usePermissions();
   const [launchPipelineExecution] = useMutation<LaunchPipelineExecution>(
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
