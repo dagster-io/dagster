@@ -225,7 +225,6 @@ class ScheduleDefinition:
                 'Using "pipeline_name", "mode", or "solid_selection"',
                 breaking_version="1.0",
                 additional_warn_txt="Pass a constructed job to argument `job` instead.",
-                # stacklevel=4,  # to get the caller of `normalize_metadata`
             )
             self._target = RepoRelativeTarget(
                 pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
