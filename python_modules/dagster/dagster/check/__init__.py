@@ -1,4 +1,5 @@
 import inspect
+from os import PathLike, fspath
 from typing import (
     AbstractSet,
     Any,
@@ -1048,6 +1049,40 @@ def _check_tuple_items(
                 )
 
     return obj_tuple
+
+
+# ########################
+# ##### PATH
+# ########################
+
+
+def path_param(obj: object, param_name: str) -> str:
+    if not isinstance(obj, (str, PathLike)):
+        raise _param_type_mismatch_exception(obj, (str, PathLike), param_name)
+    return fspath(obj)
+
+
+@overload
+def opt_path_param(obj: object, param_name: str, default: Union[str, PathLike]) -> str:
+    ...
+
+
+@overload
+def opt_path_param(obj: object, param_name: str) -> Optional[str]:
+    ...
+
+
+def opt_path_param(
+    obj: object, param_name: str, default: Optional[Union[str, PathLike]] = None
+) -> Optional[str]:
+    if obj is not None and not isinstance(obj, (str, PathLike)):
+        raise _param_type_mismatch_exception(obj, (str, PathLike), param_name)
+    if obj is not None:
+        return fspath(obj)
+
+    if obj is None and default is None:
+        return default
+    return fspath(default)
 
 
 # ###################################################################################################

@@ -107,6 +107,9 @@ def normalize_metadata_value(raw_value: RawMetadataValue):
                 "Consider wrapping the value with the appropriate MetadataValue type."
             )
 
+    if isinstance(raw_value, os.PathLike):
+        return MetadataValue.path(raw_value)
+
     raise DagsterInvalidMetadata(
         f"Its type was {type(raw_value)}. Consider wrapping the value with the appropriate "
         "MetadataValue type."
@@ -199,7 +202,7 @@ class MetadataValue:
         return UrlMetadataValue(url)
 
     @staticmethod
-    def path(path: str) -> "PathMetadataValue":
+    def path(path: Union[str, os.PathLike]) -> "PathMetadataValue":
         """Static constructor for a metadata value wrapping a path as
         :py:class:`PathMetadataValue`. For example:
 
@@ -496,23 +499,17 @@ class UrlMetadataValue(  # type: ignore
 
 @whitelist_for_serdes(storage_name="PathMetadataEntryData")
 class PathMetadataValue(  # type: ignore
-    NamedTuple(
-        "_PathMetadataValue",
-        [
-            ("path", Optional[str]),
-        ],
-    ),
-    MetadataValue,
+    NamedTuple("_PathMetadataValue", [("path", Optional[str])]), MetadataValue
 ):
     """Container class for path metadata entry data.
 
     Args:
-        path (Optional[str]): The path as a string.
+        path (Optional[str]): The path as a string or conforming to os.PathLike.
     """
 
-    def __new__(cls, path: Optional[str]):
+    def __new__(cls, path: Optional[Union[str, os.PathLike]]):
         return super(PathMetadataValue, cls).__new__(
-            cls, check.opt_str_param(path, "path", default="")
+            cls, check.opt_path_param(path, "path", default="")
         )
 
 
