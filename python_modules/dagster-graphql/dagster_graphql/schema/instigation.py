@@ -387,6 +387,19 @@ class GrapheneInstigationState(graphene.ObjectType):
         )
         if statuses:
             statuses = [TickStatus(status) for status in statuses]
+
+        if self._batch_loader and limit and not cursor and not before and not after:
+            ticks = (
+                self._batch_loader.get_sensor_ticks(
+                    self._instigator_state.instigator_origin_id, limit
+                )
+                if self._instigator_state.instigator_type == InstigatorType.SENSOR
+                else self._batch_loader.get_schedule_ticks(
+                    self._instigator_state.instigator_origin_id, limit
+                )
+            )
+            return [GrapheneInstigationTick(graphene_info, tick) for tick in ticks]
+
         return [
             GrapheneInstigationTick(graphene_info, tick)
             for tick in graphene_info.context.instance.get_ticks(

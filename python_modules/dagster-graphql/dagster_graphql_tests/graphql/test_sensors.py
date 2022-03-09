@@ -197,6 +197,10 @@ query RepositorySensorsQuery($repositorySelector: RepositorySelector!) {
                       id
                       runId
                     }
+                    ticks(limit: 1) {
+                      id
+                      timestamp
+                    }
                 }
             }
         }
@@ -468,6 +472,10 @@ def test_sensor_tick_range(graphql_context):
 
 
 def test_repository_batching(graphql_context):
+    instance = graphql_context.instance
+    if not instance.supports_batch_tick_queries or not instance.supports_bucket_queries:
+        pytest.skip("storage cannot batch fetch")
+
     traced_counter.set(Counter())
     selector = infer_repository_selector(graphql_context)
     result = execute_dagster_graphql(
@@ -481,7 +489,7 @@ def test_repository_batching(graphql_context):
     counter = traced_counter.get()
     counts = counter.counts()
     assert counts
-    assert len(counts) == 2
+    assert len(counts) == 3
 
     # We should have a single batch call to fetch run records (to fetch sensor runs) and a single
     # batch call to fetch instigator state, instead of separate calls for each sensor (~5 distinct
@@ -490,6 +498,7 @@ def test_repository_batching(graphql_context):
     # 2) `all_instigator_state` is fetched to instantiate GrapheneSensor
     assert counts.get("DagsterInstance.get_run_records") == 1
     assert counts.get("DagsterInstance.all_instigator_state") == 1
+    assert counts.get("DagsterInstance.get_batch_ticks") == 1
 
 
 def test_sensor_ticks_filtered(graphql_context):
