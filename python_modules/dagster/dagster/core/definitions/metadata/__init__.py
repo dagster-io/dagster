@@ -39,6 +39,7 @@ RawMetadataValue = Union[
     str,
 ]
 
+MetadataMapping = Mapping[str, "MetadataValue"]
 MetadataUserInput = Mapping[str, RawMetadataValue]
 
 
@@ -99,6 +100,9 @@ def normalize_metadata(
         for k, v in check.opt_dict_param(metadata, "metadata", key_type=str).items()
     ]
 
+import pathlib
+p = pathlib.Path('a/b/c')
+os.fspath(p)
 
 def normalize_metadata_value(raw_value: RawMetadataValue):
 

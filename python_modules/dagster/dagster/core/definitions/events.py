@@ -1,11 +1,10 @@
 import re
 import warnings
 from enum import Enum
-from typing import AbstractSet, Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union, cast
+from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union, cast
 
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidAssetKey
-from dagster.core.execution.context.output import OutputContext
 from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster.utils.backcompat import experimental_class_param_warning
 
@@ -17,6 +16,9 @@ from .metadata import (
     normalize_metadata,
 )
 from .utils import DEFAULT_OUTPUT, check_valid_name
+
+if TYPE_CHECKING:
+    from dagster.core.execution.context.output import OutputContext
 
 ASSET_KEY_REGEX = re.compile("^[a-zA-Z0-9_.-]+$")  # alphanumeric, _, -, .
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
@@ -127,7 +129,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", Tuple[str])])):
             return AssetKey(asset_key["path"])
         return None
 
-DynamicAssetKey = Callable[[OutputContext], Optional[AssetKey]]
+DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]
 
 @whitelist_for_serdes
 class AssetLineageInfo(

@@ -16,7 +16,6 @@ from dagster import check
 from dagster.core.definitions.events import AssetKey, DynamicAssetKey
 from dagster.core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
-from dagster.core.execution.context.output import OutputContext
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster.utils.backcompat import experimental_arg_warning
 
@@ -26,6 +25,7 @@ from .utils import DEFAULT_OUTPUT, check_valid_name
 
 if TYPE_CHECKING:
     from dagster.core.definitions.partition import PartitionsDefinition
+    from dagster.core.execution.context.output import OutputContext
 
 TOut = TypeVar("TOut", bound="OutputDefinition")
 
@@ -67,7 +67,7 @@ class OutputDefinition:
     is_required: bool
     io_manager_key: str
     metadata_entries: Sequence[MetadataEntry]
-    asset_partitions_def: Optional[PartitionsDefinition]
+    asset_partitions_def: Optional["PartitionsDefinition"]
 
     def __init__(
         self,
@@ -78,8 +78,8 @@ class OutputDefinition:
         io_manager_key: str = "io_manager",
         metadata: Optional[MetadataUserInput]=None,
         asset_key: Optional[Union[AssetKey, DynamicAssetKey]] = None,
-        asset_partitions: Optional[Union[AbstractSet[str], Callable[[OutputContext], AbstractSet[str]]]]=None,
-        asset_partitions_def: Optional[PartitionsDefinition]=None
+        asset_partitions: Optional[Union[AbstractSet[str], Callable[["OutputContext"], AbstractSet[str]]]]=None,
+        asset_partitions_def: Optional["PartitionsDefinition"]=None
         # make sure new parameters are updated in combine_with_inferred below
     ):
         from dagster.core.definitions.partition import PartitionsDefinition
@@ -321,7 +321,7 @@ class Out(
             ("asset_key", Optional[Union[AssetKey, DynamicAssetKey]]),
             (
                 "asset_partitions",
-                Optional[Union[AbstractSet[str], Callable[[OutputContext], AbstractSet[str]]]],
+                Optional[Union[AbstractSet[str], Callable[["OutputContext"], AbstractSet[str]]]],
             ),
             ("asset_partitions_def", Optional["PartitionsDefinition"]),
         ],
@@ -361,13 +361,13 @@ class Out(
         dagster_type: Union[DagsterType, Type[NoValueSentinel]] = NoValueSentinel,
         description: Optional[str] = None,
         is_required: bool = True,
-        io_manager_key: str = 'io_manager',
+        io_manager_key: Optional[str] = None,
         metadata: Optional[MetadataUserInput] = None,
         asset_key: Optional[AssetKey] = None,
         asset_partitions: Optional[
-            Union[AbstractSet[str], Callable[[OutputContext], AbstractSet[str]]]
+            Union[AbstractSet[str], Callable[["OutputContext"], AbstractSet[str]]]
         ] = None,
-        asset_partitions_def: Optional[PartitionsDefinition] = None,
+        asset_partitions_def: Optional["PartitionsDefinition"] = None,
         # make sure new parameters are updated in combine_with_inferred below
     ):
         if asset_partitions_def:
@@ -377,7 +377,7 @@ class Out(
             dagster_type=dagster_type,
             description=description,
             is_required=check.bool_param(is_required, "is_required"),
-            io_manager_key=io_manager_key,
+            io_manager_key=check.opt_str_param(io_manager_key, "io_manager_key", default="io_manager"),
             metadata=metadata,
             asset_key=asset_key,
             asset_partitions=asset_partitions,

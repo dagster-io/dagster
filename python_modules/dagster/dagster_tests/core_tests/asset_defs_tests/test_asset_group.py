@@ -116,7 +116,7 @@ def test_asset_group_missing_resources():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"SourceAsset with key AssetKey\(\['foo'\]\) requires io manager with key 'foo', which was not provided on AssetGroup. Provided keys: \['io_manager', 'root_manager'\]",
+        match=r"SourceAsset with key AssetKey\(\('foo',\)\) requires io manager with key 'foo', which was not provided on AssetGroup. Provided keys: \['io_manager', 'root_manager'\]",
     ):
         AssetGroup([], source_assets=[source_asset_io_req])
 
@@ -144,7 +144,7 @@ def test_asset_group_requires_root_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"Output 'result' with AssetKey 'AssetKey\(\['asset_foo'\]\)' "
+        match=r"Output 'result' with AssetKey 'AssetKey\(\('asset_foo',\)\)' "
         r"requires io manager 'blah' but was not provided on asset group. "
         r"Provided resources: \['io_manager', 'root_manager'\]",
     ):
@@ -321,9 +321,9 @@ def test_asset_group_build_subset_job():
 def test_asset_group_from_package_name():
     from . import asset_package
 
-    collection = AssetGroup.from_package_name(asset_package.__name__)
-    assert len(collection.assets) == 6
-    assert {asset.op.name for asset in collection.assets} == {
+    group = AssetGroup.from_package_name(asset_package.__name__)
+    assert len(group.assets) == 6
+    assert {asset.op.name for asset in group.assets} == {
         "little_richard",
         "miles_davis",
         "chuck_berry",
@@ -331,7 +331,7 @@ def test_asset_group_from_package_name():
         "james_brown",
         "fats_domino",
     }
-    assert {source_asset.key for source_asset in collection.source_assets} == {
+    assert {source_asset.key for source_asset in group.source_assets} == {
         AssetKey("elvis_presley"),
         AssetKey("buddy_holly"),
         AssetKey("jerry_lee_lewis"),
@@ -341,9 +341,9 @@ def test_asset_group_from_package_name():
 def test_asset_group_from_package_module():
     from . import asset_package
 
-    collection = AssetGroup.from_package_module(asset_package)
-    assert len(collection.assets) == 6
-    assert {asset.op.name for asset in collection.assets} == {
+    group = AssetGroup.from_package_module(asset_package)
+    assert len(group.assets) == 6
+    assert {asset.op.name for asset in group.assets} == {
         "little_richard",
         "miles_davis",
         "chuck_berry",
@@ -351,7 +351,7 @@ def test_asset_group_from_package_module():
         "james_brown",
         "fats_domino",
     }
-    assert {source_asset.key for source_asset in collection.source_assets} == {
+    assert {source_asset.key for source_asset in group.source_assets} == {
         AssetKey("elvis_presley"),
         AssetKey("buddy_holly"),
         AssetKey("jerry_lee_lewis"),
@@ -362,16 +362,16 @@ def test_asset_group_from_modules():
     from . import asset_package
     from .asset_package import module_with_assets
 
-    collection = AssetGroup.from_modules([asset_package, module_with_assets])
-    assert {asset.op.name for asset in collection.assets} == {
+    group = AssetGroup.from_modules([asset_package, module_with_assets])
+    assert {asset.op.name for asset in group.assets} == {
         "little_richard",
         "chuck_berry",
         "miles_davis",
         "james_brown",
         "fats_domino",
     }
-    assert len(collection.assets) == 5
-    assert {source_asset.key for source_asset in collection.source_assets} == {
+    assert len(group.assets) == 5
+    assert {source_asset.key for source_asset in group.source_assets} == {
         AssetKey("elvis_presley"),
         AssetKey("buddy_holly"),
         AssetKey("jerry_lee_lewis"),
