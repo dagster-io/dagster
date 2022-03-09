@@ -236,10 +236,6 @@ class GrapheneRun(graphene.ObjectType):
     parentRunId = graphene.Field(graphene.String)
     canTerminate = graphene.NonNull(graphene.Boolean)
     assets = non_null_list(GrapheneAsset)
-    events = graphene.Field(
-        non_null_list(GrapheneDagsterRunEvent),
-        after=graphene.Argument(GrapheneCursor),
-    )
     startTime = graphene.Float()
     endTime = graphene.Float()
     updateTime = graphene.Float()
@@ -355,10 +351,6 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_assets(self, graphene_info):
         return get_assets_for_run_id(graphene_info, self.run_id)
-
-    def resolve_events(self, graphene_info, after=-1):
-        events = graphene_info.context.instance.logs_after(self.run_id, cursor=after)
-        return [from_event_record(event, self._pipeline_run.pipeline_name) for event in events]
 
     def _get_run_record(self, instance):
         if not self._run_record:
