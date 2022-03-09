@@ -1,3 +1,4 @@
+import collections.abc
 import inspect
 from os import PathLike, fspath
 from typing import (
@@ -6,11 +7,15 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    Iterable,
     List,
+    Mapping,
     NoReturn,
     Optional,
+    Sequence,
     Set,
     Tuple,
+    Type,
     TypeVar,
     Union,
     overload,
@@ -19,13 +24,14 @@ from typing import (
 TypeOrTupleOfTypes = Union[type, Tuple[type, ...]]
 Numeric = Union[int, float]
 T = TypeVar("T")
+U = TypeVar("U")
 
 # This module contains runtime type-checking code used throughout Dagster. It is divided into three
 # sections:
 #
 # - TYPE CHECKS: functions that check the type of a single value
 # - OTHER CHECKS: functions that check conditions other than the type of a single value
-# - ERRORS: error generation code invoked by the check functions
+# - ERRORS/UTILITY: error generation code and other utility functions invoked by the check functions
 #
 # TYPE CHECKS is divided into subsections for each type (e.g. bool, list). Each subsection contains
 # multiple functions that implement the same check logic, but differ in how the target value is
@@ -187,7 +193,7 @@ def dict_param(
     if not (key_type or value_type):
         return obj
 
-    return _check_key_value_types(obj, key_type, value_type)
+    return _check_mapping_entries(obj, key_type, value_type, mapping_type=dict)
 
 
 def opt_dict_param(
@@ -195,7 +201,6 @@ def opt_dict_param(
     param_name: str,
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
-    value_class: Optional[TypeOrTupleOfTypes] = None,
 ) -> Dict:
     """Ensures argument obj is either a dictionary or None; if the latter, instantiates an empty
     dictionary.
@@ -208,9 +213,7 @@ def opt_dict_param(
     if not obj:
         return {}
 
-    if value_class:
-        return _check_key_value_types(obj, key_type, value_type=value_class, value_check=issubclass)
-    return _check_key_value_types(obj, key_type, value_type)
+    return _check_mapping_entries(obj, key_type, value_type, mapping_type=dict)
 
 
 # pyright understands this overload but not mypy
@@ -220,7 +223,6 @@ def opt_nullable_dict_param(  # type: ignore
     param_name: str,
     key_type: Optional[TypeOrTupleOfTypes] = ...,
     value_type: Optional[TypeOrTupleOfTypes] = ...,
-    value_class: Optional[TypeOrTupleOfTypes] = ...,
 ) -> None:
     ...
 
@@ -231,7 +233,6 @@ def opt_nullable_dict_param(
     param_name: str,
     key_type: Optional[TypeOrTupleOfTypes] = ...,
     value_type: Optional[TypeOrTupleOfTypes] = ...,
-    value_class: Optional[TypeOrTupleOfTypes] = ...,
 ) -> Dict:
     ...
 
@@ -241,7 +242,6 @@ def opt_nullable_dict_param(
     param_name: str,
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
-    value_class: Optional[TypeOrTupleOfTypes] = None,
 ) -> Optional[Dict]:
     """Ensures argument obj is either a dictionary or None."""
     from dagster.utils import frozendict
@@ -252,9 +252,7 @@ def opt_nullable_dict_param(
     if not obj:
         return None if obj is None else {}
 
-    if value_class:
-        return _check_key_value_types(obj, key_type, value_type=value_class, value_check=issubclass)
-    return _check_key_value_types(obj, key_type, value_type)
+    return _check_mapping_entries(obj, key_type, value_type, mapping_type=dict)
 
 
 def two_dim_dict_param(
@@ -266,7 +264,7 @@ def two_dim_dict_param(
     if not isinstance(obj, dict):
         raise _param_type_mismatch_exception(obj, dict, param_name)
 
-    return _check_two_dim_key_value_types(obj, key_type, param_name, value_type)
+    return _check_two_dim_mapping_entries(obj, key_type, value_type, mapping_type=dict)
 
 
 def opt_two_dim_dict_param(
@@ -281,7 +279,7 @@ def opt_two_dim_dict_param(
     if not obj:
         return {}
 
-    return _check_two_dim_key_value_types(obj, key_type, param_name, value_type)
+    return _check_two_dim_mapping_entries(obj, key_type, value_type, mapping_type=dict)
 
 
 def dict_elem(ddict: Dict, key: str) -> Dict:
@@ -330,49 +328,7 @@ def is_dict(
     if not (key_type or value_type):
         return obj
 
-    return _check_key_value_types(obj, key_type, value_type)
-
-
-def _check_key_value_types(
-    obj_dict: Dict,
-    key_type: Optional[TypeOrTupleOfTypes] = None,
-    value_type: Optional[TypeOrTupleOfTypes] = None,
-    key_check: Callable = isinstance,
-    value_check: Callable = isinstance,
-) -> Dict:
-    """Ensures argument obj_dict is a dictionary, and enforces that the keys/values conform to the types
-    specified by key_type, value_type.
-    """
-    if not isinstance(obj_dict, dict):
-        raise _type_mismatch_error(obj_dict, dict, "obj_dict")
-
-    for key, value in obj_dict.items():
-        if key_type and not key_check(key, key_type):
-            raise CheckError(
-                f"Key in dictionary mismatches type. Expected {repr(key_type)}. Got {repr(key)}"
-            )
-
-        if value_type and not value_check(value, value_type):
-            raise CheckError(
-                f"Value in dictionary mismatches expected type for key {key}. Expected value "
-                f"of type {repr(value_type)}. Got value {value} of type {type(value)}."
-            )
-
-    return obj_dict
-
-
-def _check_two_dim_key_value_types(
-    obj_dict: Dict,
-    key_type: Optional[TypeOrTupleOfTypes] = None,
-    _param_name: Optional[str] = None,
-    value_type: Optional[TypeOrTupleOfTypes] = None,
-) -> Dict:
-    _check_key_value_types(obj_dict, key_type, dict)  # check level one
-
-    for level_two_dict in obj_dict.values():
-        _check_key_value_types(level_two_dict, key_type, value_type)  # check level two
-
-    return obj_dict
+    return _check_mapping_entries(obj, key_type, value_type, mapping_type=dict)
 
 
 # ########################
@@ -588,7 +544,7 @@ def list_param(obj: object, param_name: str, of_type: Optional[TypeOrTupleOfType
     if not of_type:
         return obj
 
-    return _check_list_items(obj, of_type)
+    return _check_iterable_items(obj, of_type, "list")
 
 
 def opt_list_param(
@@ -610,7 +566,7 @@ def opt_list_param(
     if not of_type:
         return obj
 
-    return _check_list_items(obj, of_type)
+    return _check_iterable_items(obj, of_type, "list")
 
 
 # pyright understands this overload but not mypy
@@ -625,10 +581,10 @@ def opt_nullable_list_param(  # type: ignore
 
 @overload
 def opt_nullable_list_param(
-    obj: object,
+    obj: List[T],
     param_name: str,
     of_type: Optional[TypeOrTupleOfTypes] = ...,
-) -> List:
+) -> List[T]:
     ...
 
 
@@ -650,7 +606,7 @@ def opt_nullable_list_param(
     if not of_type:
         return obj
 
-    return _check_list_items(obj, of_type)
+    return _check_iterable_items(obj, of_type, "list")
 
 
 def two_dim_list_param(
@@ -677,7 +633,7 @@ def list_elem(ddict: Dict, key: str, of_type: Optional[TypeOrTupleOfTypes] = Non
         if not of_type:
             return value
 
-        return _check_list_items(value, of_type)
+        return _check_iterable_items(value, of_type, "list")
 
     raise _element_check_error(key, value, ddict, list)
 
@@ -698,7 +654,7 @@ def opt_list_elem(ddict: Dict, key: str, of_type: Optional[TypeOrTupleOfTypes] =
     if not of_type:
         return value
 
-    return _check_list_items(value, of_type)
+    return _check_iterable_items(value, of_type, "list")
 
 
 def is_list(
@@ -710,24 +666,79 @@ def is_list(
     if not of_type:
         return obj
 
-    return _check_list_items(obj, of_type)
+    return _check_iterable_items(obj, of_type, "list")
 
 
-def _check_list_items(obj_list: List, of_type: TypeOrTupleOfTypes) -> List:
-    for obj in obj_list:
-        if not isinstance(obj, of_type):
-            if isinstance(obj, type):
-                additional_message = (
-                    " Did you pass a class where you were expecting an instance of the class?"
-                )
-            else:
-                additional_message = ""
-            raise CheckError(
-                f"Member of list mismatches type. Expected {of_type}. Got {repr(obj)} of type "
-                f"{type(obj)}.{additional_message}"
-            )
+# ########################
+# ##### MAPPING
+# ########################
 
-    return obj_list
+
+def mapping_param(
+    obj: Mapping[T, U],
+    param_name: str,
+    key_type: Optional[TypeOrTupleOfTypes] = None,
+    value_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Mapping[T, U]:
+    if not isinstance(obj, collections.abc.Mapping):
+        raise _param_type_mismatch_exception(
+            obj, (collections.abc.Mapping,), param_name, additional_message=additional_message
+        )
+
+    if not (key_type or value_type):
+        return obj
+
+    return _check_mapping_entries(obj, key_type, value_type, mapping_type=collections.abc.Mapping)
+
+
+def opt_mapping_param(
+    obj: Optional[Mapping[T, U]],
+    param_name: str,
+    key_type: Optional[TypeOrTupleOfTypes] = None,
+    value_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Mapping[T, U]:
+    if obj is None:
+        return dict()
+    else:
+        return mapping_param(obj, param_name, key_type, value_type, additional_message)
+
+
+# pyright understands this overload but not mypy
+@overload
+def opt_nullable_mapping_param(  # type: ignore
+    obj: None,
+    param_name: str,
+    key_type: Optional[TypeOrTupleOfTypes] = ...,
+    value_type: Optional[TypeOrTupleOfTypes] = ...,
+    additional_message: Optional[str] = ...,
+) -> None:
+    ...
+
+
+@overload
+def opt_nullable_mapping_param(
+    obj: Mapping[T, U],
+    param_name: str,
+    key_type: Optional[TypeOrTupleOfTypes] = ...,
+    value_type: Optional[TypeOrTupleOfTypes] = ...,
+    additional_message: Optional[str] = ...,
+) -> Mapping[T, U]:
+    ...
+
+
+def opt_nullable_mapping_param(
+    obj: Optional[Mapping[T, U]],
+    param_name: str,
+    key_type: Optional[TypeOrTupleOfTypes] = None,
+    value_type: Optional[TypeOrTupleOfTypes] = None,
+    additional_message: Optional[str] = None,
+) -> Optional[Mapping[T, U]]:
+    if obj is None:
+        return dict()
+    else:
+        return mapping_param(obj, param_name, key_type, value_type, additional_message)
 
 
 # ########################
@@ -777,6 +788,70 @@ def opt_numeric_param(
 
 
 # ########################
+# ##### PATH
+# ########################
+
+
+def path_param(obj: Union[str, PathLike], param_name: str) -> str:
+    if not isinstance(obj, (str, PathLike)):
+        raise _param_type_mismatch_exception(obj, (str, PathLike), param_name)
+    return fspath(obj)
+
+
+@overload
+def opt_path_param(obj: None, param_name: str, default: None = ...) -> None:
+    ...
+
+
+@overload
+def opt_path_param(obj: None, param_name: str, default: Union[str, PathLike]) -> str:
+    ...
+
+
+@overload
+def opt_path_param(obj: Union[str, PathLike], param_name: str, default: Union[str, PathLike]) -> str:
+    ...
+
+
+def opt_path_param(
+    obj: Optional[Union[str, PathLike]], param_name: str, default: Optional[Union[str, PathLike]] = None
+) -> Optional[Union[str, PathLike]]:
+    if obj is None:
+        return str(default) if default is not None else None
+    else:
+        return path_param(obj, param_name)
+
+# ########################
+# ##### SEQUENCE
+# ########################
+
+
+def sequence_param(
+    obj: Sequence[T], param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
+) -> Sequence[T]:
+    if not isinstance(obj, collections.abc.Sequence):
+        raise _param_type_mismatch_exception(obj, (collections.abc.Sequence,), param_name)
+
+    if not of_type:
+        return obj
+
+    return _check_iterable_items(obj, of_type, "sequence")
+
+
+def opt_sequence_param(
+    obj: Optional[Sequence[T]], param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
+) -> Sequence[T]:
+    if obj is None:
+        return tuple()
+    elif not isinstance(obj, collections.abc.Sequence):
+        raise _param_type_mismatch_exception(obj, (collections.abc.Sequence,), param_name)
+    elif of_type is not None:
+        return _check_iterable_items(obj, of_type, "sequence")
+    else:
+        return obj
+
+
+# ########################
 # ##### SET
 # ########################
 
@@ -790,7 +865,7 @@ def set_param(
     if not of_type:
         return obj
 
-    return _check_set_items(obj, of_type)
+    return _check_iterable_items(obj, of_type, "set")
 
 
 def opt_set_param(
@@ -809,7 +884,7 @@ def opt_set_param(
     if not of_type:
         return obj
 
-    return _check_set_items(obj, of_type)
+    return _check_iterable_items(obj, of_type, "set")
 
 
 def opt_nullable_set_param(
@@ -828,25 +903,7 @@ def opt_nullable_set_param(
     elif not of_type:
         return obj
 
-    return _check_set_items(obj, of_type)
-
-
-def _check_set_items(obj_set: AbstractSet, of_type: TypeOrTupleOfTypes) -> AbstractSet:
-    for obj in obj_set:
-
-        if not isinstance(obj, of_type):
-            if isinstance(obj, type):
-                additional_message = (
-                    " Did you pass a class where you were expecting an instance of the class?"
-                )
-            else:
-                additional_message = ""
-            raise CheckError(
-                f"Member of set mismatches type. Expected {of_type}. Got {repr(obj)} of type "
-                f"{type(obj)}.{additional_message}"
-            )
-
-    return obj_set
+    return _check_iterable_items(obj, of_type, "set")
 
 
 # ########################
@@ -1035,54 +1092,9 @@ def _check_tuple_items(
                 )
 
     elif of_type is not None:
-        for (i, obj) in enumerate(obj_tuple):
-            if not isinstance(obj, of_type):
-                if isinstance(obj, type):
-                    additional_message = (
-                        " Did you pass a class where you were expecting an instance of the class?"
-                    )
-                else:
-                    additional_message = ""
-                raise CheckError(
-                    f"Member of tuple mismatches type at index {i}. Expected {of_type}. Got "
-                    f"{repr(obj)} of type {type(obj)}.{additional_message}"
-                )
+        _check_iterable_items(obj_tuple, of_type, "tuple")
 
     return obj_tuple
-
-
-# ########################
-# ##### PATH
-# ########################
-
-
-def path_param(obj: object, param_name: str) -> str:
-    if not isinstance(obj, (str, PathLike)):
-        raise _param_type_mismatch_exception(obj, (str, PathLike), param_name)
-    return fspath(obj)
-
-
-@overload
-def opt_path_param(obj: object, param_name: str, default: Union[str, PathLike]) -> str:
-    ...
-
-
-@overload
-def opt_path_param(obj: object, param_name: str) -> Optional[str]:
-    ...
-
-
-def opt_path_param(
-    obj: object, param_name: str, default: Optional[Union[str, PathLike]] = None
-) -> Optional[str]:
-    if obj is not None and not isinstance(obj, (str, PathLike)):
-        raise _param_type_mismatch_exception(obj, (str, PathLike), param_name)
-    if obj is not None:
-        return fspath(obj)
-
-    if obj is None and default is None:
-        return default
-    return fspath(default)
 
 
 # ###################################################################################################
@@ -1124,7 +1136,7 @@ def not_implemented(desc: str) -> NoReturn:
 
 
 # ###################################################################################################
-# ##### ERRORS
+# ##### ERRORS / UTILITY
 # ###################################################################################################
 
 
@@ -1210,3 +1222,72 @@ def _param_invariant_exception(param_name: str, desc: Optional[str] = None) -> P
     return ParameterCheckError(
         f"Invariant violation for parameter {param_name}. Description: {desc}"
     )
+
+
+V = TypeVar("V", bound=Iterable)
+
+
+def _check_iterable_items(
+    obj_iter: V, of_type: TypeOrTupleOfTypes, collection_name: str = "iterable"
+) -> V:
+    for obj in obj_iter:
+
+        if not isinstance(obj, of_type):
+            if isinstance(obj, type):
+                additional_message = (
+                    " Did you pass a class where you were expecting an instance of the class?"
+                )
+            else:
+                additional_message = ""
+            raise CheckError(
+                f"Member of {collection_name} mismatches type. Expected {of_type}. Got {repr(obj)} of type "
+                f"{type(obj)}.{additional_message}"
+            )
+
+    return obj_iter
+
+
+W = TypeVar("W", bound=Mapping)
+X = TypeVar("X", bound=Mapping)
+
+
+def _check_mapping_entries(
+    obj: W,
+    key_type: Optional[TypeOrTupleOfTypes] = None,
+    value_type: Optional[TypeOrTupleOfTypes] = None,
+    key_check: Callable = isinstance,
+    value_check: Callable = isinstance,
+    mapping_type: Type = collections.abc.Mapping,
+) -> W:
+    """Enforces that the keys/values conform to the types specified by key_type, value_type."""
+    for key, value in obj.items():
+        if key_type and not key_check(key, key_type):
+            raise CheckError(
+                f"Key in {mapping_type.__name__} mismatches type. Expected {repr(key_type)}. Got {repr(key)}"
+            )
+
+        if value_type and not value_check(value, value_type):
+            raise CheckError(
+                f"Value in {mapping_type.__name__} mismatches expected type for key {key}. Expected value "
+                f"of type {repr(value_type)}. Got value {value} of type {type(value)}."
+            )
+
+    return obj
+
+
+def _check_two_dim_mapping_entries(
+    obj: W,
+    key_type: Optional[TypeOrTupleOfTypes] = None,
+    value_type: Optional[TypeOrTupleOfTypes] = None,
+    mapping_type: Type = collections.abc.Mapping,
+) -> W:
+    _check_mapping_entries(
+        obj, key_type, mapping_type, mapping_type=mapping_type
+    )  # check level one
+
+    for inner_mapping in obj.values():
+        _check_mapping_entries(
+            inner_mapping, key_type, value_type, mapping_type=mapping_type
+        )  # check level two
+
+    return obj
