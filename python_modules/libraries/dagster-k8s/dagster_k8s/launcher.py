@@ -138,6 +138,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     @property
     def volumes(self):
         return self._volumes
+    
+    @property
+    def env_vars(self):
+        return self._env_vars
 
     @property
     def labels(self):
