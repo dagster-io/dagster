@@ -1058,10 +1058,9 @@ def _check_tuple_items(
 
 
 def path_param(obj: object, param_name: str) -> str:
-    try:
-        return fspath(obj)
-    except TypeError:
+    if not isinstance(obj, (str, PathLike)):
         raise _param_type_mismatch_exception(obj, (str, PathLike), param_name)
+    return fspath(obj)
 
 
 @overload
@@ -1077,16 +1076,14 @@ def opt_path_param(obj: object, param_name: str) -> Optional[str]:
 def opt_path_param(
     obj: object, param_name: str, default: Optional[Union[str, PathLike]] = None
 ) -> Optional[str]:
-    try:
+    if obj is not None and not isinstance(obj, (str, PathLike)):
+        raise _param_type_mismatch_exception(obj, (str, PathLike), param_name)
+    if obj is not None:
         return fspath(obj)
-    except TypeError:
-        if obj is not None:
-            raise _param_type_mismatch_exception(obj, (str, PathLike), param_name)
 
-        if obj is None and default is None:
-            return default
-
-        return fspath(default)
+    if obj is None and default is None:
+        return default
+    return fspath(default)
 
 
 # ###################################################################################################
