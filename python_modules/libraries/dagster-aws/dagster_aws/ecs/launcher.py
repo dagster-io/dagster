@@ -177,7 +177,19 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             launchType="FARGATE",
         )
 
-        arn = response["tasks"][0]["taskArn"]
+        tasks = response["tasks"]
+
+        if not tasks:
+            failures = response["failures"]
+            exceptions = []
+            for failure in failures:
+                arn = failure.get("arn")
+                reason = failure.get("reason")
+                detail = failure.get("detail")
+                exceptions.append(Exception(f"Task {arn} failed because {reason}: {detail}"))
+            raise Exception(exceptions)
+
+        arn = tasks[0]["taskArn"]
         self._set_run_tags(run.run_id, task_arn=arn)
         self._set_ecs_tags(run.run_id, task_arn=arn)
         self._instance.report_engine_event(
