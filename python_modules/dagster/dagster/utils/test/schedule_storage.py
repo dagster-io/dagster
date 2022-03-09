@@ -627,13 +627,13 @@ class TestScheduleStorage:
         if not storage.supports_batch_queries:
             pytest.skip("storage cannot batch")
 
-        a = storage.create_tick(
+        _a = storage.create_tick(
             self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS, name="sensor_one")
         )
         b = storage.create_tick(
             self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS, name="sensor_one")
         )
-        c = storage.create_tick(
+        _c = storage.create_tick(
             self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS, name="sensor_two")
         )
         d = storage.create_tick(

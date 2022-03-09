@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 
 from snapshottest import Snapshot
 
+
 snapshots = Snapshot()
 
 snapshots['TestAssetAwareEventLog.test_all_asset_keys[asset_aware_instance_in_process_env] 1'] = {
@@ -408,6 +409,48 @@ snapshots['TestAssetAwareEventLog.test_all_asset_keys[sqlite_with_default_run_la
     }
 }
 
+snapshots['TestAssetAwareEventLog.test_asset_op[asset_aware_instance_in_process_env] 1'] = {
+    'assetOrError': {
+        'definition': {
+            'op': {
+                'description': None,
+                'inputDefinitions': [
+                    {
+                        'name': 'asset_one'
+                    }
+                ],
+                'name': 'asset_two',
+                'outputDefinitions': [
+                    {
+                        'name': 'result'
+                    }
+                ]
+            }
+        }
+    }
+}
+
+snapshots['TestAssetAwareEventLog.test_asset_op[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
+    'assetOrError': {
+        'definition': {
+            'op': {
+                'description': None,
+                'inputDefinitions': [
+                    {
+                        'name': 'asset_one'
+                    }
+                ],
+                'name': 'asset_two',
+                'outputDefinitions': [
+                    {
+                        'name': 'result'
+                    }
+                ]
+            }
+        }
+    }
+}
+
 snapshots['TestAssetAwareEventLog.test_get_asset_key_lineage[asset_aware_instance_in_process_env] 1'] = {
     'assetOrError': {
         'assetMaterializations': [
@@ -564,5 +607,41 @@ snapshots['TestAssetAwareEventLog.test_get_partitioned_asset_key_materialization
                 'partition': 'partition_1'
             }
         ]
+    }
+}
+
+snapshots['TestAssetAwareEventLog.test_op_assets[asset_aware_instance_in_process_env] 1'] = {
+    'repositoryOrError': {
+        'usedSolid': {
+            'definition': {
+                'assetNodes': [
+                    {
+                        'assetKey': {
+                            'path': [
+                                'asset_two'
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}
+
+snapshots['TestAssetAwareEventLog.test_op_assets[sqlite_with_default_run_launcher_managed_grpc_env] 1'] = {
+    'repositoryOrError': {
+        'usedSolid': {
+            'definition': {
+                'assetNodes': [
+                    {
+                        'assetKey': {
+                            'path': [
+                                'asset_two'
+                            ]
+                        }
+                    }
+                ]
+            }
+        }
     }
 }

@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Iterable, Mapping, Optional, Sequence
+from typing import Iterable, Mapping, Optional, Sequence, cast
 
 import sqlalchemy as db
 
@@ -189,7 +189,7 @@ class SqlScheduleStorage(ScheduleStorage):
         for row in rows:
             tick_id = row[0]
             origin_id = row[1]
-            tick_data = deserialize_json_to_dagster_namedtuple(row[2])
+            tick_data = cast(TickData, deserialize_json_to_dagster_namedtuple(row[2]))
             results[origin_id].append(InstigatorTick(tick_id, tick_data))
         return results
 
