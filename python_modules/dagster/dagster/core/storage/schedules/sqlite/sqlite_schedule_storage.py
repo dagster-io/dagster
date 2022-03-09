@@ -11,12 +11,14 @@ from dagster.core.storage.sql import (
     run_alembic_upgrade,
     stamp_alembic_rev,
 )
-from dagster.core.storage.sqlite import create_db_conn_string
+from dagster.core.storage.sqlite import create_db_conn_string, get_sqlite_version
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import mkdir_p
 
 from ..schema import ScheduleStorageSqlMetadata
 from ..sql_schedule_storage import SqlScheduleStorage
+
+MINIMUM_SQLITE_BATCH_VERSION = "3.25.0"
 
 
 class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
@@ -71,6 +73,10 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
                 yield conn
         finally:
             conn.close()
+
+    @property
+    def supports_batch_queries(self):
+        return get_sqlite_version() > MINIMUM_SQLITE_BATCH_VERSION
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)
