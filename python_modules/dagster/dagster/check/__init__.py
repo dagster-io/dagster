@@ -1,6 +1,5 @@
-from os import fspath, PathLike
-
 import inspect
+from os import PathLike, fspath
 from typing import (
     AbstractSet,
     Any,
