@@ -850,6 +850,25 @@ def opt_sequence_param(
     else:
         return obj
 
+@overload
+def opt_nullable_sequence_param(
+    obj: None, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = ...
+) -> None:
+    ...
+
+@overload
+def opt_nullable_sequence_param(
+    obj: Sequence[T], param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
+) -> Sequence[T]:
+    ...
+
+def opt_nullable_sequence_param(
+    obj: Optional[Sequence[T]], param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
+) -> Optional[Sequence[T]]:
+    if obj is None:
+        return None
+    else:
+        return opt_sequence_param(obj, param_name, of_type)
 
 # ########################
 # ##### SET
