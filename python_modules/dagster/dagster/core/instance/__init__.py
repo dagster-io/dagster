@@ -1752,7 +1752,7 @@ records = instance.get_event_records(
 
     @property
     def supports_batch_tick_queries(self):
-        return self._schedule_storage.supports_batch_queries
+        return self._schedule_storage and self._schedule_storage.supports_batch_queries
 
     def get_batch_ticks(
         self,
@@ -1760,6 +1760,8 @@ records = instance.get_event_records(
         limit: Optional[int] = None,
         statuses: Optional[Sequence["TickStatus"]] = None,
     ) -> Mapping[str, Iterable["InstigatorTick"]]:
+        if not self._schedule_storage:
+            return {}
         return self._schedule_storage.get_batch_ticks(origin_ids, limit, statuses)
 
     @traced
