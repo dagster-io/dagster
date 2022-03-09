@@ -163,6 +163,16 @@ def test_parse_invalid_metadata():
     assert entries[0].entry_data == TextMetadataValue("[object] (unserializable)")
 
 
+def test_parse_path_metadata():
+
+    metadata = {"path": Path("/a/b.csv")}
+
+    entries = normalize_metadata(metadata, [])
+    assert len(entries) == 1
+    assert entries[0].label == "path"
+    assert entries[0].entry_data == PathMetadataValue("/a/b.csv")
+
+
 def test_bad_json_metadata_value():
     @solid(output_defs=[])
     def the_solid(context):

@@ -107,6 +107,9 @@ def normalize_metadata_value(raw_value: RawMetadataValue):
                 "Consider wrapping the value with the appropriate MetadataValue type."
             )
 
+    if isinstance(value, os.PathLike):
+        return MetadataEntry.path(value, label)
+
     raise DagsterInvalidMetadata(
         f"Its type was {type(raw_value)}. Consider wrapping the value with the appropriate "
         "MetadataValue type."
