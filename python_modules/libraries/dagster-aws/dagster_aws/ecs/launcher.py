@@ -271,6 +271,20 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             task_definition = self.ecs.describe_task_definition(taskDefinition=self.task_definition)
             return task_definition["taskDefinition"]
 
+        secrets = merge_dicts(
+            (
+                get_tagged_secrets(self.secrets_manager, self.secrets_tag)
+                if self.secrets_tag
+                else {}
+            ),
+            self.secrets,
+        )
+        secrets_dict = (
+            {"secrets": [{"name": key, "valueFrom": value} for key, value in secrets.items()]}
+            if secrets
+            else {}
+        )
+
         task_definition = {}
         with suppress(ClientError):
             # TODO: Vary family name by repository location
@@ -283,6 +297,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             if (
                 container_definition.get("image") == image
                 and container_definition.get("name") == self.container_name
+                and container_definition.get("secrets") == secrets_dict.get("secrets")
             ):
                 return task_definition
 
@@ -291,14 +306,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             metadata,
             image,
             self.container_name,
-            secrets=merge_dicts(
-                (
-                    get_tagged_secrets(self.secrets_manager, self.secrets_tag)
-                    if self.secrets_tag
-                    else {}
-                ),
-                self.secrets,
-            ),
+            secrets=secrets_dict,
         )
 
     def _task_metadata(self):

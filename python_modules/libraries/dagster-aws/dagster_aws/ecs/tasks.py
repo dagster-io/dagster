@@ -53,12 +53,6 @@ def default_ecs_task_definition(
         if key in metadata.task_definition.keys()
     )
 
-    secrets_dict = (
-        {"secrets": [{"name": key, "valueFrom": value} for key, value in secrets.items()]}
-        if secrets
-        else {}
-    )
-
     # The current process might not be running in a container that has the
     # pipeline's code installed. Inherit most of the process's container
     # definition (things like environment, dependencies, etc.) but replace
@@ -77,7 +71,7 @@ def default_ecs_task_definition(
                 "entryPoint": [],
                 "command": command if command else [],
             },
-            secrets_dict,
+            secrets or {},
         )
     ]
     task_definition = {
