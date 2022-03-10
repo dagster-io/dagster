@@ -227,6 +227,7 @@ type AssetNode {
   jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
   materializationCountByPartition: [MaterializationCountByPartition!]!
+  metadataEntries: [MetadataEntry!]!
   op: SolidDefinition
   opName: String
   partitionKeys: [String!]!

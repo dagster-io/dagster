@@ -3,6 +3,7 @@ import pytest
 from dagster import AssetGroup, AssetKey, DagsterInvariantViolationError, Out
 from dagster.check import CheckError
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
+from dagster.core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster.core.host_representation.external_data import (
     ExternalAssetDependedBy,
     ExternalAssetDependency,
@@ -381,6 +382,7 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
+            metadata_entries=[],
         ),
         ExternalAssetNode(
             asset_key=AssetKey(["in1"]),
@@ -395,6 +397,7 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
+            metadata_entries=[],
         ),
         ExternalAssetNode(
             asset_key=AssetKey(["in2"]),
@@ -408,6 +411,7 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
+            metadata_entries=[],
         ),
         ExternalAssetNode(
             asset_key=AssetKey(["mixed"]),
@@ -429,6 +433,9 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="mixed",
+            metadata_entries=[
+                MetadataEntry(label='.dagster/asset_deps', description=None, entry_data=MetadataValue.text('[set] (unserializable)'))
+            ],
         ),
         ExternalAssetNode(
             asset_key=AssetKey(["only_in"]),
@@ -451,6 +458,7 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="only_in",
+            metadata_entries=[],
         ),
         ExternalAssetNode(
             asset_key=AssetKey(["only_out"]),
@@ -471,6 +479,9 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="only_out",
+            metadata_entries=[
+                MetadataEntry(label='.dagster/asset_deps', description=None, entry_data=MetadataValue.text('[set] (unserializable)'))
+            ],
         ),
     ]
 
