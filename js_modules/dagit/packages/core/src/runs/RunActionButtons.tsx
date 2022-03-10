@@ -332,9 +332,7 @@ function usePipelineAvailabilityErrorForRun(
   };
 }
 
-const StepSelectionDescription: React.FunctionComponent<{selection: StepSelection | null}> = ({
-  selection,
-}) => (
+const StepSelectionDescription: React.FC<{selection: StepSelection | null}> = ({selection}) => (
   <div style={{paddingLeft: '10px'}}>
     {(selection?.keys || []).map((step) => (
       <span key={step} style={{display: 'block'}}>{`* ${step}`}</span>

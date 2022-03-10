@@ -484,7 +484,7 @@ const BackfillProgress = ({backfill}: {backfill: Backfill}) => {
   );
 };
 
-const PartitionSetReference: React.FunctionComponent<{
+const PartitionSetReference: React.FC<{
   partitionSet: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet;
 }> = ({partitionSet}) => {
   const repoAddress = buildRepoAddress(

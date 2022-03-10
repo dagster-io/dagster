@@ -22,7 +22,7 @@ interface ExternalConnectionNodeProps {
   onDoubleClickLabel: () => void;
 }
 
-export const ExternalConnectionNode: React.FunctionComponent<ExternalConnectionNodeProps> = ({
+export const ExternalConnectionNode: React.FC<ExternalConnectionNodeProps> = ({
   layout,
   target,
   edges,

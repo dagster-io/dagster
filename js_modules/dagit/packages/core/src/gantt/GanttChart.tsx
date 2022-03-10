@@ -435,9 +435,7 @@ interface GanttChartViewportContentsProps {
   onClickStep: (step: string, evt: React.MouseEvent<any>) => void;
 }
 
-const GanttChartViewportContents: React.FunctionComponent<GanttChartViewportContentsProps> = (
-  props,
-) => {
+const GanttChartViewportContents: React.FC<GanttChartViewportContentsProps> = (props) => {
   const {viewport, layout, hoveredStep, focusedSteps, metadata, options} = props;
   const items: React.ReactChild[] = [];
 
