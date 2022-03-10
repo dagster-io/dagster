@@ -434,7 +434,11 @@ def test_inter_op_dependency():
             job_names=["assets_job"],
             output_name="mixed",
             metadata_entries=[
-                MetadataEntry(label='.dagster/asset_deps', description=None, entry_data=MetadataValue.text('[set] (unserializable)'))
+                MetadataEntry(
+                    label=".dagster/asset_deps",
+                    description=None,
+                    entry_data=MetadataValue.text("[set] (unserializable)"),
+                )
             ],
         ),
         ExternalAssetNode(
@@ -480,7 +484,11 @@ def test_inter_op_dependency():
             job_names=["assets_job"],
             output_name="only_out",
             metadata_entries=[
-                MetadataEntry(label='.dagster/asset_deps', description=None, entry_data=MetadataValue.text('[set] (unserializable)'))
+                MetadataEntry(
+                    label=".dagster/asset_deps",
+                    description=None,
+                    entry_data=MetadataValue.text("[set] (unserializable)"),
+                )
             ],
         ),
     ]
