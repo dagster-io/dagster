@@ -4,10 +4,10 @@ import faker from 'faker';
 import * as React from 'react';
 
 import {StorybookProvider} from '../testing/StorybookProvider';
+import {generateRunMocks} from '../testing/generateRunMocks';
 import {RunStatus} from '../types/globalTypes';
 
 import {RunStatusPez, RunStatusPezList} from './RunStatusPez';
-import {generateRuns} from './RunTimeline.stories';
 import {RunTimeFragment} from './types/RunTimeFragment';
 
 // eslint-disable-next-line import/no-default-export
@@ -65,12 +65,12 @@ export const List = () => {
         <RunStatusPezList
           repoAddress={fakeRepo}
           fade
-          runs={wrapToFragment(generateRuns(10, [tenDaysAgo, now]))}
+          runs={wrapToFragment(generateRunMocks(10, [tenDaysAgo, now]))}
         />
         <RunStatusPezList
           repoAddress={fakeRepo}
           fade
-          runs={wrapToFragment(generateRuns(9, [tenDaysAgo, now])).map((f) => ({
+          runs={wrapToFragment(generateRunMocks(9, [tenDaysAgo, now])).map((f) => ({
             ...f,
             status: RunStatus.STARTED,
           }))}
@@ -79,7 +79,7 @@ export const List = () => {
           repoAddress={fakeRepo}
           fade
           runs={[
-            ...wrapToFragment(generateRuns(7, [tenDaysAgo, now])),
+            ...wrapToFragment(generateRunMocks(7, [tenDaysAgo, now])),
             ...[...new Array(3)]
               .map((_, idx) => {
                 const id = fakeId();
