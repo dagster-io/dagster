@@ -306,7 +306,7 @@ class SensorDefinition:
         return self._min_interval
 
     @property
-    def targets(self) -> Optional[List[Union[DirectTarget, RepoRelativeTarget]]]:
+    def targets(self) -> List[Union[DirectTarget, RepoRelativeTarget]]:
         return self._targets
 
     @property
@@ -393,7 +393,7 @@ class SensorDefinition:
                 return True
         return False
 
-    def load_targets(self) -> List[DirectTarget]:
+    def load_targets(self) -> List[PipelineDefinition]:
         targets = []
         for target in self._targets:
             if isinstance(target, DirectTarget):

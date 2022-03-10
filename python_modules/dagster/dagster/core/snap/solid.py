@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, NamedTuple, Optional, Set, Union
+from typing import Any, Dict, List, NamedTuple, Optional, Sequence, Set, Union
 
 from dagster import check
 from dagster.config.snap import ConfigFieldSnap, snap_from_field
@@ -72,7 +72,7 @@ class OutputDefSnap(
             ("dagster_type_key", str),
             ("description", Optional[str]),
             ("is_required", bool),
-            ("metadata_entries", List[MetadataEntry]),
+            ("metadata_entries", Sequence[MetadataEntry]),
             ("is_dynamic", bool),
         ],
     )
@@ -83,7 +83,7 @@ class OutputDefSnap(
         dagster_type_key: str,
         description: Optional[str],
         is_required: bool,
-        metadata_entries: Optional[List[MetadataEntry]] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
         is_dynamic: bool = False,
     ):
         return super(OutputDefSnap, cls).__new__(
@@ -92,7 +92,7 @@ class OutputDefSnap(
             dagster_type_key=check.str_param(dagster_type_key, "dagster_type_key"),
             description=check.opt_str_param(description, "description"),
             is_required=check.bool_param(is_required, "is_required"),
-            metadata_entries=check.opt_list_param(
+            metadata_entries=check.opt_sequence_param(
                 metadata_entries, "metadata_entries", of_type=MetadataEntry
             ),
             is_dynamic=check.bool_param(is_dynamic, "is_dynamic"),

@@ -32,17 +32,7 @@ class _Repository:
 
         repository_definitions = fn()
 
-        if not (
-            isinstance(repository_definitions, list)
-            or isinstance(repository_definitions, dict)
-            or isinstance(repository_definitions, RepositoryData)
-        ):
-            raise DagsterInvalidDefinitionError(
-                "Bad return value of type {type_} from repository construction function: must "
-                "return list, dict, or RepositoryData. See the @repository decorator docstring for "
-                "details and examples".format(type_=type(repository_definitions)),
-            )
-
+        repository_data: Union[CachingRepositoryData, RepositoryData]
         if isinstance(repository_definitions, list):
             bad_definitions = []
             for i, definition in enumerate(repository_definitions):
@@ -88,6 +78,12 @@ class _Repository:
             repository_data = CachingRepositoryData.from_dict(repository_definitions)
         elif isinstance(repository_definitions, RepositoryData):
             repository_data = repository_definitions
+        else:
+            raise DagsterInvalidDefinitionError(
+                "Bad return value of type {type_} from repository construction function: must "
+                "return list, dict, or RepositoryData. See the @repository decorator docstring for "
+                "details and examples".format(type_=type(repository_definitions)),
+            )
 
         repository_def = RepositoryDefinition(
             name=self.name, description=self.description, repository_data=repository_data

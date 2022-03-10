@@ -10,6 +10,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 
 from dagster import check
@@ -69,17 +70,21 @@ class OutputDefinition:
     metadata_entries: Sequence[MetadataEntry]
     asset_partitions_def: Optional["PartitionsDefinition"]
 
+    _asset_partitions_fn: Optional[Callable[["OutputContext"], AbstractSet[str]]] = None
+
     def __init__(
         self,
         dagster_type=None,
-        name: Optional[str]=None,
-        description: Optional[str]=None,
-        is_required: bool=True,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        is_required: bool = True,
         io_manager_key: str = "io_manager",
-        metadata: Optional[MetadataUserInput]=None,
+        metadata: Optional[MetadataUserInput] = None,
         asset_key: Optional[Union[AssetKey, DynamicAssetKey]] = None,
-        asset_partitions: Optional[Union[AbstractSet[str], Callable[["OutputContext"], AbstractSet[str]]]]=None,
-        asset_partitions_def: Optional["PartitionsDefinition"]=None
+        asset_partitions: Optional[
+            Union[AbstractSet[str], Callable[["OutputContext"], AbstractSet[str]]]
+        ] = None,
+        asset_partitions_def: Optional["PartitionsDefinition"] = None
         # make sure new parameters are updated in combine_with_inferred below
     ):
         from dagster.core.definitions.partition import PartitionsDefinition
@@ -90,7 +95,8 @@ class OutputDefinition:
         self.description = check.opt_str_param(description, "description")
         self.is_required = check.bool_param(is_required, "is_required")
         self.io_manager_key = check.str_param(
-            io_manager_key, "io_manager_key",
+            io_manager_key,
+            "io_manager_key",
         )
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         self.metadata_entries = check.is_list(
@@ -122,7 +128,11 @@ class OutputDefinition:
             self._asset_partitions_fn = asset_partitions
         elif asset_partitions is not None:
             asset_partitions = check.opt_set_param(asset_partitions, "asset_partitions", str)
-            self._asset_partitions_fn = lambda _: asset_partitions
+
+            def _fn(_context: "OutputContext") -> AbstractSet[str]:
+                return cast(AbstractSet[str], asset_partitions)  # mypy bug?
+
+            self._asset_partitions_fn = _fn
         else:
             self._asset_partitions_fn = None
 
@@ -155,7 +165,7 @@ class OutputDefinition:
         else:
             return None
 
-    def get_asset_key(self, context) -> Optional[AssetKey]:
+    def get_asset_key(self, context: OutputContext) -> Optional[AssetKey]:
         """Get the AssetKey associated with this OutputDefinition for the given
         :py:class:`OutputContext` (if any).
 
@@ -168,7 +178,7 @@ class OutputDefinition:
         else:
             return self.hardcoded_asset_key
 
-    def get_asset_partitions(self, context) -> Optional[AbstractSet[str]]:
+    def get_asset_partitions(self, context: OutputContext) -> Optional[AbstractSet[str]]:
         """Get the set of partitions associated with this OutputDefinition for the given
         :py:class:`OutputContext` (if any).
 
@@ -181,7 +191,7 @@ class OutputDefinition:
 
         return self._asset_partitions_fn(context)
 
-    def mapping_from(self, solid_name, output_name=None):
+    def mapping_from(self, solid_name: str, output_name: Optional[str] = None) -> OutputMapping:
         """Create an output mapping from an output of a child solid.
 
         In a CompositeSolidDefinition, you can use this helper function to construct
@@ -189,7 +199,7 @@ class OutputDefinition:
 
         Args:
             solid_name (str): The name of the child solid from which to map this output.
-            input_name (str): The name of the child solid's output from which to map this output.
+            output_name (str): The name of the child solid's output from which to map this output.
 
         Examples:
 
@@ -277,7 +287,7 @@ class DynamicOutputDefinition(OutputDefinition):
     """
 
     @property
-    def is_dynamic(self):
+    def is_dynamic(self) -> bool:
         return True
 
 
@@ -358,7 +368,7 @@ class Out(
 
     def __new__(
         cls,
-        dagster_type: Union[DagsterType, Type[NoValueSentinel]] = NoValueSentinel,
+        dagster_type: Union[Type, DagsterType, Type[NoValueSentinel]] = NoValueSentinel,
         description: Optional[str] = None,
         is_required: bool = True,
         io_manager_key: Optional[str] = None,
@@ -374,10 +384,14 @@ class Out(
             experimental_arg_warning("assets_definition", "Out.__new__")
         return super(Out, cls).__new__(
             cls,
-            dagster_type=dagster_type,
+            dagster_type=NoValueSentinel
+            if dagster_type is NoValueSentinel
+            else resolve_dagster_type(dagster_type),
             description=description,
             is_required=check.bool_param(is_required, "is_required"),
-            io_manager_key=check.opt_str_param(io_manager_key, "io_manager_key", default="io_manager"),
+            io_manager_key=check.opt_str_param(
+                io_manager_key, "io_manager_key", default="io_manager"
+            ),
             metadata=metadata,
             asset_key=asset_key,
             asset_partitions=asset_partitions,
@@ -478,7 +492,7 @@ class GraphOut(NamedTuple("_GraphOut", [("description", Optional[str])])):
         description (Optional[str]): Human-readable description of the output.
     """
 
-    def __new__(cls, description=None):
+    def __new__(cls, description: Optional[str] = None):
         return super(GraphOut, cls).__new__(cls, description=description)
 
     def to_definition(self, name: Optional[str]) -> "OutputDefinition":

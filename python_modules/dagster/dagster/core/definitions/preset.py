@@ -19,8 +19,8 @@ class PresetDefinition(
             ("name", str),
             ("run_config", Optional[Dict[str, object]]),
             ("solid_selection", Optional[List[str]]),
-            ("mode", Optional[str]),
-            ("tags", Dict[str, object]),
+            ("mode", str),
+            ("tags", Dict[str, str]),
         ],
     )
 ):

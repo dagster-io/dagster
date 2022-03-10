@@ -1,4 +1,4 @@
-from typing import Any, NamedTuple, Optional
+from typing import Any, Dict, NamedTuple, Optional
 
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
@@ -10,7 +10,7 @@ class SourceAsset(NamedTuple):
 
     Attributes:
         key (AssetKey): The key of the asset.
-        metadata (Optional[Any]): Metadata associated with the asset.
+        metadata (Optional[Dict[str, Any]]): Metadata associated with the asset.
         io_manager_key (str): The key for the IOManager that will be used to load the contents of
             the asset when it's used as an input to other assets inside a job.
         description (Optional[str]): The description of the asset.
@@ -19,7 +19,7 @@ class SourceAsset(NamedTuple):
     """
 
     key: AssetKey
-    metadata: Optional[Any] = None
+    metadata: Optional[Dict[str, Any]] = None
     io_manager_key: str = "io_manager"
     description: Optional[str] = None
     partitions_def: Optional[PartitionsDefinition] = None

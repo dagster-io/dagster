@@ -56,7 +56,7 @@ def normalize_metadata(
     metadata: Mapping[str, RawMetadataValue],
     metadata_entries: Sequence[Union["MetadataEntry", "PartitionMetadataEntry"]],
     allow_invalid: bool = False,
-) -> Sequence[Union["MetadataEntry", "PartitionMetadataEntry"]]:
+) -> List[Union["MetadataEntry", "PartitionMetadataEntry"]]:
     if metadata and metadata_entries:
         raise DagsterInvalidMetadata(
             "Attempted to provide both `metadata` and `metadata_entries` arguments to an event. "
@@ -70,9 +70,7 @@ def normalize_metadata(
             additional_warn_txt="Use argument `metadata` instead. The `MetadataEntry` `description` attribute is also deprecated-- argument `metadata` takes a label: value dictionary.",
             stacklevel=4,  # to get the caller of `normalize_metadata`
         )
-        return check.sequence_param(
-            metadata_entries, "metadata_entries", (MetadataEntry, PartitionMetadataEntry)
-        )
+        return list(metadata_entries)
 
     # This is a stopgap measure to deal with unsupported metadata values, which occur when we try
     # to convert arbitrary metadata (on e.g. OutputDefinition) to a MetadataValue, which is required
@@ -100,9 +98,12 @@ def normalize_metadata(
         for k, v in check.opt_dict_param(metadata, "metadata", key_type=str).items()
     ]
 
+
 import pathlib
-p = pathlib.Path('a/b/c')
+
+p = pathlib.Path("a/b/c")
 os.fspath(p)
+
 
 def normalize_metadata_value(raw_value: RawMetadataValue):
 

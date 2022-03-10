@@ -1,5 +1,5 @@
 import itertools
-from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast
+from typing import AbstractSet, Any, Dict, Mapping, Optional, Sequence, Tuple, Union, cast
 
 from dagster import check
 from dagster.core.definitions.config import ConfigMapping
@@ -77,7 +77,9 @@ def build_assets_job(
     """
     check.str_param(name, "name")
     check.sequence_param(assets, "assets", of_type=AssetsDefinition)
-    check.opt_sequence_param(source_assets, "source_assets", of_type=(SourceAsset, AssetsDefinition))
+    check.opt_sequence_param(
+        source_assets, "source_assets", of_type=(SourceAsset, AssetsDefinition)
+    )
     check.opt_str_param(description, "description")
     source_assets_by_key = build_source_assets_by_key(source_assets)
 
@@ -251,7 +253,7 @@ def build_root_manager(
             name=source_asset_key.path[-1],
             step_key="none",
             solid_def=_op,
-            metadata=source_asset.metadata,
+            metadata=cast(Dict[str, Any], source_asset.metadata),
         )
         input_context_with_upstream = build_input_context(
             name=input_context.name,

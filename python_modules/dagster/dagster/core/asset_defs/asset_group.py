@@ -106,7 +106,9 @@ class AssetGroup(
         executor_def: Optional[ExecutorDefinition] = None,
     ):
         check.sequence_param(assets, "assets", of_type=AssetsDefinition)
-        source_assets = check.opt_sequence_param(source_assets, "source_assets", of_type=SourceAsset)
+        source_assets = check.opt_sequence_param(
+            source_assets, "source_assets", of_type=SourceAsset
+        )
         resource_defs = check.opt_mapping_param(
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )

@@ -1,7 +1,21 @@
 import re
 import warnings
 from enum import Enum
-from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, List, Mapping, NamedTuple, Optional, Sequence, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    cast,
+)
 
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidAssetKey
@@ -37,7 +51,7 @@ def parse_asset_key_string(s: str) -> List[str]:
 
 
 @whitelist_for_serdes
-class AssetKey(NamedTuple("_AssetKey", [("path", Tuple[str])])):
+class AssetKey(NamedTuple("_AssetKey", [("path", Tuple[str, ...])])):
     """Object representing the structure of an asset key.  Takes in a sanitized string, list of
     strings, or tuple of strings.
 
@@ -129,7 +143,9 @@ class AssetKey(NamedTuple("_AssetKey", [("path", Tuple[str])])):
             return AssetKey(asset_key["path"])
         return None
 
+
 DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]
+
 
 @whitelist_for_serdes
 class AssetLineageInfo(
