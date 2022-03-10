@@ -84,7 +84,7 @@ def test_default_launcher(
     assert MetadataEntry.text(run.run_id, "Run ID") in event_metadata
 
 
-def test_task_definition_registration(ecs, instance, workspace, run):
+def test_task_definition_registration(ecs, instance, workspace, run, other_workspace, other_run):
     initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
     initial_tasks = ecs.list_tasks()["taskArns"]
 
@@ -96,6 +96,15 @@ def test_task_definition_registration(ecs, instance, workspace, run):
 
     # Launching another run reuses an existing task definition
     instance.launch_run(run.run_id, workspace)
+    assert task_definitions == ecs.list_task_definitions()["taskDefinitionArns"]
+
+    # Unless the image changes
+    instance.launch_run(other_run.run_id, other_workspace)
+    assert len(ecs.list_task_definitions()["taskDefinitionArns"]) == len(task_definitions) + 1
+
+    # Relaunching another run with the new image reuses an existing task definition
+    task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    instance.launch_run(other_run.run_id, other_workspace)
     assert task_definitions == ecs.list_task_definitions()["taskDefinitionArns"]
 
 

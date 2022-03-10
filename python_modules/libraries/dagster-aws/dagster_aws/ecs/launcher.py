@@ -277,7 +277,14 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             task_definition = self.ecs.describe_task_definition(taskDefinition="dagster-run")[
                 "taskDefinition"
             ]
-            return task_definition
+
+        container_definitions = task_definition.get("containerDefinitions", [{}])
+        for container_definition in container_definitions:
+            if (
+                container_definition.get("image") == image
+                and container_definition.get("name") == self.container_name
+            ):
+                return task_definition
 
         return default_ecs_task_definition(
             self.ecs,
