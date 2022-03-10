@@ -78,7 +78,7 @@ class OutputDefinition:
         name: Optional[str] = None,
         description: Optional[str] = None,
         is_required: bool = True,
-        io_manager_key: str = "io_manager",
+        io_manager_key: Optional[str] = None,
         metadata: Optional[MetadataUserInput] = None,
         asset_key: Optional[Union[AssetKey, DynamicAssetKey]] = None,
         asset_partitions: Optional[
@@ -94,9 +94,10 @@ class OutputDefinition:
         self.dagster_type = resolve_dagster_type(dagster_type)
         self.description = check.opt_str_param(description, "description")
         self.is_required = check.bool_param(is_required, "is_required")
-        self.io_manager_key = check.str_param(
+        self.io_manager_key = check.opt_str_param(
             io_manager_key,
             "io_manager_key",
+            default="io_manager",
         )
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
         self.metadata_entries = check.is_list(
