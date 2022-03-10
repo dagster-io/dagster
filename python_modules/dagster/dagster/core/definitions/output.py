@@ -165,7 +165,7 @@ class OutputDefinition:
         else:
             return None
 
-    def get_asset_key(self, context: OutputContext) -> Optional[AssetKey]:
+    def get_asset_key(self, context: "OutputContext") -> Optional[AssetKey]:
         """Get the AssetKey associated with this OutputDefinition for the given
         :py:class:`OutputContext` (if any).
 
@@ -178,7 +178,7 @@ class OutputDefinition:
         else:
             return self.hardcoded_asset_key
 
-    def get_asset_partitions(self, context: OutputContext) -> Optional[AbstractSet[str]]:
+    def get_asset_partitions(self, context: "OutputContext") -> Optional[AbstractSet[str]]:
         """Get the set of partitions associated with this OutputDefinition for the given
         :py:class:`OutputContext` (if any).
 
@@ -191,7 +191,7 @@ class OutputDefinition:
 
         return self._asset_partitions_fn(context)
 
-    def mapping_from(self, solid_name: str, output_name: Optional[str] = None) -> OutputMapping:
+    def mapping_from(self, solid_name: str, output_name: Optional[str] = None) -> "OutputMapping":
         """Create an output mapping from an output of a child solid.
 
         In a CompositeSolidDefinition, you can use this helper function to construct
