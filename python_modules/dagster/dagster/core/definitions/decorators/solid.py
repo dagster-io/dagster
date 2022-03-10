@@ -97,6 +97,7 @@ class _Solid:
         if not self.name:
             self.name = fn.__name__
 
+        output_defs: Sequence[OutputDefinition]
         if self.output_defs is None:
             output_defs = [OutputDefinition.create_from_inferred(infer_output_props(fn))]
         elif len(self.output_defs) == 1:
