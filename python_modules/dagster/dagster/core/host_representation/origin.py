@@ -184,7 +184,7 @@ class ManagedGrpcPythonEnvRepositoryLocationOrigin(
     for these repository locations on startup.
     """
 
-    def __new__(cls, loadable_target_origin: LoadableTargetOrigin, location_name: Optional[str]):
+    def __new__(cls, loadable_target_origin: LoadableTargetOrigin, location_name: Optional[str] = None):
         return super(ManagedGrpcPythonEnvRepositoryLocationOrigin, cls).__new__(
             cls,
             check.inst_param(

@@ -70,7 +70,9 @@ def normalize_metadata(
             additional_warn_txt="Use argument `metadata` instead. The `MetadataEntry` `description` attribute is also deprecated-- argument `metadata` takes a label: value dictionary.",
             stacklevel=4,  # to get the caller of `normalize_metadata`
         )
-        return list(metadata_entries)
+        return check.list_param(
+            metadata_entries, "metadata_entries", (MetadataEntry, PartitionMetadataEntry)
+        )
 
     # This is a stopgap measure to deal with unsupported metadata values, which occur when we try
     # to convert arbitrary metadata (on e.g. OutputDefinition) to a MetadataValue, which is required
