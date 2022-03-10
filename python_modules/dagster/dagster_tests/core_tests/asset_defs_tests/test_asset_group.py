@@ -116,7 +116,7 @@ def test_asset_group_missing_resources():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"SourceAsset with key AssetKey\(\('foo',\)\) requires io manager with key 'foo', which was not provided on AssetGroup. Provided keys: \['io_manager', 'root_manager'\]",
+        match=r"SourceAsset with key AssetKey\(\['foo'\]\) requires io manager with key 'foo', which was not provided on AssetGroup. Provided keys: \['io_manager', 'root_manager'\]",
     ):
         AssetGroup([], source_assets=[source_asset_io_req])
 
@@ -144,7 +144,7 @@ def test_asset_group_requires_root_manager():
 
     with pytest.raises(
         DagsterInvalidDefinitionError,
-        match=r"Output 'result' with AssetKey 'AssetKey\(\('asset_foo',\)\)' "
+        match=r"Output 'result' with AssetKey 'AssetKey\(\['asset_foo'\]\)' "
         r"requires io manager 'blah' but was not provided on asset group. "
         r"Provided resources: \['io_manager', 'root_manager'\]",
     ):

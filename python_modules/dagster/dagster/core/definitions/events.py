@@ -12,7 +12,6 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
-    Tuple,
     Union,
     cast,
 )
@@ -51,7 +50,7 @@ def parse_asset_key_string(s: str) -> List[str]:
 
 
 @whitelist_for_serdes
-class AssetKey(NamedTuple("_AssetKey", [("path", Tuple[str, ...])])):
+class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
     """Object representing the structure of an asset key.  Takes in a sanitized string, list of
     strings, or tuple of strings.
 
@@ -89,9 +88,9 @@ class AssetKey(NamedTuple("_AssetKey", [("path", Tuple[str, ...])])):
 
     def __new__(cls, path: Sequence[str]):
         if isinstance(path, str):
-            path = (path,)
+            path = [path]
         else:
-            path = tuple(check.sequence_param(path, "path", of_type=str))
+            path = list(check.sequence_param(path, "path", of_type=str))
 
         return super(AssetKey, cls).__new__(cls, path=path)
 
@@ -102,7 +101,7 @@ class AssetKey(NamedTuple("_AssetKey", [("path", Tuple[str, ...])])):
         return "AssetKey({})".format(self.path)
 
     def __hash__(self):
-        return hash(self.path)
+        return hash(tuple(self.path))
 
     def __eq__(self, other):
         if not isinstance(other, AssetKey):
