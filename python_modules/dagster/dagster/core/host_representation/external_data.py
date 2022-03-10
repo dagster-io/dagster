@@ -768,7 +768,7 @@ def external_asset_graph_from_defs(
     ] = defaultdict(list)
 
     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
-    dep_by: Dict[AssetKey, List[ExternalAssetDependedBy]] = defaultdict(list)
+    dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
     all_upstream_asset_keys: Set[AssetKey] = set()
 
     for pipeline in pipelines:
@@ -808,12 +808,10 @@ def external_asset_graph_from_defs(
                         input_name=input_name_by_asset_key.get(upstream_asset_key),
                         output_name=output_name_by_asset_key.get(upstream_asset_key),
                     )
-                    dep_by[upstream_asset_key].append(
-                        ExternalAssetDependedBy(
-                            downstream_asset_key=output_asset_key,
-                            input_name=input_name_by_asset_key.get(upstream_asset_key),
-                            output_name=output_name_by_asset_key.get(upstream_asset_key),
-                        )
+                    dep_by[upstream_asset_key][output_asset_key] = ExternalAssetDependedBy(
+                        downstream_asset_key=output_asset_key,
+                        input_name=input_name_by_asset_key.get(upstream_asset_key),
+                        output_name=output_name_by_asset_key.get(upstream_asset_key),
                     )
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
         node_defs_by_asset_key.keys()
@@ -823,7 +821,7 @@ def external_asset_graph_from_defs(
         ExternalAssetNode(
             asset_key=asset_key,
             dependencies=list(deps[asset_key].values()),
-            depended_by=dep_by[asset_key],
+            depended_by=list(dep_by[asset_key].values()),
             job_names=[],
         )
         for asset_key in asset_keys_without_definitions
@@ -840,7 +838,7 @@ def external_asset_graph_from_defs(
             ExternalAssetNode(
                 asset_key=source_asset.key,
                 dependencies=list(deps[source_asset.key].values()),
-                depended_by=dep_by[source_asset.key],
+                depended_by=list(dep_by[source_asset.key].values()),
                 job_names=[],
                 op_description=source_asset.description,
             )
@@ -873,7 +871,7 @@ def external_asset_graph_from_defs(
             ExternalAssetNode(
                 asset_key=asset_key,
                 dependencies=list(deps[asset_key].values()),
-                depended_by=dep_by[asset_key],
+                depended_by=list(dep_by[asset_key].values()),
                 op_name=node_def.name,
                 op_description=node_def.description,
                 job_names=job_names,
