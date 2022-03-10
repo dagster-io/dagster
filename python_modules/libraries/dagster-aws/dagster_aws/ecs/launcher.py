@@ -1,5 +1,6 @@
 import warnings
 from collections import namedtuple
+from contextlib import suppress
 
 import boto3
 from botocore.exceptions import ClientError
@@ -269,6 +270,14 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         if self.task_definition:
             task_definition = self.ecs.describe_task_definition(taskDefinition=self.task_definition)
             return task_definition["taskDefinition"]
+
+        task_definition = {}
+        with suppress(ClientError):
+            # TODO: Vary family name by repository location
+            task_definition = self.ecs.describe_task_definition(taskDefinition="dagster-run")[
+                "taskDefinition"
+            ]
+            return task_definition
 
         return default_ecs_task_definition(
             self.ecs,
