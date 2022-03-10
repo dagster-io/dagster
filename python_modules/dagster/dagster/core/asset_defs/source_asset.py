@@ -1,8 +1,14 @@
-from typing import Any, Dict, NamedTuple, Optional, Sequence, Union
+from typing import NamedTuple, Optional, Sequence, Union
 
 import dagster.check as check
 from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.metadata import MetadataEntry, MetadataMapping, MetadataUserInput, PartitionMetadataEntry, normalize_metadata
+from dagster.core.definitions.metadata import (
+    MetadataEntry,
+    MetadataMapping,
+    MetadataUserInput,
+    PartitionMetadataEntry,
+    normalize_metadata,
+)
 from dagster.core.definitions.partition import PartitionsDefinition
 
 
@@ -49,10 +55,12 @@ class SourceAsset(
             metadata_entries=metadata_entries,
             io_manager_key=check.str_param(io_manager_key, "io_manager_key"),
             description=check.opt_str_param(description, "description"),
-            partitions_def=check.opt_inst_param(partitions_def, "partitions_def", PartitionsDefinition),
+            partitions_def=check.opt_inst_param(
+                partitions_def, "partitions_def", PartitionsDefinition
+            ),
         )
 
     @property
-    def metadata(self) -> Dict[str, Any]:
+    def metadata(self) -> MetadataMapping:
         # PartitionMetadataEntry (unstable API) case is unhandled
-        return {entry.label: entry.entry_data for entry in self.metadata_entries}
+        return {entry.label: entry.entry_data for entry in self.metadata_entries}  # type: ignore

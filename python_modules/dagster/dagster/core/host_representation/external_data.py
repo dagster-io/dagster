@@ -23,6 +23,7 @@ from dagster.core.definitions import (
     ScheduleDefinition,
 )
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.metadata import MetadataEntry
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.partition import PartitionScheduleDefinition, ScheduleType
@@ -692,6 +693,7 @@ class ExternalAssetNode(
             ("partitions_def_data", Optional[ExternalPartitionsDefinitionData]),
             ("output_name", Optional[str]),
             ("output_description", Optional[str]),
+            ("metadata_entries", Sequence[MetadataEntry]),
         ],
     )
 ):
@@ -711,6 +713,7 @@ class ExternalAssetNode(
         partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None,
         output_name: Optional[str] = None,
         output_description: Optional[str] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     ):
         return super(ExternalAssetNode, cls).__new__(
             cls,
@@ -731,6 +734,9 @@ class ExternalAssetNode(
             ),
             output_name=check.opt_str_param(output_name, "output_name"),
             output_description=check.opt_str_param(output_description, "output_description"),
+            metadata_entries=check.opt_sequence_param(
+                metadata_entries, "metadata_entries", of_type=MetadataEntry
+            ),
         )
 
 
@@ -840,6 +846,10 @@ def external_asset_graph_from_defs(
                 " and as a non-source asset"
             )
 
+        # TODO: For now we are dropping partition metadata entries
+        metadata_entries = [
+            entry for entry in source_asset.metadata_entries if isinstance(entry, MetadataEntry)
+        ]
         asset_nodes.append(
             ExternalAssetNode(
                 asset_key=source_asset.key,
@@ -847,6 +857,7 @@ def external_asset_graph_from_defs(
                 depended_by=list(dep_by[source_asset.key].values()),
                 job_names=[],
                 op_description=source_asset.description,
+                metadata_entries=metadata_entries,
             )
         )
 
@@ -861,7 +872,7 @@ def external_asset_graph_from_defs(
             ]
         ] = None
 
-        if output_def and output_def.asset_partitions_def:
+        if output_def.asset_partitions_def:
             partitions_def = output_def.asset_partitions_def
             if partitions_def:
                 if isinstance(partitions_def, TimeWindowPartitionsDefinition):
@@ -888,6 +899,7 @@ def external_asset_graph_from_defs(
                 partitions_def_data=partitions_def_data,
                 output_name=output_def.name,
                 output_description=output_def.description,
+                metadata_entries=output_def.metadata_entries,
             )
         )
 

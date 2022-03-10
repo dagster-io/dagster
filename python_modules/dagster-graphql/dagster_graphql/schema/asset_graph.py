@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING, List, Optional, Union
 
 import graphene
+from dagster_graphql.implementation.events import iterate_metadata_entries
+from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 from dagster_graphql.schema.solids import (
     GrapheneCompositeSolidDefinition,
     GrapheneSolidDefinition,
@@ -89,6 +91,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         partitions=graphene.List(graphene.String),
     )
     materializationCountByPartition = non_null_list(GrapheneMaterializationCount)
+    metadata_entries = non_null_list(GrapheneMetadataEntry)
     op = graphene.Field(GrapheneSolidDefinition)
     opName = graphene.String()
     partitionKeys = non_null_list(graphene.String)
@@ -222,6 +225,12 @@ class GrapheneAssetNode(graphene.ObjectType):
             for dep in self._external_asset_node.depended_by
         ]
 
+    def resolve_dependencyKeys(self, _graphene_info):
+        return [
+            GrapheneAssetKey(path=dep.upstream_asset_key.path)
+            for dep in self._external_asset_node.dependencies
+        ]
+
     def resolve_dependencies(self, graphene_info) -> List[GrapheneAssetDependency]:
         if not self._external_asset_node.dependencies:
             return []
@@ -308,6 +317,9 @@ class GrapheneAssetNode(graphene.ObjectType):
             GrapheneMaterializationCount(partition_key, count_by_partition.get(partition_key, 0))
             for partition_key in partition_keys
         ]
+
+    def resolve_metadata_entries(self, _graphene_info) -> List[GrapheneMetadataEntry]:
+        return list(iterate_metadata_entries(self._external_asset_node.metadata_entries))
 
     def resolve_op(
         self, _graphene_info
