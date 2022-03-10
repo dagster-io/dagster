@@ -1103,7 +1103,7 @@ def test_opt_sequence_param():
     assert check.opt_sequence_param("foo", "sequence_param") == "foo"
     assert check.opt_sequence_param("foo", "sequence_param", of_type=str) == "foo"
 
-    assert check.opt_sequence_param(None, "sequence_param") == tuple()
+    assert check.opt_sequence_param(None, "sequence_param") == []
 
     with pytest.raises(CheckError):
         check.opt_sequence_param(1, "sequence_param", of_type=int)  # type: ignore

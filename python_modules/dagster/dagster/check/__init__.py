@@ -842,7 +842,7 @@ def opt_sequence_param(
     obj: Optional[Sequence[T]], param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
 ) -> Sequence[T]:
     if obj is None:
-        return tuple()
+        return []
     elif not isinstance(obj, collections.abc.Sequence):
         raise _param_type_mismatch_exception(obj, (collections.abc.Sequence,), param_name)
     elif of_type is not None:
