@@ -809,17 +809,22 @@ def opt_path_param(obj: None, param_name: str, default: Union[str, PathLike]) ->
 
 
 @overload
-def opt_path_param(obj: Union[str, PathLike], param_name: str, default: Union[str, PathLike]) -> str:
+def opt_path_param(
+    obj: Union[str, PathLike], param_name: str, default: Union[str, PathLike]
+) -> str:
     ...
 
 
 def opt_path_param(
-    obj: Optional[Union[str, PathLike]], param_name: str, default: Optional[Union[str, PathLike]] = None
+    obj: Optional[Union[str, PathLike]],
+    param_name: str,
+    default: Optional[Union[str, PathLike]] = None,
 ) -> Optional[Union[str, PathLike]]:
     if obj is None:
         return str(default) if default is not None else None
     else:
         return path_param(obj, param_name)
+
 
 # ########################
 # ##### SEQUENCE
@@ -850,17 +855,20 @@ def opt_sequence_param(
     else:
         return obj
 
+
 @overload
 def opt_nullable_sequence_param(
     obj: None, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = ...
 ) -> None:
     ...
 
+
 @overload
 def opt_nullable_sequence_param(
     obj: Sequence[T], param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
 ) -> Sequence[T]:
     ...
+
 
 def opt_nullable_sequence_param(
     obj: Optional[Sequence[T]], param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
@@ -869,6 +877,7 @@ def opt_nullable_sequence_param(
         return None
     else:
         return opt_sequence_param(obj, param_name, of_type)
+
 
 # ########################
 # ##### SET

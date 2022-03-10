@@ -73,7 +73,7 @@ class _Solid:
     ):
         self.name = check.opt_str_param(name, "name")
         self.input_defs = check.opt_list_param(input_defs, "input_defs", InputDefinition)
-        self.output_defs = check.opt_nullable_list_param(
+        self.output_defs = check.opt_nullable_sequence_param(
             output_defs, "output_defs", OutputDefinition
         )
         self.decorator_takes_context = check.bool_param(
