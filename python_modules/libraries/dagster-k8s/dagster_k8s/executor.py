@@ -1,3 +1,5 @@
+from typing import List, Optional, cast
+
 import kubernetes
 from dagster_k8s.launcher import K8sRunLauncher
 
@@ -12,7 +14,6 @@ from dagster.core.executor.init import InitExecutorContext
 from dagster.core.executor.step_delegating import StepDelegatingExecutor
 from dagster.core.executor.step_delegating.step_handler import StepHandler
 from dagster.core.executor.step_delegating.step_handler.base import StepHandlerContext
-from dagster.core.types.dagster_type import Optional
 from dagster.utils import frozentags, merge_dicts
 
 from .container_context import K8sContainerContext
@@ -94,7 +95,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             load_incluster_config=run_launcher.load_incluster_config,
             kubeconfig_file=run_launcher.kubeconfig_file,
         ),
-        retries=RetryMode.from_config(init_context.executor_config["retries"]),
+        retries=RetryMode.from_config(init_context.executor_config["retries"]),  # type: ignore
         should_verify_step=True,
     )
 
@@ -159,10 +160,11 @@ class K8sStepHandler(StepHandler):
     def launch_step(self, step_handler_context: StepHandlerContext):
         events = []
 
-        assert (
-            len(step_handler_context.execute_step_args.step_keys_to_execute) == 1
-        ), "Launching multiple steps is not currently supported"
-        step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
+        step_keys_to_execute = cast(
+            List[str], step_handler_context.execute_step_args.step_keys_to_execute
+        )
+        assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
+        step_key = step_keys_to_execute[0]
 
         job_name = self._get_k8s_step_job_name(step_handler_context)
         pod_name = job_name
@@ -221,10 +223,11 @@ class K8sStepHandler(StepHandler):
         return events
 
     def check_step_health(self, step_handler_context: StepHandlerContext):
-        assert (
-            len(step_handler_context.execute_step_args.step_keys_to_execute) == 1
-        ), "Launching multiple steps is not currently supported"
-        step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
+        step_keys_to_execute = cast(
+            List[str], step_handler_context.execute_step_args.step_keys_to_execute
+        )
+        assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
+        step_key = step_keys_to_execute[0]
 
         job_name = self._get_k8s_step_job_name(step_handler_context)
 
@@ -249,9 +252,10 @@ class K8sStepHandler(StepHandler):
         return []
 
     def terminate_step(self, step_handler_context: StepHandlerContext):
-        assert (
-            len(step_handler_context.execute_step_args.step_keys_to_execute) == 1
-        ), "Launching multiple steps is not currently supported"
+        step_keys_to_execute = cast(
+            List[str], step_handler_context.execute_step_args.step_keys_to_execute
+        )
+        assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
 
         job_name = self._get_k8s_step_job_name(step_handler_context)
         container_context = self._get_container_context(step_handler_context)

@@ -127,7 +127,7 @@ def materialization_schedule():
     start_date=datetime.datetime(2021, 1, 1),
     execution_timezone=_toys_tz_info(),
 )
-def hourly_materialization_schedule():
+def hourly_materialization_schedule(_dt):
     return {}
 
 
@@ -136,7 +136,7 @@ def hourly_materialization_schedule():
     start_date=datetime.datetime(2021, 1, 1),
     execution_timezone=_toys_tz_info(),
 )
-def daily_materialization_schedule():
+def daily_materialization_schedule(_dt):
     return {}
 
 
@@ -145,7 +145,7 @@ def daily_materialization_schedule():
     start_date=datetime.datetime(2021, 1, 1),
     execution_timezone=_toys_tz_info(),
 )
-def weekly_materialization_schedule():
+def weekly_materialization_schedule(_dt):
     return {}
 
 
@@ -154,7 +154,7 @@ def weekly_materialization_schedule():
     start_date=datetime.datetime(2021, 1, 1),
     execution_timezone=_toys_tz_info(),
 )
-def monthly_materialization_schedule():
+def monthly_materialization_schedule(_dt):
     return {}
 
 
