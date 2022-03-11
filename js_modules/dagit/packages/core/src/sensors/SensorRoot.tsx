@@ -6,7 +6,6 @@ import {useParams} from 'react-router-dom';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable, TickHistoryTimeline} from '../instigation/TickHistory';
-import {InstigationStatus} from '../types/globalTypes';
 import {Loading} from '../ui/Loading';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
