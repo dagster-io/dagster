@@ -2,7 +2,7 @@ import os
 
 import click
 
-from dagster.generate import generate_new_project
+from dagster._generate import generate_new_project
 from dagster.utils.backcompat import experimental
 
 

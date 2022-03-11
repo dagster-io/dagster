@@ -12,7 +12,7 @@ ignore_errors = True
 ignore_errors = True
 
 # https://github.com/python/mypy/issues/4008
-[dagster.generate.new_project.setup]
+[dagster._generate.new_project.setup]
 ignore_errors = True
 
 [mypy-azure.storage.*]
