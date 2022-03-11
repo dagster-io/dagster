@@ -1,7 +1,7 @@
 import {gql, useQuery} from '@apollo/client';
 import {Box, Checkbox, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import _, {flatMap, uniq, uniqBy, without} from 'lodash';
-import React, {useRef} from 'react';
+import React from 'react';
 import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
@@ -213,7 +213,6 @@ const AssetGraphExplorerWithData: React.FC<
   } = props;
 
   const history = useHistory();
-  const splitpanelRef = useRef<SplitPanelContainer>(null);
   const findAssetInWorkspace = useFindAssetInWorkspace();
 
   const selectedAssetValues = explorerPath.opNames[explorerPath.opNames.length - 1].split(',');
@@ -295,9 +294,8 @@ const AssetGraphExplorerWithData: React.FC<
   return (
     <SplitPanelContainer
       identifier="explorer"
-      ref={splitpanelRef}
-      firstInitialPercent={100}
-      firstMinSize={600}
+      firstInitialPercent={70}
+      firstMinSize={400}
       first={
         <>
           {graphQueryItems.length === 0 ? (
