@@ -84,7 +84,7 @@ def sample_schema_model(**config_attrs):
             return series.str.split("_", expand=True).shape[1] == 2
 
         @pa.dataframe_check
-        def a_gt_b(cls, df):   # pylint: disable=no-self-argument
+        def a_gt_b(cls, df):  # pylint: disable=no-self-argument
             """sum(a) > sum(b)"""
             return df["a"].sum() > df["b"].sum()
 
