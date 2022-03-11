@@ -23,7 +23,7 @@ from dagster._core.executor.init import InitExecutorContext
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.loggers import default_system_loggers
+from dagster._loggers import default_system_loggers
 from dagster.utils import ensure_single_item
 from dagster.utils.error import serializable_error_info_from_exc_info
 

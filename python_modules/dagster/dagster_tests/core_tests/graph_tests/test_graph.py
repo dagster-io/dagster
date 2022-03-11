@@ -34,7 +34,7 @@ from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,
 )
-from dagster.loggers import json_console_logger
+from dagster._loggers import json_console_logger
 
 
 def get_ops():

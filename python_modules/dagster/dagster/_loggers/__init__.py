@@ -51,7 +51,7 @@ def json_console_logger(init_context):
         .. code-block:: python
 
             from dagster import op, job
-            from dagster.loggers import json_console_logger
+            from dagister._loggers import json_console_logger
 
             @op
             def hello_op(context):

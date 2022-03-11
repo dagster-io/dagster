@@ -52,7 +52,7 @@ from dagster._core.storage.event_log.migration import (
 from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventLogStorage
 from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
-from dagster.loggers import colored_console_logger
+from dagster._loggers import colored_console_logger
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils import datetime_as_float
 
