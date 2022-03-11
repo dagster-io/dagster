@@ -31,8 +31,8 @@ from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster._core.test_utils import create_test_daemon_workspace, instance_for_test
 from dagster._core.workspace.load_target import PythonFileTarget
-from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.backfill import execute_backfill_iteration
+from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.backfill import execute_backfill_iteration
 from dagster.seven import IS_WINDOWS, get_system_temp_directory
 from dagster.utils import touch_file
 from dagster.utils.error import SerializableErrorInfo

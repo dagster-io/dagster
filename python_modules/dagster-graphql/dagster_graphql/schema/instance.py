@@ -5,8 +5,8 @@ import graphene
 from dagster import check
 from dagster._core.instance import DagsterInstance, is_dagit_telemetry_enabled
 from dagster._core.launcher.base import RunLauncher
-from dagster.daemon.controller import get_daemon_statuses
-from dagster.daemon.types import DaemonStatus
+from dagster._daemon.controller import get_daemon_statuses
+from dagster._daemon.types import DaemonStatus
 
 from .errors import GraphenePythonError
 from .util import non_null_list

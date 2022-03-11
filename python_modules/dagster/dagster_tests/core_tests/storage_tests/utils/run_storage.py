@@ -37,8 +37,8 @@ from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
-from dagster.daemon.daemon import SensorDaemon
-from dagster.daemon.types import DaemonHeartbeat
+from dagster._daemon.daemon import SensorDaemon
+from dagster._daemon.types import DaemonHeartbeat
 from dagster.serdes import serialize_pp
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 

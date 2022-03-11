@@ -40,8 +40,8 @@ from dagster._core.test_utils import (
     instance_for_test,
 )
 from dagster._core.workspace.load_target import PythonFileTarget
-from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
+from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 
@@ -480,9 +480,9 @@ def test_simple_sensor(capfd):
             )
 
             assert (
-                get_logger_output_from_capfd(capfd, "dagster.daemon.SensorDaemon")
-                == """2019-02-27 17:59:59 -0600 - dagster.daemon.SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
-2019-02-27 17:59:59 -0600 - dagster.daemon.SensorDaemon - INFO - No run requests returned for simple_sensor, skipping"""
+                get_logger_output_from_capfd(capfd, "dagster._daemon.SensorDaemon")
+                == """2019-02-27 17:59:59 -0600 - dagster._daemon.SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
+2019-02-27 17:59:59 -0600 - dagster._daemon.SensorDaemon - INFO - No run requests returned for simple_sensor, skipping"""
             )
 
             freeze_datetime = freeze_datetime.add(seconds=30)
@@ -508,10 +508,10 @@ def test_simple_sensor(capfd):
             )
 
             assert (
-                get_logger_output_from_capfd(capfd, "dagster.daemon.SensorDaemon")
-                == """2019-02-27 18:00:29 -0600 - dagster.daemon.SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
-2019-02-27 18:00:29 -0600 - dagster.daemon.SensorDaemon - INFO - Launching run for simple_sensor
-2019-02-27 18:00:29 -0600 - dagster.daemon.SensorDaemon - INFO - Completed launch of run {run_id} for simple_sensor""".format(
+                get_logger_output_from_capfd(capfd, "dagster._daemon.SensorDaemon")
+                == """2019-02-27 18:00:29 -0600 - dagster._daemon.SensorDaemon - INFO - Checking for new runs for sensor: simple_sensor
+2019-02-27 18:00:29 -0600 - dagster._daemon.SensorDaemon - INFO - Launching run for simple_sensor
+2019-02-27 18:00:29 -0600 - dagster._daemon.SensorDaemon - INFO - Completed launch of run {run_id} for simple_sensor""".format(
                     run_id=run.run_id
                 )
             )
@@ -959,7 +959,7 @@ def test_custom_interval_sensor_with_offset(monkeypatch):
                 execute_sensor_iteration_loop(
                     instance,
                     workspace,
-                    get_default_daemon_logger("dagster.daemon.SensorDaemon"),
+                    get_default_daemon_logger("dagster._daemon.SensorDaemon"),
                     until=freeze_datetime.add(seconds=65).timestamp(),
                 )
             )

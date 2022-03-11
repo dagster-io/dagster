@@ -11,15 +11,15 @@ from dagster import check
 from dagster._core.host_representation.grpc_server_registry import ProcessGrpcServerRegistry
 from dagster._core.instance import DagsterInstance
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
-from dagster.daemon.daemon import (
+from dagster._daemon.daemon import (
     BackfillDaemon,
     DagsterDaemon,
     MonitoringDaemon,
     SchedulerDaemon,
     SensorDaemon,
 )
-from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
-from dagster.daemon.types import DaemonHeartbeat, DaemonStatus
+from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import QueuedRunCoordinatorDaemon
+from dagster._daemon.types import DaemonHeartbeat, DaemonStatus
 from dagster.utils.interrupts import raise_interrupts_as
 from dagster.utils.log import configure_loggers
 
@@ -144,7 +144,7 @@ class DagsterDaemonController:
 
         configure_loggers(handler=handler)
 
-        self._logger = logging.getLogger("dagster.daemon")
+        self._logger = logging.getLogger("dagster._daemon")
         self._logger.info(
             "instance is configured with the following daemons: {}".format(
                 _sorted_quoted(type(daemon).__name__ for daemon in self.daemons)

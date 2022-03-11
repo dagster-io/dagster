@@ -136,7 +136,7 @@ def test_submit_run():
 
 
 def test_get_required_daemon_types():
-    from dagster.daemon.daemon import (
+    from dagster._daemon.daemon import (
         BackfillDaemon,
         MonitoringDaemon,
         SchedulerDaemon,

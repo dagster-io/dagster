@@ -522,7 +522,7 @@ def _create_scheduler_run(
     external_pipeline,
     run_request,
 ):
-    from dagster.daemon.daemon import get_telemetry_daemon_session_id
+    from dagster._daemon.daemon import get_telemetry_daemon_session_id
 
     run_config = run_request.run_config
     schedule_tags = run_request.tags

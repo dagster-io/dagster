@@ -11,8 +11,8 @@ from dagster._core.test_utils import (
     get_crash_signals,
     get_logger_output_from_capfd,
 )
-from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.backfill import execute_backfill_iteration
+from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.backfill import execute_backfill_iteration
 from dagster.seven import IS_WINDOWS
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
@@ -78,9 +78,9 @@ def test_simple(capfd):
         backfill = instance.get_backfill("simple")
         assert backfill.status == BulkActionStatus.COMPLETED
         assert (
-            get_logger_output_from_capfd(capfd, "dagster.daemon.BackfillDaemon")
-            == """2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Starting backfill for simple
-2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Backfill completed for simple for 3 partitions"""
+            get_logger_output_from_capfd(capfd, "dagster._daemon.BackfillDaemon")
+            == """2021-02-16 18:00:00 -0600 - dagster._daemon.BackfillDaemon - INFO - Starting backfill for simple
+2021-02-16 18:00:00 -0600 - dagster._daemon.BackfillDaemon - INFO - Backfill completed for simple for 3 partitions"""
         )
 
 
@@ -115,8 +115,8 @@ def test_before_submit(crash_signal, capfd):
         launch_process.join(timeout=60)
         assert launch_process.exitcode != 0
         assert (
-            get_logger_output_from_capfd(capfd, "dagster.daemon.BackfillDaemon")
-            == """2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Starting backfill for simple"""
+            get_logger_output_from_capfd(capfd, "dagster._daemon.BackfillDaemon")
+            == """2021-02-16 18:00:00 -0600 - dagster._daemon.BackfillDaemon - INFO - Starting backfill for simple"""
         )
 
         backfill = instance.get_backfill("simple")
@@ -131,9 +131,9 @@ def test_before_submit(crash_signal, capfd):
         launch_process.start()
         launch_process.join(timeout=60)
         assert (
-            get_logger_output_from_capfd(capfd, "dagster.daemon.BackfillDaemon")
-            == """2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Starting backfill for simple
-2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Backfill completed for simple for 3 partitions"""
+            get_logger_output_from_capfd(capfd, "dagster._daemon.BackfillDaemon")
+            == """2021-02-16 18:00:00 -0600 - dagster._daemon.BackfillDaemon - INFO - Starting backfill for simple
+2021-02-16 18:00:00 -0600 - dagster._daemon.BackfillDaemon - INFO - Backfill completed for simple for 3 partitions"""
         )
 
         backfill = instance.get_backfill("simple")
@@ -172,8 +172,8 @@ def test_crash_after_submit(crash_signal, capfd):
         launch_process.join(timeout=60)
         assert launch_process.exitcode != 0
         assert (
-            get_logger_output_from_capfd(capfd, "dagster.daemon.BackfillDaemon")
-            == """2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Starting backfill for simple"""
+            get_logger_output_from_capfd(capfd, "dagster._daemon.BackfillDaemon")
+            == """2021-02-16 18:00:00 -0600 - dagster._daemon.BackfillDaemon - INFO - Starting backfill for simple"""
         )
 
         backfill = instance.get_backfill("simple")
@@ -188,10 +188,10 @@ def test_crash_after_submit(crash_signal, capfd):
         launch_process.start()
         launch_process.join(timeout=60)
         assert (
-            get_logger_output_from_capfd(capfd, "dagster.daemon.BackfillDaemon")
-            == """2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Starting backfill for simple
-2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Found 3 existing runs for backfill simple, skipping
-2021-02-16 18:00:00 -0600 - dagster.daemon.BackfillDaemon - INFO - Backfill completed for simple for 3 partitions"""
+            get_logger_output_from_capfd(capfd, "dagster._daemon.BackfillDaemon")
+            == """2021-02-16 18:00:00 -0600 - dagster._daemon.BackfillDaemon - INFO - Starting backfill for simple
+2021-02-16 18:00:00 -0600 - dagster._daemon.BackfillDaemon - INFO - Found 3 existing runs for backfill simple, skipping
+2021-02-16 18:00:00 -0600 - dagster._daemon.BackfillDaemon - INFO - Backfill completed for simple for 3 partitions"""
         )
 
         backfill = instance.get_backfill("simple")

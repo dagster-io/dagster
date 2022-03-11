@@ -45,7 +45,7 @@ from dagster._core.test_utils import (
     mock_system_timezone,
 )
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget, GrpcServerTarget, ModuleTarget
-from dagster.daemon import get_default_daemon_logger
+from dagster._daemon import get_default_daemon_logger
 from dagster.grpc.client import EphemeralDagsterGrpcClient
 from dagster.grpc.server import open_server_process
 from dagster.scheduler.scheduler import launch_scheduled_runs

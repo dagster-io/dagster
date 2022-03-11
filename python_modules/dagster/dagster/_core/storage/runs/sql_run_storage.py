@@ -26,7 +26,7 @@ from dagster._core.snap import (
     create_pipeline_snapshot_id,
 )
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, ROOT_RUN_ID_TAG
-from dagster.daemon.types import DaemonHeartbeat
+from dagster._daemon.types import DaemonHeartbeat
 from dagster.serdes import (
     deserialize_as,
     deserialize_json_to_dagster_namedtuple,

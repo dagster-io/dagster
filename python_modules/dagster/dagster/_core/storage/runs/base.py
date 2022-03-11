@@ -12,7 +12,7 @@ from dagster._core.storage.pipeline_run import (
     RunsFilter,
     TagBucket,
 )
-from dagster.daemon.types import DaemonHeartbeat
+from dagster._daemon.types import DaemonHeartbeat
 
 
 class RunStorage(ABC, MayHaveInstanceWeakref):

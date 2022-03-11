@@ -12,7 +12,7 @@ from dagster import __version__ as dagster_version
 from dagster._cli.workspace.cli_target import get_workspace_load_target, workspace_target_argument
 from dagster._core.instance import DagsterInstance
 from dagster._core.telemetry import telemetry_wrapper
-from dagster.daemon.controller import (
+from dagster._daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     DagsterDaemonController,
     all_daemons_healthy,
@@ -21,7 +21,7 @@ from dagster.daemon.controller import (
     debug_daemon_heartbeats,
     get_daemon_statuses,
 )
-from dagster.daemon.daemon import get_telemetry_daemon_session_id
+from dagster._daemon.daemon import get_telemetry_daemon_session_id
 from dagster.utils.interrupts import capture_interrupts, raise_interrupts_as
 
 

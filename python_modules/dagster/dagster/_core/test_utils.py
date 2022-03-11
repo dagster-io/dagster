@@ -23,8 +23,8 @@ from dagster._core.run_coordinator import RunCoordinator, SubmitRunContext
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
-from dagster.daemon.controller import create_daemon_grpc_server_registry
-from dagster.daemon.workspace import DaemonWorkspace
+from dagster._daemon.controller import create_daemon_grpc_server_registry
+from dagster._daemon.workspace import DaemonWorkspace
 from dagster.serdes import ConfigurableClass
 from dagster.seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
 from dagster.utils import Counter, merge_dicts, traced, traced_counter

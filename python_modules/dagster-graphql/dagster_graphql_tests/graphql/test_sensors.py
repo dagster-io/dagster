@@ -16,8 +16,8 @@ from dagster._core.scheduler.instigation import (
     TickStatus,
 )
 from dagster._core.test_utils import create_test_daemon_workspace
-from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.sensor import execute_sensor_iteration
+from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.sensor import execute_sensor_iteration
 from dagster.utils import Counter, traced_counter
 from dagster.utils.error import SerializableErrorInfo
 

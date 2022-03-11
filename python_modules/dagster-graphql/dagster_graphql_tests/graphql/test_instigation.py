@@ -5,8 +5,8 @@ from dagster_graphql.test.utils import (
 )
 
 from dagster._core.test_utils import create_test_daemon_workspace
-from dagster.daemon import get_default_daemon_logger
-from dagster.daemon.sensor import execute_sensor_iteration
+from dagster._daemon import get_default_daemon_logger
+from dagster._daemon.sensor import execute_sensor_iteration
 
 from .graphql_context_test_suite import GraphQLContextVariant  # get_dict_recon_repo,
 from .graphql_context_test_suite import make_graphql_context_test_suite

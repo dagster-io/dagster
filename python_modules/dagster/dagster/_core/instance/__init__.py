@@ -91,7 +91,7 @@ if TYPE_CHECKING:
     from dagster._core.storage.runs import RunStorage
     from dagster._core.storage.schedules import ScheduleStorage
     from dagster._core.workspace.workspace import IWorkspace
-    from dagster.daemon.types import DaemonHeartbeat
+    from dagster._daemon.types import DaemonHeartbeat
 
 
 def _check_run_equality(
@@ -1602,7 +1602,7 @@ records = instance.get_event_records(
         """
         from dagster._core.events import EngineEventData
         from dagster._core.launcher import ResumeRunContext
-        from dagster.daemon.monitoring import RESUME_RUN_LOG_MESSAGE
+        from dagster._daemon.monitoring import RESUME_RUN_LOG_MESSAGE
 
         run = self.get_run_by_id(run_id)
         if run is None:
@@ -1641,7 +1641,7 @@ records = instance.get_event_records(
 
     def count_resume_run_attempts(self, run_id: str):
         from dagster._core.events import DagsterEventType
-        from dagster.daemon.monitoring import RESUME_RUN_LOG_MESSAGE
+        from dagster._daemon.monitoring import RESUME_RUN_LOG_MESSAGE
 
         events = self.all_logs(run_id, of_type=DagsterEventType.ENGINE_EVENT)
         return len([event for event in events if event.message == RESUME_RUN_LOG_MESSAGE])
@@ -1843,13 +1843,13 @@ records = instance.get_event_records(
     def get_required_daemon_types(self):
         from dagster._core.run_coordinator import QueuedRunCoordinator
         from dagster._core.scheduler import DagsterDaemonScheduler
-        from dagster.daemon.daemon import (
+        from dagster._daemon.daemon import (
             BackfillDaemon,
             MonitoringDaemon,
             SchedulerDaemon,
             SensorDaemon,
         )
-        from dagster.daemon.run_coordinator.queued_run_coordinator_daemon import (
+        from dagster._daemon.run_coordinator.queued_run_coordinator_daemon import (
             QueuedRunCoordinatorDaemon,
         )
 
