@@ -23,4 +23,4 @@ commands =
 
 [testenv:pylint]
 commands =
-  pylint: pylint -j {env:PYLINT_JOBS:0} --rcfile=../../../.pylintrc dagster_{{LIBRARY_NAME}} dagster_{{LIBRARY_NAME}}_tests
+  pylint: pylint -j {env:PYLINT_JOBS:0} --rcfile=../../../pyproject.toml dagster_{{LIBRARY_NAME}} dagster_{{LIBRARY_NAME}}_tests
