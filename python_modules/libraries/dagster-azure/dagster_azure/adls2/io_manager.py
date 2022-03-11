@@ -2,7 +2,9 @@ import pickle
 
 from dagster_azure.adls2.utils import ResourceNotFoundError
 
-from dagster import Field, IOManager, StringSource, _check as check, io_manager
+from dagster import Field, IOManager, StringSource
+from dagster import _check as check
+from dagster import io_manager
 from dagster._utils import PICKLE_PROTOCOL
 
 _LEASE_DURATION = 60  # One minute

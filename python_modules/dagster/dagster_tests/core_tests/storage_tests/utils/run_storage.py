@@ -5,7 +5,8 @@ from datetime import datetime
 import pendulum
 import pytest
 
-from dagster import job, op, _seven as seven
+from dagster import _seven as seven
+from dagster import job, op
 from dagster._core.definitions import PipelineDefinition
 from dagster._core.errors import (
     DagsterRunAlreadyExists,

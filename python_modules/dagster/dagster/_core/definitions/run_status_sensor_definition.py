@@ -21,7 +21,12 @@ from dagster._core.errors import (
 )
 from dagster._core.events import PIPELINE_RUN_STATUS_TO_EVENT_TYPE, DagsterEvent
 from dagster._core.instance import DagsterInstance
-from dagster._core.storage.pipeline_run import DagsterRun, PipelineRun, PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import (
+    DagsterRun,
+    PipelineRun,
+    PipelineRunStatus,
+    RunsFilter,
+)
 from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,

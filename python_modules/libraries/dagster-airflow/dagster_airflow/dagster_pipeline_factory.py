@@ -22,10 +22,9 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
-    _check as check,
-    repository,
-    solid,
 )
+from dagster import _check as check
+from dagster import repository, solid
 from dagster._core.definitions.utils import VALID_NAME_REGEX, validate_tags
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, IS_AIRFLOW_INGEST_PIPELINE_STR
 

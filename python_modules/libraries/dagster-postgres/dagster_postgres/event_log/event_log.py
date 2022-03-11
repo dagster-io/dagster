@@ -5,7 +5,8 @@ from typing import Callable, List, MutableMapping, Optional
 
 import sqlalchemy as db
 
-from dagster import _check as check, _seven as seven
+from dagster import _check as check
+from dagster import _seven as seven
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log import (
     AssetKeyTable,

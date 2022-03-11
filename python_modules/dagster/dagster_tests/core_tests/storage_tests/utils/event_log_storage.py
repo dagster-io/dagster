@@ -18,12 +18,9 @@ from dagster import (
     Output,
     OutputDefinition,
     RetryRequested,
-    op,
-    pipeline,
-    resource,
-    _seven as seven,
-    solid,
 )
+from dagster import _seven as seven
+from dagster import op, pipeline, resource, solid
 from dagster._core.definitions import ExpectationResult
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.pipeline_base import InMemoryPipeline

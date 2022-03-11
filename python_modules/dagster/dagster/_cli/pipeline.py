@@ -11,7 +11,8 @@ from tabulate import tabulate
 
 from dagster import PipelineDefinition
 from dagster import __version__ as dagster_version
-from dagster import _check as check, execute_pipeline
+from dagster import _check as check
+from dagster import execute_pipeline
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     get_external_pipeline_or_job_from_external_repo,
@@ -29,7 +30,11 @@ from dagster._cli.workspace.cli_target import (
 from dagster._core.definitions.pipeline_base import IPipeline
 from dagster._core.errors import DagsterBackfillFailedError, DagsterInvariantViolationError
 from dagster._core.execution.api import create_execution_plan
-from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill, create_backfill_run
+from dagster._core.execution.backfill import (
+    BulkActionStatus,
+    PartitionBackfill,
+    create_backfill_run,
+)
 from dagster._core.host_representation import (
     ExternalPipeline,
     ExternalRepository,

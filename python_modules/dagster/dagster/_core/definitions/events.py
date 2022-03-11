@@ -16,7 +16,8 @@ from typing import (
     cast,
 )
 
-from dagster import _check as check, _seven as seven
+from dagster import _check as check
+from dagster import _seven as seven
 from dagster._core.errors import DagsterInvalidAssetKey
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster._utils.backcompat import experimental_class_param_warning

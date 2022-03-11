@@ -9,7 +9,8 @@ import grpc
 from grpc_health.v1 import health_pb2
 from grpc_health.v1.health_pb2_grpc import HealthStub
 
-from dagster import _check as check, _seven as seven
+from dagster import _check as check
+from dagster import _seven as seven
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.events import EngineEventData
 from dagster._core.host_representation.origin import ExternalRepositoryOrigin

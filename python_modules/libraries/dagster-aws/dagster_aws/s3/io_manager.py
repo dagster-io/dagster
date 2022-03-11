@@ -1,7 +1,9 @@
 import io
 import pickle
 
-from dagster import Field, MemoizableIOManager, StringSource, _check as check, io_manager
+from dagster import Field, MemoizableIOManager, StringSource
+from dagster import _check as check
+from dagster import io_manager
 from dagster._utils import PICKLE_PROTOCOL
 
 

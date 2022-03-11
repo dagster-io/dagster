@@ -8,7 +8,8 @@ from typing import Dict, NamedTuple, Optional
 import coloredlogs
 import pendulum
 
-from dagster import _check as check, _seven as seven
+from dagster import _check as check
+from dagster import _seven as seven
 from dagster._config import Enum, EnumValue
 from dagster._core.definitions.logger_definition import logger
 from dagster._core.utils import PYTHON_LOGGING_LEVELS_MAPPING, coerce_valid_log_level

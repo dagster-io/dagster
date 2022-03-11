@@ -1,7 +1,8 @@
 import sqlalchemy as db
 from tqdm import tqdm
 
-from dagster import AssetKey, _seven as seven
+from dagster import AssetKey
+from dagster import _seven as seven
 from dagster._core.events.log import EventLogEntry
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster._utils import utc_datetime_from_timestamp

@@ -4,7 +4,9 @@ import subprocess
 import sys
 from typing import TYPE_CHECKING, Iterator, Optional, cast
 
-from dagster import Field, StringSource, _check as check, resource
+from dagster import Field, StringSource
+from dagster import _check as check
+from dagster import resource
 from dagster._core.code_pointer import FileCodePointer, ModuleCodePointer
 from dagster._core.definitions.reconstructable import (
     ReconstructablePipeline,

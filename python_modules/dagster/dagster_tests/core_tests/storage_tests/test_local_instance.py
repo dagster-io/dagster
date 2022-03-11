@@ -12,11 +12,9 @@ from dagster import (
     Output,
     OutputDefinition,
     PipelineRun,
-    _check as check,
-    execute_pipeline,
-    pipeline,
-    solid,
 )
+from dagster import _check as check
+from dagster import execute_pipeline, pipeline, solid
 from dagster._core.definitions.events import RetryRequested
 from dagster._core.execution.stats import StepEventStatus
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType

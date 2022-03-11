@@ -1,5 +1,8 @@
 from dagster import pipeline, repository, solid
-from dagster._core.host_representation import ExternalPipelineData, external_repository_data_from_def
+from dagster._core.host_representation import (
+    ExternalPipelineData,
+    external_repository_data_from_def,
+)
 from dagster._core.snap import PipelineSnapshot
 
 

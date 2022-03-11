@@ -25,7 +25,7 @@ signature-mutators=solid,composite_solid,lambda_solid,configured,op,graph
 
 [MASTER]
 ignore=snapshots
-load-plugins=dagster.utils.linter
+load-plugins=dagster._utils.linter
 
 # See: https://stackoverflow.com/questions/40163106/cannot-find-col-function-in-pyspark
 generated-members=pyspark.*

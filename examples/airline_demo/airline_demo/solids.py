@@ -20,11 +20,9 @@ from dagster import (
     Output,
     OutputDefinition,
     String,
-    _check as check,
-    composite_solid,
-    make_python_type_usable_as_dagster_type,
-    solid,
 )
+from dagster import _check as check
+from dagster import composite_solid, make_python_type_usable_as_dagster_type, solid
 from dagster._core.types.dagster_type import create_string_type
 
 from .cache_file_from_s3 import cache_file_from_s3

@@ -15,7 +15,8 @@ from tqdm import tqdm
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
-from dagster import _check as check, _seven as seven
+from dagster import _check as check
+from dagster import _seven as seven
 from dagster._config.source import StringSource
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry

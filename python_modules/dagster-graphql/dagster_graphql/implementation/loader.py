@@ -2,7 +2,8 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, Iterable, List, Optional, Set
 
-from dagster import DagsterInstance, _check as check
+from dagster import DagsterInstance
+from dagster import _check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.events.log import EventLogEntry
 from dagster._core.host_representation import ExternalRepository

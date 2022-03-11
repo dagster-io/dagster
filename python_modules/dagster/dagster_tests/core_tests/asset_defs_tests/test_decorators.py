@@ -2,16 +2,9 @@ import warnings
 
 import pytest
 
-from dagster import (
-    AssetKey,
-    DagsterInvalidDefinitionError,
-    OpExecutionContext,
-    Out,
-    Output,
-    String,
-    build_op_context,
-    _check as check,
-)
+from dagster import AssetKey, DagsterInvalidDefinitionError, OpExecutionContext, Out, Output, String
+from dagster import _check as check
+from dagster import build_op_context
 from dagster._core.asset_defs import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
 from dagster._core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 from dagster.utils.backcompat import ExperimentalWarning

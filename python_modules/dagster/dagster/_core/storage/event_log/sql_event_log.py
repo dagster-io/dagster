@@ -7,7 +7,8 @@ from typing import Dict, Iterable, List, Mapping, Optional, Sequence, cast
 import pendulum
 import sqlalchemy as db
 
-from dagster import _check as check, _seven as seven
+from dagster import _check as check
+from dagster import _seven as seven
 from dagster._core.assets import AssetDetails
 from dagster._core.definitions.events import AssetKey, AssetMaterialization
 from dagster._core.errors import DagsterEventLogInvalidForRun

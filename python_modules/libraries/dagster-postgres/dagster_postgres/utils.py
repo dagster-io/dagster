@@ -9,7 +9,8 @@ import psycopg2
 import psycopg2.errorcodes
 import sqlalchemy
 
-from dagster import Field, IntSource, Permissive, StringSource, _check as check
+from dagster import Field, IntSource, Permissive, StringSource
+from dagster import _check as check
 from dagster._core.definitions.policy import Backoff, Jitter, calculate_delay
 from dagster._core.storage.sql import get_alembic_config, handle_schema_errors
 

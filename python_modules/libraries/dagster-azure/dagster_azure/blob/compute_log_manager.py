@@ -2,14 +2,19 @@ import itertools
 import os
 from contextlib import contextmanager
 
-from dagster import Field, StringSource, _check as check, _seven as seven
+from dagster import Field, StringSource
+from dagster import _check as check
+from dagster import _seven as seven
 from dagster._core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeIOType,
     ComputeLogFileData,
     ComputeLogManager,
 )
-from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION, LocalComputeLogManager
+from dagster._core.storage.local_compute_log_manager import (
+    IO_TYPE_EXTENSION,
+    LocalComputeLogManager,
+)
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster._utils import ensure_dir, ensure_file
 

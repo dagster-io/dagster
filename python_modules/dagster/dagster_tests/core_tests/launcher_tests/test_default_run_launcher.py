@@ -8,16 +8,9 @@ from contextlib import contextmanager
 
 import pytest
 
-from dagster import (
-    DefaultRunLauncher,
-    ModeDefinition,
-    file_relative_path,
-    fs_io_manager,
-    pipeline,
-    repository,
-    _seven as seven,
-    solid,
-)
+from dagster import DefaultRunLauncher, ModeDefinition
+from dagster import _seven as seven
+from dagster import file_relative_path, fs_io_manager, pipeline, repository, solid
 from dagster._core.errors import DagsterLaunchFailedError
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG

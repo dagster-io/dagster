@@ -6,7 +6,9 @@ import paramiko
 from paramiko.config import SSH_PORT
 from sshtunnel import SSHTunnelForwarder
 
-from dagster import Field, StringSource, _check as check, resource
+from dagster import Field, StringSource
+from dagster import _check as check
+from dagster import resource
 from dagster._utils import merge_dicts, mkdir_p
 
 

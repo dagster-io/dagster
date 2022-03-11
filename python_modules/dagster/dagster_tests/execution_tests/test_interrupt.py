@@ -6,13 +6,9 @@ from threading import Thread
 
 import pytest
 
+from dagster import DagsterEventType, Failure, Field, ModeDefinition, RetryPolicy, String
+from dagster import _seven as seven
 from dagster import (
-    DagsterEventType,
-    Failure,
-    Field,
-    ModeDefinition,
-    RetryPolicy,
-    String,
     execute_pipeline,
     execute_pipeline_iterator,
     job,
@@ -20,7 +16,6 @@ from dagster import (
     pipeline,
     reconstructable,
     resource,
-    _seven as seven,
     solid,
 )
 from dagster._core.errors import DagsterExecutionInterruptedError, raise_execution_interrupts

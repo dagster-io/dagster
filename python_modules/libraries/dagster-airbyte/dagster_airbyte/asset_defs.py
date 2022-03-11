@@ -2,7 +2,8 @@ from typing import List, Optional
 
 from dagster_airbyte.utils import generate_materializations
 
-from dagster import AssetKey, Out, Output, _check as check
+from dagster import AssetKey, Out, Output
+from dagster import _check as check
 from dagster._core.asset_defs import AssetsDefinition, multi_asset
 from dagster._utils.backcompat import experimental
 

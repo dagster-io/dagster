@@ -3,7 +3,9 @@ import datetime
 import pandas as pd
 from dagster_pandas import DataFrame
 
-from dagster import DependencyDefinition, GraphDefinition, In, Out, _check as check, graph, op
+from dagster import DependencyDefinition, GraphDefinition, In, Out
+from dagster import _check as check
+from dagster import graph, op
 
 
 def get_op_result_value(op_inst):

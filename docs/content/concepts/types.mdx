@@ -91,7 +91,7 @@ Dagster offers a special type called <PyObject object="Nothing" />, which is use
 You can use <PyObject module="dagster" object="check_dagster_type" /> to test the type check function of a custom Dagster Type:
 
 ```python file=/concepts/types/types.py startafter=start_test_dagster_type endbefore=end_test_dagster_type
-from dagster import check_dagster_type, Dict, Any
+from dagster import _check as check_dagster_type, Dict, Any
 
 
 def test_dagster_type():

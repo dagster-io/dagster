@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List, Optional
 
-from dagster import DagsterEvent, DagsterInstance, _check as check
+from dagster import DagsterEvent, DagsterInstance
+from dagster import _check as check
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._grpc.types import ExecuteStepArgs
 

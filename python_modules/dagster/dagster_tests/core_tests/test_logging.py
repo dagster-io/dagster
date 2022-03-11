@@ -6,17 +6,9 @@ from contextlib import contextmanager
 
 import pytest
 
-from dagster import (
-    DagsterInvalidConfigError,
-    ModeDefinition,
-    PipelineRun,
-    _check as check,
-    execute_pipeline,
-    execute_solid,
-    pipeline,
-    resource,
-    solid,
-)
+from dagster import DagsterInvalidConfigError, ModeDefinition, PipelineRun
+from dagster import _check as check
+from dagster import execute_pipeline, execute_solid, pipeline, resource, solid
 from dagster._core.definitions import NodeHandle
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.context.logger import InitLoggerContext

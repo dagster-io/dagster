@@ -2,7 +2,8 @@ from gzip import GzipFile
 
 import click
 
-from dagster import DagsterInstance, _check as check
+from dagster import DagsterInstance
+from dagster import _check as check
 from dagster._cli.debug import DebugRunPayload
 from dagster._core.workspace import WorkspaceProcessContext
 from dagster._serdes import deserialize_json_to_dagster_namedtuple

@@ -7,7 +7,9 @@ from dagster_test.graph_job_op_toys.log_file import log_file_job
 from dagster_test.graph_job_op_toys.log_s3 import log_s3_job
 from slack_sdk import WebClient
 
-from dagster import AssetKey, RunRequest, SkipReason, _check as check, sensor
+from dagster import AssetKey, RunRequest, SkipReason
+from dagster import _check as check
+from dagster import sensor
 from dagster._core.definitions.decorators.sensor import asset_sensor
 from dagster._core.definitions.run_status_sensor_definition import (
     RunFailureSensorContext,

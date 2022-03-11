@@ -4,7 +4,8 @@ from contextlib import contextmanager
 
 from google.cloud import storage  # type: ignore
 
-from dagster import _check as check, usable_as_dagster_type
+from dagster import _check as check
+from dagster import usable_as_dagster_type
 from dagster._core.storage.file_manager import (
     FileHandle,
     FileManager,

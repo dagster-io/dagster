@@ -8,7 +8,9 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-from dagster import Failure, Field, IntSource, RetryRequested, StringSource, _check as check, resource
+from dagster import Failure, Field, IntSource, RetryRequested, StringSource
+from dagster import _check as check
+from dagster import resource
 from dagster._core.utils import coerce_valid_log_level
 
 from ..dbt_resource import DbtResource

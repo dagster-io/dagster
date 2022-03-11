@@ -166,8 +166,10 @@ class InProcessRepositoryLocationOrigin(
             "in_process_code_pointer": self.recon_repo.pointer.describe(),
         }
 
-    def create_location(self) -> "InProcessRepositoryLocation":
-        from dagster._core.host_representation.repository_location import InProcessRepositoryLocation
+    def create_location(self):
+        from dagster._core.host_representation.repository_location import (
+            InProcessRepositoryLocation,
+        )
 
         return InProcessRepositoryLocation(self)
 
