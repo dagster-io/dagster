@@ -2,6 +2,7 @@ import {
   Box,
   Checkbox,
   ColorsWIP,
+  FontFamily,
   Group,
   IconWIP,
   NonIdealState,
@@ -16,6 +17,7 @@ import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
+import {withMiddleTruncation} from '../app/Util';
 import {WebSocketContext} from '../app/WebSocketProvider';
 import {
   EMPTY_RUN_METADATA,
@@ -492,7 +494,7 @@ const GanttChartViewportContents: React.FC<GanttChartViewportContentsProps> = (p
     items.push(
       <div
         key={box.key}
-        data-tooltip={box.width < box.node.name.length * 5 ? box.node.name : undefined}
+        data-tooltip={box.node.name}
         onClick={(evt: React.MouseEvent<any>) => props.onClickStep(box.node.name, evt)}
         onDoubleClick={() => props.onDoubleClickStep(box.node.name)}
         onMouseEnter={() => props.setHoveredNodeName(box.node.name)}
@@ -511,7 +513,7 @@ const GanttChartViewportContents: React.FC<GanttChartViewportContentsProps> = (p
         }}
       >
         {box.state === IStepState.RUNNING ? <Spinner purpose="body-text" /> : undefined}
-        {box.width > BOX_SHOW_LABEL_WIDTH_CUTOFF ? box.node.name : undefined}
+        {truncatedBoxLabel(box)}
       </div>,
     );
   });
@@ -660,6 +662,18 @@ const GanttLine = React.memo(
   isEqual,
 );
 
+function truncatedBoxLabel(box: GanttChartBox) {
+  if (box.width <= BOX_SHOW_LABEL_WIDTH_CUTOFF) {
+    return undefined;
+  }
+
+  // Note: The constants here must be in sync with the CSS immediately below
+  const totalPadding = 7 + (box.state === IStepState.RUNNING ? 16 : 0);
+  const maxLength = (box.width - totalPadding) / 6.2;
+
+  return withMiddleTruncation(box.node.name, {maxLength});
+}
+
 // Note: It is much faster to use standard CSS class selectors here than make
 // each box and line a styled-component because all styled components register
 // listeners for the "theme" React context.
@@ -704,13 +718,18 @@ const GanttChartContainer = styled.div`
   }
 
   .box {
+    /* Note: padding + font changes may also impact truncatedBoxLabel */
+
     height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
     padding: 3px;
     padding-right: 1px;
     border: 1px solid transparent;
     border-radius: 2px;
     white-space: nowrap;
-    text-overflow: ellipsis;
+    font-family: ${FontFamily.monospace};
+    font-size: 12.5px;
+    font-weight: 700;
+    line-height: 15px;
 
     transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear,
       width ${CSS_DURATION}ms linear, height ${CSS_DURATION}ms linear;
