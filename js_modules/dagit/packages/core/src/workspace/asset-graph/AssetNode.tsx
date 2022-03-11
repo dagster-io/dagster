@@ -258,6 +258,9 @@ export const ASSET_NODE_FRAGMENT = gql`
     id
     opName
     description
+    metadataEntries {
+      ...MetadataEntryFragment
+    }
     partitionDefinition
     assetKey {
       path
@@ -271,6 +274,7 @@ export const ASSET_NODE_FRAGMENT = gql`
       }
     }
   }
+  ${METADATA_ENTRY_FRAGMENT}
 `;
 
 export const getNodeDimensions = (def: {
