@@ -667,6 +667,7 @@ class GraphDefinition(NodeDefinition):
             graph_def=self,
             executor_def=execute_in_process_executor,
             resource_defs=resource_defs,
+            _input_values=input_values,
         ).get_job_def_for_op_selection(op_selection)
 
         run_config = run_config if run_config is not None else {}

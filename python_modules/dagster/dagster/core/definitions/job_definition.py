@@ -74,6 +74,7 @@ class JobDefinition(PipelineDefinition):
         version_strategy: Optional[VersionStrategy] = None,
         _op_selection_data: Optional[OpSelectionData] = None,
         asset_layer: Optional[AssetLayer] = None,
+        _input_values: Optional[Dict[str, Any]] = None,
     ):
 
         # Exists for backcompat - JobDefinition is implemented as a single-mode pipeline.
@@ -89,6 +90,7 @@ class JobDefinition(PipelineDefinition):
         self._op_selection_data = check.opt_inst_param(
             _op_selection_data, "_op_selection_data", OpSelectionData
         )
+        self._input_values = check.opt_dict_param(_input_values, "_input_values")
 
         super(JobDefinition, self).__init__(
             name=name,

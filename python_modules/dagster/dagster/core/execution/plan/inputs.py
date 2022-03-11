@@ -494,6 +494,47 @@ class FromConfig(
 
 
 @whitelist_for_serdes
+class FromRootInputValue(
+    NamedTuple("_FromRootInputConfig", [("input_name", str), ("input_value", Any)]),
+    StepInputSource,
+):
+    """This step input source is configuration to be passed to a type loader"""
+
+    def __new__(cls, input_name: str, input_value: Any):
+        return super(FromRootInputValue, cls).__new__(
+            cls, input_name=input_name, input_value=input_value
+        )
+
+    def get_input_def(self, pipeline_def: PipelineDefinition) -> InputDefinition:
+        return pipeline_def.graph.input_def_named(self.input_name)
+
+    def load_input_object(self, step_context: "StepExecutionContext") -> Any:
+        with user_code_error_boundary(
+            DagsterTypeLoadingError,
+            msg_fn=lambda: (f'Error occurred while loading top-level input "{self.input_name}": '),
+            log_manager=step_context.log,
+        ):
+            return self.input_value
+
+    def required_resource_keys(self, _pipeline_def: PipelineDefinition) -> Set[str]:
+        return set()
+
+    @property
+    def solid_handle(self):
+        raise DagsterInvariantViolationError(
+            "Solid handle is not set on the root input value source."
+        )
+
+    def compute_version(
+        self,
+        step_versions: Dict[str, Optional[str]],
+        pipeline_def: PipelineDefinition,
+        resolved_run_config: ResolvedRunConfig,
+    ) -> Optional[str]:
+        return str(self.input_value)
+
+
+@whitelist_for_serdes
 class FromDefaultValue(
     NamedTuple(
         "_FromDefaultValue",
