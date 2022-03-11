@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optiona
 import pendulum
 
 from dagster import _check as check
-from dagster.seven import funcsigs
+from dagster._seven import funcsigs
 
 from ..._serdes import whitelist_for_serdes
 from ..._utils import ensure_gen, merge_dicts

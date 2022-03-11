@@ -21,7 +21,7 @@ from starlette.routing import BaseRoute
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
 from dagster import _check as check
-from dagster.seven import json
+from dagster._seven import json
 
 
 class GraphQLWS(str, Enum):

@@ -2,7 +2,7 @@ import logging
 
 import coloredlogs
 
-from dagster import seven
+from dagster import _seven as seven
 from dagster._config import Field
 from dagster._core.definitions.logger_definition import logger
 from dagster._core.utils import coerce_valid_log_level

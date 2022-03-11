@@ -32,7 +32,7 @@ from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
 )
-from dagster.seven import JSONDecodeError
+from dagster._seven import JSONDecodeError
 from dagster._utils import merge_dicts, utc_datetime_from_timestamp
 
 from ..pipeline_run import JobBucket, PipelineRun, RunRecord, RunsFilter, TagBucket

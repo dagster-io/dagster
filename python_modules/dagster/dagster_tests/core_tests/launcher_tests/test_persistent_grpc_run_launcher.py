@@ -8,7 +8,7 @@ from dagster_tests.core_tests.launcher_tests.test_default_run_launcher import (
     slow_pipeline,
 )
 
-from dagster import file_relative_path, seven
+from dagster import file_relative_path, _seven as seven
 from dagster._core.errors import DagsterLaunchFailedError
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.storage.tags import GRPC_INFO_TAG

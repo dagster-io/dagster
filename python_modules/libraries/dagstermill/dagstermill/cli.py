@@ -8,7 +8,7 @@ import nbformat
 from papermill.iorw import load_notebook_node, write_ipynb
 
 from dagster import _check as check
-from dagster.seven.json import loads
+from dagster._seven.json import loads
 from dagster._utils import mkdir_p, safe_isfile
 
 

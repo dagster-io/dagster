@@ -8,7 +8,7 @@ from dagster_graphql.test.utils import (
 )
 
 from dagster._core.execution.backfill import BulkActionStatus
-from dagster.seven import get_system_temp_directory
+from dagster._seven import get_system_temp_directory
 
 from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 

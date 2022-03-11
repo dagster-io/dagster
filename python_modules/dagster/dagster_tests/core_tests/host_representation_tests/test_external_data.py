@@ -1,7 +1,6 @@
 import pytest
 
 from dagster import AssetGroup, AssetKey, DagsterInvariantViolationError, Out
-from dagster import AssetKey, DagsterInvariantViolationError, Out
 from dagster._check import CheckError
 from dagster._core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
 from dagster._core.definitions.metadata import MetadataEntry, MetadataValue

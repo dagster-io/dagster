@@ -1,6 +1,6 @@
 import papermill
 
-from dagster import seven
+from dagster import _seven as seven
 
 RESERVED_INPUT_NAMES = [
     "__dm_context",
@@ -16,7 +16,7 @@ RESERVED_INPUT_NAMES = [
 
 INJECTED_BOILERPLATE = """
 # Injected parameters
-from dagster import seven as __dm_seven
+from dagster import _seven as __dm_seven
 import dagstermill as __dm_dagstermill
 context = __dm_dagstermill._reconstitute_pipeline_context(
     **{{

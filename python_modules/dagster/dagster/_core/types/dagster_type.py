@@ -227,7 +227,7 @@ class DagsterType:
 
 
 def _validate_type_check_fn(fn: t.Callable, name: t.Optional[str]) -> bool:
-    from dagster.seven import get_args
+    from dagster._seven import get_args
 
     args = get_args(fn)
 

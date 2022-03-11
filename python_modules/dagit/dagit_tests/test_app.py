@@ -8,7 +8,7 @@ from dagit.app import create_app_from_workspace_process_context
 from dagit.cli import dagit, host_dagit_ui_with_workspace_process_context
 from starlette.testclient import TestClient
 
-from dagster import seven
+from dagster import _seven as seven
 from dagster._core.instance import DagsterInstance
 from dagster._core.telemetry import START_DAGIT_WEBSERVER, UPDATE_REPO_STATS, hash_name
 from dagster._core.test_utils import instance_for_test

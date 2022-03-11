@@ -5,7 +5,7 @@ from datetime import datetime
 import pendulum
 import pytest
 
-from dagster import job, op, seven
+from dagster import job, op, _seven as seven
 from dagster._core.definitions import PipelineDefinition
 from dagster._core.errors import (
     DagsterRunAlreadyExists,
@@ -40,7 +40,7 @@ from dagster._core.utils import make_new_run_id
 from dagster._daemon.daemon import SensorDaemon
 from dagster._daemon.types import DaemonHeartbeat
 from dagster._serdes import serialize_pp
-from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 
 win_py36 = seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6
 

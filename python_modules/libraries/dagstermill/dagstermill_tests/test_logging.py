@@ -12,7 +12,7 @@ from dagster import (
     logger,
     pipeline,
     reconstructable,
-    seven,
+    _seven as seven,
 )
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import safe_tempfile_path

@@ -7,7 +7,7 @@ from graphql.execution.executors.gevent import GeventExecutor
 from graphql.execution.executors.sync import SyncExecutor
 
 from dagster import __version__ as dagster_version
-from dagster import _check as check, seven
+from dagster import _check as check, _seven as seven
 from dagster._cli.workspace import workspace_target_argument
 from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,

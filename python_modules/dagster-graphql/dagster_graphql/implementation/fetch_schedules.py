@@ -3,7 +3,7 @@ from graphql.execution.base import ResolveInfo
 from dagster import _check as check
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.host_representation import PipelineSelector, RepositorySelector, ScheduleSelector
-from dagster.seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
+from dagster._seven import get_current_datetime_in_utc, get_timestamp_from_utc_datetime
 
 from .utils import UserFacingGraphQLError, capture_error
 

@@ -9,7 +9,7 @@ from dagster import (
     StringSource,
     _check as check,
     multiple_process_executor_requirements,
-    seven,
+    _seven as seven,
 )
 from dagster._core.definitions.executor_definition import executor
 from dagster._core.errors import raise_execution_interrupts

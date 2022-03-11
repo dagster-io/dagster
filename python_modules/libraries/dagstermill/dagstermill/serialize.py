@@ -1,4 +1,4 @@
-from dagster import seven
+from dagster import _seven as seven
 
 PICKLE_PROTOCOL = 2
 

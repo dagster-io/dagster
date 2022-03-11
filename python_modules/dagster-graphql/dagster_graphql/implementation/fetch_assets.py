@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Mapping
 
-from dagster import AssetKey, DagsterEventType, EventRecordsFilter, _check as check, seven
+from dagster import AssetKey, DagsterEventType, EventRecordsFilter, _check as check, _seven as seven
 from dagster._core.events import ASSET_EVENTS
 
 from .utils import capture_error

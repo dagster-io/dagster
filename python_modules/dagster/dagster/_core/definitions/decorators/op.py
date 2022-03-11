@@ -15,7 +15,7 @@ from typing import (
 from dagster import _check as check
 from dagster._core.decorator_utils import format_docstring_for_description
 
-from ....seven.typing import get_origin
+from ...._seven.typing import get_origin
 from ...errors import DagsterInvariantViolationError
 from ..inference import InferredOutputProps, infer_output_props
 from ..input import In, InputDefinition

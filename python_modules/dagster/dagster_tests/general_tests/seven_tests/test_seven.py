@@ -4,7 +4,7 @@ from functools import update_wrapper
 
 import pytest
 
-from dagster import seven
+from dagster import _seven as seven
 from dagster._utils import file_relative_path
 
 

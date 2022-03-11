@@ -21,7 +21,7 @@ from dagster import (
     op,
     pipeline,
     resource,
-    seven,
+    _seven as seven,
     solid,
 )
 from dagster._core.definitions import ExpectationResult

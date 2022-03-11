@@ -23,7 +23,7 @@ from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterUnknownResourceError,
 )
-from dagster.seven import funcsigs
+from dagster._seven import funcsigs
 from dagster._utils.backcompat import experimental_arg_warning
 
 from ..decorator_utils import (

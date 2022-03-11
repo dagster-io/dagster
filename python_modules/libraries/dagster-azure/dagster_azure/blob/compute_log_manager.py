@@ -2,7 +2,7 @@ import itertools
 import os
 from contextlib import contextmanager
 
-from dagster import Field, StringSource, _check as check, seven
+from dagster import Field, StringSource, _check as check, _seven as seven
 from dagster._core.storage.compute_log_manager import (
     MAX_BYTES_FILE_READ,
     ComputeIOType,
@@ -42,7 +42,7 @@ class AzureBlobComputeLogManager(ComputeLogManager, ConfigurableClass):
         secret_key (str): Secret key for the storage account. SAS tokens are not
             supported because we need a secret key to generate a SAS token for a download URL.
         local_dir (Optional[str]): Path to the local directory in which to stage logs. Default:
-            ``dagster.seven.get_system_temp_directory()``.
+            ``dagister._seven.get_system_temp_directory()``.
         prefix (Optional[str]): Prefix for the log file keys.
         inst_data (Optional[ConfigurableClassData]): Serializable representation of the compute
             log manager when newed up from config.

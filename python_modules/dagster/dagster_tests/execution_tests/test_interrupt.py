@@ -20,7 +20,7 @@ from dagster import (
     pipeline,
     reconstructable,
     resource,
-    seven,
+    _seven as seven,
     solid,
 )
 from dagster._core.errors import DagsterExecutionInterruptedError, raise_execution_interrupts

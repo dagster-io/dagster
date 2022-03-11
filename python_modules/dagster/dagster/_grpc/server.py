@@ -14,7 +14,7 @@ from typing import NamedTuple
 import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
-from dagster import _check as check, seven
+from dagster import _check as check, _seven as seven
 from dagster._core.code_pointer import CodePointer
 from dagster._core.definitions.reconstructable import ReconstructableRepository
 from dagster._core.errors import DagsterUserCodeUnreachableError

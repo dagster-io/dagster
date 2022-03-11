@@ -10,7 +10,7 @@ from dagster_graphql.test.utils import (
 )
 
 from dagster import execute_pipeline
-from dagster.seven import json
+from dagster._seven import json
 
 from .setup import noop_pipeline
 

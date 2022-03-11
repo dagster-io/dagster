@@ -49,8 +49,8 @@ from dagster._daemon import get_default_daemon_logger
 from dagster._grpc.client import EphemeralDagsterGrpcClient
 from dagster._grpc.server import open_server_process
 from dagster._scheduler.scheduler import launch_scheduled_runs
-from dagster.seven import wait_for_process
-from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
+from dagster._seven import wait_for_process
+from dagster._seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster._utils import find_free_port
 from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 

@@ -56,7 +56,7 @@ from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.utils import str_format_list
 from dagster._serdes import ConfigurableClass
-from dagster.seven import get_current_datetime_in_utc
+from dagster._seven import get_current_datetime_in_utc
 from dagster._utils import traced
 from dagster._utils.backcompat import experimental_functionality_warning
 from dagster._utils.error import serializable_error_info_from_exc_info

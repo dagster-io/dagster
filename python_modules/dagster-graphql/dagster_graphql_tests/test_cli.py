@@ -7,7 +7,7 @@ from contextlib import contextmanager
 from click.testing import CliRunner
 from dagster_graphql.cli import ui
 
-from dagster import seven
+from dagster import _seven as seven
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import file_relative_path

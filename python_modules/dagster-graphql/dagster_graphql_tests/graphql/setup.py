@@ -90,7 +90,7 @@ from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.test_utils import default_mode_def_for_test, today_at_midnight
 from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
-from dagster.seven import get_system_temp_directory
+from dagster._seven import get_system_temp_directory
 from dagster._utils import file_relative_path, segfault
 
 LONG_INT = 2875972244  # 32b unsigned, > 32b signed

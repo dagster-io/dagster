@@ -26,7 +26,7 @@ from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster._daemon.controller import create_daemon_grpc_server_registry
 from dagster._daemon.workspace import DaemonWorkspace
 from dagster._serdes import ConfigurableClass
-from dagster.seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
+from dagster._seven.compat.pendulum import create_pendulum_time, mock_pendulum_timezone
 from dagster._utils import Counter, merge_dicts, traced, traced_counter
 from dagster._utils.error import serializable_error_info_from_exc_info
 from dagster._utils.log import configure_loggers

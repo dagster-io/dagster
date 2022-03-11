@@ -8,7 +8,7 @@ from dagster._core.definitions.partition import Partition, PartitionSetDefinitio
 from dagster._core.definitions.run_request import SkipReason
 from dagster._core.definitions.schedule_definition import ScheduleEvaluationContext
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster.seven.compat.pendulum import PendulumDateTime, to_timezone
+from dagster._seven.compat.pendulum import PendulumDateTime, to_timezone
 
 DEFAULT_MONTHLY_FORMAT = "%Y-%m"
 DEFAULT_DATE_FORMAT = "%Y-%m-%d"

@@ -33,7 +33,7 @@ from dagster._core.test_utils import create_test_daemon_workspace, instance_for_
 from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
-from dagster.seven import IS_WINDOWS, get_system_temp_directory
+from dagster._seven import IS_WINDOWS, get_system_temp_directory
 from dagster._utils import touch_file
 from dagster._utils.error import SerializableErrorInfo
 

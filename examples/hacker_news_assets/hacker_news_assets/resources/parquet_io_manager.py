@@ -5,7 +5,7 @@ import pandas
 import pyspark
 
 from dagster import Field, IOManager, MetadataEntry, OutputContext, _check as check, io_manager
-from dagster.seven.temp_dir import get_system_temp_directory
+from dagster._seven.temp_dir import get_system_temp_directory
 
 
 class PartitionedParquetIOManager(IOManager):

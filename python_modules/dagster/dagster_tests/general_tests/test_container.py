@@ -1,6 +1,6 @@
 import pytest
 
-from dagster import seven
+from dagster import _seven as seven
 
 
 @pytest.mark.skipif(seven.IS_WINDOWS, reason="docker doesn't work on windows tests")

@@ -18,7 +18,7 @@ from dagster import (
     OutputDefinition,
     SolidDefinition,
     _check as check,
-    seven,
+    _seven as seven,
 )
 from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster._core.definitions.metadata import MetadataEntry
@@ -30,7 +30,7 @@ from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.storage.file_manager import FileHandle
 from dagster._serdes import pack_value
-from dagster.seven import get_system_temp_directory
+from dagster._seven import get_system_temp_directory
 from dagster._utils import mkdir_p, safe_tempfile_path
 from dagster._utils.backcompat import rename_warning
 from dagster._utils.error import serializable_error_info_from_exc_info

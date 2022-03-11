@@ -21,7 +21,7 @@ from dagster._core.scheduler.instigation import (
     InstigatorType,
     ScheduleInstigatorData,
 )
-from dagster.seven.compat.pendulum import create_pendulum_time
+from dagster._seven.compat.pendulum import create_pendulum_time
 from dagster._utils import Counter, traced_counter
 
 GET_SCHEDULES_QUERY = """
