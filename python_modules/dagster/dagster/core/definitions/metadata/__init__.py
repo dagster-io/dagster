@@ -101,12 +101,6 @@ def normalize_metadata(
     ]
 
 
-import pathlib
-
-p = pathlib.Path("a/b/c")
-os.fspath(p)
-
-
 def normalize_metadata_value(raw_value: RawMetadataValue):
 
     if isinstance(raw_value, MetadataValue):

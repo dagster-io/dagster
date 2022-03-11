@@ -67,6 +67,8 @@ class GrapheneAssetDependency(graphene.ObjectType):
 
 
 class GrapheneAssetNode(graphene.ObjectType):
+
+    # NOTE: properties/resolvers are listed alphabetically
     assetKey = graphene.NonNull(GrapheneAssetKey)
     assetMaterializations = graphene.Field(
         non_null_list(GrapheneMaterializationEvent),

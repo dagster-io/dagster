@@ -4,9 +4,9 @@ from typing import (
     AbstractSet,
     Any,
     Callable,
+    List,
     NamedTuple,
     Optional,
-    Sequence,
     Type,
     TypeVar,
     Union,
@@ -62,16 +62,6 @@ class OutputDefinition:
             partitions from the OutputContext) which should be associated with this OutputDefinition.
     """
 
-    dagster_type: DagsterType
-    name: str
-    description: Optional[str]
-    is_required: bool
-    io_manager_key: str
-    metadata_entries: Sequence[MetadataEntry]
-    asset_partitions_def: Optional["PartitionsDefinition"]
-
-    _asset_partitions_fn: Optional[Callable[["OutputContext"], AbstractSet[str]]] = None
-
     def __init__(
         self,
         dagster_type=None,
@@ -89,18 +79,18 @@ class OutputDefinition:
     ):
         from dagster.core.definitions.partition import PartitionsDefinition
 
-        self.name = check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))
+        self._name = check_valid_name(check.opt_str_param(name, "name", DEFAULT_OUTPUT))
         self._type_not_set = dagster_type is None
-        self.dagster_type = resolve_dagster_type(dagster_type)
-        self.description = check.opt_str_param(description, "description")
-        self.is_required = check.bool_param(is_required, "is_required")
-        self.io_manager_key = check.opt_str_param(
+        self._dagster_type = resolve_dagster_type(dagster_type)
+        self._description = check.opt_str_param(description, "description")
+        self._is_required = check.bool_param(is_required, "is_required")
+        self._io_manager_key = check.opt_str_param(
             io_manager_key,
             "io_manager_key",
             default="io_manager",
         )
         self._metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
-        self.metadata_entries = check.is_list(
+        self._metadata_entries = check.is_list(
             normalize_metadata(self._metadata, [], allow_invalid=True), MetadataEntry
         )
 
@@ -139,9 +129,29 @@ class OutputDefinition:
 
         if asset_partitions_def:
             experimental_arg_warning("asset_partitions_def", "OutputDefinition.__init__")
-        self.asset_partitions_def = check.opt_inst_param(
+        self._asset_partitions_def = check.opt_inst_param(
             asset_partitions_def, "asset_partition_def", PartitionsDefinition
         )
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def dagster_type(self) -> DagsterType:
+        return self._dagster_type
+
+    @property
+    def description(self) -> Optional[str]:
+        return self._description
+
+    @property
+    def is_required(self) -> bool:
+        return self._is_required
+
+    @property
+    def io_manager_key(self) -> str:
+        return self._io_manager_key
 
     @property
     def optional(self) -> bool:
@@ -152,12 +162,20 @@ class OutputDefinition:
         return self._metadata
 
     @property
+    def metadata_entries(self) -> List[MetadataEntry]:
+        return self._metadata_entries
+
+    @property
     def is_dynamic(self) -> bool:
         return False
 
     @property
     def is_asset(self) -> bool:
         return self._asset_key is not None
+
+    @property
+    def asset_partitions_def(self) -> Optional["PartitionsDefinition"]:
+        return self._asset_partitions_def
 
     @property
     def hardcoded_asset_key(self) -> Optional[AssetKey]:
