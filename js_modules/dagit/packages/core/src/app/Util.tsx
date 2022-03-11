@@ -19,15 +19,45 @@ function indexesOf(string: string, search: RegExp | string) {
 export const withMiddleTruncation = (text: string, options: {maxLength: number}) => {
   const overflowLength = text.length - options.maxLength;
   if (overflowLength <= 0) {
+    // No truncation is necessary
     return text;
   }
-  let breakpoint = Math.floor(text.length / 2);
-  const breakpoints = text.includes('__') ? indexesOf(text, /__/g) : indexesOf(text, /[_>\.-]/g);
-  if (breakpoints.length > 0) {
-    breakpoint = breakpoints[Math.floor(breakpoints.length / 2)];
+  if (options.maxLength <= 6) {
+    // Middle truncation to this few characters (eg: abc…ef) is kind of silly
+    // and just using abcde… looks better.
+    return text.substring(0, options.maxLength - 1) + '…';
   }
 
-  return `${text.substring(0, breakpoint - (overflowLength + 1))}…${text.substring(breakpoint)}`;
+  // Find all the breakpoints in the string
+  //   "my_great_long_solid_name"
+  //     ˄     ˄    ˄     ˄
+  const breakpoints = text.includes('__') ? indexesOf(text, /__/g) : indexesOf(text, /[_>\.-]/g);
+
+  // Given no breakpoints, slice out the middle of the string. Adding
+  // the overflowLength here gives us the END point of the truncated region.
+  //
+  //   "abc(defg)hijk"
+  //            ˄
+  let breakpoint = Math.floor((text.length + overflowLength) / 2);
+
+  // Find the first breakpoint that exists AFTER enough characters that we could show
+  // at least three prefix letters after cutting out overflowLength.
+  const firstUsableIdx = breakpoints.findIndex((bp) => bp > overflowLength + 3);
+
+  if (firstUsableIdx !== -1) {
+    // If we found a usable breakpoint, see if we could instead choose the middle
+    // breakpoint which would give us more prefix. All else equal,
+    // "my_great_l…_name" looks better than "my_g…_solid_name"
+    const middleIdx = Math.floor(breakpoints.length / 2);
+    breakpoint = breakpoints[Math.max(firstUsableIdx, middleIdx)];
+  }
+
+  const result = [
+    text.substring(0, breakpoint - (overflowLength + 1)),
+    text.substring(breakpoint),
+  ].join('…');
+
+  return result;
 };
 
 export const formatElapsedTime = (msec: number) => {

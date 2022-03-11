@@ -16,6 +16,7 @@ import {
   GlobalToasterStyle,
   GlobalTooltipStyle,
   FontFamily,
+  CustomTooltipProvider,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
@@ -27,7 +28,6 @@ import {WorkspaceProvider} from '../workspace/WorkspaceContext';
 import {AppContext} from './AppContext';
 import {CustomAlertProvider} from './CustomAlertProvider';
 import {CustomConfirmationProvider} from './CustomConfirmationProvider';
-import {CustomTooltipProvider} from './CustomTooltipProvider';
 import {LayoutProvider} from './LayoutProvider';
 import {PermissionsProvider} from './Permissions';
 import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
