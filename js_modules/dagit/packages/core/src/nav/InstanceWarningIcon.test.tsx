@@ -74,11 +74,25 @@ describe('InstanceWarningIcon', () => {
         });
       });
 
-      it('displays if there are schedules, and only a scheduler error', async () => {
+      it('does not display if schedules are not enabled, and only a scheduler error', async () => {
         const pipelineMocks = {
           Pipeline: () => ({
             sensors: () => [],
-            schedules: () => [...new Array(1)],
+            schedules: () => [{scheduleState: {status: 'STOPPED'}}],
+          }),
+        };
+
+        render(<Test mocks={[defaultMocks, scheduleErrorMocks, pipelineMocks]} />);
+        await waitFor(() => {
+          expect(screen.queryByLabelText('warning')).toBeNull();
+        });
+      });
+
+      it('displays if there are running schedules, and only a scheduler error', async () => {
+        const pipelineMocks = {
+          Pipeline: () => ({
+            sensors: () => [],
+            schedules: () => [{scheduleState: {status: 'RUNNING'}}],
           }),
         };
 
@@ -117,7 +131,7 @@ describe('InstanceWarningIcon', () => {
       it('displays if there are sensors, and only a sensor error', async () => {
         const pipelineMocks = {
           Pipeline: () => ({
-            sensors: () => [...new Array(1)],
+            sensors: () => [{sensorState: {status: 'RUNNING'}}],
             schedules: () => [],
           }),
         };
@@ -157,7 +171,7 @@ describe('InstanceWarningIcon', () => {
       it('displays if there are sensors, and only (both) sensor/schedule errors', async () => {
         const pipelineMocks = {
           Pipeline: () => ({
-            sensors: () => [...new Array(1)],
+            sensors: () => [{sensorState: {status: 'RUNNING'}}],
             schedules: () => [],
           }),
         };
@@ -172,7 +186,7 @@ describe('InstanceWarningIcon', () => {
         const pipelineMocks = {
           Pipeline: () => ({
             sensors: () => [],
-            schedules: () => [...new Array(1)],
+            schedules: () => [{scheduleState: {status: 'RUNNING'}}],
           }),
         };
 
@@ -185,8 +199,8 @@ describe('InstanceWarningIcon', () => {
       it('displays if there are schedules and sensors, and only (both) sensor/schedule errors', async () => {
         const pipelineMocks = {
           Pipeline: () => ({
-            sensors: () => [...new Array(1)],
-            schedules: () => [...new Array(1)],
+            sensors: () => [{sensorState: {status: 'RUNNING'}}],
+            schedules: () => [{scheduleState: {status: 'RUNNING'}}],
           }),
         };
 
