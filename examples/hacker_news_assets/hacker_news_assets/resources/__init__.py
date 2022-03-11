@@ -53,7 +53,6 @@ RESOURCES_PROD = {
     "parquet_io_manager": s3_partitioned_parquet_io_manager,
     "warehouse_io_manager": snowflake_io_manager_prod,
     "pyspark": configured_pyspark,
-    "warehouse_loader": snowflake_io_manager_prod,
     "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
     "dbt": dbt_prod_resource,
 }
@@ -70,7 +69,6 @@ RESOURCES_STAGING = {
     "parquet_io_manager": s3_partitioned_parquet_io_manager,
     "warehouse_io_manager": snowflake_io_manager_staging,
     "pyspark": configured_pyspark,
-    "warehouse_loader": snowflake_io_manager_staging,
     "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
     "dbt": dbt_staging_resource,
 }
@@ -80,7 +78,6 @@ RESOURCES_LOCAL = {
     "parquet_io_manager": local_partitioned_parquet_io_manager,
     "warehouse_io_manager": local_partitioned_parquet_io_manager,
     "pyspark": configured_pyspark,
-    "warehouse_loader": snowflake_io_manager_prod,
     "hn_client": hn_snapshot_client,
     "dbt": ResourceDefinition.none_resource(),
 }
