@@ -6,7 +6,7 @@ from typing import Any, Callable, Optional
 import click
 
 from dagster import check, seven
-from dagster.cli.workspace.cli_target import (
+from dagster._cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
 )

@@ -8,8 +8,8 @@ from graphql.execution.executors.sync import SyncExecutor
 
 from dagster import __version__ as dagster_version
 from dagster import check, seven
-from dagster.cli.workspace import workspace_target_argument
-from dagster.cli.workspace.cli_target import (
+from dagster._cli.workspace import workspace_target_argument
+from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     get_workspace_process_context_from_kwargs,
 )

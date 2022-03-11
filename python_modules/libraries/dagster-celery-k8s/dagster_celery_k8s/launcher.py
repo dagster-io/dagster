@@ -196,7 +196,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
 
         user_defined_k8s_config = get_user_defined_k8s_config(frozentags(run.tags))
 
-        from dagster.cli.api import ExecuteRunArgs
+        from dagster._cli.api import ExecuteRunArgs
 
         run_args = ExecuteRunArgs(
             pipeline_origin=pipeline_origin,

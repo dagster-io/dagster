@@ -3,7 +3,7 @@ import sys
 import kubernetes
 
 from dagster import Field, MetadataEntry, StringSource, check
-from dagster.cli.api import ExecuteRunArgs
+from dagster._cli.api import ExecuteRunArgs
 from dagster.core.events import EngineEventData
 from dagster.core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
 from dagster.core.launcher.base import CheckRunHealthResult, WorkerStatus

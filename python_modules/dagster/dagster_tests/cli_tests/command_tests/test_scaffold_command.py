@@ -1,8 +1,8 @@
 import pytest
 from click.testing import CliRunner
 
-from dagster.cli.job import job_scaffold_command
-from dagster.cli.pipeline import execute_scaffold_command, pipeline_scaffold_command
+from dagster._cli.job import job_scaffold_command
+from dagster._cli.pipeline import execute_scaffold_command, pipeline_scaffold_command
 
 from .test_cli_commands import (
     valid_job_python_origin_target_cli_args,

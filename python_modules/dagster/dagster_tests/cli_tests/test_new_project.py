@@ -2,7 +2,7 @@ import os
 
 from click.testing import CliRunner
 
-from dagster.cli import new_project_cli
+from dagster._cli import new_project_cli
 
 
 def test_new_project_command_fails_when_dir_path_exists():

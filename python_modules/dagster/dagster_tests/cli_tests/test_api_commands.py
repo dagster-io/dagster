@@ -2,8 +2,8 @@ import mock
 from click.testing import CliRunner
 from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_pipeline_handle
 
-from dagster.cli import api
-from dagster.cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
+from dagster._cli import api
+from dagster._cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
 from dagster.core.execution.plan.state import KnownExecutionState
 from dagster.core.execution.retries import RetryState
 from dagster.core.execution.stats import RunStepKeyStatsSnapshot
@@ -279,7 +279,7 @@ def test_execute_step_verify_step():
             assert not verify_step(instance, run, retries, step_keys_to_execute=["do_something"])
 
             # Test trying to re-run a retry fails verify_step (case 2)
-            with mock.patch("dagster.cli.api.get_step_stats_by_key") as _step_stats_by_key:
+            with mock.patch("dagister._cli.api.get_step_stats_by_key") as _step_stats_by_key:
                 _step_stats_by_key.return_value = {
                     "do_something": RunStepKeyStatsSnapshot(
                         run_id=run.run_id, step_key="do_something", attempts=2
@@ -302,7 +302,7 @@ def test_execute_step_verify_step():
             assert not verify_step(instance, run, retries, step_keys_to_execute=["do_something"])
 
 
-@mock.patch("dagster.cli.api.verify_step")
+@mock.patch("dagister._cli.api.verify_step")
 def test_execute_step_verify_step_framework_error(mock_verify_step):
     with get_foo_pipeline_handle() as pipeline_handle:
         runner = CliRunner()

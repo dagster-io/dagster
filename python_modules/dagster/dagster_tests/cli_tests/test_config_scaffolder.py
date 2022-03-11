@@ -7,7 +7,7 @@ from dagster import (
     String,
     check,
 )
-from dagster.cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
+from dagster._cli.config_scaffolder import scaffold_pipeline_config, scaffold_type
 from dagster.config import config_type
 from dagster.core.definitions import create_run_config_schema
 

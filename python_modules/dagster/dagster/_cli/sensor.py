@@ -7,7 +7,7 @@ import yaml
 from dagster import DagsterInvariantViolationError
 from dagster import __version__ as dagster_version
 from dagster import check
-from dagster.cli.workspace.cli_target import (
+from dagster._cli.workspace.cli_target import (
     get_external_repository_from_kwargs,
     get_external_repository_from_repo_location,
     get_repository_location_from_kwargs,

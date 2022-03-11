@@ -38,7 +38,7 @@ from dagster import (
     executor,
     multiple_process_executor_requirements,
 )
-from dagster.cli.api import ExecuteStepArgs
+from dagster._cli.api import ExecuteStepArgs
 from dagster.core.errors import DagsterUnmetExecutorRequirementsError
 from dagster.core.events import EngineEventData
 from dagster.core.events.log import EventLogEntry

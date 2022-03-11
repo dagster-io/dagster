@@ -17,7 +17,7 @@ from dagster import (
     executor,
     multiple_process_executor_requirements,
 )
-from dagster.cli.api import ExecuteStepArgs
+from dagster._cli.api import ExecuteStepArgs
 from dagster.core.events import EngineEventData
 from dagster.core.execution.retries import RetryMode
 from dagster.core.storage.pipeline_run import PipelineRun

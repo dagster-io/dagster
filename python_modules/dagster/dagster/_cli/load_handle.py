@@ -4,7 +4,7 @@ from typing import Dict, cast
 from click import UsageError
 
 from dagster import check
-from dagster.cli.workspace.cli_target import get_working_directory_from_kwargs
+from dagster._cli.workspace.cli_target import get_working_directory_from_kwargs
 from dagster.core.definitions.reconstructable import ReconstructableRepository
 
 

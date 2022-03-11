@@ -2,7 +2,7 @@ import click
 import pytest
 from click.testing import CliRunner
 
-from dagster.cli.workspace.cli_target import (
+from dagster._cli.workspace.cli_target import (
     get_external_repository_from_kwargs,
     repository_target_argument,
 )

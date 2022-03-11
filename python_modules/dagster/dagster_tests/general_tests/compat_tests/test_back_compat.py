@@ -21,7 +21,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.cli.debug import DebugRunPayload
+from dagster._cli.debug import DebugRunPayload
 from dagster.core.definitions.dependency import NodeHandle
 from dagster.core.errors import DagsterInstanceMigrationRequired
 from dagster.core.events import DagsterEvent
