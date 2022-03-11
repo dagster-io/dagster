@@ -115,6 +115,7 @@ class OutputDefinition:
                 'Cannot specify "asset_partitions" argument without also specifying "asset_key"',
             )
 
+        self._asset_partitions_fn: Optional[Callable[["OutputContext"], AbstractSet[str]]]
         if callable(asset_partitions):
             self._asset_partitions_fn = asset_partitions
         elif asset_partitions is not None:
