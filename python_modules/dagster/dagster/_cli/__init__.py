@@ -4,7 +4,7 @@ import sys
 import click
 
 from .._core.instance import DagsterInstance
-from ..version import __version__
+from .._version import __version__
 from .api import api_cli
 from .asset import asset_cli
 from .debug import debug_cli

@@ -35,7 +35,7 @@ from dagster._core.definitions.reconstructable import (
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.instance import DagsterInstance
 from dagster._utils import merge_dicts
-from dagster.version import __version__ as dagster_module_version
+from dagster._version import __version__ as dagster_module_version
 
 TELEMETRY_STR = ".telemetry"
 INSTANCE_ID_STR = "instance_id"

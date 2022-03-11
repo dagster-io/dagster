@@ -3,7 +3,7 @@ import posixpath
 
 import jinja2
 
-from dagster.version import __version__ as dagster_version
+from dagster._version import __version__ as dagster_version
 
 NEW_PROJECT_PLACEHOLDER = "new_project"
 NEW_PROJECT_PATH = os.path.join(os.path.dirname(__file__), NEW_PROJECT_PLACEHOLDER)

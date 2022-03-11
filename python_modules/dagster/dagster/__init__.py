@@ -257,7 +257,7 @@ from dagster._utils.test import (
     execute_solids_within_pipeline,
 )
 
-from .version import __version__
+from ._version import __version__
 
 from dagster._config.source import BoolSource, StringSource, IntSource  # isort:skip
 

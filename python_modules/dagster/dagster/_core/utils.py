@@ -9,7 +9,7 @@ import toposort as toposort_
 
 from dagster import _check as check
 from dagster._utils import frozendict
-from dagster.version import __version__
+from dagster._version import __version__
 
 BACKFILL_TAG_LENGTH = 8
 
