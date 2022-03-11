@@ -19,8 +19,8 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.config.config_type import ConfigTypeKind
-from dagster.config.validate import process_config
+from dagster._config.config_type import ConfigTypeKind
+from dagster._config.validate import process_config
 from dagster.core.definitions import create_run_config_schema
 from dagster.core.definitions.run_config import (
     RunConfigSchemaCreationData,

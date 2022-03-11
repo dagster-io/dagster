@@ -2,8 +2,8 @@ import os
 import pickle
 
 from dagster import check
-from dagster.config import Field
-from dagster.config.source import StringSource
+from dagster._config import Field
+from dagster._config.source import StringSource
 from dagster.core.definitions.events import AssetKey, AssetMaterialization
 from dagster.core.definitions.metadata import MetadataEntry
 from dagster.core.errors import DagsterInvariantViolationError

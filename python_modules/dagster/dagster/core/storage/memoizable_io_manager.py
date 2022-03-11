@@ -3,8 +3,8 @@ import pickle
 from abc import abstractmethod
 
 from dagster import check
-from dagster.config import Field
-from dagster.config.source import StringSource
+from dagster._config import Field
+from dagster._config.source import StringSource
 from dagster.core.execution.context.output import OutputContext
 from dagster.core.storage.io_manager import IOManager, io_manager
 from dagster.utils import PICKLE_PROTOCOL, mkdir_p

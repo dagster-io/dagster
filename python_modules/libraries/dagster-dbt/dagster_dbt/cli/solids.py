@@ -10,7 +10,7 @@ from dagster import (
     StringSource,
     solid,
 )
-from dagster.config.field import Field
+from dagster._config.field import Field
 from dagster.utils.backcompat import experimental
 
 from ..utils import generate_materializations

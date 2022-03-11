@@ -1,5 +1,5 @@
 from dagster import Field, Permissive, Selector, Shape
-from dagster.config.field_utils import _compute_fields_hash
+from dagster._config.field_utils import _compute_fields_hash
 
 
 def _hash(fields):

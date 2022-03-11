@@ -4,9 +4,9 @@ import typing
 from pep562 import pep562
 
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
-from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
-from dagster.config.config_schema import ConfigSchema
-from dagster.config.config_type import Array, Noneable, ScalarUnion
+from dagster._config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
+from dagster._config.config_schema import ConfigSchema
+from dagster._config.config_type import Array, Noneable, ScalarUnion
 from dagster.core.asset_defs import (
     AssetGroup,
     AssetIn,
@@ -259,7 +259,7 @@ from dagster.utils.test import (
 
 from .version import __version__
 
-from dagster.config.source import BoolSource, StringSource, IntSource  # isort:skip
+from dagster._config.source import BoolSource, StringSource, IntSource  # isort:skip
 
 # ########################
 # ##### DEPRECATED ALIASES

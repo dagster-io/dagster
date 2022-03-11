@@ -2,7 +2,7 @@ import pytest
 
 from dagster import Field, composite_solid, solid
 from dagster.check import CheckError
-from dagster.config.config_type import ConfigAnyInstance
+from dagster._config.config_type import ConfigAnyInstance
 
 
 def test_solid_field_backcompat():

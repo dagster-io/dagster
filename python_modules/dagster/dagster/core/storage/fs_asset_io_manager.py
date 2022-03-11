@@ -1,7 +1,7 @@
 import os
 
-from dagster.config import Field
-from dagster.config.source import StringSource
+from dagster._config import Field
+from dagster._config.source import StringSource
 from dagster.core.storage.io_manager import io_manager
 
 from .fs_io_manager import PickledObjectFilesystemIOManager

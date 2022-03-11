@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional
 
 from dagster import check
 from dagster.builtins import Int
-from dagster.config import Field, Selector
+from dagster._config import Field, Selector
 from dagster.core.definitions.configurable import (
     ConfiguredDefinitionConfigSchema,
     NamedConfigurableDefinition,

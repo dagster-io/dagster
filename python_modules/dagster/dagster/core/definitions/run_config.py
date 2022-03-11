@@ -1,9 +1,9 @@
 from typing import Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, cast
 
-from dagster.config import Field, Permissive, Selector
-from dagster.config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
-from dagster.config.field_utils import Shape
-from dagster.config.iterate_types import iterate_config_types
+from dagster._config import Field, Permissive, Selector
+from dagster._config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
+from dagster._config.field_utils import Shape
+from dagster._config.iterate_types import iterate_config_types
 from dagster.core.definitions.executor_definition import (
     ExecutorDefinition,
     execute_in_process_executor,

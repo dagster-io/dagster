@@ -2,8 +2,8 @@ import os
 import warnings
 
 from dagster import Array, Bool, check
-from dagster.config import Field, Permissive
-from dagster.config.validate import validate_config
+from dagster._config import Field, Permissive
+from dagster._config.validate import validate_config
 from dagster.core.errors import DagsterInvalidConfigError
 from dagster.serdes import class_from_code_pointer
 from dagster.utils import merge_dicts

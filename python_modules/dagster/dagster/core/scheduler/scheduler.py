@@ -3,8 +3,8 @@ import os
 from typing import List, NamedTuple
 
 from dagster import check
-from dagster.config import Field
-from dagster.config.source import IntSource
+from dagster._config import Field
+from dagster._config.source import IntSource
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.errors import DagsterError
 from dagster.core.host_representation import ExternalSchedule

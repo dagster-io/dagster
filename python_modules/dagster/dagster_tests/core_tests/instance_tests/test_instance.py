@@ -6,7 +6,7 @@ from dagster_tests.api_tests.utils import get_bar_workspace
 
 from dagster import PipelineDefinition, check, execute_pipeline, pipeline, solid
 from dagster.check import CheckError
-from dagster.config import Field
+from dagster._config import Field
 from dagster.core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidConfigError,

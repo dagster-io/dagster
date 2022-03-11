@@ -7,8 +7,8 @@ from contextlib import contextmanager
 from typing import BinaryIO, Optional, TextIO, Union
 
 from dagster import check
-from dagster.config import Field
-from dagster.config.source import StringSource
+from dagster._config import Field
+from dagster._config.source import StringSource
 from dagster.core.definitions.resource_definition import resource
 from dagster.core.instance import DagsterInstance
 from dagster.core.types.decorator import usable_as_dagster_type

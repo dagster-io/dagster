@@ -1,7 +1,7 @@
 from typing import Dict, Iterable, NamedTuple, Optional
 
 from dagster import check
-from dagster.config.config_type import ConfigType
+from dagster._config.config_type import ConfigType
 
 from .config import ConfigMapping
 from .pipeline_definition import PipelineDefinition

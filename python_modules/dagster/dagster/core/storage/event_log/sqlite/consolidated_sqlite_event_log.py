@@ -8,7 +8,7 @@ from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
 from dagster import check
-from dagster.config.source import StringSource
+from dagster._config.source import StringSource
 from dagster.core.storage.pipeline_run import PipelineRunStatus
 from dagster.core.storage.sql import (
     check_alembic_revision,

@@ -1,7 +1,7 @@
 from typing import Optional
 
 from dagster import PipelineDefinition, check
-from dagster.config.config_type import ConfigType, ConfigTypeKind
+from dagster._config.config_type import ConfigType, ConfigTypeKind
 from dagster.core.definitions import create_run_config_schema
 
 
