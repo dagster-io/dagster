@@ -73,7 +73,7 @@ class SnowflakeIOManager(IOManager):
         self._config = config
 
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
-        schema, table = "hackernews", context.asset_key.path[-1]
+        schema, table = DB_SCHEMA, context.asset_key.path[-1]
 
         time_window = context.asset_partitions_time_window if context.has_asset_partitions else None
         with connect_snowflake(config=self._config, schema=schema) as con:
