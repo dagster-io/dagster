@@ -9,7 +9,7 @@ from dagster import (
     multiple_process_executor_requirements,
 )
 from dagster._core.execution.retries import RetryMode, get_retries_config
-from dagster.grpc.types import ExecuteStepArgs
+from dagster._grpc.types import ExecuteStepArgs
 from dagster.serdes import pack_value
 
 from .config import DEFAULT_CONFIG, dict_wrapper

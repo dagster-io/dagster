@@ -16,7 +16,7 @@ from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.plan.step import ExecutionStep
 from dagster._core.execution.retries import RetryMode
 from dagster._core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
-from dagster.grpc.types import ExecuteStepArgs
+from dagster._grpc.types import ExecuteStepArgs
 
 from ..base import Executor
 

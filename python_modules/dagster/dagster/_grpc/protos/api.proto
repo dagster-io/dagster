@@ -1,4 +1,4 @@
-// If you make changes to this file, run "python -m dagster.grpc.compile" after.
+// If you make changes to this file, run "python -m dagster._grpc.compile" after.
 
 syntax = "proto3";
 

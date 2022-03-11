@@ -3,7 +3,7 @@ from typing import Dict, List, Optional
 
 from dagster import DagsterEvent, DagsterInstance, check
 from dagster._core.storage.pipeline_run import PipelineRun
-from dagster.grpc.types import ExecuteStepArgs
+from dagster._grpc.types import ExecuteStepArgs
 
 
 class StepHandlerContext:

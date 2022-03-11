@@ -11,7 +11,7 @@ from dagster._core.host_representation import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.workspace.load import location_origins_from_yaml_paths
-from dagster.grpc.types import ListRepositoriesResponse
+from dagster._grpc.types import ListRepositoriesResponse
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 

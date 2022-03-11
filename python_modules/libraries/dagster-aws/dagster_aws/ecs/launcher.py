@@ -6,7 +6,7 @@ from botocore.exceptions import ClientError
 from dagster import Array, Field, Noneable, StringSource, check
 from dagster._core.events import EngineEventData, MetadataEntry
 from dagster._core.launcher.base import LaunchRunContext, RunLauncher
-from dagster.grpc.types import ExecuteRunArgs
+from dagster._grpc.types import ExecuteRunArgs
 from dagster.serdes import ConfigurableClass
 from dagster.utils import merge_dicts
 

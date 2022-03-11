@@ -30,7 +30,7 @@ from dagster._core.host_representation.grpc_server_state_subscriber import (
 )
 from dagster._core.host_representation.origin import GrpcServerRepositoryLocationOrigin
 from dagster._core.instance import DagsterInstance
-from dagster.grpc.server_watcher import create_grpc_watch_thread
+from dagster._grpc.server_watcher import create_grpc_watch_thread
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from .load_target import WorkspaceLoadTarget

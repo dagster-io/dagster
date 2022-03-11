@@ -13,7 +13,7 @@ from dagster_test.dagster_core_docker_buildkite import (
 
 from dagster import check, seven
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster.grpc.client import DagsterGrpcClient
+from dagster._grpc.client import DagsterGrpcClient
 from dagster.seven import nullcontext
 from dagster.utils import file_relative_path
 

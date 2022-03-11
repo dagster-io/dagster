@@ -9,7 +9,7 @@ from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation import GrpcServerRepositoryLocationOrigin
 from dagster._core.test_utils import environ
 from dagster._core.workspace.load import location_origins_from_config
-from dagster.grpc.server import GrpcServerProcess
+from dagster._grpc.server import GrpcServerProcess
 from dagster.utils import file_relative_path
 
 

@@ -2,7 +2,7 @@ import threading
 
 from dagster import check
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster.grpc.client import DagsterGrpcClient
+from dagster._grpc.client import DagsterGrpcClient
 
 WATCH_INTERVAL = 1
 REQUEST_TIMEOUT = 2

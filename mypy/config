@@ -8,7 +8,7 @@ exclude = (setup.py$)|(alembic/versions/[0-9a-z_]*.py$)|(alembic/env.py$)|(dagst
 [mypy-dagster.seven]
 ignore_errors = True
 
-[mypy-dagster.grpc.__generated__.*]
+[mypy-dagster._grpc.__generated__.*]
 ignore_errors = True
 
 # https://github.com/python/mypy/issues/4008

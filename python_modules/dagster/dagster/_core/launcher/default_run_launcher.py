@@ -10,8 +10,8 @@ from dagster._core.host_representation.grpc_server_registry import ProcessGrpcSe
 from dagster._core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._core.storage.tags import GRPC_INFO_TAG
-from dagster.grpc.client import DagsterGrpcClient
-from dagster.grpc.types import (
+from dagster._grpc.client import DagsterGrpcClient
+from dagster._grpc.types import (
     CanCancelExecutionRequest,
     CancelExecutionRequest,
     ExecuteExternalPipelineArgs,

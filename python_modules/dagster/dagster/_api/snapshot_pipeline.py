@@ -4,11 +4,11 @@ from dagster import check
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.external_data import ExternalPipelineSubsetResult
 from dagster._core.host_representation.origin import ExternalPipelineOrigin
-from dagster.grpc.types import PipelineSubsetSnapshotArgs
+from dagster._grpc.types import PipelineSubsetSnapshotArgs
 from dagster.serdes import deserialize_as
 
 if TYPE_CHECKING:
-    from dagster.grpc.client import DagsterGrpcClient
+    from dagster._grpc.client import DagsterGrpcClient
 
 
 def sync_get_external_pipeline_subset_grpc(
@@ -16,7 +16,7 @@ def sync_get_external_pipeline_subset_grpc(
     pipeline_origin: ExternalPipelineOrigin,
     solid_selection: Optional[List[str]] = None,
 ) -> ExternalPipelineSubsetResult:
-    from dagster.grpc.client import DagsterGrpcClient
+    from dagster._grpc.client import DagsterGrpcClient
 
     check.inst_param(api_client, "api_client", DagsterGrpcClient)
     pipeline_origin = check.inst_param(pipeline_origin, "pipeline_origin", ExternalPipelineOrigin)

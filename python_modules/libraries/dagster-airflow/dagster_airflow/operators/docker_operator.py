@@ -10,7 +10,7 @@ from dagster import check, seven
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.plan import should_skip_step
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, DagsterInstance
-from dagster.grpc.types import ExecuteStepArgs
+from dagster._grpc.types import ExecuteStepArgs
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 
 from .util import check_events_for_failures, check_events_for_skips, get_aws_environment

@@ -310,7 +310,7 @@ class GrpcServerRepositoryLocationOrigin(
         return True
 
     def create_client(self) -> "DagsterGrpcClient":
-        from dagster.grpc.client import DagsterGrpcClient
+        from dagster._grpc.client import DagsterGrpcClient
 
         return DagsterGrpcClient(
             port=self.port,

@@ -6,8 +6,8 @@ import pytest
 
 from dagster import check, seven
 from dagster._core.errors import DagsterUserCodeUnreachableError
-from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
-from dagster.grpc.server import GrpcServerProcess, open_server_process
+from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer, ephemeral_grpc_api_client
+from dagster._grpc.server import GrpcServerProcess, open_server_process
 from dagster.serdes.ipc import interrupt_ipc_subprocess_pid
 from dagster.utils import find_free_port, safe_tempfile_path
 
