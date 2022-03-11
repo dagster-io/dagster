@@ -6,9 +6,9 @@ from dagster._cli.workspace.cli_target import (
     get_external_repository_from_kwargs,
     repository_target_argument,
 )
-from dagster.core.host_representation import ExternalRepository
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import instance_for_test
+from dagster._core.host_representation import ExternalRepository
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
 
 

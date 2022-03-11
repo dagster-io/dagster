@@ -2,8 +2,8 @@ import os
 import pickle
 import tempfile
 
-from dagster.core.asset_defs import AssetIn, asset, build_assets_job
-from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
+from dagster._core.asset_defs import AssetIn, asset, build_assets_job
+from dagster._core.storage.fs_asset_io_manager import fs_asset_io_manager
 
 
 def get_assets_job(io_manager_def):

@@ -8,7 +8,7 @@ from dagster import (
     repository,
     solid,
 )
-from dagster.core.storage.memoizable_io_manager import versioned_filesystem_io_manager
+from dagster._core.storage.memoizable_io_manager import versioned_filesystem_io_manager
 
 
 @solid(

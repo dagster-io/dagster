@@ -1,9 +1,9 @@
 from typing import TYPE_CHECKING, List, Optional
 
 from dagster import check
-from dagster.core.errors import DagsterUserCodeProcessError
-from dagster.core.host_representation.external_data import ExternalPipelineSubsetResult
-from dagster.core.host_representation.origin import ExternalPipelineOrigin
+from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.host_representation.external_data import ExternalPipelineSubsetResult
+from dagster._core.host_representation.origin import ExternalPipelineOrigin
 from dagster.grpc.types import PipelineSubsetSnapshotArgs
 from dagster.serdes import deserialize_as
 

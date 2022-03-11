@@ -11,7 +11,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.definitions.executor_definition import default_executors
+from dagster._core.definitions.executor_definition import default_executors
 
 
 def get_executor_defs():

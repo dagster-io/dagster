@@ -2,7 +2,7 @@ import time
 
 from dagster_graphql import ShutdownRepositoryLocationStatus
 
-from dagster.core.errors import DagsterUserCodeUnreachableError
+from dagster._core.errors import DagsterUserCodeUnreachableError
 
 from ..graphql.graphql_context_test_suite import (
     GraphQLContextVariant,

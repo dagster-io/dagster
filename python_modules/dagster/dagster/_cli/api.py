@@ -10,17 +10,17 @@ from dagster._cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
 )
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.errors import DagsterExecutionInterruptedError
-from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
-from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
-from dagster.core.execution.run_cancellation_thread import start_run_cancellation_thread
-from dagster.core.instance import DagsterInstance
-from dagster.core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
-from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.test_utils import mock_system_timezone
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.core.utils import coerce_valid_log_level
+from dagster._core.definitions.reconstructable import ReconstructablePipeline
+from dagster._core.errors import DagsterExecutionInterruptedError
+from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
+from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
+from dagster._core.execution.run_cancellation_thread import start_run_cancellation_thread
+from dagster._core.instance import DagsterInstance
+from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
+from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.test_utils import mock_system_timezone
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.utils import coerce_valid_log_level
 from dagster.grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster.grpc.impl import core_execute_run
 from dagster.grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs

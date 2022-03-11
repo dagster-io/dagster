@@ -11,11 +11,11 @@ from dagster._cli.workspace.cli_target import (
     get_external_repository_from_kwargs,
     repository_target_argument,
 )
-from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.host_representation import ExternalRepository
-from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.instigation import InstigatorStatus
-from dagster.core.scheduler.scheduler import DagsterDaemonScheduler
+from dagster._core.definitions.run_request import InstigatorType
+from dagster._core.host_representation import ExternalRepository
+from dagster._core.instance import DagsterInstance
+from dagster._core.scheduler.instigation import InstigatorStatus
+from dagster._core.scheduler.scheduler import DagsterDaemonScheduler
 
 
 @click.group(name="schedule")

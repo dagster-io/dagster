@@ -1,7 +1,7 @@
 import pytest
 
 from dagster import InitResourceContext, build_init_resource_context, resource
-from dagster.core.errors import DagsterInvariantViolationError
+from dagster._core.errors import DagsterInvariantViolationError
 
 
 def test_build_no_args():

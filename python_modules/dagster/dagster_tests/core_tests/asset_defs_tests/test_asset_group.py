@@ -15,7 +15,7 @@ from dagster import (
     repository,
     resource,
 )
-from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
+from dagster._core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
 
 
 @pytest.fixture(autouse=True)

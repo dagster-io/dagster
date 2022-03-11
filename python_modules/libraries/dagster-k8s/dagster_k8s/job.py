@@ -14,7 +14,7 @@ from dagster import __version__ as dagster_version
 from dagster import check
 from dagster._config.field_utils import Permissive, Shape
 from dagster._config.validate import validate_config
-from dagster.core.errors import DagsterInvalidConfigError
+from dagster._core.errors import DagsterInvalidConfigError
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import frozentags, merge_dicts
 

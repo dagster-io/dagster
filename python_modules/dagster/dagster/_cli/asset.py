@@ -1,7 +1,7 @@
 import click
 
-from dagster.core.definitions.events import AssetKey
-from dagster.core.instance import DagsterInstance
+from dagster._core.definitions.events import AssetKey
+from dagster._core.instance import DagsterInstance
 
 
 @click.group(name="asset")

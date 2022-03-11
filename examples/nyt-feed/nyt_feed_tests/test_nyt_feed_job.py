@@ -5,7 +5,7 @@ import pandas as pd
 from nyt_feed.nyt_feed_job import df_to_csv_io_manager, process_nyt_feed
 
 from dagster import build_init_resource_context, build_input_context, build_output_context
-from dagster.core.test_utils import instance_for_test
+from dagster._core.test_utils import instance_for_test
 
 
 def test_nyt_feed_job():

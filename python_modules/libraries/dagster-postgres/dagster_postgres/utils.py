@@ -10,8 +10,8 @@ import psycopg2.errorcodes
 import sqlalchemy
 
 from dagster import Field, IntSource, Permissive, StringSource, check
-from dagster.core.definitions.policy import Backoff, Jitter, calculate_delay
-from dagster.core.storage.sql import get_alembic_config, handle_schema_errors
+from dagster._core.definitions.policy import Backoff, Jitter, calculate_delay
+from dagster._core.storage.sql import get_alembic_config, handle_schema_errors
 
 
 class DagsterPostgresException(Exception):

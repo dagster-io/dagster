@@ -1,5 +1,5 @@
 from dagster import composite_solid, solid
-from dagster.core.snap import (
+from dagster._core.snap import (
     CompositeSolidDefSnap,
     DependencyStructureIndex,
     build_composite_solid_def_snap,

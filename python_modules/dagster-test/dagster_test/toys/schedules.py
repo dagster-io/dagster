@@ -9,7 +9,7 @@ from dagster import (
     monthly_schedule,
     weekly_schedule,
 )
-from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.utils.partitions import date_partition_range
 
 

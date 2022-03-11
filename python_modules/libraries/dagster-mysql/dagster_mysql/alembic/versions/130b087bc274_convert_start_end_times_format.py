@@ -5,7 +5,7 @@ Revises: 17154c80d885
 Create Date: 2022-02-01 15:21:22.257972
 
 """
-from dagster.core.storage.migration.utils import (
+from dagster._core.storage.migration.utils import (
     add_run_record_start_end_timestamps,
     drop_run_record_start_end_timestamps,
 )

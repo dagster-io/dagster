@@ -4,12 +4,12 @@ from dagster_tests.api_tests.utils import get_bar_repo_handle, get_foo_pipeline_
 
 from dagster._cli import api
 from dagster._cli.api import ExecuteRunArgs, ExecuteStepArgs, verify_step
-from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.core.execution.retries import RetryState
-from dagster.core.execution.stats import RunStepKeyStatsSnapshot
-from dagster.core.host_representation import PipelineHandle
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import create_run_for_test, instance_for_test
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.execution.retries import RetryState
+from dagster._core.execution.stats import RunStepKeyStatsSnapshot
+from dagster._core.host_representation import PipelineHandle
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster.serdes import serialize_dagster_namedtuple
 
 
@@ -41,7 +41,7 @@ def test_execute_run():
         with instance_for_test(
             overrides={
                 "compute_logs": {
-                    "module": "dagster.core.storage.noop_compute_log_manager",
+                    "module": "dagster._core.storage.noop_compute_log_manager",
                     "class": "NoOpComputeLogManager",
                 }
             }
@@ -77,7 +77,7 @@ def test_execute_run_fail_pipeline():
         with instance_for_test(
             overrides={
                 "compute_logs": {
-                    "module": "dagster.core.storage.noop_compute_log_manager",
+                    "module": "dagster._core.storage.noop_compute_log_manager",
                     "class": "NoOpComputeLogManager",
                 }
             }
@@ -132,7 +132,7 @@ def test_execute_run_cannot_load():
         with instance_for_test(
             overrides={
                 "compute_logs": {
-                    "module": "dagster.core.storage.noop_compute_log_manager",
+                    "module": "dagster._core.storage.noop_compute_log_manager",
                     "class": "NoOpComputeLogManager",
                 }
             }
@@ -187,7 +187,7 @@ def test_execute_step():
         with instance_for_test(
             overrides={
                 "compute_logs": {
-                    "module": "dagster.core.storage.noop_compute_log_manager",
+                    "module": "dagster._core.storage.noop_compute_log_manager",
                     "class": "NoOpComputeLogManager",
                 }
             }
@@ -218,7 +218,7 @@ def test_execute_step_1():
         with instance_for_test(
             overrides={
                 "compute_logs": {
-                    "module": "dagster.core.storage.noop_compute_log_manager",
+                    "module": "dagster._core.storage.noop_compute_log_manager",
                     "class": "NoOpComputeLogManager",
                 }
             }
@@ -249,7 +249,7 @@ def test_execute_step_verify_step():
         with instance_for_test(
             overrides={
                 "compute_logs": {
-                    "module": "dagster.core.storage.noop_compute_log_manager",
+                    "module": "dagster._core.storage.noop_compute_log_manager",
                     "class": "NoOpComputeLogManager",
                 }
             }
@@ -279,7 +279,7 @@ def test_execute_step_verify_step():
             assert not verify_step(instance, run, retries, step_keys_to_execute=["do_something"])
 
             # Test trying to re-run a retry fails verify_step (case 2)
-            with mock.patch("dagister._cli.api.get_step_stats_by_key") as _step_stats_by_key:
+            with mock.patch("dagster._cli.api.get_step_stats_by_key") as _step_stats_by_key:
                 _step_stats_by_key.return_value = {
                     "do_something": RunStepKeyStatsSnapshot(
                         run_id=run.run_id, step_key="do_something", attempts=2
@@ -302,7 +302,7 @@ def test_execute_step_verify_step():
             assert not verify_step(instance, run, retries, step_keys_to_execute=["do_something"])
 
 
-@mock.patch("dagister._cli.api.verify_step")
+@mock.patch("dagster._cli.api.verify_step")
 def test_execute_step_verify_step_framework_error(mock_verify_step):
     with get_foo_pipeline_handle() as pipeline_handle:
         runner = CliRunner()
@@ -312,7 +312,7 @@ def test_execute_step_verify_step_framework_error(mock_verify_step):
         with instance_for_test(
             overrides={
                 "compute_logs": {
-                    "module": "dagster.core.storage.noop_compute_log_manager",
+                    "module": "dagster._core.storage.noop_compute_log_manager",
                     "class": "NoOpComputeLogManager",
                 }
             }

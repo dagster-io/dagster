@@ -3,9 +3,9 @@ import multiprocessing
 import pendulum
 import pytest
 
-from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import (
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import (
     cleanup_test_instance,
     create_test_daemon_workspace,
     get_crash_signals,

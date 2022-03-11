@@ -7,7 +7,7 @@ from time import sleep
 from typing import NamedTuple, Optional
 
 from dagster import check
-from dagster.core.errors import DagsterError
+from dagster._core.errors import DagsterError
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,

@@ -11,11 +11,11 @@ from dagstermill import DagstermillError
 from dagstermill.manager import Manager
 
 from dagster import AssetMaterialization, ModeDefinition, ResourceDefinition, check
-from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.core.test_utils import instance_for_test
-from dagster.core.utils import make_new_run_id
+from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.definitions.reconstructable import ReconstructablePipeline
+from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.test_utils import instance_for_test
+from dagster._core.utils import make_new_run_id
 from dagster.serdes import pack_value
 from dagster.utils import safe_tempfile_path
 

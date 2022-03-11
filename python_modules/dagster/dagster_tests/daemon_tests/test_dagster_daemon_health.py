@@ -4,8 +4,8 @@ import pendulum
 import pytest
 
 from dagster import DagsterInvariantViolationError
-from dagster.core.test_utils import instance_for_test
-from dagster.core.workspace.load_target import EmptyWorkspaceTarget
+from dagster._core.test_utils import instance_for_test
+from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster.daemon.controller import (
     DEFAULT_DAEMON_HEARTBEAT_TOLERANCE_SECONDS,
     all_daemons_healthy,
@@ -21,7 +21,7 @@ def test_healthy():
     with instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster.core.run_coordinator.queued_run_coordinator",
+                "module": "dagster._core.run_coordinator.queued_run_coordinator",
                 "class": "QueuedRunCoordinator",
             },
         }
@@ -94,7 +94,7 @@ def test_healthy_with_different_daemons():
             with instance_for_test(
                 overrides={
                     "run_coordinator": {
-                        "module": "dagster.core.run_coordinator.queued_run_coordinator",
+                        "module": "dagster._core.run_coordinator.queued_run_coordinator",
                         "class": "QueuedRunCoordinator",
                     },
                 }

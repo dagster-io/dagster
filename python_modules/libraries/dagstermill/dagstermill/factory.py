@@ -20,15 +20,15 @@ from dagster import (
     check,
     seven,
 )
-from dagster.core.definitions.events import AssetMaterialization, Failure, RetryRequested
-from dagster.core.definitions.metadata import MetadataEntry
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.definitions.utils import validate_tags
-from dagster.core.execution.context.compute import SolidExecutionContext
-from dagster.core.execution.context.input import build_input_context
-from dagster.core.execution.context.system import StepExecutionContext
-from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.storage.file_manager import FileHandle
+from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested
+from dagster._core.definitions.metadata import MetadataEntry
+from dagster._core.definitions.reconstructable import ReconstructablePipeline
+from dagster._core.definitions.utils import validate_tags
+from dagster._core.execution.context.compute import SolidExecutionContext
+from dagster._core.execution.context.input import build_input_context
+from dagster._core.execution.context.system import StepExecutionContext
+from dagster._core.execution.plan.outputs import StepOutputHandle
+from dagster._core.storage.file_manager import FileHandle
 from dagster.serdes import pack_value
 from dagster.seven import get_system_temp_directory
 from dagster.utils import mkdir_p, safe_tempfile_path
@@ -333,7 +333,7 @@ def define_dagstermill_solid(
         output_notebook (Optional[str]): If set, will be used as the name of an injected output of
             type :py:class:`~dagster.FileHandle` that will point to the executed notebook (in
             addition to the :py:class:`~dagster.AssetMaterialization` that is always created). This
-            respects the :py:class:`~dagster.core.storage.file_manager.FileManager` configured on
+            respects the :py:class:`~dagster._core.storage.file_manager.FileManager` configured on
             the pipeline resources via the "file_manager" resource key, so, e.g.,
             if :py:class:`~dagster_aws.s3.s3_file_manager` is configured, the output will be a :
             py:class:`~dagster_aws.s3.S3FileHandle`.

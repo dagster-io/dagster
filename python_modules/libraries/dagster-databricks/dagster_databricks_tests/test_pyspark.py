@@ -24,8 +24,8 @@ from dagster import (
     reconstructable,
     solid,
 )
-from dagster.core.definitions.no_step_launcher import no_step_launcher
-from dagster.core.test_utils import instance_for_test
+from dagster._core.definitions.no_step_launcher import no_step_launcher
+from dagster._core.test_utils import instance_for_test
 from dagster.utils.merger import deep_merge_dicts
 
 S3_BUCKET = "dagster-databricks-tests"

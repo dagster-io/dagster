@@ -16,7 +16,7 @@ Schedules
 
 .. autofunction:: build_schedule_context
 
-.. currentmodule:: dagster.core.scheduler
+.. currentmodule:: dagster._core.scheduler
 
 .. autoconfigurable:: DagsterDaemonScheduler
   :annotation: Scheduler

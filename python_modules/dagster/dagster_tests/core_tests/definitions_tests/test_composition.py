@@ -17,10 +17,10 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.definitions.decorators.hook import event_list_hook, success_hook
-from dagster.core.definitions.events import DynamicOutput, HookExecutionResult
-from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.core.execution.api import create_execution_plan
+from dagster._core.definitions.decorators.hook import event_list_hook, success_hook
+from dagster._core.definitions.events import DynamicOutput, HookExecutionResult
+from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
+from dagster._core.execution.api import create_execution_plan
 
 
 def builder(graph):

@@ -19,28 +19,28 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
 )
-from dagster.core.definitions.logger_definition import LoggerDefinition
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
-from dagster.core.definitions.solid_definition import NodeDefinition
-from dagster.core.execution.api import create_execution_plan, scoped_pipeline_context
-from dagster.core.execution.context.system import PlanExecutionContext
-from dagster.core.execution.context_creation_pipeline import (
+from dagster._core.definitions.logger_definition import LoggerDefinition
+from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
+from dagster._core.definitions.solid_definition import NodeDefinition
+from dagster._core.execution.api import create_execution_plan, scoped_pipeline_context
+from dagster._core.execution.context.system import PlanExecutionContext
+from dagster._core.execution.context_creation_pipeline import (
     create_context_creation_data,
     create_execution_data,
     create_executor,
     create_log_manager,
     create_plan_data,
 )
-from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler import Scheduler
-from dagster.core.scheduler.scheduler import DagsterScheduleDoesNotExist, DagsterSchedulerError
-from dagster.core.snap import snapshot_from_execution_plan
-from dagster.core.storage.file_manager import LocalFileManager
-from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.types.dagster_type import resolve_dagster_type
-from dagster.core.utility_solids import define_stub_solid
-from dagster.core.utils import make_new_run_id
+from dagster._core.instance import DagsterInstance
+from dagster._core.scheduler import Scheduler
+from dagster._core.scheduler.scheduler import DagsterScheduleDoesNotExist, DagsterSchedulerError
+from dagster._core.snap import snapshot_from_execution_plan
+from dagster._core.storage.file_manager import LocalFileManager
+from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.types.dagster_type import resolve_dagster_type
+from dagster._core.utility_solids import define_stub_solid
+from dagster._core.utils import make_new_run_id
 from dagster.serdes import ConfigurableClass
 
 # pylint: disable=unused-import

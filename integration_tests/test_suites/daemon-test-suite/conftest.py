@@ -3,9 +3,9 @@ import os
 import pytest
 
 from dagster import file_relative_path
-from dagster.core.test_utils import instance_for_test
-from dagster.core.workspace import WorkspaceProcessContext
-from dagster.core.workspace.load_target import PythonFileTarget
+from dagster._core.test_utils import instance_for_test
+from dagster._core.workspace import WorkspaceProcessContext
+from dagster._core.workspace.load_target import PythonFileTarget
 
 
 @pytest.fixture(name="instance")
@@ -13,7 +13,7 @@ def instance_fixture():
     with instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster.core.run_coordinator",
+                "module": "dagster._core.run_coordinator",
                 "class": "QueuedRunCoordinator",
                 "config": {"dequeue_interval_seconds": 1},
             },

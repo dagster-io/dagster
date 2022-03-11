@@ -5,8 +5,8 @@ import click
 from tqdm import tqdm
 
 from dagster import DagsterInstance
-from dagster.core.debug import DebugRunPayload
-from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.debug import DebugRunPayload
+from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.serdes import deserialize_as
 
 

@@ -1,5 +1,5 @@
 from dagster import file_relative_path
-from dagster.core.instance.config import dagster_instance_config
+from dagster._core.instance.config import dagster_instance_config
 
 
 def test_dagster_yaml():

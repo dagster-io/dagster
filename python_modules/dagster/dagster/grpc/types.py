@@ -1,16 +1,16 @@
 from typing import Dict, List, NamedTuple, Optional
 
 from dagster import check
-from dagster.core.code_pointer import CodePointer
-from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.core.execution.retries import RetryMode
-from dagster.core.host_representation.origin import (
+from dagster._core.code_pointer import CodePointer
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.execution.retries import RetryMode
+from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
     RepositoryLocationOrigin,
 )
-from dagster.core.instance.ref import InstanceRef
-from dagster.core.origin import PipelinePythonOrigin, get_python_environment_entry_point
+from dagster._core.instance.ref import InstanceRef
+from dagster._core.origin import PipelinePythonOrigin, get_python_environment_entry_point
 from dagster.serdes import serialize_dagster_namedtuple, whitelist_for_serdes
 from dagster.utils import frozenlist
 from dagster.utils.error import SerializableErrorInfo

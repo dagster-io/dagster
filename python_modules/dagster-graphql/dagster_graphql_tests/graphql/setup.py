@@ -78,18 +78,18 @@ from dagster import (
     usable_as_dagster_type,
     weekly_schedule,
 )
-from dagster.core.asset_defs import SourceAsset, asset, build_assets_job
-from dagster.core.definitions.decorators.sensor import sensor
-from dagster.core.definitions.executor_definition import in_process_executor
-from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.definitions.sensor_definition import RunRequest, SkipReason
-from dagster.core.log_manager import coerce_valid_log_level
-from dagster.core.storage.fs_io_manager import fs_io_manager
-from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster.core.storage.tags import RESUME_RETRY_TAG
-from dagster.core.test_utils import default_mode_def_for_test, today_at_midnight
-from dagster.core.workspace.context import WorkspaceProcessContext
-from dagster.core.workspace.load_target import PythonFileTarget
+from dagster._core.asset_defs import SourceAsset, asset, build_assets_job
+from dagster._core.definitions.decorators.sensor import sensor
+from dagster._core.definitions.executor_definition import in_process_executor
+from dagster._core.definitions.reconstructable import ReconstructableRepository
+from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
+from dagster._core.log_manager import coerce_valid_log_level
+from dagster._core.storage.fs_io_manager import fs_io_manager
+from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.tags import RESUME_RETRY_TAG
+from dagster._core.test_utils import default_mode_def_for_test, today_at_midnight
+from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.load_target import PythonFileTarget
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, segfault
 

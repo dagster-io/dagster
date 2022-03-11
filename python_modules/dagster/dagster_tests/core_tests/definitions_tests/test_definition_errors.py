@@ -14,7 +14,7 @@ from dagster import (
     SolidDefinition,
     solid,
 )
-from dagster.core.utility_solids import define_stub_solid
+from dagster._core.utility_solids import define_stub_solid
 
 
 def solid_a_b_list():

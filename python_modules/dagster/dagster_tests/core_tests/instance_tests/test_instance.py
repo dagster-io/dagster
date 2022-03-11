@@ -7,21 +7,21 @@ from dagster_tests.api_tests.utils import get_bar_workspace
 from dagster import PipelineDefinition, check, execute_pipeline, pipeline, solid
 from dagster.check import CheckError
 from dagster._config import Field
-from dagster.core.errors import (
+from dagster._core.errors import (
     DagsterHomeNotSetError,
     DagsterInvalidConfigError,
     DagsterInvariantViolationError,
 )
-from dagster.core.execution.api import create_execution_plan
-from dagster.core.instance import DagsterInstance, InstanceRef
-from dagster.core.launcher import LaunchRunContext, RunLauncher
-from dagster.core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
-from dagster.core.snap import (
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.launcher import LaunchRunContext, RunLauncher
+from dagster._core.run_coordinator.queued_run_coordinator import QueuedRunCoordinator
+from dagster._core.snap import (
     create_execution_plan_snapshot_id,
     create_pipeline_snapshot_id,
     snapshot_from_execution_plan,
 )
-from dagster.core.test_utils import create_run_for_test, environ, instance_for_test
+from dagster._core.test_utils import create_run_for_test, environ, instance_for_test
 from dagster.serdes import ConfigurableClass
 from dagster.serdes.config_class import ConfigurableClassData
 
@@ -109,7 +109,7 @@ def test_submit_run():
     with instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster.core.test_utils",
+                "module": "dagster._core.test_utils",
                 "class": "MockedRunCoordinator",
             }
         }
@@ -344,7 +344,7 @@ class TestInstanceSubclass(DagsterInstance):
     def config_defaults(base_dir):
         defaults = InstanceRef.config_defaults(base_dir)
         defaults["run_coordinator"] = ConfigurableClassData(
-            "dagster.core.run_coordinator.queued_run_coordinator",
+            "dagster._core.run_coordinator.queued_run_coordinator",
             "QueuedRunCoordinator",
             yaml.dump({}),
         )

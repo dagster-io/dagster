@@ -1,7 +1,7 @@
 import collections
 
 from dagster import PythonObjectDagsterType, usable_as_dagster_type
-from dagster.core.types.dagster_type import resolve_dagster_type
+from dagster._core.types.dagster_type import resolve_dagster_type
 
 
 def test_dagster_type_decorator():

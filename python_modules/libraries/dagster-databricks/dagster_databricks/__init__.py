@@ -8,7 +8,7 @@ This package provides:
     to execute an arbitrary task in Databricks.
 """
 
-from dagster.core.utils import check_dagster_package_version
+from dagster._core.utils import check_dagster_package_version
 
 from .databricks import DatabricksError, DatabricksJobRunner
 from .databricks_pyspark_step_launcher import (

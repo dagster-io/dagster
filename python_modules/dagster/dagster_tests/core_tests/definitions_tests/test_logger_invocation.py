@@ -4,12 +4,12 @@ import pytest
 
 from dagster import Field, build_init_logger_context, graph, logger, op, pipeline, solid
 from dagster.check import CheckError
-from dagster.core.errors import (
+from dagster._core.errors import (
     DagsterInvalidConfigError,
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,
 )
-from dagster.core.utils import coerce_valid_log_level
+from dagster._core.utils import coerce_valid_log_level
 
 
 def test_logger_invocation_arguments():

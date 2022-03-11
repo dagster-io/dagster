@@ -2,7 +2,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster._config.validate import validate_config_from_snap
-from dagster.core.host_representation import RepresentedPipeline
+from dagster._core.host_representation import RepresentedPipeline
 
 from .external import get_external_pipeline_or_raise
 from .utils import PipelineSelector, UserFacingGraphQLError, capture_error

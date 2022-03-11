@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from dagster import ModeDefinition, PresetDefinition, daily_schedule, pipeline, repository, solid
-from dagster.core.host_representation import (
+from dagster._core.host_representation import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )

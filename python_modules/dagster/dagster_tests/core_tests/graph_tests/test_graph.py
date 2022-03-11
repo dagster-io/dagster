@@ -21,15 +21,15 @@ from dagster import (
     success_hook,
 )
 from dagster.check import CheckError
-from dagster.core.definitions.graph_definition import GraphDefinition
-from dagster.core.definitions.partition import (
+from dagster._core.definitions.graph_definition import GraphDefinition
+from dagster._core.definitions.partition import (
     Partition,
     PartitionedConfig,
     StaticPartitionsDefinition,
 )
-from dagster.core.definitions.pipeline_definition import PipelineSubsetDefinition
-from dagster.core.definitions.time_window_partitions import DailyPartitionsDefinition
-from dagster.core.errors import (
+from dagster._core.definitions.pipeline_definition import PipelineSubsetDefinition
+from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
+from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterInvalidConfigError,
     DagsterInvalidDefinitionError,

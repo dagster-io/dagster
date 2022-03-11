@@ -14,7 +14,7 @@ from dagster import (
     reconstructable,
     seven,
 )
-from dagster.core.test_utils import instance_for_test
+from dagster._core.test_utils import instance_for_test
 from dagster.utils import safe_tempfile_path
 
 

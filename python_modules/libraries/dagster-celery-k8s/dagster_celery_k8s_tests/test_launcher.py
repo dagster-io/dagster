@@ -14,10 +14,10 @@ from dagster_test.test_project import get_test_project_workspace_and_external_pi
 
 from dagster import pipeline, reconstructable
 from dagster.check import CheckError
-from dagster.core.host_representation import RepositoryHandle
-from dagster.core.launcher import LaunchRunContext
-from dagster.core.storage.tags import DOCKER_IMAGE_TAG
-from dagster.core.test_utils import (
+from dagster._core.host_representation import RepositoryHandle
+from dagster._core.launcher import LaunchRunContext
+from dagster._core.storage.tags import DOCKER_IMAGE_TAG
+from dagster._core.test_utils import (
     create_run_for_test,
     environ,
     in_process_test_workspace,

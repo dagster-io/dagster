@@ -1,5 +1,5 @@
 {{- define "dagsterYaml.scheduler.daemon" }}
-module: dagster.core.scheduler
+module: dagster._core.scheduler
 class: DagsterDaemonScheduler
 {{- end }}
 

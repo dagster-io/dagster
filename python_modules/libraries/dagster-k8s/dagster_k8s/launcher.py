@@ -4,11 +4,11 @@ import kubernetes
 
 from dagster import Field, MetadataEntry, StringSource, check
 from dagster._cli.api import ExecuteRunArgs
-from dagster.core.events import EngineEventData
-from dagster.core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
-from dagster.core.launcher.base import CheckRunHealthResult, WorkerStatus
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.core.storage.tags import DOCKER_IMAGE_TAG
+from dagster._core.events import EngineEventData
+from dagster._core.launcher import LaunchRunContext, ResumeRunContext, RunLauncher
+from dagster._core.launcher.base import CheckRunHealthResult, WorkerStatus
+from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.grpc.types import ResumeRunArgs
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import frozentags, merge_dicts

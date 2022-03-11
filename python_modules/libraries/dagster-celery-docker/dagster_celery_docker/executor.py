@@ -18,9 +18,9 @@ from dagster import (
     multiple_process_executor_requirements,
 )
 from dagster._cli.api import ExecuteStepArgs
-from dagster.core.events import EngineEventData
-from dagster.core.execution.retries import RetryMode
-from dagster.core.storage.pipeline_run import PipelineRun
+from dagster._core.events import EngineEventData
+from dagster._core.execution.retries import RetryMode
+from dagster._core.storage.pipeline_run import PipelineRun
 from dagster.serdes import pack_value, serialize_dagster_namedtuple, unpack_value
 from dagster.utils import merge_dicts
 

@@ -111,7 +111,7 @@ from pyspark.sql import DataFrame, Row
 from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 from dagster import IOManager, graph, io_manager, op, repository
-from dagster.core.definitions.no_step_launcher import no_step_launcher
+from dagster._core.definitions.no_step_launcher import no_step_launcher
 
 
 class ParquetIOManager(IOManager):

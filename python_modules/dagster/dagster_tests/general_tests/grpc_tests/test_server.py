@@ -1,7 +1,7 @@
 import threading
 import time
 
-from dagster.core.errors import DagsterUserCodeUnreachableError
+from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster.grpc.client import ephemeral_grpc_api_client
 
 

@@ -11,8 +11,8 @@ from dagster import (
     daily_schedule,
     schedule,
 )
-from dagster.core.errors import DagsterInvalidInvocationError
-from dagster.core.test_utils import instance_for_test
+from dagster._core.errors import DagsterInvalidInvocationError
+from dagster._core.test_utils import instance_for_test
 
 
 def test_schedule_context_backcompat():

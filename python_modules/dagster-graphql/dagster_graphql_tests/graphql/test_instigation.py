@@ -4,7 +4,7 @@ from dagster_graphql.test.utils import (
     infer_repository_selector,
 )
 
-from dagster.core.test_utils import create_test_daemon_workspace
+from dagster._core.test_utils import create_test_daemon_workspace
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.sensor import execute_sensor_iteration
 

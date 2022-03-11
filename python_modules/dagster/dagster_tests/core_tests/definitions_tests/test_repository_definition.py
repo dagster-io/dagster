@@ -25,7 +25,7 @@ from dagster import (
     sensor,
     solid,
 )
-from dagster.core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
+from dagster._core.definitions.partition import PartitionedConfig, StaticPartitionsDefinition
 
 
 def create_single_node_pipeline(name, called):

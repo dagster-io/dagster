@@ -10,8 +10,8 @@ from dagster_graphql.schema.solids import (
 )
 
 from dagster import AssetKey, check
-from dagster.core.host_representation import ExternalRepository, RepositoryLocation
-from dagster.core.host_representation.external_data import (
+from dagster._core.host_representation import ExternalRepository, RepositoryLocation
+from dagster._core.host_representation.external_data import (
     ExternalAssetNode,
     ExternalStaticPartitionsDefinitionData,
     ExternalTimeWindowPartitionsDefinitionData,

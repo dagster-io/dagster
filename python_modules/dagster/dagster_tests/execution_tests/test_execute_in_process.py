@@ -15,8 +15,8 @@ from dagster import (
     solid,
 )
 from dagster.check import CheckError
-from dagster.core.definitions.decorators.graph import graph
-from dagster.core.definitions.output import GraphOut
+from dagster._core.definitions.decorators.graph import graph
+from dagster._core.definitions.output import GraphOut
 
 
 def get_solids():

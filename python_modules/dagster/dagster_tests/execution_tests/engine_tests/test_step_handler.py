@@ -1,7 +1,7 @@
 from dagster import pipeline
-from dagster.core.definitions.reconstructable import reconstructable
-from dagster.core.executor.step_delegating import StepHandlerContext
-from dagster.core.test_utils import create_run_for_test, instance_for_test
+from dagster._core.definitions.reconstructable import reconstructable
+from dagster._core.executor.step_delegating import StepHandlerContext
+from dagster._core.test_utils import create_run_for_test, instance_for_test
 from dagster.grpc.types import ExecuteStepArgs
 
 

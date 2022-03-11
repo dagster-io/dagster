@@ -5,7 +5,7 @@ Revises: 1a2d72f6b24e
 Create Date: 2021-09-08 10:29:08.823969
 
 """
-from dagster.core.storage.migration.utils import create_event_log_event_idx
+from dagster._core.storage.migration.utils import create_event_log_event_idx
 
 # revision identifiers, used by Alembic.
 revision = "29a8e9d74220"

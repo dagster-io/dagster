@@ -51,7 +51,7 @@ class ConfigurableClassData(
     def rehydrate(self):
         from dagster._config.field import resolve_to_config_type
         from dagster._config.validate import process_config
-        from dagster.core.errors import DagsterInvalidConfigError
+        from dagster._core.errors import DagsterInvalidConfigError
 
         try:
             module = importlib.import_module(self.module_name)
@@ -142,7 +142,7 @@ class ConfigurableClass(ABC):
         Args:
             config_value (dict): The validated config value to use. Typically this should be the
                 ``value`` attribute of a
-                :py:class:`~dagster.core.types.evaluator.evaluation.EvaluateValueResult`.
+                :py:class:`~dagster._core.types.evaluator.evaluation.EvaluateValueResult`.
 
 
         A common pattern is for the implementation to align the config_value with the signature

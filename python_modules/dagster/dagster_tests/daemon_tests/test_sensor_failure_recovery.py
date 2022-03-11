@@ -3,12 +3,12 @@ import multiprocessing
 import pendulum
 import pytest
 
-from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
-from dagster.core.test_utils import (
+from dagster._core.definitions.run_request import InstigatorType
+from dagster._core.instance import DagsterInstance
+from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
+from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.tags import RUN_KEY_TAG, SENSOR_NAME_TAG
+from dagster._core.test_utils import (
     cleanup_test_instance,
     create_test_daemon_workspace,
     get_crash_signals,

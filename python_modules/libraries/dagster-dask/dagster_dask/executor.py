@@ -11,14 +11,14 @@ from dagster import (
     multiple_process_executor_requirements,
     seven,
 )
-from dagster.core.definitions.executor_definition import executor
-from dagster.core.errors import raise_execution_interrupts
-from dagster.core.events import DagsterEvent
-from dagster.core.execution.api import create_execution_plan, execute_plan
-from dagster.core.execution.context.system import PlanOrchestrationContext
-from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.execution.retries import RetryMode
-from dagster.core.instance import DagsterInstance
+from dagster._core.definitions.executor_definition import executor
+from dagster._core.errors import raise_execution_interrupts
+from dagster._core.events import DagsterEvent
+from dagster._core.execution.api import create_execution_plan, execute_plan
+from dagster._core.execution.context.system import PlanOrchestrationContext
+from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.execution.retries import RetryMode
+from dagster._core.instance import DagsterInstance
 from dagster.utils import frozentags, iterate_with_context
 
 # Dask resource requirements are specified under this key

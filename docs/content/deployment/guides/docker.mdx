@@ -95,7 +95,7 @@ compute_logs:
     prefix: "dagster-test-"
 
 local_artifact_storage:
-  module: dagster.core.storage.root
+  module: dagster._core.storage.root
   class: LocalArtifactStorage
   config:
     base_dir: "/opt/dagster/local/"

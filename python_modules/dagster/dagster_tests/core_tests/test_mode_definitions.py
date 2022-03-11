@@ -22,7 +22,7 @@ from dagster import (
     solid,
 )
 from dagster.check import CheckError
-from dagster.core.utils import coerce_valid_log_level
+from dagster._core.utils import coerce_valid_log_level
 from dagster.utils.test import execute_solids_within_pipeline
 
 

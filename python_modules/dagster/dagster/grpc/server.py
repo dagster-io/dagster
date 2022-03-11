@@ -15,14 +15,14 @@ import grpc
 from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 from dagster import check, seven
-from dagster.core.code_pointer import CodePointer
-from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.core.host_representation.external_data import external_repository_data_from_def
-from dagster.core.host_representation.origin import ExternalPipelineOrigin, ExternalRepositoryOrigin
-from dagster.core.instance import DagsterInstance
-from dagster.core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.code_pointer import CodePointer
+from dagster._core.definitions.reconstructable import ReconstructableRepository
+from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.host_representation.external_data import external_repository_data_from_def
+from dagster._core.host_representation.origin import ExternalPipelineOrigin, ExternalRepositoryOrigin
+from dagster._core.instance import DagsterInstance
+from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
@@ -965,7 +965,7 @@ def open_server_process(
     check.opt_inst_param(loadable_target_origin, "loadable_target_origin", LoadableTargetOrigin)
     check.opt_int_param(max_workers, "max_workers")
 
-    from dagster.core.test_utils import get_mocked_system_timezone
+    from dagster._core.test_utils import get_mocked_system_timezone
 
     mocked_system_timezone = get_mocked_system_timezone()
 

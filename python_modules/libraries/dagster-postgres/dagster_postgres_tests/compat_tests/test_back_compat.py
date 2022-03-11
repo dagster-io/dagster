@@ -18,10 +18,10 @@ from dagster import (
     reconstructable,
     solid,
 )
-from dagster.core.errors import DagsterInstanceMigrationRequired
-from dagster.core.instance import DagsterInstance
-from dagster.core.storage.pipeline_run import RunsFilter
-from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster._core.errors import DagsterInstanceMigrationRequired
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
 from dagster.utils import file_relative_path
 
 

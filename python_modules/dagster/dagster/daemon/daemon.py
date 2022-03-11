@@ -9,8 +9,8 @@ from contextlib import AbstractContextManager
 import pendulum
 
 from dagster import DagsterInstance, check
-from dagster.core.telemetry import DAEMON_ALIVE, log_action
-from dagster.core.workspace import IWorkspace
+from dagster._core.telemetry import DAEMON_ALIVE, log_action
+from dagster._core.workspace import IWorkspace
 from dagster.daemon.backfill import execute_backfill_iteration
 from dagster.daemon.monitoring import execute_monitoring_iteration
 from dagster.daemon.sensor import execute_sensor_iteration_loop
@@ -63,7 +63,7 @@ class DagsterDaemon(AbstractContextManager):
         error_interval_seconds,
         until=None,
     ):
-        from dagster.core.telemetry_upload import uploading_logging_thread
+        from dagster._core.telemetry_upload import uploading_logging_thread
 
         # Each loop runs in its own thread with its own instance and IWorkspace
         with DagsterInstance.from_ref(instance_ref) as instance:

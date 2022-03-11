@@ -12,7 +12,7 @@ from dagster import (
     root_input_manager,
     solid,
 )
-from dagster.core.storage.io_manager import IOManager, io_manager
+from dagster._core.storage.io_manager import IOManager, io_manager
 
 
 def named_io_manager(storage_dict, name):

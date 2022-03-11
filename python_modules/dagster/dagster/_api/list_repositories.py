@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING, Optional
 
 from dagster import check
-from dagster.core.errors import DagsterUserCodeProcessError
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.types import ListRepositoriesResponse
 from dagster.serdes import deserialize_as
 from dagster.utils.error import SerializableErrorInfo

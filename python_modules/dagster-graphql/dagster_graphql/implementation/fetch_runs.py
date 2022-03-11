@@ -5,12 +5,12 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import PipelineDefinition, PipelineRunStatus, check
 from dagster._config.validate import validate_config
-from dagster.core.definitions import create_run_config_schema
-from dagster.core.errors import DagsterRunNotFoundError
-from dagster.core.execution.stats import StepEventStatus
-from dagster.core.host_representation import PipelineSelector
-from dagster.core.storage.pipeline_run import PipelineRun, RunsFilter
-from dagster.core.storage.tags import TagType, get_tag_type
+from dagster._core.definitions import create_run_config_schema
+from dagster._core.errors import DagsterRunNotFoundError
+from dagster._core.execution.stats import StepEventStatus
+from dagster._core.host_representation import PipelineSelector
+from dagster._core.storage.pipeline_run import PipelineRun, RunsFilter
+from dagster._core.storage.tags import TagType, get_tag_type
 from dagster.utils import utc_datetime_from_timestamp
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise

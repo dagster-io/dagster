@@ -11,7 +11,7 @@ import pytest
 from airline_demo.solids import sql_solid
 
 from dagster import ModeDefinition
-from dagster.core.storage.temp_file_manager import tempfile_resource
+from dagster._core.storage.temp_file_manager import tempfile_resource
 
 tempfile_mode = ModeDefinition(name="tempfile", resource_defs={"tempfile": tempfile_resource})
 

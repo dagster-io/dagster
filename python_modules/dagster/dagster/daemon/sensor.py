@@ -6,22 +6,22 @@ from typing import List, NamedTuple, Optional, cast
 import pendulum
 
 from dagster import check, seven
-from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
-from dagster.core.errors import DagsterError
-from dagster.core.host_representation import PipelineSelector
-from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.instigation import (
+from dagster._core.definitions.run_request import InstigatorType
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
+from dagster._core.errors import DagsterError
+from dagster._core.host_representation import PipelineSelector
+from dagster._core.instance import DagsterInstance
+from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
     SensorInstigatorData,
     TickData,
     TickStatus,
 )
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
-from dagster.core.storage.tags import RUN_KEY_TAG, check_tags
-from dagster.core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
-from dagster.core.workspace import IWorkspace
+from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
+from dagster._core.storage.tags import RUN_KEY_TAG, check_tags
+from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
+from dagster._core.workspace import IWorkspace
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 

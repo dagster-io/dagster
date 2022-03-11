@@ -8,8 +8,8 @@ from celery.utils.nodenames import default_nodename, host_format
 from dagster import check
 from dagster._config.post_process import post_process_config
 from dagster._config.validate import validate_config
-from dagster.core.errors import DagsterInvalidConfigError
-from dagster.core.instance import DagsterInstance
+from dagster._core.errors import DagsterInvalidConfigError
+from dagster._core.instance import DagsterInstance
 from dagster.utils import load_yaml_from_path, mkdir_p
 
 from .executor import CeleryExecutor, celery_executor

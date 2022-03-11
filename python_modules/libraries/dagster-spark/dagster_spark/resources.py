@@ -2,7 +2,7 @@ import os
 import subprocess
 
 from dagster import check, resource
-from dagster.core.log_manager import DagsterLogManager
+from dagster._core.log_manager import DagsterLogManager
 
 from .types import SparkOpError
 from .utils import construct_spark_shell_command

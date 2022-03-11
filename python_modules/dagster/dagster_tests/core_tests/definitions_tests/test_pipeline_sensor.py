@@ -1,5 +1,5 @@
 from dagster import repository
-from dagster.core.definitions.run_status_sensor_definition import pipeline_failure_sensor
+from dagster._core.definitions.run_status_sensor_definition import pipeline_failure_sensor
 
 
 def test_pipeline_failure_sensor_def():

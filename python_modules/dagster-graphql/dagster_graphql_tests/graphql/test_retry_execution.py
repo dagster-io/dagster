@@ -12,10 +12,10 @@ from dagster_graphql.test.utils import (
     infer_pipeline_selector,
 )
 
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.storage.tags import RESUME_RETRY_TAG
-from dagster.core.test_utils import poll_for_finished_run
-from dagster.core.utils import make_new_run_id
+from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.tags import RESUME_RETRY_TAG
+from dagster._core.test_utils import poll_for_finished_run
+from dagster._core.utils import make_new_run_id
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,

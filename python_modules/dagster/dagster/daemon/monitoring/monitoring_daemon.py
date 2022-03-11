@@ -2,9 +2,9 @@ import sys
 import time
 
 from dagster import DagsterInstance, check
-from dagster.core.events import DagsterEventType
-from dagster.core.launcher import WorkerStatus
-from dagster.core.storage.pipeline_run import (
+from dagster._core.events import DagsterEventType
+from dagster._core.launcher import WorkerStatus
+from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     PipelineRunStatus,
     RunsFilter,

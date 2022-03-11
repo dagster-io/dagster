@@ -6,16 +6,16 @@ from typing import Callable, List, MutableMapping, Optional
 import sqlalchemy as db
 
 from dagster import check, seven
-from dagster.core.events.log import EventLogEntry
-from dagster.core.storage.event_log import (
+from dagster._core.events.log import EventLogEntry
+from dagster._core.storage.event_log import (
     AssetKeyTable,
     SqlEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
 )
-from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
-from dagster.core.storage.event_log.polling_event_watcher import CallbackAfterCursor
-from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
+from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
+from dagster._core.storage.event_log.polling_event_watcher import CallbackAfterCursor
+from dagster._core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
 from dagster.serdes import (
     ConfigurableClass,
     ConfigurableClassData,

@@ -8,10 +8,10 @@ from dagster import (
     reexecute_pipeline,
     reexecute_pipeline_iterator,
 )
-from dagster.core.definitions.pipeline_base import InMemoryPipeline
-from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
-from dagster.core.instance import DagsterInstance
-from dagster.core.test_utils import step_output_event_filter
+from dagster._core.definitions.pipeline_base import InMemoryPipeline
+from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
+from dagster._core.instance import DagsterInstance
+from dagster._core.test_utils import step_output_event_filter
 
 from .test_subset_selector import foo_pipeline
 

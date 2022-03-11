@@ -18,22 +18,22 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.definitions.events import parse_asset_key_string, validate_asset_key_string
-from dagster.core.errors import DagsterInvalidAssetKey
-from dagster.core.events import DagsterEvent, StepMaterializationData
-from dagster.core.events.log import EventLogEntry
-from dagster.core.instance import DagsterInstance, InstanceRef, InstanceType
-from dagster.core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
-from dagster.core.run_coordinator import DefaultRunCoordinator
-from dagster.core.storage.event_log import (
+from dagster._core.definitions.events import parse_asset_key_string, validate_asset_key_string
+from dagster._core.errors import DagsterInvalidAssetKey
+from dagster._core.events import DagsterEvent, StepMaterializationData
+from dagster._core.events.log import EventLogEntry
+from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
+from dagster._core.launcher.sync_in_memory_run_launcher import SyncInMemoryRunLauncher
+from dagster._core.run_coordinator import DefaultRunCoordinator
+from dagster._core.storage.event_log import (
     ConsolidatedSqliteEventLogStorage,
     InMemoryEventLogStorage,
     SqliteEventLogStorage,
 )
-from dagster.core.storage.event_log.migration import ASSET_KEY_INDEX_COLS, migrate_asset_key_data
-from dagster.core.storage.noop_compute_log_manager import NoOpComputeLogManager
-from dagster.core.storage.root import LocalArtifactStorage
-from dagster.core.storage.runs import InMemoryRunStorage
+from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS, migrate_asset_key_data
+from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
+from dagster._core.storage.root import LocalArtifactStorage
+from dagster._core.storage.runs import InMemoryRunStorage
 from dagster.utils import file_relative_path
 from dagster.utils.test import copy_directory
 

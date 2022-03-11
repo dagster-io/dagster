@@ -13,7 +13,7 @@ from dagster import (
     execute_solid,
     pipeline,
 )
-from dagster.core.storage.file_cache import LocalFileHandle, fs_file_cache
+from dagster._core.storage.file_cache import LocalFileHandle, fs_file_cache
 
 
 def execute_solid_with_resources(solid_def, resource_defs, run_config):

@@ -1,8 +1,8 @@
 import pytest
 
 from dagster import InputDefinition, lambda_solid, pipeline
-from dagster.core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
-from dagster.core.selector.subset_selector import (
+from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
+from dagster._core.selector.subset_selector import (
     MAX_NUM,
     Traverser,
     clause_to_subset,
@@ -11,7 +11,7 @@ from dagster.core.selector.subset_selector import (
     parse_solid_selection,
     parse_step_selection,
 )
-from dagster.core.test_utils import default_mode_def_for_test
+from dagster._core.test_utils import default_mode_def_for_test
 
 
 @lambda_solid

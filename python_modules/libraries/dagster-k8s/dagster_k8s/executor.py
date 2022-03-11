@@ -2,17 +2,17 @@ import kubernetes
 from dagster_k8s.launcher import K8sRunLauncher
 
 from dagster import Field, StringSource, check, executor
-from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
-from dagster.core.errors import DagsterUnmetExecutorRequirementsError
-from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
-from dagster.core.execution.plan.objects import StepFailureData
-from dagster.core.execution.retries import RetryMode, get_retries_config
-from dagster.core.executor.base import Executor
-from dagster.core.executor.init import InitExecutorContext
-from dagster.core.executor.step_delegating import StepDelegatingExecutor
-from dagster.core.executor.step_delegating.step_handler import StepHandler
-from dagster.core.executor.step_delegating.step_handler.base import StepHandlerContext
-from dagster.core.types.dagster_type import Optional
+from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
+from dagster._core.errors import DagsterUnmetExecutorRequirementsError
+from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
+from dagster._core.execution.plan.objects import StepFailureData
+from dagster._core.execution.retries import RetryMode, get_retries_config
+from dagster._core.executor.base import Executor
+from dagster._core.executor.init import InitExecutorContext
+from dagster._core.executor.step_delegating import StepDelegatingExecutor
+from dagster._core.executor.step_delegating.step_handler import StepHandler
+from dagster._core.executor.step_delegating.step_handler.base import StepHandlerContext
+from dagster._core.types.dagster_type import Optional
 from dagster.utils import frozentags, merge_dicts
 
 from .job import (

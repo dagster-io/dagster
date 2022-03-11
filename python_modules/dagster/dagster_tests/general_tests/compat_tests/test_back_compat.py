@@ -22,15 +22,15 @@ from dagster import (
     solid,
 )
 from dagster._cli.debug import DebugRunPayload
-from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.errors import DagsterInstanceMigrationRequired
-from dagster.core.events import DagsterEvent
-from dagster.core.events.log import EventLogEntry
-from dagster.core.instance import DagsterInstance, InstanceRef
-from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick
-from dagster.core.storage.event_log.migration import migrate_event_log_data
-from dagster.core.storage.event_log.sql_event_log import SqlEventLogStorage
-from dagster.core.storage.pipeline_run import DagsterRun, DagsterRunStatus
+from dagster._core.definitions.dependency import NodeHandle
+from dagster._core.errors import DagsterInstanceMigrationRequired
+from dagster._core.events import DagsterEvent
+from dagster._core.events.log import EventLogEntry
+from dagster._core.instance import DagsterInstance, InstanceRef
+from dagster._core.scheduler.instigation import InstigatorState, InstigatorTick
+from dagster._core.storage.event_log.migration import migrate_event_log_data
+from dagster._core.storage.event_log.sql_event_log import SqlEventLogStorage
+from dagster._core.storage.pipeline_run import DagsterRun, DagsterRunStatus
 from dagster.serdes import DefaultNamedTupleSerializer, create_snapshot_id
 from dagster.serdes.serdes import (
     WhitelistMap,
@@ -351,8 +351,8 @@ def test_run_partition_migration():
 def test_run_partition_data_migration():
     src_dir = file_relative_path(__file__, "snapshot_0_9_22_post_schema_pre_data_partition/sqlite")
     with copy_directory(src_dir) as test_dir:
-        from dagster.core.storage.runs.migration import RUN_PARTITIONS
-        from dagster.core.storage.runs.sql_run_storage import SqlRunStorage
+        from dagster._core.storage.runs.migration import RUN_PARTITIONS
+        from dagster._core.storage.runs.sql_run_storage import SqlRunStorage
 
         # load db that has migrated schema, but not populated data for run partitions
         db_path = os.path.join(test_dir, "history", "runs.db")
@@ -659,7 +659,7 @@ def test_external_job_origin_instigator_origin():
 
     legacy_env, klass, repo_klass, location_klass = build_legacy_whitelist_map()
 
-    from dagster.core.host_representation.origin import (
+    from dagster._core.host_representation.origin import (
         ExternalInstigatorOrigin,
         ExternalRepositoryOrigin,
         GrpcServerRepositoryLocationOrigin,

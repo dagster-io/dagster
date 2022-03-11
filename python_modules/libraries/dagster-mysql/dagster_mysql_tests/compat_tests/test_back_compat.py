@@ -4,7 +4,7 @@ import os
 import subprocess
 import tempfile
 
-from dagster.core.instance import DagsterInstance
+from dagster._core.instance import DagsterInstance
 from dagster.utils import datetime_as_float, file_relative_path
 
 

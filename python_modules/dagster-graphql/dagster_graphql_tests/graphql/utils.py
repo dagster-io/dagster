@@ -2,7 +2,7 @@ from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION, SUB
 from dagster_graphql.test.utils import execute_dagster_graphql
 
 from dagster import DagsterEventType, check
-from dagster.core.workspace.context import WorkspaceRequestContext
+from dagster._core.workspace.context import WorkspaceRequestContext
 
 
 def get_all_logs_for_finished_run_via_subscription(context, run_id):

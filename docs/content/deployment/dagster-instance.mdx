@@ -89,7 +89,7 @@ To configure Run Storage, you should set the `run_storage` attribute in your `da
 
 #### SqliteRunStorage (Default)
 
-<PyObject module="dagster.core.storage.runs" object="SqliteRunStorage" /> uses a
+<PyObject module="dagster._core.storage.runs" object="SqliteRunStorage" /> uses a
 Sqlite DB as the backing run storage.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_storage_sqlite endbefore=end_marker_run_storage_sqlite
@@ -97,14 +97,14 @@ Sqlite DB as the backing run storage.
 
 # this config manually sets the directory (`base_dir`) for Sqlite to store run information in:
 run_storage:
-  module: dagster.core.storage.runs
+  module: dagster._core.storage.runs
   class: SqliteRunStorage
   config:
     base_dir: /path/to/dir
 
 # and this config grabs the directory from an environment variable
 run_storage:
-  module: dagster.core.storage.runs
+  module: dagster._core.storage.runs
   class: SqliteRunStorage
   config:
     base_dir:
@@ -225,7 +225,7 @@ To configure Event Log Storage, you should set the `event_log_storage` attribute
 #### SqliteEventLogStorage (Default)
 
 <PyObject
-module="dagster.core.storage.event_log"
+module="dagster._core.storage.event_log"
 object="SqliteEventLogStorage"
 /> uses a Sqlite database as the backing storage for event logs. However, it utilizes
 a seperate Sqlite database (i.e. directory) for each run. In other words, the storage
@@ -239,14 +239,14 @@ Note that by leaving your `event_log_storage` attribute blank, Run Storage will 
 
 # the first manually sets the directory (`base_dir`) to write event log data to:
 event_log_storage:
-  module: dagster.core.storage.event_log
+  module: dagster._core.storage.event_log
   class: SqliteEventLogStorage
   config:
     base_dir: /path/to/dir
 
 # and the second grabs the directory from an environment variable
 event_log_storage:
-  module: dagster.core.storage.event_log
+  module: dagster._core.storage.event_log
   class: SqliteEventLogStorage
   config:
     base_dir:
@@ -256,7 +256,7 @@ event_log_storage:
 #### ConsolidatedSqliteEventLogStorage <Experimental/>
 
 <PyObject
-module="dagster.core.storage.event_log"
+module="dagster._core.storage.event_log"
 object="ConsolidatedSqliteEventLogStorage"
 /> is meant to imitate the behavior of Postgres or MySQL-based event log storages,
 as it is not sharded by run. That is, all runs are persisted to the same Sqlite DB,
@@ -268,14 +268,14 @@ the Assets page).
 
 # the first manually sets the directory (`base_dir`) to write event log data to:
 event_log_storage:
-  module: dagster.core.storage.event_log
+  module: dagster._core.storage.event_log
   class: ConsolidatedSqliteEventLogStorage
   config:
     base_dir: /path/to/dir
 
 # and the second grabs the directory from an environment variable
 event_log_storage:
-  module: dagster.core.storage.event_log
+  module: dagster._core.storage.event_log
   class: ConsolidatedSqliteEventLogStorage
   config:
     base_dir:
@@ -396,7 +396,7 @@ To configure Schedule Storage, you should set the `schedule_storage` key in your
 #### SqliteScheduleStorage (Default)
 
 <PyObject
-module="dagster.core.storage.schedules"
+module="dagster._core.storage.schedules"
 object="SqliteScheduleStorage"
 /> uses a Sqlite DB as the backing schedule storage solution.
 
@@ -405,14 +405,14 @@ object="SqliteScheduleStorage"
 
 # the first manually sets the directory (`base_dir`) to write schedule-related data to:
 schedule_storage:
-  module: dagster.core.storage.schedules
+  module: dagster._core.storage.schedules
   class: SqliteScheduleStorage
   config:
     base_dir: /path/to/dir
 
 # the second grabs the directory from an environment variable
 schedule_storage:
-  module: dagster.core.storage.schedules
+  module: dagster._core.storage.schedules
   class: SqliteScheduleStorage
   config:
     base_dir:
@@ -534,11 +534,11 @@ To configure the Run Launcher, set `run_launcher` in your `dagster.yaml` in one 
 
 #### DefaultRunLauncher (Default)
 
-The <PyObject module="dagster.core.launcher" object="DefaultRunLauncher" /> spawns a new process in the same node as a job's repository location. Please see the <Link href="/deployment/run-launcher#default-run-launcher">Run Launcher</Link> docs for deployment information.
+The <PyObject module="dagster._core.launcher" object="DefaultRunLauncher" /> spawns a new process in the same node as a job's repository location. Please see the <Link href="/deployment/run-launcher#default-run-launcher">Run Launcher</Link> docs for deployment information.
 
 ```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_marker_run_launcher_default endbefore=end_marker_run_launcher_default
 run_launcher:
-  module: dagster.core.launcher
+  module: dagster._core.launcher
   class: DefaultRunLauncher
 ```
 
@@ -592,7 +592,7 @@ To configure the Run Coordinator, set the `run_coodinator` key in your `dagster.
 
 #### DefaultRunCoordinator (Default)
 
-The <PyObject module="dagster.core.run_coordinator" object="DefaultRunCoordinator" /> immediately sends runs to the run launcher (no notion of `Queued` runs).
+The <PyObject module="dagster._core.run_coordinator" object="DefaultRunCoordinator" /> immediately sends runs to the run launcher (no notion of `Queued` runs).
 
 See the <Link href="/deployment/run-coordinator#defaultruncoordinator">Run Coordinator</Link> docs for more information.
 
@@ -600,13 +600,13 @@ See the <Link href="/deployment/run-coordinator#defaultruncoordinator">Run Coord
 # Since DefaultRunCoordinator is the default option, omitting the `run_coordinator` key will also suffice,
 # but if you would like to set it explicitly:
 run_coordinator:
-  module: dagster.core.run_coordinator
+  module: dagster._core.run_coordinator
   class: DefaultRunCoordinator
 ```
 
 #### QueuedRunCoordinator
 
-The <PyObject module="dagster.core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executing at once. Note that this requires a [dagster-daemon process](/deployment/dagster-daemon) to be active to actually launch the runs.
+The <PyObject module="dagster._core.run_coordinator" object="QueuedRunCoordinator" /> allows you to set limits on the number of runs that can be executing at once. Note that this requires a [dagster-daemon process](/deployment/dagster-daemon) to be active to actually launch the runs.
 
 This run coordinator has several configuration options, which allow for both limiting the overall number of concurrent runs as well as more specific limits based on run tags - for example, you can configure a limit on the number of runs that interact with a particular cloud service that can run concurrently to avoid being throttled.
 
@@ -617,12 +617,12 @@ For more information, see the <Link href="/deployment/run-coordinator#queuedrunc
 
 # this first option has concurrency limits set to default values
 run_coordinator:
-  module: dagster.core.run_coordinator
+  module: dagster._core.run_coordinator
   class: QueuedRunCoordinator
 
 # this second option manually specifies limits:
 run_coordinator:
-  module: dagster.core.run_coordinator
+  module: dagster._core.run_coordinator
   class: QueuedRunCoordinator
   config:
     max_concurrent_runs: 25
@@ -635,7 +635,7 @@ run_coordinator:
 
 # as always, some or all of these values can be obtained from environment variables:
 run_coordinator:
-  module: dagster.core.run_coordinator
+  module: dagster._core.run_coordinator
   class: QueuedRunCoordinator
   config:
     max_concurrent_runs:
@@ -659,7 +659,7 @@ To configure Compute Log Storage, set the `compute_logs` key in your `dagster.ya
 #### LocalComputeLogManager (Default)
 
 <PyObject
-module="dagster.core.storage.local_compute_log_manager"
+module="dagster._core.storage.local_compute_log_manager"
 object="LocalComputeLogManager"
 /> writes stdout & stderr logs to disk.
 
@@ -669,14 +669,14 @@ object="LocalComputeLogManager"
 
 # You could directly set the `base_dir` key
 compute_logs:
-  module: dagster.core.storage.local_compute_log_manager
+  module: dagster._core.storage.local_compute_log_manager
   class: LocalComputeLogManager
   config:
     base_dir: /path/to/directory
 
 # Alternatively, you could set the `base_dir` key to an environment variable
 compute_logs:
-  module: dagster.core.storage.local_compute_log_manager
+  module: dagster._core.storage.local_compute_log_manager
   class: LocalComputeLogManager
   config:
     base_dir:
@@ -754,7 +754,7 @@ To configure Local Artifact Storage, set `local_artifact_storage` as follows in 
 
 #### LocalArtifactStorage (Default)
 
-<PyObject module="dagster.core.storage.root" object="LocalArtifactStorage" /> is
+<PyObject module="dagster._core.storage.root" object="LocalArtifactStorage" /> is
 currently the only option for Local Artifact Storage. This configures the directory
 used by the default filesystem IO Manager, as well as any artifacts that require
 a local disk.
@@ -764,14 +764,14 @@ a local disk.
 
 # example local_artifact_storage setup pointing to /var/shared/dagster directory
 local_artifact_storage:
-  module: dagster.core.storage.root
+  module: dagster._core.storage.root
   class: LocalArtifactStorage
   config:
     base_dir: "/path/to/dir"
 
 # alternatively, `base_dir` can be set to an environment variable
 local_artifact_storage:
-  module: dagster.core.storage.root
+  module: dagster._core.storage.root
   class: LocalArtifactStorage
   config:
     base_dir:

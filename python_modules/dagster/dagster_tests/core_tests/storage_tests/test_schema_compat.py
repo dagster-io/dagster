@@ -1,5 +1,5 @@
-from dagster.core.storage.event_log import schema as event_log_schema
-from dagster.core.storage.runs import schema as run_schema
+from dagster._core.storage.event_log import schema as event_log_schema
+from dagster._core.storage.runs import schema as run_schema
 
 
 def assert_cols_equal(a_cols, b_cols, attr_name):

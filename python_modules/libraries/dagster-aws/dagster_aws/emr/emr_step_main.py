@@ -9,8 +9,8 @@ from threading import Thread
 import boto3
 from dagster_aws.s3.file_manager import S3FileHandle, S3FileManager
 
-from dagster.core.execution.plan.external_step import PICKLED_EVENTS_FILE_NAME, run_step_from_ref
-from dagster.core.instance import DagsterInstance
+from dagster._core.execution.plan.external_step import PICKLED_EVENTS_FILE_NAME, run_step_from_ref
+from dagster._core.instance import DagsterInstance
 
 DONE = object()
 

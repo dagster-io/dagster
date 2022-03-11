@@ -23,7 +23,7 @@ from dagster import (
     check,
     solid,
 )
-from dagster.core.execution.context.compute import SolidExecutionContext
+from dagster._core.execution.context.compute import SolidExecutionContext
 
 from ..errors import DagsterDbtRpcUnexpectedPollOutputError
 from .types import DbtRpcOutput

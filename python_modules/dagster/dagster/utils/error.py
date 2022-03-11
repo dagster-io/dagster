@@ -57,7 +57,7 @@ def serializable_error_info_from_exc_info(
     hoist_user_code_error: Optional[bool] = True,
 ) -> SerializableErrorInfo:
     _exc_type, e, _tb = exc_info
-    from dagster.core.errors import DagsterUserCodeProcessError
+    from dagster._core.errors import DagsterUserCodeProcessError
 
     if (
         hoist_user_code_error

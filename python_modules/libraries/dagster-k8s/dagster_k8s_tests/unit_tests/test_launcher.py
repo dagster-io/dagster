@@ -5,10 +5,10 @@ from dagster_k8s import K8sRunLauncher
 from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, UserDefinedDagsterK8sConfig
 
 from dagster import pipeline, reconstructable
-from dagster.core.host_representation import RepositoryHandle
-from dagster.core.launcher import LaunchRunContext
-from dagster.core.storage.tags import DOCKER_IMAGE_TAG
-from dagster.core.test_utils import (
+from dagster._core.host_representation import RepositoryHandle
+from dagster._core.launcher import LaunchRunContext
+from dagster._core.storage.tags import DOCKER_IMAGE_TAG
+from dagster._core.test_utils import (
     create_run_for_test,
     in_process_test_workspace,
     instance_for_test,

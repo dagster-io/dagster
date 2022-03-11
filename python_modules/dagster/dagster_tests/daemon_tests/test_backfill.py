@@ -19,18 +19,18 @@ from dagster import (
     repository,
     solid,
 )
-from dagster.core.definitions import Partition, PartitionSetDefinition
-from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.execution.api import execute_pipeline
-from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster.core.host_representation import (
+from dagster._core.definitions import Partition, PartitionSetDefinition
+from dagster._core.definitions.reconstructable import ReconstructableRepository
+from dagster._core.execution.api import execute_pipeline
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
 )
-from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster.core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster.core.test_utils import create_test_daemon_workspace, instance_for_test
-from dagster.core.workspace.load_target import PythonFileTarget
+from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
+from dagster._core.storage.tags import BACKFILL_ID_TAG, PARTITION_NAME_TAG, PARTITION_SET_TAG
+from dagster._core.test_utils import create_test_daemon_workspace, instance_for_test
+from dagster._core.workspace.load_target import PythonFileTarget
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.backfill import execute_backfill_iteration
 from dagster.seven import IS_WINDOWS, get_system_temp_directory

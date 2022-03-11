@@ -6,7 +6,7 @@ from dagster_aws.s3 import S3Coordinate
 from moto import mock_s3
 
 from dagster import ModeDefinition, solid
-from dagster.core.storage.file_cache import FSFileCache
+from dagster._core.storage.file_cache import FSFileCache
 from dagster.utils.temp_file import get_temp_dir, get_temp_file_name
 from dagster.utils.test import execute_solid
 

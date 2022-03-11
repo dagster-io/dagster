@@ -5,9 +5,9 @@ import pytest
 import yaml
 
 from dagster import DagsterInstance
-from dagster.core.host_representation import GrpcServerRepositoryLocation
-from dagster.core.workspace import WorkspaceProcessContext
-from dagster.core.workspace.load import (
+from dagster._core.host_representation import GrpcServerRepositoryLocation
+from dagster._core.workspace import WorkspaceProcessContext
+from dagster._core.workspace.load import (
     load_workspace_process_context_from_yaml_paths,
     location_origins_from_config,
 )

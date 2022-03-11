@@ -9,9 +9,9 @@ from dagster import (
     IOManager,
     io_manager,
 )
-from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
-from dagster.core.snap import DependencyStructureIndex
-from dagster.core.snap.dep_snapshot import (
+from dagster._core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job
+from dagster._core.snap import DependencyStructureIndex
+from dagster._core.snap.dep_snapshot import (
     OutputHandleSnap,
     build_dep_structure_snapshot_from_icontains_solids,
 )

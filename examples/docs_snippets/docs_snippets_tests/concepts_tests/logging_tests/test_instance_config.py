@@ -1,5 +1,5 @@
 from dagster import DagsterInstance
-from dagster.core.instance import InstanceRef
+from dagster._core.instance import InstanceRef
 from dagster.utils import file_relative_path
 
 

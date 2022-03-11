@@ -6,9 +6,9 @@ import pendulum
 import yaml
 
 from dagster import check
-from dagster.core.definitions.schedule_definition import ScheduleExecutionData
-from dagster.core.definitions.sensor_definition import RunRequest
-from dagster.core.scheduler.instigation import (
+from dagster._core.definitions.schedule_definition import ScheduleExecutionData
+from dagster._core.definitions.sensor_definition import RunRequest
+from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorTick,
     InstigatorType,
@@ -16,8 +16,8 @@ from dagster.core.scheduler.instigation import (
     SensorInstigatorData,
     TickStatus,
 )
-from dagster.core.storage.pipeline_run import RunsFilter
-from dagster.core.storage.tags import TagType, get_tag_type
+from dagster._core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.tags import TagType, get_tag_type
 from dagster.seven.compat.pendulum import to_timezone
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 

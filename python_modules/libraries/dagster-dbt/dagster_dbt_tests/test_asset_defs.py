@@ -8,8 +8,8 @@ from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError
 from dagster_dbt.types import DbtOutput
 
 from dagster import AssetKey, MetadataEntry, ResourceDefinition
-from dagster.core.asset_defs import build_assets_job
-from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
+from dagster._core.asset_defs import build_assets_job
+from dagster._core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 from dagster.utils import file_relative_path
 
 

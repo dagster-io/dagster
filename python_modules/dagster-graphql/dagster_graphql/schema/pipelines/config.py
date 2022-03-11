@@ -20,7 +20,7 @@ from dagster._config.stack import (
     EvaluationStackMapValueEntry,
     EvaluationStackPathEntry,
 )
-from dagster.core.host_representation.represented import RepresentedPipeline
+from dagster._core.host_representation.represented import RepresentedPipeline
 from dagster.utils.error import SerializableErrorInfo
 
 from ..config_types import GrapheneConfigTypeField

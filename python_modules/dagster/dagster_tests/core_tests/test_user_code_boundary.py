@@ -11,7 +11,7 @@ from dagster import (
     solid,
     usable_as_dagster_type,
 )
-from dagster.core.types.dagster_type import create_any_type
+from dagster._core.types.dagster_type import create_any_type
 
 
 class UserError(Exception):

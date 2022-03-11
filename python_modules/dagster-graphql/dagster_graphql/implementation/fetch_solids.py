@@ -1,7 +1,7 @@
 from collections import OrderedDict, defaultdict
 
 from dagster import check
-from dagster.core.host_representation import ExternalRepository
+from dagster._core.host_representation import ExternalRepository
 
 from .utils import GraphSelector, capture_error
 

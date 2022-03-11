@@ -3,7 +3,7 @@ import graphene
 from dagster import check
 from dagster._config.config_type import ConfigTypeKind
 from dagster._config.snap import get_recursive_type_keys
-from dagster.core.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
+from dagster._core.snap import ConfigFieldSnap, ConfigSchemaSnapshot, ConfigTypeSnap
 
 from .util import non_null_list
 

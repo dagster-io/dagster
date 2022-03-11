@@ -101,7 +101,7 @@ def overridden_dagster_yaml(reference_deployment):
     with open("dagster.yaml", "r") as f:
         dagster_yaml = yaml.safe_load(f)
         dagster_yaml["run_launcher"] = {
-            "module": "dagster.core.launcher",
+            "module": "dagster._core.launcher",
             "class": "DefaultRunLauncher",
         }
     with open("dagster.yaml", "w") as f:

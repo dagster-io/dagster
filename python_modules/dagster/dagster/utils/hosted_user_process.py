@@ -10,13 +10,13 @@ to be the case.
 """
 
 from dagster import check
-from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import ExternalPipeline, ExternalRepository
-from dagster.core.host_representation.external_data import (
+from dagster._core.definitions.reconstructable import ReconstructableRepository
+from dagster._core.host_representation import ExternalPipeline, ExternalRepository
+from dagster._core.host_representation.external_data import (
     external_pipeline_data_from_def,
     external_repository_data_from_def,
 )
-from dagster.core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
+from dagster._core.origin import PipelinePythonOrigin, RepositoryPythonOrigin
 
 
 def recon_pipeline_from_origin(origin):

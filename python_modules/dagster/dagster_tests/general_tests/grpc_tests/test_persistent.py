@@ -8,13 +8,13 @@ import pytest
 
 from dagster import seven
 from dagster._api.list_repositories import sync_list_repositories_grpc
-from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.core.host_representation.origin import (
+from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.host_representation.origin import (
     ExternalRepositoryOrigin,
     GrpcServerRepositoryLocationOrigin,
 )
-from dagster.core.test_utils import environ, instance_for_test, new_cwd
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.test_utils import environ, instance_for_test, new_cwd
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.client import DagsterGrpcClient
 from dagster.grpc.server import open_server_process, wait_for_grpc_server
 from dagster.grpc.types import SensorExecutionArgs

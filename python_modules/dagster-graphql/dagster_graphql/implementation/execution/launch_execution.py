@@ -1,7 +1,7 @@
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
-from dagster.core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.pipeline_run import RunsFilter
 
 from ..external import get_external_pipeline_or_raise
 from ..utils import ExecutionMetadata, ExecutionParams, capture_error

@@ -4,7 +4,7 @@ import click
 
 from dagster import DagsterInstance, check
 from dagster._cli.debug import DebugRunPayload
-from dagster.core.workspace import WorkspaceProcessContext
+from dagster._core.workspace import WorkspaceProcessContext
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 
 from .cli import (

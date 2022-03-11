@@ -15,7 +15,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.definitions.no_step_launcher import no_step_launcher
+from dagster._core.definitions.no_step_launcher import no_step_launcher
 from dagster.utils import file_relative_path
 
 

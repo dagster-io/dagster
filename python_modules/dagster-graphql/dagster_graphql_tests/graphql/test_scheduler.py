@@ -10,12 +10,12 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
-from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import (
+from dagster._core.definitions.reconstructable import ReconstructableRepository
+from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
 )
-from dagster.core.scheduler.instigation import (
+from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
     InstigatorType,

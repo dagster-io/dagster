@@ -6,32 +6,32 @@ from collections import namedtuple
 from contextlib import contextmanager
 
 from dagster import check
-from dagster.core.code_pointer import FileCodePointer
-from dagster.core.definitions.reconstructable import (
+from dagster._core.code_pointer import FileCodePointer
+from dagster._core.definitions.reconstructable import (
     ReconstructablePipeline,
     ReconstructableRepository,
 )
-from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.build_resources import build_resources
-from dagster.core.execution.context.output import build_output_context
-from dagster.core.host_representation import (
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.execution.build_resources import build_resources
+from dagster._core.execution.context.output import build_output_context
+from dagster._core.host_representation import (
     ExternalPipeline,
     ExternalSchedule,
     GrpcServerRepositoryLocationOrigin,
     InProcessRepositoryLocationOrigin,
     RepositoryLocation,
 )
-from dagster.core.host_representation.origin import (
+from dagster._core.host_representation.origin import (
     ExternalInstigatorOrigin,
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
 )
-from dagster.core.origin import (
+from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     PipelinePythonOrigin,
     RepositoryPythonOrigin,
 )
-from dagster.core.test_utils import in_process_test_workspace
+from dagster._core.test_utils import in_process_test_workspace
 from dagster.serdes import whitelist_for_serdes
 from dagster.utils import file_relative_path, git_repository_root
 

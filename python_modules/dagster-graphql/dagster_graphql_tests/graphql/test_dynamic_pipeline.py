@@ -8,7 +8,7 @@ from dagster_graphql.test.utils import (
     infer_pipeline_selector,
 )
 
-from dagster.core.storage.tags import RESUME_RETRY_TAG
+from dagster._core.storage.tags import RESUME_RETRY_TAG
 
 from .utils import (
     get_all_logs_for_finished_run_via_subscription,

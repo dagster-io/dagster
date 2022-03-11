@@ -25,7 +25,7 @@ from dagster import (
     make_python_type_usable_as_dagster_type,
     solid,
 )
-from dagster.core.types.dagster_type import create_string_type
+from dagster._core.types.dagster_type import create_string_type
 
 from .cache_file_from_s3 import cache_file_from_s3
 from .unzip_file_handle import unzip_file_handle

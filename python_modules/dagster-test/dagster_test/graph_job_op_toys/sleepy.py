@@ -3,8 +3,8 @@ from time import sleep
 from typing import List
 
 from dagster import Field, Output, op
-from dagster.core.definitions.decorators.graph import graph
-from dagster.core.definitions.output import Out
+from dagster._core.definitions.decorators.graph import graph
+from dagster._core.definitions.output import Out
 
 
 @op

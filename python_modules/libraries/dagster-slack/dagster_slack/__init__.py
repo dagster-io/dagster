@@ -1,4 +1,4 @@
-from dagster.core.utils import check_dagster_package_version
+from dagster._core.utils import check_dagster_package_version
 
 from .hooks import slack_on_failure, slack_on_success
 from .resources import slack_resource

@@ -1,4 +1,4 @@
-from dagster.core.utils import check_dagster_package_version
+from dagster._core.utils import check_dagster_package_version
 
 from .asset_defs import load_assets_from_dbt_manifest, load_assets_from_dbt_project
 from .cli import (

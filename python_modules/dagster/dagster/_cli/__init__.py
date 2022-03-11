@@ -3,7 +3,7 @@ import sys
 
 import click
 
-from ..core.instance import DagsterInstance
+from .._core.instance import DagsterInstance
 from ..version import __version__
 from .api import api_cli
 from .asset import asset_cli

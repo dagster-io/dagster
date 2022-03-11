@@ -4,8 +4,8 @@ import sys
 from contextlib import contextmanager
 
 from dagster import check
-from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation import InProcessRepositoryLocationOrigin
+from dagster._core.definitions.reconstructable import ReconstructableRepository
+from dagster._core.host_representation import InProcessRepositoryLocationOrigin
 from dagster.utils import file_relative_path, git_repository_root
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None

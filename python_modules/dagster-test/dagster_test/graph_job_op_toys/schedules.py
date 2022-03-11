@@ -5,7 +5,7 @@ from dagster_test.graph_job_op_toys.many_events import many_events
 from dagster_test.graph_job_op_toys.unreliable import unreliable
 
 from dagster import build_schedule_from_partitioned_job
-from dagster.core.definitions.time_window_partitions import (
+from dagster._core.definitions.time_window_partitions import (
     daily_partitioned_config,
     hourly_partitioned_config,
     monthly_partitioned_config,

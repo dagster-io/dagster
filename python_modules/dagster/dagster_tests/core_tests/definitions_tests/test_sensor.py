@@ -1,7 +1,7 @@
 import pytest
 
 from dagster import SensorDefinition, graph
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidDefinitionError
 
 
 def test_jobs_attr():

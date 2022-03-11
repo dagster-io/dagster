@@ -1,6 +1,6 @@
 from dagster import DagsterInstance
-from dagster.core.workspace import WorkspaceProcessContext
-from dagster.core.workspace.load import load_workspace_process_context_from_yaml_paths
+from dagster._core.workspace import WorkspaceProcessContext
+from dagster._core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster.utils import file_relative_path
 
 

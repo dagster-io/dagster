@@ -2,7 +2,7 @@ import io
 import os
 
 from dagster import LocalFileHandle
-from dagster.core.storage.file_cache import FSFileCache
+from dagster._core.storage.file_cache import FSFileCache
 from dagster.utils.temp_file import get_temp_dir
 
 

@@ -20,10 +20,10 @@ from dagster import (
     reconstructable,
     solid,
 )
-from dagster.core.errors import DagsterUnmetExecutorRequirementsError
-from dagster.core.instance import DagsterInstance
-from dagster.core.storage.compute_log_manager import ComputeIOType
-from dagster.core.test_utils import default_mode_def_for_test, instance_for_test
+from dagster._core.errors import DagsterUnmetExecutorRequirementsError
+from dagster._core.instance import DagsterInstance
+from dagster._core.storage.compute_log_manager import ComputeIOType
+from dagster._core.test_utils import default_mode_def_for_test, instance_for_test
 from dagster.utils import safe_tempfile_path, segfault
 
 
@@ -317,7 +317,7 @@ def test_ephemeral_event_log():
     with instance_for_test(
         overrides={
             "event_log_storage": {
-                "module": "dagster.core.storage.event_log",
+                "module": "dagster._core.storage.event_log",
                 "class": "InMemoryEventLogStorage",
             }
         }

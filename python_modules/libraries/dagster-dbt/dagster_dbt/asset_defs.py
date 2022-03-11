@@ -18,7 +18,7 @@ from dagster import (
     check,
     get_dagster_logger,
 )
-from dagster.core.asset_defs import AssetsDefinition, multi_asset
+from dagster._core.asset_defs import AssetsDefinition, multi_asset
 
 
 def _load_manifest_for_project(

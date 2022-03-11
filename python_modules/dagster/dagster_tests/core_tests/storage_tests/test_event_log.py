@@ -7,15 +7,15 @@ import traceback
 import pytest
 import sqlalchemy
 
-from dagster.core.errors import DagsterEventLogInvalidForRun
-from dagster.core.storage.event_log import (
+from dagster._core.errors import DagsterEventLogInvalidForRun
+from dagster._core.storage.event_log import (
     ConsolidatedSqliteEventLogStorage,
     InMemoryEventLogStorage,
     SqlEventLogStorageMetadata,
     SqlEventLogStorageTable,
     SqliteEventLogStorage,
 )
-from dagster.core.storage.sql import create_engine
+from dagster._core.storage.sql import create_engine
 
 from .utils.event_log_storage import TestEventLogStorage
 

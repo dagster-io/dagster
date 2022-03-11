@@ -1,15 +1,15 @@
 from typing import TYPE_CHECKING, Optional
 
 from dagster import check
-from dagster.core.definitions.sensor_definition import SensorExecutionData
-from dagster.core.errors import DagsterUserCodeProcessError
-from dagster.core.host_representation.external_data import ExternalSensorExecutionErrorData
-from dagster.core.host_representation.handle import RepositoryHandle
+from dagster._core.definitions.sensor_definition import SensorExecutionData
+from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.host_representation.external_data import ExternalSensorExecutionErrorData
+from dagster._core.host_representation.handle import RepositoryHandle
 from dagster.grpc.types import SensorExecutionArgs
 from dagster.serdes import deserialize_as
 
 if TYPE_CHECKING:
-    from dagster.core.instance import DagsterInstance
+    from dagster._core.instance import DagsterInstance
     from dagster.grpc.client import DagsterGrpcClient
 
 

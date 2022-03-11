@@ -3,7 +3,7 @@ from math import isnan
 from dagster_graphql.schema.table import GrapheneTable, GrapheneTableSchema
 
 from dagster import check, seven
-from dagster.core.definitions.metadata import (
+from dagster._core.definitions.metadata import (
     DagsterAssetMetadataValue,
     DagsterPipelineRunMetadataValue,
     FloatMetadataValue,
@@ -18,9 +18,9 @@ from dagster.core.definitions.metadata import (
     TextMetadataValue,
     UrlMetadataValue,
 )
-from dagster.core.events import DagsterEventType
-from dagster.core.events.log import EventLogEntry
-from dagster.core.execution.plan.objects import StepFailureData
+from dagster._core.events import DagsterEventType
+from dagster._core.events.log import EventLogEntry
+from dagster._core.execution.plan.objects import StepFailureData
 
 MAX_INT = 2147483647
 MIN_INT = -2147483648

@@ -13,8 +13,8 @@ from dagster._cli.workspace.cli_target import (
     WORKSPACE_TARGET_WARNING,
     get_workspace_process_context_from_kwargs,
 )
-from dagster.core.instance import DagsterInstance
-from dagster.core.workspace.context import WorkspaceProcessContext
+from dagster._core.instance import DagsterInstance
+from dagster._core.workspace.context import WorkspaceProcessContext
 from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME
 from dagster.utils.log import get_stack_trace_array
 

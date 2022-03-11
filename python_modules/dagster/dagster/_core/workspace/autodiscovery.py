@@ -1,0 +1,110 @@
+import inspect
+from typing import NamedTuple
+
+from dagster import (
+    DagsterInvariantViolationError,
+    GraphDefinition,
+    JobDefinition,
+    PipelineDefinition,
+    RepositoryDefinition,
+)
+from dagster._core.asset_defs import AssetGroup
+from dagster._core.code_pointer import load_python_file, load_python_module
+
+LoadableTarget = NamedTuple("LoadableTarget", [("attribute", str), ("target_definition", object)])
+
+
+def loadable_targets_from_python_file(python_file, working_directory=None):
+    loaded_module = load_python_file(python_file, working_directory)
+    return loadable_targets_from_loaded_module(loaded_module)
+
+
+def loadable_targets_from_python_module(module_name, working_directory, remove_from_path_fn=None):
+    module = load_python_module(
+        module_name,
+        working_directory=working_directory,
+        remove_from_path_fn=remove_from_path_fn,
+    )
+    return loadable_targets_from_loaded_module(module)
+
+
+def loadable_targets_from_python_package(package_name, working_directory, remove_from_path_fn=None):
+    module = load_python_module(
+        package_name, working_directory, remove_from_path_fn=remove_from_path_fn
+    )
+    return loadable_targets_from_loaded_module(module)
+
+
+def loadable_targets_from_loaded_module(module):
+    loadable_repos = _loadable_targets_of_type(module, RepositoryDefinition)
+    if loadable_repos:
+        return loadable_repos
+
+    loadable_pipelines = _loadable_targets_of_type(module, PipelineDefinition)
+    loadable_jobs = _loadable_targets_of_type(module, JobDefinition)
+
+    if len(loadable_pipelines) == 1:
+        return loadable_pipelines
+
+    elif len(loadable_pipelines) > 1:
+        target_type = "job" if len(loadable_jobs) > 1 else "pipeline"
+        raise DagsterInvariantViolationError(
+            (
+                'No repository and more than one {target_type} found in "{module_name}". If you load '
+                "a file or module directly it must have only one {target_type} "
+                "in scope. Found {target_type}s defined in variables or decorated "
+                "functions: {pipeline_symbols}."
+            ).format(
+                module_name=module.__name__,
+                pipeline_symbols=repr([p.attribute for p in loadable_pipelines]),
+                target_type=target_type,
+            )
+        )
+
+    loadable_graphs = _loadable_targets_of_type(module, GraphDefinition)
+
+    if len(loadable_graphs) == 1:
+        return loadable_graphs
+
+    elif len(loadable_graphs) > 1:
+        raise DagsterInvariantViolationError(
+            (
+                'No repository, job, or pipeline, and more than one graph found in "{module_name}". '
+                "If you load a file or module directly it must either have one repository, one "
+                "job, one pipeline, or one graph in scope. Found graphs defined in variables or "
+                "decorated functions: {graph_symbols}."
+            ).format(
+                module_name=module.__name__,
+                graph_symbols=repr([g.attribute for g in loadable_graphs]),
+            )
+        )
+
+    loadable_asset_groups = _loadable_targets_of_type(module, AssetGroup)
+    if len(loadable_asset_groups) == 1:
+        return loadable_asset_groups
+
+    elif len(loadable_asset_groups) > 1:
+        var_names = repr([a.attribute for a in loadable_asset_groups])
+        raise DagsterInvariantViolationError(
+            (
+                f'More than one asset collection found in "{module.__name__}". '
+                "If you load a file or module directly it must either have one repository, one "
+                "job, one pipeline, one graph, or one asset collection scope. Found asset "
+                f"collections defined in variables: {var_names}."
+            )
+        )
+
+    raise DagsterInvariantViolationError(
+        'No jobs, pipelines, graphs, asset collections, or repositories found in "{}".'.format(
+            module.__name__
+        )
+    )
+
+
+def _loadable_targets_of_type(module, klass):
+    loadable_targets = []
+    for name, value in inspect.getmembers(module):
+        if isinstance(value, klass):
+            loadable_targets.append(LoadableTarget(name, value))
+
+    return loadable_targets

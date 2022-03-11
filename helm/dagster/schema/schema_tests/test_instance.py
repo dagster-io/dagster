@@ -39,7 +39,7 @@ from schema.charts.dagster.subschema.run_launcher import (
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.utils.helm_template import HelmTemplate
 
-from dagster.core.run_coordinator import QueuedRunCoordinator
+from dagster._core.run_coordinator import QueuedRunCoordinator
 
 
 def to_camel_case(s: str) -> str:
@@ -335,7 +335,7 @@ def test_queued_run_coordinator_config(template: HelmTemplate, enabled: bool):
 
     assert ("run_coordinator" in instance) == enabled
     if enabled:
-        assert instance["run_coordinator"]["module"] == "dagster.core.run_coordinator"
+        assert instance["run_coordinator"]["module"] == "dagster._core.run_coordinator"
         assert instance["run_coordinator"]["class"] == "QueuedRunCoordinator"
         assert instance["run_coordinator"]["config"]
 
@@ -397,7 +397,7 @@ def test_noop_compute_log_manager(
     instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
     compute_logs_config = instance["compute_logs"]
 
-    assert compute_logs_config["module"] == "dagster.core.storage.noop_compute_log_manager"
+    assert compute_logs_config["module"] == "dagster._core.storage.noop_compute_log_manager"
     assert compute_logs_config["class"] == "NoOpComputeLogManager"
 
 

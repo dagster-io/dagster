@@ -6,7 +6,7 @@ from botocore.exceptions import ClientError
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
 
 from dagster.check import CheckError
-from dagster.core.events import MetadataEntry
+from dagster._core.events import MetadataEntry
 
 
 @pytest.mark.parametrize("task_long_arn_format", ["enabled", "disabled"])

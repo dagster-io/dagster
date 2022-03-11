@@ -1,6 +1,6 @@
 import time
 
-from dagster.core.host_representation.grpc_server_state_subscriber import (
+from dagster._core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEvent,
     LocationStateChangeEventType,
     LocationStateSubscriber,

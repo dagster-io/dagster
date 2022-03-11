@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 
-from dagster.core.telemetry import log_action
+from dagster._core.telemetry import log_action
 
 
 def log_dagit_telemetry_event(graphene_info, action, client_time, metadata):

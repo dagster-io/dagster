@@ -2,7 +2,7 @@ from typing import Any, Union, overload
 
 from dagster import check
 from dagster.builtins import BuiltinEnum
-from dagster.core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
+from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster.serdes import serialize_value
 from dagster.utils import is_enum_value
 from dagster.utils.typing_api import is_closed_python_optional_type, is_typing_type
@@ -97,9 +97,9 @@ def resolve_to_config_type(dagster_type) -> Union[ConfigType, bool]:
             )
         return Array(inner_type)
 
-    from dagster.core.types.dagster_type import DagsterType, List, ListType
-    from dagster.core.types.python_set import Set, _TypedPythonSet
-    from dagster.core.types.python_tuple import Tuple, _TypedPythonTuple
+    from dagster._core.types.dagster_type import DagsterType, List, ListType
+    from dagster._core.types.python_set import Set, _TypedPythonSet
+    from dagster._core.types.python_tuple import Tuple, _TypedPythonTuple
 
     if _is_config_type_class(dagster_type):
         check.param_invariant(

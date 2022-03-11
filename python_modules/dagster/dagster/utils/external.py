@@ -1,7 +1,7 @@
 from dagster import check
-from dagster.core.host_representation import RepositoryLocation
-from dagster.core.host_representation.origin import ExternalPipelineOrigin
-from dagster.core.host_representation.selector import PipelineSelector
+from dagster._core.host_representation import RepositoryLocation
+from dagster._core.host_representation.origin import ExternalPipelineOrigin
+from dagster._core.host_representation.selector import PipelineSelector
 
 
 def external_pipeline_from_location(repo_location, external_pipeline_origin, solid_selection):

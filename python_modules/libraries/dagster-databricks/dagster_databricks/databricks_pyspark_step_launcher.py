@@ -14,9 +14,9 @@ from dagster_pyspark.utils import build_pyspark_zip
 from requests import HTTPError
 
 from dagster import Bool, Field, IntSource, StringSource, check, resource
-from dagster.core.definitions.step_launcher import StepLauncher
-from dagster.core.errors import raise_execution_interrupts
-from dagster.core.execution.plan.external_step import (
+from dagster._core.definitions.step_launcher import StepLauncher
+from dagster._core.errors import raise_execution_interrupts
+from dagster._core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
     PICKLED_STEP_RUN_REF_FILE_NAME,
     step_context_to_step_run_ref,

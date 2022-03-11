@@ -3,7 +3,7 @@ import os
 from dagster_msteams.sensors import make_teams_on_pipeline_failure_sensor
 
 from dagster import repository
-from dagster.core.test_utils import environ
+from dagster._core.test_utils import environ
 
 
 def test_teams_pipeline_failure_sensor_def():

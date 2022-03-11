@@ -8,11 +8,11 @@ The following run coordinators can be configured on your [Dagster instance](/dep
 
 ### DefaultRunCoordinator
 
-The <PyObject module="dagster.core.run_coordinator" object="DefaultRunCoordinator" /> simply calls `launch_run` on the instance's run launcher immediately in the same process, without applying any limits or prioritization rules. With this run coordinator set, clicking `Launch Run` in Dagit will cause the run to immediately launch from the Dagit process. Similarly, scheduled runs will launch immediately from the scheduler process.
+The <PyObject module="dagster._core.run_coordinator" object="DefaultRunCoordinator" /> simply calls `launch_run` on the instance's run launcher immediately in the same process, without applying any limits or prioritization rules. With this run coordinator set, clicking `Launch Run` in Dagit will cause the run to immediately launch from the Dagit process. Similarly, scheduled runs will launch immediately from the scheduler process.
 
 ### QueuedRunCoordinator
 
-The <PyObject module="dagster.core.run_coordinator" object="QueuedRunCoordinator" /> sends runs to the [Dagster Daemon](/deployment/dagster-daemon) via a queue. The daemon pulls from the queue, and calls `launch_run` on the submitted runs. Using this run coordinator enables instance-level [limits on run concurrency](#limiting-run-concurrency), as well as custom run prioritization rules.
+The <PyObject module="dagster._core.run_coordinator" object="QueuedRunCoordinator" /> sends runs to the [Dagster Daemon](/deployment/dagster-daemon) via a queue. The daemon pulls from the queue, and calls `launch_run` on the submitted runs. Using this run coordinator enables instance-level [limits on run concurrency](#limiting-run-concurrency), as well as custom run prioritization rules.
 
 ### Custom Run Coordinators
 
@@ -47,7 +47,7 @@ For example, you can add the following to your dagster.yaml:
 
 ```yaml file=/deploying/concurrency_limits/dagster.yaml
 run_coordinator:
-  module: dagster.core.run_coordinator
+  module: dagster._core.run_coordinator
   class: QueuedRunCoordinator
   config:
     max_concurrent_runs: 25
@@ -91,7 +91,7 @@ In some cases, you may want to apply separate limits to many possible values of 
 
 ```yaml file=/deploying/concurrency_limits/per-unique-value-dagster.yaml
 run_coordinator:
-  module: dagster.core.run_coordinator
+  module: dagster._core.run_coordinator
   class: QueuedRunCoordinator
   config:
     tag_concurrency_limits:

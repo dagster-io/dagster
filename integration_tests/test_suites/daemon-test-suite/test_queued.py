@@ -1,7 +1,7 @@
 from utils import start_daemon
 
-from dagster.core.storage.pipeline_run import PipelineRun
-from dagster.core.test_utils import create_run_for_test, poll_for_finished_run
+from dagster._core.storage.pipeline_run import PipelineRun
+from dagster._core.test_utils import create_run_for_test, poll_for_finished_run
 from dagster.utils import file_relative_path, merge_dicts
 
 

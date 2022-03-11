@@ -5,14 +5,14 @@ import docker
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
 
 from dagster import check, executor
-from dagster.core.definitions.executor_definition import multiple_process_executor_requirements
-from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
-from dagster.core.execution.plan.objects import StepFailureData
-from dagster.core.execution.retries import RetryMode, get_retries_config
-from dagster.core.executor.base import Executor
-from dagster.core.executor.init import InitExecutorContext
-from dagster.core.executor.step_delegating import StepDelegatingExecutor
-from dagster.core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
+from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
+from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
+from dagster._core.execution.plan.objects import StepFailureData
+from dagster._core.execution.retries import RetryMode, get_retries_config
+from dagster._core.executor.base import Executor
+from dagster._core.executor.init import InitExecutorContext
+from dagster._core.executor.step_delegating import StepDelegatingExecutor
+from dagster._core.executor.step_delegating.step_handler.base import StepHandler, StepHandlerContext
 from dagster.serdes.utils import hash_str
 from dagster.utils import merge_dicts
 from dagster.utils.backcompat import experimental

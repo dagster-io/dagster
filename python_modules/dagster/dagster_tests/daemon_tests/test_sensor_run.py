@@ -22,24 +22,24 @@ from dagster import (
     run_failure_sensor,
     solid,
 )
-from dagster.core.definitions.decorators.sensor import asset_sensor, sensor
-from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.definitions.run_status_sensor_definition import run_status_sensor
-from dagster.core.definitions.sensor_definition import DefaultSensorStatus, RunRequest, SkipReason
-from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.events.log import EventLogEntry
-from dagster.core.execution.api import execute_pipeline
-from dagster.core.host_representation import ExternalInstigatorOrigin, ExternalRepositoryOrigin
-from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
-from dagster.core.storage.event_log.base import EventRecordsFilter
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.test_utils import (
+from dagster._core.definitions.decorators.sensor import asset_sensor, sensor
+from dagster._core.definitions.run_request import InstigatorType
+from dagster._core.definitions.run_status_sensor_definition import run_status_sensor
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus, RunRequest, SkipReason
+from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._core.events.log import EventLogEntry
+from dagster._core.execution.api import execute_pipeline
+from dagster._core.host_representation import ExternalInstigatorOrigin, ExternalRepositoryOrigin
+from dagster._core.instance import DagsterInstance
+from dagster._core.scheduler.instigation import InstigatorState, InstigatorStatus, TickStatus
+from dagster._core.storage.event_log.base import EventRecordsFilter
+from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.test_utils import (
     create_test_daemon_workspace,
     get_logger_output_from_capfd,
     instance_for_test,
 )
-from dagster.core.workspace.load_target import PythonFileTarget
+from dagster._core.workspace.load_target import PythonFileTarget
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.sensor import execute_sensor_iteration, execute_sensor_iteration_loop
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
@@ -734,7 +734,7 @@ def test_launch_failure(capfd):
     with instance_with_sensors(
         overrides={
             "run_launcher": {
-                "module": "dagster.core.test_utils",
+                "module": "dagster._core.test_utils",
                 "class": "ExplodingRunLauncher",
             },
         },
@@ -1595,12 +1595,12 @@ def sqlite_storage_config_fn(temp_dir):
     # non-run sharded storage
     return {
         "run_storage": {
-            "module": "dagster.core.storage.runs",
+            "module": "dagster._core.storage.runs",
             "class": "SqliteRunStorage",
             "config": {"base_dir": temp_dir},
         },
         "event_log_storage": {
-            "module": "dagster.core.storage.event_log",
+            "module": "dagster._core.storage.event_log",
             "class": "SqliteEventLogStorage",
             "config": {"base_dir": temp_dir},
         },
@@ -1615,7 +1615,7 @@ def default_storage_config_fn(_):
 def sql_event_log_storage_config_fn(temp_dir):
     return {
         "event_log_storage": {
-            "module": "dagster.core.storage.event_log",
+            "module": "dagster._core.storage.event_log",
             "class": "ConsolidatedSqliteEventLogStorage",
             "config": {"base_dir": temp_dir},
         },

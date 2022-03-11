@@ -4,11 +4,11 @@ import time
 from celery.exceptions import TaskRevokedError
 
 from dagster import check
-from dagster.core.errors import DagsterSubprocessError
-from dagster.core.events import DagsterEvent, EngineEventData
-from dagster.core.execution.context.system import PlanOrchestrationContext
-from dagster.core.execution.plan.plan import ExecutionPlan
-from dagster.core.storage.tags import PRIORITY_TAG
+from dagster._core.errors import DagsterSubprocessError
+from dagster._core.events import DagsterEvent, EngineEventData
+from dagster._core.execution.context.system import PlanOrchestrationContext
+from dagster._core.execution.plan.plan import ExecutionPlan
+from dagster._core.storage.tags import PRIORITY_TAG
 from dagster.serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 

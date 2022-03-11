@@ -2,10 +2,10 @@ import graphene
 import yaml
 
 from dagster import check
-from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
-from dagster.core.host_representation.external_data import ExternalPresetData
-from dagster.core.storage.pipeline_run import PipelineRunStatus, RunRecord, RunsFilter
-from dagster.core.storage.tags import TagType, get_tag_type
+from dagster._core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
+from dagster._core.host_representation.external_data import ExternalPresetData
+from dagster._core.storage.pipeline_run import PipelineRunStatus, RunRecord, RunsFilter
+from dagster._core.storage.tags import TagType, get_tag_type
 from dagster.utils import datetime_as_float
 
 from ...implementation.events import from_event_record

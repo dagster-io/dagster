@@ -2,7 +2,7 @@ from typing import Optional
 
 from dagster import PipelineDefinition, check
 from dagster._config.config_type import ConfigType, ConfigTypeKind
-from dagster.core.definitions import create_run_config_schema
+from dagster._core.definitions import create_run_config_schema
 
 
 def scaffold_pipeline_config(

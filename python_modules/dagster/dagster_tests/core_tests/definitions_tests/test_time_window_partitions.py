@@ -11,7 +11,7 @@ from dagster import (
     hourly_partitioned_config,
     monthly_partitioned_config,
 )
-from dagster.core.definitions.time_window_partitions import TimeWindow
+from dagster._core.definitions.time_window_partitions import TimeWindow
 from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
 
 DATE_FORMAT = "%Y-%m-%d"

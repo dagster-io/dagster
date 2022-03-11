@@ -10,7 +10,7 @@ from dagster_graphql.client.query import (
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 from graphql import parse
 
-from dagster.core.storage.pipeline_run import RunsFilter
+from dagster._core.storage.pipeline_run import RunsFilter
 from dagster.utils import file_relative_path
 from dagster.utils.test import get_temp_file_name
 

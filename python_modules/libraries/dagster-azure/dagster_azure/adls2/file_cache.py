@@ -1,5 +1,5 @@
 from dagster import Field, Selector, StringSource, check, resource
-from dagster.core.storage.file_cache import FileCache
+from dagster._core.storage.file_cache import FileCache
 
 from .file_manager import ADLS2FileHandle
 from .utils import ResourceNotFoundError, create_adls2_client

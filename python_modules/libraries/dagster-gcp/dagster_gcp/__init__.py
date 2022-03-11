@@ -1,4 +1,4 @@
-from dagster.core.utils import check_dagster_package_version
+from dagster._core.utils import check_dagster_package_version
 
 from .bigquery.ops import (
     bq_create_dataset,

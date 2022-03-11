@@ -9,7 +9,7 @@
 {{- end }}
 
 {{- define "dagsterYaml.computeLogManager.noop" }}
-module: dagster.core.storage.noop_compute_log_manager
+module: dagster._core.storage.noop_compute_log_manager
 class: NoOpComputeLogManager
 {{- end }}
 

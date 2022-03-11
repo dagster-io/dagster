@@ -1,7 +1,7 @@
 import sys
 
-from dagster.core.host_representation import ManagedGrpcPythonEnvRepositoryLocationOrigin
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.host_representation import ManagedGrpcPythonEnvRepositoryLocationOrigin
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.utils import file_relative_path
 
 

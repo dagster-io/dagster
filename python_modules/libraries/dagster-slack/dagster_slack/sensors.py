@@ -3,8 +3,8 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 from slack_sdk import WebClient
 
 from dagster import DefaultSensorStatus
-from dagster.core.definitions import GraphDefinition, PipelineDefinition
-from dagster.core.definitions.run_status_sensor_definition import (
+from dagster._core.definitions import GraphDefinition, PipelineDefinition
+from dagster._core.definitions.run_status_sensor_definition import (
     PipelineFailureSensorContext,
     RunFailureSensorContext,
     pipeline_failure_sensor,

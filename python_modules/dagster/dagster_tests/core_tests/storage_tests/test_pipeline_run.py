@@ -3,19 +3,19 @@ import sys
 import pytest
 
 from dagster import check
-from dagster.core.code_pointer import ModuleCodePointer
-from dagster.core.definitions.reconstructable import ReconstructableRepository
-from dagster.core.host_representation.origin import (
+from dagster._core.code_pointer import ModuleCodePointer
+from dagster._core.definitions.reconstructable import ReconstructableRepository
+from dagster._core.host_representation.origin import (
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
 )
-from dagster.core.origin import (
+from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     PipelinePythonOrigin,
     RepositoryPythonOrigin,
 )
-from dagster.core.storage.pipeline_run import (
+from dagster._core.storage.pipeline_run import (
     IN_PROGRESS_RUN_STATUSES,
     NON_IN_PROGRESS_RUN_STATUSES,
     PipelineRun,

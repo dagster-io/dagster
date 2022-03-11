@@ -1,8 +1,8 @@
 import graphene
 
 from dagster import check
-from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
-from dagster.core.storage.pipeline_run import RunsFilter
+from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
+from dagster._core.storage.pipeline_run import RunsFilter
 
 from .errors import (
     GrapheneInvalidOutputError,

@@ -12,12 +12,12 @@ from dagster_k8s.utils import delete_job
 from dagster import DagsterInvariantViolationError, MetadataEntry, check
 from dagster._config.field import resolve_to_config_type
 from dagster._config.validate import process_config
-from dagster.core.events import EngineEventData
-from dagster.core.execution.retries import RetryMode
-from dagster.core.launcher import LaunchRunContext, RunLauncher
-from dagster.core.launcher.base import CheckRunHealthResult, WorkerStatus
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.core.storage.tags import DOCKER_IMAGE_TAG
+from dagster._core.events import EngineEventData
+from dagster._core.execution.retries import RetryMode
+from dagster._core.launcher import LaunchRunContext, RunLauncher
+from dagster._core.launcher.base import CheckRunHealthResult, WorkerStatus
+from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info

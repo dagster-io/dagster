@@ -1,5 +1,5 @@
 from dagster import DynamicOut, Field, graph, op
-from dagster.core.definitions.events import DynamicOutput
+from dagster._core.definitions.events import DynamicOutput
 
 
 @op

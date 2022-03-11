@@ -1,8 +1,8 @@
 import pytest
 from click.testing import CliRunner
 
-from dagster.core.test_utils import instance_for_test
-from dagster.core.workspace.load_target import EmptyWorkspaceTarget
+from dagster._core.test_utils import instance_for_test
+from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster.daemon.cli import run_command
 from dagster.daemon.controller import daemon_controller_from_instance
 from dagster.daemon.daemon import SchedulerDaemon
@@ -13,7 +13,7 @@ def test_scheduler_instance():
     with instance_for_test(
         overrides={
             "scheduler": {
-                "module": "dagster.core.scheduler",
+                "module": "dagster._core.scheduler",
                 "class": "DagsterDaemonScheduler",
             },
         }
@@ -33,7 +33,7 @@ def test_run_coordinator_instance():
     with instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster.core.run_coordinator.queued_run_coordinator",
+                "module": "dagster._core.run_coordinator.queued_run_coordinator",
                 "class": "QueuedRunCoordinator",
             },
         }

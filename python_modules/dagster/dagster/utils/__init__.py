@@ -25,7 +25,7 @@ from warnings import warn
 import yaml
 
 from dagster import check, seven
-from dagster.core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
+from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
 from dagster.seven import IS_WINDOWS
 from dagster.seven.abc import Mapping
 
@@ -38,7 +38,7 @@ else:
     from pathlib2 import Path  # pylint: disable=import-error
 
 if TYPE_CHECKING:
-    from dagster.core.events import DagsterEvent
+    from dagster._core.events import DagsterEvent
 
 T = TypeVar("T")
 
@@ -261,7 +261,7 @@ def check_script(path, return_code=0):
 
 
 def check_cli_execute_file_pipeline(path, pipeline_fn_name, env_file=None):
-    from dagster.core.test_utils import instance_for_test
+    from dagster._core.test_utils import instance_for_test
 
     with instance_for_test():
         cli_cmd = [

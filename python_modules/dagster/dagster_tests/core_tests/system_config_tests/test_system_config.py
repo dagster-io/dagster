@@ -21,12 +21,12 @@ from dagster import (
 )
 from dagster._config.config_type import ConfigTypeKind
 from dagster._config.validate import process_config
-from dagster.core.definitions import create_run_config_schema
-from dagster.core.definitions.run_config import (
+from dagster._core.definitions import create_run_config_schema
+from dagster._core.definitions.run_config import (
     RunConfigSchemaCreationData,
     define_solid_dictionary_cls,
 )
-from dagster.core.system_config.objects import ResolvedRunConfig, ResourceConfig, SolidConfig
+from dagster._core.system_config.objects import ResolvedRunConfig, ResourceConfig, SolidConfig
 from dagster.loggers import default_loggers
 
 

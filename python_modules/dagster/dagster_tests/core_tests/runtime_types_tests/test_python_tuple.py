@@ -9,7 +9,7 @@ from dagster import (
     execute_solid,
     lambda_solid,
 )
-from dagster.core.types.python_tuple import create_typed_tuple
+from dagster._core.types.python_tuple import create_typed_tuple
 
 
 def test_vanilla_tuple_output():

@@ -12,9 +12,9 @@ from nbconvert.preprocessors import ExecutePreprocessor
 
 from dagster import execute_pipeline, pipeline
 from dagster.check import CheckError
-from dagster.core.definitions.metadata import PathMetadataValue
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
-from dagster.core.test_utils import instance_for_test
+from dagster._core.definitions.metadata import PathMetadataValue
+from dagster._core.definitions.reconstructable import ReconstructablePipeline
+from dagster._core.test_utils import instance_for_test
 from dagster.utils import file_relative_path, safe_tempfile_path
 
 try:

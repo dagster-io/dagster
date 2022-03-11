@@ -7,7 +7,7 @@ from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster._config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
 from dagster._config.config_schema import ConfigSchema
 from dagster._config.config_type import Array, Noneable, ScalarUnion
-from dagster.core.asset_defs import (
+from dagster._core.asset_defs import (
     AssetGroup,
     AssetIn,
     AssetsDefinition,
@@ -16,7 +16,7 @@ from dagster.core.asset_defs import (
     build_assets_job,
     multi_asset,
 )
-from dagster.core.definitions import (
+from dagster._core.definitions import (
     AssetKey,
     AssetMaterialization,
     AssetObservation,
@@ -143,18 +143,18 @@ from dagster.core.definitions import (
     weekly_partitioned_config,
     weekly_schedule,
 )
-from dagster.core.definitions.configurable import configured
-from dagster.core.definitions.policy import Backoff, Jitter, RetryPolicy
-from dagster.core.definitions.run_status_sensor_definition import build_run_status_sensor_context
-from dagster.core.definitions.schedule_definition import build_schedule_context
-from dagster.core.definitions.sensor_definition import build_sensor_context
-from dagster.core.definitions.utils import (
+from dagster._core.definitions.configurable import configured
+from dagster._core.definitions.policy import Backoff, Jitter, RetryPolicy
+from dagster._core.definitions.run_status_sensor_definition import build_run_status_sensor_context
+from dagster._core.definitions.schedule_definition import build_schedule_context
+from dagster._core.definitions.sensor_definition import build_sensor_context
+from dagster._core.definitions.utils import (
     config_from_files,
     config_from_pkg_resources,
     config_from_yaml_strings,
 )
-from dagster.core.definitions.version_strategy import SourceHashVersionStrategy, VersionStrategy
-from dagster.core.errors import (
+from dagster._core.definitions.version_strategy import SourceHashVersionStrategy, VersionStrategy
+from dagster._core.errors import (
     DagsterConfigMappingFunctionError,
     DagsterError,
     DagsterEventLogInvalidForRun,
@@ -175,72 +175,72 @@ from dagster.core.errors import (
     DagsterUnmetExecutorRequirementsError,
     DagsterUserCodeExecutionError,
 )
-from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.execution.api import (
+from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._core.execution.api import (
     execute_pipeline,
     execute_pipeline_iterator,
     reexecute_pipeline,
     reexecute_pipeline_iterator,
 )
-from dagster.core.execution.build_resources import build_resources
-from dagster.core.execution.context.compute import OpExecutionContext, SolidExecutionContext
-from dagster.core.execution.context.hook import HookContext, build_hook_context
-from dagster.core.execution.context.init import InitResourceContext, build_init_resource_context
-from dagster.core.execution.context.input import InputContext, build_input_context
-from dagster.core.execution.context.invocation import build_op_context, build_solid_context
-from dagster.core.execution.context.logger import InitLoggerContext
-from dagster.core.execution.context.output import OutputContext, build_output_context
-from dagster.core.execution.context.system import TypeCheckContext
-from dagster.core.execution.execute_in_process_result import ExecuteInProcessResult
-from dagster.core.execution.results import (
+from dagster._core.execution.build_resources import build_resources
+from dagster._core.execution.context.compute import OpExecutionContext, SolidExecutionContext
+from dagster._core.execution.context.hook import HookContext, build_hook_context
+from dagster._core.execution.context.init import InitResourceContext, build_init_resource_context
+from dagster._core.execution.context.input import InputContext, build_input_context
+from dagster._core.execution.context.invocation import build_op_context, build_solid_context
+from dagster._core.execution.context.logger import InitLoggerContext
+from dagster._core.execution.context.output import OutputContext, build_output_context
+from dagster._core.execution.context.system import TypeCheckContext
+from dagster._core.execution.execute_in_process_result import ExecuteInProcessResult
+from dagster._core.execution.results import (
     CompositeSolidExecutionResult,
     PipelineExecutionResult,
     SolidExecutionResult,
 )
-from dagster.core.execution.validate_run_config import validate_run_config
-from dagster.core.executor.base import Executor
-from dagster.core.executor.init import InitExecutorContext
-from dagster.core.instance import DagsterInstance
-from dagster.core.launcher import DefaultRunLauncher
-from dagster.core.log_manager import DagsterLogManager
-from dagster.core.storage.event_log import (
+from dagster._core.execution.validate_run_config import validate_run_config
+from dagster._core.executor.base import Executor
+from dagster._core.executor.init import InitExecutorContext
+from dagster._core.instance import DagsterInstance
+from dagster._core.launcher import DefaultRunLauncher
+from dagster._core.log_manager import DagsterLogManager
+from dagster._core.storage.event_log import (
     EventLogEntry,
     EventLogRecord,
     EventRecordsFilter,
     RunShardedEventsCursor,
 )
-from dagster.core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
-from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
-from dagster.core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
-from dagster.core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
-from dagster.core.storage.mem_io_manager import mem_io_manager
-from dagster.core.storage.memoizable_io_manager import MemoizableIOManager
-from dagster.core.storage.pipeline_run import (
+from dagster._core.storage.file_manager import FileHandle, LocalFileHandle, local_file_manager
+from dagster._core.storage.fs_asset_io_manager import fs_asset_io_manager
+from dagster._core.storage.fs_io_manager import custom_path_fs_io_manager, fs_io_manager
+from dagster._core.storage.io_manager import IOManager, IOManagerDefinition, io_manager
+from dagster._core.storage.mem_io_manager import mem_io_manager
+from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
+from dagster._core.storage.pipeline_run import (
     DagsterRun,
     DagsterRunStatus,
     PipelineRun,
     PipelineRunStatus,
 )
-from dagster.core.storage.root_input_manager import (
+from dagster._core.storage.root_input_manager import (
     RootInputManager,
     RootInputManagerDefinition,
     root_input_manager,
 )
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
-from dagster.core.types.config_schema import (
+from dagster._core.storage.tags import MEMOIZED_RUN_TAG
+from dagster._core.types.config_schema import (
     DagsterTypeLoader,
     DagsterTypeMaterializer,
     dagster_type_loader,
     dagster_type_materializer,
 )
-from dagster.core.types.dagster_type import DagsterType, List, Optional, PythonObjectDagsterType
-from dagster.core.types.decorator import (
+from dagster._core.types.dagster_type import DagsterType, List, Optional, PythonObjectDagsterType
+from dagster._core.types.decorator import (
     make_python_type_usable_as_dagster_type,
     usable_as_dagster_type,
 )
-from dagster.core.types.python_dict import Dict
-from dagster.core.types.python_set import Set
-from dagster.core.types.python_tuple import Tuple
+from dagster._core.types.python_dict import Dict
+from dagster._core.types.python_set import Set
+from dagster._core.types.python_tuple import Tuple
 from dagster.utils import file_relative_path
 from dagster.utils.alert import make_email_on_run_failure_sensor
 from dagster.utils.backcompat import ExperimentalWarning, rename_warning
@@ -271,24 +271,24 @@ from dagster._config.source import BoolSource, StringSource, IntSource  # isort:
 
 if typing.TYPE_CHECKING:
     # pylint:disable=reimported
-    from dagster.core.definitions import DagsterAssetMetadataValue as DagsterAssetMetadataEntryData
-    from dagster.core.definitions import (
+    from dagster._core.definitions import DagsterAssetMetadataValue as DagsterAssetMetadataEntryData
+    from dagster._core.definitions import (
         DagsterPipelineRunMetadataValue as DagsterPipelineRunMetadataEntryData,
     )
-    from dagster.core.definitions import FloatMetadataValue as FloatMetadataEntryData
-    from dagster.core.definitions import IntMetadataValue as IntMetadataEntryData
-    from dagster.core.definitions import JsonMetadataValue as JsonMetadataEntryData
-    from dagster.core.definitions import MarkdownMetadataValue as MarkdownMetadataEntryData
-    from dagster.core.definitions import MetadataEntry as EventMetadataEntry
-    from dagster.core.definitions import MetadataValue as EventMetadata
-    from dagster.core.definitions import PathMetadataValue as PathMetadataEntryData
-    from dagster.core.definitions import (
+    from dagster._core.definitions import FloatMetadataValue as FloatMetadataEntryData
+    from dagster._core.definitions import IntMetadataValue as IntMetadataEntryData
+    from dagster._core.definitions import JsonMetadataValue as JsonMetadataEntryData
+    from dagster._core.definitions import MarkdownMetadataValue as MarkdownMetadataEntryData
+    from dagster._core.definitions import MetadataEntry as EventMetadataEntry
+    from dagster._core.definitions import MetadataValue as EventMetadata
+    from dagster._core.definitions import PathMetadataValue as PathMetadataEntryData
+    from dagster._core.definitions import (
         PythonArtifactMetadataValue as PythonArtifactMetadataEntryData,
     )
-    from dagster.core.definitions import TableMetadataValue as TableMetadataEntryData
-    from dagster.core.definitions import TableSchemaMetadataValue as TableSchemaMetadataEntryData
-    from dagster.core.definitions import TextMetadataValue as TextMetadataEntryData
-    from dagster.core.definitions import UrlMetadataValue as UrlMetadataEntryData
+    from dagster._core.definitions import TableMetadataValue as TableMetadataEntryData
+    from dagster._core.definitions import TableSchemaMetadataValue as TableSchemaMetadataEntryData
+    from dagster._core.definitions import TextMetadataValue as TextMetadataEntryData
+    from dagster._core.definitions import UrlMetadataValue as UrlMetadataEntryData
 
     # pylint:enable=reimported
 

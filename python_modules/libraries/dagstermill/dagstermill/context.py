@@ -1,11 +1,11 @@
 from typing import Any, Dict, Set
 
 from dagster import PipelineDefinition, PipelineRun, SolidDefinition, check
-from dagster.core.definitions.dependency import Node, NodeHandle
-from dagster.core.execution.context.compute import AbstractComputeExecutionContext
-from dagster.core.execution.context.system import PlanExecutionContext, StepExecutionContext
-from dagster.core.log_manager import DagsterLogManager
-from dagster.core.system_config.objects import ResolvedRunConfig
+from dagster._core.definitions.dependency import Node, NodeHandle
+from dagster._core.execution.context.compute import AbstractComputeExecutionContext
+from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext
+from dagster._core.log_manager import DagsterLogManager
+from dagster._core.system_config.objects import ResolvedRunConfig
 
 
 class DagstermillExecutionContext(AbstractComputeExecutionContext):

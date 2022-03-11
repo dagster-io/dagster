@@ -3,13 +3,13 @@ import smtplib
 import ssl
 from typing import TYPE_CHECKING, Callable, List, Optional, Union
 
-from dagster.core.definitions.sensor_definition import DefaultSensorStatus
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster._core.definitions.sensor_definition import DefaultSensorStatus
+from dagster._core.errors import DagsterInvalidDefinitionError
 
 if TYPE_CHECKING:
-    from dagster.core.definitions.graph_definition import GraphDefinition
-    from dagster.core.definitions.pipeline_definition import PipelineDefinition
-    from dagster.core.definitions.run_status_sensor_definition import (
+    from dagster._core.definitions.graph_definition import GraphDefinition
+    from dagster._core.definitions.pipeline_definition import PipelineDefinition
+    from dagster._core.definitions.run_status_sensor_definition import (
         PipelineFailureSensorContext,
         RunFailureSensorContext,
     )
@@ -145,7 +145,7 @@ def make_email_on_pipeline_failure_sensor(
 
     """
 
-    from dagster.core.definitions.run_status_sensor_definition import (
+    from dagster._core.definitions.run_status_sensor_definition import (
         PipelineFailureSensorContext,
         pipeline_failure_sensor,
     )
@@ -253,7 +253,7 @@ def make_email_on_run_failure_sensor(
 
     """
 
-    from dagster.core.definitions.run_status_sensor_definition import (
+    from dagster._core.definitions.run_status_sensor_definition import (
         RunFailureSensorContext,
         run_failure_sensor,
     )

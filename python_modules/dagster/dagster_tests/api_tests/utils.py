@@ -2,13 +2,13 @@ import sys
 from contextlib import contextmanager
 
 from dagster import file_relative_path
-from dagster.core.host_representation import (
+from dagster._core.host_representation import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     PipelineHandle,
 )
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.core.workspace.context import WorkspaceProcessContext
-from dagster.core.workspace.load_target import PythonFileTarget
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.workspace.context import WorkspaceProcessContext
+from dagster._core.workspace.load_target import PythonFileTarget
 
 
 @contextmanager

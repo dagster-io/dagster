@@ -12,15 +12,15 @@ from dagster import (
     SourceAsset,
     StaticPartitionsDefinition,
 )
-from dagster.core.asset_defs import asset, build_assets_job
-from dagster.core.asset_defs.asset_partitions import (
+from dagster._core.asset_defs import asset, build_assets_job
+from dagster._core.asset_defs.asset_partitions import (
     get_downstream_partitions_for_partition_range,
     get_upstream_partitions_for_partition_range,
 )
-from dagster.core.asset_defs.partition_mapping import PartitionMapping
-from dagster.core.definitions.events import AssetKey
-from dagster.core.definitions.partition_key_range import PartitionKeyRange
-from dagster.core.definitions.time_window_partitions import TimeWindow
+from dagster._core.asset_defs.partition_mapping import PartitionMapping
+from dagster._core.definitions.events import AssetKey
+from dagster._core.definitions.partition_key_range import PartitionKeyRange
+from dagster._core.definitions.time_window_partitions import TimeWindow
 
 
 def test_assets_with_same_partitioning():

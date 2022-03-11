@@ -4,7 +4,7 @@ IPC machinery."""
 import sys
 import time
 
-from dagster.core.execution.compute_logs import mirror_stream_to_file
+from dagster._core.execution.compute_logs import mirror_stream_to_file
 from dagster.utils.interrupts import setup_interrupt_handlers
 
 if __name__ == "__main__":

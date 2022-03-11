@@ -11,10 +11,10 @@ from dagster_aws.emr.configs_spark import spark_config as get_spark_config
 from dagster_aws.utils.mrjob.log4j import parse_hadoop_log4j_records
 
 from dagster import Field, StringSource, check, resource
-from dagster.core.definitions.step_launcher import StepLauncher
-from dagster.core.errors import DagsterInvariantViolationError, raise_execution_interrupts
-from dagster.core.events import log_step_event
-from dagster.core.execution.plan.external_step import (
+from dagster._core.definitions.step_launcher import StepLauncher
+from dagster._core.errors import DagsterInvariantViolationError, raise_execution_interrupts
+from dagster._core.events import log_step_event
+from dagster._core.execution.plan.external_step import (
     PICKLED_EVENTS_FILE_NAME,
     PICKLED_STEP_RUN_REF_FILE_NAME,
     step_context_to_step_run_ref,

@@ -7,7 +7,7 @@ from dagster import (
     pipeline,
     repository,
 )
-from dagster.core.test_utils import today_at_midnight
+from dagster._core.test_utils import today_at_midnight
 
 
 @lambda_solid(input_defs=[InputDefinition("num", Int)], output_def=OutputDefinition(Int))

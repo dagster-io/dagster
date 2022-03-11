@@ -6,8 +6,8 @@ from contextlib import contextmanager
 import objgraph
 
 from dagster import RunRequest, pipeline, repository, schedule, sensor, solid
-from dagster.core.test_utils import instance_for_test
-from dagster.core.workspace.load_target import PythonFileTarget
+from dagster._core.test_utils import instance_for_test
+from dagster._core.workspace.load_target import PythonFileTarget
 from dagster.daemon.controller import daemon_controller_from_instance
 
 
@@ -72,12 +72,12 @@ def test_no_memory_leaks():
     with instance_for_test(
         overrides={
             "run_coordinator": {
-                "module": "dagster.core.run_coordinator",
+                "module": "dagster._core.run_coordinator",
                 "class": "QueuedRunCoordinator",
             },
             "run_launcher": {
                 "class": "DefaultRunLauncher",
-                "module": "dagster.core.launcher.default_run_launcher",
+                "module": "dagster._core.launcher.default_run_launcher",
                 "config": {
                     "wait_for_processes": False,
                 },

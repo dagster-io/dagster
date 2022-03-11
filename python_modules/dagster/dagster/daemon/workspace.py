@@ -4,15 +4,15 @@ from abc import abstractmethod
 from typing import Dict
 
 from dagster import check
-from dagster.core.errors import DagsterRepositoryLocationLoadError
-from dagster.core.host_representation.grpc_server_registry import GrpcServerRegistry
-from dagster.core.host_representation.origin import RepositoryLocationOrigin
-from dagster.core.host_representation.repository_location import (
+from dagster._core.errors import DagsterRepositoryLocationLoadError
+from dagster._core.host_representation.grpc_server_registry import GrpcServerRegistry
+from dagster._core.host_representation.origin import RepositoryLocationOrigin
+from dagster._core.host_representation.repository_location import (
     GrpcServerRepositoryLocation,
     RepositoryLocation,
 )
-from dagster.core.workspace import IWorkspace, WorkspaceLocationEntry, WorkspaceLocationLoadStatus
-from dagster.core.workspace.load_target import WorkspaceLoadTarget
+from dagster._core.workspace import IWorkspace, WorkspaceLocationEntry, WorkspaceLocationLoadStatus
+from dagster._core.workspace.load_target import WorkspaceLoadTarget
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 

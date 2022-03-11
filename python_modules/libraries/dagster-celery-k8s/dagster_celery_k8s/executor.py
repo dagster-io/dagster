@@ -39,12 +39,12 @@ from dagster import (
     multiple_process_executor_requirements,
 )
 from dagster._cli.api import ExecuteStepArgs
-from dagster.core.errors import DagsterUnmetExecutorRequirementsError
-from dagster.core.events import EngineEventData
-from dagster.core.events.log import EventLogEntry
-from dagster.core.execution.plan.objects import StepFailureData, UserFailureData
-from dagster.core.execution.retries import RetryMode
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus
+from dagster._core.errors import DagsterUnmetExecutorRequirementsError
+from dagster._core.events import EngineEventData
+from dagster._core.events.log import EventLogEntry
+from dagster._core.execution.plan.objects import StepFailureData, UserFailureData
+from dagster._core.execution.retries import RetryMode
+from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster.serdes import pack_value, serialize_dagster_namedtuple, unpack_value
 from dagster.utils.error import serializable_error_info_from_exc_info
 

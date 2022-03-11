@@ -18,10 +18,10 @@ from dagster import (
     resource,
     solid,
 )
-from dagster.core.definitions import failure_hook, success_hook
-from dagster.core.definitions.decorators.hook import event_list_hook
-from dagster.core.definitions.events import Failure, HookExecutionResult
-from dagster.core.errors import DagsterInvalidDefinitionError
+from dagster._core.definitions import failure_hook, success_hook
+from dagster._core.definitions.decorators.hook import event_list_hook
+from dagster._core.definitions.events import Failure, HookExecutionResult
+from dagster._core.errors import DagsterInvalidDefinitionError
 
 
 class SomeUserException(Exception):

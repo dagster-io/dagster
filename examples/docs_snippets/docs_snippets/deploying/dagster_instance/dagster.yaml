@@ -5,14 +5,14 @@
 
 # this config manually sets the directory (`base_dir`) for Sqlite to store run information in:
 run_storage:
-  module: dagster.core.storage.runs
+  module: dagster._core.storage.runs
   class: SqliteRunStorage
   config:
     base_dir: /path/to/dir
 
 # and this config grabs the directory from an environment variable
 run_storage:
-  module: dagster.core.storage.runs
+  module: dagster._core.storage.runs
   class: SqliteRunStorage
   config:
     base_dir:
@@ -126,14 +126,14 @@ run_storage:
 
 # the first manually sets the directory (`base_dir`) to write event log data to:
 event_log_storage:
-  module: dagster.core.storage.event_log
+  module: dagster._core.storage.event_log
   class: SqliteEventLogStorage
   config:
     base_dir: /path/to/dir
 
 # and the second grabs the directory from an environment variable
 event_log_storage:
-  module: dagster.core.storage.event_log
+  module: dagster._core.storage.event_log
   class: SqliteEventLogStorage
   config:
     base_dir:
@@ -147,14 +147,14 @@ event_log_storage:
 
 # the first manually sets the directory (`base_dir`) to write event log data to:
 event_log_storage:
-  module: dagster.core.storage.event_log
+  module: dagster._core.storage.event_log
   class: ConsolidatedSqliteEventLogStorage
   config:
     base_dir: /path/to/dir
 
 # and the second grabs the directory from an environment variable
 event_log_storage:
-  module: dagster.core.storage.event_log
+  module: dagster._core.storage.event_log
   class: ConsolidatedSqliteEventLogStorage
   config:
     base_dir:
@@ -264,7 +264,7 @@ event_log_storage:
 # start_marker_dagster_daemon
 
 scheduler:
-  module: dagster.core.scheduler
+  module: dagster._core.scheduler
   class: DagsterDaemonScheduler
 
 # end_marker_dagster_daemon
@@ -275,14 +275,14 @@ scheduler:
 
 # the first manually sets the directory (`base_dir`) to write schedule-related data to:
 schedule_storage:
-  module: dagster.core.storage.schedules
+  module: dagster._core.storage.schedules
   class: SqliteScheduleStorage
   config:
     base_dir: /path/to/dir
 
 # the second grabs the directory from an environment variable
 schedule_storage:
-  module: dagster.core.storage.schedules
+  module: dagster._core.storage.schedules
   class: SqliteScheduleStorage
   config:
     base_dir:
@@ -392,7 +392,7 @@ schedule_storage:
 # start_marker_run_launcher_default
 
 run_launcher:
-  module: dagster.core.launcher
+  module: dagster._core.launcher
   class: DefaultRunLauncher
 
 # end_marker_run_launcher_default
@@ -441,7 +441,7 @@ run_launcher:
 # Since DefaultRunCoordinator is the default option, omitting the `run_coordinator` key will also suffice,
 # but if you would like to set it explicitly:
 run_coordinator:
-  module: dagster.core.run_coordinator
+  module: dagster._core.run_coordinator
   class: DefaultRunCoordinator
 
 # end_marker_run_coordinator_default
@@ -452,12 +452,12 @@ run_coordinator:
 
 # this first option has concurrency limits set to default values
 run_coordinator:
-  module: dagster.core.run_coordinator
+  module: dagster._core.run_coordinator
   class: QueuedRunCoordinator
 
 # this second option manually specifies limits:
 run_coordinator:
-  module: dagster.core.run_coordinator
+  module: dagster._core.run_coordinator
   class: QueuedRunCoordinator
   config:
     max_concurrent_runs: 25
@@ -470,7 +470,7 @@ run_coordinator:
 
 # as always, some or all of these values can be obtained from environment variables:
 run_coordinator:
-  module: dagster.core.run_coordinator
+  module: dagster._core.run_coordinator
   class: QueuedRunCoordinator
   config:
     max_concurrent_runs:
@@ -493,14 +493,14 @@ run_coordinator:
 
 # You could directly set the `base_dir` key
 compute_logs:
-  module: dagster.core.storage.local_compute_log_manager
+  module: dagster._core.storage.local_compute_log_manager
   class: LocalComputeLogManager
   config:
     base_dir: /path/to/directory
 
 # Alternatively, you could set the `base_dir` key to an environment variable
 compute_logs:
-  module: dagster.core.storage.local_compute_log_manager
+  module: dagster._core.storage.local_compute_log_manager
   class: LocalComputeLogManager
   config:
     base_dir:
@@ -569,14 +569,14 @@ compute_logs:
 
 # example local_artifact_storage setup pointing to /var/shared/dagster directory
 local_artifact_storage:
-  module: dagster.core.storage.root
+  module: dagster._core.storage.root
   class: LocalArtifactStorage
   config:
     base_dir: "/path/to/dir"
 
 # alternatively, `base_dir` can be set to an environment variable
 local_artifact_storage:
-  module: dagster.core.storage.root
+  module: dagster._core.storage.root
   class: LocalArtifactStorage
   config:
     base_dir:

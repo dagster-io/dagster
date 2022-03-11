@@ -12,7 +12,7 @@ from dagster import (
     StaticPartitionsDefinition,
 )
 from dagster.check import CheckError
-from dagster.core.definitions.partition import (
+from dagster._core.definitions.partition import (
     Partition,
     ScheduleTimeBasedPartitionsDefinition,
     ScheduleType,

@@ -4,7 +4,7 @@ from .job_2 import generate_trip_distribution_plot
 
 generate_trip_distribution_plot.execute_in_process()
 # => ...
-# => dagster.core.errors.DagsterTypeCheckDidNotPass: Type check failed for step output "result" - expected type "TripsDataFrame".
+# => dagster._core.errors.DagsterTypeCheckDidNotPass: Type check failed for step output "result" - expected type "TripsDataFrame".
 # => ...
 
 # execution_2

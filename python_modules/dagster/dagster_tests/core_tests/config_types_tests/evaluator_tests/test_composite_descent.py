@@ -17,7 +17,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.system_config.composite_descent import composite_descent
+from dagster._core.system_config.composite_descent import composite_descent
 
 
 def test_single_level_pipeline():

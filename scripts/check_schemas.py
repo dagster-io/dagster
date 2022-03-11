@@ -53,7 +53,7 @@ def validate_column(column: Column):
         raise Exception(
             f"Column {column} has a server default of CURRENT_TIMESTAMP without precision specified. "
             "To allow schema compatibility between MySQL, Postgres, and SQLite, "
-            "use dagster.core.storage.sql.py::get_current_timestamp() instead."
+            "use dagster._core.storage.sql.py::get_current_timestamp() instead."
         )
 
 
@@ -64,7 +64,7 @@ if __name__ == "__main__":
         for _, module_name, is_pkg in pkgutil.walk_packages(
             package_name.__path__, package_name.__name__ + "."
         ):
-            # Collect all of the dagster.core.storage.*.schema modules
+            # Collect all of the dagster._core.storage.*.schema modules
             if module_name.endswith("schema"):
                 schema_modules.add(module_name)
 
@@ -72,7 +72,7 @@ if __name__ == "__main__":
             if is_pkg:
                 list_submodules(module_name)
 
-    list_submodules(dagster.core.storage)
+    list_submodules(dagster._core.storage)
 
     for schema_module in schema_modules:
         check_schema_compat(importlib.import_module(schema_module))

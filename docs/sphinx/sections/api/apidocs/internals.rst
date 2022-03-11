@@ -30,7 +30,7 @@ Executors
 File Manager
 --------------
 
-.. currentmodule:: dagster.core.storage.file_manager
+.. currentmodule:: dagster._core.storage.file_manager
 
 .. autoclass:: FileManager
    :members:
@@ -51,7 +51,7 @@ Instance
 .. autoclass:: DagsterInstance
    :members:
 
-.. currentmodule:: dagster.core.instance
+.. currentmodule:: dagster._core.instance
 
 .. autoclass:: InstanceRef
    :members:
@@ -64,7 +64,7 @@ Instance
 .. autoclass:: ConfigurableClassData
    :members:
 
-.. currentmodule:: dagster.core.storage.root
+.. currentmodule:: dagster._core.storage.root
 
 .. autoclass:: LocalArtifactStorage
    :members:
@@ -86,7 +86,7 @@ Run storage
    :members:
    :undoc-members:
 
-.. currentmodule:: dagster.core.storage.runs
+.. currentmodule:: dagster._core.storage.runs
 
 .. autoclass:: RunStorage
 
@@ -102,7 +102,7 @@ See also: :py:class:`dagster_postgres.PostgresRunStorage` and :py:class:`dagster
 Event log storage
 -----------------
 
-.. currentmodule:: dagster.core.storage.event_log
+.. currentmodule:: dagster._core.storage.event_log
 
 .. autoclass:: EventLogEntry
 
@@ -127,11 +127,11 @@ See also: :py:class:`dagster_postgres.PostgresEventLogStorage` and :py:class:`da
 Compute log manager
 -------------------
 
-.. currentmodule:: dagster.core.storage.compute_log_manager
+.. currentmodule:: dagster._core.storage.compute_log_manager
 
 .. autoclass:: ComputeLogManager
 
-.. currentmodule:: dagster.core.storage.local_compute_log_manager
+.. currentmodule:: dagster._core.storage.local_compute_log_manager
 
 .. autoclass:: LocalComputeLogManager
 
@@ -141,7 +141,7 @@ See also: :py:class:`dagster_aws.S3ComputeLogManager`.
 
 Run launcher
 ------------
-.. currentmodule:: dagster.core.launcher
+.. currentmodule:: dagster._core.launcher
 
 .. autoclass:: RunLauncher
 
@@ -152,7 +152,7 @@ Run launcher
 Run coordinator
 ---------------
 
-.. currentmodule:: dagster.core.run_coordinator
+.. currentmodule:: dagster._core.run_coordinator
 
 .. autoclass:: DefaultRunCoordinator
 
@@ -164,11 +164,11 @@ Run coordinator
 Scheduling
 ----------
 
-.. currentmodule:: dagster.core.scheduler
+.. currentmodule:: dagster._core.scheduler
 
 .. autoclass:: Scheduler
 
-.. currentmodule:: dagster.core.storage.schedules
+.. currentmodule:: dagster._core.storage.schedules
 
 .. autoclass:: ScheduleStorage
 
@@ -183,6 +183,6 @@ see also: :py:class:`dagster_postgres.PostgresScheduleStorage` and :py:class:`da
 Exception handling
 ------------------
 
-.. currentmodule:: dagster.core.errors
+.. currentmodule:: dagster._core.errors
 
 .. autofunction:: user_code_error_boundary

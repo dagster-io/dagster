@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
 from dagster import check
-from dagster.core.errors import DagsterUserCodeProcessError
-from dagster.core.execution.plan.state import KnownExecutionState
-from dagster.core.host_representation.origin import ExternalPipelineOrigin
-from dagster.core.instance import DagsterInstance
-from dagster.core.snap.execution_plan_snapshot import (
+from dagster._core.errors import DagsterUserCodeProcessError
+from dagster._core.execution.plan.state import KnownExecutionState
+from dagster._core.host_representation.origin import ExternalPipelineOrigin
+from dagster._core.instance import DagsterInstance
+from dagster._core.snap.execution_plan_snapshot import (
     ExecutionPlanSnapshot,
     ExecutionPlanSnapshotErrorData,
 )

@@ -3561,7 +3561,7 @@ compatible with 0.8.0
     as follows:
 
     ```python
-    from dagster.core.storage.event_log.migration import migrate_event_log_data
+    from dagster._core.storage.event_log.migration import migrate_event_log_data
     from dagster import DagsterInstance
 
     migrate_event_log_data(instance=DagsterInstance.get())
@@ -3937,7 +3937,7 @@ compatible with 0.8.0
   `event_log` data migration can be invoked as follows:
 
   ```python
-  from dagster.core.storage.event_log.migration import migrate_event_log_data
+  from dagster._core.storage.event_log.migration import migrate_event_log_data
   from dagster import DagsterInstance
 
   migrate_event_log_data(instance=DagsterInstance.get())

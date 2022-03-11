@@ -15,7 +15,7 @@ from dagster import (
 from dagster._config.config_type import ConfigTypeKind
 from dagster._config.field import resolve_to_config_type
 from dagster._config.field_utils import Map
-from dagster.core.snap import (
+from dagster._core.snap import (
     ConfigEnumValueSnap,
     build_config_schema_snapshot,
     snap_from_config_type,

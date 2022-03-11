@@ -11,7 +11,7 @@ from airflow.operators.sqlite_operator import SqliteOperator
 from dagster_airflow import airflow_operator_to_op
 
 from dagster import job, op
-from dagster.core.test_utils import instance_for_test
+from dagster._core.test_utils import instance_for_test
 
 
 def test_simple_bash_task():

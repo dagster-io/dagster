@@ -3,7 +3,7 @@ from unittest import mock
 from dagster_snowflake import snowflake_resource
 
 from dagster import ModeDefinition, execute_solid, solid
-from dagster.core.test_utils import environ
+from dagster._core.test_utils import environ
 
 from .utils import create_mock_connector
 

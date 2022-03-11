@@ -18,8 +18,8 @@ from dagster_test.test_project import cleanup_memoized_results, get_test_project
 from dagster_test.test_project.test_pipelines.repo import define_memoization_pipeline
 
 from dagster import DagsterEventType
-from dagster.core.storage.pipeline_run import PipelineRunStatus
-from dagster.core.storage.tags import DOCKER_IMAGE_TAG
+from dagster._core.storage.pipeline_run import PipelineRunStatus
+from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.utils.merger import deep_merge_dicts, merge_dicts
 from dagster.utils.yaml_utils import merge_yamls
 

@@ -7,13 +7,13 @@ from dagster_graphql.implementation.fetch_solids import get_solid, get_solids
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 
 from dagster import DagsterInstance, check
-from dagster.core.host_representation import (
+from dagster._core.host_representation import (
     ExternalRepository,
     GrpcServerRepositoryLocation,
     ManagedGrpcPythonEnvRepositoryLocationOrigin,
     RepositoryLocation,
 )
-from dagster.core.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
+from dagster._core.workspace import WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 
 from .asset_graph import GrapheneAssetNode
 from .errors import GraphenePythonError, GrapheneRepositoryNotFoundError

@@ -1,18 +1,18 @@
 from typing import TYPE_CHECKING, Mapping
 
 from dagster import check
-from dagster.core.host_representation.external_data import ExternalRepositoryData
+from dagster._core.host_representation.external_data import ExternalRepositoryData
 from dagster.serdes import deserialize_as
 
 if TYPE_CHECKING:
-    from dagster.core.host_representation import RepositoryLocation
+    from dagster._core.host_representation import RepositoryLocation
     from dagster.grpc.client import DagsterGrpcClient
 
 
 def sync_get_streaming_external_repositories_data_grpc(
     api_client: "DagsterGrpcClient", repository_location: "RepositoryLocation"
 ) -> Mapping[str, ExternalRepositoryData]:
-    from dagster.core.host_representation import ExternalRepositoryOrigin, RepositoryLocation
+    from dagster._core.host_representation import ExternalRepositoryOrigin, RepositoryLocation
 
     check.inst_param(repository_location, "repository_location", RepositoryLocation)
 

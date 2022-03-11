@@ -21,8 +21,8 @@ from dagster import (
     root_input_manager,
     solid,
 )
-from dagster.core.definitions.events import Failure, RetryRequested
-from dagster.core.instance import InstanceRef
+from dagster._core.definitions.events import Failure, RetryRequested
+from dagster._core.instance import InstanceRef
 
 
 def test_validate_inputs():

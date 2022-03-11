@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 
 from dagster import Array, Field, Noneable, check, resource
-from dagster.core.test_utils import environ
+from dagster._core.test_utils import environ
 from dagster.utils.merger import merge_dicts
 
 from .secrets import construct_secretsmanager_client, get_secrets_from_arns, get_tagged_secrets

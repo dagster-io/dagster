@@ -3,12 +3,12 @@ from enum import Enum
 from typing import Any, Dict, Iterable, List, Optional, Set
 
 from dagster import DagsterInstance, check
-from dagster.core.definitions.events import AssetKey
-from dagster.core.events.log import EventLogEntry
-from dagster.core.host_representation import ExternalRepository
-from dagster.core.scheduler.instigation import InstigatorType
-from dagster.core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
-from dagster.core.storage.tags import SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
+from dagster._core.definitions.events import AssetKey
+from dagster._core.events.log import EventLogEntry
+from dagster._core.host_representation import ExternalRepository
+from dagster._core.scheduler.instigation import InstigatorType
+from dagster._core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
+from dagster._core.storage.tags import SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
 
 
 class RepositoryDataType(Enum):

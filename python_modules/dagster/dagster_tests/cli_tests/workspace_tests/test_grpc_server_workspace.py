@@ -5,10 +5,10 @@ import yaml
 
 from dagster import seven
 from dagster.check import CheckError
-from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.core.host_representation import GrpcServerRepositoryLocationOrigin
-from dagster.core.test_utils import environ
-from dagster.core.workspace.load import location_origins_from_config
+from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.host_representation import GrpcServerRepositoryLocationOrigin
+from dagster._core.test_utils import environ
+from dagster._core.workspace.load import location_origins_from_config
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import file_relative_path
 

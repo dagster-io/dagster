@@ -7,11 +7,11 @@ from typing import cast
 import pendulum
 
 from dagster import check
-from dagster.core.definitions.schedule_definition import DefaultScheduleStatus
-from dagster.core.errors import DagsterUserCodeUnreachableError
-from dagster.core.host_representation import ExternalSchedule, PipelineSelector
-from dagster.core.instance import DagsterInstance
-from dagster.core.scheduler.instigation import (
+from dagster._core.definitions.schedule_definition import DefaultScheduleStatus
+from dagster._core.errors import DagsterUserCodeUnreachableError
+from dagster._core.host_representation import ExternalSchedule, PipelineSelector
+from dagster._core.instance import DagsterInstance
+from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
     InstigatorType,
@@ -19,11 +19,11 @@ from dagster.core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster.core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
-from dagster.core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG, check_tags
-from dagster.core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
-from dagster.core.workspace import IWorkspace
+from dagster._core.scheduler.scheduler import DEFAULT_MAX_CATCHUP_RUNS, DagsterSchedulerError
+from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
+from dagster._core.storage.tags import RUN_KEY_TAG, SCHEDULED_EXECUTION_TIME_TAG, check_tags
+from dagster._core.telemetry import SCHEDULED_RUN_CREATED, hash_name, log_action
+from dagster._core.workspace import IWorkspace
 from dagster.seven.compat.pendulum import to_timezone
 from dagster.utils import merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info

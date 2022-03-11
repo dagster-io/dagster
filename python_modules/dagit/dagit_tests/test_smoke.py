@@ -4,7 +4,7 @@ from starlette.testclient import TestClient
 
 from dagster import DagsterInstance
 from dagster._cli.workspace import get_workspace_process_context_from_kwargs
-from dagster.core.test_utils import instance_for_test
+from dagster._core.test_utils import instance_for_test
 
 SMOKE_TEST_QUERY = """
 {

@@ -15,14 +15,14 @@ from dagster import (
     solid,
 )
 from dagster._config.config_type import Array, Bool, Enum, EnumValue, Float, Int, Noneable, String
-from dagster.core.snap import (
+from dagster._core.snap import (
     DependencyStructureIndex,
     PipelineSnapshot,
     SolidInvocationSnap,
     create_pipeline_snapshot_id,
     snap_from_config_type,
 )
-from dagster.core.snap.dep_snapshot import (
+from dagster._core.snap.dep_snapshot import (
     InputHandle,
     OutputHandleSnap,
     build_dep_structure_snapshot_from_icontains_solids,

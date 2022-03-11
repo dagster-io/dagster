@@ -4,9 +4,9 @@ from dagster_graphql.schema import create_schema
 from graphql import graphql
 
 from dagster import check
-from dagster.core.instance import DagsterInstance
-from dagster.core.workspace import WorkspaceProcessContext
-from dagster.core.workspace.load_target import PythonFileTarget
+from dagster._core.instance import DagsterInstance
+from dagster._core.workspace import WorkspaceProcessContext
+from dagster._core.workspace.load_target import PythonFileTarget
 
 
 def main_repo_location_name():

@@ -16,7 +16,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.core.test_utils import nesting_composite_pipeline
+from dagster._core.test_utils import nesting_composite_pipeline
 
 celery_mode_defs = [
     ModeDefinition(

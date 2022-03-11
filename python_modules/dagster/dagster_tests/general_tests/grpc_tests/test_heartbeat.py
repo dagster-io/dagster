@@ -1,7 +1,7 @@
 import sys
 import time
 
-from dagster.core.types.loadable_target_origin import LoadableTargetOrigin
+from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.grpc.server import GrpcServerProcess
 from dagster.utils import file_relative_path
 

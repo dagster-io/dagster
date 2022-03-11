@@ -1,9 +1,9 @@
 import pytest
 
 from dagster import Field, resource
-from dagster.core.definitions.resource_definition import IContainsGenerator
-from dagster.core.errors import DagsterResourceFunctionError
-from dagster.core.execution.build_resources import build_resources
+from dagster._core.definitions.resource_definition import IContainsGenerator
+from dagster._core.errors import DagsterResourceFunctionError
+from dagster._core.execution.build_resources import build_resources
 
 
 def test_basic_resource():

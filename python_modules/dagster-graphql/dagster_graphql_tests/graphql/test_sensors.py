@@ -8,14 +8,14 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
-from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.scheduler.instigation import (
+from dagster._core.definitions.run_request import InstigatorType
+from dagster._core.scheduler.instigation import (
     InstigatorState,
     InstigatorStatus,
     TickData,
     TickStatus,
 )
-from dagster.core.test_utils import create_test_daemon_workspace
+from dagster._core.test_utils import create_test_daemon_workspace
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.sensor import execute_sensor_iteration
 from dagster.utils import Counter, traced_counter

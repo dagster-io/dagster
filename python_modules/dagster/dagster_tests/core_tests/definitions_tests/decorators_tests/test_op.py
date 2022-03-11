@@ -25,9 +25,9 @@ from dagster import (
     op,
     solid,
 )
-from dagster.core.definitions.op_definition import OpDefinition
-from dagster.core.test_utils import instance_for_test
-from dagster.core.types.dagster_type import Int, String
+from dagster._core.definitions.op_definition import OpDefinition
+from dagster._core.test_utils import instance_for_test
+from dagster._core.types.dagster_type import Int, String
 
 
 def execute_op_in_graph(an_op, instance=None):

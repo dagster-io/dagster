@@ -4,7 +4,7 @@ from dagster_msteams.card import Card
 from dagster_msteams.client import TeamsClient
 
 from dagster import DefaultSensorStatus
-from dagster.core.definitions.run_status_sensor_definition import (
+from dagster._core.definitions.run_status_sensor_definition import (
     PipelineFailureSensorContext,
     pipeline_failure_sensor,
 )

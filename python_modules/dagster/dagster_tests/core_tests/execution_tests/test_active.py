@@ -1,12 +1,12 @@
 import pytest
 
 from dagster import job, op
-from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.events import DagsterEvent, DagsterEventType
-from dagster.core.execution.api import create_execution_plan
-from dagster.core.execution.plan.objects import StepSuccessData
-from dagster.core.execution.plan.outputs import StepOutputData, StepOutputHandle
-from dagster.core.execution.retries import RetryMode
+from dagster._core.errors import DagsterInvariantViolationError
+from dagster._core.events import DagsterEvent, DagsterEventType
+from dagster._core.execution.api import create_execution_plan
+from dagster._core.execution.plan.objects import StepSuccessData
+from dagster._core.execution.plan.outputs import StepOutputData, StepOutputHandle
+from dagster._core.execution.retries import RetryMode
 
 
 def define_foo_job():
