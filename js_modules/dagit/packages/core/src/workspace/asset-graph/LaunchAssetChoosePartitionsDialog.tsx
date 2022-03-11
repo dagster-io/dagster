@@ -16,7 +16,9 @@ import {useHistory} from 'react-router-dom';
 import * as yaml from 'yaml';
 
 import {AppContext} from '../../app/AppContext';
+import {showCustomAlert} from '../../app/CustomAlertProvider';
 import {SharedToaster} from '../../app/DomUtils';
+import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../../app/Util';
 import {PartitionHealthSummary, usePartitionHealthData} from '../../assets/PartitionHealthSummary';
 import {AssetKey} from '../../assets/types';
@@ -109,10 +111,15 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
     setLaunching(true);
 
     if (!partitionSet) {
-      SharedToaster.show({
-        message: 'No partition set was found on the job for this asset graph',
-        icon: 'error',
-        intent: 'danger',
+      const error =
+        partitionSetsData?.partitionSetsOrError.__typename === 'PythonError'
+          ? partitionSetsData.partitionSetsOrError
+          : {message: 'No details provided.'};
+
+      setLaunching(false);
+      showCustomAlert({
+        title: `Unable to find partition set on ${assetJobName}`,
+        body: <PythonErrorInfo error={error} />,
       });
       return;
     }
@@ -144,14 +151,25 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
 
       const {partition} = tagAndConfigData.partitionSetOrError;
 
-      let tags: {key: string; value: string}[] = [];
-      if (partition.tagsOrError.__typename !== 'PythonError') {
-        tags = [...partition.tagsOrError.results];
+      if (partition.tagsOrError.__typename === 'PythonError') {
+        setLaunching(false);
+        showCustomAlert({
+          title: 'Unable to load tags',
+          body: <PythonErrorInfo error={partition.tagsOrError} />,
+        });
+        return;
       }
-      let runConfigData = {};
-      if (partition.runConfigOrError.__typename !== 'PythonError') {
-        runConfigData = yaml.parse(partition.runConfigOrError.yaml || '') || {};
+      if (partition.runConfigOrError.__typename === 'PythonError') {
+        setLaunching(false);
+        showCustomAlert({
+          title: 'Unable to load tags',
+          body: <PythonErrorInfo error={partition.runConfigOrError} />,
+        });
+        return;
       }
+
+      const tags = [...partition.tagsOrError.results];
+      const runConfigData = yaml.parse(partition.runConfigOrError.yaml || '') || {};
 
       const launchResult = await client.mutate<
         LaunchPipelineExecution,
@@ -328,6 +346,9 @@ const ASSET_JOB_PARTITION_SETS_QUERY = gql`
       }
     ) {
       __typename
+      ... on PythonError {
+        message
+      }
       ... on PartitionSets {
         __typename
         results {
