@@ -38,6 +38,7 @@ import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {RunStatus} from '../types/globalTypes';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -204,7 +205,9 @@ export const InstanceOverviewPage = () => {
         (r) =>
           r.repository.name === repoAddress.name &&
           r.repositoryLocation.name === repoAddress.location,
-      ) && job.name.toLocaleLowerCase().includes(searchToLower);
+      ) &&
+      job.name.toLocaleLowerCase().includes(searchToLower) &&
+      job.name !== __ASSET_GROUP;
 
     const {failed, inProgress, queued, succeeded, neverRan} = bucketed;
     return {
