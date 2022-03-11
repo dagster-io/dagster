@@ -61,9 +61,6 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
           return null;
         }
         const showDaemonWarning = !instance.daemonHealth.daemonStatus.healthy;
-        const showLiveTicks =
-          instance.daemonHealth.daemonStatus.healthy &&
-          sensorOrError.sensorState.status === InstigationStatus.RUNNING;
 
         return (
           <Page>

@@ -9,13 +9,13 @@ import {
   DialogWIP,
   Group,
 } from '@dagster-io/ui';
-import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import * as React from 'react';
 
 import 'chartjs-adapter-date-fns';
 
+import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {SensorSelector} from '../types/globalTypes';
 
 export const EditCursorDialog: React.FC<{
