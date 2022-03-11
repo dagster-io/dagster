@@ -13,6 +13,7 @@ import {
 } from '@dagster-io/ui';
 import qs from 'qs';
 import * as React from 'react';
+import {useHistory} from 'react-router-dom';
 import * as yaml from 'yaml';
 
 import {AppContext} from '../app/AppContext';
@@ -42,8 +43,9 @@ export const RunActionsMenu: React.FC<{
   const {refetch} = React.useContext(RunsQueryRefetchContext);
   const [visibleDialog, setVisibleDialog] = React.useState<'none' | 'terminate' | 'delete'>('none');
 
-  const {basePath, rootServerURI} = React.useContext(AppContext);
+  const {rootServerURI} = React.useContext(AppContext);
   const {canTerminatePipelineExecution, canDeletePipelineRun} = usePermissions();
+  const history = useHistory();
 
   const [reexecute] = useMutation<LaunchPipelineReexecution>(LAUNCH_PIPELINE_REEXECUTION_MUTATION, {
     onCompleted: refetch,
@@ -144,7 +146,9 @@ export const RunActionsMenu: React.FC<{
                           repositoryName: repoMatch.match.repository.name,
                         }),
                       });
-                      handleLaunchResult(basePath, run.pipelineName, result, {});
+                      handleLaunchResult(run.pipelineName, result, history, {
+                        behavior: 'open',
+                      });
                     }
                   }}
                 />
