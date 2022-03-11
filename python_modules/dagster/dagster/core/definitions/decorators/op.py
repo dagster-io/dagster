@@ -49,7 +49,7 @@ class _Op:
         out: Optional[Union[Out, Dict[str, Out]]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
-        self.input_defs = check.opt_nullable_list_param(
+        self.input_defs = check.opt_nullable_sequence_param(
             input_defs, "input_defs", of_type=InputDefinition
         )
         self.output_defs = output_defs
