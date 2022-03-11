@@ -158,7 +158,7 @@ def build_job_partitions_from_assets(
 
             inputs_dict: Dict[str, Dict[str, Any]] = {}
             for in_asset_key, input_def in assets_def.input_defs_by_asset_key.items():
-                upstream_partitions_def = partitions_defs_by_asset_key[in_asset_key]
+                upstream_partitions_def = partitions_defs_by_asset_key.get(in_asset_key)
                 if assets_def.partitions_def is not None and upstream_partitions_def is not None:
                     upstream_partition_key_range = get_upstream_partitions_for_partition_range(
                         assets_def, upstream_partitions_def, in_asset_key, asset_partition_key_range
