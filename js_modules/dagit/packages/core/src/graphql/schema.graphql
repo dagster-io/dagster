@@ -211,36 +211,31 @@ interface MetadataEntry {
 }
 
 type AssetNode {
-  id: ID!
   assetKey: AssetKey!
-  description: String
-  opName: String
-  op: SolidDefinition
-  jobs: [Pipeline!]!
-  jobNames: [String!]!
-  repository: Repository!
-  dependencies: [AssetDependency!]!
-  dependedBy: [AssetDependency!]!
-  dependencyKeys: [AssetKey!]!
-  dependedByKeys: [AssetKey!]!
   assetMaterializations(
     partitions: [String]
     beforeTimestampMillis: String
     limit: Int
   ): [MaterializationEvent!]!
-  partitionKeys: [String!]!
-  partitionDefinition: String
+  dependedBy: [AssetDependency!]!
+  dependedByKeys: [AssetKey!]!
+  dependencies: [AssetDependency!]!
+  dependencyKeys: [AssetKey!]!
+  description: String
+  id: ID!
+  jobNames: [String!]!
+  jobs: [Pipeline!]!
   latestMaterializationByPartition(partitions: [String]): [MaterializationEvent]!
   materializationCountByPartition: [MaterializationCountByPartition!]!
+  op: SolidDefinition
+  opName: String
+  partitionKeys: [String!]!
+  partitionDefinition: String
+  repository: Repository!
 }
 
 type AssetKey {
   path: [String!]!
-}
-
-type AssetDependency {
-  inputName: String!
-  asset: AssetNode!
 }
 
 type MaterializationEvent implements MessageEvent & StepEvent & DisplayableEvent {
@@ -995,6 +990,11 @@ interface PipelineRunNotFoundError {
 type AssetLineageInfo {
   assetKey: AssetKey!
   partitions: [String!]!
+}
+
+type AssetDependency {
+  asset: AssetNode!
+  inputName: String!
 }
 
 type MaterializationCountByPartition {

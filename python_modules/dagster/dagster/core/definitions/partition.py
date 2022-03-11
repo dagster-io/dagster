@@ -392,8 +392,8 @@ class PartitionSetDefinition(Generic[T]):
             "Only one of `partition_fn` or `partitions_def` must be supplied.",
         )
         check.invariant(
-            not (pipeline_name and job_name),
-            "Only one of `job_name` and `pipeline_name` must be supplied.",
+            (pipeline_name or job_name) and not (pipeline_name and job_name),
+            "Exactly one one of `job_name` and `pipeline_name` must be supplied.",
         )
 
         _wrap_partition_fn = None
@@ -459,6 +459,11 @@ class PartitionSetDefinition(Generic[T]):
     @property
     def job_name(self):
         return self._job_name
+
+    @property
+    def pipeline_or_job_name(self) -> str:
+        # one is guaranteed to be set
+        return cast(str, self._pipeline_name or self._job_name)
 
     @property
     def solid_selection(self):

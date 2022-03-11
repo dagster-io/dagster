@@ -21,6 +21,7 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.input import In
 from dagster.core.definitions.output import Out
 from dagster.core.definitions.partition import PartitionsDefinition
+from dagster.core.definitions.utils import NoValueSentinel
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterType
 from dagster.utils.backcompat import experimental_decorator
@@ -184,7 +185,7 @@ class _Asset:
             asset_key=out_asset_key,
             metadata=self.metadata or {},
             io_manager_key=self.io_manager_key,
-            dagster_type=self.dagster_type,
+            dagster_type=self.dagster_type if self.dagster_type else NoValueSentinel,
             asset_partitions_def=self.partitions_def,
             asset_partitions=partition_fn,
         )

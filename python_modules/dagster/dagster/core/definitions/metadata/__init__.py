@@ -1,7 +1,19 @@
 import functools
 import os
 import re
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidMetadata
@@ -27,6 +39,9 @@ RawMetadataValue = Union[
     str,
 ]
 
+MetadataMapping = Mapping[str, "MetadataValue"]
+MetadataUserInput = Mapping[str, RawMetadataValue]
+
 
 def last_file_comp(path: str) -> str:
     return os.path.basename(os.path.normpath(path))
@@ -38,8 +53,8 @@ def last_file_comp(path: str) -> str:
 
 
 def normalize_metadata(
-    metadata: Dict[str, RawMetadataValue],
-    metadata_entries: List[Union["MetadataEntry", "PartitionMetadataEntry"]],
+    metadata: Mapping[str, RawMetadataValue],
+    metadata_entries: Sequence[Union["MetadataEntry", "PartitionMetadataEntry"]],
     allow_invalid: bool = False,
 ) -> List[Union["MetadataEntry", "PartitionMetadataEntry"]]:
     if metadata and metadata_entries:

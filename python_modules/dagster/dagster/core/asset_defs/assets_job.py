@@ -1,5 +1,5 @@
 import itertools
-from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast
+from typing import AbstractSet, Any, Dict, Mapping, Optional, Sequence, Tuple, Union, cast
 
 from dagster import check
 from dagster.core.definitions.config import ConfigMapping
@@ -34,9 +34,9 @@ from .source_asset import SourceAsset
 @experimental
 def build_assets_job(
     name: str,
-    assets: List[AssetsDefinition],
+    assets: Sequence[AssetsDefinition],
     source_assets: Optional[Sequence[Union[SourceAsset, AssetsDefinition]]] = None,
-    resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
+    resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
     description: Optional[str] = None,
     config: Optional[Union[ConfigMapping, Dict[str, Any], PartitionedConfig]] = None,
     tags: Optional[Dict[str, Any]] = None,
@@ -76,8 +76,10 @@ def build_assets_job(
         JobDefinition: A job that materializes the given assets.
     """
     check.str_param(name, "name")
-    check.list_param(assets, "assets", of_type=AssetsDefinition)
-    check.opt_list_param(source_assets, "source_assets", of_type=(SourceAsset, AssetsDefinition))
+    check.sequence_param(assets, "assets", of_type=AssetsDefinition)
+    check.opt_sequence_param(
+        source_assets, "source_assets", of_type=(SourceAsset, AssetsDefinition)
+    )
     check.opt_str_param(description, "description")
     source_assets_by_key = build_source_assets_by_key(source_assets)
 
@@ -201,7 +203,7 @@ def build_source_assets_by_key(
 
 
 def build_op_deps(
-    multi_asset_defs: List[AssetsDefinition], source_paths: AbstractSet[AssetKey]
+    multi_asset_defs: Sequence[AssetsDefinition], source_paths: AbstractSet[AssetKey]
 ) -> Dict[Union[str, NodeInvocation], Dict[str, IDependencyDefinition]]:
     op_outputs_by_asset: Dict[AssetKey, Tuple[OpDefinition, str]] = {}
     for multi_asset_def in multi_asset_defs:
@@ -251,7 +253,7 @@ def build_root_manager(
             name=source_asset_key.path[-1],
             step_key="none",
             solid_def=_op,
-            metadata=source_asset.metadata,
+            metadata=cast(Dict[str, Any], source_asset.metadata),
         )
         input_context_with_upstream = build_input_context(
             name=input_context.name,
