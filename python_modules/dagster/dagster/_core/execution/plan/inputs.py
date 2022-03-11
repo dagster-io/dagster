@@ -2,7 +2,7 @@ import hashlib
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, NamedTuple, Optional, Set, Union, cast
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions import InputDefinition, NodeHandle, PipelineDefinition
 from dagster._core.definitions.events import AssetLineageInfo
 from dagster._core.errors import (

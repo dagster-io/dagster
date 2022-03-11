@@ -2,7 +2,7 @@ import sys
 
 import pytest
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.code_pointer import ModuleCodePointer
 from dagster._core.definitions.reconstructable import ReconstructableRepository
 from dagster._core.host_representation.origin import (

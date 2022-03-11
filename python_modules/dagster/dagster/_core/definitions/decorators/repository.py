@@ -1,7 +1,7 @@
 from functools import update_wrapper
 from typing import Any, Callable, Optional, Union, overload
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.errors import DagsterInvalidDefinitionError
 
 from ..graph_definition import GraphDefinition

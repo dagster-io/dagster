@@ -1,7 +1,7 @@
 """System-provided config objects and constructors."""
 from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Type, Union, cast
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.configurable import ConfigurableDefinition
 from dagster._core.definitions.executor_definition import (
     ExecutorDefinition,

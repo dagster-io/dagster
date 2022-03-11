@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 
 from dateutil.parser import isoparse
 
-from dagster import check, usable_as_dagster_type
+from dagster import _check as check, usable_as_dagster_type
 
 from ..types import DbtOutput
 

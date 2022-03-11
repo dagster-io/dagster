@@ -10,7 +10,7 @@ from contextlib import ExitStack, contextmanager
 import pendulum
 import yaml
 
-from dagster import ModeDefinition, Shape, check, composite_solid, fs_io_manager, pipeline, solid
+from dagster import ModeDefinition, Shape, _check as check, composite_solid, fs_io_manager, pipeline, solid
 from dagster._config import Field
 from dagster._config.config_type import Array
 from dagster._core.host_representation.origin import (

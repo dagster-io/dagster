@@ -1,7 +1,7 @@
 import os
 from typing import Dict, cast
 
-from dagster import check
+from dagster import _check as check
 from dagster._config import Field, ScalarUnion, Selector
 from dagster._config.evaluate_value_result import EvaluateValueResult
 from dagster._config.source import IntSource, StringSource

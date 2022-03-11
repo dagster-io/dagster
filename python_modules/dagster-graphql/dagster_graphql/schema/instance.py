@@ -2,7 +2,7 @@ import sys
 
 import graphene
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.instance import DagsterInstance, is_dagit_telemetry_enabled
 from dagster._core.launcher.base import RunLauncher
 from dagster._daemon.controller import get_daemon_statuses

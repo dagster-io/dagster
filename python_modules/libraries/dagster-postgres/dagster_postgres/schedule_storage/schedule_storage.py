@@ -1,6 +1,6 @@
 import sqlalchemy as db
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
 from dagster._core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
 from dagster._serdes import ConfigurableClass, ConfigurableClassData

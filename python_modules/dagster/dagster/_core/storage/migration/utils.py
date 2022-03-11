@@ -4,7 +4,7 @@ import sqlalchemy as db
 from alembic import op
 from sqlalchemy.engine import reflection
 
-from dagster import check
+from dagster import _check as check
 
 
 def get_inspector():

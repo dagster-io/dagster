@@ -3,7 +3,7 @@ import subprocess
 from contextlib import contextmanager
 from tempfile import TemporaryDirectory
 
-from dagster import check, file_relative_path
+from dagster import _check as check, file_relative_path
 from dagster._core.test_utils import instance_for_test
 from dagster._utils import merge_dicts
 

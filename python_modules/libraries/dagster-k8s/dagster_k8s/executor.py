@@ -1,7 +1,7 @@
 import kubernetes
 from dagster_k8s.launcher import K8sRunLauncher
 
-from dagster import Field, StringSource, check, executor
+from dagster import Field, StringSource, _check as check, executor
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry

@@ -1,6 +1,6 @@
 import pytest
 
-from dagster.check import CheckError
+from dagster._check import CheckError
 from dagster._core.definitions.dependency import NodeHandle
 from dagster.seven import json
 

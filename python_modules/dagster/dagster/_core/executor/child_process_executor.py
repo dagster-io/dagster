@@ -7,7 +7,7 @@ import sys
 from abc import ABC, abstractmethod
 from typing import NamedTuple
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.errors import DagsterExecutionInterruptedError
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster._utils.interrupts import capture_interrupts

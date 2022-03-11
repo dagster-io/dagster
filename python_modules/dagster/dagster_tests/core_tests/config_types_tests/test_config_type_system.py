@@ -29,7 +29,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.check import ParameterCheckError
+from dagster._check import ParameterCheckError
 from dagster._config.errors import DagsterEvaluationErrorReason
 from dagster._config.field_utils import Map, Shape, convert_potential_field
 from dagster._config.validate import process_config, validate_config

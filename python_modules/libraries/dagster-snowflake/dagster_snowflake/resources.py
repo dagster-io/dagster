@@ -2,7 +2,7 @@ import sys
 import warnings
 from contextlib import closing, contextmanager
 
-from dagster import check, resource
+from dagster import _check as check, resource
 
 from .configs import define_snowflake_config
 

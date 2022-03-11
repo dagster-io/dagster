@@ -33,7 +33,7 @@ from dagster import (
     resource,
     solid,
 )
-from dagster.check import CheckError
+from dagster._check import CheckError
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.time_window_partitions import DailyPartitionsDefinition
 from dagster._core.execution.api import create_execution_plan, execute_plan

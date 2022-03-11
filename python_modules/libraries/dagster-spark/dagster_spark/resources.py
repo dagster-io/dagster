@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-from dagster import check, resource
+from dagster import _check as check, resource
 from dagster._core.log_manager import DagsterLogManager
 
 from .types import SparkOpError

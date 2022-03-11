@@ -9,7 +9,7 @@ from dagster_graphql.schema.solids import (
     build_solid_definition,
 )
 
-from dagster import AssetKey, check
+from dagster import AssetKey, _check as check
 from dagster._core.host_representation import ExternalRepository, RepositoryLocation
 from dagster._core.host_representation.external_data import (
     ExternalAssetNode,

@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.errors import (
     DagsterInvalidDefinitionError,
     DagsterInvalidInvocationError,

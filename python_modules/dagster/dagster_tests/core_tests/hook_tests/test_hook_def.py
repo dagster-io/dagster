@@ -8,7 +8,7 @@ from dagster import (
     NodeInvocation,
     PipelineDefinition,
     build_hook_context,
-    check,
+    _check as check,
     execute_pipeline,
     graph,
     op,

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, List, Mapping, Optional
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.host_representation.origin import ExternalPipelineOrigin

@@ -1,7 +1,7 @@
 # pylint disable is for bug: https://github.com/PyCQA/pylint/issues/3299
 from typing import Any, Generator, Generic, List, Optional, TypeVar  # pylint: disable=unused-import
 
-from dagster import check
+from dagster import _check as check
 
 from .errors import EvaluationError
 

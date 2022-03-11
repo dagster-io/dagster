@@ -1,4 +1,4 @@
-from dagster import check
+from dagster import _check as check
 from dagster._core.errors import DagsterInvariantViolationError, DagsterRunNotFoundError
 from dagster._core.execution.context.system import IPlanContext
 from dagster._core.execution.plan.plan import ExecutionPlan

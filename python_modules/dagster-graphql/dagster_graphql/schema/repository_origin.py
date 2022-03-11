@@ -1,6 +1,6 @@
 import graphene
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.host_representation import ExternalRepositoryOrigin
 
 from .util import non_null_list

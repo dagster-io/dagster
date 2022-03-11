@@ -20,7 +20,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions import ExecutorDefinition, ModeDefinition, PipelineDefinition
 from dagster._core.definitions.executor_definition import check_cross_process_constraints
 from dagster._core.definitions.pipeline_base import IPipeline

@@ -11,7 +11,7 @@ from dagster import (
     HourlyPartitionsDefinition,
     StaticPartitionsDefinition,
 )
-from dagster.check import CheckError
+from dagster._check import CheckError
 from dagster._core.definitions.partition import (
     Partition,
     ScheduleTimeBasedPartitionsDefinition,

@@ -28,7 +28,7 @@ from typing import (
 
 import yaml
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import (

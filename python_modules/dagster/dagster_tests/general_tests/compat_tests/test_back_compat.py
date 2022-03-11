@@ -14,7 +14,7 @@ from dagster import (
     AssetKey,
     AssetMaterialization,
     Output,
-    check,
+    _check as check,
     execute_pipeline,
     file_relative_path,
     job,

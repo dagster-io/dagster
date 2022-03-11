@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import pkg_resources
 import yaml
 
-from dagster import check, seven
+from dagster import _check as check, seven
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._utils import frozentags
 from dagster._utils.yaml_utils import merge_yaml_strings, merge_yamls

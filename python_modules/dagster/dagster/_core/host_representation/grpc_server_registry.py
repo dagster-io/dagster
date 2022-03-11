@@ -7,7 +7,7 @@ from typing import Generic, NamedTuple, Optional, TypeVar, Union, cast
 
 import pendulum
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.origin import (
     ManagedGrpcPythonEnvRepositoryLocationOrigin,

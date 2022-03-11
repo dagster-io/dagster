@@ -1,6 +1,6 @@
 import graphene
 
-from dagster import check
+from dagster import _check as check
 
 
 class GraphenePermission(graphene.ObjectType):

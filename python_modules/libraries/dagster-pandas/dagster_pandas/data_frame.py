@@ -14,11 +14,11 @@ from dagster import (
     MetadataEntry,
     StringSource,
     TypeCheck,
-    check,
+    _check as check,
     dagster_type_loader,
     dagster_type_materializer,
 )
-from dagster.check import CheckError
+from dagster._check import CheckError
 from dagster._config.field_utils import Selector
 from dagster._core.definitions.metadata import normalize_metadata
 from dagster._core.errors import DagsterInvalidMetadata

@@ -1,6 +1,6 @@
 from typing import Any, Dict, Set
 
-from dagster import PipelineDefinition, PipelineRun, SolidDefinition, check
+from dagster import PipelineDefinition, PipelineRun, SolidDefinition, _check as check
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.execution.context.compute import AbstractComputeExecutionContext
 from dagster._core.execution.context.system import PlanExecutionContext, StepExecutionContext

@@ -3,7 +3,7 @@ from typing import List, Optional
 from dagster_fivetran.resources import DEFAULT_POLL_INTERVAL
 from dagster_fivetran.utils import generate_materializations
 
-from dagster import AssetKey, AssetsDefinition, Out, Output, check, multi_asset
+from dagster import AssetKey, AssetsDefinition, Out, Output, _check as check, multi_asset
 from dagster._utils.backcompat import experimental
 
 

@@ -20,7 +20,7 @@ from dagster import (
     Output,
     OutputDefinition,
     String,
-    check,
+    _check as check,
     composite_solid,
     make_python_type_usable_as_dagster_type,
     solid,

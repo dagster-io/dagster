@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._utils.error import SerializableErrorInfo
 

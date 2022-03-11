@@ -4,7 +4,7 @@ from typing import List
 import docker
 from dagster_docker.utils import DOCKER_CONFIG_SCHEMA, validate_docker_config, validate_docker_image
 
-from dagster import check, executor
+from dagster import _check as check, executor
 from dagster._core.definitions.executor_definition import multiple_process_executor_requirements
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData, MetadataEntry
 from dagster._core.execution.plan.objects import StepFailureData

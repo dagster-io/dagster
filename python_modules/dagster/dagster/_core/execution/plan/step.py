@@ -14,7 +14,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.utils import validate_tags
 from dagster._serdes.serdes import DefaultEnumSerializer, whitelist_for_serdes
 from dagster._utils import merge_dicts

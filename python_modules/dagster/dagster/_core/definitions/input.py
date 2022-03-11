@@ -1,7 +1,7 @@
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Mapping, NamedTuple, Optional, Set, Type, Union
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataEntry, normalize_metadata
 from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError

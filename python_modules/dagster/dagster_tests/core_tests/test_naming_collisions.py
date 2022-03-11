@@ -3,7 +3,7 @@ from dagster import (
     Output,
     OutputDefinition,
     String,
-    check,
+    _check as check,
     execute_pipeline,
     pipeline,
     solid,

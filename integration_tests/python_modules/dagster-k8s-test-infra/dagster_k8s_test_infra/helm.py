@@ -13,7 +13,7 @@ import requests
 import yaml
 from dagster_k8s.utils import wait_for_pod
 
-from dagster import check
+from dagster import _check as check
 from dagster._utils import find_free_port, git_repository_root, merge_dicts
 
 from .integration_utils import IS_BUILDKITE, check_output, get_test_namespace, image_pull_policy

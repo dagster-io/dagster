@@ -5,7 +5,7 @@ import pendulum
 import pytz
 from croniter import croniter
 
-from dagster import check
+from dagster import _check as check
 from dagster.seven.compat.pendulum import to_timezone
 
 

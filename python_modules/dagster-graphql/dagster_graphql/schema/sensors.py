@@ -2,7 +2,7 @@ import graphene
 from dagster_graphql.implementation.loader import RepositoryScopedBatchLoader
 from dagster_graphql.implementation.utils import capture_error, check_permission
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.host_representation import ExternalSensor, ExternalTargetData, SensorSelector
 from dagster._core.scheduler.instigation import InstigatorState
 from dagster._core.workspace.permissions import Permissions

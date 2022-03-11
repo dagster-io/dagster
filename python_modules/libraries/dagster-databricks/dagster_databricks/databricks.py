@@ -5,7 +5,7 @@ import requests.exceptions
 from databricks_api import DatabricksAPI
 
 import dagster
-from dagster import check
+from dagster import _check as check
 
 from .types import (
     DATABRICKS_RUN_TERMINATED_STATES,

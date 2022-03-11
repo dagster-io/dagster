@@ -4,7 +4,7 @@ from typing import Iterable, Mapping, Optional, Sequence, cast
 
 import sqlalchemy as db
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.scheduler.instigation import (

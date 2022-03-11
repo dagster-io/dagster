@@ -1,6 +1,6 @@
 from typing import List, NamedTuple, Optional
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.code_pointer import CodePointer
 from dagster._serdes import create_snapshot_id, whitelist_for_serdes
 from dagster._utils import frozenlist

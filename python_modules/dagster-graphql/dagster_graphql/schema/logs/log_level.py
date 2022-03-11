@@ -2,7 +2,7 @@ import logging
 
 import graphene
 
-from dagster import check
+from dagster import _check as check
 
 
 class GrapheneLogLevel(graphene.Enum):

@@ -3,7 +3,7 @@ from collections import namedtuple
 import boto3
 from botocore.exceptions import ClientError
 
-from dagster import Array, Field, Noneable, StringSource, check
+from dagster import Array, Field, Noneable, StringSource, _check as check
 from dagster._core.events import EngineEventData, MetadataEntry
 from dagster._core.launcher.base import LaunchRunContext, RunLauncher
 from dagster._grpc.types import ExecuteRunArgs

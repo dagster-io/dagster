@@ -1,4 +1,4 @@
-from dagster import InputDefinition, Output, OutputDefinition, SolidDefinition, check, lambda_solid
+from dagster import InputDefinition, Output, OutputDefinition, SolidDefinition, _check as check, lambda_solid
 
 
 def _compute_fn(context, inputs):

@@ -3,7 +3,7 @@ from collections import namedtuple
 
 from graphql.execution.base import ResolveInfo
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.host_representation import GraphSelector, PipelineSelector
 from dagster._utils.error import serializable_error_info_from_exc_info
 

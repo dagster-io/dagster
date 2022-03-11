@@ -3,7 +3,7 @@ from typing import Dict, List, NamedTuple, Optional
 import pkg_resources
 import yaml
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.utils import config_from_files, config_from_yaml_strings
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._utils.merger import deep_merge_dicts

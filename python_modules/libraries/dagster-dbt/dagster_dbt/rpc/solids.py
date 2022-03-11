@@ -20,7 +20,7 @@ from dagster import (
     Permissive,
     RetryRequested,
     String,
-    check,
+    _check as check,
     solid,
 )
 from dagster._core.execution.context.compute import SolidExecutionContext

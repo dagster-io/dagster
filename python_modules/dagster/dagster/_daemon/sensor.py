@@ -5,7 +5,7 @@ from typing import List, NamedTuple, Optional, cast
 
 import pendulum
 
-from dagster import check, seven
+from dagster import _check as check, seven
 from dagster._core.definitions.run_request import InstigatorType
 from dagster._core.definitions.sensor_definition import DefaultSensorStatus, SensorExecutionData
 from dagster._core.errors import DagsterError

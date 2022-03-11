@@ -2,7 +2,7 @@ import os
 
 import click
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.instance import DagsterInstance
 
 

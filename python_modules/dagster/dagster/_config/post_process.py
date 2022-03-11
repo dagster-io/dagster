@@ -1,7 +1,7 @@
 import sys
 from typing import Any, Dict, List, Optional, cast
 
-from dagster import check
+from dagster import _check as check
 from dagster._utils import ensure_single_item, frozendict, frozenlist
 from dagster._utils.error import serializable_error_info_from_exc_info
 

@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from typing import Any, List, Optional
 
-from dagster import check
+from dagster import _check as check
 from dagster._config.field import Field
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.metadata import MetadataEntry

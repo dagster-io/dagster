@@ -14,7 +14,7 @@ from dagster import (
     resource,
     solid,
 )
-from dagster.check import CheckError
+from dagster._check import CheckError
 from dagster._core.definitions.decorators.graph import graph
 from dagster._core.definitions.output import GraphOut
 

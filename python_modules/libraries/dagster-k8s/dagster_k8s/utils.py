@@ -1,6 +1,6 @@
 import re
 
-from dagster import check, seven
+from dagster import _check as check, seven
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
 
 from .client import (

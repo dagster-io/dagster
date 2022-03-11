@@ -59,7 +59,7 @@ from dagster import (
     TableConstraints,
     TableRecord,
     TableSchema,
-    check,
+    _check as check,
     composite_solid,
     dagster_type_loader,
     dagster_type_materializer,

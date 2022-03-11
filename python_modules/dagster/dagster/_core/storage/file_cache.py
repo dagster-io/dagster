@@ -3,7 +3,7 @@ import os
 import shutil
 from abc import ABC, abstractmethod
 
-from dagster import check
+from dagster import _check as check
 from dagster._config import Field
 from dagster._core.definitions import resource
 from dagster._utils import mkdir_p

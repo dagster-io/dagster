@@ -1,4 +1,4 @@
-from dagster import check
+from dagster import _check as check
 from dagster._core.execution.api import execute_run
 from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._serdes import ConfigurableClass

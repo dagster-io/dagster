@@ -7,7 +7,7 @@ from typing import Union
 
 import toposort as toposort_
 
-from dagster import check
+from dagster import _check as check
 from dagster._utils import frozendict
 from dagster.version import __version__
 

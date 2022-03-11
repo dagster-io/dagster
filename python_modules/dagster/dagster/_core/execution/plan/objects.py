@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import TYPE_CHECKING, List, NamedTuple, Optional
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.metadata import MetadataEntry
 from dagster._serdes import whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info

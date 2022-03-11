@@ -13,7 +13,7 @@ from dagster_k8s.job import UserDefinedDagsterK8sConfig
 from dagster_test.test_project import get_test_project_workspace_and_external_pipeline
 
 from dagster import pipeline, reconstructable
-from dagster.check import CheckError
+from dagster._check import CheckError
 from dagster._core.host_representation import RepositoryHandle
 from dagster._core.launcher import LaunchRunContext
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG

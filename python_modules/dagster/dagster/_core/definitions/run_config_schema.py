@@ -1,6 +1,6 @@
 from typing import Dict, Iterable, NamedTuple, Optional
 
-from dagster import check
+from dagster import _check as check
 from dagster._config.config_type import ConfigType
 
 from .config import ConfigMapping

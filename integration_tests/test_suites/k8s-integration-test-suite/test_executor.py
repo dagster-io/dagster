@@ -29,7 +29,7 @@ from dagster_test.test_project import (
 )
 from dagster_test.test_project.test_pipelines.repo import define_memoization_pipeline
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.events import DagsterEventType
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG

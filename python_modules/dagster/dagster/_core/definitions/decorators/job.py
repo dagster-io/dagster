@@ -1,7 +1,7 @@
 from functools import update_wrapper
 from typing import TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Optional, Union, overload
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.decorator_utils import format_docstring_for_description
 
 from ..config import ConfigMapping

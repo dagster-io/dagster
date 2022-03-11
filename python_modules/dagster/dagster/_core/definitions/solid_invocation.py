@@ -1,7 +1,7 @@
 import inspect
 from typing import TYPE_CHECKING, Any, Optional, Union, cast
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.errors import (
     DagsterInvalidInvocationError,
     DagsterInvariantViolationError,

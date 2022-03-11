@@ -1,4 +1,4 @@
-from dagster import check
+from dagster import _check as check
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from .compute_log_manager import MAX_BYTES_FILE_READ, ComputeLogFileData, ComputeLogManager

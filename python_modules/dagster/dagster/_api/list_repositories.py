@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.types import ListRepositoriesResponse

@@ -1,4 +1,4 @@
-from dagster import check
+from dagster import _check as check
 
 from .dagster_type import PythonObjectDagsterType, make_python_type_usable_as_dagster_type
 

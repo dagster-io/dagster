@@ -2,7 +2,7 @@ import inspect
 from contextlib import contextmanager
 from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidInvocationError
 
 from ..._config import Shape

@@ -1,6 +1,6 @@
 from dagster_k8s import utils
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.plan.objects import StepSuccessData
 

@@ -3,7 +3,7 @@ from typing import Callable, Union
 
 import pendulum
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.partition import Partition, PartitionSetDefinition
 from dagster._core.definitions.run_request import SkipReason
 from dagster._core.definitions.schedule_definition import ScheduleEvaluationContext

@@ -2,7 +2,7 @@ from abc import abstractmethod
 from functools import update_wrapper
 from typing import Optional, Set
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.definition_config_schema import (
     convert_user_facing_definition_config_schema,

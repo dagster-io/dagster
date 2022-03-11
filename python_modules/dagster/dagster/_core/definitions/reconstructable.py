@@ -4,7 +4,7 @@ import sys
 from functools import lru_cache
 from typing import TYPE_CHECKING, FrozenSet, List, NamedTuple, Optional, Union, overload
 
-from dagster import check, seven
+from dagster import _check as check, seven
 from dagster._core.code_pointer import (
     CodePointer,
     CustomPointer,

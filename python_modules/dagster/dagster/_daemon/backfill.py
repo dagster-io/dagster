@@ -2,7 +2,7 @@ import os
 import sys
 import time
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.errors import DagsterBackfillFailedError
 from dagster._core.execution.backfill import (
     BulkActionStatus,

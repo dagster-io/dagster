@@ -4,7 +4,7 @@ from typing import Callable, NamedTuple, Optional
 
 import yaml
 
-from dagster import check
+from dagster import _check as check
 
 from .ecr import ecr_image, get_aws_account_id, get_aws_region
 from .utils import (

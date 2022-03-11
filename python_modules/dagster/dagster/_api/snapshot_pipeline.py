@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, List, Optional
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._core.host_representation.external_data import ExternalPipelineSubsetResult
 from dagster._core.host_representation.origin import ExternalPipelineOrigin

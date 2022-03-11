@@ -1,4 +1,4 @@
-from dagster import Field, Selector, StringSource, check, resource
+from dagster import Field, Selector, StringSource, _check as check, resource
 from dagster._core.storage.file_cache import FileCache
 
 from .file_manager import ADLS2FileHandle

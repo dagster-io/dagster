@@ -3,7 +3,7 @@ import sys
 from collections import OrderedDict
 from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Union, cast
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.code_pointer import rebase_file
 from dagster._core.host_representation.origin import (
     GrpcServerRepositoryLocationOrigin,

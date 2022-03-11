@@ -15,7 +15,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._serdes.serdes import (

@@ -1,6 +1,6 @@
 from typing import List, NamedTuple
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.events.log import EventLogEntry
 from dagster._core.snap import ExecutionPlanSnapshot, PipelineSnapshot
 from dagster._core.storage.pipeline_run import PipelineRun

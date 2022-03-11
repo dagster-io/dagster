@@ -1,6 +1,6 @@
 from typing import NamedTuple, Optional
 
-from dagster import check
+from dagster import _check as check
 from dagster._config.evaluate_value_result import EvaluateValueResult
 from dagster._config.validate import process_config
 from dagster._core.definitions.dependency import NodeHandle

@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Dict
 
-from dagster import check
+from dagster import _check as check
 
 from .config_type import ConfigType
 from .field import Field

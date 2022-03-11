@@ -1,4 +1,4 @@
-from dagster import check
+from dagster import _check as check
 from dagster._core.host_representation import RepositoryLocation
 from dagster._core.host_representation.origin import ExternalPipelineOrigin
 from dagster._core.host_representation.selector import PipelineSelector

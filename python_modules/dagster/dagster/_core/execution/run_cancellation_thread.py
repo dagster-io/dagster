@@ -1,7 +1,7 @@
 import threading
 from typing import Tuple, cast
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster._utils import send_interrupt

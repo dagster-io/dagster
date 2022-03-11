@@ -10,7 +10,7 @@ from dagster import (
     Output,
     String,
     build_op_context,
-    check,
+    _check as check,
 )
 from dagster._core.asset_defs import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
 from dagster._core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY

@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import Dict, List, NamedTuple, Union
 
-from dagster import check
+from dagster import _check as check
 from dagster._utils.error import SerializableErrorInfo
 
 from .config_type import ConfigTypeKind

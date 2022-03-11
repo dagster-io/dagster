@@ -17,7 +17,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.check import CheckError
+from dagster._check import CheckError
 from dagster._core.definitions.metadata import (
     DagsterInvalidMetadata,
     MetadataEntry,

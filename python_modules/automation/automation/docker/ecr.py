@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-from dagster import check
+from dagster import _check as check
 
 # We default to using the ECR region here
 DEFAULT_AWS_ECR_REGION = "us-west-2"

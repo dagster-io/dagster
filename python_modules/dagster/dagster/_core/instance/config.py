@@ -1,7 +1,7 @@
 import os
 import warnings
 
-from dagster import Array, Bool, check
+from dagster import Array, Bool, _check as check
 from dagster._config import Field, Permissive
 from dagster._config.validate import validate_config
 from dagster._core.errors import DagsterInvalidConfigError

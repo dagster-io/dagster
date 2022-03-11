@@ -14,7 +14,7 @@ from typing import (
     Union,
 )
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry

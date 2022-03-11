@@ -4,7 +4,7 @@ from dagster import (
     Noneable,
     Permissive,
     StringSource,
-    check,
+    _check as check,
     executor,
     multiple_process_executor_requirements,
 )

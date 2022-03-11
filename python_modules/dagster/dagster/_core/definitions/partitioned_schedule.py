@@ -1,7 +1,7 @@
 from datetime import time
 from typing import Optional, Union, cast
 
-from dagster import check
+from dagster import _check as check
 
 from .job_definition import JobDefinition
 from .partition import (

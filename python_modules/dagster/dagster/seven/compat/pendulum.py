@@ -45,7 +45,7 @@ PendulumDateTime = (
 # Workaround for issues with .in_tz() in pendulum:
 # https://github.com/sdispater/pendulum/issues/535
 def to_timezone(dt, tz):
-    from dagster import check
+    from dagster import _check as check
 
     check.inst_param(dt, "dt", PendulumDateTime)
     return pendulum.from_timestamp(dt.timestamp(), tz=tz)

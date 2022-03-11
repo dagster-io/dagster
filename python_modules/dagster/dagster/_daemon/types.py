@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, NamedTuple, Optional, cast
 
-from dagster import check
+from dagster import _check as check
 from dagster._serdes import DefaultNamedTupleSerializer, unpack_inner_value, whitelist_for_serdes
 from dagster._utils.error import SerializableErrorInfo
 

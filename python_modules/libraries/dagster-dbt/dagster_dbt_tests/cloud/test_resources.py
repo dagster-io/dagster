@@ -3,7 +3,7 @@ import responses
 from dagster_dbt import dbt_cloud_resource
 
 from dagster import Failure, build_init_resource_context
-from dagster.check import CheckError
+from dagster._check import CheckError
 
 from .utils import (
     SAMPLE_ACCOUNT_ID,

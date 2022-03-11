@@ -1,7 +1,7 @@
 import yaml
 from graphql.execution.base import ResolveInfo
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.host_representation import (
     ExternalPartitionSet,
     RepositoryHandle,

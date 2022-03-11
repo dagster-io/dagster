@@ -1,6 +1,6 @@
 from typing import Any, Dict, NamedTuple, Optional, Union
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.events import DagsterEvent
 from dagster._core.utils import coerce_valid_log_level

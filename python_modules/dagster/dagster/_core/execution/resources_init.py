@@ -3,7 +3,7 @@ from collections import deque
 from contextlib import ContextDecorator
 from typing import AbstractSet, Any, Callable, Deque, Dict, Optional, cast
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.decorator_utils import get_function_params
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._core.definitions.resource_definition import (

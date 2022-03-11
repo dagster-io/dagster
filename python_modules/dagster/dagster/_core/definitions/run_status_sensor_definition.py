@@ -4,7 +4,7 @@ from typing import Any, Callable, List, NamedTuple, Optional, Union, cast
 
 import pendulum
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions import GraphDefinition, PipelineDefinition
 from dagster._core.definitions.sensor_definition import (
     DefaultSensorStatus,

@@ -2,7 +2,7 @@ import os
 import pickle
 from abc import abstractmethod
 
-from dagster import check
+from dagster import _check as check
 from dagster._config import Field
 from dagster._config.source import StringSource
 from dagster._core.execution.context.output import OutputContext

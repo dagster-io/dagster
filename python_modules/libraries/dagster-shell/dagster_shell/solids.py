@@ -10,7 +10,7 @@ from dagster import (
     Nothing,
     OutputDefinition,
     Permissive,
-    check,
+    _check as check,
     op,
     solid,
 )

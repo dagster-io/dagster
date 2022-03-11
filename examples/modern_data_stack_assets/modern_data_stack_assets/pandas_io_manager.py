@@ -1,6 +1,6 @@
 import pandas as pd
 
-from dagster import IOManager, check, io_manager
+from dagster import IOManager, _check as check, io_manager
 
 
 class PandasIOManager(IOManager):

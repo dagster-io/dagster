@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, AbstractSet, Any, Callable, NamedTuple, Optional
 
-from dagster import check
+from dagster import _check as check
 
 from ..decorator_utils import get_function_params
 from ..errors import DagsterInvalidInvocationError

@@ -3,7 +3,7 @@ from typing import Dict, List
 
 from graphql.execution.base import ResolveInfo
 
-from dagster import PipelineDefinition, PipelineRunStatus, check
+from dagster import PipelineDefinition, PipelineRunStatus, _check as check
 from dagster._config.validate import validate_config
 from dagster._core.definitions import create_run_config_schema
 from dagster._core.errors import DagsterRunNotFoundError

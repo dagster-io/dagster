@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.executor_definition import ExecutorDefinition, default_executors
 from dagster._loggers import default_loggers
 from dagster._utils.merger import merge_dicts

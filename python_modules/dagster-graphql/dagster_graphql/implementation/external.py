@@ -2,7 +2,7 @@ import sys
 
 from graphql.execution.base import ResolveInfo
 
-from dagster import check
+from dagster import _check as check
 from dagster._config.validate import validate_config_from_snap
 from dagster._core.host_representation import ExternalPipeline, PipelineSelector, RepositorySelector
 from dagster._core.workspace.context import BaseWorkspaceRequestContext

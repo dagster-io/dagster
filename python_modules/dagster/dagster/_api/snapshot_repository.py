@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Mapping
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.host_representation.external_data import ExternalRepositoryData
 from dagster._serdes import deserialize_as
 

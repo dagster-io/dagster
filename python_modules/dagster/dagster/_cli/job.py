@@ -3,7 +3,7 @@ from typing import Dict
 import click
 
 from dagster import __version__ as dagster_version
-from dagster import check
+from dagster import _check as check
 from dagster._cli.pipeline import (
     add_step_to_table,
     execute_backfill_command,

@@ -1,4 +1,4 @@
-from dagster import check
+from dagster import _check as check
 from dagster._utils.indenting_printer import IndentingPrinter
 
 from .config_type import ConfigType, ConfigTypeKind

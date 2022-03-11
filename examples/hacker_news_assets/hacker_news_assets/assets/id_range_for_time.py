@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 
 from hacker_news_assets.partitions import hourly_partitions
 
-from dagster import MetadataEntry, Output, asset, check
+from dagster import MetadataEntry, Output, asset, _check as check
 
 
 def binary_search_nearest_left(get_value, start, end, min_target):

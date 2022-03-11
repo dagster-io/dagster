@@ -3,7 +3,7 @@ import warnings
 from functools import wraps
 from typing import Optional
 
-from dagster import check
+from dagster import _check as check
 
 EXPERIMENTAL_WARNING_HELP = (
     "To mute warnings for experimental functionality, invoke"

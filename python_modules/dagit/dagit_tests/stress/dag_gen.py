@@ -9,7 +9,7 @@ from dagster import (
     OutputDefinition,
     PipelineDefinition,
     SolidDefinition,
-    check,
+    _check as check,
 )
 
 

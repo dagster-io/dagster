@@ -1,6 +1,6 @@
 import graphene
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.storage.pipeline_run import RunsFilter
 

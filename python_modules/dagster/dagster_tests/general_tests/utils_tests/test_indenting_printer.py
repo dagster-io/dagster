@@ -1,6 +1,6 @@
 import pytest
 
-from dagster.check import CheckError
+from dagster._check import CheckError
 from dagster._utils.indenting_printer import IndentingPrinter, IndentingStringIoPrinter
 
 LOREM_IPSUM = (

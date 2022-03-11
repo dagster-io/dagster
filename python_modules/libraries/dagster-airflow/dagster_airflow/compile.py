@@ -1,7 +1,7 @@
 import itertools
 from collections import OrderedDict, defaultdict
 
-from dagster import check
+from dagster import _check as check
 
 
 def _coalesce_solid_order(execution_plan):

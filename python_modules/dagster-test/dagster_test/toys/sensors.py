@@ -2,7 +2,7 @@ import os
 
 from slack_sdk import WebClient
 
-from dagster import AssetKey, RunRequest, SkipReason, check, sensor
+from dagster import AssetKey, RunRequest, SkipReason, _check as check, sensor
 from dagster._core.definitions.decorators.sensor import asset_sensor
 from dagster._core.definitions.run_status_sensor_definition import (
     PipelineFailureSensorContext,

@@ -1,6 +1,6 @@
 from typing import Any, Callable, Optional, Union, overload
 
-from dagster import check
+from dagster import _check as check
 
 from ..config import ConfigMapping
 

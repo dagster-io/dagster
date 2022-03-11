@@ -2,7 +2,7 @@ import asyncio
 import inspect
 from typing import Any, AsyncGenerator, Callable, Dict, Iterator, List, Set, Union
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions import (
     AssetMaterialization,
     AssetObservation,

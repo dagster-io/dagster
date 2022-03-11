@@ -6,7 +6,7 @@ from airflow.exceptions import AirflowException, AirflowSkipException
 from dagster_airflow.vendor.docker_operator import DockerOperator
 from docker import APIClient, from_env
 
-from dagster import check, seven
+from dagster import _check as check, seven
 from dagster._core.execution.api import create_execution_plan
 from dagster._core.execution.plan.plan import should_skip_step
 from dagster._core.instance import AIRFLOW_EXECUTION_DATE_STR, DagsterInstance

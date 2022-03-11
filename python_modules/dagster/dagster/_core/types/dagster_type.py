@@ -4,7 +4,7 @@ from enum import Enum as PythonEnum
 from functools import partial
 from typing import cast
 
-from dagster import check
+from dagster import _check as check
 from dagster.builtins import BuiltinEnum
 from dagster._config.config_type import Array, ConfigType
 from dagster._config.config_type import Noneable as ConfigNoneable

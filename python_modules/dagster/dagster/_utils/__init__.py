@@ -24,7 +24,7 @@ from warnings import warn
 
 import yaml
 
-from dagster import check, seven
+from dagster import _check as check, seven
 from dagster._core.errors import DagsterExecutionInterruptedError, DagsterInvariantViolationError
 from dagster.seven import IS_WINDOWS
 from dagster.seven.abc import Mapping

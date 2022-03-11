@@ -1,7 +1,7 @@
 import tempfile
 from contextlib import contextmanager
 
-from dagster import check, job, op
+from dagster import _check as check, job, op
 from dagster._core.instance import DagsterInstance, InstanceRef, InstanceType
 from dagster._core.launcher import DefaultRunLauncher
 from dagster._core.run_coordinator import DefaultRunCoordinator

@@ -1,6 +1,6 @@
 import graphene
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.storage.pipeline_run import PipelineRunStatsSnapshot
 
 from ..errors import GraphenePythonError

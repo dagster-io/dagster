@@ -5,7 +5,7 @@ import sys
 from collections import namedtuple
 from contextlib import contextmanager
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.code_pointer import FileCodePointer
 from dagster._core.definitions.reconstructable import (
     ReconstructablePipeline,

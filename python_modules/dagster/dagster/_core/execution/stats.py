@@ -2,7 +2,7 @@ from collections import defaultdict
 from enum import Enum
 from typing import Any, Dict, Iterable, List, NamedTuple, Optional, cast
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions import ExpectationResult
 from dagster._core.events import DagsterEventType, StepExpectationResultData
 from dagster._core.events.log import EventLogEntry

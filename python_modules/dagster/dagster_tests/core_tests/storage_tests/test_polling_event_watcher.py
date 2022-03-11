@@ -3,7 +3,7 @@ import time
 from contextlib import contextmanager
 from typing import Callable
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.event_log import SqlPollingEventWatcher, SqliteEventLogStorage

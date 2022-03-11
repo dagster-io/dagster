@@ -1,6 +1,6 @@
 import os
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.reconstructable import (
     load_def_in_module,
     load_def_in_package,

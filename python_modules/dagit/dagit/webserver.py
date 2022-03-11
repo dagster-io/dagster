@@ -26,7 +26,7 @@ from starlette.staticfiles import StaticFiles
 from starlette.types import Message
 
 from dagster import __version__ as dagster_version
-from dagster import check
+from dagster import _check as check
 from dagster._core.debug import DebugRunPayload
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.workspace.context import WorkspaceProcessContext, WorkspaceRequestContext

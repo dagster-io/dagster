@@ -12,7 +12,7 @@ from typing import (
     overload,
 )
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.decorator_utils import format_docstring_for_description
 
 from ....seven.typing import get_origin

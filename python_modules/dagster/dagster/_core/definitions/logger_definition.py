@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any, Callable, Optional, Union
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.config import is_callable_valid_config_arg
 from dagster._core.definitions.configurable import AnonymousConfigurableDefinition
 from dagster._core.errors import DagsterInvalidInvocationError

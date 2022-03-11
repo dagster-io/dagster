@@ -20,7 +20,7 @@ from dagster import (
     resource,
     success_hook,
 )
-from dagster.check import CheckError
+from dagster._check import CheckError
 from dagster._core.definitions.graph_definition import GraphDefinition
 from dagster._core.definitions.partition import (
     Partition,

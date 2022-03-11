@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions import GraphDefinition, Node, NodeHandle, PipelineDefinition
 from dagster._core.definitions.utils import DEFAULT_OUTPUT
 from dagster._core.errors import DagsterInvariantViolationError

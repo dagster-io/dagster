@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Dict, NamedTuple
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.host_representation.origin import (
     ExternalRepositoryOrigin,
     RepositoryLocationOrigin,

@@ -5,7 +5,7 @@ import graphene
 import pendulum
 import yaml
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.schedule_definition import ScheduleExecutionData
 from dagster._core.definitions.sensor_definition import RunRequest
 from dagster._core.scheduler.instigation import (

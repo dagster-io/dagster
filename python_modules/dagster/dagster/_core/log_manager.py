@@ -2,7 +2,7 @@ import datetime
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, NamedTuple, Optional, Union
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.utils import coerce_valid_log_level, make_new_run_id
 from dagster._utils.log import get_dagster_logger
 

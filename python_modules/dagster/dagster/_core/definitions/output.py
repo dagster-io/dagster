@@ -13,7 +13,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.events import AssetKey, DynamicAssetKey
 from dagster._core.definitions.metadata import MetadataEntry, MetadataUserInput, normalize_metadata
 from dagster._core.errors import DagsterError, DagsterInvalidDefinitionError

@@ -2,7 +2,7 @@ import sys
 from contextlib import contextmanager
 from typing import Any, Dict, FrozenSet, Iterator, List, Optional, Tuple, Union
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions import IPipeline, JobDefinition, PipelineDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
 from dagster._core.definitions.pipeline_definition import PipelineSubsetDefinition

@@ -1,6 +1,6 @@
 from typing import Any, Dict, Optional, cast
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions import JobDefinition, PipelineDefinition
 from dagster._core.system_config.objects import ResolvedRunConfig
 

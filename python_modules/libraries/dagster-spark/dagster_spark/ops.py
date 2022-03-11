@@ -1,4 +1,4 @@
-from dagster import InputDefinition, Nothing, OutputDefinition, check, op, solid
+from dagster import InputDefinition, Nothing, OutputDefinition, _check as check, op, solid
 
 from .configs import define_spark_config
 

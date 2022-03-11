@@ -20,7 +20,7 @@ from typing import (
     cast,
 )
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster._utils import merge_dicts

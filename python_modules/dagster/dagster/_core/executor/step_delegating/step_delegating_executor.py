@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, cast
 
 import pendulum
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.events import (
     DagsterEvent,
     DagsterEventType,

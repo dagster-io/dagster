@@ -16,7 +16,7 @@ from typing import (
 
 from toposort import CircularDependencyError, toposort_flatten
 
-from dagster import check
+from dagster import _check as check
 from dagster._config import Field, Shape
 from dagster._config.config_type import ConfigType
 from dagster._config.validate import validate_config

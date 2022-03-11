@@ -13,7 +13,7 @@ from dagster import (
     Output,
     OutputDefinition,
     StringSource,
-    check,
+    _check as check,
     op,
     resource,
     solid,

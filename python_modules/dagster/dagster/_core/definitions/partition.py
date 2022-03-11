@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Generic, List, NamedTuple, Optional, Typ
 import pendulum
 from dateutil.relativedelta import relativedelta
 
-from dagster import check
+from dagster import _check as check
 from dagster._serdes import whitelist_for_serdes
 
 from ...seven.compat.pendulum import PendulumDateTime, to_timezone

@@ -4,7 +4,7 @@ import os
 from enum import Enum
 from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, NamedTuple, Optional, Union, cast
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions import (
     AssetKey,
     AssetMaterialization,

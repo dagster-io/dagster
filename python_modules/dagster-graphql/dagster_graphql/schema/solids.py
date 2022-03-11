@@ -5,7 +5,7 @@ from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.logs.events import GrapheneRunStepStats
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions import NodeHandle
 from dagster._core.host_representation import RepresentedPipeline
 from dagster._core.host_representation.historical import HistoricalPipeline

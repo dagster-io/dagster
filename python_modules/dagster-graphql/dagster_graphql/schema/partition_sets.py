@@ -8,7 +8,7 @@ from dagster_graphql.implementation.fetch_partition_sets import (
 )
 from dagster_graphql.implementation.fetch_runs import get_runs
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.host_representation import ExternalPartitionSet, RepositoryHandle
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG

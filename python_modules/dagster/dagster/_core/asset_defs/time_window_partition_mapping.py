@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from typing import cast
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.partition import PartitionsDefinition, ScheduleType
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 from dagster._core.definitions.time_window_partitions import TimeWindowPartitionsDefinition

@@ -1,6 +1,6 @@
 from typing import Any, Optional
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.job_definition import JobDefinition
 from dagster._core.definitions.logger_definition import LoggerDefinition
 from dagster._core.definitions.pipeline_definition import PipelineDefinition

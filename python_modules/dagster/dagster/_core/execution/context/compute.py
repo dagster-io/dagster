@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Iterator, List, Mapping, Optional
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.dependency import Node, NodeHandle
 from dagster._core.definitions.events import (
     AssetMaterialization,

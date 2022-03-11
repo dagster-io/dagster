@@ -7,7 +7,7 @@ from dagster import (
     Permissive,
     Selector,
     StringSource,
-    check,
+    _check as check,
     multiple_process_executor_requirements,
     seven,
 )

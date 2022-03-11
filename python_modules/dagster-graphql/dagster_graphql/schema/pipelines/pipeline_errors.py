@@ -1,6 +1,6 @@
 import graphene
 
-from dagster import check
+from dagster import _check as check
 
 from ..errors import GrapheneError
 from .pipeline import GraphenePipeline

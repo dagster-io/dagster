@@ -2,7 +2,7 @@ from typing import List
 
 import click
 
-from dagster import check
+from dagster import _check as check
 
 from .dagster_docker import DagsterDockerImage
 from .ecr import ensure_ecr_login

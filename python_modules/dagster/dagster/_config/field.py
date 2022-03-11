@@ -1,6 +1,6 @@
 from typing import Any, Union, overload
 
-from dagster import check
+from dagster import _check as check
 from dagster.builtins import BuiltinEnum
 from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster._serdes import serialize_value

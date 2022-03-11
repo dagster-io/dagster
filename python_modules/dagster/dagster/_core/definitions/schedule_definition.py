@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optiona
 
 import pendulum
 
-from dagster import check
+from dagster import _check as check
 from dagster.seven import funcsigs
 
 from ..._serdes import whitelist_for_serdes

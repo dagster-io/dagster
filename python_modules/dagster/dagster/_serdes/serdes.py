@@ -34,7 +34,7 @@ from typing import (
     overload,
 )
 
-from dagster import check, seven
+from dagster import _check as check, seven
 
 from .errors import DeserializationError, SerdesUsageError, SerializationError
 

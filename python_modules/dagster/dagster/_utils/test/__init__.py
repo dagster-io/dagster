@@ -15,7 +15,7 @@ from dagster import (
     PipelineDefinition,
     RepositoryDefinition,
     TypeCheck,
-    check,
+    _check as check,
     execute_pipeline,
     lambda_solid,
 )

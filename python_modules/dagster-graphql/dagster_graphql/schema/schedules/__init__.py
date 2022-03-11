@@ -1,6 +1,6 @@
 import graphene
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.host_representation import ExternalSchedule, ScheduleSelector
 from dagster._core.host_representation.selector import RepositorySelector
 from dagster._core.scheduler.instigation import TickStatsSnapshot

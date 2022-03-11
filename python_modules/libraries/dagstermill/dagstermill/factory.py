@@ -17,7 +17,7 @@ from dagster import (
     Output,
     OutputDefinition,
     SolidDefinition,
-    check,
+    _check as check,
     seven,
 )
 from dagster._core.definitions.events import AssetMaterialization, Failure, RetryRequested

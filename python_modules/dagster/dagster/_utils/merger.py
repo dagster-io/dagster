@@ -1,7 +1,7 @@
 import copy
 from typing import Mapping
 
-from dagster import check
+from dagster import _check as check
 
 
 def _deep_merge_dicts(onto_dict: dict, from_dict: Mapping) -> dict:

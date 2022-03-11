@@ -1,7 +1,7 @@
 import graphene
 import yaml
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster._core.host_representation.external_data import ExternalPresetData
 from dagster._core.storage.pipeline_run import PipelineRunStatus, RunRecord, RunsFilter

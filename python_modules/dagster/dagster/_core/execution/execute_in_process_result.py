@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Union, cast
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions import NodeDefinition, NodeHandle
 from dagster._core.definitions.events import AssetMaterialization, AssetObservation, Materialization
 from dagster._core.definitions.utils import DEFAULT_OUTPUT

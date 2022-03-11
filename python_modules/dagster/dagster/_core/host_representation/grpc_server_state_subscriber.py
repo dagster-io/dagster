@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import NamedTuple, Optional
 
-from dagster import check
+from dagster import _check as check
 
 
 class LocationStateChangeEventType(Enum):

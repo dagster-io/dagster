@@ -6,7 +6,7 @@ from dagster import (
     ExecutorRequirement,
     ModeDefinition,
     PipelineDefinition,
-    check,
+    _check as check,
     execute_pipeline,
     fs_io_manager,
     in_process_executor,

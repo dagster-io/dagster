@@ -2,7 +2,7 @@ import socket
 import struct
 from urllib.parse import urlparse
 
-from dagster import check
+from dagster import _check as check
 
 
 def is_loopback(host):

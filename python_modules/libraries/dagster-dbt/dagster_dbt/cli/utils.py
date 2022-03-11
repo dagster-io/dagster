@@ -3,7 +3,7 @@ import os
 import subprocess
 from typing import Any, Dict
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.utils import coerce_valid_log_level
 
 from ..errors import (

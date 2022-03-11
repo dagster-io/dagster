@@ -1,7 +1,7 @@
 from collections import OrderedDict, defaultdict
 from typing import Callable, Dict, Iterable, List, Optional, Set, Tuple, Union, cast
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.errors import (
     DagsterRunAlreadyExists,
     DagsterRunNotFoundError,

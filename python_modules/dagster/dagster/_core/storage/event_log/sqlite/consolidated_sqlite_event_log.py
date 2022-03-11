@@ -7,7 +7,7 @@ from sqlalchemy.pool import NullPool
 from watchdog.events import PatternMatchingEventHandler
 from watchdog.observers import Observer
 
-from dagster import check
+from dagster import _check as check
 from dagster._config.source import StringSource
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.storage.sql import (

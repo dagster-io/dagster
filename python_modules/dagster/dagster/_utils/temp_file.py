@@ -4,7 +4,7 @@ import shutil
 import tempfile
 from contextlib import contextmanager
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.storage.file_manager import LocalFileHandle
 
 

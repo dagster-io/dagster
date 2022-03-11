@@ -2,7 +2,7 @@ import graphene
 from dagster_graphql.implementation.events import iterate_metadata_entries
 from dagster_graphql.schema.metadata import GrapheneMetadataEntry
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.snap import PipelineSnapshot
 from dagster._core.types.dagster_type import DagsterTypeKind
 

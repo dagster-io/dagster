@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from time import sleep
 from typing import NamedTuple, Optional
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.errors import DagsterError
 from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,

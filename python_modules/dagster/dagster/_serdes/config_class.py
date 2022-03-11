@@ -4,7 +4,7 @@ from typing import NamedTuple
 
 import yaml
 
-from dagster import check
+from dagster import _check as check
 
 from .serdes import whitelist_for_serdes
 

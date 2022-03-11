@@ -3,7 +3,7 @@ from collections import namedtuple
 import graphene
 from graphene.types.generic import GenericScalar
 
-from dagster import check
+from dagster import _check as check
 from dagster._config.errors import EvaluationError as DagsterEvaluationError
 from dagster._config.errors import (
     FieldNotDefinedErrorData,

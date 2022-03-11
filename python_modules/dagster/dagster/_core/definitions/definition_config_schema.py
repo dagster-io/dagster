@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Union
 
-from dagster import check
+from dagster import _check as check
 from dagster._config.config_type import ConfigAnyInstance, ConfigType
 from dagster._config.evaluate_value_result import EvaluateValueResult
 from dagster._config.field import Field

@@ -1,7 +1,7 @@
 from graphql.execution.base import ResolveInfo
 from rx import Observable
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster._serdes import serialize_dagster_namedtuple

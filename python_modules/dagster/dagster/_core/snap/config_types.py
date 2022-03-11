@@ -1,4 +1,4 @@
-from dagster import check
+from dagster import _check as check
 from dagster._config.snap import ConfigSchemaSnapshot, snap_from_config_type
 from dagster._core.definitions.pipeline_definition import PipelineDefinition
 from dagster._utils import merge_dicts

@@ -1,6 +1,6 @@
 from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.definitions.events import AssetKey
 
 

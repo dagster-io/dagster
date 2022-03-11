@@ -1,6 +1,6 @@
 import graphene
 
-from dagster import check
+from dagster import _check as check
 from dagster._core.storage.compute_log_manager import ComputeIOType
 
 from ...implementation.execution import get_compute_log_observable, get_pipeline_run_observable

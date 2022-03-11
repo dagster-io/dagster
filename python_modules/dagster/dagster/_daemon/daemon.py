@@ -8,7 +8,7 @@ from contextlib import AbstractContextManager
 
 import pendulum
 
-from dagster import DagsterInstance, check
+from dagster import DagsterInstance, _check as check
 from dagster._core.telemetry import DAEMON_ALIVE, log_action
 from dagster._core.workspace import IWorkspace
 from dagster._daemon.backfill import execute_backfill_iteration

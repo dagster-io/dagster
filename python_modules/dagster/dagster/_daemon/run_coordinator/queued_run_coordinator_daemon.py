@@ -4,7 +4,7 @@ import time
 from collections import defaultdict
 from typing import Dict
 
-from dagster import DagsterEvent, DagsterEventType, check
+from dagster import DagsterEvent, DagsterEventType, _check as check
 from dagster._core.events.log import EventLogEntry
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import (
