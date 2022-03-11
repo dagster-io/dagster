@@ -53,8 +53,9 @@ def test_executor_init(k8s_run_launcher_instance):
         )
     )
 
+    # env vars from both launcher and the executor
     # pylint: disable=protected-access
-    assert executor._step_handler._job_config.env_vars == ["FOO_TEST"]
+    assert executor._step_handler._job_config.env_vars == ["BAR_TEST", "FOO_TEST"]
 
 
 def test_step_handler(kubeconfig_file):
