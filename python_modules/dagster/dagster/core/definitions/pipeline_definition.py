@@ -10,6 +10,7 @@ from typing import (
     Optional,
     Set,
     Union,
+    cast,
 )
 
 import dagster._check as check
@@ -1054,6 +1055,7 @@ def _create_run_config_schema(
         define_run_config_schema_type,
     )
     from .run_config_schema import RunConfigSchema
+    from .job_definition import JobDefinition
 
     # When executing with a subset pipeline, include the missing solids
     # from the original pipeline as ignored to allow execution with
@@ -1083,6 +1085,7 @@ def _create_run_config_schema(
             ignored_solids=ignored_solids,
             required_resources=required_resources,
             is_using_graph_job_op_apis=pipeline_def.is_job,
+            top_level_inputs=cast(JobDefinition, pipeline_def)._input_values,
         )
     )
 

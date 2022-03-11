@@ -1,4 +1,4 @@
-from typing import Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, cast
+from typing import Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, cast, Any
 
 from dagster.config import Field, Permissive, Selector
 from dagster.config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
@@ -73,6 +73,7 @@ class RunConfigSchemaCreationData(NamedTuple):
     ignored_solids: List[Node]
     required_resources: Set[str]
     is_using_graph_job_op_apis: bool
+    top_level_inputs: Dict[str, Any]
 
 
 def define_logger_dictionary_cls(creation_data: RunConfigSchemaCreationData) -> Shape:
@@ -137,6 +138,7 @@ def define_run_config_schema_type(creation_data: RunConfigSchemaCreationData) ->
             dependency_structure=creation_data.dependency_structure,
             resource_defs=creation_data.mode_definition.resource_defs,
             solid_ignored=False,
+            input_values=creation_data.top_level_inputs,
         ),
     }
 
@@ -178,12 +180,15 @@ def get_inputs_field(
     dependency_structure: DependencyStructure,
     resource_defs: Dict[str, ResourceDefinition],
     solid_ignored: bool,
+    input_values: Dict[str, Any] = None,
 ):
     inputs_field_fields = {}
     for name, inp in solid.definition.input_dict.items():
         inp_handle = SolidInputHandle(solid, inp)
         has_upstream = input_has_upstream(dependency_structure, inp_handle, solid, name)
-        if inp.root_manager_key and not has_upstream:
+        if input_values and name in input_values and not has_upstream:
+            input_field = None
+        elif inp.root_manager_key and not has_upstream:
             input_field = get_input_manager_input_field(solid, inp, resource_defs)
         elif inp.dagster_type.loader and not has_upstream:
             input_field = get_type_loader_input_field(solid, name, inp)

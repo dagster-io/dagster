@@ -52,6 +52,20 @@ def get_ops():
     return emit_one, add
 
 
+def test_top_level_inputs_execution():
+    @op
+    def the_op(the_in: int):
+        return the_in + 1
+
+    @graph
+    def the_graph(the_in):
+        return the_op(the_in)
+
+    result = the_graph.execute_in_process(input_values={"the_in": 2})
+    assert result.success
+    assert result.output_value() == 3
+
+
 def test_basic_graph():
     emit_one, add = get_ops()
 

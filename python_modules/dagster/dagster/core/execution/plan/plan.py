@@ -10,6 +10,7 @@ from typing import (
     Set,
     Union,
     cast,
+    Any,
 )
 
 import dagster._check as check
@@ -53,6 +54,8 @@ from .inputs import (
     FromDynamicCollect,
     FromMultipleSources,
     FromPendingDynamicStepOutput,
+    FromRootInputConfig,
+    FromRootInputValue,
     FromRootInputManager,
     FromStepOutput,
     FromUnresolvedStepOutput,
@@ -173,6 +176,7 @@ class _PlanBuilder:
 
             input_source = get_root_graph_input_source(
                 plan_builder=self,
+                pipeline_def=pipeline_def,
                 input_name=input_name,
                 input_def=input_def,
             )
@@ -194,6 +198,9 @@ class _PlanBuilder:
             pipeline_def.solids_in_topological_order,
             pipeline_def.dependency_structure,
             parent_step_inputs=root_inputs,
+            top_level_inputs=cast(JobDefinition, pipeline_def)._input_values
+            if pipeline_def.is_job
+            else None,
         )
 
         step_dict = {step.handle: step for step in self._steps.values()}
@@ -255,6 +262,7 @@ class _PlanBuilder:
         parent_step_inputs: Optional[
             List[Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]]
         ] = None,
+        top_level_inputs: Optional[Dict[str, Any]] = None,
     ):
         asset_layer = self.pipeline.get_definition().asset_layer
         for solid in solids:
@@ -276,6 +284,7 @@ class _PlanBuilder:
                     dependency_structure,
                     handle,
                     parent_step_inputs,
+                    top_level_inputs,
                 )
 
                 # If an input with dagster_type "Nothing" doesn't have a value
@@ -405,7 +414,14 @@ def get_root_graph_input_source(
     plan_builder: _PlanBuilder,
     input_name: str,
     input_def: InputDefinition,
-) -> Optional[FromConfig]:
+    pipeline_def: PipelineDefinition,
+) -> Optional[Union[FromRootInputConfig, FromRootInputValue]]:
+
+    if pipeline_def.is_job and input_name in cast(JobDefinition, pipeline_def)._input_values:
+        return FromRootInputValue(
+            input_name=input_name,
+            input_value=cast(JobDefinition, pipeline_def)._input_values[input_name],
+        )
 
     input_config = plan_builder.resolved_run_config.inputs
 
@@ -437,6 +453,7 @@ def get_step_input_source(
     parent_step_inputs: Optional[
         List[Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]]
     ],
+    top_level_inputs: Optional[Dict[str, Any]],
 ):
     check.inst_param(plan_builder, "plan_builder", _PlanBuilder)
     check.inst_param(solid, "solid", Node)
