@@ -429,7 +429,7 @@ class AssetGroup(
         assets: List[AssetsDefinition] = []
         for module in modules:
             for asset in _find_assets_in_module(module):
-                if not id(asset) in asset_ids:
+                if id(asset) not in asset_ids:
                     asset_ids.add(id(asset))
                     keys = asset.asset_keys if isinstance(asset, AssetsDefinition) else [asset.key]
                     for key in keys:
