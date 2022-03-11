@@ -8,7 +8,7 @@ from dagster._core.execution.context_creation_pipeline import PlanExecutionConte
 from dagster._core.execution.plan.execute_plan import inner_plan_execution_iterator
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
-from dagster.utils.timing import format_duration, time_execution_scope
+from dagster._utils.timing import format_duration, time_execution_scope
 
 from .base import Executor
 

@@ -3,7 +3,7 @@ import os
 
 from dagster import LocalFileHandle
 from dagster._core.storage.file_cache import FSFileCache
-from dagster.utils.temp_file import get_temp_dir
+from dagster._utils.temp_file import get_temp_dir
 
 
 def test_fs_file_cache_write_data():

@@ -4,8 +4,8 @@ from google.api_core.exceptions import Forbidden, TooManyRequests
 from google.cloud import storage  # type: ignore
 
 from dagster import Field, IOManager, StringSource, check, io_manager
-from dagster.utils import PICKLE_PROTOCOL
-from dagster.utils.backoff import backoff
+from dagster._utils import PICKLE_PROTOCOL
+from dagster._utils.backoff import backoff
 
 DEFAULT_LEASE_DURATION = 60  # One minute
 

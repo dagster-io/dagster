@@ -10,7 +10,7 @@ from dagster._config.post_process import post_process_config
 from dagster._config.validate import validate_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._core.instance import DagsterInstance
-from dagster.utils import load_yaml_from_path, mkdir_p
+from dagster._utils import load_yaml_from_path, mkdir_p
 
 from .executor import CeleryExecutor, celery_executor
 from .make_app import make_app

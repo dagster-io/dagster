@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 from dagster import check
 from dagster._core.errors import DagsterUserCodeProcessError
-from dagster.utils.error import SerializableErrorInfo
+from dagster._utils.error import SerializableErrorInfo
 
 if TYPE_CHECKING:
     from dagster._grpc.client import DagsterGrpcClient

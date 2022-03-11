@@ -54,7 +54,7 @@ from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
 from dagster._loggers import colored_console_logger
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
-from dagster.utils import datetime_as_float
+from dagster._utils import datetime_as_float
 
 DEFAULT_RUN_ID = "foo"
 

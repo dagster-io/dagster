@@ -39,7 +39,7 @@ from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.test_utils import instance_for_test
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.server import GrpcServerProcess
-from dagster.utils import file_relative_path, merge_dicts
+from dagster._utils import file_relative_path, merge_dicts
 from dagster.version import __version__
 
 
@@ -394,7 +394,7 @@ def scheduler_instance(overrides=None):
             overrides=merge_dicts(
                 {
                     "scheduler": {
-                        "module": "dagster.utils.test",
+                        "module": "dagster._utils.test",
                         "class": "FilesystemTestScheduler",
                         "config": {"base_dir": temp_dir},
                     }

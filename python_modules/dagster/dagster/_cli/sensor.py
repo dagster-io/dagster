@@ -21,7 +21,7 @@ from dagster._core.scheduler.instigation import (
     InstigatorStatus,
     SensorInstigatorData,
 )
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 
 @click.group(name="sensor")

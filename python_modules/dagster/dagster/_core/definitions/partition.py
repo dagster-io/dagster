@@ -12,8 +12,8 @@ from dagster import check
 from dagster._serdes import whitelist_for_serdes
 
 from ...seven.compat.pendulum import PendulumDateTime, to_timezone
-from ...utils import frozenlist, merge_dicts
-from ...utils.schedules import schedule_execution_time_iterator
+from ..._utils import frozenlist, merge_dicts
+from ..._utils.schedules import schedule_execution_time_iterator
 from ..decorator_utils import get_function_params
 from ..errors import (
     DagsterInvalidDefinitionError,

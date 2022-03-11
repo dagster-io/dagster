@@ -23,7 +23,7 @@ import signal
 from subprocess import PIPE, STDOUT, Popen
 
 from dagster import check
-from dagster.utils import safe_tempfile_path
+from dagster._utils import safe_tempfile_path
 
 OUTPUT_LOGGING_OPTIONS = ["STREAM", "BUFFER", "NONE"]
 

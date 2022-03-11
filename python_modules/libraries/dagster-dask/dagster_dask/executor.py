@@ -19,7 +19,7 @@ from dagster._core.execution.context.system import PlanOrchestrationContext
 from dagster._core.execution.plan.plan import ExecutionPlan
 from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance
-from dagster.utils import frozentags, iterate_with_context
+from dagster._utils import frozentags, iterate_with_context
 
 # Dask resource requirements are specified under this key
 DASK_RESOURCE_REQUIREMENTS_KEY = "dagster-dask/resource_requirements"

@@ -10,7 +10,7 @@ from dagster_aws.emr import EmrClusterState, EmrError, EmrJobRunner
 from dagster_aws.utils.mrjob.utils import _boto3_now
 from moto import mock_emr
 
-from dagster.utils.test import create_test_pipeline_execution_context
+from dagster._utils.test import create_test_pipeline_execution_context
 
 REGION = "us-west-1"
 

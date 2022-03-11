@@ -23,7 +23,7 @@ from dagster._core.execution.compute_logs import should_disable_io_stream_redire
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.test_utils import create_run_for_test, instance_for_test
-from dagster.utils import ensure_dir, touch_file
+from dagster._utils import ensure_dir, touch_file
 
 HELLO_SOLID = "HELLO SOLID"
 HELLO_RESOURCE = "HELLO RESOURCE"

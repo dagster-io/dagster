@@ -19,7 +19,7 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import TagType, get_tag_type
 from dagster.seven.compat.pendulum import to_timezone
-from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 from ..implementation.fetch_schedules import get_schedule_next_tick
 from ..implementation.fetch_sensors import get_sensor_next_tick

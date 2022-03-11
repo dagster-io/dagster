@@ -14,7 +14,7 @@ from dagster._config.config_type import (
 )
 from dagster._config.field import Field
 from dagster._config.field_utils import Selector
-from dagster.utils.backcompat import ExperimentalWarning
+from dagster._utils.backcompat import ExperimentalWarning
 
 from .config_schema import dagster_type_loader, dagster_type_materializer
 

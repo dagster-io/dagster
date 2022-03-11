@@ -11,8 +11,8 @@ from dagster._core.execution.context.input import InputContext
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager, io_manager
 from dagster._core.storage.memoizable_io_manager import MemoizableIOManager
-from dagster.utils import PICKLE_PROTOCOL, mkdir_p
-from dagster.utils.backcompat import experimental
+from dagster._utils import PICKLE_PROTOCOL, mkdir_p
+from dagster._utils.backcompat import experimental
 
 
 @io_manager(config_schema={"base_dir": Field(StringSource, is_required=False)})

@@ -34,8 +34,8 @@ from dagster._core.workspace.load_target import PythonFileTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.backfill import execute_backfill_iteration
 from dagster.seven import IS_WINDOWS, get_system_temp_directory
-from dagster.utils import touch_file
-from dagster.utils.error import SerializableErrorInfo
+from dagster._utils import touch_file
+from dagster._utils.error import SerializableErrorInfo
 
 default_mode_def = ModeDefinition(resource_defs={"io_manager": fs_io_manager})
 

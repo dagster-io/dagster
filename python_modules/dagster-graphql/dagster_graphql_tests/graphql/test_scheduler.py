@@ -22,7 +22,7 @@ from dagster._core.scheduler.instigation import (
     ScheduleInstigatorData,
 )
 from dagster.seven.compat.pendulum import create_pendulum_time
-from dagster.utils import Counter, traced_counter
+from dagster._utils import Counter, traced_counter
 
 GET_SCHEDULES_QUERY = """
 query SchedulesQuery($repositorySelector: RepositorySelector!) {

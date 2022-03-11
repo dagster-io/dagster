@@ -16,7 +16,7 @@ from dagster._core.snap import (
     create_pipeline_snapshot_id,
 )
 from dagster._daemon.types import DaemonHeartbeat
-from dagster.utils import EPOCH, frozendict, merge_dicts
+from dagster._utils import EPOCH, frozendict, merge_dicts
 
 from ..pipeline_run import JobBucket, PipelineRun, RunRecord, RunsFilter, TagBucket
 from .base import RunStorage

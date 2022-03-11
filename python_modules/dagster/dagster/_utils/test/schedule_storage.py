@@ -18,7 +18,7 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster.seven import get_current_datetime_in_utc
-from dagster.utils.error import SerializableErrorInfo
+from dagster._utils.error import SerializableErrorInfo
 
 
 class TestScheduleStorage:

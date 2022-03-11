@@ -15,7 +15,7 @@ from dagster import (
     execute_pipeline,
     lambda_solid,
 )
-from dagster.utils.test import get_temp_file_name
+from dagster._utils.test import get_temp_file_name
 
 
 def _execute_pipeline_with_subset(pipeline, run_config, solid_selection):

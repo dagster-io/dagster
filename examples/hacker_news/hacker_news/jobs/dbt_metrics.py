@@ -5,7 +5,7 @@ from hacker_news.resources.dbt_asset_resource import SnowflakeQueryDbtAssetResou
 from hacker_news.resources.snowflake_io_manager import SHARED_SNOWFLAKE_CONF
 
 from dagster import ResourceDefinition, graph
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../hacker_news_dbt")
 DBT_PROFILES_DIR = DBT_PROJECT_DIR + "/config"

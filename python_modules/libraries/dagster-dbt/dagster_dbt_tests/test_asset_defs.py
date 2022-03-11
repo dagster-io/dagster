@@ -10,7 +10,7 @@ from dagster_dbt.types import DbtOutput
 from dagster import AssetKey, MetadataEntry, ResourceDefinition
 from dagster._core.asset_defs import build_assets_job
 from dagster._core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 def test_load_from_manifest_json():

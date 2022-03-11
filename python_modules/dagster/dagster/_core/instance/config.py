@@ -6,8 +6,8 @@ from dagster._config import Field, Permissive
 from dagster._config.validate import validate_config
 from dagster._core.errors import DagsterInvalidConfigError
 from dagster._serdes import class_from_code_pointer
-from dagster.utils import merge_dicts
-from dagster.utils.yaml_utils import load_yaml_from_globs
+from dagster._utils import merge_dicts
+from dagster._utils.yaml_utils import load_yaml_from_globs
 
 DAGSTER_CONFIG_YAML_FILENAME = "dagster.yaml"
 

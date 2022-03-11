@@ -2,7 +2,7 @@
 import sys
 import time
 
-from dagster.utils.interrupts import setup_interrupt_handlers
+from dagster._utils.interrupts import setup_interrupt_handlers
 
 if __name__ == "__main__":
     setup_interrupt_handlers()

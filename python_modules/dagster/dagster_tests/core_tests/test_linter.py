@@ -2,7 +2,7 @@ import astroid
 import pylint.testutils
 import pytest
 
-from dagster.utils.linter import define_dagster_checker
+from dagster._utils.linter import define_dagster_checker
 
 
 class TestDagsterChecker(pylint.testutils.CheckerTestCase):

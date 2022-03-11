@@ -18,7 +18,7 @@ from dagster import (
     get_dagster_logger,
     resource,
 )
-from dagster.utils.merger import deep_merge_dicts
+from dagster._utils.merger import deep_merge_dicts
 
 from .types import DbtCloudOutput
 

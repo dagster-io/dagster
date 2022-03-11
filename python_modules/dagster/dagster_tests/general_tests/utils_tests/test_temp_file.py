@@ -1,6 +1,6 @@
 import pytest
 
-from dagster.utils.temp_file import get_temp_file_name, get_temp_file_names
+from dagster._utils.temp_file import get_temp_file_name, get_temp_file_names
 
 
 @pytest.mark.skipif('"win" in sys.platform', reason="resource module not available in windows")

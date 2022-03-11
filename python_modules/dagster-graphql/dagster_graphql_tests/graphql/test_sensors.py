@@ -18,8 +18,8 @@ from dagster._core.scheduler.instigation import (
 from dagster._core.test_utils import create_test_daemon_workspace
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.sensor import execute_sensor_iteration
-from dagster.utils import Counter, traced_counter
-from dagster.utils.error import SerializableErrorInfo
+from dagster._utils import Counter, traced_counter
+from dagster._utils.error import SerializableErrorInfo
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,

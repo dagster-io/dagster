@@ -241,16 +241,16 @@ from dagster._core.types.decorator import (
 from dagster._core.types.python_dict import Dict
 from dagster._core.types.python_set import Set
 from dagster._core.types.python_tuple import Tuple
-from dagster.utils import file_relative_path
-from dagster.utils.alert import make_email_on_run_failure_sensor
-from dagster.utils.backcompat import ExperimentalWarning, rename_warning
-from dagster.utils.log import get_dagster_logger
-from dagster.utils.partitions import (
+from dagster._utils import file_relative_path
+from dagster._utils.alert import make_email_on_run_failure_sensor
+from dagster._utils.backcompat import ExperimentalWarning, rename_warning
+from dagster._utils.log import get_dagster_logger
+from dagster._utils.partitions import (
     create_offset_partition_selector,
     date_partition_range,
     identity_partition_selector,
 )
-from dagster.utils.test import (
+from dagster._utils.test import (
     check_dagster_type,
     execute_solid,
     execute_solid_within_pipeline,

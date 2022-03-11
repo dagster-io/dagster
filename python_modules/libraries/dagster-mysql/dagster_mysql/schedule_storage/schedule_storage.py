@@ -4,7 +4,7 @@ from dagster import check
 from dagster._core.storage.schedules import ScheduleStorageSqlMetadata, SqlScheduleStorage
 from dagster._core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils.backcompat import experimental_class_warning
+from dagster._utils.backcompat import experimental_class_warning
 
 from ..utils import (
     MYSQL_POOL_RECYCLE,

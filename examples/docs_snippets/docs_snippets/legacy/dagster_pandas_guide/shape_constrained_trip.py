@@ -4,7 +4,7 @@ from dagster_pandas import RowCountConstraint, create_dagster_pandas_dataframe_t
 from pandas import DataFrame, read_csv
 
 from dagster import Out, job, op
-from dagster.utils import script_relative_path
+from dagster._utils import script_relative_path
 
 # start_create_type
 ShapeConstrainedTripDataFrame = create_dagster_pandas_dataframe_type(

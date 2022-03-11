@@ -8,7 +8,7 @@ from typing import Union
 import toposort as toposort_
 
 from dagster import check
-from dagster.utils import frozendict
+from dagster._utils import frozendict
 from dagster.version import __version__
 
 BACKFILL_TAG_LENGTH = 8

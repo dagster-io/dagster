@@ -13,7 +13,7 @@ import docker
 import pytest
 from dagster_test.test_project import build_and_tag_test_image, get_test_project_docker_image
 
-from dagster.utils import mkdir_p
+from dagster._utils import mkdir_p
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

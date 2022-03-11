@@ -22,7 +22,7 @@ from dagster._core.errors import DagsterInstanceMigrationRequired
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import RunsFilter
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):

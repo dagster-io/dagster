@@ -11,8 +11,8 @@ from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_s
 from graphql import parse
 
 from dagster._core.storage.pipeline_run import RunsFilter
-from dagster.utils import file_relative_path
-from dagster.utils.test import get_temp_file_name
+from dagster._utils import file_relative_path
+from dagster._utils.test import get_temp_file_name
 
 from .graphql_context_test_suite import (
     ExecutingGraphQLContextTestMatrix,

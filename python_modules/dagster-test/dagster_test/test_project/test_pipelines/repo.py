@@ -38,8 +38,8 @@ from dagster import (
 )
 from dagster._core.definitions.decorators import daily_schedule, schedule
 from dagster._core.test_utils import nesting_composite_pipeline
-from dagster.utils import merge_dicts, segfault
-from dagster.utils.yaml_utils import merge_yamls
+from dagster._utils import merge_dicts, segfault
+from dagster._utils.yaml_utils import merge_yamls
 
 IS_BUILDKITE = bool(os.getenv("BUILDKITE"))
 

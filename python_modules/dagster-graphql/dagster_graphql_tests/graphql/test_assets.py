@@ -9,7 +9,7 @@ from dagster_graphql.test.utils import (
 )
 
 from dagster import AssetKey
-from dagster.utils import safe_tempfile_path
+from dagster._utils import safe_tempfile_path
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 

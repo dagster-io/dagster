@@ -13,7 +13,7 @@ from dagster._core.executor.step_delegating import StepDelegatingExecutor
 from dagster._core.executor.step_delegating.step_handler import StepHandler
 from dagster._core.executor.step_delegating.step_handler.base import StepHandlerContext
 from dagster._core.types.dagster_type import Optional
-from dagster.utils import frozentags, merge_dicts
+from dagster._utils import frozentags, merge_dicts
 
 from .job import (
     DagsterK8sJobConfig,

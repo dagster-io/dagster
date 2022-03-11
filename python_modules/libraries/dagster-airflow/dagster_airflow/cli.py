@@ -6,9 +6,9 @@ import yaml
 
 from dagster import check
 from dagster._cli.load_handle import recon_repo_for_cli_args
-from dagster.utils import load_yaml_from_glob_list
-from dagster.utils.backcompat import canonicalize_backcompat_args
-from dagster.utils.indenting_printer import IndentingStringIoPrinter
+from dagster._utils import load_yaml_from_glob_list
+from dagster._utils.backcompat import canonicalize_backcompat_args
+from dagster._utils.indenting_printer import IndentingStringIoPrinter
 
 
 def construct_environment_yaml(preset_name, config, pipeline_name, module_name):

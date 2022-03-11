@@ -10,7 +10,7 @@ from dagster._core.types.dagster_type import (
     DagsterType,
     resolve_dagster_type,
 )
-from dagster.utils.backcompat import experimental_arg_warning
+from dagster._utils.backcompat import experimental_arg_warning
 
 from .inference import InferredInputProps
 from .utils import NoValueSentinel, check_valid_name

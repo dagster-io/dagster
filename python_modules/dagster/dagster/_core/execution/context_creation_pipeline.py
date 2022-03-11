@@ -40,8 +40,8 @@ from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._loggers import default_loggers, default_system_loggers
-from dagster.utils import EventGenerationManager
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._utils import EventGenerationManager
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .context.logger import InitLoggerContext
 from .context.system import (

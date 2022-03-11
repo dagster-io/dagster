@@ -2,7 +2,7 @@ import io
 import pickle
 
 from dagster import Field, MemoizableIOManager, StringSource, check, io_manager
-from dagster.utils import PICKLE_PROTOCOL
+from dagster._utils import PICKLE_PROTOCOL
 
 
 class PickledObjectS3IOManager(MemoizableIOManager):

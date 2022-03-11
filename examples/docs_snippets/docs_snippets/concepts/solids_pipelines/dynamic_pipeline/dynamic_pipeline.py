@@ -5,7 +5,7 @@ import os
 from typing import List
 
 from dagster import DynamicOut, DynamicOutput, Field, job, op
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 @op(

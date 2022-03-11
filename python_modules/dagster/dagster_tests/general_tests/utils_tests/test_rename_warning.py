@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from dagster.utils.backcompat import rename_warning
+from dagster._utils.backcompat import rename_warning
 
 
 def test_no_additional_warn_text():

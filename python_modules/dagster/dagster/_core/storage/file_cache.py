@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from dagster import check
 from dagster._config import Field
 from dagster._core.definitions import resource
-from dagster.utils import mkdir_p
+from dagster._utils import mkdir_p
 
 from .file_manager import LocalFileHandle
 

@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Mapping, Sequence
 from dagster import check
 from dagster._core.definitions.configurable import NamedConfigurableDefinition
 from dagster._core.definitions.policy import RetryPolicy
-from dagster.utils import frozendict, frozenlist
+from dagster._utils import frozendict, frozenlist
 
 from .hook_definition import HookDefinition
 from .utils import check_valid_name, validate_tags

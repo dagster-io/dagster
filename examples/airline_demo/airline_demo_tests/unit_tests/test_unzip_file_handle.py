@@ -15,7 +15,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.utils.test import get_temp_file_name
+from dagster._utils.test import get_temp_file_name
 
 # for dep graphs
 

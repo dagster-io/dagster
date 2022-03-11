@@ -1,7 +1,7 @@
 from urllib.request import urlretrieve
 
 from dagster import Field, OutputDefinition, String, op
-from dagster.utils import script_relative_path
+from dagster._utils import script_relative_path
 
 
 @op(

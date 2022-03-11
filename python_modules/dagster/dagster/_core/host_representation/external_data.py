@@ -37,7 +37,7 @@ from dagster._core.definitions.time_window_partitions import TimeWindowPartition
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster._core.snap import PipelineSnapshot
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
-from dagster.utils.error import SerializableErrorInfo
+from dagster._utils.error import SerializableErrorInfo
 
 
 @whitelist_for_serdes

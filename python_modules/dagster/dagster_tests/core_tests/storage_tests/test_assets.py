@@ -34,8 +34,8 @@ from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS, migr
 from dagster._core.storage.noop_compute_log_manager import NoOpComputeLogManager
 from dagster._core.storage.root import LocalArtifactStorage
 from dagster._core.storage.runs import InMemoryRunStorage
-from dagster.utils import file_relative_path
-from dagster.utils.test import copy_directory
+from dagster._utils import file_relative_path
+from dagster._utils.test import copy_directory
 
 
 def test_validate_asset_key_string():

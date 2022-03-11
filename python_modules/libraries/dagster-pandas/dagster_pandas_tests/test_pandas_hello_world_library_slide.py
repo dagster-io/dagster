@@ -1,7 +1,7 @@
 from dagster_pandas import DataFrame
 
 from dagster import In, Out, graph, op
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 def test_hello_world():

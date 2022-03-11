@@ -5,7 +5,7 @@ from dagster_dbt import dbt_cli_resource
 from dagster_pyspark import pyspark_resource
 
 from dagster import ResourceDefinition
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 from .common_bucket_s3_pickle_io_manager import common_bucket_s3_pickle_io_manager
 from .hn_resource import hn_api_subsample_client, hn_snapshot_client

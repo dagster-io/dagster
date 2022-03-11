@@ -11,8 +11,8 @@ from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._grpc.types import ResumeRunArgs
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils import frozentags, merge_dicts
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._utils import frozentags, merge_dicts
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 from .job import (
     DagsterK8sJobConfig,

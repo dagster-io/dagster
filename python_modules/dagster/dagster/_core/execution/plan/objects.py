@@ -4,8 +4,8 @@ from typing import TYPE_CHECKING, List, NamedTuple, Optional
 from dagster import check
 from dagster._core.definitions.metadata import MetadataEntry
 from dagster._serdes import whitelist_for_serdes
-from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster.utils.types import ExcInfo
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.types import ExcInfo
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.system import StepExecutionContext

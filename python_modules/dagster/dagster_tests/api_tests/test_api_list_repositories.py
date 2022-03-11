@@ -12,7 +12,7 @@ from dagster._core.code_pointer import FileCodePointer, ModuleCodePointer, Packa
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._grpc.types import LoadableRepositorySymbol
 from dagster._serdes import deserialize_json_to_dagster_namedtuple
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 def test_sync_list_python_file_grpc():
@@ -119,7 +119,7 @@ def test_sync_list_python_file_attribute_multi_repo_grpc():
 
 
 def test_sync_list_python_module_grpc():
-    module_name = "dagster.utils.test.hello_world_repository"
+    module_name = "dagster._utils.test.hello_world_repository"
     response = sync_list_repositories_ephemeral_grpc(
         sys.executable,
         python_file=None,
@@ -154,7 +154,7 @@ def test_sync_list_python_module_grpc():
 
 
 def test_sync_list_python_module_attribute_grpc():
-    module_name = "dagster.utils.test.hello_world_repository"
+    module_name = "dagster._utils.test.hello_world_repository"
     response = sync_list_repositories_ephemeral_grpc(
         sys.executable,
         python_file=None,
@@ -189,7 +189,7 @@ def test_sync_list_python_module_attribute_grpc():
 
 
 def test_sync_list_python_package_attribute_grpc():
-    package_name = "dagster.utils.test.hello_world_repository"
+    package_name = "dagster._utils.test.hello_world_repository"
     response = sync_list_repositories_ephemeral_grpc(
         sys.executable,
         python_file=None,

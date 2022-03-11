@@ -51,8 +51,8 @@ from dagster._grpc.server import open_server_process
 from dagster._scheduler.scheduler import launch_scheduled_runs
 from dagster.seven import wait_for_process
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
-from dagster.utils import find_free_port
-from dagster.utils.partitions import DEFAULT_DATE_FORMAT
+from dagster._utils import find_free_port
+from dagster._utils.partitions import DEFAULT_DATE_FORMAT
 
 from .conftest import loadable_target_origin, workspace_load_target
 

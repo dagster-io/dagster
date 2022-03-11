@@ -12,7 +12,7 @@ from dagster._core.workspace.autodiscovery import (
     loadable_targets_from_python_module,
     loadable_targets_from_python_package,
 )
-from dagster.utils import alter_sys_path, file_relative_path, restore_sys_modules
+from dagster._utils import alter_sys_path, file_relative_path, restore_sys_modules
 
 
 def test_single_repository():
@@ -134,7 +134,7 @@ def test_no_loadable_targets():
 
 def test_single_repository_in_module():
     loadable_targets = loadable_targets_from_python_module(
-        "dagster.utils.test.toys.single_repository",
+        "dagster._utils.test.toys.single_repository",
         working_directory=None,
     )
     assert len(loadable_targets) == 1
@@ -142,7 +142,7 @@ def test_single_repository_in_module():
     assert symbol == "single_repository"
 
     repo_def = CodePointer.from_module(
-        "dagster.utils.test.toys.single_repository", symbol, working_directory=None
+        "dagster._utils.test.toys.single_repository", symbol, working_directory=None
     ).load_target()
     isinstance(repo_def, RepositoryDefinition)
     assert repo_def.name == "single_repository"
@@ -150,7 +150,7 @@ def test_single_repository_in_module():
 
 def test_single_repository_in_package():
     loadable_targets = loadable_targets_from_python_package(
-        "dagster.utils.test.toys.single_repository",
+        "dagster._utils.test.toys.single_repository",
         working_directory=None,
     )
     assert len(loadable_targets) == 1
@@ -158,7 +158,7 @@ def test_single_repository_in_package():
     assert symbol == "single_repository"
 
     repo_def = CodePointer.from_python_package(
-        "dagster.utils.test.toys.single_repository", symbol, working_directory=None
+        "dagster._utils.test.toys.single_repository", symbol, working_directory=None
     ).load_target()
     isinstance(repo_def, RepositoryDefinition)
     assert repo_def.name == "single_repository"

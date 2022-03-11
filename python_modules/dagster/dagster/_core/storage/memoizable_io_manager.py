@@ -7,8 +7,8 @@ from dagster._config import Field
 from dagster._config.source import StringSource
 from dagster._core.execution.context.output import OutputContext
 from dagster._core.storage.io_manager import IOManager, io_manager
-from dagster.utils import PICKLE_PROTOCOL, mkdir_p
-from dagster.utils.backcompat import experimental
+from dagster._utils import PICKLE_PROTOCOL, mkdir_p
+from dagster._utils.backcompat import experimental
 
 
 class MemoizableIOManager(IOManager):

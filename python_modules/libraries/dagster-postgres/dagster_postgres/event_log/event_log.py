@@ -22,7 +22,7 @@ from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
 )
-from dagster.utils import utc_datetime_from_timestamp
+from dagster._utils import utc_datetime_from_timestamp
 
 from ..pynotify import await_pg_notifications
 from ..utils import (

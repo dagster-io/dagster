@@ -32,7 +32,7 @@ from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.utils import make_new_run_id
 from dagster._loggers import colored_console_logger
 from dagster._serdes import unpack_value
-from dagster.utils import EventGenerationManager, ensure_gen
+from dagster._utils import EventGenerationManager, ensure_gen
 
 from .context import DagstermillExecutionContext, DagstermillRuntimeExecutionContext
 from .errors import DagstermillError

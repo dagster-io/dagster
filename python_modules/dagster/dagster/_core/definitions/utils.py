@@ -9,8 +9,8 @@ import yaml
 
 from dagster import check, seven
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.utils import frozentags
-from dagster.utils.yaml_utils import merge_yaml_strings, merge_yamls
+from dagster._utils import frozentags
+from dagster._utils.yaml_utils import merge_yaml_strings, merge_yamls
 
 DEFAULT_OUTPUT = "result"
 

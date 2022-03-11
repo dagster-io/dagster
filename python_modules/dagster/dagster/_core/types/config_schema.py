@@ -7,8 +7,8 @@ from dagster._config.config_type import ConfigType
 from dagster._core.decorator_utils import get_function_params, validate_expected_params
 from dagster._core.definitions.events import AssetMaterialization
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster.utils import ensure_gen
-from dagster.utils.backcompat import experimental_arg_warning
+from dagster._utils import ensure_gen
+from dagster._utils.backcompat import experimental_arg_warning
 
 if TYPE_CHECKING:
     from dagster._core.execution.context.system import StepExecutionContext

@@ -33,7 +33,7 @@ from dagster._core.types.dagster_type import (
     DagsterTypeKind,
     construct_dagster_type_dictionary,
 )
-from dagster.utils import merge_dicts
+from dagster._utils import merge_dicts
 
 from .dependency import (
     DependencyStructure,

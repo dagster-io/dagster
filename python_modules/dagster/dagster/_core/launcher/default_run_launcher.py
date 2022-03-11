@@ -18,7 +18,7 @@ from dagster._grpc.types import (
     StartRunResult,
 )
 from dagster._serdes import ConfigurableClass, deserialize_as, deserialize_json_to_dagster_namedtuple
-from dagster.utils import merge_dicts
+from dagster._utils import merge_dicts
 
 from .base import LaunchRunContext, RunLauncher
 

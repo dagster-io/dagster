@@ -15,7 +15,7 @@ from dagster.check import CheckError
 from dagster._core.definitions.metadata import PathMetadataValue
 from dagster._core.definitions.reconstructable import ReconstructablePipeline
 from dagster._core.test_utils import instance_for_test
-from dagster.utils import file_relative_path, safe_tempfile_path
+from dagster._utils import file_relative_path, safe_tempfile_path
 
 try:
     import dagster_pandas as _

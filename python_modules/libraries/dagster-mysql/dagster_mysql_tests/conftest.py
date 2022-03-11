@@ -1,7 +1,7 @@
 import pytest
 
-from dagster.utils import file_relative_path
-from dagster.utils.test.mysql_instance import TestMySQLInstance
+from dagster._utils import file_relative_path
+from dagster._utils.test.mysql_instance import TestMySQLInstance
 
 
 @pytest.fixture(scope="session")

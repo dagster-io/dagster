@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, AbstractSet, Dict, List, NamedTuple
 
 from dagster._core.definitions.dependency import DependencyStructure
 from dagster._core.errors import DagsterExecutionStepNotFoundError, DagsterInvalidSubsetError
-from dagster.utils import check
+from dagster._utils import check
 
 if TYPE_CHECKING:
     from dagster._core.definitions.job_definition import JobDefinition

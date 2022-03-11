@@ -6,7 +6,7 @@ from dagster import seven
 from dagster._config import Field
 from dagster._core.definitions.logger_definition import logger
 from dagster._core.utils import coerce_valid_log_level
-from dagster.utils.log import default_date_format_string, default_format_string
+from dagster._utils.log import default_date_format_string, default_format_string
 
 
 @logger(
@@ -51,7 +51,7 @@ def json_console_logger(init_context):
         .. code-block:: python
 
             from dagster import op, job
-            from dagister._loggers import json_console_logger
+            from dagster._loggers import json_console_logger
 
             @op
             def hello_op(context):

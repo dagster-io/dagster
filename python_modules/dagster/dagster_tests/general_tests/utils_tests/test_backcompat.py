@@ -5,7 +5,7 @@ import pytest
 from dagster_tests.general_tests.utils_tests.utils import assert_no_warnings
 
 from dagster.check import CheckError
-from dagster.utils.backcompat import (
+from dagster._utils.backcompat import (
     ExperimentalWarning,
     canonicalize_backcompat_args,
     experimental,

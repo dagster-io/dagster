@@ -11,7 +11,7 @@ from dagster import Field, Float, StringSource, check
 from dagster._core.execution.compute_logs import mirror_stream_to_file
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils import ensure_dir, touch_file
+from dagster._utils import ensure_dir, touch_file
 
 from .compute_log_manager import (
     MAX_BYTES_FILE_READ,

@@ -10,7 +10,7 @@ from hacker_news_assets.resources.snowflake_io_manager import (
 )
 
 from dagster import MetadataValue
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 DBT_PROJECT_DIR = file_relative_path(__file__, "../../hacker_news_dbt")
 DBT_PROFILES_DIR = DBT_PROJECT_DIR + "/config"

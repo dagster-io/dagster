@@ -3,7 +3,7 @@ import os
 import click
 
 from dagster._generate import generate_new_project
-from dagster.utils.backcompat import experimental
+from dagster._utils.backcompat import experimental
 
 
 @click.command(name="new-project")

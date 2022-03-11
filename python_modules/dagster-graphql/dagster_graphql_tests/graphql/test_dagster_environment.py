@@ -2,7 +2,7 @@ import sys
 
 from dagster._core.host_representation import ManagedGrpcPythonEnvRepositoryLocationOrigin
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 def test_dagster_out_of_process_location():

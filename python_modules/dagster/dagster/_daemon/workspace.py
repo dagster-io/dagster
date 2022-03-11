@@ -13,7 +13,7 @@ from dagster._core.host_representation.repository_location import (
 )
 from dagster._core.workspace import IWorkspace, WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 from dagster._core.workspace.load_target import WorkspaceLoadTarget
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 
 class BaseDaemonWorkspace(IWorkspace):

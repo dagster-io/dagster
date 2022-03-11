@@ -16,7 +16,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 def test_presets():

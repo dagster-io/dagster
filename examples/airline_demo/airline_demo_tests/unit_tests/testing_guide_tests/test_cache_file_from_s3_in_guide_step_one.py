@@ -6,8 +6,8 @@ import boto3
 from dagster_aws.s3 import S3Coordinate
 
 from dagster import execute_pipeline, pipeline, solid
-from dagster.utils.temp_file import get_temp_dir, get_temp_file_name
-from dagster.utils.test import execute_solid
+from dagster._utils.temp_file import get_temp_dir, get_temp_file_name
+from dagster._utils.test import execute_solid
 
 
 def file_cache_folder():

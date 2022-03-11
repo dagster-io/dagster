@@ -24,8 +24,8 @@ from dagster._core.test_utils import (
     instance_for_test,
 )
 from dagster._grpc.types import ExecuteRunArgs
-from dagster.utils import merge_dicts
-from dagster.utils.hosted_user_process import external_pipeline_from_recon_pipeline
+from dagster._utils import merge_dicts
+from dagster._utils.hosted_user_process import external_pipeline_from_recon_pipeline
 
 
 def test_empty_celery_config():

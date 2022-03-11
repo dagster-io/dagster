@@ -23,8 +23,8 @@ from dagster import (
 )
 from dagster._core.definitions.no_step_launcher import no_step_launcher
 from dagster._core.errors import DagsterSubprocessError
-from dagster.utils.merger import deep_merge_dicts
-from dagster.utils.test import create_test_pipeline_execution_context
+from dagster._utils.merger import deep_merge_dicts
+from dagster._utils.test import create_test_pipeline_execution_context
 
 S3_BUCKET = "dagster-scratch-80542c2"
 

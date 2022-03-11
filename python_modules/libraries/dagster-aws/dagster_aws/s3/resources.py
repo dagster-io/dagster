@@ -1,5 +1,5 @@
 from dagster import Field, StringSource, resource
-from dagster.utils.merger import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .file_manager import S3FileManager
 from .utils import construct_s3_client

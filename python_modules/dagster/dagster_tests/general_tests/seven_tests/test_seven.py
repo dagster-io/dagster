@@ -5,7 +5,7 @@ from functools import update_wrapper
 import pytest
 
 from dagster import seven
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 def test_is_ascii():

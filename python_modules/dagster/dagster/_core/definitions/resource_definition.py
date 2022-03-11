@@ -24,7 +24,7 @@ from dagster._core.errors import (
     DagsterUnknownResourceError,
 )
 from dagster.seven import funcsigs
-from dagster.utils.backcompat import experimental_arg_warning
+from dagster._utils.backcompat import experimental_arg_warning
 
 from ..decorator_utils import (
     get_function_params,

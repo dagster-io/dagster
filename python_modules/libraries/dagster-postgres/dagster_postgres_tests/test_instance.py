@@ -7,7 +7,7 @@ from dagster_postgres.utils import get_conn
 
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.test_utils import instance_for_test
-from dagster.utils.test.postgres_instance import TestPostgresInstance
+from dagster._utils.test.postgres_instance import TestPostgresInstance
 
 
 def full_pg_config(hostname):

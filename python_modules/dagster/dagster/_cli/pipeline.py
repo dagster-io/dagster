@@ -44,11 +44,11 @@ from dagster._core.storage.tags import MEMOIZED_RUN_TAG
 from dagster._core.telemetry import log_external_repo_stats, telemetry_wrapper
 from dagster._core.utils import make_new_backfill_id
 from dagster.seven import IS_WINDOWS, JSONDecodeError, json
-from dagster.utils import DEFAULT_WORKSPACE_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
-from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.hosted_user_process import recon_pipeline_from_origin
-from dagster.utils.indenting_printer import IndentingPrinter
-from dagster.utils.interrupts import capture_interrupts
+from dagster._utils import DEFAULT_WORKSPACE_YAML_FILENAME, load_yaml_from_glob_list, merge_dicts
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.hosted_user_process import recon_pipeline_from_origin
+from dagster._utils.indenting_printer import IndentingPrinter
+from dagster._utils.interrupts import capture_interrupts
 
 from .config_scaffolder import scaffold_pipeline_config
 from .utils import get_instance_for_service

@@ -20,9 +20,9 @@ from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster._core.system_config.objects import ResolvedRunConfig
 from dagster._core.telemetry import log_repo_stats, telemetry_wrapper
 from dagster._core.utils import str_format_set
-from dagster.utils import merge_dicts
-from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.interrupts import capture_interrupts
+from dagster._utils import merge_dicts
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.interrupts import capture_interrupts
 
 from .context_creation_pipeline import (
     ExecutionContextManager,
@@ -852,7 +852,7 @@ class ExecuteRunWithPlanIterable:
     This is a class and not a function because, e.g., in constructing a `scoped_pipeline_context`
     for `PipelineExecutionResult`, we need to pull out the `pipeline_context` after we're done
     yielding events. This broadly follows a pattern we make use of in other places,
-    cf. `dagster.utils.EventGenerationManager`.
+    cf. `dagster._utils.EventGenerationManager`.
     """
 
     def __init__(self, execution_plan, iterator, execution_context_manager):

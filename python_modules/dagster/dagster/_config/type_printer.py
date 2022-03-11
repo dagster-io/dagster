@@ -1,5 +1,5 @@
 from dagster import check
-from dagster.utils.indenting_printer import IndentingPrinter
+from dagster._utils.indenting_printer import IndentingPrinter
 
 from .config_type import ConfigType, ConfigTypeKind
 from .field import resolve_to_config_type

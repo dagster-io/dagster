@@ -6,7 +6,7 @@ import yaml
 from dagster import check
 from dagster._core.definitions.utils import config_from_files, config_from_yaml_strings
 from dagster._core.errors import DagsterInvariantViolationError
-from dagster.utils.merger import deep_merge_dicts
+from dagster._utils.merger import deep_merge_dicts
 
 from .mode import DEFAULT_MODE_NAME
 from .utils import check_valid_name

@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 import requests
 
-from dagster.utils import merge_dicts
-from dagster.utils.backoff import backoff
+from dagster._utils import merge_dicts
+from dagster._utils.backoff import backoff
 
 
 @dataclass

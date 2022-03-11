@@ -4,7 +4,7 @@ from dagster_pandas import PandasColumn, create_dagster_pandas_dataframe_type
 from pandas import DataFrame, read_csv
 
 from dagster import Out, job, op
-from dagster.utils import script_relative_path
+from dagster._utils import script_relative_path
 
 # start_core_trip_marker_0
 TripDataFrame = create_dagster_pandas_dataframe_type(

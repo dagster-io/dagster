@@ -26,10 +26,10 @@ from dagster._grpc.impl import core_execute_run
 from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
 from dagster._serdes import deserialize_as, serialize_dagster_namedtuple
 from dagster.seven import nullcontext
-from dagster.utils.error import serializable_error_info_from_exc_info
-from dagster.utils.hosted_user_process import recon_pipeline_from_origin
-from dagster.utils.interrupts import capture_interrupts
-from dagster.utils.log import configure_loggers
+from dagster._utils.error import serializable_error_info_from_exc_info
+from dagster._utils.hosted_user_process import recon_pipeline_from_origin
+from dagster._utils.interrupts import capture_interrupts
+from dagster._utils.log import configure_loggers
 
 
 @click.group(name="api", hidden=True)

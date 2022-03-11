@@ -6,8 +6,8 @@ from dagster_aws.s3 import S3Coordinate
 
 from dagster import ModeDefinition, pipeline, solid
 from dagster._core.storage.file_cache import FSFileCache, fs_file_cache
-from dagster.utils.temp_file import get_temp_dir, get_temp_file_name
-from dagster.utils.test import execute_solid
+from dagster._utils.temp_file import get_temp_dir, get_temp_file_name
+from dagster._utils.test import execute_solid
 
 
 @solid(required_resource_keys={"file_cache"})

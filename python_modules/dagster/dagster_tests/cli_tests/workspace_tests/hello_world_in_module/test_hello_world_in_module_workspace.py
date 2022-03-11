@@ -1,7 +1,7 @@
 from dagster import DagsterInstance
 from dagster._core.workspace import WorkspaceProcessContext
 from dagster._core.workspace.load import load_workspace_process_context_from_yaml_paths
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 def test_load_in_process_location_hello_world_terse():
@@ -11,7 +11,7 @@ def test_load_in_process_location_hello_world_terse():
     ) as workspace:
         assert isinstance(workspace, WorkspaceProcessContext)
         assert workspace.repository_locations_count == 1
-        assert workspace.repository_location_names[0] == "dagster.utils.test.hello_world_repository"
+        assert workspace.repository_location_names[0] == "dagster._utils.test.hello_world_repository"
 
 
 def test_load_in_process_location_hello_world_nested():
@@ -21,7 +21,7 @@ def test_load_in_process_location_hello_world_nested():
     ) as workspace:
         assert isinstance(workspace, WorkspaceProcessContext)
         assert workspace.repository_locations_count == 1
-        assert workspace.repository_location_names[0] == "dagster.utils.test.hello_world_repository"
+        assert workspace.repository_location_names[0] == "dagster._utils.test.hello_world_repository"
 
 
 def test_load_in_process_location_hello_world_nested_with_def():
@@ -33,5 +33,5 @@ def test_load_in_process_location_hello_world_nested_with_def():
         assert workspace.repository_locations_count == 1
         assert (
             workspace.repository_location_names[0]
-            == "dagster.utils.test.hello_world_repository:hello_world_repository"
+            == "dagster._utils.test.hello_world_repository:hello_world_repository"
         )

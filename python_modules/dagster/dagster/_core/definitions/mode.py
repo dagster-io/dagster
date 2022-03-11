@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Dict, List, NamedTuple, Optional
 from dagster import check
 from dagster._core.definitions.executor_definition import ExecutorDefinition, default_executors
 from dagster._loggers import default_loggers
-from dagster.utils.merger import merge_dicts
+from dagster._utils.merger import merge_dicts
 
 from .config import ConfigMapping
 from .logger_definition import LoggerDefinition

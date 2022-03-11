@@ -9,7 +9,7 @@ from gql.transport.requests import RequestsHTTPTransport
 from dagster import check
 from dagster._core.definitions.utils import validate_tags
 from dagster._core.storage.pipeline_run import PipelineRunStatus
-from dagster.utils.backcompat import experimental_class_warning
+from dagster._utils.backcompat import experimental_class_warning
 
 from .client_queries import (
     CLIENT_GET_REPO_LOCATIONS_NAMES_AND_PIPELINES_QUERY,

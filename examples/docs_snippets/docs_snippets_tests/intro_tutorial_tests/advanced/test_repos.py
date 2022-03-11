@@ -1,4 +1,4 @@
-from dagster.utils import pushd, script_relative_path
+from dagster._utils import pushd, script_relative_path
 from docs_snippets.intro_tutorial.advanced.repositories.repos import (
     hello_cereal_repository,
 )

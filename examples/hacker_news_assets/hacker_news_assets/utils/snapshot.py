@@ -5,7 +5,7 @@ from concurrent.futures import ThreadPoolExecutor
 from hacker_news_assets.resources.hn_resource import HNAPIClient
 from tqdm import tqdm
 
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 # Slice that surrounds 12/30/2020
 SNAPSHOT_START_ID = 25576000

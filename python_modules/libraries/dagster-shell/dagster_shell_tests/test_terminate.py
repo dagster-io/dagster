@@ -9,7 +9,7 @@ from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.test_utils import instance_for_test, poll_for_finished_run, poll_for_step_start
 from dagster._core.workspace import WorkspaceProcessContext
 from dagster._core.workspace.load_target import PythonFileTarget
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 @solid

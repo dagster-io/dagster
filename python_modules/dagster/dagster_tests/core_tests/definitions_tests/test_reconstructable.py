@@ -13,8 +13,8 @@ from dagster._core.origin import (
     RepositoryPythonOrigin,
 )
 from dagster._core.snap import PipelineSnapshot, create_pipeline_snapshot_id
-from dagster.utils import file_relative_path
-from dagster.utils.hosted_user_process import recon_pipeline_from_origin
+from dagster._utils import file_relative_path
+from dagster._utils.hosted_user_process import recon_pipeline_from_origin
 
 
 @lambda_solid

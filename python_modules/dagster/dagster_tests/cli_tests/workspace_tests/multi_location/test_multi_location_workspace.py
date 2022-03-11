@@ -11,7 +11,7 @@ from dagster._core.workspace.load import (
     load_workspace_process_context_from_yaml_paths,
     location_origins_from_config,
 )
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 def test_multi_location_workspace_foo():
@@ -102,7 +102,7 @@ load_from:
 
     - python_module:
         executable_path: {executable}
-        module_name: dagster.utils.test.hello_world_repository
+        module_name: dagster._utils.test.hello_world_repository
         location_name: loaded_from_module
 
     - python_file:
@@ -112,12 +112,12 @@ load_from:
 
     - python_module:
         executable_path: {executable}
-        module_name: dagster.utils.test.named_hello_world_repository
+        module_name: dagster._utils.test.named_hello_world_repository
         location_name: named_loaded_from_module
 
     - python_module:
         executable_path: {executable}
-        module_name: dagster.utils.test.named_hello_world_repository
+        module_name: dagster._utils.test.named_hello_world_repository
         attribute: named_hello_world_repository
         location_name: named_loaded_from_module_attribute
 
@@ -169,7 +169,7 @@ def test_multi_location_origins(config_source):
     )
     assert (
         origins["loaded_from_module"].loadable_target_origin.module_name
-        == "dagster.utils.test.hello_world_repository"
+        == "dagster._utils.test.hello_world_repository"
     )
 
     assert (

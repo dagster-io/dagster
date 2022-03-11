@@ -28,9 +28,9 @@ from dagster._core.workspace.load_target import (
     WorkspaceFileTarget,
 )
 from dagster._grpc.server import GrpcServerProcess
-from dagster.utils import merge_dicts
-from dagster.utils.test import FilesystemTestScheduler
-from dagster.utils.test.postgres_instance import TestPostgresInstance
+from dagster._utils import merge_dicts
+from dagster._utils.test import FilesystemTestScheduler
+from dagster._utils.test.postgres_instance import TestPostgresInstance
 
 
 def get_main_loadable_target_origin():
@@ -71,7 +71,7 @@ def graphql_postgres_instance(overrides):
                             "config": {"postgres_url": pg_conn_string},
                         },
                         "scheduler": {
-                            "module": "dagster.utils.test",
+                            "module": "dagster._utils.test",
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
@@ -150,7 +150,7 @@ class InstanceManagers:
                     temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
-                            "module": "dagster.utils.test",
+                            "module": "dagster._utils.test",
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
@@ -194,7 +194,7 @@ class InstanceManagers:
                     temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
-                            "module": "dagster.utils.test",
+                            "module": "dagster._utils.test",
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
@@ -219,7 +219,7 @@ class InstanceManagers:
                     temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
-                            "module": "dagster.utils.test",
+                            "module": "dagster._utils.test",
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },
@@ -244,7 +244,7 @@ class InstanceManagers:
                     temp_dir=temp_dir,
                     overrides={
                         "scheduler": {
-                            "module": "dagster.utils.test",
+                            "module": "dagster._utils.test",
                             "class": "FilesystemTestScheduler",
                             "config": {"base_dir": temp_dir},
                         },

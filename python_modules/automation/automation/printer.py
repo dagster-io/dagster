@@ -2,7 +2,7 @@ import os
 import sys
 from io import StringIO
 
-from dagster.utils.indenting_printer import IndentingPrinter
+from dagster._utils.indenting_printer import IndentingPrinter
 
 
 class IndentingBufferPrinter(IndentingPrinter):

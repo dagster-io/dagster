@@ -39,8 +39,8 @@ from dagster._core.execution.retries import RetryMode
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._core.test_utils import instance_for_test
-from dagster.utils import safe_tempfile_path, send_interrupt
-from dagster.utils.merger import deep_merge_dicts, merge_dicts
+from dagster._utils import safe_tempfile_path, send_interrupt
+from dagster._utils.merger import deep_merge_dicts, merge_dicts
 
 RUN_CONFIG_BASE = {"solids": {"return_two": {"config": {"a": "b"}}}}
 

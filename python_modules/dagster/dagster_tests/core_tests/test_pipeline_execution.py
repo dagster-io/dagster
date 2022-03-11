@@ -43,7 +43,7 @@ from dagster._core.utility_solids import (
     input_set,
 )
 from dagster._core.workspace.load import location_origin_from_python_file
-from dagster.utils.test import execute_solid_within_pipeline
+from dagster._utils.test import execute_solid_within_pipeline
 
 # protected members
 # pylint: disable=W0212

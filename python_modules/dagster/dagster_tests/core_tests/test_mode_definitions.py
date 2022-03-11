@@ -23,7 +23,7 @@ from dagster import (
 )
 from dagster.check import CheckError
 from dagster._core.utils import coerce_valid_log_level
-from dagster.utils.test import execute_solids_within_pipeline
+from dagster._utils.test import execute_solids_within_pipeline
 
 
 def test_default_mode_definition():

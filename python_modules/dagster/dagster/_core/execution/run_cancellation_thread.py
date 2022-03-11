@@ -4,7 +4,7 @@ from typing import Tuple, cast
 from dagster import check
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.utils import send_interrupt
+from dagster._utils import send_interrupt
 
 
 def _kill_on_cancel(instance_ref: InstanceRef, run_id, shutdown_event):

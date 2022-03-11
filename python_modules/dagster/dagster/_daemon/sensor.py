@@ -22,8 +22,8 @@ from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus, R
 from dagster._core.storage.tags import RUN_KEY_TAG, check_tags
 from dagster._core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster._core.workspace import IWorkspace
-from dagster.utils import merge_dicts
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._utils import merge_dicts
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 MIN_INTERVAL_LOOP_TIME = 5
 

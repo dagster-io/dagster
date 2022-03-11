@@ -15,7 +15,7 @@ from dagster._core.telemetry import (
 )
 from dagster._core.test_utils import instance_for_test
 from dagster._core.workspace.load import load_workspace_process_context_from_yaml_paths
-from dagster.utils import file_relative_path, pushd, script_relative_path
+from dagster._utils import file_relative_path, pushd, script_relative_path
 
 EXPECTED_KEYS = set(
     [

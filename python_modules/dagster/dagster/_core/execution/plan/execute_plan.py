@@ -23,7 +23,7 @@ from dagster._core.execution.plan.objects import (
     step_failure_event_from_exc_info,
 )
 from dagster._core.execution.plan.plan import ExecutionPlan
-from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
+from dagster._utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 
 
 def inner_plan_execution_iterator(

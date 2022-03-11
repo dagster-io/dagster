@@ -1,8 +1,8 @@
 from dagster._core.host_representation import ExternalExecutionPlan
 from dagster._core.instance import DagsterInstance, InstanceRef
 from dagster._core.snap import create_execution_plan_snapshot_id, create_pipeline_snapshot_id
-from dagster.utils import file_relative_path
-from dagster.utils.test import copy_directory
+from dagster._utils import file_relative_path
+from dagster._utils.test import copy_directory
 
 
 # a change of schema in the snapshot hierarchy caused hashes to be different
@@ -42,7 +42,7 @@ def test_run_created_in_0_7_9_snapshot_id_change():
 # from dagster import pipeline, solid, DagsterInstance, execute_pipeline
 # from dagster._core.snap.utils import create_snapshot_id
 #
-# from dagister._serdes import serialize_pp
+# from dagster._serdes import serialize_pp
 #
 # @solid
 # def noop_solid(_):

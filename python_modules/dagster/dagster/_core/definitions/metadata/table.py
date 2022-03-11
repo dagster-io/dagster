@@ -3,7 +3,7 @@ from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, cast
 
 import dagster.check as check
 from dagster._serdes.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
-from dagster.utils.backcompat import ExperimentalWarning, experimental
+from dagster._utils.backcompat import ExperimentalWarning, experimental
 
 # ########################
 # ##### TABLE RECORD

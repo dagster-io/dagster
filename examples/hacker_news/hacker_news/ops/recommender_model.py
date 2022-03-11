@@ -6,7 +6,7 @@ from pandas import DataFrame, Series
 from sklearn.decomposition import TruncatedSVD
 
 from dagster import In, InputDefinition, MetadataValue, Out, Output, op
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 @op(out=Out(dagster_type=TruncatedSVD, metadata={"key": "recommender_model"}))

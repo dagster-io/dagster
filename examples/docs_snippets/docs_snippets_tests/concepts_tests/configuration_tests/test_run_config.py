@@ -1,6 +1,6 @@
 import yaml
 
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 from docs_snippets.concepts.configuration.make_values_resource_any import basic_result
 from docs_snippets.concepts.configuration.make_values_resource_config_schema import (
     different_values_job,

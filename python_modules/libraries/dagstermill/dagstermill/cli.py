@@ -9,7 +9,7 @@ from papermill.iorw import load_notebook_node, write_ipynb
 
 from dagster import check
 from dagster.seven.json import loads
-from dagster.utils import mkdir_p, safe_isfile
+from dagster._utils import mkdir_p, safe_isfile
 
 
 def get_import_cell():

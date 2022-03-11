@@ -22,7 +22,7 @@ from dagster._daemon.controller import (
     get_daemon_statuses,
 )
 from dagster._daemon.daemon import get_telemetry_daemon_session_id
-from dagster.utils.interrupts import capture_interrupts, raise_interrupts_as
+from dagster._utils.interrupts import capture_interrupts, raise_interrupts_as
 
 
 def _get_heartbeat_tolerance():

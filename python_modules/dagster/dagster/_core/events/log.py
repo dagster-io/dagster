@@ -12,8 +12,8 @@ from dagster._serdes.serdes import (
     serialize_dagster_namedtuple,
     whitelist_for_serdes,
 )
-from dagster.utils.error import SerializableErrorInfo
-from dagster.utils.log import (
+from dagster._utils.error import SerializableErrorInfo
+from dagster._utils.log import (
     JsonEventLoggerHandler,
     StructuredLoggerHandler,
     StructuredLoggerMessage,

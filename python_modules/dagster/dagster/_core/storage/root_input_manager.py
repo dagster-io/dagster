@@ -8,7 +8,7 @@ from dagster._core.definitions.definition_config_schema import (
 )
 from dagster._core.definitions.resource_definition import ResourceDefinition
 from dagster._core.storage.input_manager import InputManager
-from dagster.utils.backcompat import experimental
+from dagster._utils.backcompat import experimental
 
 
 class IInputManagerDefinition:

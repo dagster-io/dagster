@@ -18,7 +18,7 @@ from dagster import (
 from dagster._core.definitions.reconstructable import ReconstructablePipeline
 from dagster._core.errors import DagsterSubprocessError
 from dagster._core.events import DagsterEventType
-from dagster.utils import send_interrupt
+from dagster._utils import send_interrupt
 
 from .utils import (  # isort:skip
     execute_eagerly_on_celery,

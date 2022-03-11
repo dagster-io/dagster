@@ -7,7 +7,7 @@ spark = SparkSession.builder.getOrCreate()
 sc = spark.sparkContext
 sys.path.insert(0, SparkFiles.getRootDirectory())
 
-from dagster.utils.test import execute_solid_within_pipeline
+from dagster._utils.test import execute_solid_within_pipeline
 
 from {pipeline_file} import {pipeline_fn_name}
 

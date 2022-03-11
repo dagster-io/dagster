@@ -24,8 +24,8 @@ from dagster._core.execution.context.input import InputContext, build_input_cont
 from dagster._core.execution.context.output import build_output_context
 from dagster._core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster._core.storage.root_input_manager import RootInputManagerDefinition, root_input_manager
-from dagster.utils.backcompat import ExperimentalWarning, experimental
-from dagster.utils.merger import merge_dicts
+from dagster._utils.backcompat import ExperimentalWarning, experimental
+from dagster._utils.merger import merge_dicts
 
 from .asset import AssetsDefinition
 from .asset_partitions import get_upstream_partitions_for_partition_range

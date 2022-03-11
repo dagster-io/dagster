@@ -1,7 +1,7 @@
 from pandas import DataFrame, Series
 
 from dagster import In, Out, Output, op
-from dagster.utils.log import get_dagster_logger
+from dagster._utils.log import get_dagster_logger
 
 logger = get_dagster_logger()
 

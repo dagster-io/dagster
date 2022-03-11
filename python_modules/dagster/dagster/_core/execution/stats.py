@@ -8,7 +8,7 @@ from dagster._core.events import DagsterEventType, StepExpectationResultData
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.pipeline_run import PipelineRunStatsSnapshot
 from dagster._serdes import whitelist_for_serdes
-from dagster.utils import datetime_as_float
+from dagster._utils import datetime_as_float
 
 
 def build_run_stats_from_events(run_id, records):

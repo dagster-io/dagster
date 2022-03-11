@@ -7,7 +7,7 @@ import pandas as pd
 from pandas import DataFrame
 
 from dagster import DagsterType, MetadataEntry, TypeCheck, check
-from dagster.utils.backcompat import experimental_class_warning
+from dagster._utils.backcompat import experimental_class_warning
 
 
 class ConstraintViolationException(Exception):

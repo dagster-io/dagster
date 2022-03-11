@@ -7,7 +7,7 @@ from paramiko.config import SSH_PORT
 from sshtunnel import SSHTunnelForwarder
 
 from dagster import Field, StringSource, check, resource
-from dagster.utils import merge_dicts, mkdir_p
+from dagster._utils import merge_dicts, mkdir_p
 
 
 def key_from_str(key_str):

@@ -22,8 +22,8 @@ from dagster.check import CheckError
 from dagster._config.field_utils import Selector
 from dagster._core.definitions.metadata import normalize_metadata
 from dagster._core.errors import DagsterInvalidMetadata
-from dagster.utils import dict_without_keys
-from dagster.utils.backcompat import experimental
+from dagster._utils import dict_without_keys
+from dagster._utils.backcompat import experimental
 
 CONSTRAINT_BLACKLIST = {ColumnDTypeFnConstraint, ColumnDTypeInSetConstraint}
 

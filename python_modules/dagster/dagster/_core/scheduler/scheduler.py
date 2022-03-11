@@ -16,7 +16,7 @@ from dagster._core.scheduler.instigation import (
 )
 from dagster._serdes import ConfigurableClass
 from dagster.seven import get_current_datetime_in_utc
-from dagster.utils import mkdir_p
+from dagster._utils import mkdir_p
 
 
 class DagsterSchedulerError(DagsterError):

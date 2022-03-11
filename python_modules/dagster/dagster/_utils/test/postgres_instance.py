@@ -8,7 +8,7 @@ import pytest
 
 from dagster import check, file_relative_path
 from dagster._core.test_utils import instance_for_test
-from dagster.utils import merge_dicts
+from dagster._utils import merge_dicts
 
 BUILDKITE = bool(os.getenv("BUILDKITE"))
 

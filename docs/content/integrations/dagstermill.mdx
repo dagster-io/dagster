@@ -42,7 +42,7 @@ We can simply turn a notebook into an op using <PyObject module="dagstermill" ob
 import dagstermill as dm
 
 from dagster import job
-from dagster.utils import script_relative_path
+from dagster._utils import script_relative_path
 
 k_means_iris = dm.define_dagstermill_op(
     "k_means_iris",
@@ -99,7 +99,7 @@ We'll illustrate this process by adding a non-notebook op to our job, which will
 import dagstermill as dm
 
 from dagster import InputDefinition, job
-from dagster.utils import script_relative_path
+from dagster._utils import script_relative_path
 from docs_snippets.legacy.data_science.download_file import download_file
 
 k_means_iris = dm.define_dagstermill_op(
@@ -127,7 +127,7 @@ We'll configure the `download_file` op with the URL to download the file from, a
 from urllib.request import urlretrieve
 
 from dagster import Field, OutputDefinition, String, op
-from dagster.utils import script_relative_path
+from dagster._utils import script_relative_path
 
 
 @op(
@@ -226,7 +226,7 @@ For instance, suppose we want to make the number of clusters (the \_k\_ in k-mea
 import dagstermill as dm
 
 from dagster import Field, InputDefinition, Int, job
-from dagster.utils import script_relative_path
+from dagster._utils import script_relative_path
 from docs_snippets.legacy.data_science.download_file import download_file
 
 k_means_iris = dm.define_dagstermill_op(

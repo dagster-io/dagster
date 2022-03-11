@@ -6,7 +6,7 @@ from dagster._core.execution.plan.state import KnownExecutionState
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._core.storage.tags import RESUME_RETRY_TAG
 from dagster._core.utils import make_new_run_id
-from dagster.utils import merge_dicts
+from dagster._utils import merge_dicts
 
 from ...schema.errors import GrapheneNoModeProvidedError
 from ..external import ensure_valid_config, get_external_execution_plan_or_raise

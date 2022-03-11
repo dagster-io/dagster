@@ -16,7 +16,7 @@ from dagster import (
     solid,
 )
 from dagster._core.definitions.no_step_launcher import no_step_launcher
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 def test_airline_demo_load_df():

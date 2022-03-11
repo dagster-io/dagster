@@ -4,8 +4,8 @@ from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
 import pendulum
 
 from dagster import check
-from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
-from dagster.utils.schedules import schedule_execution_time_iterator
+from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE
+from dagster._utils.schedules import schedule_execution_time_iterator
 
 from .partition import (
     DEFAULT_DATE_FORMAT,

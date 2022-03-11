@@ -6,7 +6,7 @@ import subprocess
 
 import requests
 
-from dagster.utils import merge_dicts
+from dagster._utils import merge_dicts
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None
 

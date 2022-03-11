@@ -14,7 +14,7 @@ from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, S
 from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.snap import ExecutionPlanSnapshot
 from dagster._core.utils import toposort
-from dagster.utils.schedules import schedule_execution_time_iterator
+from dagster._utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
     ExternalAssetNode,

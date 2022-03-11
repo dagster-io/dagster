@@ -4,7 +4,7 @@ import re
 import shutil
 from typing import Dict
 
-from dagster.utils import file_relative_path
+from dagster._utils import file_relative_path
 
 
 def read_json(filename):

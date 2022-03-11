@@ -20,7 +20,7 @@ import traceback
 from contextlib import contextmanager
 
 from dagster import check
-from dagster.utils.interrupts import raise_interrupts_as
+from dagster._utils.interrupts import raise_interrupts_as
 
 
 class DagsterExecutionInterruptedError(BaseException):
@@ -354,7 +354,7 @@ class DagsterSubprocessError(DagsterError):
     """
 
     def __init__(self, *args, **kwargs):
-        from dagster.utils.error import SerializableErrorInfo
+        from dagster._utils.error import SerializableErrorInfo
 
         self.subprocess_error_infos = check.list_param(
             kwargs.pop("subprocess_error_infos"), "subprocess_error_infos", SerializableErrorInfo
@@ -372,7 +372,7 @@ class DagsterUserCodeProcessError(DagsterError):
 
     @staticmethod
     def from_error_info(error_info):
-        from dagster.utils.error import SerializableErrorInfo
+        from dagster._utils.error import SerializableErrorInfo
 
         check.inst_param(error_info, "error_info", SerializableErrorInfo)
         return DagsterUserCodeProcessError(
@@ -380,7 +380,7 @@ class DagsterUserCodeProcessError(DagsterError):
         )
 
     def __init__(self, *args, **kwargs):
-        from dagster.utils.error import SerializableErrorInfo
+        from dagster._utils.error import SerializableErrorInfo
 
         self.user_code_process_error_infos = check.list_param(
             kwargs.pop("user_code_process_error_infos"),
@@ -392,7 +392,7 @@ class DagsterUserCodeProcessError(DagsterError):
 
 class DagsterRepositoryLocationLoadError(DagsterError):
     def __init__(self, *args, **kwargs):
-        from dagster.utils.error import SerializableErrorInfo
+        from dagster._utils.error import SerializableErrorInfo
 
         self.load_error_infos = check.list_param(
             kwargs.pop("load_error_infos"),
@@ -406,7 +406,7 @@ class DagsterLaunchFailedError(DagsterError):
     """Indicates an error while attempting to launch a pipeline run."""
 
     def __init__(self, *args, **kwargs):
-        from dagster.utils.error import SerializableErrorInfo
+        from dagster._utils.error import SerializableErrorInfo
 
         self.serializable_error_info = check.opt_inst_param(
             kwargs.pop("serializable_error_info", None),
@@ -420,7 +420,7 @@ class DagsterBackfillFailedError(DagsterError):
     """Indicates an error while attempting to launch a backfill."""
 
     def __init__(self, *args, **kwargs):
-        from dagster.utils.error import SerializableErrorInfo
+        from dagster._utils.error import SerializableErrorInfo
 
         self.serializable_error_info = check.opt_inst_param(
             kwargs.pop("serializable_error_info", None),

@@ -5,7 +5,7 @@ import subprocess
 import tempfile
 
 from dagster._core.instance import DagsterInstance
-from dagster.utils import datetime_as_float, file_relative_path
+from dagster._utils import datetime_as_float, file_relative_path
 
 
 def _reconstruct_from_file(hostname, path, username="root", password="test"):

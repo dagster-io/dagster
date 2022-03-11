@@ -8,7 +8,7 @@ from dagster._core.events import EngineEventData, MetadataEntry
 from dagster._core.launcher.base import LaunchRunContext, RunLauncher
 from dagster._grpc.types import ExecuteRunArgs
 from dagster._serdes import ConfigurableClass
-from dagster.utils import merge_dicts
+from dagster._utils import merge_dicts
 
 from ..secretsmanager import get_secrets_from_arns, get_tagged_secrets
 from .tasks import default_ecs_task_definition, default_ecs_task_metadata

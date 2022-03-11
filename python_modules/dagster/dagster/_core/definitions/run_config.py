@@ -15,7 +15,7 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.storage.output_manager import IOutputManagerDefinition
 from dagster._core.storage.root_input_manager import IInputManagerDefinition
 from dagster._core.types.dagster_type import ALL_RUNTIME_BUILTINS, construct_dagster_type_dictionary
-from dagster.utils import check
+from dagster._utils import check
 
 from .configurable import ConfigurableDefinition
 from .definition_config_schema import IDefinitionConfigSchema

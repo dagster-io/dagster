@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 
 from dagster import DagsterInvariantViolationError, Partition
-from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE, date_partition_range
+from dagster._utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE, date_partition_range
 
 
 def test_date_partition_range_out_of_order():

@@ -10,7 +10,7 @@ class ForkedPdb(pdb.Pdb):
 
     .. code-block:: python
 
-        from dagster.utils.forked_pdb import ForkedPdb
+        from dagster._utils.forked_pdb import ForkedPdb
 
         @solid
         def complex_solid(_):

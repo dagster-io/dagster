@@ -34,8 +34,8 @@ from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._core.types.dagster_type import DagsterType
-from dagster.utils import merge_dicts
-from dagster.utils.forked_pdb import ForkedPdb
+from dagster._utils import merge_dicts
+from dagster._utils.forked_pdb import ForkedPdb
 
 from .compute import OpExecutionContext
 from .system import StepExecutionContext, TypeCheckContext
@@ -131,7 +131,7 @@ class UnboundSolidExecutionContext(OpExecutionContext):
 
     @property
     def pdb(self) -> ForkedPdb:
-        """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the solid.
+        """dagster._utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the solid.
 
         Example:
 
@@ -384,7 +384,7 @@ class BoundSolidExecutionContext(OpExecutionContext):
 
     @property
     def pdb(self) -> ForkedPdb:
-        """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the solid.
+        """dagster._utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the solid.
 
         Example:
 

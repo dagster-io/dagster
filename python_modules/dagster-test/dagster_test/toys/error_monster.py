@@ -15,7 +15,7 @@ from dagster import (
     pipeline,
     solid,
 )
-from dagster.utils import segfault
+from dagster._utils import segfault
 
 
 class ExampleException(Exception):

@@ -137,7 +137,7 @@ if __name__ == "__main__":
         },
         entry_points={
             "console_scripts": [
-                "dagster = dagister._cli:main",
+                "dagster = dagster._cli:main",
                 "dagster-daemon = dagster._daemon.cli:main",
             ]
         },

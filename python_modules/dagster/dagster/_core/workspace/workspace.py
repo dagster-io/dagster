@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Dict, NamedTuple, Optional
 
 from dagster._core.host_representation import RepositoryLocation, RepositoryLocationOrigin
-from dagster.utils.error import SerializableErrorInfo
+from dagster._utils.error import SerializableErrorInfo
 
 
 # For locations that are loaded asynchronously

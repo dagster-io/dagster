@@ -1,7 +1,7 @@
 from typing import Dict, List, Optional, Set, TypeVar, cast
 
 from dagster import check
-from dagster.utils import ensure_single_item, frozendict
+from dagster._utils import ensure_single_item, frozendict
 
 from .config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
 from .errors import (

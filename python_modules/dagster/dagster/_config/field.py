@@ -4,8 +4,8 @@ from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
 from dagster._serdes import serialize_value
-from dagster.utils import is_enum_value
-from dagster.utils.typing_api import is_closed_python_optional_type, is_typing_type
+from dagster._utils import is_enum_value
+from dagster._utils.typing_api import is_closed_python_optional_type, is_typing_type
 
 from .config_type import Array, ConfigAnyInstance, ConfigType, ConfigTypeKind
 from .field_utils import FIELD_NO_DEFAULT_PROVIDED, Map, all_optional_type

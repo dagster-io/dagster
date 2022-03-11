@@ -12,7 +12,7 @@ from dagster._config.source import StringSource
 from dagster._core.definitions.resource_definition import resource
 from dagster._core.instance import DagsterInstance
 from dagster._core.types.decorator import usable_as_dagster_type
-from dagster.utils import mkdir_p
+from dagster._utils import mkdir_p
 
 from .temp_file_manager import TempfileManager
 

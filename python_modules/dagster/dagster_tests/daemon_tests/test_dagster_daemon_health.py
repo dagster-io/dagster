@@ -13,7 +13,7 @@ from dagster._daemon.controller import (
     daemon_controller_from_instance,
     get_daemon_statuses,
 )
-from dagster.utils.error import SerializableErrorInfo
+from dagster._utils.error import SerializableErrorInfo
 
 
 def test_healthy():

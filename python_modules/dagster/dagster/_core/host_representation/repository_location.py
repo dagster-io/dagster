@@ -56,8 +56,8 @@ from dagster._grpc.impl import (
 from dagster._grpc.types import GetCurrentImageResult
 from dagster._serdes import deserialize_as
 from dagster.seven.compat.pendulum import PendulumDateTime
-from dagster.utils import merge_dicts
-from dagster.utils.hosted_user_process import external_repo_from_def
+from dagster._utils import merge_dicts
+from dagster._utils.hosted_user_process import external_repo_from_def
 
 from .selector import PipelineSelector
 

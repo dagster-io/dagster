@@ -12,8 +12,8 @@ from alembic.script import ScriptDirectory
 from sqlalchemy.ext.compiler import compiles
 
 from dagster._core.errors import DagsterInstanceMigrationRequired
-from dagster.utils import file_relative_path
-from dagster.utils.log import quieten
+from dagster._utils import file_relative_path
+from dagster._utils.log import quieten
 
 create_engine = db.create_engine  # exported
 

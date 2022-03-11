@@ -15,7 +15,7 @@ from dagster import (
     seven,
 )
 from dagster._core.test_utils import instance_for_test
-from dagster.utils import safe_tempfile_path
+from dagster._utils import safe_tempfile_path
 
 
 class LogTestFileHandler(logging.Handler):

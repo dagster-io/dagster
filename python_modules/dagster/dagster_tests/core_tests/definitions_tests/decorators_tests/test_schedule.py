@@ -23,7 +23,7 @@ from dagster import (
     weekly_schedule,
 )
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
-from dagster.utils.partitions import (
+from dagster._utils.partitions import (
     DEFAULT_DATE_FORMAT,
     DEFAULT_HOURLY_FORMAT_WITHOUT_TIMEZONE,
     DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE,

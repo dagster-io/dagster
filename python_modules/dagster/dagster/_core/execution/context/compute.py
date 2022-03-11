@@ -20,7 +20,7 @@ from dagster._core.events import DagsterEvent
 from dagster._core.instance import DagsterInstance
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import PipelineRun
-from dagster.utils.forked_pdb import ForkedPdb
+from dagster._utils.forked_pdb import ForkedPdb
 
 from .system import StepExecutionContext
 
@@ -126,7 +126,7 @@ class SolidExecutionContext(AbstractComputeExecutionContext):
 
     @property
     def pdb(self) -> ForkedPdb:
-        """dagster.utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the op.
+        """dagster._utils.forked_pdb.ForkedPdb: Gives access to pdb debugging from within the op.
 
         Example:
 

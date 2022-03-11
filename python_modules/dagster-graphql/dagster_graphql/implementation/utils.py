@@ -5,7 +5,7 @@ from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster._core.host_representation import GraphSelector, PipelineSelector
-from dagster.utils.error import serializable_error_info_from_exc_info
+from dagster._utils.error import serializable_error_info_from_exc_info
 
 
 def check_permission(permission):

@@ -8,7 +8,7 @@ from dagster import execute_pipeline
 from dagster._core.definitions.reconstructable import ReconstructableRepository
 from dagster._core.storage.pipeline_run import PipelineRunStatus
 from dagster._grpc.types import CancelExecutionRequest
-from dagster.utils import file_relative_path, safe_tempfile_path
+from dagster._utils import file_relative_path, safe_tempfile_path
 
 from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
 

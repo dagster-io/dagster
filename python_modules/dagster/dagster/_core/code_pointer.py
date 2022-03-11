@@ -9,7 +9,7 @@ from dagster import check
 from dagster._core.errors import DagsterImportError, DagsterInvariantViolationError
 from dagster._serdes import whitelist_for_serdes
 from dagster.seven import get_import_error_message, import_module_from_path
-from dagster.utils import alter_sys_path, frozenlist
+from dagster._utils import alter_sys_path, frozenlist
 
 
 class CodePointer(ABC):

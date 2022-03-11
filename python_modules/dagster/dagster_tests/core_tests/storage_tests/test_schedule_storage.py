@@ -4,7 +4,7 @@ from contextlib import contextmanager
 import pytest
 
 from dagster._core.storage.schedules import SqliteScheduleStorage
-from dagster.utils.test.schedule_storage import TestScheduleStorage
+from dagster._utils.test.schedule_storage import TestScheduleStorage
 
 
 @contextmanager
