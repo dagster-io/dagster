@@ -37,7 +37,9 @@ def test_io_manager():
             },
         )
 
-        expected_path = os.path.join(temp_dir, "pandas_df_asset-20220101160000_20220101170000.pq")
+        expected_path = os.path.join(
+            temp_dir, "pandas_df_asset", "20220101160000_20220101170000.pq"
+        )
         res = io_manager_test_job.execute_in_process(partition_key="2022-01-01-16:00")
         assert res.success
         assert os.path.exists(expected_path)

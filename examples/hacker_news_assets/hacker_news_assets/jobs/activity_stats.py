@@ -1,4 +1,4 @@
-from hacker_news_assets.assets import prod_assets, staging_assets
+from hacker_news_assets.assets import local_assets, prod_assets, staging_assets
 
 from dagster import AssetGroup, JobDefinition
 
@@ -17,3 +17,4 @@ def make_activity_stats_job(asset_group: AssetGroup) -> JobDefinition:
 
 activity_stats_prod_job = make_activity_stats_job(prod_assets)
 activity_stats_staging_job = make_activity_stats_job(staging_assets)
+activity_stats_local_job = make_activity_stats_job(local_assets)
