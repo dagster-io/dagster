@@ -83,6 +83,15 @@ class SnowflakeIOManager(IOManager):
             yield from self._handle_spark_output(obj, schema, table)
         elif isinstance(obj, PandasDataFrame):
             yield from self._handle_pandas_output(obj, schema, table)
+        elif obj is None:  # dbt
+            config = dict(SHARED_SNOWFLAKE_CONF)
+            config["schema"] = DB_SCHEMA
+            with connect_snowflake(config=config) as con:
+                df = read_sql(f"SELECT * FROM {context.name} LIMIT 5", con=con)
+                num_rows = con.execute(f"SELECT COUNT(*) FROM {context.name}").fetchone()
+
+            yield MetadataEntry.md(df.to_markdown(), "Data sample")
+            yield MetadataEntry.int(num_rows, "Rows")
         else:
             raise Exception(
                 "SnowflakeIOManager only supports pandas DataFrames and spark DataFrames"
