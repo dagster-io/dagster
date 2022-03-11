@@ -9,7 +9,7 @@ import pendulum
 from dateutil.relativedelta import relativedelta
 
 from dagster import check
-from dagster.serdes import whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 
 from ...seven.compat.pendulum import PendulumDateTime, to_timezone
 from ...utils import frozenlist, merge_dicts

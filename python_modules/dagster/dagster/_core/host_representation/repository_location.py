@@ -54,7 +54,7 @@ from dagster._grpc.impl import (
     get_partition_tags,
 )
 from dagster._grpc.types import GetCurrentImageResult
-from dagster.serdes import deserialize_as
+from dagster._serdes import deserialize_as
 from dagster.seven.compat.pendulum import PendulumDateTime
 from dagster.utils import merge_dicts
 from dagster.utils.hosted_user_process import external_repo_from_def

@@ -12,7 +12,7 @@ from dagster._core.host_representation.external_data import (
     ExternalTargetData,
     external_asset_graph_from_defs,
 )
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
 
 
 def test_single_asset_job():

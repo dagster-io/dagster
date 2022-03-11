@@ -43,8 +43,8 @@ from dagster._core.snap.execution_plan_snapshot import (
 )
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._grpc.types import ExecutionPlanSnapshotArgs
-from dagster.serdes import deserialize_as
-from dagster.serdes.ipc import IPCErrorMessage
+from dagster._serdes import deserialize_as
+from dagster._serdes.ipc import IPCErrorMessage
 from dagster.seven import nullcontext
 from dagster.utils import start_termination_thread
 from dagster.utils.error import serializable_error_info_from_exc_info

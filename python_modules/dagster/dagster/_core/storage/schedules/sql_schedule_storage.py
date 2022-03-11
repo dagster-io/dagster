@@ -14,7 +14,7 @@ from dagster._core.scheduler.instigation import (
     TickStatsSnapshot,
     TickStatus,
 )
-from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
 
 from .base import ScheduleStorage

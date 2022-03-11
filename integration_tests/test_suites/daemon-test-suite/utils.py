@@ -1,7 +1,7 @@
 import contextlib
 
 from dagster import seven
-from dagster.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 
 
 @contextlib.contextmanager

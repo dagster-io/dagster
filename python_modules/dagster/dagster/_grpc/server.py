@@ -23,12 +23,12 @@ from dagster._core.host_representation.origin import ExternalPipelineOrigin, Ext
 from dagster._core.instance import DagsterInstance
 from dagster._core.origin import DEFAULT_DAGSTER_ENTRY_POINT, get_python_environment_entry_point
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
-from dagster.serdes import (
+from dagster._serdes import (
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,
     whitelist_for_serdes,
 )
-from dagster.serdes.ipc import IPCErrorMessage, ipc_write_stream, open_ipc_subprocess
+from dagster._serdes.ipc import IPCErrorMessage, ipc_write_stream, open_ipc_subprocess
 from dagster.utils import find_free_port, frozenlist, safe_tempfile_path_unmanaged
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 

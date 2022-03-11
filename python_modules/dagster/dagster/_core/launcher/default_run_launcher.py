@@ -17,7 +17,7 @@ from dagster._grpc.types import (
     ExecuteExternalPipelineArgs,
     StartRunResult,
 )
-from dagster.serdes import ConfigurableClass, deserialize_as, deserialize_json_to_dagster_namedtuple
+from dagster._serdes import ConfigurableClass, deserialize_as, deserialize_json_to_dagster_namedtuple
 from dagster.utils import merge_dicts
 
 from .base import LaunchRunContext, RunLauncher

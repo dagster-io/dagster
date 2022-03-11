@@ -14,8 +14,8 @@ from dagster._core.errors import DagsterEventLogInvalidForRun
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.stats import build_run_step_stats_from_events
-from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
-from dagster.serdes.errors import DeserializationError
+from dagster._serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
+from dagster._serdes.errors import DeserializationError
 from dagster.utils import datetime_as_float, utc_datetime_from_naive, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRunStatsSnapshot

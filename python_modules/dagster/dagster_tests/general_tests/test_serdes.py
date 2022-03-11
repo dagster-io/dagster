@@ -8,8 +8,8 @@ import pytest
 
 from dagster import seven
 from dagster.check import ParameterCheckError, inst_param, set_param
-from dagster.serdes.errors import DeserializationError, SerdesUsageError, SerializationError
-from dagster.serdes.serdes import (
+from dagster._serdes.errors import DeserializationError, SerdesUsageError, SerializationError
+from dagster._serdes.serdes import (
     DefaultEnumSerializer,
     DefaultNamedTupleSerializer,
     EnumSerializer,
@@ -25,7 +25,7 @@ from dagster.serdes.serdes import (
     serialize_value,
     unpack_inner_value,
 )
-from dagster.serdes.utils import create_snapshot_id, hash_str
+from dagster._serdes.utils import create_snapshot_id, hash_str
 
 
 def test_deserialize_value_ok():

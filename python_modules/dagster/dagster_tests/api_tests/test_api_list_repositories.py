@@ -11,7 +11,7 @@ from dagster._api.list_repositories import (
 from dagster._core.code_pointer import FileCodePointer, ModuleCodePointer, PackageCodePointer
 from dagster._core.errors import DagsterUserCodeProcessError
 from dagster._grpc.types import LoadableRepositorySymbol
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils import file_relative_path
 
 

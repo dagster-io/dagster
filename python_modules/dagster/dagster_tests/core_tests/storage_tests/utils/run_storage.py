@@ -39,7 +39,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._core.utils import make_new_run_id
 from dagster._daemon.daemon import SensorDaemon
 from dagster._daemon.types import DaemonHeartbeat
-from dagster.serdes import serialize_pp
+from dagster._serdes import serialize_pp
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 
 win_py36 = seven.IS_WINDOWS and sys.version_info[0] == 3 and sys.version_info[1] == 6

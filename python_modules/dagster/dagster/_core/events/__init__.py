@@ -29,7 +29,7 @@ from dagster._core.execution.plan.handle import ResolvedFromDynamicStepHandle, S
 from dagster._core.execution.plan.outputs import StepOutputData
 from dagster._core.log_manager import DagsterLogManager
 from dagster._core.storage.pipeline_run import PipelineRunStatus
-from dagster.serdes import register_serdes_tuple_fallbacks, whitelist_for_serdes
+from dagster._serdes import register_serdes_tuple_fallbacks, whitelist_for_serdes
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
 from dagster.utils.timing import format_duration
 

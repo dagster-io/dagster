@@ -3,7 +3,7 @@
 import sys
 import time
 
-from dagster.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster.utils import file_relative_path
 from dagster.utils.interrupts import setup_interrupt_handlers
 

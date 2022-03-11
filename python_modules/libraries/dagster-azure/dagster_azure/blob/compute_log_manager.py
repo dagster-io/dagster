@@ -10,7 +10,7 @@ from dagster._core.storage.compute_log_manager import (
     ComputeLogManager,
 )
 from dagster._core.storage.local_compute_log_manager import IO_TYPE_EXTENSION, LocalComputeLogManager
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import ensure_dir, ensure_file
 
 from .utils import create_blob_client, generate_blob_sas

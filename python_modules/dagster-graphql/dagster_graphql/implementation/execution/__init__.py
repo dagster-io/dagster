@@ -4,7 +4,7 @@ from rx import Observable
 from dagster import check
 from dagster._core.storage.compute_log_manager import ComputeIOType
 from dagster._core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster.serdes import serialize_dagster_namedtuple
+from dagster._serdes import serialize_dagster_namedtuple
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 from ..external import ExternalPipeline, ensure_valid_config, get_external_pipeline_or_raise

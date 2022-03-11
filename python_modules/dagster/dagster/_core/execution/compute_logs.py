@@ -9,7 +9,7 @@ import warnings
 from contextlib import contextmanager
 
 from dagster._core.execution import poll_compute_logs, watch_orphans
-from dagster.serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
+from dagster._serdes.ipc import interrupt_ipc_subprocess, open_ipc_subprocess
 from dagster.seven import IS_WINDOWS, wait_for_process
 from dagster.utils import ensure_file
 

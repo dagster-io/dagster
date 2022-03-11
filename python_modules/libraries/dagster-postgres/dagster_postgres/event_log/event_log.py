@@ -16,7 +16,7 @@ from dagster._core.storage.event_log import (
 from dagster._core.storage.event_log.migration import ASSET_KEY_INDEX_COLS
 from dagster._core.storage.event_log.polling_event_watcher import CallbackAfterCursor
 from dagster._core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
-from dagster.serdes import (
+from dagster._serdes import (
     ConfigurableClass,
     ConfigurableClassData,
     deserialize_json_to_dagster_namedtuple,

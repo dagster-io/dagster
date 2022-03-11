@@ -11,7 +11,7 @@ from dagster._config.config_type import Noneable as ConfigNoneable
 from dagster._core.definitions.events import TypeCheck
 from dagster._core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
 from dagster._core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
-from dagster.serdes import whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 
 from .builtin_config_schemas import BuiltinSchemas
 from .config_schema import DagsterTypeLoader, DagsterTypeMaterializer

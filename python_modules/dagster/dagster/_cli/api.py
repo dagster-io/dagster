@@ -24,7 +24,7 @@ from dagster._core.utils import coerce_valid_log_level
 from dagster._grpc import DagsterGrpcClient, DagsterGrpcServer
 from dagster._grpc.impl import core_execute_run
 from dagster._grpc.types import ExecuteRunArgs, ExecuteStepArgs, ResumeRunArgs
-from dagster.serdes import deserialize_as, serialize_dagster_namedtuple
+from dagster._serdes import deserialize_as, serialize_dagster_namedtuple
 from dagster.seven import nullcontext
 from dagster.utils.error import serializable_error_info_from_exc_info
 from dagster.utils.hosted_user_process import recon_pipeline_from_origin

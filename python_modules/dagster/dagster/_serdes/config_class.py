@@ -26,7 +26,7 @@ class ConfigurableClassData(
     Users should not instantiate this class directly.
 
     Classes intended to be serialized in this way should implement the
-    :py:class:`dagster.serdes.ConfigurableClass` mixin.
+    :py:class:`dagister._serdes.ConfigurableClass` mixin.
     """
 
     def __new__(cls, module_name, class_name, config_yaml):

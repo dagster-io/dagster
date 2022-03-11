@@ -7,7 +7,7 @@ from dagster._core.host_representation.external_data import ExternalScheduleExec
 from dagster._core.host_representation.handle import RepositoryHandle
 from dagster._core.instance import DagsterInstance
 from dagster._grpc.types import ExternalScheduleExecutionArgs
-from dagster.serdes import deserialize_as
+from dagster._serdes import deserialize_as
 from dagster.seven.compat.pendulum import PendulumDateTime
 
 if TYPE_CHECKING:

@@ -9,7 +9,7 @@ from dagster._core.storage.runs import (
 )
 from dagster._core.storage.sql import stamp_alembic_rev  # pylint: disable=unused-import
 from dagster._core.storage.sql import create_engine, run_alembic_upgrade
-from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
+from dagster._serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
 from dagster.utils.backcompat import experimental_class_warning
 

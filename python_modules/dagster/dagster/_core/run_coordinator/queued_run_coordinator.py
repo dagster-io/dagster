@@ -9,7 +9,7 @@ from dagster._config.config_type import Array, Noneable, ScalarUnion
 from dagster._config.field_utils import Shape
 from dagster._core.events.log import EventLogEntry
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 
 from .base import RunCoordinator, SubmitRunContext
 

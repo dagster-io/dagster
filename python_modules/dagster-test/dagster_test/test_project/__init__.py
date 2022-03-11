@@ -32,7 +32,7 @@ from dagster._core.origin import (
     RepositoryPythonOrigin,
 )
 from dagster._core.test_utils import in_process_test_workspace
-from dagster.serdes import whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 from dagster.utils import file_relative_path, git_repository_root
 
 IS_BUILDKITE = os.getenv("BUILDKITE") is not None

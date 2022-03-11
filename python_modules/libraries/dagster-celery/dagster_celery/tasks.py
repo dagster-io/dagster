@@ -3,7 +3,7 @@ from dagster._core.definitions.reconstructable import ReconstructablePipeline
 from dagster._core.events import EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster._grpc.types import ExecuteStepArgs
-from dagster.serdes import serialize_dagster_namedtuple, unpack_value
+from dagster._serdes import serialize_dagster_namedtuple, unpack_value
 
 from .core_execution_loop import DELEGATE_MARKER
 from .executor import CeleryExecutor

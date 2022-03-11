@@ -19,7 +19,7 @@ from dagster._core.test_utils import (
 from dagster._core.workspace.load_target import EmptyWorkspaceTarget
 from dagster._daemon import get_default_daemon_logger
 from dagster._daemon.monitoring.monitoring_daemon import monitor_started_run, monitor_starting_run
-from dagster.serdes import ConfigurableClass
+from dagster._serdes import ConfigurableClass
 
 
 class TestRunLauncher(RunLauncher, ConfigurableClass):

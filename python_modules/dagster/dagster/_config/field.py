@@ -3,7 +3,7 @@ from typing import Any, Union, overload
 from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster._core.errors import DagsterInvalidConfigError, DagsterInvalidDefinitionError
-from dagster.serdes import serialize_value
+from dagster._serdes import serialize_value
 from dagster.utils import is_enum_value
 from dagster.utils.typing_api import is_closed_python_optional_type, is_typing_type
 

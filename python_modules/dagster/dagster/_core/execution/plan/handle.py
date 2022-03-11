@@ -3,7 +3,7 @@ from typing import NamedTuple, Optional, Union, cast
 
 from dagster import check
 from dagster._core.definitions.dependency import NodeHandle
-from dagster.serdes import whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes

@@ -19,7 +19,7 @@ from dagster._core.origin import (
     RepositoryPythonOrigin,
 )
 from dagster._core.selector import parse_solid_selection
-from dagster.serdes import pack_value, unpack_value, whitelist_for_serdes
+from dagster._serdes import pack_value, unpack_value, whitelist_for_serdes
 from dagster.utils import frozenlist
 from dagster.utils.backcompat import experimental
 

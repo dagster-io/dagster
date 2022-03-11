@@ -53,7 +53,7 @@ from dagster._core.storage.event_log.sqlite.sqlite_event_log import SqliteEventL
 from dagster._core.test_utils import instance_for_test
 from dagster._core.utils import make_new_run_id
 from dagster._loggers import colored_console_logger
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster.utils import datetime_as_float
 
 DEFAULT_RUN_ID = "foo"

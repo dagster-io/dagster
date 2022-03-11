@@ -22,7 +22,7 @@ from dagster._core.errors import (
 )
 from dagster._core.instance import DagsterInstance
 from dagster._core.instance.ref import InstanceRef
-from dagster.serdes import whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 from dagster.seven import funcsigs
 from dagster.utils import ensure_gen
 

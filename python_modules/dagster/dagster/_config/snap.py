@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, NamedTuple, Optional, Set, cast
 
 from dagster import check
-from dagster.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
+from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 
 from .config_type import ConfigScalarKind, ConfigType, ConfigTypeKind
 from .field import Field

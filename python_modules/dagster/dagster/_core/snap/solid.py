@@ -12,8 +12,8 @@ from dagster._core.definitions import (
     SolidDefinition,
 )
 from dagster._core.definitions.metadata import MetadataEntry
-from dagster.serdes import whitelist_for_serdes
-from dagster.serdes.serdes import DefaultNamedTupleSerializer
+from dagster._serdes import whitelist_for_serdes
+from dagster._serdes.serdes import DefaultNamedTupleSerializer
 
 from .dep_snapshot import (
     DependencyStructureSnapshot,

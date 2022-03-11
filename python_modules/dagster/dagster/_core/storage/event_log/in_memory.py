@@ -7,7 +7,7 @@ from dagster import check
 from dagster._core.definitions.events import AssetKey
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
-from dagster.serdes import ConfigurableClass
+from dagster._serdes import ConfigurableClass
 
 from .base import (
     EventLogRecord,

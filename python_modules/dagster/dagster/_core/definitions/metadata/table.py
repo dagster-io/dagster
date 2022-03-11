@@ -2,7 +2,7 @@ import warnings
 from typing import Any, Dict, List, NamedTuple, Optional, Type, Union, cast
 
 import dagster.check as check
-from dagster.serdes.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
+from dagster._serdes.serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
 from dagster.utils.backcompat import ExperimentalWarning, experimental
 
 # ########################

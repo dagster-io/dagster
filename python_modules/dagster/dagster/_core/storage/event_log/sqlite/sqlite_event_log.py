@@ -30,7 +30,7 @@ from dagster._core.storage.sql import (
     stamp_alembic_rev,
 )
 from dagster._core.storage.sqlite import create_db_conn_string
-from dagster.serdes import (
+from dagster._serdes import (
     ConfigurableClass,
     ConfigurableClassData,
     deserialize_json_to_dagster_namedtuple,

@@ -25,7 +25,7 @@ from dagster._core.execution.stats import (
 )
 from dagster._core.instance import MayHaveInstanceWeakref
 from dagster._core.storage.pipeline_run import PipelineRunStatsSnapshot
-from dagster.serdes import whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 
 
 class RunShardedEventsCursor(NamedTuple):

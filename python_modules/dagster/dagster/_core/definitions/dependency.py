@@ -18,7 +18,7 @@ from typing import (
 from dagster import check
 from dagster._core.definitions.policy import RetryPolicy
 from dagster._core.errors import DagsterInvalidDefinitionError
-from dagster.serdes.serdes import (
+from dagster._serdes.serdes import (
     DefaultNamedTupleSerializer,
     WhitelistMap,
     register_serdes_tuple_fallbacks,

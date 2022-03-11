@@ -56,7 +56,7 @@ Instance
 .. autoclass:: InstanceRef
    :members:
 
-.. currentmodule:: dagster.serdes
+.. currentmodule:: dagster._serdes
 
 .. autoclass:: ConfigurableClass
    :members:

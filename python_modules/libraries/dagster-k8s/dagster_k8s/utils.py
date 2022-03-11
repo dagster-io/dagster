@@ -1,7 +1,7 @@
 import re
 
 from dagster import check, seven
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
 
 from .client import (
     DEFAULT_JOB_POD_COUNT,

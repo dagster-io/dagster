@@ -19,7 +19,7 @@ from dagster._core.execution.context_creation_pipeline import PlanExecutionConte
 from dagster._core.execution.plan.execute_step import core_dagster_event_sequence_for_step
 from dagster._core.instance import DagsterInstance
 from dagster._core.storage.file_manager import LocalFileHandle, LocalFileManager
-from dagster.serdes import deserialize_value
+from dagster._serdes import deserialize_value
 
 PICKLED_EVENTS_FILE_NAME = "events.pkl"
 PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"

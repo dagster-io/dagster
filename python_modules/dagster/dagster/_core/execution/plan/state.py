@@ -5,7 +5,7 @@ from dagster import check
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.execution.retries import RetryState
-from dagster.serdes import whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 
 
 @whitelist_for_serdes

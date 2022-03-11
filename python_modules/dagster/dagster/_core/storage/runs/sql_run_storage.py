@@ -27,7 +27,7 @@ from dagster._core.snap import (
 )
 from dagster._core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG, ROOT_RUN_ID_TAG
 from dagster._daemon.types import DaemonHeartbeat
-from dagster.serdes import (
+from dagster._serdes import (
     deserialize_as,
     deserialize_json_to_dagster_namedtuple,
     serialize_dagster_namedtuple,

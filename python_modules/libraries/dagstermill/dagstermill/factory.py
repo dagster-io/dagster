@@ -29,7 +29,7 @@ from dagster._core.execution.context.input import build_input_context
 from dagster._core.execution.context.system import StepExecutionContext
 from dagster._core.execution.plan.outputs import StepOutputHandle
 from dagster._core.storage.file_manager import FileHandle
-from dagster.serdes import pack_value
+from dagster._serdes import pack_value
 from dagster.seven import get_system_temp_directory
 from dagster.utils import mkdir_p, safe_tempfile_path
 from dagster.utils.backcompat import rename_warning

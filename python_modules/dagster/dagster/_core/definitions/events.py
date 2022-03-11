@@ -19,7 +19,7 @@ from typing import (
 from dagster import check, seven
 from dagster._core.errors import DagsterInvalidAssetKey
 from dagster._serdes import DefaultNamedTupleSerializer, whitelist_for_serdes
-from dagster._utils.backcompat import experimental_class_param_warning
+from dagster.utils.backcompat import experimental_class_param_warning
 
 from .metadata import (
     MetadataEntry,

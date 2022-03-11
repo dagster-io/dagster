@@ -18,7 +18,7 @@ from dagster._core.launcher import LaunchRunContext, RunLauncher
 from dagster._core.launcher.base import CheckRunHealthResult, WorkerStatus
 from dagster._core.storage.pipeline_run import PipelineRun, PipelineRunStatus
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
-from dagster.serdes import ConfigurableClass, ConfigurableClassData
+from dagster._serdes import ConfigurableClass, ConfigurableClassData
 from dagster.utils import frozentags, merge_dicts
 from dagster.utils.error import serializable_error_info_from_exc_info
 

@@ -14,7 +14,7 @@ from dagster._core.launcher.base import (
 from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._core.storage.tags import DOCKER_IMAGE_TAG
 from dagster._grpc.types import ExecuteRunArgs, ResumeRunArgs
-from dagster.serdes import ConfigurableClass
+from dagster._serdes import ConfigurableClass
 
 DOCKER_CONTAINER_ID_TAG = "docker/container_id"
 

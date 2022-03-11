@@ -7,7 +7,7 @@ from dagster import check
 from dagster._core.origin import PipelinePythonOrigin
 from dagster._core.storage.tags import PARENT_RUN_ID_TAG, ROOT_RUN_ID_TAG
 from dagster._core.utils import make_new_run_id
-from dagster.serdes.serdes import (
+from dagster._serdes.serdes import (
     DefaultNamedTupleSerializer,
     EnumSerializer,
     WhitelistMap,

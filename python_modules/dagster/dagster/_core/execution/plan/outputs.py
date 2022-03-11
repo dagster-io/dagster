@@ -7,7 +7,7 @@ from dagster._core.definitions import (
     MetadataEntry,
     NodeHandle,
 )
-from dagster.serdes import whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 
 from .handle import UnresolvedStepHandle
 from .objects import TypeCheckData

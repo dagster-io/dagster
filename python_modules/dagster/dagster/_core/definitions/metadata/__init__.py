@@ -17,7 +17,7 @@ from typing import (
 
 from dagster import check, seven
 from dagster._core.errors import DagsterInvalidMetadata
-from dagster.serdes import whitelist_for_serdes
+from dagster._serdes import whitelist_for_serdes
 from dagster.utils.backcompat import (
     canonicalize_backcompat_args,
     deprecation_warning,

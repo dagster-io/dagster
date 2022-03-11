@@ -41,7 +41,7 @@ from dagster._core.storage.pipeline_run import PipelineRun
 from dagster._core.types.dagster_type import resolve_dagster_type
 from dagster._core.utility_solids import define_stub_solid
 from dagster._core.utils import make_new_run_id
-from dagster.serdes import ConfigurableClass
+from dagster._serdes import ConfigurableClass
 
 # pylint: disable=unused-import
 from ..temp_file import (

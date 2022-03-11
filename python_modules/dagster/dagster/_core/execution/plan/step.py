@@ -16,7 +16,7 @@ from typing import (
 
 from dagster import check
 from dagster._core.definitions.utils import validate_tags
-from dagster.serdes.serdes import DefaultEnumSerializer, whitelist_for_serdes
+from dagster._serdes.serdes import DefaultEnumSerializer, whitelist_for_serdes
 from dagster.utils import merge_dicts
 
 from .handle import ResolvedFromDynamicStepHandle, StepHandle, UnresolvedStepHandle

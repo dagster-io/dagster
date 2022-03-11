@@ -18,7 +18,7 @@ from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._grpc.client import DagsterGrpcClient
 from dagster._grpc.server import open_server_process, wait_for_grpc_server
 from dagster._grpc.types import SensorExecutionArgs
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster._serdes import deserialize_json_to_dagster_namedtuple
 from dagster.seven import get_system_temp_directory
 from dagster.utils import file_relative_path, find_free_port
 from dagster.utils.error import SerializableErrorInfo

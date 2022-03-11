@@ -10,7 +10,7 @@ from dagster._core.execution.stats import RunStepKeyStatsSnapshot
 from dagster._core.host_representation import PipelineHandle
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import create_run_for_test, instance_for_test
-from dagster.serdes import serialize_dagster_namedtuple
+from dagster._serdes import serialize_dagster_namedtuple
 
 
 def runner_execute_run(runner, cli_args):

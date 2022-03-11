@@ -9,7 +9,7 @@ import pendulum
 from dagster import check
 from dagster.seven import funcsigs
 
-from ...serdes import whitelist_for_serdes
+from ..._serdes import whitelist_for_serdes
 from ...utils import ensure_gen, merge_dicts
 from ...utils.schedules import is_valid_cron_string
 from ..decorator_utils import get_function_params
