@@ -65,23 +65,23 @@ class ExternalRepositoryData(
         return super(ExternalRepositoryData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            external_pipeline_datas=check.list_param(
+            external_pipeline_datas=check.sequence_param(
                 external_pipeline_datas, "external_pipeline_datas", of_type=ExternalPipelineData
             ),
-            external_schedule_datas=check.list_param(
+            external_schedule_datas=check.sequence_param(
                 external_schedule_datas, "external_schedule_datas", of_type=ExternalScheduleData
             ),
-            external_partition_set_datas=check.list_param(
+            external_partition_set_datas=check.sequence_param(
                 external_partition_set_datas,
                 "external_partition_set_datas",
                 of_type=ExternalPartitionSetData,
             ),
-            external_sensor_datas=check.opt_list_param(
+            external_sensor_datas=check.opt_sequence_param(
                 external_sensor_datas,
                 "external_sensor_datas",
                 of_type=ExternalSensorData,
             ),
-            external_asset_graph_data=check.opt_list_param(
+            external_asset_graph_data=check.opt_sequence_param(
                 external_asset_graph_data,
                 "external_asset_graph_dats",
                 of_type=ExternalAssetNode,
@@ -684,11 +684,11 @@ class ExternalAssetNode(
         "_ExternalAssetNode",
         [
             ("asset_key", AssetKey),
-            ("dependencies", List[ExternalAssetDependency]),
-            ("depended_by", List[ExternalAssetDependedBy]),
+            ("dependencies", Sequence[ExternalAssetDependency]),
+            ("depended_by", Sequence[ExternalAssetDependedBy]),
             ("op_name", Optional[str]),
             ("op_description", Optional[str]),
-            ("job_names", List[str]),
+            ("job_names", Sequence[str]),
             ("partitions_def_data", Optional[ExternalPartitionsDefinitionData]),
             ("output_name", Optional[str]),
             ("output_description", Optional[str]),
@@ -703,11 +703,11 @@ class ExternalAssetNode(
     def __new__(
         cls,
         asset_key: AssetKey,
-        dependencies: List[ExternalAssetDependency],
-        depended_by: List[ExternalAssetDependedBy],
+        dependencies: Sequence[ExternalAssetDependency],
+        depended_by: Sequence[ExternalAssetDependedBy],
         op_name: Optional[str] = None,
         op_description: Optional[str] = None,
-        job_names: Optional[List[str]] = None,
+        job_names: Optional[Sequence[str]] = None,
         partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None,
         output_name: Optional[str] = None,
         output_description: Optional[str] = None,
@@ -715,17 +715,17 @@ class ExternalAssetNode(
         return super(ExternalAssetNode, cls).__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
-            dependencies=check.opt_list_param(
+            dependencies=check.opt_sequence_param(
                 dependencies, "dependencies", of_type=ExternalAssetDependency
             ),
-            depended_by=check.opt_list_param(
+            depended_by=check.opt_sequence_param(
                 depended_by, "depended_by", of_type=ExternalAssetDependedBy
             ),
             op_name=check.opt_str_param(op_name, "op_name"),
             op_description=check.opt_str_param(
                 op_description or output_description, "op_description"
             ),
-            job_names=check.opt_list_param(job_names, "job_names", of_type=str),
+            job_names=check.opt_sequence_param(job_names, "job_names", of_type=str),
             partitions_def_data=check.opt_inst_param(
                 partitions_def_data, "partitions_def_data", ExternalPartitionsDefinitionData
             ),
