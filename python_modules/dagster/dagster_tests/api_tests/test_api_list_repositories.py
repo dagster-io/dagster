@@ -4,7 +4,7 @@ import pytest
 from dagster_test.dagster_core_docker_buildkite import get_test_project_docker_image
 
 from dagster import seven
-from dagster.api.list_repositories import (
+from dagster._api.list_repositories import (
     sync_list_repositories_ephemeral_grpc,
     sync_list_repositories_grpc,
 )
