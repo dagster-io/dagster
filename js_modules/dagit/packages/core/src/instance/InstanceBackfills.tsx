@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   ButtonWIP,
-  ButtonLink,
   ColorsWIP,
   CursorPaginationControls,
   Group,
@@ -203,24 +202,16 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
     } else {
       const error = data.resumePartitionBackfill;
       SharedToaster.show({
-        message: (
-          <Group direction="column" spacing={4}>
-            <div>An unexpected error occurred. This backfill was not retried.</div>
-            <ButtonLink
-              color={ColorsWIP.White}
-              underline="always"
-              onClick={() => {
-                showCustomAlert({
-                  body: <PythonErrorInfo error={error} />,
-                });
-              }}
-            >
-              View error
-            </ButtonLink>
-          </Group>
-        ),
+        message: <div>An unexpected error occurred. This backfill was not retried.</div>,
         icon: 'error',
         intent: 'danger',
+        action: {
+          text: 'View error',
+          onClick: () =>
+            showCustomAlert({
+              body: <PythonErrorInfo error={error} />,
+            }),
+        },
       });
     }
   };

@@ -1,8 +1,8 @@
 import {useMutation} from '@apollo/client';
 import * as React from 'react';
+import {useHistory} from 'react-router';
 
 import {IconName} from '../../../ui/src';
-import {AppContext} from '../app/AppContext';
 import {DISABLED_MESSAGE, usePermissions} from '../app/Permissions';
 import {TelemetryAction, useTelemetryAction} from '../app/Telemetry';
 import {LAUNCH_PIPELINE_EXECUTION_MUTATION, handleLaunchResult} from '../runs/RunUtils';
@@ -17,6 +17,7 @@ import {showLaunchError} from './showLaunchError';
 interface LaunchRootExecutionButtonProps {
   disabled: boolean;
   getVariables: () => undefined | LaunchPipelineExecutionVariables;
+  behavior: 'open' | 'open-in-new-tab' | 'toast';
   pipelineName: string;
   title?: string;
   icon?: IconName;
@@ -27,8 +28,8 @@ export const LaunchRootExecutionButton: React.FC<LaunchRootExecutionButtonProps>
   const [launchPipelineExecution] = useMutation<LaunchPipelineExecution>(
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
   );
-  const {basePath} = React.useContext(AppContext);
   const logTelemetry = useTelemetryAction();
+  const history = useHistory();
 
   const onLaunch = async () => {
     const variables = props.getVariables();
@@ -47,7 +48,7 @@ export const LaunchRootExecutionButton: React.FC<LaunchRootExecutionButtonProps>
     try {
       const result = await launchPipelineExecution({variables});
       logTelemetry(TelemetryAction.LAUNCH_RUN, metadata);
-      handleLaunchResult(basePath, props.pipelineName, result, {});
+      handleLaunchResult(props.pipelineName, result, history, {behavior: props.behavior});
     } catch (error) {
       showLaunchError(error as Error);
     }

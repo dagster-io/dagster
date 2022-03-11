@@ -1,7 +1,7 @@
 import {useMutation} from '@apollo/client';
 import React from 'react';
+import {useHistory} from 'react-router';
 
-import {AppContext} from '../../app/AppContext';
 import {showLaunchError} from '../../launchpad/showLaunchError';
 import {LAUNCH_PIPELINE_EXECUTION_MUTATION, handleLaunchResult} from '../../runs/RunUtils';
 import {LaunchPipelineExecution} from '../../runs/types/LaunchPipelineExecution';
@@ -9,7 +9,7 @@ import {repoAddressToSelector} from '../repoAddressToSelector';
 import {RepoAddress} from '../types';
 
 export const useLaunchSingleAssetJob = () => {
-  const {basePath} = React.useContext(AppContext);
+  const history = useHistory();
   const [launchPipelineExecution] = useMutation<LaunchPipelineExecution>(
     LAUNCH_PIPELINE_EXECUTION_MUTATION,
   );
@@ -30,13 +30,11 @@ export const useLaunchSingleAssetJob = () => {
             },
           },
         });
-        handleLaunchResult(basePath, jobName, result, {
-          openInTab: true,
-        });
+        handleLaunchResult(jobName, result, history, {behavior: 'toast'});
       } catch (error) {
         showLaunchError(error as Error);
       }
     },
-    [basePath, launchPipelineExecution],
+    [history, launchPipelineExecution],
   );
 };

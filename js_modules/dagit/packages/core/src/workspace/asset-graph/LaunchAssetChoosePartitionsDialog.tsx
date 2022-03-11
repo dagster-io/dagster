@@ -15,9 +15,7 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 import * as yaml from 'yaml';
 
-import {AppContext} from '../../app/AppContext';
 import {showCustomAlert} from '../../app/CustomAlertProvider';
-import {SharedToaster} from '../../app/DomUtils';
 import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../../app/Util';
 import {PartitionHealthSummary, usePartitionHealthData} from '../../assets/PartitionHealthSummary';
@@ -34,7 +32,8 @@ import {
 } from '../../partitions/PartitionRangeInput';
 import {
   LAUNCH_PARTITION_BACKFILL_MUTATION,
-  messageForLaunchBackfillError,
+  showBackfillErrorToast,
+  showBackfillSuccessToast,
 } from '../../partitions/PartitionsBackfill';
 import {
   LaunchPartitionBackfill,
@@ -85,7 +84,6 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
   }`;
 
   const client = useApolloClient();
-  const {basePath} = React.useContext(AppContext);
   const history = useHistory();
 
   // Find the partition set name. This seems like a bit of a hack, unclear
@@ -193,9 +191,14 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
         },
       });
 
-      handleLaunchResult(basePath, assetJobName, launchResult, {});
+      setLaunching(false);
+      handleLaunchResult(assetJobName, launchResult, history, {behavior: 'toast'});
+
+      if (launchResult.data?.launchPipelineExecution.__typename === 'LaunchRunSuccess') {
+        setOpen(false);
+      }
     } else {
-      const launchBackfillResult = await client.mutate<
+      const {data: launchBackfillData} = await client.mutate<
         LaunchPartitionBackfill,
         LaunchPartitionBackfillVariables
       >({
@@ -217,17 +220,13 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
         },
       });
 
-      if (
-        launchBackfillResult.data?.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess'
-      ) {
-        history.push('/instance/backfills');
+      setLaunching(false);
+
+      if (launchBackfillData?.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess') {
+        showBackfillSuccessToast(history, launchBackfillData?.launchPartitionBackfill.backfillId);
+        setOpen(false);
       } else {
-        setLaunching(false);
-        SharedToaster.show({
-          message: messageForLaunchBackfillError(launchBackfillResult.data),
-          icon: 'error',
-          intent: 'danger',
-        });
+        showBackfillErrorToast(launchBackfillData);
       }
     }
   };

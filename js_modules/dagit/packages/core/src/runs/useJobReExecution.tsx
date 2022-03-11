@@ -1,8 +1,7 @@
 import {useMutation} from '@apollo/client';
 import * as React from 'react';
-import {useLocation} from 'react-router';
+import {useHistory} from 'react-router';
 
-import {AppContext} from '../app/AppContext';
 import {showLaunchError} from '../launchpad/showLaunchError';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 
@@ -19,13 +18,12 @@ import {
 import {RunFragment} from './types/RunFragment';
 
 export const useJobReExecution = (run: RunFragment | undefined | null) => {
-  const {basePath} = React.useContext(AppContext);
+  const history = useHistory();
   const [launchPipelineReexecution] = useMutation<
     LaunchPipelineReexecution,
     LaunchPipelineReexecutionVariables
   >(LAUNCH_PIPELINE_REEXECUTION_MUTATION);
   const repoMatch = useRepositoryForRun(run);
-  const location = useLocation();
 
   return React.useCallback(
     async (style: ReExecutionStyle) => {
@@ -42,13 +40,14 @@ export const useJobReExecution = (run: RunFragment | undefined | null) => {
 
       try {
         const result = await launchPipelineReexecution({variables});
-        handleLaunchResult(basePath, run.pipelineName, result, {
-          querystring: location.search,
+        handleLaunchResult(run.pipelineName, result, history, {
+          preserveQuerystring: true,
+          behavior: 'open',
         });
       } catch (error) {
         showLaunchError(error as Error);
       }
     },
-    [basePath, launchPipelineReexecution, repoMatch, run, location.search],
+    [history, launchPipelineReexecution, repoMatch, run],
   );
 };
