@@ -11,8 +11,7 @@ class Permissions(str, Enum):
     LAUNCH_PIPELINE_REEXECUTION = "launch_pipeline_reexecution"
     START_SCHEDULE = "start_schedule"
     STOP_RUNNING_SCHEDULE = "stop_running_schedule"
-    START_SENSOR = "start_sensor"
-    STOP_SENSOR = "stop_sensor"
+    EDIT_SENSOR = "edit_sensor"
     TERMINATE_PIPELINE_EXECUTION = "terminate_pipeline_execution"
     DELETE_PIPELINE_RUN = "delete_pipeline_run"
     RELOAD_REPOSITORY_LOCATION = "reload_repository_location"
@@ -30,8 +29,7 @@ VIEWER_PERMISSIONS: Dict[str, bool] = {
     Permissions.LAUNCH_PIPELINE_REEXECUTION: False,
     Permissions.START_SCHEDULE: False,
     Permissions.STOP_RUNNING_SCHEDULE: False,
-    Permissions.START_SENSOR: False,
-    Permissions.STOP_SENSOR: False,
+    Permissions.EDIT_SENSOR: False,
     Permissions.TERMINATE_PIPELINE_EXECUTION: False,
     Permissions.DELETE_PIPELINE_RUN: False,
     Permissions.RELOAD_REPOSITORY_LOCATION: False,
@@ -46,8 +44,7 @@ EDITOR_PERMISSIONS: Dict[str, bool] = {
     Permissions.LAUNCH_PIPELINE_REEXECUTION: True,
     Permissions.START_SCHEDULE: True,
     Permissions.STOP_RUNNING_SCHEDULE: True,
-    Permissions.START_SENSOR: True,
-    Permissions.STOP_SENSOR: True,
+    Permissions.EDIT_SENSOR: True,
     Permissions.TERMINATE_PIPELINE_EXECUTION: True,
     Permissions.DELETE_PIPELINE_RUN: True,
     Permissions.RELOAD_REPOSITORY_LOCATION: True,
