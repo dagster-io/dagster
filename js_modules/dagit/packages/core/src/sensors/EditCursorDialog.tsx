@@ -1,6 +1,16 @@
 import {gql, useMutation} from '@apollo/client';
 import {TextArea} from '@blueprintjs/core';
-import {ButtonWIP, DialogBody, DialogFooter, DialogWIP} from '@dagster-io/ui';
+import {
+  ButtonLink,
+  ButtonWIP,
+  ColorsWIP,
+  DialogBody,
+  DialogFooter,
+  DialogWIP,
+  Group,
+} from '@dagster-io/ui';
+import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import * as React from 'react';
 
 import 'chartjs-adapter-date-fns';
@@ -23,9 +33,29 @@ export const EditCursorDialog: React.FC<{
       variables: {sensorSelector, cursor: cursorValue},
     });
     if (data?.setSensorCursor.__typename === 'Sensor') {
-      SharedToaster.show({message: 'Set cursor value', intent: 'success'});
+      SharedToaster.show({message: 'Cursor value updated', intent: 'success'});
     } else {
-      SharedToaster.show({message: 'Could not set cursor value', intent: 'danger'});
+      const error = data.setSensorCursor;
+      SharedToaster.show({
+        intent: 'danger',
+        message: (
+          <Group direction="row" spacing={8}>
+            <div>Could not set cursor value.</div>
+            <ButtonLink
+              color={ColorsWIP.White}
+              underline="always"
+              onClick={() => {
+                showCustomAlert({
+                  title: 'Python Error',
+                  body: <PythonErrorInfo error={error} />,
+                });
+              }}
+            >
+              View error
+            </ButtonLink>
+          </Group>
+        ),
+      });
     }
     onClose();
   };
@@ -59,11 +89,6 @@ export const EditCursorDialog: React.FC<{
 const SET_CURSOR_MUTATION = gql`
   mutation SetSensorCursorMutation($sensorSelector: SensorSelector!, $cursor: String) {
     setSensorCursor(sensorSelector: $sensorSelector, cursor: $cursor) {
-      ... on PythonError {
-        message
-        className
-        stack
-      }
       ... on Sensor {
         id
         sensorState {
@@ -76,6 +101,8 @@ const SET_CURSOR_MUTATION = gql`
           }
         }
       }
+      ...PythonErrorFragment
     }
   }
+  ${PYTHON_ERROR_FRAGMENT}
 `;

@@ -1,5 +1,5 @@
 import {gql, NetworkStatus, useQuery} from '@apollo/client';
-import {Box, Tabs, Tab, Page} from '@dagster-io/ui';
+import {Box, Tabs, Tab, Page, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
@@ -124,8 +124,16 @@ export const SchedulePreviousRuns: React.FC<{
     pollInterval: 15 * 1000,
   });
 
-  if (!data || data.pipelineRunsOrError.__typename !== 'Runs') {
+  if (!data) {
     return null;
+  } else if (data.pipelineRunsOrError.__typename !== 'Runs') {
+    return (
+      <NonIdealState
+        icon="error"
+        title="Query Error"
+        description={data.pipelineRunsOrError.message}
+      />
+    );
   }
 
   const runs = data?.pipelineRunsOrError.results;
@@ -181,6 +189,9 @@ const PREVIOUS_RUNS_FOR_SCHEDULE_QUERY = gql`
             ...RunTableRunFragment
           }
         }
+      }
+      ... on Error {
+        message
       }
     }
   }

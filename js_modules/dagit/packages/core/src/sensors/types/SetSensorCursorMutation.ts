@@ -13,13 +13,6 @@ export interface SetSensorCursorMutation_setSensorCursor_SensorNotFoundError {
   __typename: "SensorNotFoundError" | "UnauthorizedError";
 }
 
-export interface SetSensorCursorMutation_setSensorCursor_PythonError {
-  __typename: "PythonError";
-  message: string;
-  className: string | null;
-  stack: string[];
-}
-
 export interface SetSensorCursorMutation_setSensorCursor_Sensor_sensorState_typeSpecificData_ScheduleData {
   __typename: "ScheduleData";
 }
@@ -33,6 +26,7 @@ export type SetSensorCursorMutation_setSensorCursor_Sensor_sensorState_typeSpeci
 
 export interface SetSensorCursorMutation_setSensorCursor_Sensor_sensorState {
   __typename: "InstigationState";
+  id: string;
   status: InstigationStatus;
   typeSpecificData: SetSensorCursorMutation_setSensorCursor_Sensor_sensorState_typeSpecificData | null;
 }
@@ -43,7 +37,20 @@ export interface SetSensorCursorMutation_setSensorCursor_Sensor {
   sensorState: SetSensorCursorMutation_setSensorCursor_Sensor_sensorState;
 }
 
-export type SetSensorCursorMutation_setSensorCursor = SetSensorCursorMutation_setSensorCursor_SensorNotFoundError | SetSensorCursorMutation_setSensorCursor_PythonError | SetSensorCursorMutation_setSensorCursor_Sensor;
+export interface SetSensorCursorMutation_setSensorCursor_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
+export interface SetSensorCursorMutation_setSensorCursor_PythonError {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+  cause: SetSensorCursorMutation_setSensorCursor_PythonError_cause | null;
+}
+
+export type SetSensorCursorMutation_setSensorCursor = SetSensorCursorMutation_setSensorCursor_SensorNotFoundError | SetSensorCursorMutation_setSensorCursor_Sensor | SetSensorCursorMutation_setSensorCursor_PythonError;
 
 export interface SetSensorCursorMutation {
   setSensorCursor: SetSensorCursorMutation_setSensorCursor;

@@ -363,7 +363,13 @@ class TestSensorMutations(ExecutingGraphQLContextTestMatrix):
             return sensor["sensorState"]["typeSpecificData"]["lastCursor"]
 
         sensor_selector = infer_sensor_selector(graphql_context, "always_no_config_sensor")
+        assert get_cursor(sensor_selector) is None
+        set_cursor(sensor_selector, "new cursor value")
+        assert get_cursor(sensor_selector) == "new cursor value"
+        set_cursor(sensor_selector, None)
+        assert get_cursor(sensor_selector) is None
 
+        sensor_selector = infer_sensor_selector(graphql_context, "running_in_code_sensor")
         assert get_cursor(sensor_selector) is None
         set_cursor(sensor_selector, "new cursor value")
         assert get_cursor(sensor_selector) == "new cursor value"

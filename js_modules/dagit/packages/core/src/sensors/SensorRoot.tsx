@@ -80,9 +80,7 @@ export const SensorRoot: React.FC<{repoAddress: RepoAddress}> = ({repoAddress}) 
                 <SensorInfo daemonHealth={instance.daemonHealth} />
               </Box>
             ) : null}
-            {showLiveTicks ? (
-              <TickHistoryTimeline repoAddress={repoAddress} name={sensorOrError.name} />
-            ) : null}
+            <TickHistoryTimeline repoAddress={repoAddress} name={sensorOrError.name} />
             {selectedTab === 'ticks' ? (
               <TicksTable tabs={tabs} repoAddress={repoAddress} name={sensorOrError.name} />
             ) : (
