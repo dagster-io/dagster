@@ -249,11 +249,16 @@ def build_root_manager(
         def _op():
             pass
 
+        resource_config = input_context.step_context.resolved_run_config.resources[
+            source_asset.io_manager_key
+        ].config
+
         output_context = build_output_context(
             name=source_asset_key.path[-1],
             step_key="none",
             solid_def=_op,
             metadata=cast(Dict[str, Any], source_asset.metadata),
+            resource_config=resource_config,
         )
         input_context_with_upstream = build_input_context(
             name=input_context.name,
@@ -263,6 +268,7 @@ def build_root_manager(
             upstream_output=output_context,
             op_def=input_context.op_def,
             step_context=input_context.step_context,
+            resource_config=resource_config,
         )
 
         io_manager = getattr(cast(Any, input_context.resources), source_asset.io_manager_key)
