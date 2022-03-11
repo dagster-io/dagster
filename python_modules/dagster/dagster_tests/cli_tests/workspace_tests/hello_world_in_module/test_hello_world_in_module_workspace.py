@@ -11,7 +11,9 @@ def test_load_in_process_location_hello_world_terse():
     ) as workspace:
         assert isinstance(workspace, WorkspaceProcessContext)
         assert workspace.repository_locations_count == 1
-        assert workspace.repository_location_names[0] == "dagster._utils.test.hello_world_repository"
+        assert (
+            workspace.repository_location_names[0] == "dagster._utils.test.hello_world_repository"
+        )
 
 
 def test_load_in_process_location_hello_world_nested():
@@ -21,7 +23,9 @@ def test_load_in_process_location_hello_world_nested():
     ) as workspace:
         assert isinstance(workspace, WorkspaceProcessContext)
         assert workspace.repository_locations_count == 1
-        assert workspace.repository_location_names[0] == "dagster._utils.test.hello_world_repository"
+        assert (
+            workspace.repository_location_names[0] == "dagster._utils.test.hello_world_repository"
+        )
 
 
 def test_load_in_process_location_hello_world_nested_with_def():
