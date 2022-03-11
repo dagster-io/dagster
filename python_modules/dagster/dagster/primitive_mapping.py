@@ -3,7 +3,7 @@ from dagster._config.config_type import Array
 from dagster._config.config_type import ConfigAnyInstance as ConfigAny
 from dagster._config.field_utils import Permissive
 
-from .builtins import Bool, Float, Int, String
+from ._builtins import Bool, Float, Int, String
 from ._core.types.dagster_type import Any as RuntimeAny
 from ._core.types.dagster_type import List
 from ._core.types.python_dict import PythonDict

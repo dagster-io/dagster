@@ -3,7 +3,7 @@ from enum import Enum as PythonEnum
 from typing import Dict, List, Optional
 
 from dagster import _check as check
-from dagster.builtins import BuiltinEnum
+from dagster._builtins import BuiltinEnum
 from dagster._serdes import whitelist_for_serdes
 
 

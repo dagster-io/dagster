@@ -3,7 +3,7 @@ import time
 from typing import Any, Dict, List, NamedTuple, Optional
 
 from dagster import DagsterEvent, DagsterEventType, IntSource, String, _check as check
-from dagster.builtins import Bool
+from dagster._builtins import Bool
 from dagster._config import Field
 from dagster._config.config_type import Array, Noneable, ScalarUnion
 from dagster._config.field_utils import Shape

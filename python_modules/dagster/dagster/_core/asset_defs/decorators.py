@@ -14,7 +14,7 @@ from typing import (
 )
 
 from dagster import _check as check
-from dagster.builtins import Nothing
+from dagster._builtins import Nothing
 from dagster._config import Field
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
 from dagster._core.definitions.decorators.op import _Op

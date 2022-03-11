@@ -3,7 +3,7 @@ import typing
 
 from pep562 import pep562
 
-from dagster.builtins import Any, Bool, Float, Int, Nothing, String
+from dagster._builtins import Any, Bool, Float, Int, Nothing, String
 from dagster._config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
 from dagster._config.config_schema import ConfigSchema
 from dagster._config.config_type import Array, Noneable, ScalarUnion

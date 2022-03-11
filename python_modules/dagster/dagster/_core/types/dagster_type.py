@@ -5,7 +5,7 @@ from functools import partial
 from typing import cast
 
 from dagster import _check as check
-from dagster.builtins import BuiltinEnum
+from dagster._builtins import BuiltinEnum
 from dagster._config.config_type import Array, ConfigType
 from dagster._config.config_type import Noneable as ConfigNoneable
 from dagster._core.definitions.events import TypeCheck

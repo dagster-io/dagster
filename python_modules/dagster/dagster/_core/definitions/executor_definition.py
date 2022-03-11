@@ -3,7 +3,7 @@ from functools import update_wrapper
 from typing import Any, Dict, Optional
 
 from dagster import _check as check
-from dagster.builtins import Int
+from dagster._builtins import Int
 from dagster._config import Field, Selector
 from dagster._core.definitions.configurable import (
     ConfiguredDefinitionConfigSchema,
