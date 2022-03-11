@@ -13,7 +13,7 @@ from dagster._core.test_utils import (
     get_crash_signals,
     get_terminate_signal,
 )
-from dagster.scheduler.scheduler import launch_scheduled_runs
+from dagster._scheduler.scheduler import launch_scheduled_runs
 from dagster.seven import IS_WINDOWS
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 

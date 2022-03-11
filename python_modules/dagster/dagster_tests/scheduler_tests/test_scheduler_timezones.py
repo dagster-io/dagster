@@ -1,7 +1,7 @@
 import pendulum
 
 from dagster._core.scheduler.instigation import TickStatus
-from dagster.scheduler.scheduler import launch_scheduled_runs
+from dagster._scheduler.scheduler import launch_scheduled_runs
 from dagster.seven.compat.pendulum import create_pendulum_time, to_timezone
 from dagster.utils.partitions import DEFAULT_HOURLY_FORMAT_WITH_TIMEZONE
 
