@@ -173,7 +173,7 @@ def resolve_to_config_type(dagster_type) -> Union[ConfigType, bool]:
     #  2) We have been passed an invalid thing. We return False to signify this. It is
     #     up to callers to report a reasonable error.
 
-    from dagster.primitive_mapping import (
+    from dagster._primitive_mapping import (
         is_supported_config_python_builtin,
         remap_python_builtin_for_config,
     )
