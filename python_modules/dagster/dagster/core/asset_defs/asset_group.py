@@ -7,6 +7,7 @@ from types import ModuleType
 from typing import (
     Any,
     Dict,
+    Generator,
     Iterable,
     List,
     Mapping,
@@ -423,24 +424,22 @@ class AssetGroup(
             AssetGroup: An asset group with all the assets defined in the given modules.
         """
         asset_ids: Set[int] = set()
-        asset_keys: Set[AssetKey] = set()
+        asset_keys: Dict[AssetKey, ModuleType] = dict()
         source_assets: List[SourceAsset] = []
         assets: List[AssetsDefinition] = []
         for module in modules:
-            module_assets, module_source_assets = _find_assets_in_module(module)
-            all_assets: List[Union[AssetsDefinition, SourceAsset]] = [
-                *module_assets,
-                *module_source_assets,
-            ]
-            for asset in all_assets:
+            for asset in _find_assets_in_module(module):
                 if not id(asset) in asset_ids:
                     asset_ids.add(id(asset))
                     keys = asset.asset_keys if isinstance(asset, AssetsDefinition) else [asset.key]
                     for key in keys:
                         if key in asset_keys:
                             raise DagsterInvalidDefinitionError(
-                                f"Asset key {key} is defined multiple times in module {module.__name__}"
+                                "Asset key {key} is defined multiple times. Definitions in "
+                                f"module {asset_keys[key].__name__} and {module.__name__}."
                             )
+                        else:
+                            asset_keys[key] = module
                     if isinstance(asset, SourceAsset):
                         source_assets.append(asset)
                     else:
@@ -480,28 +479,18 @@ class AssetGroup(
 
 def _find_assets_in_module(
     module: ModuleType,
-) -> Tuple[Sequence[AssetsDefinition], Sequence[SourceAsset]]:
+) -> Generator[Union[AssetsDefinition, SourceAsset], None, None]:
     """
     Finds assets in the given module and adds them to the given sets of assets and source assets.
     """
-    assets: List[AssetsDefinition] = []
-    source_assets: List[SourceAsset] = []
-
     for attr in dir(module):
         value = getattr(module, attr)
-        if isinstance(value, AssetsDefinition):
-            assets.append(value)
-        elif isinstance(value, SourceAsset):
-            source_assets.append(value)
-        elif isinstance(value, list):
-            if all(isinstance(el, (AssetsDefinition, SourceAsset)) for el in value):
-                for el in value:
-                    if isinstance(el, AssetsDefinition):
-                        assets.append(el)
-                    elif isinstance(el, SourceAsset):
-                        source_assets.append(el)
-
-    return assets, source_assets
+        if isinstance(value, (AssetsDefinition, SourceAsset)):
+            yield value
+        elif isinstance(value, list) and all(
+            isinstance(el, (AssetsDefinition, SourceAsset)) for el in value
+        ):
+            yield from value
 
 
 def _find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]:
