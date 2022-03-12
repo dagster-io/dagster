@@ -1,9 +1,12 @@
 import inspect
 import warnings
 from functools import wraps
-from typing import Optional
+from types import FunctionType
+from typing import Any, Callable, Optional, Type, TypeVar, cast
 
 from dagster import check
+
+T = TypeVar("T")
 
 EXPERIMENTAL_WARNING_HELP = (
     "To mute warnings for experimental functionality, invoke"
@@ -13,7 +16,9 @@ EXPERIMENTAL_WARNING_HELP = (
 )
 
 
-def canonicalize_backcompat_args(new_val, new_arg, old_val, old_arg, breaking_version, **kwargs):
+def canonicalize_backcompat_args(
+    new_val: T, new_arg: str, old_val: T, old_arg: str, breaking_version: str, **kwargs: object
+) -> T:
     """
     Utility for managing backwards compatibility of two related arguments.
 
@@ -91,7 +96,13 @@ def deprecation_warning(
     )
 
 
-def rename_warning(new_name, old_name, breaking_version, additional_warn_txt=None, stacklevel=3):
+def rename_warning(
+    new_name: str,
+    old_name: str,
+    breaking_version: str,
+    additional_warn_txt: Optional[str] = None,
+    stacklevel: int = 3,
+) -> None:
     """
     Common utility for managing backwards compatibility of renaming.
     """
@@ -111,7 +122,7 @@ class ExperimentalWarning(Warning):
     pass
 
 
-def experimental_fn_warning(name, stacklevel=3):
+def experimental_fn_warning(name: str, stacklevel: int = 3) -> None:
     """Utility for warning that a function is experimental"""
     warnings.warn(
         '"{name}" is an experimental function. It may break in future versions, even between dot'
@@ -121,7 +132,7 @@ def experimental_fn_warning(name, stacklevel=3):
     )
 
 
-def experimental_decorator_warning(name, stacklevel=3):
+def experimental_decorator_warning(name: str, stacklevel: int = 3) -> None:
     """Utility for warning that a decorator is experimental"""
     warnings.warn(
         f'"{name}" is an experimental decorator. It may break in future versions, even between dot'
@@ -131,7 +142,7 @@ def experimental_decorator_warning(name, stacklevel=3):
     )
 
 
-def experimental_class_warning(name, stacklevel=3):
+def experimental_class_warning(name: str, stacklevel: int = 3) -> None:
     """Utility for warning that a class is experimental. Expected to be called from the class's
     __init__ method.
 
@@ -152,7 +163,7 @@ def experimental_class_warning(name, stacklevel=3):
     )
 
 
-def experimental_arg_warning(arg_name, fn_name, stacklevel=3):
+def experimental_arg_warning(arg_name: str, fn_name: str, stacklevel: int = 3) -> None:
     """Utility for warning that an argument to a function is experimental"""
     warnings.warn(
         '"{arg_name}" is an experimental argument to function "{fn_name}". '
@@ -164,7 +175,7 @@ def experimental_arg_warning(arg_name, fn_name, stacklevel=3):
     )
 
 
-def experimental_functionality_warning(desc, stacklevel=3):
+def experimental_functionality_warning(desc: str, stacklevel: int = 3) -> None:
     """Utility for warning that a particular functionality is experimental"""
     warnings.warn(
         f"{desc} is currently experimental functionality. It may break in future versions, even "
@@ -174,7 +185,7 @@ def experimental_functionality_warning(desc, stacklevel=3):
     )
 
 
-def experimental_class_param_warning(param_name, class_name, stacklevel=3):
+def experimental_class_param_warning(param_name: str, class_name: str, stacklevel=3) -> None:
     """Utility for warning that an argument to a constructor is experimental"""
     warnings.warn(
         (
@@ -186,7 +197,10 @@ def experimental_class_param_warning(param_name, class_name, stacklevel=3):
     )
 
 
-def experimental(callable_):
+F = TypeVar("F", bound=Callable)
+
+
+def experimental(callable_: F) -> F:
     """
     Spews an "experimental" warning whenever the given callable is called. If the argument is a
     class, this means the warning will be emitted when the class is instantiated.
@@ -212,9 +226,9 @@ def experimental(callable_):
             experimental_fn_warning(callable_.__name__, stacklevel=3)
             return callable_(*args, **kwargs)
 
-        return _inner
+        return cast(F, _inner)
 
-    if inspect.isclass(callable_):
+    elif inspect.isclass(callable_):
 
         undecorated_init = callable_.__init__
 
@@ -222,17 +236,20 @@ def experimental(callable_):
             experimental_class_warning(callable_.__name__, stacklevel=3)
             # Tuples must be handled differently, because the undecorated_init does not take any
             # arguments-- they're assigned in __new__.
-            if issubclass(callable_, tuple):
+            if issubclass(cast(Type, callable_), tuple):
                 undecorated_init(self)
             else:
                 undecorated_init(self, *args, **kwargs)
 
         callable_.__init__ = __init__
 
-        return callable_
+        return cast(F, callable_)
+
+    else:
+        check.failed("callable_ must be a function or a class")
 
 
-def experimental_decorator(decorator):
+def experimental_decorator(decorator: F) -> F:
     """
     Spews an "experimental" warning whenever the given decorator is invoked.
 
@@ -251,4 +268,4 @@ def experimental_decorator(decorator):
         experimental_decorator_warning(decorator.__name__, stacklevel=3)
         return decorator(*args, **kwargs)
 
-    return _inner
+    return cast(F, _inner)

@@ -3,7 +3,7 @@ import logging
 import sys
 import traceback
 from contextlib import contextmanager
-from typing import Dict, NamedTuple, Optional
+from typing import TYPE_CHECKING, Callable, Dict, NamedTuple, Optional
 
 import coloredlogs
 import pendulum
@@ -13,15 +13,18 @@ from dagster.config import Enum, EnumValue
 from dagster.core.definitions.logger_definition import logger
 from dagster.core.utils import PYTHON_LOGGING_LEVELS_MAPPING, coerce_valid_log_level
 
+if TYPE_CHECKING:
+    from dagster._core.events.log import EventLogEntry
+
 LogLevelEnum = Enum("log_level", list(map(EnumValue, PYTHON_LOGGING_LEVELS_MAPPING.keys())))
 
 
 class JsonFileHandler(logging.Handler):
-    def __init__(self, json_path):
+    def __init__(self, json_path: str):
         super(JsonFileHandler, self).__init__()
         self.json_path = check.str_param(json_path, "json_path")
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord) -> None:
         try:
             log_dict = copy.copy(record.__dict__)
 
@@ -80,12 +83,12 @@ class StructuredLoggerMessage(
 
 
 class JsonEventLoggerHandler(logging.Handler):
-    def __init__(self, json_path, construct_event_record):
+    def __init__(self, json_path: str, construct_event_record):
         super(JsonEventLoggerHandler, self).__init__()
         self.json_path = check.str_param(json_path, "json_path")
         self.construct_event_record = construct_event_record
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord) -> None:
         try:
             event_record = self.construct_event_record(record)
             with open(self.json_path, "a", encoding="utf8") as ff:
@@ -103,14 +106,14 @@ class StructuredLoggerHandler(logging.Handler):
         super(StructuredLoggerHandler, self).__init__()
         self.callback = check.is_callable(callback, "callback")
 
-    def emit(self, record):
+    def emit(self, record: logging.LogRecord) -> None:
         try:
             self.callback(
                 StructuredLoggerMessage(
                     name=record.name,
                     message=record.msg,
                     level=record.levelno,
-                    meta=record.dagster_meta,
+                    meta=record.dagster_meta,  # type: ignore
                     record=record,
                 )
             )

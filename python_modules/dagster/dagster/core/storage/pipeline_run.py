@@ -1,7 +1,7 @@
 import warnings
 from datetime import datetime
 from enum import Enum
-from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, NamedTuple, Optional, Type
+from typing import TYPE_CHECKING, AbstractSet, Any, Dict, List, Mapping, NamedTuple, Optional, Type
 
 from dagster import check
 from dagster.core.origin import PipelinePythonOrigin
@@ -273,7 +273,7 @@ class PipelineRun(
         [
             ("pipeline_name", str),
             ("run_id", str),
-            ("run_config", Dict[str, object]),
+            ("run_config", Mapping[str, object]),
             ("mode", Optional[str]),
             ("solid_selection", Optional[List[str]]),
             ("solids_to_execute", Optional[AbstractSet[str]]),
@@ -297,7 +297,7 @@ class PipelineRun(
         cls,
         pipeline_name: str,
         run_id: Optional[str] = None,
-        run_config: Optional[Dict[str, object]] = None,
+        run_config: Optional[Mapping[str, object]] = None,
         mode: Optional[str] = None,
         solid_selection: Optional[List[str]] = None,
         solids_to_execute: Optional[AbstractSet[str]] = None,
@@ -349,7 +349,7 @@ class PipelineRun(
             cls,
             pipeline_name=check.str_param(pipeline_name, "pipeline_name"),
             run_id=check.str_param(run_id, "run_id"),
-            run_config=check.opt_dict_param(run_config, "run_config", key_type=str),
+            run_config=check.opt_mapping_param(run_config, "run_config", key_type=str),
             mode=check.opt_str_param(mode, "mode"),
             solid_selection=solid_selection,
             solids_to_execute=solids_to_execute,

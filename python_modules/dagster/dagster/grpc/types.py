@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, NamedTuple, Optional
+from typing import Dict, List, Mapping, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
@@ -23,7 +23,7 @@ class ExecutionPlanSnapshotArgs(
         [
             ("pipeline_origin", ExternalPipelineOrigin),
             ("solid_selection", List[str]),
-            ("run_config", Dict[str, object]),
+            ("run_config", Mapping[str, object]),
             ("mode", str),
             ("step_keys_to_execute", Optional[List[str]]),
             ("pipeline_snapshot_id", str),
@@ -36,7 +36,7 @@ class ExecutionPlanSnapshotArgs(
         cls,
         pipeline_origin: ExternalPipelineOrigin,
         solid_selection: List[str],
-        run_config: Dict[str, object],
+        run_config: Mapping[str, object],
         mode: str,
         step_keys_to_execute: Optional[List[str]],
         pipeline_snapshot_id: str,

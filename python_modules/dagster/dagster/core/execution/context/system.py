@@ -85,7 +85,7 @@ class IPlanContext(ABC):
         return self.pipeline_run.run_id
 
     @property
-    def run_config(self) -> dict:
+    def run_config(self) -> Mapping[str, object]:
         return self.pipeline_run.run_config
 
     @property
