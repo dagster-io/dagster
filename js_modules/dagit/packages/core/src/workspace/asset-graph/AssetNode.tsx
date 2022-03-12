@@ -126,10 +126,10 @@ export const AssetNode: React.FC<{
                       to={
                         repoAddress.name
                           ? workspacePath(
-                              repoAddress.name,
-                              repoAddress.location,
-                              `jobs/${runOrError.pipelineName}`,
-                            )
+                            repoAddress.name,
+                            repoAddress.location,
+                            `jobs/${runOrError.pipelineName}`,
+                          )
                           : workspacePipelinePathGuessRepo(runOrError.pipelineName, true, '')
                       }
                     >
@@ -141,9 +141,9 @@ export const AssetNode: React.FC<{
                   <Link
                     style={{fontFamily: FontFamily.monospace, fontSize: 14}}
                     to={`/instance/runs/${runOrError.runId}?${qs.stringify({
-                      timestamp: event.stepStats.endTime,
-                      selection: event.stepStats.stepKey,
-                      logs: `step:${event.stepStats.stepKey}`,
+                      timestamp: event.stepStats?.endTime,
+                      selection: event.stepStats?.stepKey,
+                      logs: `step:${event.stepStats?.stepKey}`,
                     })}`}
                     onClick={(e) => e.stopPropagation()}
                     target="_blank"
@@ -152,18 +152,20 @@ export const AssetNode: React.FC<{
                   </Link>
                 </StatsRow>
                 <StatsRow>
-                  {event.stepStats.endTime ? (
+                  {event.stepStats?.endTime ? (
                     <TimestampDisplay
-                      timestamp={event.stepStats.endTime}
+                      timestamp={event.stepStats?.endTime}
                       timeFormat={{showSeconds: false, showTimezone: false}}
                     />
                   ) : (
                     'Never'
                   )}
-                  <TimeElapsed
-                    startUnix={event.stepStats.startTime}
-                    endUnix={event.stepStats.endTime}
-                  />
+                  {event.stepStats && (
+                    <TimeElapsed
+                      startUnix={event.stepStats?.startTime}
+                      endUnix={event.stepStats?.endTime}
+                    />
+                  )}
                 </StatsRow>
               </>
             ) : (

@@ -19,7 +19,7 @@ import {LatestMaterializationMetadataFragment} from './types/LatestMaterializati
 export const LatestMaterializationMetadata: React.FC<{
   latest: LatestMaterializationMetadataFragment | undefined;
 }> = ({latest}) => {
-  const latestRun = latest?.runOrError.__typename === 'Run' ? latest?.runOrError : null;
+  const latestRun = latest?.runOrError?.__typename === 'Run' ? latest?.runOrError : null;
   const repositoryOrigin = latestRun?.repositoryOrigin;
   const repoAddress = repositoryOrigin
     ? buildRepoAddress(repositoryOrigin.repositoryName, repositoryOrigin.repositoryLocationName)

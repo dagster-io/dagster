@@ -40,6 +40,7 @@ from .utils import check_valid_name
 
 if TYPE_CHECKING:
     from dagster.core.events.log import EventLogEntry
+    from dagster.core.definitions.events import AssetObservation
 
 
 @whitelist_for_serdes
@@ -180,7 +181,12 @@ class SensorDefinition:
         evaluation_fn: Optional[
             Callable[
                 ["SensorEvaluationContext"],
-                Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+                Union[
+                    Generator[Union[RunRequest, SkipReason, "AssetObservation"], None, None],
+                    RunRequest,
+                    SkipReason,
+                    "AssetObservation",
+                ],
             ]
         ] = None,
         pipeline_name: Optional[str] = None,
@@ -243,7 +249,8 @@ class SensorDefinition:
 
         self._raw_fn = check.callable_param(evaluation_fn, "evaluation_fn")
         self._evaluation_fn: Callable[
-            [SensorEvaluationContext], Generator[Union[RunRequest, SkipReason], None, None]
+            [SensorEvaluationContext],
+            Generator[Union[RunRequest, SkipReason, "AssetObservation"], None, None],
         ] = wrap_sensor_evaluation(self._name, evaluation_fn)
         self._min_interval = check.opt_int_param(
             minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
@@ -349,7 +356,6 @@ class SensorDefinition:
             pipeline_run_reactions = []
             skip_message = "Sensor function returned an empty result"
         elif len(result) == 1:
-            print('hello?!?!')
             item = result[0]
             check.inst(item, (SkipReason, RunRequest, PipelineRunReaction, AssetObservation))
             run_requests = [item] if isinstance(item, RunRequest) else []
@@ -515,9 +521,17 @@ def wrap_sensor_evaluation(
     sensor_name: str,
     fn: Callable[
         ["SensorEvaluationContext"],
-        Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
+        Union[
+            Generator[Union[RunRequest, SkipReason, "AssetObservation"], None, None],
+            RunRequest,
+            SkipReason,
+            "AssetObservation",
+        ],
     ],
-) -> Callable[["SensorEvaluationContext"], Generator[Union[SkipReason, RunRequest], None, None]]:
+) -> Callable[
+    ["SensorEvaluationContext"],
+    Generator[Union[SkipReason, RunRequest, "AssetObservation"], None, None],
+]:
     def _wrapped_fn(context):
         result = fn(context) if is_context_provided(get_function_params(fn)) else fn()
 

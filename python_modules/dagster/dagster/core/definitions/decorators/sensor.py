@@ -42,7 +42,7 @@ def sensor(
         Callable[
             [SensorEvaluationContext],
             Union[
-                Generator[Union[RunRequest, SkipReason], None, None],
+                Generator[Union[RunRequest, SkipReason, AssetObservation], None, None],
                 RunRequest,
                 SkipReason,
                 AssetObservation,
@@ -88,7 +88,12 @@ def sensor(
     def inner(
         fn: Callable[
             ["SensorEvaluationContext"],
-            Union[Generator[Union[SkipReason, RunRequest], None, None], SkipReason, RunRequest],
+            Union[
+                Generator[Union[SkipReason, RunRequest, AssetObservation], None, None],
+                SkipReason,
+                RunRequest,
+                AssetObservation,
+            ],
         ]
     ) -> SensorDefinition:
         check.callable_param(fn, "fn")

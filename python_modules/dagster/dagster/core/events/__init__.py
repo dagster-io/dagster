@@ -267,7 +267,7 @@ class DagsterEvent(
         "_DagsterEvent",
         [
             ("event_type_value", str),
-            ("pipeline_name", str),
+            ("pipeline_name", Optional[str]),
             ("step_handle", Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]]),
             ("solid_handle", Optional[NodeHandle]),
             ("step_kind_value", Optional[str]),
