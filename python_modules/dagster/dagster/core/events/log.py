@@ -48,6 +48,7 @@ class EventLogEntry(
             ("step_key", Optional[str]),
             ("pipeline_name", Optional[str]),
             ("dagster_event", Optional[DagsterEvent]),
+            ("sensor_name", Optional[str]),
         ],
     )
 ):
@@ -74,6 +75,8 @@ class EventLogEntry(
             structured event.
         pipeline_name (Optional[str]): (legacy) The pipeline which generated this event. Some events are
             generated outside of a pipeline context.
+        sensor_name (Optional[str]): The sensor which generated this event. Some events are generated
+            outside of a sensor context.
     """
 
     def __new__(
@@ -86,6 +89,7 @@ class EventLogEntry(
         step_key=None,
         pipeline_name=None,
         dagster_event=None,
+        sensor_name=None,
         job_name=None,
     ):
         if pipeline_name and job_name:
@@ -105,6 +109,7 @@ class EventLogEntry(
             check.opt_str_param(step_key, "step_key"),
             check.opt_str_param(pipeline_name, "pipeline_name"),
             check.opt_inst_param(dagster_event, "dagster_event", DagsterEvent),
+            check.opt_str_param(sensor_name, "sensor_name"),
         )
 
     @property

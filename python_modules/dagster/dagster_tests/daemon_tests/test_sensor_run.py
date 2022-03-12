@@ -275,6 +275,17 @@ def bad_request_unspecified(_ctx):
     yield RunRequest(run_key=None)
 
 
+@sensor(job=the_job)
+def yields_observation_sensor(_ctx):
+    yield AssetObservation("foo", metadata={"foo": "bar", "baz": "qux"})
+    yield RunRequest(run_key=None)
+
+
+@sensor(job=the_job)
+def only_observation_sensor(_ctx):
+    yield AssetObservation("foo_2", metadata={"foo": "bar", "baz": "qux"})
+
+
 @repository
 def the_repo():
     return [
@@ -306,6 +317,8 @@ def the_repo():
         bad_request_untargeted,
         bad_request_mismatch,
         bad_request_unspecified,
+        yields_observation_sensor,
+        only_observation_sensor,
     ]
 
 
@@ -2000,3 +2013,78 @@ def test_status_in_code_sensor():
                 )
 
                 assert len(instance.get_ticks(never_running_origin.get_id())) == 0
+
+
+def test_sensor_yields_observation():
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors() as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            job_sensor = external_repo.get_external_sensor("yields_observation_sensor")
+            instance.start_sensor(job_sensor)
+
+            evaluate_sensors(instance, workspace)
+            ticks = instance.get_ticks(job_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                job_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+            observations = instance.get_event_records(
+                EventRecordsFilter(event_type=DagsterEventType.ASSET_OBSERVATION)
+            )
+            assert len(observations) == 1
+            observation = observations[0]
+            assert observation.event_log_entry.pipeline_name == None
+            assert observation.event_log_entry.step_key == None
+            assert observation.event_log_entry.sensor_name == 'yields_observation_sensor'
+            observation = (
+                observation.event_log_entry.dagster_event.event_specific_data.asset_observation
+            )
+            assert observation.asset_key == AssetKey("foo")
+            assert len(observation.metadata_entries) == 2
+
+
+def test_sensor_only_observation_yielded():
+    freeze_datetime = to_timezone(
+        create_pendulum_time(year=2019, month=2, day=27, hour=23, minute=59, second=59, tz="UTC"),
+        "US/Central",
+    )
+    with instance_with_sensors() as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+            job_sensor = external_repo.get_external_sensor("only_observation_sensor")
+            instance.start_sensor(job_sensor)
+
+            evaluate_sensors(instance, workspace)
+            ticks = instance.get_ticks(job_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                job_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,  # no run requests yielded
+            )
+            observations = instance.get_event_records(
+                EventRecordsFilter(event_type=DagsterEventType.ASSET_OBSERVATION)
+            )
+            assert len(observations) == 1
+            observation = observations[0]
+            assert observation.event_log_entry.sensor_name == 'only_observation_sensor'
+            observation = (
+                observation.event_log_entry.dagster_event.event_specific_data.asset_observation
+            )
+            assert observation.asset_key == AssetKey("foo_2")
+            assert len(observation.metadata_entries) == 2

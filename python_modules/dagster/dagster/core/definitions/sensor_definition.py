@@ -343,20 +343,21 @@ class SensorDefinition:
         run_requests: List[RunRequest]
         pipeline_run_reactions: List[PipelineRunReaction]
 
-        observations: List[AssetObservation]
+        observations: List[AssetObservation] = []
         if not result or result == [None]:
             run_requests = []
             pipeline_run_reactions = []
             skip_message = "Sensor function returned an empty result"
         elif len(result) == 1:
-            # if only yields observation raise error
+            print('hello?!?!')
             item = result[0]
-            check.inst(item, (SkipReason, RunRequest, PipelineRunReaction))
+            check.inst(item, (SkipReason, RunRequest, PipelineRunReaction, AssetObservation))
             run_requests = [item] if isinstance(item, RunRequest) else []
             pipeline_run_reactions = (
                 [cast(PipelineRunReaction, item)] if isinstance(item, PipelineRunReaction) else []
             )
             skip_message = item.skip_message if isinstance(item, SkipReason) else None
+            observations = [item] if isinstance(item, AssetObservation) else []
         else:
             check.is_list(result, (SkipReason, RunRequest, PipelineRunReaction, AssetObservation))
 
@@ -406,6 +407,7 @@ class SensorDefinition:
                 level=logging.INFO,
                 timestamp=time.time(),
                 dagster_event=observation_event,
+                sensor_name=self._name,
             )
             context.instance.store_event(event_record)
 
