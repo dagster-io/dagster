@@ -1,3 +1,5 @@
+from typing import List, Optional, cast
+
 import kubernetes
 from dagster_k8s.launcher import K8sRunLauncher
 
@@ -14,7 +16,6 @@ from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating import StepDelegatingExecutor
 from dagster._core.executor.step_delegating.step_handler import StepHandler
 from dagster._core.executor.step_delegating.step_handler.base import StepHandlerContext
-from dagster._core.types.dagster_type import Optional
 from dagster._utils import frozentags, merge_dicts
 
 from .job import (
@@ -84,32 +85,37 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             else run_launcher.image_pull_policy
         ),
         image_pull_secrets=run_launcher.image_pull_secrets
-        + (exc_cfg.get("image_pull_secrets") or []),
+        + check.opt_list_elem(exc_cfg, "image_pull_secrets", dict),
         service_account_name=(
             exc_cfg.get("service_account_name")
             if exc_cfg.get("service_account_name") != None
             else run_launcher.service_account_name
         ),
-        env_config_maps=run_launcher.env_config_maps + (exc_cfg.get("env_config_maps") or []),
-        env_secrets=run_launcher.env_secrets + (exc_cfg.get("env_secrets") or []),
-        env_vars=run_launcher.env_vars + (exc_cfg.get("env_vars") or []),
-        volume_mounts=run_launcher.volume_mounts + (exc_cfg.get("volume_mounts") or []),
-        volumes=run_launcher.volumes + (exc_cfg.get("volumes") or []),
-        labels=merge_dicts(run_launcher.labels, exc_cfg.get("labels", {})),
+        env_config_maps=run_launcher.env_config_maps
+        + check.opt_list_elem(exc_cfg, "env_config_maps", of_type=str),
+        env_secrets=run_launcher.env_secrets
+        + cast(List[str], check.opt_list_elem(exc_cfg, "env_secrets", of_type=str)),
+        env_vars = run_launcher.env_vars + check.opt_list_elem(exc_cfg, "env_vars", of_type=str),
+        volume_mounts=run_launcher.volume_mounts + check.opt_list_elem(exc_cfg, "volume_mounts"),
+        volumes=run_launcher.volumes + check.opt_list_elem(exc_cfg, "volumes"),
+        labels=merge_dicts(
+            run_launcher.labels,
+            check.opt_dict_elem(exc_cfg, "labels", key_type=str, value_type=str),
+        ),
     )
 
     return StepDelegatingExecutor(
         K8sStepHandler(
             job_config=job_config,
             job_namespace=(
-                exc_cfg.get("job_namespace")
+                check.str_elem(exc_cfg, "job_namespace")
                 if exc_cfg.get("job_namespace") != None
                 else run_launcher.job_namespace
             ),
             load_incluster_config=run_launcher.load_incluster_config,
             kubeconfig_file=run_launcher.kubeconfig_file,
         ),
-        retries=RetryMode.from_config(init_context.executor_config["retries"]),
+        retries=RetryMode.from_config(init_context.executor_config["retries"]),  # type: ignore
         should_verify_step=True,
     )
 
@@ -165,10 +171,11 @@ class K8sStepHandler(StepHandler):
     def launch_step(self, step_handler_context: StepHandlerContext):
         events = []
 
-        assert (
-            len(step_handler_context.execute_step_args.step_keys_to_execute) == 1
-        ), "Launching multiple steps is not currently supported"
-        step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
+        step_keys_to_execute = cast(
+            List[str], step_handler_context.execute_step_args.step_keys_to_execute
+        )
+        assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
+        step_key = step_keys_to_execute[0]
 
         job_name = self._get_k8s_step_job_name(step_handler_context)
         pod_name = job_name
@@ -221,10 +228,11 @@ class K8sStepHandler(StepHandler):
         return events
 
     def check_step_health(self, step_handler_context: StepHandlerContext):
-        assert (
-            len(step_handler_context.execute_step_args.step_keys_to_execute) == 1
-        ), "Launching multiple steps is not currently supported"
-        step_key = step_handler_context.execute_step_args.step_keys_to_execute[0]
+        step_keys_to_execute = cast(
+            List[str], step_handler_context.execute_step_args.step_keys_to_execute
+        )
+        assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
+        step_key = step_keys_to_execute[0]
 
         job_name = self._get_k8s_step_job_name(step_handler_context)
 
@@ -245,9 +253,10 @@ class K8sStepHandler(StepHandler):
         return []
 
     def terminate_step(self, step_handler_context: StepHandlerContext):
-        assert (
-            len(step_handler_context.execute_step_args.step_keys_to_execute) == 1
-        ), "Launching multiple steps is not currently supported"
+        step_keys_to_execute = cast(
+            List[str], step_handler_context.execute_step_args.step_keys_to_execute
+        )
+        assert len(step_keys_to_execute) == 1, "Launching multiple steps is not currently supported"
 
         job_name = self._get_k8s_step_job_name(step_handler_context)
 

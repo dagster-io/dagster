@@ -66,7 +66,7 @@ def slack_on_failure(
                 base_url=dagit_base_url, run_id=context.run_id
             )
 
-        context.resources.slack.chat_postMessage(channel=channel, text=text)
+        context.resources.slack.chat_postMessage(channel=channel, text=text)  # type: ignore
 
     return _hook
 
@@ -116,6 +116,6 @@ def slack_on_success(
                 base_url=dagit_base_url, run_id=context.run_id
             )
 
-        context.resources.slack.chat_postMessage(channel=channel, text=text)
+        context.resources.slack.chat_postMessage(channel=channel, text=text)  # type: ignore
 
     return _hook

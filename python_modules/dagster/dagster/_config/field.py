@@ -44,7 +44,7 @@ def resolve_to_config_type(dagster_type: object) -> Union[ConfigType, bool]:
     pass
 
 
-def resolve_to_config_type(dagster_type) -> Union[ConfigType, bool]:
+def resolve_to_config_type(dagster_type: Any) -> Union[ConfigType, bool]:
     from .field_utils import convert_fields_to_dict_type
 
     # Short circuit if it's already a Config Type

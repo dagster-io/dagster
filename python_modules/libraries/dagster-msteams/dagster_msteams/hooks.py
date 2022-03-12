@@ -71,7 +71,7 @@ def teams_on_failure(
             )
         card = Card()
         card.add_attachment(text_message=text)
-        context.resources.msteams.post_message(payload=card.payload)
+        context.resources.msteams.post_message(payload=card.payload)  # type: ignore
 
     return _hook
 
@@ -124,6 +124,6 @@ def teams_on_success(
             )
         card = Card()
         card.add_attachment(text_message=text)
-        context.resources.msteams.post_message(payload=card.payload)
+        context.resources.msteams.post_message(payload=card.payload)  # type: ignore
 
     return _hook

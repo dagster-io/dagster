@@ -52,7 +52,7 @@ def event_reports():
 
 
 @sensor(job=event_reports.to_job(resource_defs={"mode": ResourceDefinition.none_resource()}))
-def event_reports_sensor():
+def event_reports_sensor(_context):
     pass
 
 

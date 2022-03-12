@@ -131,7 +131,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         """
         run = context.pipeline_run
         metadata = self._task_metadata()
-        pipeline_origin = context.pipeline_code_origin
+        pipeline_origin = check.not_none(context.pipeline_code_origin)
         image = pipeline_origin.repository_origin.container_image
         task_definition = self._task_definition(metadata, image)["family"]
 

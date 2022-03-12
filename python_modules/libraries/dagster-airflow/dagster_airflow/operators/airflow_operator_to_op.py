@@ -71,8 +71,8 @@ def airflow_operator_to_op(
 
     @op(
         name=airflow_op.task_id,
-        ins={"start_after": In(Nothing)},
-        out=Out(Any) if return_output else Out(Nothing),
+        ins={"start_after": In(Nothing)},  # type: ignore
+        out=Out(Any) if return_output else Out(Nothing),  # type: ignore
     )
     def converted_op(context):
         conn_names = []

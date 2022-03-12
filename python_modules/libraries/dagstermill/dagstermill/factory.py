@@ -350,8 +350,8 @@ def define_dagstermill_solid(
     check.str_param(notebook_path, "notebook_path")
     input_defs = check.opt_list_param(input_defs, "input_defs", of_type=InputDefinition)
     output_defs = check.opt_list_param(output_defs, "output_defs", of_type=OutputDefinition)
-    required_resource_keys = check.opt_set_param(
-        required_resource_keys, "required_resource_keys", of_type=str
+    required_resource_keys = set(
+        check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
     )
 
     extra_output_defs = []
@@ -447,8 +447,8 @@ def define_dagstermill_op(
     check.str_param(notebook_path, "notebook_path")
     input_defs = check.opt_list_param(input_defs, "input_defs", of_type=InputDefinition)
     output_defs = check.opt_list_param(output_defs, "output_defs", of_type=OutputDefinition)
-    required_resource_keys = check.opt_set_param(
-        required_resource_keys, "required_resource_keys", of_type=str
+    required_resource_keys = set(
+        check.opt_set_param(required_resource_keys, "required_resource_keys", of_type=str)
     )
 
     extra_output_defs = []

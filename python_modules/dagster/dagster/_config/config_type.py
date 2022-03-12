@@ -1,6 +1,6 @@
 import typing
 from enum import Enum as PythonEnum
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, cast
 
 from dagster import _check as check
 from dagster._builtins import BuiltinEnum
@@ -175,10 +175,10 @@ class Noneable(ConfigType):
        config={}                 # Error
     """
 
-    def __init__(self, inner_type: ConfigType):
+    def __init__(self, inner_type: object):
         from .field import resolve_to_config_type
 
-        self.inner_type = resolve_to_config_type(inner_type)
+        self.inner_type = cast(ConfigType, resolve_to_config_type(inner_type))
         super(Noneable, self).__init__(
             key="Noneable.{inner_type}".format(inner_type=self.inner_type.key),
             kind=ConfigTypeKind.NONEABLE,

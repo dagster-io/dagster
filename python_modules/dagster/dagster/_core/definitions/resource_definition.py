@@ -269,10 +269,10 @@ def resource(config_schema=Callable[["InitResourceContext"], Any]) -> ResourceDe
 
 @overload
 def resource(
-    config_schema: Optional[Dict[str, Any]] = None,
-    description: Optional[str] = None,
-    required_resource_keys: Optional[AbstractSet[str]] = None,
-    version=None,
+    config_schema: Optional[Union[IDefinitionConfigSchema, Dict[str, Any]]] = ...,
+    description: Optional[str] = ...,
+    required_resource_keys: Optional[AbstractSet[str]] = ...,
+    version: Optional[str] = ...,
 ) -> Callable[[Callable[["InitResourceContext"], Any]], "ResourceDefinition"]:
     ...
 
@@ -283,7 +283,7 @@ def resource(
     ] = None,
     description: Optional[str] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
-    version=None,
+    version: Optional[str] = None,
 ) -> Union[
     Callable[[Callable[["InitResourceContext"], Any]], "ResourceDefinition"], "ResourceDefinition"
 ]:
