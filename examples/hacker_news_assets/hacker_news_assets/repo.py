@@ -1,47 +1,23 @@
+from typing import Optional
+
 from dagster import repository, schedule_from_partitions
 
-from .assets import local_assets, prod_assets, staging_assets
-from .jobs.activity_stats import (
-    activity_stats_local_job,
-    activity_stats_prod_job,
-    activity_stats_staging_job,
-)
-from .jobs.hacker_news_api_download import (
-    download_local_job,
-    download_prod_job,
-    download_staging_job,
-)
-from .jobs.story_recommender import (
-    story_recommender_local_job,
-    story_recommender_prod_job,
-    story_recommender_staging_job,
-)
+from .assets import build_asset_group
+from .jobs.activity_stats import build_activity_stats_job
+from .jobs.hacker_news_api_download import build_download_job
+from .jobs.story_recommender import build_story_recommender_job
 from .sensors.hn_tables_updated_sensor import make_hn_tables_updated_sensor
 from .sensors.slack_on_failure_sensor import make_slack_on_failure_sensor
 
 
 @repository
-def hacker_news_assets_prod():
+def hacker_news_assets(env: Optional[str]):
+    asset_group = build_asset_group(env)
+
     return [
-        prod_assets,
-        schedule_from_partitions(download_prod_job),
+        build_asset_group(env),
+        schedule_from_partitions(build_download_job(asset_group)),
         make_slack_on_failure_sensor(base_url="my_dagit_url.com"),
-        make_hn_tables_updated_sensor(activity_stats_prod_job),
-        make_hn_tables_updated_sensor(story_recommender_prod_job),
+        make_hn_tables_updated_sensor(build_activity_stats_job(asset_group)),
+        make_hn_tables_updated_sensor(build_story_recommender_job(asset_group)),
     ]
-
-
-@repository
-def hacker_news_assets_staging():
-    return [
-        staging_assets,
-        schedule_from_partitions(download_staging_job),
-        make_slack_on_failure_sensor(base_url="my_dagit_url.com"),
-        make_hn_tables_updated_sensor(activity_stats_staging_job),
-        make_hn_tables_updated_sensor(story_recommender_staging_job),
-    ]
-
-
-@repository
-def hacker_news_assets_local():
-    return [local_assets, download_local_job, activity_stats_local_job, story_recommender_local_job]

@@ -1,4 +1,5 @@
 import os
+from typing import Dict
 
 from dagster_aws.s3 import s3_resource
 from dagster_dbt import dbt_cli_resource
@@ -87,3 +88,9 @@ RESOURCES_LOCAL = {
     "hn_client": hn_api_client,
     "dbt": dbt_local_resource,
 }
+
+
+def get_resource_defs_for_environment(env: str) -> Dict[str, ResourceDefinition]:
+    return {"production": RESOURCES_PROD, "staging": RESOURCES_STAGING, "local": RESOURCES_LOCAL}[
+        env
+    ]
