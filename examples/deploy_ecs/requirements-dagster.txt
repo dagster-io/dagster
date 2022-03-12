@@ -1,3 +1,4 @@
 dagster
 dagster-aws
 dagster-postgres
+ipython_genutils
