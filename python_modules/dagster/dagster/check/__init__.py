@@ -282,44 +282,54 @@ def opt_two_dim_dict_param(
     return _check_two_dim_mapping_entries(obj, key_type, value_type, mapping_type=dict)
 
 
-def dict_elem(ddict: Dict, key: str) -> Dict:
+def dict_elem(
+    obj: Dict,
+    key: str,
+    key_type: Optional[TypeOrTupleOfTypes] = None,
+    value_type: Optional[TypeOrTupleOfTypes] = None,
+) -> Dict:
     from dagster.utils import frozendict
 
-    dict_param(ddict, "ddict")
+    dict_param(obj, "obj")
     str_param(key, "key")
 
-    if key not in ddict:
-        raise CheckError(f"{key} not present in dictionary {ddict}")
+    if key not in obj:
+        raise CheckError(f"{key} not present in dictionary {obj}")
 
-    value = ddict[key]
+    value = obj[key]
     if not isinstance(value, (frozendict, dict)):
-        raise _element_check_error(key, value, ddict, (frozendict, dict))
-    return value
+        raise _element_check_error(key, value, obj, (frozendict, dict))
+    else:
+        return _check_mapping_entries(value, key_type, value_type, mapping_type=dict)
 
 
-def opt_dict_elem(ddict: Dict, key: str) -> Dict:
+def opt_dict_elem(
+    obj: Dict[str, Any],
+    key: str,
+    key_type: Optional[TypeOrTupleOfTypes] = None,
+    value_type: Optional[TypeOrTupleOfTypes] = None,
+) -> Dict:
     from dagster.utils import frozendict
 
-    dict_param(ddict, "ddict")
+    dict_param(obj, "obj")
     str_param(key, "key")
 
-    value = ddict.get(key)
+    value = obj.get(key)
 
     if value is None:
         return {}
-
-    if not isinstance(value, (frozendict, dict)):
-        raise _element_check_error(key, value, ddict, list)
-
-    return value
+    elif not isinstance(value, (frozendict, dict)):
+        raise _element_check_error(key, value, obj, dict)
+    else:
+        return _check_mapping_entries(value, key_type, value_type, mapping_type=dict)
 
 
 def is_dict(
-    obj: object,
+    obj: Dict[T, U],
     key_type: Optional[TypeOrTupleOfTypes] = None,
     value_type: Optional[TypeOrTupleOfTypes] = None,
     desc: Optional[str] = None,
-) -> Dict:
+) -> Dict[T, U]:
     from dagster.utils import frozendict
 
     if not isinstance(obj, (frozendict, dict)):
@@ -883,10 +893,10 @@ def opt_nullable_sequence_param(
 # ##### SET
 # ########################
 
+T_SET = TypeVar("T_SET", bound=AbstractSet)
 
-def set_param(
-    obj: object, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
-) -> AbstractSet:
+
+def set_param(obj: T_SET, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None) -> T_SET:
     if not isinstance(obj, (frozenset, set)):
         raise _param_type_mismatch_exception(obj, (frozenset, set), param_name)
 
@@ -896,28 +906,40 @@ def set_param(
     return _check_iterable_items(obj, of_type, "set")
 
 
+@overload
+def opt_set_param(obj: None, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = ...) -> Set:
+    ...
+
+
+@overload
 def opt_set_param(
-    obj: object, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
-) -> AbstractSet:
+    obj: T_SET, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = ...
+) -> T_SET:
+    ...
+
+
+def opt_set_param(
+    obj: Optional[T_SET], param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
+) -> Union[T_SET, Set]:
     """Ensures argument obj is a set or None; in the latter case, instantiates an empty set
     and returns it.
 
     If the of_type argument is provided, also ensures that list items conform to the type specified
     by of_type.
     """
-    if obj is not None and not isinstance(obj, (frozenset, set)):
-        raise _param_type_mismatch_exception(obj, (frozenset, set), param_name)
-    if not obj:
+    if obj is None:
         return set()
-    if not of_type:
+    elif obj is not None and not isinstance(obj, (frozenset, set)):
+        raise _param_type_mismatch_exception(obj, (frozenset, set), param_name)
+    elif not of_type:
         return obj
 
     return _check_iterable_items(obj, of_type, "set")
 
 
 def opt_nullable_set_param(
-    obj: object, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
-) -> Optional[AbstractSet]:
+    obj: Optional[T_SET], param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
+) -> Optional[T_SET]:
     """Ensures argument obj is a set or None. Returns None if input is None.
     and returns it.
 
