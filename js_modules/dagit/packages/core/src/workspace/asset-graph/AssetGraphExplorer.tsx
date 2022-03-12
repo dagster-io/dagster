@@ -2,7 +2,6 @@ import {gql, useQuery} from '@apollo/client';
 import {Box, Checkbox, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import _, {flatMap, uniq, uniqBy, without} from 'lodash';
 import React from 'react';
-import {useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {filterByQuery, GraphQueryItem} from '../../app/GraphQueryImpl';
@@ -212,7 +211,6 @@ const AssetGraphExplorerWithData: React.FC<
     pipelineSelector,
   } = props;
 
-  const history = useHistory();
   const findAssetInWorkspace = useFindAssetInWorkspace();
 
   const selectedAssetValues = explorerPath.opNames[explorerPath.opNames.length - 1].split(',');
@@ -240,16 +238,11 @@ const AssetGraphExplorerWithData: React.FC<
         clicked = await findAssetInWorkspace(assetKey);
       }
 
-      if (!clicked.opName || !clicked.jobName) {
-        // We were unable to find this asset in the workspace - show it in the asset catalog.
-        history.push(`/instance/assets/${assetKey.path.join('/')}`);
-        return;
-      }
-
       let nextOpsQuery = explorerPath.opsQuery;
       let nextOpsNameSelection = token;
 
-      if (clicked.jobName !== explorerPath.pipelineName) {
+      // If no opName, this is a source asset.
+      if (clicked.jobName !== explorerPath.pipelineName || !clicked.opName) {
         nextOpsQuery = '';
       } else if (e.shiftKey || e.metaKey) {
         const existing = explorerPath.opNames[0].split(',');
@@ -269,19 +262,12 @@ const AssetGraphExplorerWithData: React.FC<
           ...explorerPath,
           opNames: [nextOpsNameSelection],
           opsQuery: nextOpsQuery,
-          pipelineName: clicked.jobName,
+          pipelineName: clicked.jobName || explorerPath.pipelineName,
         },
         'replace',
       );
     },
-    [
-      explorerPath,
-      onChangeExplorerPath,
-      findAssetInWorkspace,
-      history,
-      lastSelectedNode,
-      assetGraphData,
-    ],
+    [explorerPath, onChangeExplorerPath, findAssetInWorkspace, lastSelectedNode, assetGraphData],
   );
 
   const layout = React.useMemo(() => layoutGraph(assetGraphData), [assetGraphData]);
@@ -324,13 +310,14 @@ const AssetGraphExplorerWithData: React.FC<
               <SVGContainer width={layout.width} height={layout.height}>
                 <AssetLinks edges={layout.edges} />
 
-                {layout.nodes.map((layoutNode) => {
+                {layout.nodes.map((layoutNode, index) => {
                   const graphNode = assetGraphData.nodes[layoutNode.id];
                   const path = JSON.parse(layoutNode.id);
 
                   if (isNodeOffscreen(layoutNode, bounds)) {
                     return layoutNode.id === lastSelectedNode?.id ? (
                       <RecenterGraph
+                        key={index}
                         viewportRef={viewportEl}
                         x={layoutNode.x + layoutNode.width / 2}
                         y={layoutNode.y + layoutNode.height / 2}
