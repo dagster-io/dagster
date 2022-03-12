@@ -893,10 +893,10 @@ def opt_nullable_sequence_param(
 # ##### SET
 # ########################
 
-T_SET = TypeVar("T_SET", bound=AbstractSet)
 
-
-def set_param(obj: T_SET, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None) -> T_SET:
+def set_param(
+    obj: AbstractSet[T], param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
+) -> AbstractSet[T]:
     if not isinstance(obj, (frozenset, set)):
         raise _param_type_mismatch_exception(obj, (frozenset, set), param_name)
 
@@ -906,21 +906,9 @@ def set_param(obj: T_SET, param_name: str, of_type: Optional[TypeOrTupleOfTypes]
     return _check_iterable_items(obj, of_type, "set")
 
 
-@overload
-def opt_set_param(obj: None, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = ...) -> Set:
-    ...
-
-
-@overload
 def opt_set_param(
-    obj: T_SET, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = ...
-) -> T_SET:
-    ...
-
-
-def opt_set_param(
-    obj: Optional[T_SET], param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
-) -> Union[T_SET, Set]:
+    obj: Optional[AbstractSet[T]], param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
+) -> AbstractSet[T]:
     """Ensures argument obj is a set or None; in the latter case, instantiates an empty set
     and returns it.
 
@@ -937,9 +925,23 @@ def opt_set_param(
     return _check_iterable_items(obj, of_type, "set")
 
 
+@overload
 def opt_nullable_set_param(
-    obj: Optional[T_SET], param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
-) -> Optional[T_SET]:
+    obj: None, param_name: str, of_type: Optional[TypeOrTupleOfTypes] = ...
+) -> None:
+    ...
+
+
+@overload
+def opt_nullable_set_param(
+    obj: AbstractSet[T], param_name: str, of_type: Optional[TypeOrTupleOfTypes] = ...
+) -> AbstractSet[T]:
+    ...
+
+
+def opt_nullable_set_param(
+    obj: Optional[AbstractSet[T]], param_name: str, of_type: Optional[TypeOrTupleOfTypes] = None
+) -> Optional[AbstractSet[T]]:
     """Ensures argument obj is a set or None. Returns None if input is None.
     and returns it.
 
