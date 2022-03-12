@@ -144,7 +144,7 @@ class GrapheneRunConfigData(GenericScalar, graphene.Scalar):
 
 
 def parse_run_config_input(run_config):
-    return json.loads(run_config) if isinstance(run_config, str) else run_config
+    return json.loads(run_config) if (run_config and isinstance(run_config, str)) else run_config
 
 
 types = [
