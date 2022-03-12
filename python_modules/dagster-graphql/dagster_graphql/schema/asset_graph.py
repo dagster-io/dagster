@@ -250,12 +250,6 @@ class GrapheneAssetNode(graphene.ObjectType):
             for dep in self._external_asset_node.dependencies
         ]
 
-    def resolve_dependencyKeys(self, _graphene_info) -> List[GrapheneAssetKey]:
-        return [
-            GrapheneAssetKey(path=dep.upstream_asset_key.path)
-            for dep in self._external_asset_node.dependencies
-        ]
-
     def resolve_jobNames(self, _graphene_info) -> List[graphene.String]:
         return self._external_asset_node.job_names
 
