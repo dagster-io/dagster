@@ -38,7 +38,7 @@ and `file_cache` resource.
     """,
 )
 def cache_file_from_s3(
-    context, s3_coordinate: S3Coordinate   # type: ignore
+    context, s3_coordinate: S3Coordinate  # type: ignore
 ) -> Generator[Union[ExpectationResult, Output], None, None]:
     target_key = context.solid_config.get("file_key", s3_coordinate["key"].split("/")[-1])
 

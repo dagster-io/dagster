@@ -193,7 +193,7 @@ class Output(
         cls,
         value: Any,
         output_name: Optional[str] = DEFAULT_OUTPUT,
-        metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         metadata: Optional[Dict[str, RawMetadataValue]] = None,
     ):
 
@@ -378,19 +378,19 @@ class AssetMaterialization(
 
     def __new__(
         cls,
-        asset_key: Union[List[str], AssetKey, str],
+        asset_key: Union[Sequence[str], AssetKey, str],
         description: Optional[str] = None,
-        metadata_entries: Optional[List[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
+        metadata_entries: Optional[Sequence[Union[MetadataEntry, PartitionMetadataEntry]]] = None,
         partition: Optional[str] = None,
-        tags: Optional[Dict[str, str]] = None,
-        metadata: Optional[Dict[str, RawMetadataValue]] = None,
+        tags: Optional[Mapping[str, str]] = None,
+        metadata: Optional[Mapping[str, RawMetadataValue]] = None,
     ):
         if isinstance(asset_key, AssetKey):
             check.inst_param(asset_key, "asset_key", AssetKey)
         elif isinstance(asset_key, str):
             asset_key = AssetKey(parse_asset_key_string(asset_key))
         elif isinstance(asset_key, list):
-            check.list_param(asset_key, "asset_key", of_type=str)
+            check.sequence_param(asset_key, "asset_key", of_type=str)
             asset_key = AssetKey(asset_key)
         else:
             check.tuple_param(asset_key, "asset_key", of_type=str)
@@ -399,9 +399,9 @@ class AssetMaterialization(
         if tags:
             experimental_class_param_warning("tags", "AssetMaterialization")
 
-        metadata = check.opt_dict_param(metadata, "metadata", key_type=str)
-        metadata_entries = check.opt_list_param(
-            metadata_entries, "metadata_entries", of_type=MetadataEntry
+        metadata = check.opt_mapping_param(metadata, "metadata", key_type=str)
+        metadata_entries = check.opt_sequence_param(
+            metadata_entries, "metadata_entries", of_type=(MetadataEntry, PartitionMetadataEntry)
         )
 
         return super(AssetMaterialization, cls).__new__(

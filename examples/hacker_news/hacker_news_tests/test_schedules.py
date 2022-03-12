@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 
 from hacker_news.jobs.hacker_news_api_download import download_prod_job, download_staging_job
 
+import dagster._check as check
 from dagster import Partition
 from dagster.core.definitions import JobDefinition
 from dagster.core.execution.api import create_execution_plan
@@ -13,7 +14,7 @@ def assert_partitioned_schedule_builds(
     start: datetime,
     end: datetime,
 ):
-    partition_set = job_def.get_partition_set_def()
+    partition_set = check.not_none(job_def.get_partition_set_def())
     run_config = partition_set.run_config_for_partition(Partition((start, end)))
     create_execution_plan(job_def, run_config=run_config)
 

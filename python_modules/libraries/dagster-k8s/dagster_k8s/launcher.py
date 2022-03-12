@@ -1,4 +1,5 @@
 import sys
+from typing import Dict, List, Optional, cast
 
 import kubernetes
 
@@ -117,43 +118,43 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         return self._job_image
 
     @property
-    def image_pull_policy(self):
+    def image_pull_policy(self) -> str:
         return self._image_pull_policy
 
     @property
-    def image_pull_secrets(self):
+    def image_pull_secrets(self) -> List[Dict]:
         return self._image_pull_secrets
 
     @property
-    def service_account_name(self):
+    def service_account_name(self) -> str:
         return self._service_account_name
 
     @property
-    def env_config_maps(self):
+    def env_config_maps(self) -> List[str]:
         return self._env_config_maps
 
     @property
-    def env_secrets(self):
+    def env_secrets(self) -> List[str]:
         return self._env_secrets
 
     @property
-    def volume_mounts(self):
+    def volume_mounts(self) -> List:
         return self._volume_mounts
 
     @property
-    def volumes(self):
+    def volumes(self) -> List:
         return self._volumes
 
     @property
-    def env_vars(self):
+    def env_vars(self) -> List[str]:
         return self._env_vars
 
     @property
-    def labels(self):
+    def labels(self) -> Dict[str, str]:
         return self._labels
 
     @property
-    def fail_pod_on_run_failure(self):
+    def fail_pod_on_run_failure(self) -> Optional[bool]:
         return self._fail_pod_on_run_failure
 
     @property

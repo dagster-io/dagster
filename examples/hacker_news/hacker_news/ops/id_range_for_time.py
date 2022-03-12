@@ -91,7 +91,7 @@ def _id_range_for_time(start, end, hn_client):
 @op(
     required_resource_keys={"hn_client", "partition_bounds"},
     out=Out(
-        Tuple[int, int],
+        Tuple[int, int],  # type: ignore
         description="The lower (inclusive) and upper (exclusive) ids that bound the range for the partition",
     ),
 )

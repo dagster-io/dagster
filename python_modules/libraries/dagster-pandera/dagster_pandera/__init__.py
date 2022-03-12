@@ -216,7 +216,7 @@ def _pandera_column_to_table_column(pa_column: pa.Column) -> TableColumn:
         unique=pa_column.unique,
         other=[_pandera_check_to_column_constraint(pa_check) for pa_check in pa_column.checks],
     )
-    name = check.not_none(pa_column.name, "name")
+    name: str = check.not_none(pa_column.name, "name")
     return TableColumn(
         name=name,
         type=str(pa_column.dtype),
