@@ -1,4 +1,6 @@
-import importlib.util
+import importlib
+import importlib.abc
+import os
 import sys
 import typing as t
 from importlib.abc import MetaPathFinder
@@ -7,28 +9,25 @@ from types import ModuleType
 
 from pep562 import pep562
 
-class SubModuleMapper(MetaPathFinder):
-    """Maps imports of the form `dagster.XXX` to `dagster._XXX`. Backcompat
-    layer to allow importing modules under old, non-underscored names after all
-    top-level submodules were underscored to mark them private for
-    type-checkers.
-    """
+from dagster._module_map import AliasedModuleFinder as _AliasedModuleFinder
 
-    def find_spec(
-        self,
-        fullname: str,
-        _path: t.Optional[t.Sequence[t.Union[bytes, str]]] = None,
-        _target: t.Optional[ModuleType] = None,
-    ) -> t.Optional[ModuleSpec]:
-        parts = fullname.split(".")
-        if len(parts) >= 2 and parts[0] == "dagster" and parts[1][0] != "_":
-            target_name = ".".join([parts[0], f"_{parts[1]}", *parts[2:]])
-            return importlib.util.find_spec(target_name)
-        else:
-            return None
-
-
-sys.meta_path.append(SubModuleMapper())
+# Imports of a key will return the module loaded under the corresponding value.
+sys.meta_path.append(_AliasedModuleFinder({
+    "dagster.api": "dagster._api",
+    "dagster.check": "dagster._check",
+    "dagster.cli": "dagster._cli",
+    "dagster.config": "dagster._config",
+    "dagster.core": "dagster._core",
+    "dagster.daemon": "dagster._daemon",
+    "dagster.experimental": "dagster._experimental",
+    "dagster.generate": "dagster._generate",
+    "dagster.grpc": "dagster._grpc",
+    "dagster.loggers": "dagster._loggers",
+    "dagster.scheduler": "dagster._scheduler",
+    "dagster.serdes": "dagster._serdes",
+    "dagster.seven": "dagster._seven",
+    "dagster.utils": "dagster._utils",
+}))
 
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape

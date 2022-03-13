@@ -23,3 +23,13 @@ def test_deprecated_imports():
     with pytest.warns(DeprecationWarning, match=re.escape('"EventMetadataEntry" is deprecated')):
         from dagster import EventMetadataEntry, MetadataEntry
     assert EventMetadataEntry is MetadataEntry
+
+
+def test_deprecated_submodule_import_paths():
+    import dagster._core
+    import dagster._core.definitions
+    import dagster.core  # type: ignore
+    import dagster.core.definitions  # type: ignore
+
+    assert dagster.core == dagster._core  # pylint: disable=protected-access
+    assert dagster.core.definitions == dagster._core.definitions  # pylint: disable=protected-access
