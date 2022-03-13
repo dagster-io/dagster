@@ -22,7 +22,7 @@ from ..input import In, InputDefinition
 from ..output import Out, OutputDefinition
 from ..policy import RetryPolicy
 from ..solid_definition import SolidDefinition
-from .solid import (
+from .solid_decorator import (
     DecoratedSolidFunction,
     NoContextDecoratedSolidFunction,
     resolve_checked_solid_fn_inputs,

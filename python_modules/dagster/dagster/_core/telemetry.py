@@ -27,7 +27,7 @@ import yaml
 
 from dagster import _check as check
 from dagster._core.definitions.pipeline_base import IPipeline
-from dagster._core.definitions.reconstructable import (
+from dagster._core.definitions.reconstructable_definition import (
     ReconstructablePipeline,
     ReconstructableRepository,
     get_ephemeral_repository_name,

@@ -5,7 +5,7 @@ import pytest
 
 from dagster import DagsterInvariantViolationError, RepositoryDefinition
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.reconstructable import repository_def_from_pointer
+from dagster._core.definitions.reconstructable_definition import repository_def_from_pointer
 from dagster._core.errors import DagsterImportError
 from dagster._core.workspace.autodiscovery import (
     loadable_targets_from_python_file,

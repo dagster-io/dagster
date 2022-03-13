@@ -19,7 +19,7 @@ from dagster import (
     solid,
 )
 from dagster._core.definitions import failure_hook, success_hook
-from dagster._core.definitions.decorators.hook import event_list_hook
+from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.definitions.events import Failure, HookExecutionResult
 from dagster._core.errors import DagsterInvalidDefinitionError
 

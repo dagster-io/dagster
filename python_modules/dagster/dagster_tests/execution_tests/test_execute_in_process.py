@@ -15,7 +15,7 @@ from dagster import (
     solid,
 )
 from dagster._check import CheckError
-from dagster._core.definitions.decorators.graph import graph
+from dagster._core.definitions.decorators.graph_decorator import graph
 from dagster._core.definitions.output import GraphOut
 
 

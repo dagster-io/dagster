@@ -24,7 +24,7 @@ from dagster._core.errors import (
 from dagster._utils import frozentags
 
 from .config import ConfigMapping
-from .decorators.solid import (
+from .decorators.solid_decorator import (
     DecoratedSolidFunction,
     NoContextDecoratedSolidFunction,
     resolve_checked_solid_fn_inputs,

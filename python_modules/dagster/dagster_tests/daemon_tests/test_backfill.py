@@ -20,7 +20,7 @@ from dagster import (
     solid,
 )
 from dagster._core.definitions import Partition, PartitionSetDefinition
-from dagster._core.definitions.reconstructable import ReconstructableRepository
+from dagster._core.definitions.reconstructable_definition import ReconstructableRepository
 from dagster._core.execution.api import execute_pipeline
 from dagster._core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster._core.host_representation import (

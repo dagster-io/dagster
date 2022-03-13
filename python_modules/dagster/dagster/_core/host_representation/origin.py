@@ -18,7 +18,7 @@ from typing import (
 )
 
 from dagster import _check as check
-from dagster._core.definitions.reconstructable import ReconstructableRepository
+from dagster._core.definitions.reconstructable_definition import ReconstructableRepository
 from dagster._core.errors import DagsterInvariantViolationError, DagsterUserCodeUnreachableError
 from dagster._core.types.loadable_target_origin import LoadableTargetOrigin
 from dagster._serdes import (

@@ -1,7 +1,7 @@
 import time
 from collections import defaultdict
 
-from dagster._core.definitions.reconstructable import ReconstructablePipeline
+from dagster._core.definitions.reconstructable_definition import ReconstructablePipeline
 from dagster._core.events import DagsterEventType
 from dagster._core.events.log import EventLogEntry
 from dagster._core.execution.api import execute_run

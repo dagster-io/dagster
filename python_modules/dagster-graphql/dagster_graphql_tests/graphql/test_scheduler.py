@@ -10,7 +10,7 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
-from dagster._core.definitions.reconstructable import ReconstructableRepository
+from dagster._core.definitions.reconstructable_definition import ReconstructableRepository
 from dagster._core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,

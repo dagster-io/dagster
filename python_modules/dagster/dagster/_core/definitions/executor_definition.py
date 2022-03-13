@@ -9,7 +9,7 @@ from dagster._core.definitions.configurable import (
     ConfiguredDefinitionConfigSchema,
     NamedConfigurableDefinition,
 )
-from dagster._core.definitions.reconstructable import ReconstructablePipeline
+from dagster._core.definitions.reconstructable_definition import ReconstructablePipeline
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.execution.retries import RetryMode, get_retries_config
 

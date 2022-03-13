@@ -6,7 +6,7 @@ from .decorators import (
     daily_schedule,
     failure_hook,
     graph,
-    hook,
+    hook_decorator,
     hourly_schedule,
     job,
     lambda_solid,
@@ -103,7 +103,7 @@ from .partitioned_schedule import build_schedule_from_partitioned_job, schedule_
 from .pipeline_base import IPipeline
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
-from .reconstructable import (
+from .reconstructable_definition import (
     ReconstructablePipeline,
     build_reconstructable_job,
     build_reconstructable_pipeline,

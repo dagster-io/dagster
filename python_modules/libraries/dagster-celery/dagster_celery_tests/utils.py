@@ -5,7 +5,7 @@ import tempfile
 from contextlib import contextmanager
 
 from dagster import execute_pipeline
-from dagster._core.definitions.reconstructable import ReconstructablePipeline
+from dagster._core.definitions.reconstructable_definition import ReconstructablePipeline
 from dagster._core.instance import DagsterInstance
 from dagster._core.test_utils import instance_for_test
 

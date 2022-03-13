@@ -17,7 +17,7 @@ from dagster import _check as check
 from dagster._builtins import Nothing
 from dagster._config import Field
 from dagster._core.decorator_utils import get_function_params, get_valid_name_permutations
-from dagster._core.definitions.decorators.op import _Op
+from dagster._core.definitions.decorators.op_decorator import _Op
 from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.input import In
 from dagster._core.definitions.output import Out
@@ -27,8 +27,8 @@ from dagster._core.errors import DagsterInvalidDefinitionError
 from dagster._core.types.dagster_type import DagsterType
 from dagster._utils.backcompat import ExperimentalWarning, experimental_decorator
 
-from .asset import AssetsDefinition
 from .asset_in import AssetIn
+from .assets import AssetsDefinition
 from .partition_mapping import PartitionMapping
 
 ASSET_DEPENDENCY_METADATA_KEY = ".dagster/asset_deps"

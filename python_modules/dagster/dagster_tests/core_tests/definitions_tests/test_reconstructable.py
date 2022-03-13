@@ -6,7 +6,7 @@ import pytest
 
 from dagster import DagsterInvariantViolationError, PipelineDefinition, lambda_solid, pipeline
 from dagster._core.code_pointer import FileCodePointer
-from dagster._core.definitions.reconstructable import reconstructable
+from dagster._core.definitions.reconstructable_definition import reconstructable
 from dagster._core.origin import (
     DEFAULT_DAGSTER_ENTRY_POINT,
     PipelinePythonOrigin,

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
         UnboundSolidExecutionContext,
     )
     from .composition import PendingNodeInvocation
-    from .decorators.solid import DecoratedSolidFunction
+    from .decorators.solid_decorator import DecoratedSolidFunction
     from .output import OutputDefinition
     from .solid_definition import SolidDefinition
 
@@ -28,7 +28,7 @@ def solid_invocation_result(
     *args,
     **kwargs,
 ) -> Any:
-    from dagster._core.definitions.decorators.solid import DecoratedSolidFunction
+    from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
     from dagster._core.execution.context.invocation import build_solid_context
 
     from .composition import PendingNodeInvocation

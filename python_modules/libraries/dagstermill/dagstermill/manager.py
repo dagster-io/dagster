@@ -16,7 +16,7 @@ from dagster import _check as check
 from dagster._core.definitions.dependency import NodeHandle
 from dagster._core.definitions.events import RetryRequested
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
-from dagster._core.definitions.reconstructable import ReconstructablePipeline
+from dagster._core.definitions.reconstructable_definition import ReconstructablePipeline
 from dagster._core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster._core.events import DagsterEvent
 from dagster._core.execution.api import scoped_pipeline_context

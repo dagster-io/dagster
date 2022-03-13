@@ -4,7 +4,7 @@ from typing import AbstractSet, Any, Dict, Mapping, Optional, Sequence, Tuple, U
 
 from dagster import _check as check
 from dagster._core.definitions.config import ConfigMapping
-from dagster._core.definitions.decorators.op import op
+from dagster._core.definitions.decorators.op_decorator import op
 from dagster._core.definitions.dependency import (
     DependencyDefinition,
     IDependencyDefinition,
@@ -27,8 +27,8 @@ from dagster._core.storage.root_input_manager import RootInputManagerDefinition,
 from dagster._utils.backcompat import ExperimentalWarning, experimental
 from dagster._utils.merger import merge_dicts
 
-from .asset import AssetsDefinition
 from .asset_partitions import get_upstream_partitions_for_partition_range
+from .assets import AssetsDefinition
 from .source_asset import SourceAsset
 
 

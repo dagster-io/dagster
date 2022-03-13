@@ -31,7 +31,7 @@ from ..definitions.job_definition import JobDefinition
 from ..definitions.op_definition import OpDefinition
 from ..definitions.resource_definition import ResourceDefinition
 from ..errors import DagsterInvalidDefinitionError
-from .asset import AssetsDefinition
+from .assets import AssetsDefinition
 from .assets_job import build_assets_job, build_root_manager, build_source_assets_by_key
 from .source_asset import SourceAsset
 

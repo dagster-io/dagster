@@ -81,9 +81,9 @@ from dagster import (
     weekly_schedule,
 )
 from dagster._core.asset_defs import SourceAsset, asset, build_assets_job
-from dagster._core.definitions.decorators.sensor import sensor
+from dagster._core.definitions.decorators.sensor_decorator import sensor
 from dagster._core.definitions.executor_definition import in_process_executor
-from dagster._core.definitions.reconstructable import ReconstructableRepository
+from dagster._core.definitions.reconstructable_definition import ReconstructableRepository
 from dagster._core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster._core.log_manager import coerce_valid_log_level
 from dagster._core.storage.fs_io_manager import fs_io_manager

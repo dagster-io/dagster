@@ -4,7 +4,7 @@ import mock
 import pytest
 
 from dagster import HookContext, build_hook_context, failure_hook, resource, solid, success_hook
-from dagster._core.definitions.decorators.hook import event_list_hook
+from dagster._core.definitions.decorators.hook_decorator import event_list_hook
 from dagster._core.errors import DagsterInvalidInvocationError, DagsterInvariantViolationError
 
 

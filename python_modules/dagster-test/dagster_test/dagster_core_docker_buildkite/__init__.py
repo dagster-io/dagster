@@ -4,7 +4,7 @@ import sys
 from contextlib import contextmanager
 
 from dagster import _check as check
-from dagster._core.definitions.reconstructable import ReconstructableRepository
+from dagster._core.definitions.reconstructable_definition import ReconstructableRepository
 from dagster._core.host_representation import InProcessRepositoryLocationOrigin
 from dagster._utils import file_relative_path, git_repository_root
 

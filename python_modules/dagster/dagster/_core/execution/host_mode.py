@@ -10,7 +10,7 @@ from dagster._core.definitions.executor_definition import (
     check_cross_process_constraints,
     default_executors,
 )
-from dagster._core.definitions.reconstructable import ReconstructablePipeline
+from dagster._core.definitions.reconstructable_definition import ReconstructablePipeline
 from dagster._core.definitions.run_config import selector_for_named_defs
 from dagster._core.errors import (
     DagsterError,

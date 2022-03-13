@@ -1,6 +1,6 @@
 from dagster import DagsterInstance, MetadataEntry
 from dagster import _check as check
-from dagster._core.definitions.reconstructable import ReconstructablePipeline
+from dagster._core.definitions.reconstructable_definition import ReconstructablePipeline
 from dagster._core.events import EngineEventData
 from dagster._core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster._grpc.types import ExecuteStepArgs

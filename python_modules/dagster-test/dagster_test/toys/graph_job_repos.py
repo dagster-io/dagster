@@ -9,7 +9,7 @@ from dagster import (
     sensor,
     solid,
 )
-from dagster._core.definitions.decorators.graph import graph
+from dagster._core.definitions.decorators.graph_decorator import graph
 
 
 def make_solid(

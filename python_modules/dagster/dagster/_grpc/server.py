@@ -17,7 +17,7 @@ from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 from dagster import _check as check
 from dagster import _seven as seven
 from dagster._core.code_pointer import CodePointer
-from dagster._core.definitions.reconstructable import ReconstructableRepository
+from dagster._core.definitions.reconstructable_definition import ReconstructableRepository
 from dagster._core.errors import DagsterUserCodeUnreachableError
 from dagster._core.host_representation.external_data import external_repository_data_from_def
 from dagster._core.host_representation.origin import (

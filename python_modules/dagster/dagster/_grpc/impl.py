@@ -8,7 +8,7 @@ import pendulum
 
 from dagster import _check as check
 from dagster._core.definitions import ScheduleEvaluationContext
-from dagster._core.definitions.reconstructable import (
+from dagster._core.definitions.reconstructable_definition import (
     ReconstructablePipeline,
     ReconstructableRepository,
 )

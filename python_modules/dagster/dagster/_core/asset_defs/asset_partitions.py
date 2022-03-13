@@ -3,7 +3,7 @@ from dagster._core.definitions.events import AssetKey
 from dagster._core.definitions.partition import PartitionsDefinition
 from dagster._core.definitions.partition_key_range import PartitionKeyRange
 
-from .asset import AssetsDefinition
+from .assets import AssetsDefinition
 
 
 def get_upstream_partitions_for_partition_range(

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Dict, NamedTuple, Optional, Sequence
 
 from dagster import _check as check
-from dagster._core.definitions.reconstructable import ReconstructablePipeline
+from dagster._core.definitions.reconstructable_definition import ReconstructablePipeline
 from dagster._core.execution.retries import RetryMode
 from dagster._core.storage.pipeline_run import PipelineRun
 

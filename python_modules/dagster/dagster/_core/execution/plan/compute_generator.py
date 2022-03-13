@@ -10,7 +10,7 @@ from dagster._core.definitions import (
     Output,
     SolidDefinition,
 )
-from dagster._core.definitions.decorators.solid import DecoratedSolidFunction
+from dagster._core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster._core.errors import DagsterInvariantViolationError
 from dagster._core.types.dagster_type import DagsterTypeKind
 

@@ -9,7 +9,7 @@ from dagster_k8s.job import DagsterK8sJobConfig, UserDefinedDagsterK8sConfig
 from dagster import execute_pipeline, pipeline, solid
 from dagster._core.definitions.mode import ModeDefinition
 from dagster._core.definitions.pipeline_base import InMemoryPipeline
-from dagster._core.definitions.reconstructable import reconstructable
+from dagster._core.definitions.reconstructable_definition import reconstructable
 from dagster._core.errors import DagsterUnmetExecutorRequirementsError
 from dagster._core.executor.init import InitExecutorContext
 from dagster._core.executor.step_delegating.step_handler.base import StepHandlerContext
