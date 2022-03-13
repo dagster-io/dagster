@@ -1,7 +1,34 @@
+import importlib.util
 import sys
-import typing
+import typing as t
+from importlib.abc import MetaPathFinder
+from importlib.machinery import ModuleSpec
+from types import ModuleType
 
 from pep562 import pep562
+
+class SubModuleMapper(MetaPathFinder):
+    """Maps imports of the form `dagster.XXX` to `dagster._XXX`. Backcompat
+    layer to allow importing modules under old, non-underscored names after all
+    top-level submodules were underscored to mark them private for
+    type-checkers.
+    """
+
+    def find_spec(
+        self,
+        fullname: str,
+        _path: t.Optional[t.Sequence[t.Union[bytes, str]]] = None,
+        _target: t.Optional[ModuleType] = None,
+    ) -> t.Optional[ModuleSpec]:
+        parts = fullname.split(".")
+        if len(parts) >= 2 and parts[0] == "dagster" and parts[1][0] != "_":
+            target_name = ".".join([parts[0], f"_{parts[1]}", *parts[2:]])
+            return importlib.util.find_spec(target_name)
+        else:
+            return None
+
+
+sys.meta_path.append(SubModuleMapper())
 
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
@@ -271,7 +298,7 @@ from dagster.config.source import BoolSource, StringSource, IntSource  # isort:s
 # TYPE_CHECKING declaration satisfies linters and type checkers, but the entry
 # in `_DEPRECATED` is required  for us to generate the deprecation warning.
 
-if typing.TYPE_CHECKING:
+if t.TYPE_CHECKING:
     # pylint:disable=reimported
     from dagster.core.definitions import DagsterAssetMetadataValue as DagsterAssetMetadataEntryData
     from dagster.core.definitions import (
