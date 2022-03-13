@@ -1,4 +1,6 @@
+import importlib
 import inspect
+import pkgutil
 import re
 
 import pytest
@@ -25,11 +27,26 @@ def test_deprecated_imports():
     assert EventMetadataEntry is MetadataEntry
 
 
-def test_deprecated_submodule_import_paths():
-    import dagster._core
-    import dagster._core.definitions
-    import dagster.core  # type: ignore
-    import dagster.core.definitions  # type: ignore
+def test_deprecated_top_level_submodule_import():
 
-    assert dagster.core == dagster._core  # pylint: disable=protected-access
-    assert dagster.core.definitions == dagster._core.definitions  # pylint: disable=protected-access
+    # one hardcoded
+    assert importlib.import_module("dagster.core") == importlib.import_module("dagster._core")
+
+    exclude_submodules = ["_module_alias_map"]
+
+    # all top level private (single-underscore prefix) submodule
+    private_submodules = [
+        p.name
+        for p in pkgutil.iter_modules(dagster.__path__)
+        if re.match(r"^_[^_]", p.name) and not p.name in exclude_submodules
+    ]
+    for submodule in private_submodules:
+        assert importlib.import_module(f"dagster.{submodule}") == importlib.import_module(
+            f"dagster.{submodule[1:]}"  # strip the leading underscore
+        )
+
+
+def test_deprecated_nested_submodule_import():
+    assert importlib.import_module("dagster.core.definitions") == importlib.import_module(
+        "dagster._core.definitions"
+    )

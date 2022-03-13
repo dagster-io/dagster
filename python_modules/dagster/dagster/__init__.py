@@ -1,33 +1,36 @@
-import importlib
-import importlib.abc
-import os
 import sys
-import typing as t
-from importlib.abc import MetaPathFinder
-from importlib.machinery import ModuleSpec
-from types import ModuleType
+import typing
 
 from pep562 import pep562
 
-from dagster._module_map import AliasedModuleFinder as _AliasedModuleFinder
+import dagster._module_alias_map as _module_alias_map
 
-# Imports of a key will return the module loaded under the corresponding value.
-sys.meta_path.append(_AliasedModuleFinder({
-    "dagster.api": "dagster._api",
-    "dagster.check": "dagster._check",
-    "dagster.cli": "dagster._cli",
-    "dagster.config": "dagster._config",
-    "dagster.core": "dagster._core",
-    "dagster.daemon": "dagster._daemon",
-    "dagster.experimental": "dagster._experimental",
-    "dagster.generate": "dagster._generate",
-    "dagster.grpc": "dagster._grpc",
-    "dagster.loggers": "dagster._loggers",
-    "dagster.scheduler": "dagster._scheduler",
-    "dagster.serdes": "dagster._serdes",
-    "dagster.seven": "dagster._seven",
-    "dagster.utils": "dagster._utils",
-}))
+# Imports of a key will return the module named by the corresponding value.
+sys.meta_path.insert(
+    _module_alias_map.get_meta_path_insertion_index(),
+    _module_alias_map.AliasedModuleFinder(
+        {
+            "dagster.api": "dagster._api",
+            "dagster.builtins": "dagster._builtins",
+            "dagster.check": "dagster._check",
+            "dagster.cli": "dagster._cli",
+            "dagster.config": "dagster._config",
+            "dagster.core": "dagster._core",
+            "dagster.daemon": "dagster._daemon",
+            "dagster.experimental": "dagster._experimental",
+            "dagster.generate": "dagster._generate",
+            "dagster.grpc": "dagster._grpc",
+            "dagster.loggers": "dagster._loggers",
+            "dagster.primitive_mapping": "dagster._primitive_mapping",
+            "dagster.scheduler": "dagster._scheduler",
+            "dagster.serdes": "dagster._serdes",
+            "dagster.seven": "dagster._seven",
+            "dagster.utils": "dagster._utils",
+            "dagster.version": "dagster._version",
+            "dagster.fakemod": "dagster._fakemod",
+        }
+    ),
+)
 
 from dagster.builtins import Any, Bool, Float, Int, Nothing, String
 from dagster.config import Enum, EnumValue, Field, Map, Permissive, Selector, Shape
@@ -297,7 +300,7 @@ from dagster.config.source import BoolSource, StringSource, IntSource  # isort:s
 # TYPE_CHECKING declaration satisfies linters and type checkers, but the entry
 # in `_DEPRECATED` is required  for us to generate the deprecation warning.
 
-if t.TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     # pylint:disable=reimported
     from dagster.core.definitions import DagsterAssetMetadataValue as DagsterAssetMetadataEntryData
     from dagster.core.definitions import (
