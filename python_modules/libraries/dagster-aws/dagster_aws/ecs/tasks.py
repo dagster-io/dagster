@@ -35,6 +35,7 @@ class EcsNoTasksFound(Exception):
 
 def default_ecs_task_definition(
     ecs,
+    family,
     metadata,
     image,
     container_name,
@@ -76,7 +77,7 @@ def default_ecs_task_definition(
     ]
     task_definition = {
         **task_definition,
-        "family": "dagster-run",
+        "family": family,
         "containerDefinitions": container_definitions,
     }
 

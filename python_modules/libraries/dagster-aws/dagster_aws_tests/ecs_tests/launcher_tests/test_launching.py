@@ -4,6 +4,7 @@ import dagster_aws
 import pytest
 from botocore.exceptions import ClientError
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
+from dagster_aws.ecs.utils import sanitize_family
 
 from dagster.check import CheckError
 from dagster.core.events import MetadataEntry
@@ -36,7 +37,9 @@ def test_default_launcher(
     task_definition = task_definition["taskDefinition"]
 
     # It has a new family, name, and image
-    assert task_definition["family"] == "dagster-run"
+    # We get the family name from the location name. With the InProcessExecutor that we use in tests,
+    # the location name is always <<in_process>>. And we sanitize it so it's compatible with the ECS API.
+    assert task_definition["family"] == "in_process"
     assert len(task_definition["containerDefinitions"]) == 1
     container_definition = task_definition["containerDefinitions"][0]
     assert container_definition["name"] == "run"
