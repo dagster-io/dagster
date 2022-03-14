@@ -32,6 +32,7 @@ export interface ScheduleFragment_scheduleState_repositoryOrigin {
 export interface ScheduleFragment_scheduleState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface ScheduleFragment_scheduleState_typeSpecificData_ScheduleData {

@@ -1,16 +1,29 @@
 import os
 
 from dagster_aws.s3 import s3_resource
+from dagster_dbt import dbt_cli_resource
 from dagster_pyspark import pyspark_resource
 
 from dagster import ResourceDefinition
+from dagster.utils import file_relative_path
 
 from .common_bucket_s3_pickle_io_manager import common_bucket_s3_pickle_io_manager
+from .hn_resource import hn_api_subsample_client, hn_snapshot_client
 from .parquet_io_manager import (
     local_partitioned_parquet_io_manager,
     s3_partitioned_parquet_io_manager,
 )
 from .snowflake_io_manager import snowflake_io_manager
+
+DBT_PROJECT_DIR = file_relative_path(__file__, "../../hacker_news_dbt")
+DBT_PROFILES_DIR = DBT_PROJECT_DIR + "/config"
+dbt_staging_resource = dbt_cli_resource.configured(
+    {"profiles-dir": DBT_PROFILES_DIR, "project-dir": DBT_PROJECT_DIR, "target": "staging"}
+)
+dbt_prod_resource = dbt_cli_resource.configured(
+    {"profiles_dir": DBT_PROFILES_DIR, "project_dir": DBT_PROJECT_DIR, "target": "prod"}
+)
+
 
 configured_pyspark = pyspark_resource.configured(
     {
@@ -41,6 +54,8 @@ RESOURCES_PROD = {
     "warehouse_io_manager": snowflake_io_manager_prod,
     "pyspark": configured_pyspark,
     "warehouse_loader": snowflake_io_manager_prod,
+    "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
+    "dbt": dbt_prod_resource,
 }
 
 snowflake_io_manager_staging = snowflake_io_manager.configured(
@@ -56,6 +71,8 @@ RESOURCES_STAGING = {
     "warehouse_io_manager": snowflake_io_manager_staging,
     "pyspark": configured_pyspark,
     "warehouse_loader": snowflake_io_manager_staging,
+    "hn_client": hn_api_subsample_client.configured({"sample_rate": 10}),
+    "dbt": dbt_staging_resource,
 }
 
 
@@ -64,4 +81,6 @@ RESOURCES_LOCAL = {
     "warehouse_io_manager": local_partitioned_parquet_io_manager,
     "pyspark": configured_pyspark,
     "warehouse_loader": snowflake_io_manager_prod,
+    "hn_client": hn_snapshot_client,
+    "dbt": ResourceDefinition.none_resource(),
 }

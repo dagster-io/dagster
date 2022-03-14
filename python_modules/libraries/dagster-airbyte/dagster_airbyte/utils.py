@@ -33,7 +33,7 @@ def _materialization_for_stream(
 
 
 def generate_materializations(output: AirbyteOutput, asset_key_prefix: List[str]):
-    prefix = output.connection_details.get("prefix", "")
+    prefix = output.connection_details.get("prefix") or ""
     stream_info = {
         prefix + stream["stream"]["name"]: stream
         for stream in output.connection_details.get("syncCatalog", {}).get("streams", [])

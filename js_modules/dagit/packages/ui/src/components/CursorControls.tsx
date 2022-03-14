@@ -12,7 +12,7 @@ export interface CursorPaginationProps {
   reset: () => void;
 }
 
-export const CursorPaginationControls: React.FunctionComponent<CursorPaginationProps> = ({
+export const CursorPaginationControls: React.FC<CursorPaginationProps> = ({
   hasPrevCursor,
   hasNextCursor,
   popCursor,
@@ -34,7 +34,7 @@ export const CursorPaginationControls: React.FunctionComponent<CursorPaginationP
   );
 };
 
-export const CursorHistoryControls: React.FunctionComponent<CursorPaginationProps> = ({
+export const CursorHistoryControls: React.FC<CursorPaginationProps> = ({
   hasPrevCursor,
   hasNextCursor,
   popCursor,

@@ -39,7 +39,7 @@ const CustomConfirmationContext = React.createContext<
 
 export const useConfirmation = () => React.useContext(CustomConfirmationContext);
 
-export const CustomConfirmationProvider: React.FunctionComponent = ({children}) => {
+export const CustomConfirmationProvider: React.FC = ({children}) => {
   const [confirmationState, setConfirmationState] = React.useState<ConfirmationOptions | null>(
     null,
   );

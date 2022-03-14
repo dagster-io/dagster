@@ -369,6 +369,10 @@ class GrapheneRun(graphene.ObjectType):
         run_record = self._get_run_record(graphene_info.context.instance)
         # If a user has not migrated in 0.13.15, then run_record will not have start_time and end_time. So it will be necessary to fill this data using the run_stats. Since we potentially make this call multiple times, we cache the result.
         if run_record.start_time is None and self._pipeline_run.status in STARTED_STATUSES:
+            # Short-circuit if pipeline failed to start, so it has an end time but no start time
+            if run_record.end_time is not None:
+                return None
+
             if self._run_stats is None or self._run_stats.start_time is None:
                 self._run_stats = graphene_info.context.instance.get_run_stats(self.runId)
             return self._run_stats.start_time

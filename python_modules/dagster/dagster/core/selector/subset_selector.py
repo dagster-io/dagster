@@ -1,6 +1,6 @@
 import re
 import sys
-from collections import defaultdict
+from collections import defaultdict, deque
 from typing import TYPE_CHECKING, AbstractSet, Dict, List, NamedTuple
 
 from dagster.core.definitions.dependency import DependencyStructure
@@ -99,7 +99,7 @@ class Traverser:
 
     def _fetch_items(self, item_name, depth, direction):
         dep_graph = self.graph[direction]
-        stack = [item_name]
+        stack = deque([item_name])
         result = set()
         curr_depth = 0
         while stack:
@@ -108,9 +108,9 @@ class Traverser:
                 break
             curr_level_len = len(stack)
             while stack and curr_level_len > 0:
-                curr_item = stack.pop()
+                curr_item = stack.popleft()
+                curr_level_len -= 1
                 for item in dep_graph.get(curr_item, set()):
-                    curr_level_len -= 1
                     if item not in result:
                         stack.append(item)
                         result.add(item)

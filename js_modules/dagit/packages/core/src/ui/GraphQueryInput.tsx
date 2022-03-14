@@ -335,7 +335,10 @@ export const GraphQueryInput = React.memo(
                 props.onBlur?.(pendingValue);
               }}
               onKeyDown={onKeyDown}
-              style={{width: props.width || '24vw'}}
+              style={{
+                width: props.width || '24vw',
+                paddingRight: focused && uncomitted ? 55 : '',
+              }}
               className={props.className}
               ref={inputRef}
             />
@@ -439,6 +442,7 @@ const EnterHint = styled.div`
   top: 5px;
   border-radius: 5px;
   border: 1px solid ${ColorsWIP.Gray500};
+  background: ${ColorsWIP.White};
   font-weight: 500;
   font-size: 12px;
   color: ${ColorsWIP.Gray500};

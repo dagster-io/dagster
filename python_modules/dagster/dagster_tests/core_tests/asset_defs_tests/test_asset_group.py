@@ -6,6 +6,7 @@ from dagster import (
     IOManager,
     Out,
     fs_asset_io_manager,
+    graph,
     in_process_executor,
     io_manager,
     mem_io_manager,
@@ -36,7 +37,7 @@ def test_asset_group_from_list():
 
     assert len(the_repo.get_all_jobs()) == 1
     asset_group_underlying_job = the_repo.get_all_jobs()[0]
-    assert asset_group_underlying_job.name == group.all_assets_job_name
+    assert asset_group_underlying_job.name == group.all_assets_job_name()
 
     result = asset_group_underlying_job.execute_in_process()
     assert result.success
@@ -71,7 +72,7 @@ def test_asset_group_source_asset():
         return [group]
 
     asset_group_underlying_job = the_repo.get_all_jobs()[0]
-    assert asset_group_underlying_job.name == group.all_assets_job_name
+    assert asset_group_underlying_job.name == group.all_assets_job_name()
 
     result = asset_group_underlying_job.execute_in_process()
     assert result.success
@@ -93,7 +94,7 @@ def test_asset_group_with_resources():
         return [group]
 
     asset_group_underlying_job = the_repo.get_all_jobs()[0]
-    assert asset_group_underlying_job.name == group.all_assets_job_name
+    assert asset_group_underlying_job.name == group.all_assets_job_name()
 
     result = asset_group_underlying_job.execute_in_process()
     assert result.success
@@ -320,32 +321,40 @@ def test_asset_group_build_subset_job():
 def test_asset_group_from_package_name():
     from . import asset_package
 
-    collection = AssetGroup.from_package_name(asset_package.__name__)
-    assert len(collection.assets) == 4
-    assert {asset.op.name for asset in collection.assets} == {
+    group = AssetGroup.from_package_name(asset_package.__name__)
+    assert len(group.assets) == 6
+    assert {asset.op.name for asset in group.assets} == {
         "little_richard",
         "miles_davis",
         "chuck_berry",
         "bb_king",
+        "james_brown",
+        "fats_domino",
     }
-    assert {source_asset.key for source_asset in collection.source_assets} == {
-        AssetKey("elvis_presley")
+    assert {source_asset.key for source_asset in group.source_assets} == {
+        AssetKey("elvis_presley"),
+        AssetKey("buddy_holly"),
+        AssetKey("jerry_lee_lewis"),
     }
 
 
 def test_asset_group_from_package_module():
     from . import asset_package
 
-    collection = AssetGroup.from_package_module(asset_package)
-    assert len(collection.assets) == 4
-    assert {asset.op.name for asset in collection.assets} == {
+    group = AssetGroup.from_package_module(asset_package)
+    assert len(group.assets) == 6
+    assert {asset.op.name for asset in group.assets} == {
         "little_richard",
         "miles_davis",
         "chuck_berry",
         "bb_king",
+        "james_brown",
+        "fats_domino",
     }
-    assert {source_asset.key for source_asset in collection.source_assets} == {
-        AssetKey("elvis_presley")
+    assert {source_asset.key for source_asset in group.source_assets} == {
+        AssetKey("elvis_presley"),
+        AssetKey("buddy_holly"),
+        AssetKey("jerry_lee_lewis"),
     }
 
 
@@ -353,16 +362,38 @@ def test_asset_group_from_modules():
     from . import asset_package
     from .asset_package import module_with_assets
 
-    collection = AssetGroup.from_modules([asset_package, module_with_assets])
-    assert {asset.op.name for asset in collection.assets} == {
+    group = AssetGroup.from_modules([asset_package, module_with_assets])
+    assert {asset.op.name for asset in group.assets} == {
         "little_richard",
         "chuck_berry",
         "miles_davis",
+        "james_brown",
+        "fats_domino",
     }
-    assert len(collection.assets) == 3
-    assert {source_asset.key for source_asset in collection.source_assets} == {
-        AssetKey("elvis_presley")
+    assert len(group.assets) == 5
+    assert {source_asset.key for source_asset in group.source_assets} == {
+        AssetKey("elvis_presley"),
+        AssetKey("buddy_holly"),
+        AssetKey("jerry_lee_lewis"),
     }
+
+
+@asset
+def asset_in_current_module():
+    pass
+
+
+source_asset_in_current_module = SourceAsset(AssetKey("source_asset_in_current_module"))
+
+
+def test_asset_group_from_current_module():
+    group = AssetGroup.from_current_module()
+    assert {asset.op.name for asset in group.assets} == {"asset_in_current_module"}
+    assert len(group.assets) == 1
+    assert {source_asset.key for source_asset in group.source_assets} == {
+        AssetKey("source_asset_in_current_module")
+    }
+    assert len(group.source_assets) == 1
 
 
 def test_default_io_manager():
@@ -375,3 +406,31 @@ def test_default_io_manager():
         group.resource_defs["io_manager"]  # pylint: disable=comparison-with-callable
         == fs_asset_io_manager
     )
+
+
+def test_repo_with_multiple_asset_groups():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match="When constructing repository, attempted to pass multiple "
+        "AssetGroups. There can only be one AssetGroup per repository.",
+    ):
+
+        @repository
+        def the_repo():  # pylint: disable=unused-variable
+            return [AssetGroup(assets=[]), AssetGroup(assets=[])]
+
+
+def test_job_with_reserved_name():
+    @graph
+    def the_graph():
+        pass
+
+    the_job = the_graph.to_job(name=AssetGroup.all_assets_job_name())
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=f"Attempted to provide job called {AssetGroup.all_assets_job_name()} to repository, which is a reserved name.",
+    ):
+
+        @repository
+        def the_repo():  # pylint: disable=unused-variable
+            return [the_job]

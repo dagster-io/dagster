@@ -240,7 +240,7 @@ def test_access_partition_keys_from_context_only_one_asset_partitioned():
         def handle_output(self, context, obj):
             if context.op_def.name == "upstream_asset":
                 assert context.asset_partition_key == "b"
-            elif context.op_def.name == "downstream_asset":
+            elif context.op_def.name in ["downstream_asset", "double_downstream_asset"]:
                 assert not context.has_asset_partitions
                 with pytest.raises(Exception):  # TODO: better error message
                     assert context.asset_partition_key_range
@@ -258,9 +258,13 @@ def test_access_partition_keys_from_context_only_one_asset_partitioned():
     def downstream_asset(upstream_asset):
         assert upstream_asset is None
 
+    @asset
+    def double_downstream_asset(downstream_asset):
+        assert downstream_asset is None
+
     my_job = build_assets_job(
         "my_job",
-        assets=[upstream_asset, downstream_asset],
+        assets=[upstream_asset, downstream_asset, double_downstream_asset],
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="b")

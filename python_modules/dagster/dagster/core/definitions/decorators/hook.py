@@ -78,7 +78,7 @@ def event_list_hook(
 
 
 def event_list_hook(
-    name: Union[Callable[..., Any], Optional[str]] = None,
+    name: Optional[Union[Callable[..., Any], str]] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
     decorated_fn: Optional[Callable[..., Any]] = None,
 ) -> Union[HookDefinition, _Hook]:
@@ -145,7 +145,7 @@ def success_hook(
 
 
 def success_hook(
-    name: Union[SuccessOrFailureHookFn, Optional[str]] = None,
+    name: Optional[Union[SuccessOrFailureHookFn, str]] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
 ) -> Union[HookDefinition, _Hook, Callable[[SuccessOrFailureHookFn], Union[HookDefinition, _Hook]]]:
     """Create a hook on step success events with the specified parameters from the decorated function.
@@ -219,7 +219,7 @@ def failure_hook(
 
 
 def failure_hook(
-    name: Union[SuccessOrFailureHookFn, Optional[str]] = None,
+    name: Optional[Union[SuccessOrFailureHookFn, str]] = None,
     required_resource_keys: Optional[AbstractSet[str]] = None,
 ) -> Union[HookDefinition, _Hook, Callable[[SuccessOrFailureHookFn], Union[HookDefinition, _Hook]]]:
     """Create a hook on step failure events with the specified parameters from the decorated function.

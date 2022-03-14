@@ -20,6 +20,7 @@ from dagster_test.graph_job_op_toys.long_asset_keys import long_asset_keys_group
 from dagster_test.graph_job_op_toys.longitudinal import longitudinal_job
 from dagster_test.graph_job_op_toys.many_events import many_events, many_events_subset_job
 from dagster_test.graph_job_op_toys.notebooks import hello_world_notebook_pipeline
+from dagster_test.graph_job_op_toys.partitioned_assets import partitioned_asset_group
 from dagster_test.graph_job_op_toys.retries import retry_job
 from dagster_test.graph_job_op_toys.sleepy import sleepy_job
 from dagster_test.graph_job_op_toys.software_defined_assets import software_defined_assets
@@ -86,3 +87,8 @@ def long_asset_keys_repository():
 @repository
 def big_honkin_assets_repository():
     return [big_honkin_asset_group]
+
+
+@repository
+def partitioned_asset_repository():
+    return [partitioned_asset_group]

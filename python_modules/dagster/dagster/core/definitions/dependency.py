@@ -80,8 +80,8 @@ class NodeInvocation(
         cls,
         name: str,
         alias: Optional[str] = None,
-        tags: Dict[str, str] = None,
-        hook_defs: AbstractSet[HookDefinition] = None,
+        tags: Optional[Dict[str, str]] = None,
+        hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):
         return super().__new__(
@@ -109,7 +109,7 @@ class Node:
         name: str,
         definition: "NodeDefinition",
         graph_definition: "GraphDefinition",
-        tags: Dict[str, str] = None,
+        tags: Optional[Dict[str, str]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         retry_policy: Optional[RetryPolicy] = None,
     ):

@@ -14,7 +14,7 @@ def build_fivetran_assets(
     poll_interval: float = DEFAULT_POLL_INTERVAL,
     poll_timeout: Optional[float] = None,
     io_manager_key: Optional[str] = None,
-    asset_key_prefix: List[str] = None,
+    asset_key_prefix: Optional[List[str]] = None,
 ) -> List[AssetsDefinition]:
 
     """

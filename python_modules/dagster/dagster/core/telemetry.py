@@ -6,7 +6,7 @@ To see the logs we send, inspect $DAGSTER_HOME/logs/ if $DAGSTER_HOME is set or 
 See class TelemetryEntry for logged fields.
 
 For local development:
-  Spin up local telemetry server and set DAGSTER_TELEMETRY_URL = 'http://localhost:3000/actions'
+  Spin up local telemetry server and set the environment variable DAGSTER_TELEMETRY_URL = 'http://localhost:3000/actions'
   To test RotatingFileHandler, can set MAX_BYTES = 500
 """
 

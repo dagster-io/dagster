@@ -87,8 +87,8 @@ def test_step_handler_user_defined_config(kubeconfig_file):
 
     # Construct Dagster solid tags with user defined k8s config.
     expected_resources = {
-        "requests": {"cpu": "250m", "memory": "64Mi"},
         "limits": {"cpu": "500m", "memory": "2560Mi"},
+        "requests": {"cpu": "250m", "memory": "64Mi"},
     }
     user_defined_k8s_config = UserDefinedDagsterK8sConfig(
         container_config={"resources": expected_resources},
@@ -118,7 +118,7 @@ def test_step_handler_user_defined_config(kubeconfig_file):
         assert method_name == "create_namespaced_job"
         assert kwargs["body"].spec.template.spec.containers[0].image == "bizbuz"
         job_resources = kwargs["body"].spec.template.spec.containers[0].resources
-        assert job_resources == expected_resources
+        assert job_resources.to_dict() == expected_resources
 
 
 def test_step_handler_image_override(kubeconfig_file):

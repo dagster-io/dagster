@@ -4,6 +4,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {usePermissions} from '../app/Permissions';
+import {withMiddleTruncation} from '../app/Util';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -18,6 +19,11 @@ export const RepositoryLink: React.FC<{
   const {location} = repoAddress;
   const {canReloadRepositoryLocation} = usePermissions();
 
+  const repoAddressTruncated = [
+    withMiddleTruncation(repoAddress.name, {maxLength: 19}),
+    withMiddleTruncation(repoAddress.location, {maxLength: 19}),
+  ].join('@');
+
   return (
     <Box flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}}>
       {showIcon && <IconWIP name="folder" style={{marginRight: 8}} color={ColorsWIP.Gray400} />}
@@ -25,7 +31,7 @@ export const RepositoryLink: React.FC<{
         to={workspacePathFromAddress(repoAddress)}
         title={repoAddressAsString(repoAddress)}
       >
-        {repoAddressAsString(repoAddress)}
+        {repoAddressTruncated}
       </RepositoryName>
       {canReloadRepositoryLocation && showRefresh ? (
         <ReloadRepositoryLocationButton location={location}>

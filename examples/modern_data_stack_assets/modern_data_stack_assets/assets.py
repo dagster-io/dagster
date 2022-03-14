@@ -1,3 +1,4 @@
+# pylint: disable=redefined-outer-name
 from typing import Any, Tuple
 
 import numpy as np
@@ -6,9 +7,9 @@ from dagster_airbyte import airbyte_resource, build_airbyte_assets
 from dagster_dbt import dbt_cli_resource, load_assets_from_dbt_project
 from scipy import optimize
 
-from dagster import AssetGroup, Output, asset
+from dagster import AssetGroup, asset
 
-from .constants import *
+from .constants import *  # pylint: disable=wildcard-import,unused-wildcard-import
 from .pandas_io_manager import pandas_io_manager
 
 airbyte_assets = build_airbyte_assets(
@@ -48,6 +49,6 @@ analytics_assets = AssetGroup(
     resource_defs={
         "airbyte": airbyte_resource.configured(AIRBYTE_CONFIG),
         "dbt": dbt_cli_resource.configured(DBT_CONFIG),
-        "pandas_io_manager": pandas_io_manager.configured(PG_CONFIG),
+        "pandas_io_manager": pandas_io_manager.configured(PANDAS_IO_CONFIG),
     },
 ).build_job("Assets")

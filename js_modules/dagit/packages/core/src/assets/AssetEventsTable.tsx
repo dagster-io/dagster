@@ -87,7 +87,7 @@ const MetadataEntriesRow: React.FC<{
 }> = React.memo(({group, hasLineage}) => {
   const {latest, timestamp} = group;
   if (!latest) {
-    return <span />;
+    return <tr></tr>;
   }
   const assetLineage = latest.__typename === 'MaterializationEvent' ? latest.assetLineage : [];
 

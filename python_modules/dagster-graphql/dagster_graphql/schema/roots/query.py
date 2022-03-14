@@ -461,7 +461,7 @@ class GrapheneDagitQuery(graphene.ObjectType):
             GrapheneAssetNode(
                 node.repository_location,
                 node.external_repository,
-                node.get_external_asset_node(),
+                node.external_asset_node,
                 materialization_loader=materialization_loader,
             )
             for node in results
