@@ -1,6 +1,6 @@
+import inspect
 import logging
 import time
-import inspect
 from contextlib import ExitStack
 from enum import Enum
 from typing import (
@@ -39,8 +39,8 @@ from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
-    from dagster.core.events.log import EventLogEntry
     from dagster.core.definitions.events import AssetObservation
+    from dagster.core.events.log import EventLogEntry
 
 
 @whitelist_for_serdes
@@ -338,8 +338,8 @@ class SensorDefinition:
             SensorExecutionData: Contains list of run requests, or skip message if present.
 
         """
-        from dagster.core.events import DagsterEvent, AssetObservationData
         from dagster.core.definitions.events import AssetObservation
+        from dagster.core.events import AssetObservationData, DagsterEvent
         from dagster.core.events.log import EventLogEntry
         from dagster.core.storage.event_log.base import SENSOR_RUN_ID
 

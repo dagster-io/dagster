@@ -2046,7 +2046,7 @@ def test_sensor_yields_observation():
             observation = observations[0]
             assert observation.event_log_entry.pipeline_name == None
             assert observation.event_log_entry.step_key == None
-            assert observation.event_log_entry.sensor_name == 'yields_observation_sensor'
+            assert observation.event_log_entry.sensor_name == "yields_observation_sensor"
             observation = (
                 observation.event_log_entry.dagster_event.event_specific_data.asset_observation
             )
@@ -2082,7 +2082,7 @@ def test_sensor_only_observation_yielded():
             )
             assert len(observations) == 1
             observation = observations[0]
-            assert observation.event_log_entry.sensor_name == 'only_observation_sensor'
+            assert observation.event_log_entry.sensor_name == "only_observation_sensor"
             observation = (
                 observation.event_log_entry.dagster_event.event_specific_data.asset_observation
             )
