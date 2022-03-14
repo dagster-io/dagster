@@ -156,9 +156,9 @@ class K8sStepHandler(StepHandler):
         if step_handler_context.execute_step_args.known_state:
             retry_state = step_handler_context.execute_step_args.known_state.get_retry_state()
             if retry_state.get_attempt_count(step_key):
-                return "dagster-job-%s-%d" % (name_key, retry_state.get_attempt_count(step_key))
+                return "dagster-step-%s-%d" % (name_key, retry_state.get_attempt_count(step_key))
 
-        return "dagster-job-%s" % (name_key)
+        return "dagster-step-%s" % (name_key)
 
     def launch_step(self, step_handler_context: StepHandlerContext):
         events = []

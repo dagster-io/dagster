@@ -128,7 +128,7 @@ class DockerStepHandler(StepHandler):
         return client
 
     def _get_container_name(self, run_id, step_key):
-        return f"dagster-job-{hash_str(run_id + step_key)}"
+        return f"dagster-step-{hash_str(run_id + step_key)}"
 
     def _create_step_container(self, client, step_image, execute_step_args):
         return client.containers.create(
