@@ -1963,7 +1963,7 @@ class TestEventLogStorage:
 
             assert len(records) == 1
 
-    def test_last_asset_materialization_updates_on_observation(self, storage):
+    def test_asset_key_exists_on_observation(self, storage):
 
         key = AssetKey("hello")
 
