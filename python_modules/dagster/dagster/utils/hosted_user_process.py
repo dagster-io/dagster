@@ -10,7 +10,7 @@ to be the case.
 """
 
 from dagster import check
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.definitions.reconstructable_definition import ReconstructableRepository
 from dagster.core.host_representation import ExternalPipeline, ExternalRepository
 from dagster.core.host_representation.external_data import (
     external_pipeline_data_from_def,

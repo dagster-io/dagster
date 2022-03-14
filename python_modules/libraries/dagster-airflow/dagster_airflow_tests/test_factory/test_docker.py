@@ -16,7 +16,7 @@ from dagster_airflow_tests.test_fixtures import (
 )
 from dagster_test.test_project import get_test_project_environments_path
 
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.definitions.reconstructable_definition import ReconstructableRepository
 from dagster.core.utils import make_new_run_id
 from dagster.utils import git_repository_root, load_yaml_from_glob_list
 

@@ -3,7 +3,7 @@ import tempfile
 import pytest
 
 from dagster import execute_pipeline, file_relative_path
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstructable_definition import ReconstructablePipeline
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import pushd
 from dagster.utils.yaml_utils import load_yaml_from_path

@@ -15,7 +15,7 @@ from dagster import (
     execute_pipeline,
     execute_pipeline_iterator,
 )
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstructable_definition import ReconstructablePipeline
 from dagster.core.errors import DagsterSubprocessError
 from dagster.core.events import DagsterEventType
 from dagster.utils import send_interrupt

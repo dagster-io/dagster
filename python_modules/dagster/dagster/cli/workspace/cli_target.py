@@ -8,7 +8,7 @@ from click import UsageError
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
-from dagster.core.definitions.reconstructable import repository_def_from_target_def
+from dagster.core.definitions.reconstructable_definition import repository_def_from_target_def
 from dagster.core.host_representation.external import ExternalRepository
 from dagster.core.host_representation.repository_location import RepositoryLocation
 from dagster.core.instance import DagsterInstance

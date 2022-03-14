@@ -22,7 +22,7 @@ from dagster import (
     run_failure_sensor,
     solid,
 )
-from dagster.core.definitions.decorators.sensor import asset_sensor, sensor
+from dagster.core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.run_status_sensor_definition import run_status_sensor
 from dagster.core.definitions.sensor_definition import DefaultSensorStatus, RunRequest, SkipReason

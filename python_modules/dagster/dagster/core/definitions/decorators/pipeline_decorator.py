@@ -58,7 +58,7 @@ class _Pipeline:
         if not self.name:
             self.name = fn.__name__
 
-        from dagster.core.definitions.decorators.composite_solid import (
+        from dagster.core.definitions.decorators.composite_solid_decorator import (
             do_composition,
             get_validated_config_mapping,
         )
