@@ -321,7 +321,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         if filters.tags:
             # first apply the filters to the base query, then use a join to filter, then do the
             # bucket query
-            filtered_query = db.select(RunsTable.c.run_id).select_from(
+            filtered_query = db.select([RunsTable.c.run_id]).select_from(
                 RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
                 if filters.tags
                 else RunsTable

@@ -1288,7 +1288,7 @@ class TestRunStorage:
         _one = _add_run("a", tags={"a": "1", "b": "1"})
         _two = _add_run("a", tags={"a": "2", "b": "1"})
         three = _add_run("a", tags={"a": "3", "b": "1"})
-        _none = _add_run("a", tags={'b': '1'})
+        _none = _add_run("a", tags={"b": "1"})
         b = _add_run("b", tags={"a": "4", "b": "2"})
         one = _add_run("a", tags={"a": "1", "b": "1"})
         two = _add_run("a", tags={"a": "2", "b": "1"})
@@ -1330,7 +1330,6 @@ class TestRunStorage:
         assert runs_by_tag.get("1").run_id == one.run_id
         assert runs_by_tag.get("2").run_id == two.run_id
         assert runs_by_tag.get("3").run_id == three.run_id
-
 
     def test_run_record_timestamps(self, storage):
         assert storage
