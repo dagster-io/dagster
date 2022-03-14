@@ -205,9 +205,10 @@ def test_source_asset():
             pass
 
         def load_input(self, context):
+            assert context.resource_config["a"] == 7
             return 5
 
-    @io_manager
+    @io_manager(config_schema={"a": int})
     def my_io_manager(_):
         return MyIOManager()
 
@@ -215,7 +216,7 @@ def test_source_asset():
         "a",
         [asset1],
         source_assets=[SourceAsset(AssetKey("source1"), io_manager_key="special_io_manager")],
-        resource_defs={"special_io_manager": my_io_manager},
+        resource_defs={"special_io_manager": my_io_manager.configured({"a": 7})},
     )
     assert job.graph.node_defs == [asset1.op]
     assert job.execute_in_process().success
