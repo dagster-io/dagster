@@ -431,17 +431,28 @@ def test_dict_elem():
     with pytest.raises(CheckError):
         check.dict_elem(ddict, "nonexistantkey")
 
+    assert check.dict_elem(
+        {"foo": {"str": 1, "str2": "str", 1: "str", 2: "str"}},
+        "foo",
+        key_type=(str, int),
+        value_type=(str, int),
+    )
+
 
 def test_opt_dict_elem():
     dict_value = {"blah": "blahblah"}
     ddict = {"dictkey": dict_value, "stringkey": "A", "nonekey": None}
 
     assert check.opt_dict_elem(ddict, "dictkey") == dict_value
+    assert check.opt_dict_elem(ddict, "dictkey", key_type=str, value_type=str) == dict_value
     assert check.opt_dict_elem(ddict, "nonekey") == {}
     assert check.opt_dict_elem(ddict, "nonexistantkey") == {}
 
     with pytest.raises(CheckError):
         check.opt_dict_elem(ddict, "stringkey")
+
+    with pytest.raises(CheckError):
+        check.opt_dict_elem(ddict, "dictkey", key_type=str, value_type=int)
 
 
 # ########################
