@@ -144,7 +144,7 @@ const logTypeFromQuery = (queryLogType: string) => {
  * We could revisit this in the future but I believe we iterated quite a bit to get to this
  * solution and we should avoid locking the two filter inputs together completely.
  */
-const RunWithData: React.FunctionComponent<RunWithDataProps> = ({
+const RunWithData: React.FC<RunWithDataProps> = ({
   run,
   runId,
   logs,

@@ -142,7 +142,7 @@ class ExternalRepository:
             for external_partition_set_data in self.external_repository_data.external_partition_set_datas
         ]
 
-    def get_full_external_pipeline(self, pipeline_name):
+    def get_full_external_pipeline(self, pipeline_name: str) -> "ExternalPipeline":
         check.str_param(pipeline_name, "pipeline_name")
         return ExternalPipeline(
             self.external_repository_data.get_external_pipeline_data(pipeline_name),
@@ -156,7 +156,7 @@ class ExternalRepository:
     def has_external_job(self, job_name):
         return job_name in self._job_index_map
 
-    def get_external_job(self, job_name):
+    def get_external_job(self, job_name) -> "ExternalPipeline":
         check.str_param(job_name, "job_name")
 
         if not self.has_external_job(job_name):
@@ -168,7 +168,7 @@ class ExternalRepository:
             pipeline_index=self.get_pipeline_index(job_name),
         )
 
-    def get_external_jobs(self):
+    def get_external_jobs(self) -> List["ExternalPipeline"]:
         return [self.get_external_job(pn) for pn in self._job_index_map]
 
     @property
@@ -301,7 +301,7 @@ class ExternalPipeline(RepresentedPipeline):
             mode_name if mode_name else self.get_default_mode_name()
         ).root_config_key
 
-    def get_default_mode_name(self):
+    def get_default_mode_name(self) -> str:
         return self._pipeline_index.get_default_mode_name()
 
     @property

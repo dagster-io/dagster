@@ -5,5 +5,7 @@ sources:
     database: postgres_replica
     schema: public
     tables:
-      - name: users
       - name: orders
+        identifier: _airbyte_raw_orders
+      - name: users
+        identifier: _airbyte_raw_users

@@ -17,6 +17,8 @@ class RepositoryDataType(Enum):
     SENSOR_RUNS = "sensor_runs"
     SCHEDULE_STATES = "schedule_states"
     SENSOR_STATES = "sensor_states"
+    SCHEDULE_TICKS = "schedule_ticks"
+    SENSOR_TICKS = "sensor_ticks"
 
 
 class RepositoryScopedBatchLoader:
@@ -139,6 +141,29 @@ class RepositoryScopedBatchLoader:
             )
             for state in sensor_states:
                 fetched[state.name].append(state)
+
+        elif data_type == RepositoryDataType.SCHEDULE_TICKS:
+            origin_ids = [
+                schedule.get_external_origin_id()
+                for schedule in self._repository.get_external_schedules()
+            ]
+            if self._instance.supports_batch_tick_queries:
+                fetched = self._instance.get_batch_ticks(origin_ids, limit=limit)
+            else:
+                for origin_id in origin_ids:
+                    fetched[origin_id] = self._instance.get_ticks(origin_id, limit=limit)
+
+        elif data_type == RepositoryDataType.SENSOR_TICKS:
+            origin_ids = [
+                sensor.get_external_origin_id()
+                for sensor in self._repository.get_external_sensors()
+            ]
+            if self._instance.supports_batch_tick_queries:
+                fetched = self._instance.get_batch_ticks(origin_ids, limit=limit)
+            else:
+                for origin_id in origin_ids:
+                    fetched[origin_id] = self._instance.get_ticks(origin_id, limit=limit)
+
         else:
             check.failed(f"Unknown data type for {self.__class__.__name__}: {data_type}")
 
@@ -179,6 +204,26 @@ class RepositoryScopedBatchLoader:
         )
         states = self._get(RepositoryDataType.SENSOR_STATES, sensor_state, 1)
         return states[0] if states else None
+
+    def get_sensor_ticks(self, origin_id, limit):
+        check.invariant(
+            origin_id
+            in [
+                sensor.get_external_origin_id()
+                for sensor in self._repository.get_external_sensors()
+            ]
+        )
+        return self._get(RepositoryDataType.SENSOR_TICKS, origin_id, limit)
+
+    def get_schedule_ticks(self, origin_id, limit):
+        check.invariant(
+            origin_id
+            in [
+                schedule.get_external_origin_id()
+                for schedule in self._repository.get_external_schedules()
+            ]
+        )
+        return self._get(RepositoryDataType.SCHEDULE_TICKS, origin_id, limit)
 
 
 class BatchRunLoader:

@@ -11,7 +11,7 @@ import {SidebarModeInfoFragment} from './types/SidebarModeInfoFragment';
 
 const NO_DESCRIPTION = '';
 
-export const SidebarModeSection: React.FunctionComponent<{
+export const SidebarModeSection: React.FC<{
   mode: SidebarModeInfoFragment;
 }> = ({mode}) => {
   return (

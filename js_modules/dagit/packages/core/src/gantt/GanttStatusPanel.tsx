@@ -22,7 +22,7 @@ interface GanttStatusPanelProps {
   onDoubleClickStep?: (step: string) => void;
 }
 
-export const GanttStatusPanel: React.FunctionComponent<GanttStatusPanelProps> = ({
+export const GanttStatusPanel: React.FC<GanttStatusPanelProps> = ({
   runId,
   nowMs,
   metadata,
@@ -120,7 +120,7 @@ export const GanttStatusPanel: React.FunctionComponent<GanttStatusPanelProps> = 
   );
 };
 
-const StepItem: React.FunctionComponent<{
+const StepItem: React.FC<{
   name: string;
   selected: boolean;
   metadata: IRunMetadataDict;

@@ -607,7 +607,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
     def use_ssl(self) -> bool:
         return self._use_ssl
 
-    def _reload_current_image(self) -> str:
+    def _reload_current_image(self) -> Optional[str]:
         return deserialize_as(
             self.client.get_current_image(),
             GetCurrentImageResult,

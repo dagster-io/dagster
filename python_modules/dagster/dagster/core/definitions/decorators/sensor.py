@@ -87,10 +87,9 @@ def sensor(
         ]
     ) -> SensorDefinition:
         check.callable_param(fn, "fn")
-        sensor_name = name or fn.__name__
 
         sensor_def = SensorDefinition(
-            name=sensor_name,
+            name=name,
             pipeline_name=pipeline_name,
             evaluation_fn=fn,
             solid_selection=solid_selection,

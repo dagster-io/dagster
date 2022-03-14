@@ -261,7 +261,7 @@ const PythonArtifactLink = ({
   </>
 );
 
-const MetadataEntryModalAction: React.FunctionComponent<{
+const MetadataEntryModalAction: React.FC<{
   label: string;
   content: () => React.ReactNode;
   copyContent: () => string;

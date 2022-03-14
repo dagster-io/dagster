@@ -7,9 +7,6 @@
 pylint:
 	pylint -j 0 `git ls-files '*.py'` --rcfile=.pylintrc
 
-update_doc_snapshot:
-	pytest docs --snapshot-update
-
 # NOTE: See pyproject.toml [tool.black] for majority of black config. Only include/exclude options
 # and format targets should be specified here. Note there are separate pyproject.toml for the root
 # and examples/docs_snippets.
@@ -25,10 +22,10 @@ black:
     examples/docs_snippets
 
 check_black:
-	-black --check --fast \
+	black --check --fast \
     --extend-exclude="examples/docs_snippets|snapshots" \
     examples integration_tests helm python_modules .buildkite
-	-black --check --fast \
+	black --check --fast \
     examples/docs_snippets
 
 
@@ -38,22 +35,23 @@ check_black:
 # `--skip`/`--filter-files` is very slow.
 isort:
 	isort \
-    `git ls-files {.buildkite,examples,integration_tests,helm,python_modules}'/**/*.py' \
+    `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' 'helm/*.py' 'python_modules/*.py' \
       ':!:examples/docs_snippets' \
       ':!:snapshots'`
 	isort \
-   `git ls-files 'examples/docs_snippets/**/*.py'`
+   `git ls-files 'examples/docs_snippets/*.py'`
 
 check_isort:
-	-isort --check \
-    `git ls-files {.buildkite,examples,integration_tests,helm,python_modules}'/**/*.py' \
+	isort --check \
+    `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' 'helm/*.py' 'python_modules/*.py' \
       ':!:examples/docs_snippets' \
       ':!:snapshots'`
-	-isort --check \
-    `git ls-files 'examples/docs_snippets/**/*.py'`
+	isort --check \
+    `git ls-files 'examples/docs_snippets/*.py'`
 
 yamllint:
-	yamllint -c .yamllint.yaml --strict `git ls-files 'helm/**/*.yml' 'helm/**/*.yaml' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'`
+	yamllint -c .yamllint.yaml --strict \
+    `git ls-files 'helm/*.yml' 'helm/*.yaml' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'`
 
 install_dev_python_modules:
 	python scripts/install_dev_python_modules.py -qqq

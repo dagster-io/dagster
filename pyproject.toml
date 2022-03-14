@@ -14,7 +14,7 @@ line-length = 100
 required-version = "22.1.0"
 
 # Ensure black's output will be compatible with all listed versions.
-target_version = ['py36', 'py37', 'py38', 'py39', 'py310']
+target-version = ['py36', 'py37', 'py38', 'py39', 'py310']
 
 # ########################
 # ##### ISORT
@@ -25,16 +25,20 @@ target_version = ['py36', 'py37', 'py38', 'py39', 'py310']
 # [Config option reference]
 #   https://pycqa.github.io/isort/docs/configuration/options.html
 
+# NOTE: File inclusion//exclusion/skip options are set at the invocation site
+# and shouldn't be set in this config file.
+
 [tool.isort]
+
+# Ensures isort classifies imports from `dagster` as first-party in all environments. Without this
+# there can be differences between buildkite and local dev.
+known_first_party = ['dagster']
 
 # Sets a variety of default options for parentheses etc that are compatible with black.
 profile = "black"
 
 # Sorts uppercase imports before lowercase improts.
 case_sensitive=true
-
-# Isort will read skip info from gitignore (including subdirectory gitignores)
-skip_gitignore=true
 
 # profile=black just sets defaults, it won't read our line-length override in black's config
 line_length=100

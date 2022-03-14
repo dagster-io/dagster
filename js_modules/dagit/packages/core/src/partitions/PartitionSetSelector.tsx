@@ -5,7 +5,7 @@ import {PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results} 
 
 type PartitionSet = PipelinePartitionsRootQuery_partitionSetsOrError_PartitionSets_results;
 
-export const PartitionSetSelector: React.FunctionComponent<{
+export const PartitionSetSelector: React.FC<{
   selected: PartitionSet;
   partitionSets: PartitionSet[];
   onSelect: (partitionSet: PartitionSet) => void;

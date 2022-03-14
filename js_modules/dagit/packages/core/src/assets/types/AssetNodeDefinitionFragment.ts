@@ -22,6 +22,157 @@ export interface AssetNodeDefinitionFragment_repository {
   location: AssetNodeDefinitionFragment_repository_location;
 }
 
+export interface AssetNodeDefinitionFragment_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_AssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: AssetNodeDefinitionFragment_metadataEntries_AssetMetadataEntry_assetKey;
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetNodeDefinitionFragment_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: AssetNodeDefinitionFragment_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetNodeDefinitionFragment_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: AssetNodeDefinitionFragment_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: AssetNodeDefinitionFragment_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetNodeDefinitionFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: AssetNodeDefinitionFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetNodeDefinitionFragment_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface AssetNodeDefinitionFragment_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: AssetNodeDefinitionFragment_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type AssetNodeDefinitionFragment_metadataEntries = AssetNodeDefinitionFragment_metadataEntries_PathMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_JsonMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_UrlMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_TextMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_MarkdownMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_PythonArtifactMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_FloatMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_IntMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_PipelineRunMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_AssetMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_TableMetadataEntry | AssetNodeDefinitionFragment_metadataEntries_TableSchemaMetadataEntry;
+
 export interface AssetNodeDefinitionFragment_assetKey {
   __typename: "AssetKey";
   path: string[];
@@ -231,157 +382,6 @@ export interface AssetNodeDefinitionFragment_assetMaterializations {
   assetLineage: AssetNodeDefinitionFragment_assetMaterializations_assetLineage[];
   stepStats: AssetNodeDefinitionFragment_assetMaterializations_stepStats;
 }
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_PathMetadataEntry {
-  __typename: "PathMetadataEntry";
-  label: string;
-  description: string | null;
-  path: string;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_JsonMetadataEntry {
-  __typename: "JsonMetadataEntry";
-  label: string;
-  description: string | null;
-  jsonString: string;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_UrlMetadataEntry {
-  __typename: "UrlMetadataEntry";
-  label: string;
-  description: string | null;
-  url: string;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TextMetadataEntry {
-  __typename: "TextMetadataEntry";
-  label: string;
-  description: string | null;
-  text: string;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_MarkdownMetadataEntry {
-  __typename: "MarkdownMetadataEntry";
-  label: string;
-  description: string | null;
-  mdStr: string;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_PythonArtifactMetadataEntry {
-  __typename: "PythonArtifactMetadataEntry";
-  label: string;
-  description: string | null;
-  module: string;
-  name: string;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_FloatMetadataEntry {
-  __typename: "FloatMetadataEntry";
-  label: string;
-  description: string | null;
-  floatValue: number | null;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_IntMetadataEntry {
-  __typename: "IntMetadataEntry";
-  label: string;
-  description: string | null;
-  intValue: number | null;
-  intRepr: string;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_PipelineRunMetadataEntry {
-  __typename: "PipelineRunMetadataEntry";
-  label: string;
-  description: string | null;
-  runId: string;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_AssetMetadataEntry_assetKey {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_AssetMetadataEntry {
-  __typename: "AssetMetadataEntry";
-  label: string;
-  description: string | null;
-  assetKey: AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_AssetMetadataEntry_assetKey;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
-  __typename: "TableColumnConstraints";
-  nullable: boolean;
-  unique: boolean;
-  other: string[];
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_columns {
-  __typename: "TableColumn";
-  name: string;
-  description: string | null;
-  type: string;
-  constraints: AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_constraints {
-  __typename: "TableConstraints";
-  other: string[];
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema {
-  __typename: "TableSchema";
-  columns: AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_columns[];
-  constraints: AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table {
-  __typename: "Table";
-  records: string[];
-  schema: AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry {
-  __typename: "TableMetadataEntry";
-  label: string;
-  description: string | null;
-  table: AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
-  __typename: "TableColumnConstraints";
-  nullable: boolean;
-  unique: boolean;
-  other: string[];
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_columns {
-  __typename: "TableColumn";
-  name: string;
-  description: string | null;
-  type: string;
-  constraints: AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
-  __typename: "TableConstraints";
-  other: string[];
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema {
-  __typename: "TableSchema";
-  columns: AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
-  constraints: AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
-}
-
-export interface AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry {
-  __typename: "TableSchemaMetadataEntry";
-  label: string;
-  description: string | null;
-  schema: AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema;
-}
-
-export type AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries = AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_PathMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_JsonMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_UrlMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TextMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_MarkdownMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_PythonArtifactMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_FloatMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_IntMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_PipelineRunMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_AssetMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry | AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry;
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions_type_metadataEntries_PathMetadataEntry {
   __typename: "PathMetadataEntry";
@@ -2534,7 +2534,6 @@ export interface AssetNodeDefinitionFragment_op_outputDefinitions_type {
 
 export interface AssetNodeDefinitionFragment_op_outputDefinitions {
   __typename: "OutputDefinition";
-  metadataEntries: AssetNodeDefinitionFragment_op_outputDefinitions_metadataEntries[];
   type: AssetNodeDefinitionFragment_op_outputDefinitions_type;
 }
 
@@ -2542,6 +2541,157 @@ export interface AssetNodeDefinitionFragment_op {
   __typename: "SolidDefinition";
   outputDefinitions: AssetNodeDefinitionFragment_op_outputDefinitions[];
 }
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_AssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_AssetMetadataEntry_assetKey;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type AssetNodeDefinitionFragment_dependencies_asset_metadataEntries = AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_PathMetadataEntry | AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_JsonMetadataEntry | AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_UrlMetadataEntry | AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TextMetadataEntry | AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_MarkdownMetadataEntry | AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_PythonArtifactMetadataEntry | AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_FloatMetadataEntry | AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_IntMetadataEntry | AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_PipelineRunMetadataEntry | AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_AssetMetadataEntry | AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableMetadataEntry | AssetNodeDefinitionFragment_dependencies_asset_metadataEntries_TableSchemaMetadataEntry;
 
 export interface AssetNodeDefinitionFragment_dependencies_asset_assetKey {
   __typename: "AssetKey";
@@ -2772,6 +2922,7 @@ export interface AssetNodeDefinitionFragment_dependencies_asset {
   opName: string | null;
   jobNames: string[];
   description: string | null;
+  metadataEntries: AssetNodeDefinitionFragment_dependencies_asset_metadataEntries[];
   partitionDefinition: string | null;
   assetKey: AssetNodeDefinitionFragment_dependencies_asset_assetKey;
   repository: AssetNodeDefinitionFragment_dependencies_asset_repository;
@@ -2782,6 +2933,157 @@ export interface AssetNodeDefinitionFragment_dependencies {
   __typename: "AssetDependency";
   asset: AssetNodeDefinitionFragment_dependencies_asset;
 }
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_AssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_AssetMetadataEntry_assetKey;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries = AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_PathMetadataEntry | AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_JsonMetadataEntry | AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_UrlMetadataEntry | AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TextMetadataEntry | AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_MarkdownMetadataEntry | AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_PythonArtifactMetadataEntry | AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_FloatMetadataEntry | AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_IntMetadataEntry | AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_PipelineRunMetadataEntry | AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_AssetMetadataEntry | AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableMetadataEntry | AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries_TableSchemaMetadataEntry;
 
 export interface AssetNodeDefinitionFragment_dependedBy_asset_assetKey {
   __typename: "AssetKey";
@@ -3012,6 +3314,7 @@ export interface AssetNodeDefinitionFragment_dependedBy_asset {
   opName: string | null;
   jobNames: string[];
   description: string | null;
+  metadataEntries: AssetNodeDefinitionFragment_dependedBy_asset_metadataEntries[];
   partitionDefinition: string | null;
   assetKey: AssetNodeDefinitionFragment_dependedBy_asset_assetKey;
   repository: AssetNodeDefinitionFragment_dependedBy_asset_repository;
@@ -3030,6 +3333,7 @@ export interface AssetNodeDefinitionFragment {
   opName: string | null;
   jobNames: string[];
   repository: AssetNodeDefinitionFragment_repository;
+  metadataEntries: AssetNodeDefinitionFragment_metadataEntries[];
   partitionDefinition: string | null;
   assetKey: AssetNodeDefinitionFragment_assetKey;
   assetMaterializations: AssetNodeDefinitionFragment_assetMaterializations[];

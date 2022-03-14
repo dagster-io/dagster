@@ -17,7 +17,7 @@ export const Default = () => {
       <NonIdealState
         icon="star"
         title="This run is currently queued."
-        action={<a href="/instance/runs?q=status%3AQUEUED">View queued runs</a>}
+        action={<a href="/instance/runs?q[]=status%3AQUEUED">View queued runs</a>}
       />
       <NonIdealState
         icon="warning"

@@ -1,5 +1,5 @@
 import os
-from collections import namedtuple
+from typing import Dict, NamedTuple, Optional
 
 import yaml
 
@@ -43,11 +43,20 @@ def configurable_class_data_or_default(config_value, field_name, default):
 
 @whitelist_for_serdes
 class InstanceRef(
-    namedtuple(
+    NamedTuple(
         "_InstanceRef",
-        "local_artifact_storage_data run_storage_data event_storage_data compute_logs_data "
-        "schedule_storage_data scheduler_data run_coordinator_data run_launcher_data settings "
-        "custom_instance_class_data",
+        [
+            ("local_artifact_storage_data", ConfigurableClassData),
+            ("run_storage_data", ConfigurableClassData),
+            ("event_storage_data", ConfigurableClassData),
+            ("compute_logs_data", ConfigurableClassData),
+            ("schedule_storage_data", Optional[ConfigurableClassData]),
+            ("scheduler_data", Optional[ConfigurableClassData]),
+            ("run_coordinator_data", Optional[ConfigurableClassData]),
+            ("run_launcher_data", Optional[ConfigurableClassData]),
+            ("settings", Dict[str, object]),
+            ("custom_instance_class_data", Optional[ConfigurableClassData]),
+        ],
     )
 ):
     """Serializable representation of a :py:class:`DagsterInstance`.
@@ -57,16 +66,16 @@ class InstanceRef(
 
     def __new__(
         cls,
-        local_artifact_storage_data,
-        run_storage_data,
-        event_storage_data,
-        compute_logs_data,
-        schedule_storage_data,
-        scheduler_data,
-        run_coordinator_data,
-        run_launcher_data,
-        settings,
-        custom_instance_class_data=None,
+        local_artifact_storage_data: ConfigurableClassData,
+        run_storage_data: ConfigurableClassData,
+        event_storage_data: ConfigurableClassData,
+        compute_logs_data: ConfigurableClassData,
+        schedule_storage_data: Optional[ConfigurableClassData],
+        scheduler_data: Optional[ConfigurableClassData],
+        run_coordinator_data: Optional[ConfigurableClassData],
+        run_launcher_data: Optional[ConfigurableClassData],
+        settings: Dict[str, object],
+        custom_instance_class_data: Optional[ConfigurableClassData] = None,
     ):
         return super(cls, InstanceRef).__new__(
             cls,
@@ -94,7 +103,7 @@ class InstanceRef(
             run_launcher_data=check.opt_inst_param(
                 run_launcher_data, "run_launcher_data", ConfigurableClassData
             ),
-            settings=check.opt_dict_param(settings, "settings"),
+            settings=check.opt_dict_param(settings, "settings", key_type=str),
             custom_instance_class_data=check.opt_inst_param(
                 custom_instance_class_data,
                 "instance_class",

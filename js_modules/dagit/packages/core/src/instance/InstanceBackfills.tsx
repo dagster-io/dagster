@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   ButtonWIP,
-  ButtonLink,
   ColorsWIP,
   CursorPaginationControls,
   Group,
@@ -28,6 +27,7 @@ import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
 import {usePermissions} from '../app/Permissions';
 import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {
@@ -38,6 +38,7 @@ import {
   successStatuses,
 } from '../runs/RunStatuses';
 import {DagsterTag} from '../runs/RunTag';
+import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
@@ -84,13 +85,14 @@ export const InstanceBackfills = () => {
         ? result.partitionBackfillsOrError.results
         : [],
   });
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   useDocumentTitle('Backfills');
 
   return (
     <>
       <PageHeader
         title={<Heading>Instance status</Heading>}
-        tabs={<InstanceTabs tab="backfills" queryData={queryData} />}
+        tabs={<InstanceTabs tab="backfills" refreshState={refreshState} />}
       />
       <Loading queryResult={queryResult} allowStaleData={true}>
         {({partitionBackfillsOrError}) => {
@@ -200,24 +202,16 @@ const BackfillTable = ({backfills, refetch}: {backfills: Backfill[]; refetch: ()
     } else {
       const error = data.resumePartitionBackfill;
       SharedToaster.show({
-        message: (
-          <Group direction="column" spacing={4}>
-            <div>An unexpected error occurred. This backfill was not retried.</div>
-            <ButtonLink
-              color={ColorsWIP.White}
-              underline="always"
-              onClick={() => {
-                showCustomAlert({
-                  body: <PythonErrorInfo error={error} />,
-                });
-              }}
-            >
-              View error
-            </ButtonLink>
-          </Group>
-        ),
+        message: <div>An unexpected error occurred. This backfill was not retried.</div>,
         icon: 'error',
         intent: 'danger',
+        action: {
+          text: 'View error',
+          onClick: () =>
+            showCustomAlert({
+              body: <PythonErrorInfo error={error} />,
+            }),
+        },
       });
     }
   };
@@ -281,9 +275,12 @@ const BackfillRow = ({
   const history = useHistory();
   const {canCancelPartitionBackfill, canLaunchPartitionBackfill} = usePermissions();
   const counts = React.useMemo(() => getProgressCounts(backfill), [backfill]);
-  const runsUrl = `/instance/runs?${qs.stringify({
-    q: [stringFromValue([{token: 'tag', value: `dagster/backfill=${backfill.backfillId}`}])],
-  })}`;
+  const runsUrl = runsPathWithFilters([
+    {
+      token: 'tag',
+      value: `dagster/backfill=${backfill.backfillId}`,
+    },
+  ]);
 
   const repoAddress = backfill.partitionSet
     ? buildRepoAddress(
@@ -478,7 +475,7 @@ const BackfillProgress = ({backfill}: {backfill: Backfill}) => {
   );
 };
 
-const PartitionSetReference: React.FunctionComponent<{
+const PartitionSetReference: React.FC<{
   partitionSet: InstanceBackfillsQuery_partitionBackfillsOrError_PartitionBackfills_results_partitionSet;
 }> = ({partitionSet}) => {
   const repoAddress = buildRepoAddress(

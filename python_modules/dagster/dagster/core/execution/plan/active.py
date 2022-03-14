@@ -245,7 +245,7 @@ class ActiveExecution:
         step = self._plan.get_step_by_key(step_key)
         return cast(ExecutionStep, check.inst(step, ExecutionStep))
 
-    def get_steps_to_execute(self, limit: int = None) -> List[ExecutionStep]:
+    def get_steps_to_execute(self, limit: Optional[int] = None) -> List[ExecutionStep]:
         check.invariant(
             self._context_guard,
             "ActiveExecution must be used as a context manager",

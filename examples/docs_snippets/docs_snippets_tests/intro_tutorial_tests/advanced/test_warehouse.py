@@ -2,7 +2,6 @@ import csv
 import os
 
 from dagster.utils import script_relative_path
-
 from docs_snippets.intro_tutorial.advanced.pipelines.modes import (
     SqlAlchemyPostgresWarehouse as sapw1,
 )

@@ -109,12 +109,20 @@
             "path": "/concepts/ops-jobs-graphs/nesting-graphs"
           },
           {
+            "title": "Dynamic Graphs",
+            "path": "/concepts/ops-jobs-graphs/dynamic-graphs"
+          },
+          {
             "title": "Op Events",
             "path": "/concepts/ops-jobs-graphs/op-events"
           },
           {
             "title": "Op Hooks",
             "path": "/concepts/ops-jobs-graphs/op-hooks"
+          },
+          {
+            "title": "Op Retries",
+            "path": "/concepts/ops-jobs-graphs/op-retries"
           }
         ]
       },

@@ -2,6 +2,7 @@ import {
   Box,
   Checkbox,
   ColorsWIP,
+  FontFamily,
   Group,
   IconWIP,
   NonIdealState,
@@ -16,6 +17,7 @@ import styled from 'styled-components/macro';
 
 import {AppContext} from '../app/AppContext';
 import {filterByQuery, GraphQueryItem} from '../app/GraphQueryImpl';
+import {withMiddleTruncation} from '../app/Util';
 import {WebSocketContext} from '../app/WebSocketProvider';
 import {
   EMPTY_RUN_METADATA,
@@ -23,6 +25,7 @@ import {
   IStepMetadata,
   IStepState,
 } from '../runs/RunMetadataProvider';
+import {runsPathWithFilters} from '../runs/RunsFilterInput';
 import {StepSelection} from '../runs/StepSelection';
 import {GraphQueryInput} from '../ui/GraphQueryInput';
 
@@ -344,7 +347,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
         />
       )}
       <div style={{overflow: 'scroll', flex: 1}} {...containerProps}>
-        <div style={{position: 'relative', marginBottom: 50, ...layoutSize}}>
+        <div style={{position: 'relative', marginBottom: 70, ...layoutSize}}>
           {measurementComplete && (
             <GanttChartViewportContents
               options={options}
@@ -383,7 +386,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
             </Box>
           </WebsocketWarning>
         ) : null}
-        <Box flex={{direction: 'row', alignItems: 'center', gap: 12}}>
+        <FilterInputsBackgroundBox flex={{direction: 'row', alignItems: 'center', gap: 12}}>
           <GraphQueryInput
             items={props.graph}
             value={props.selection.query}
@@ -397,7 +400,7 @@ const GanttChartInner = (props: GanttChartInnerProps) => {
             label="Hide unselected steps"
             onChange={props.onChange}
           />
-        </Box>
+        </FilterInputsBackgroundBox>
       </GraphQueryInputContainer>
     </>
   );
@@ -434,9 +437,7 @@ interface GanttChartViewportContentsProps {
   onClickStep: (step: string, evt: React.MouseEvent<any>) => void;
 }
 
-const GanttChartViewportContents: React.FunctionComponent<GanttChartViewportContentsProps> = (
-  props,
-) => {
+const GanttChartViewportContents: React.FC<GanttChartViewportContentsProps> = (props) => {
   const {viewport, layout, hoveredStep, focusedSteps, metadata, options} = props;
   const items: React.ReactChild[] = [];
 
@@ -493,7 +494,7 @@ const GanttChartViewportContents: React.FunctionComponent<GanttChartViewportCont
     items.push(
       <div
         key={box.key}
-        data-tooltip={box.width < box.node.name.length * 5 ? box.node.name : undefined}
+        data-tooltip={box.node.name}
         onClick={(evt: React.MouseEvent<any>) => props.onClickStep(box.node.name, evt)}
         onDoubleClick={() => props.onDoubleClickStep(box.node.name)}
         onMouseEnter={() => props.setHoveredNodeName(box.node.name)}
@@ -512,7 +513,7 @@ const GanttChartViewportContents: React.FunctionComponent<GanttChartViewportCont
         }}
       >
         {box.state === IStepState.RUNNING ? <Spinner purpose="body-text" /> : undefined}
-        {box.width > BOX_SHOW_LABEL_WIDTH_CUTOFF ? box.node.name : undefined}
+        {truncatedBoxLabel(box)}
       </div>,
     );
   });
@@ -661,6 +662,18 @@ const GanttLine = React.memo(
   isEqual,
 );
 
+function truncatedBoxLabel(box: GanttChartBox) {
+  if (box.width <= BOX_SHOW_LABEL_WIDTH_CUTOFF) {
+    return undefined;
+  }
+
+  // Note: The constants here must be in sync with the CSS immediately below
+  const totalPadding = 7 + (box.state === IStepState.RUNNING ? 16 : 0);
+  const maxLength = (box.width - totalPadding) / 6.2;
+
+  return withMiddleTruncation(box.node.name, {maxLength});
+}
+
 // Note: It is much faster to use standard CSS class selectors here than make
 // each box and line a styled-component because all styled components register
 // listeners for the "theme" React context.
@@ -705,13 +718,18 @@ const GanttChartContainer = styled.div`
   }
 
   .box {
+    /* Note: padding + font changes may also impact truncatedBoxLabel */
+
     height: ${BOX_HEIGHT - BOX_MARGIN_Y * 2}px;
     padding: 3px;
     padding-right: 1px;
     border: 1px solid transparent;
     border-radius: 2px;
     white-space: nowrap;
-    text-overflow: ellipsis;
+    font-family: ${FontFamily.monospace};
+    font-size: 12.5px;
+    font-weight: 700;
+    line-height: 15px;
 
     transition: top ${CSS_DURATION}ms linear, left ${CSS_DURATION}ms linear,
       width ${CSS_DURATION}ms linear, height ${CSS_DURATION}ms linear;
@@ -773,6 +791,11 @@ const GraphQueryInputContainer = styled.div`
   white-space: nowrap;
 `;
 
+const FilterInputsBackgroundBox = styled(Box)`
+  background: radial-gradient(${ColorsWIP.Gray50} 0%, rgba(255, 255, 255, 0) 100%);
+  padding: 15px 15px 0px 15px;
+`;
+
 export const GanttChartLoadingState = ({runId}: {runId: string}) => (
   <GanttChartContainer>
     <OptionsContainer />
@@ -808,7 +831,11 @@ export const QueuedState = ({runId}: {runId: string}) => (
           icon="arrow_forward"
           title="Run Queued"
           description="This run is queued for execution and will start soon."
-          action={<Link to="/instance/runs?q=status%3AQUEUED">View queued runs</Link>}
+          action={
+            <Link to={runsPathWithFilters([{token: 'status', value: 'QUEUED'}])}>
+              View queued runs
+            </Link>
+          }
         />
       }
       firstInitialPercent={70}

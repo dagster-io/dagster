@@ -21,14 +21,14 @@ export const InstanceWarningIcon = React.memo(() => {
 
     // Find any schedules or sensors in the repo list.
     for (const repo of options) {
-      const {schedules, sensors} = repo.repository;
-      if (sensors.length) {
+      if (repo.repository.sensors.some((s) => s.sensorState.status === 'RUNNING')) {
         anySensors = true;
+        break;
       }
-      if (schedules.length) {
+    }
+    for (const repo of options) {
+      if (repo.repository.schedules.some((s) => s.scheduleState.status === 'RUNNING')) {
         anySchedules = true;
-      }
-      if (anySensors && anySchedules) {
         break;
       }
     }
@@ -37,6 +37,10 @@ export const InstanceWarningIcon = React.memo(() => {
   }, [options]);
 
   const allDaemons = healthData?.instance.daemonHealth.allDaemonStatuses;
+  const anyRequestedBackfills =
+    healthData?.partitionBackfillsOrError.__typename === 'PartitionBackfills'
+      ? healthData.partitionBackfillsOrError.results.length > 0
+      : false;
 
   const visibleErrorCount = React.useMemo(() => {
     if (!allDaemons) {
@@ -50,11 +54,13 @@ export const InstanceWarningIcon = React.memo(() => {
     const totalErrorCount = errors.size;
     const scheduleError = anySchedules && errors.has('SCHEDULER');
     const sensorError = anySensors && errors.has('SENSOR');
+    const backfillsError = anyRequestedBackfills && errors.has('BACKFILL');
 
     errors.delete('SCHEDULER');
     errors.delete('SENSOR');
+    errors.delete('BACKFILL');
 
-    // If there are any errors besides scheduler/sensor, show the entire count.
+    // If there are any errors besides scheduler/sensor/backfill, show the entire count.
     if (errors.size) {
       return totalErrorCount;
     }
@@ -62,8 +68,9 @@ export const InstanceWarningIcon = React.memo(() => {
     // Otherwise, just show the number that is relevant to the user's workspace.
     // - If there are no schedules or sensors, this will be zero.
     // - If there is a sensor daemon error but there are no sensors, this will be zero.
-    return Number(scheduleError) + Number(sensorError);
-  }, [anySchedules, anySensors, allDaemons]);
+    // - If there is a backfill daemon error but there are no backfills, this will be zero.
+    return Number(scheduleError) + Number(sensorError) + Number(backfillsError);
+  }, [anySchedules, anySensors, anyRequestedBackfills, allDaemons]);
 
   if (visibleErrorCount) {
     return (
@@ -88,6 +95,14 @@ const INSTANCE_WARNING_QUERY = gql`
   query InstanceWarningQuery {
     instance {
       ...InstanceHealthFragment
+    }
+    partitionBackfillsOrError(status: REQUESTED) {
+      __typename
+      ... on PartitionBackfills {
+        results {
+          backfillId
+        }
+      }
     }
   }
   ${INSTANCE_HEALTH_FRAGMENT}

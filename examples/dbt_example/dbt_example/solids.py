@@ -48,7 +48,7 @@ def test_cereals_models(context) -> DbtCliOutput:
 
 analyze_cereals = define_dagstermill_solid(
     "analyze_cereals",
-    file_relative_path(__file__, "notebooks/Analyze Cereals.ipynb"),
+    file_relative_path(__file__, "notebooks/Analyze_Cereals.ipynb"),
     input_defs=[InputDefinition("run_results", dagster_type=DbtCliOutput)],
     output_defs=[OutputDefinition(str)],
     required_resource_keys={"db"},

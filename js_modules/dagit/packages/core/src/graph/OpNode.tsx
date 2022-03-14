@@ -3,7 +3,8 @@ import {ColorsWIP, IconWIP, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {displayNameForAssetKey} from '../app/Util';
+import {displayNameForAssetKey, withMiddleTruncation} from '../app/Util';
+import {AssetKey} from '../assets/types';
 
 import {OpIOBox, metadataForIO} from './OpIOBox';
 import {OpTags, IOpTag} from './OpTags';
@@ -108,6 +109,8 @@ export class OpNode extends React.Component<IOpNodeProps> {
       tags.push({label: 'Expand', onClick: this.handleEnterComposite});
     }
 
+    const label = invocation ? invocation.name : definition.name;
+
     return (
       <NodeContainer
         $minified={minified}
@@ -156,25 +159,17 @@ export class OpNode extends React.Component<IOpNodeProps> {
         ))}
 
         <div className="node-box" style={{...position(layout.op)}}>
-          <div
-            className="name"
-            data-tooltip={invocation ? invocation.name : definition.name}
-            data-tooltip-style={TOOLTIP_STYLE}
-          >
+          <div className="name">
             {!minified && <IconWIP name="op" size={16} />}
-            <div className="label">{invocation ? invocation.name : definition.name}</div>
+            <div className="label" data-tooltip={label} data-tooltip-style={TOOLTIP_STYLE}>
+              {withMiddleTruncation(label, {maxLength: 48})}
+            </div>
           </div>
           {!minified && (definition.description || definition.assetNodes.length === 0) && (
             <div className="description">{(definition.description || '').split('\n')[0]}</div>
           )}
           {!minified && definition.assetNodes.length > 0 && (
-            <div className="assets">
-              <IconWIP name="asset" size={16} />
-              {displayNameForAssetKey(definition.assetNodes[0].assetKey)}
-              {definition.assetNodes.length > 1
-                ? ` + ${definition.assetNodes.length - 1} more`
-                : ''}
-            </div>
+            <OpNodeAssociatedAssets nodes={definition.assetNodes} />
           )}
         </div>
 
@@ -193,6 +188,19 @@ export class OpNode extends React.Component<IOpNodeProps> {
     );
   }
 }
+
+const OpNodeAssociatedAssets: React.FC<{nodes: {assetKey: AssetKey}[]}> = ({nodes}) => {
+  const more = nodes.length > 1 ? ` + ${nodes.length - 1} more` : '';
+  return (
+    <div className="assets">
+      <IconWIP name="asset" size={16} />
+      {withMiddleTruncation(displayNameForAssetKey(nodes[0].assetKey), {
+        maxLength: 48 - more.length,
+      })}
+      {more}
+    </div>
+  );
+};
 
 export const OP_NODE_INVOCATION_FRAGMENT = gql`
   fragment OpNodeInvocationFragment on Solid {

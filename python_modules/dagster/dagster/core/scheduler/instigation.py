@@ -1,7 +1,6 @@
-from collections import namedtuple
 from enum import Enum
 from inspect import Parameter
-from typing import Any, Dict, Mapping, NamedTuple, Optional, Type, Union
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Type, Union
 
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
@@ -413,50 +412,59 @@ class TickDataSerializer(DefaultNamedTupleSerializer):
 
 @whitelist_for_serdes(serializer=TickDataSerializer)
 class TickData(
-    namedtuple(
+    NamedTuple(
         "_TickData",
-        (
-            "instigator_origin_id instigator_name instigator_type status timestamp run_ids "
-            "run_keys error skip_reason cursor origin_run_ids failure_count"
-        ),
+        [
+            ("instigator_origin_id", str),
+            ("instigator_name", str),
+            ("instigator_type", InstigatorType),
+            ("status", TickStatus),
+            ("timestamp", float),
+            ("run_ids", List[str]),
+            ("run_keys", List[str]),
+            ("error", Optional[SerializableErrorInfo]),
+            ("skip_reason", Optional[str]),
+            ("cursor", Optional[str]),
+            ("origin_run_ids", List[str]),
+            ("failure_count", int),
+        ],
     )
 ):
+    """
+    This class defines the data that is serialized and stored for each schedule/sensor tick. We
+    depend on the storage implementation to provide tick ids, and therefore separate all other
+    data into this serializable class that can be stored independently of the id.
+
+    Args:
+        instigator_origin_id (str): The id of the instigator target for this tick
+        instigator_name (str): The name of the instigator for this tick
+        instigator_type (InstigatorType): The type of this instigator for this tick
+        status (TickStatus): The status of the tick, which can be updated
+        timestamp (float): The timestamp at which this instigator evaluation started
+        run_id (str): The run created by the tick.
+        error (SerializableErrorInfo): The error caught during execution. This is set only when
+            the status is ``TickStatus.Failure``
+        skip_reason (str): message for why the tick was skipped
+        origin_run_ids (List[str]): The runs originated from the schedule/sensor.
+        failure_count (int): The number of times this tick has failed. If the status is not
+            FAILED, this is the number of previous failures before it reached the current state.
+    """
+
     def __new__(
         cls,
-        instigator_origin_id,
-        instigator_name,
-        instigator_type,
-        status,
-        timestamp,
-        run_ids=None,
-        run_keys=None,
-        error=None,
-        skip_reason=None,
-        cursor=None,
-        origin_run_ids=None,
-        failure_count=None,
+        instigator_origin_id: str,
+        instigator_name: str,
+        instigator_type: InstigatorType,
+        status: TickStatus,
+        timestamp: float,
+        run_ids: Optional[List[str]] = None,
+        run_keys: Optional[List[str]] = None,
+        error: Optional[SerializableErrorInfo] = None,
+        skip_reason: Optional[str] = None,
+        cursor: Optional[str] = None,
+        origin_run_ids: Optional[List[str]] = None,
+        failure_count: Optional[int] = None,
     ):
-        """
-        This class defines the data that is serialized and stored for each schedule/sensor tick. We
-        depend on the storage implementation to provide tick ids, and therefore separate all other
-        data into this serializable class that can be stored independently of the id.
-
-        Arguments:
-            instigator_origin_id (str): The id of the instigator target for this tick
-            instigator_name (str): The name of the instigator for this tick
-            instigator_type (InstigatorType): The type of this instigator for this tick
-            status (TickStatus): The status of the tick, which can be updated
-            timestamp (float): The timestamp at which this instigator evaluation started
-
-        Keyword Arguments:
-            run_id (str): The run created by the tick.
-            error (SerializableErrorInfo): The error caught during execution. This is set only when
-                the status is ``TickStatus.Failure``
-            skip_reason (str): message for why the tick was skipped
-            origin_run_ids (List[str]): The runs originated from the schedule/sensor.
-            failure_count (int): The number of times this tick has failed. If the status is not
-                FAILED, this is the number of previous failures before it reached the current state.
-        """
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         return super(TickData, cls).__new__(
             cls,
@@ -558,17 +566,18 @@ def _validate_tick_args(instigator_type, status, run_ids=None, error=None, skip_
 
 
 class TickStatsSnapshot(
-    namedtuple(
+    NamedTuple(
         "TickStatsSnapshot",
-        ("ticks_started ticks_succeeded ticks_skipped ticks_failed"),
+        [
+            ("ticks_started", int),
+            ("ticks_succeeded", int),
+            ("ticks_skipped", int),
+            ("ticks_failed", int),
+        ],
     )
 ):
     def __new__(
-        cls,
-        ticks_started,
-        ticks_succeeded,
-        ticks_skipped,
-        ticks_failed,
+        cls, ticks_started: int, ticks_succeeded: int, ticks_skipped: int, ticks_failed: int
     ):
         return super(TickStatsSnapshot, cls).__new__(
             cls,

@@ -600,7 +600,7 @@ def repository_def_from_target_def(target: object) -> None:
     ...
 
 
-def repository_def_from_target_def(target):
+def repository_def_from_target_def(target: object) -> Optional["RepositoryDefinition"]:
     from dagster.core.asset_defs.asset_group import AssetGroup
 
     from .graph_definition import GraphDefinition

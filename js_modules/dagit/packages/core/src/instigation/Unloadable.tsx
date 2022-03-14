@@ -28,7 +28,7 @@ import {TickTag} from './InstigationTick';
 import {InstigatedRunStatus} from './InstigationUtils';
 import {InstigationStateFragment} from './types/InstigationStateFragment';
 
-export const UnloadableSensors: React.FunctionComponent<{
+export const UnloadableSensors: React.FC<{
   sensorStates: InstigationStateFragment[];
 }> = ({sensorStates}) => {
   if (!sensorStates.length) {
@@ -59,7 +59,7 @@ export const UnloadableSensors: React.FunctionComponent<{
   );
 };
 
-export const UnloadableSchedules: React.FunctionComponent<{
+export const UnloadableSchedules: React.FC<{
   scheduleStates: InstigationStateFragment[];
 }> = ({scheduleStates}) => {
   if (!scheduleStates.length) {
@@ -195,7 +195,7 @@ const SensorStateRow = ({sensorState}: {sensorState: InstigationStateFragment}) 
   );
 };
 
-const ScheduleStateRow: React.FunctionComponent<{
+const ScheduleStateRow: React.FC<{
   scheduleState: InstigationStateFragment;
 }> = ({scheduleState}) => {
   const [stopSchedule, {loading: toggleOffInFlight}] = useMutation<StopSchedule>(
