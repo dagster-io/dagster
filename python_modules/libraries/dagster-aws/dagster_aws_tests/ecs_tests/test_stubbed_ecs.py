@@ -202,6 +202,19 @@ def test_register_task_definition(ecs):
             family="dagster", containerDefinitions=[], memory="512", cpu="1"
         )
 
+    # With invalid names
+    with pytest.raises(ClientError):
+        # Special characters
+        ecs.register_task_definition(
+            family="boom!", containerDefinitions=[], memory="512", cpu="256"
+        )
+
+    with pytest.raises(ClientError):
+        # Too long
+        ecs.register_task_definition(
+            family=256 * "a", containerDefinitions=[], memory="512", cpu="256"
+        )
+
     response = ecs.register_task_definition(
         family="dagster", containerDefinitions=[], memory="512", cpu="256"
     )

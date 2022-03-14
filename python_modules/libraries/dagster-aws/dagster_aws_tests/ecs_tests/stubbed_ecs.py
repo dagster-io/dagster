@@ -1,4 +1,5 @@
 import copy
+import re
 import itertools
 import uuid
 from collections import defaultdict
@@ -258,6 +259,12 @@ class StubbedEcs:
     @stubbed
     def register_task_definition(self, **kwargs):
         family = kwargs.get("family")
+        # Family must be <= 255 characters. Alphanumeric, dash, and underscore only.
+        if len(family) > 255 or not re.match(r"^[\w\-]+$", family):
+            self.stubber.add_client_error(
+                method="register_task_definition", expected_params={**kwargs}
+            )
+
         # Revisions are 1 indexed
         revision = len(self.task_definitions[family]) + 1
         arn = self._task_definition_arn(family, revision)
