@@ -27,7 +27,6 @@ sys.meta_path.insert(
             "dagster.seven": "dagster._seven",
             "dagster.utils": "dagster._utils",
             "dagster.version": "dagster._version",
-            "dagster.fakemod": "dagster._fakemod",
         }
     ),
 )
