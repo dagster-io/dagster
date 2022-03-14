@@ -1,5 +1,5 @@
+import {gql} from '@apollo/client';
 import {Box, ColorsWIP, Group, IconWIP, Mono, NonIdealState, Table} from '@dagster-io/ui';
-import {gql} from 'graphql.macro';
 import qs from 'qs';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
