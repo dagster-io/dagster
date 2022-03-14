@@ -1285,13 +1285,13 @@ class TestRunStorage:
                 )
             )
 
-        _one = _add_run("a", tags={"a": "1"})
-        _two = _add_run("a", tags={"a": "2"})
-        three = _add_run("a", tags={"a": "3"})
-        _none = _add_run("a")
-        b = _add_run("b", tags={"a": "4"})
-        one = _add_run("a", tags={"a": "1"})
-        two = _add_run("a", tags={"a": "2"})
+        _one = _add_run("a", tags={"a": "1", "b": "1"})
+        _two = _add_run("a", tags={"a": "2", "b": "1"})
+        three = _add_run("a", tags={"a": "3", "b": "1"})
+        _none = _add_run("a", tags={'b': '1'})
+        b = _add_run("b", tags={"a": "4", "b": "2"})
+        one = _add_run("a", tags={"a": "1", "b": "1"})
+        two = _add_run("a", tags={"a": "2", "b": "1"})
 
         runs_by_tag = {
             run.tags.get("a"): run
@@ -1305,6 +1305,7 @@ class TestRunStorage:
         assert runs_by_tag.get("3").run_id == three.run_id
         assert runs_by_tag.get("4").run_id == b.run_id
 
+        # fetch with a pipeline_name filter applied
         runs_by_tag = {
             run.tags.get("a"): run
             for run in storage.get_runs(
@@ -1316,6 +1317,20 @@ class TestRunStorage:
         assert runs_by_tag.get("1").run_id == one.run_id
         assert runs_by_tag.get("2").run_id == two.run_id
         assert runs_by_tag.get("3").run_id == three.run_id
+
+        # fetch with a tags filter applied
+        runs_by_tag = {
+            run.tags.get("a"): run
+            for run in storage.get_runs(
+                filters=RunsFilter(tags={"b": "1"}),
+                bucket_by=TagBucket(tag_key="a", tag_values=["1", "2", "3", "4"], bucket_limit=1),
+            )
+        }
+        assert set(runs_by_tag.keys()) == {"1", "2", "3"}
+        assert runs_by_tag.get("1").run_id == one.run_id
+        assert runs_by_tag.get("2").run_id == two.run_id
+        assert runs_by_tag.get("3").run_id == three.run_id
+
 
     def test_run_record_timestamps(self, storage):
         assert storage
