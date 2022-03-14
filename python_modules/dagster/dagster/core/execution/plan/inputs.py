@@ -527,6 +527,7 @@ class FromMultipleSources(
         from dagster.core.events import DagsterEvent
 
         values = []
+
         # some upstream steps may have skipped and we allow fan-in to continue in their absence
         source_handles_to_skip = list(
             filter(lambda x: not step_context.can_load(x), self.step_output_handle_dependencies)
