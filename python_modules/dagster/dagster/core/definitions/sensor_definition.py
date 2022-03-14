@@ -341,6 +341,7 @@ class SensorDefinition:
         from dagster.core.events import DagsterEvent, AssetObservationData
         from dagster.core.definitions.events import AssetObservation
         from dagster.core.events.log import EventLogEntry
+        from dagster.core.storage.event_log.base import SENSOR_RUN_ID
 
         check.inst_param(context, "context", SensorEvaluationContext)
         result = list(ensure_gen(self._evaluation_fn(context)))
@@ -409,7 +410,7 @@ class SensorDefinition:
             event_record = EventLogEntry(
                 user_message="",
                 error_info=None,
-                run_id="",
+                run_id=SENSOR_RUN_ID,
                 level=logging.INFO,
                 timestamp=time.time(),
                 dagster_event=observation_event,

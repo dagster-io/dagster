@@ -27,6 +27,9 @@ from dagster.core.instance import MayHaveInstanceWeakref
 from dagster.core.storage.pipeline_run import PipelineRunStatsSnapshot
 from dagster.serdes import whitelist_for_serdes
 
+# Default run ID for events generated from sensors.
+SENSOR_RUN_ID = "sensor-run-id"
+
 
 class RunShardedEventsCursor(NamedTuple):
     """Pairs an id-based event log cursor with a timestamp-based run cursor, for improved
