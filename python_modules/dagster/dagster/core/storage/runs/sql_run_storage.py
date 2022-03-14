@@ -258,11 +258,11 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def _runs_query(
         self,
-        filters: RunsFilter = None,
-        cursor: str = None,
-        limit: int = None,
-        columns: List[str] = None,
-        order_by: str = None,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+        columns: Optional[List[str]] = None,
+        order_by: Optional[str] = None,
         ascending: bool = False,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ):
@@ -329,16 +329,16 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def get_runs(
         self,
-        filters: RunsFilter = None,
-        cursor: str = None,
-        limit: int = None,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[PipelineRun]:
         query = self._runs_query(filters, cursor, limit, bucket_by=bucket_by)
         rows = self.fetchall(query)
         return self._rows_to_runs(rows)
 
-    def get_runs_count(self, filters: RunsFilter = None) -> int:
+    def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
         subquery = self._runs_query(filters=filters).alias("subquery")
 
         # We use an alias here because Postgres requires subqueries to be
@@ -367,11 +367,11 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def get_run_records(
         self,
-        filters: RunsFilter = None,
-        limit: int = None,
-        order_by: str = None,
+        filters: Optional[RunsFilter] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[str] = None,
         ascending: bool = False,
-        cursor: str = None,
+        cursor: Optional[str] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
         filters = check.opt_inst_param(filters, "filters", RunsFilter, default=RunsFilter())
@@ -516,7 +516,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return (root_run_id, [root_run] + run_group)
 
     def get_run_groups(
-        self, filters: RunsFilter = None, cursor: str = None, limit: int = None
+        self,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         # The runs that would be returned by calling RunStorage.get_runs with the same arguments
         runs = self._runs_query(
@@ -783,7 +786,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     # Tracking data migrations over secondary indexes
 
     def _execute_data_migrations(
-        self, migrations, print_fn: Callable = None, force_rebuild_all: bool = False
+        self, migrations, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False
     ):
         for migration_name, migration_fn in migrations.items():
             if self.has_built_index(migration_name):
@@ -796,10 +799,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             if print_fn:
                 print_fn(f"Finished data migration: {migration_name}")
 
-    def migrate(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+    def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
         self._execute_data_migrations(REQUIRED_DATA_MIGRATIONS, print_fn, force_rebuild_all)
 
-    def optimize(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+    def optimize(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
         self._execute_data_migrations(OPTIONAL_DATA_MIGRATIONS, print_fn, force_rebuild_all)
 
     def has_built_index(self, migration_name: str) -> bool:
@@ -888,7 +891,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
 
     def get_backfills(
-        self, status: BulkActionStatus = None, cursor: str = None, limit: int = None
+        self,
+        status: Optional[BulkActionStatus] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> List[PartitionBackfill]:
         check.opt_inst_param(status, "status", BulkActionStatus)
         query = db.select([BulkActionsTable.c.body])

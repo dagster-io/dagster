@@ -89,6 +89,7 @@ export const LaunchAssetExecutionButton: React.FC<{
           disabled={!!disabledReason}
           title={title}
           icon="materialization"
+          behavior="toast"
           getVariables={() => ({
             executionParams: {
               mode: 'default',

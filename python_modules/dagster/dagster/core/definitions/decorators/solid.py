@@ -73,7 +73,7 @@ class _Solid:
     ):
         self.name = check.opt_str_param(name, "name")
         self.input_defs = check.opt_list_param(input_defs, "input_defs", InputDefinition)
-        self.output_defs = check.opt_nullable_list_param(
+        self.output_defs = check.opt_nullable_sequence_param(
             output_defs, "output_defs", OutputDefinition
         )
         self.decorator_takes_context = check.bool_param(
@@ -97,6 +97,7 @@ class _Solid:
         if not self.name:
             self.name = fn.__name__
 
+        output_defs: Sequence[OutputDefinition]
         if self.output_defs is None:
             output_defs = [OutputDefinition.create_from_inferred(infer_output_props(fn))]
         elif len(self.output_defs) == 1:
@@ -155,7 +156,7 @@ def solid(
 
 
 def solid(
-    name: Union[Callable[..., Any], Optional[str]] = None,
+    name: Optional[Union[Callable[..., Any], str]] = None,
     description: Optional[str] = None,
     input_defs: Optional[Sequence[InputDefinition]] = None,
     output_defs: Optional[Sequence[OutputDefinition]] = None,
@@ -405,7 +406,7 @@ def is_context_provided(params: List[funcsigs.Parameter]) -> bool:
 
 
 def lambda_solid(
-    name: Union[Optional[str], Callable[..., Any]] = None,
+    name: Optional[Union[str, Callable[..., Any]]] = None,
     description: Optional[str] = None,
     input_defs: Optional[List[InputDefinition]] = None,
     output_def: Optional[OutputDefinition] = None,

@@ -226,11 +226,11 @@ class RunStepKeyStatsSnapshot(
         status: Optional[StepEventStatus] = None,
         start_time: Optional[float] = None,
         end_time: Optional[float] = None,
-        materialization_events: List[EventLogEntry] = None,
-        expectation_results: List[ExpectationResult] = None,
+        materialization_events: Optional[List[EventLogEntry]] = None,
+        expectation_results: Optional[List[ExpectationResult]] = None,
         attempts: Optional[int] = None,
-        attempts_list: List[RunStepMarker] = None,
-        markers: List[RunStepMarker] = None,
+        attempts_list: Optional[List[RunStepMarker]] = None,
+        markers: Optional[List[RunStepMarker]] = None,
     ):
         return super(RunStepKeyStatsSnapshot, cls).__new__(
             cls,

@@ -7,7 +7,7 @@ for that.
 from abc import ABC, abstractmethod
 from collections import defaultdict
 from datetime import datetime
-from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple
+from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Sequence, Set, Tuple, Union, cast
 
 from dagster import StaticPartitionsDefinition, check
 from dagster.core.asset_defs import SourceAsset
@@ -23,11 +23,16 @@ from dagster.core.definitions import (
     ScheduleDefinition,
 )
 from dagster.core.definitions.events import AssetKey
+from dagster.core.definitions.metadata import MetadataEntry
 from dagster.core.definitions.mode import DEFAULT_MODE_NAME
 from dagster.core.definitions.node_definition import NodeDefinition
 from dagster.core.definitions.partition import PartitionScheduleDefinition, ScheduleType
 from dagster.core.definitions.schedule_definition import DefaultScheduleStatus
-from dagster.core.definitions.sensor_definition import AssetSensorDefinition, DefaultSensorStatus
+from dagster.core.definitions.sensor_definition import (
+    AssetSensorDefinition,
+    DefaultSensorStatus,
+    SensorDefinition,
+)
 from dagster.core.definitions.time_window_partitions import TimeWindowPartitionsDefinition
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.core.snap import PipelineSnapshot
@@ -61,23 +66,23 @@ class ExternalRepositoryData(
         return super(ExternalRepositoryData, cls).__new__(
             cls,
             name=check.str_param(name, "name"),
-            external_pipeline_datas=check.list_param(
+            external_pipeline_datas=check.sequence_param(
                 external_pipeline_datas, "external_pipeline_datas", of_type=ExternalPipelineData
             ),
-            external_schedule_datas=check.list_param(
+            external_schedule_datas=check.sequence_param(
                 external_schedule_datas, "external_schedule_datas", of_type=ExternalScheduleData
             ),
-            external_partition_set_datas=check.list_param(
+            external_partition_set_datas=check.sequence_param(
                 external_partition_set_datas,
                 "external_partition_set_datas",
                 of_type=ExternalPartitionSetData,
             ),
-            external_sensor_datas=check.opt_list_param(
+            external_sensor_datas=check.opt_sequence_param(
                 external_sensor_datas,
                 "external_sensor_datas",
                 of_type=ExternalSensorData,
             ),
-            external_asset_graph_data=check.opt_list_param(
+            external_asset_graph_data=check.opt_sequence_param(
                 external_asset_graph_data,
                 "external_asset_graph_dats",
                 of_type=ExternalAssetNode,
@@ -210,7 +215,7 @@ class ExternalPresetData(
     def __new__(
         cls,
         name: str,
-        run_config: Dict[str, Any],
+        run_config: Optional[Dict[str, Any]],
         solid_selection: Optional[List[str]],
         mode: str,
         tags: Dict[str, str],
@@ -680,14 +685,15 @@ class ExternalAssetNode(
         "_ExternalAssetNode",
         [
             ("asset_key", AssetKey),
-            ("dependencies", List[ExternalAssetDependency]),
-            ("depended_by", List[ExternalAssetDependedBy]),
+            ("dependencies", Sequence[ExternalAssetDependency]),
+            ("depended_by", Sequence[ExternalAssetDependedBy]),
             ("op_name", Optional[str]),
             ("op_description", Optional[str]),
-            ("job_names", List[str]),
+            ("job_names", Sequence[str]),
             ("partitions_def_data", Optional[ExternalPartitionsDefinitionData]),
             ("output_name", Optional[str]),
             ("output_description", Optional[str]),
+            ("metadata_entries", Sequence[MetadataEntry]),
         ],
     )
 ):
@@ -699,34 +705,38 @@ class ExternalAssetNode(
     def __new__(
         cls,
         asset_key: AssetKey,
-        dependencies: List[ExternalAssetDependency],
-        depended_by: List[ExternalAssetDependedBy],
+        dependencies: Sequence[ExternalAssetDependency],
+        depended_by: Sequence[ExternalAssetDependedBy],
         op_name: Optional[str] = None,
         op_description: Optional[str] = None,
-        job_names: Optional[List[str]] = None,
+        job_names: Optional[Sequence[str]] = None,
         partitions_def_data: Optional[ExternalPartitionsDefinitionData] = None,
         output_name: Optional[str] = None,
         output_description: Optional[str] = None,
+        metadata_entries: Optional[Sequence[MetadataEntry]] = None,
     ):
         return super(ExternalAssetNode, cls).__new__(
             cls,
             asset_key=check.inst_param(asset_key, "asset_key", AssetKey),
-            dependencies=check.opt_list_param(
+            dependencies=check.opt_sequence_param(
                 dependencies, "dependencies", of_type=ExternalAssetDependency
             ),
-            depended_by=check.opt_list_param(
+            depended_by=check.opt_sequence_param(
                 depended_by, "depended_by", of_type=ExternalAssetDependedBy
             ),
             op_name=check.opt_str_param(op_name, "op_name"),
             op_description=check.opt_str_param(
                 op_description or output_description, "op_description"
             ),
-            job_names=check.opt_list_param(job_names, "job_names", of_type=str),
+            job_names=check.opt_sequence_param(job_names, "job_names", of_type=str),
             partitions_def_data=check.opt_inst_param(
                 partitions_def_data, "partitions_def_data", ExternalPartitionsDefinitionData
             ),
             output_name=check.opt_str_param(output_name, "output_name"),
             output_description=check.opt_str_param(output_description, "output_description"),
+            metadata_entries=check.opt_sequence_param(
+                metadata_entries, "metadata_entries", of_type=MetadataEntry
+            ),
         )
 
 
@@ -768,7 +778,7 @@ def external_asset_graph_from_defs(
     ] = defaultdict(list)
 
     deps: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependency]] = defaultdict(dict)
-    dep_by: Dict[AssetKey, List[ExternalAssetDependedBy]] = defaultdict(list)
+    dep_by: Dict[AssetKey, Dict[AssetKey, ExternalAssetDependedBy]] = defaultdict(dict)
     all_upstream_asset_keys: Set[AssetKey] = set()
 
     for pipeline in pipelines:
@@ -798,7 +808,9 @@ def external_asset_graph_from_defs(
                 node_defs_by_asset_key[output_asset_key].append((output_def, node_def, pipeline))
 
                 # if no deps specified, assume depends on all inputs and no outputs
-                asset_deps = (output_def.metadata or {}).get(ASSET_DEPENDENCY_METADATA_KEY)
+                asset_deps = cast(
+                    Set[AssetKey], (output_def.metadata or {}).get(ASSET_DEPENDENCY_METADATA_KEY)
+                )
                 if asset_deps is None:
                     asset_deps = node_upstream_asset_keys
 
@@ -808,12 +820,10 @@ def external_asset_graph_from_defs(
                         input_name=input_name_by_asset_key.get(upstream_asset_key),
                         output_name=output_name_by_asset_key.get(upstream_asset_key),
                     )
-                    dep_by[upstream_asset_key].append(
-                        ExternalAssetDependedBy(
-                            downstream_asset_key=output_asset_key,
-                            input_name=input_name_by_asset_key.get(upstream_asset_key),
-                            output_name=output_name_by_asset_key.get(upstream_asset_key),
-                        )
+                    dep_by[upstream_asset_key][output_asset_key] = ExternalAssetDependedBy(
+                        downstream_asset_key=output_asset_key,
+                        input_name=input_name_by_asset_key.get(upstream_asset_key),
+                        output_name=output_name_by_asset_key.get(upstream_asset_key),
                     )
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
         node_defs_by_asset_key.keys()
@@ -823,7 +833,7 @@ def external_asset_graph_from_defs(
         ExternalAssetNode(
             asset_key=asset_key,
             dependencies=list(deps[asset_key].values()),
-            depended_by=dep_by[asset_key],
+            depended_by=list(dep_by[asset_key].values()),
             job_names=[],
         )
         for asset_key in asset_keys_without_definitions
@@ -836,13 +846,18 @@ def external_asset_graph_from_defs(
                 " and as a non-source asset"
             )
 
+        # TODO: For now we are dropping partition metadata entries
+        metadata_entries = [
+            entry for entry in source_asset.metadata_entries if isinstance(entry, MetadataEntry)
+        ]
         asset_nodes.append(
             ExternalAssetNode(
                 asset_key=source_asset.key,
                 dependencies=list(deps[source_asset.key].values()),
-                depended_by=dep_by[source_asset.key],
+                depended_by=list(dep_by[source_asset.key].values()),
                 job_names=[],
                 op_description=source_asset.description,
+                metadata_entries=metadata_entries,
             )
         )
 
@@ -851,10 +866,14 @@ def external_asset_graph_from_defs(
         job_names = [job_def.name for _, _, job_def in node_tuple_list]
 
         # temporary workaround to retrieve asset partition definition from job
-        partitions_def_data = None
+        partitions_def_data: Optional[
+            Union[
+                ExternalTimeWindowPartitionsDefinitionData, ExternalStaticPartitionsDefinitionData
+            ]
+        ] = None
 
-        if output_def and output_def._asset_partitions_def:  # pylint: disable=protected-access
-            partitions_def = output_def._asset_partitions_def  # pylint: disable=protected-access
+        if output_def.asset_partitions_def:
+            partitions_def = output_def.asset_partitions_def
             if partitions_def:
                 if isinstance(partitions_def, TimeWindowPartitionsDefinition):
                     partitions_def_data = external_time_window_partitions_definition_from_def(
@@ -873,20 +892,21 @@ def external_asset_graph_from_defs(
             ExternalAssetNode(
                 asset_key=asset_key,
                 dependencies=list(deps[asset_key].values()),
-                depended_by=dep_by[asset_key],
+                depended_by=list(dep_by[asset_key].values()),
                 op_name=node_def.name,
                 op_description=node_def.description,
                 job_names=job_names,
                 partitions_def_data=partitions_def_data,
                 output_name=output_def.name,
                 output_description=output_def.description,
+                metadata_entries=output_def.metadata_entries,
             )
         )
 
     return asset_nodes
 
 
-def external_pipeline_data_from_def(pipeline_def):
+def external_pipeline_data_from_def(pipeline_def: PipelineDefinition) -> ExternalPipelineData:
     check.inst_param(pipeline_def, "pipeline_def", PipelineDefinition)
     return ExternalPipelineData(
         name=pipeline_def.name,
@@ -900,7 +920,7 @@ def external_pipeline_data_from_def(pipeline_def):
     )
 
 
-def external_schedule_data_from_def(schedule_def):
+def external_schedule_data_from_def(schedule_def: ScheduleDefinition) -> ExternalScheduleData:
     check.inst_param(schedule_def, "schedule_def", ScheduleDefinition)
     return ExternalScheduleData(
         name=schedule_def.name,
@@ -918,7 +938,9 @@ def external_schedule_data_from_def(schedule_def):
     )
 
 
-def external_time_window_partitions_definition_from_def(partitions_def):
+def external_time_window_partitions_definition_from_def(
+    partitions_def: TimeWindowPartitionsDefinition,
+) -> ExternalTimeWindowPartitionsDefinitionData:
     check.inst_param(partitions_def, "partitions_def", TimeWindowPartitionsDefinition)
     return ExternalTimeWindowPartitionsDefinitionData(
         schedule_type=partitions_def.schedule_type,
@@ -929,24 +951,28 @@ def external_time_window_partitions_definition_from_def(partitions_def):
     )
 
 
-def external_static_partitions_definition_from_def(partitions_def):
+def external_static_partitions_definition_from_def(
+    partitions_def: StaticPartitionsDefinition,
+) -> ExternalStaticPartitionsDefinitionData:
     check.inst_param(partitions_def, "partitions_def", StaticPartitionsDefinition)
     return ExternalStaticPartitionsDefinitionData(
         partition_keys=partitions_def.get_partition_keys()
     )
 
 
-def external_partition_set_data_from_def(partition_set_def):
+def external_partition_set_data_from_def(
+    partition_set_def: PartitionSetDefinition,
+) -> ExternalPartitionSetData:
     check.inst_param(partition_set_def, "partition_set_def", PartitionSetDefinition)
     return ExternalPartitionSetData(
         name=partition_set_def.name,
-        pipeline_name=partition_set_def.pipeline_name or partition_set_def.job_name,
+        pipeline_name=partition_set_def.pipeline_or_job_name,
         solid_selection=partition_set_def.solid_selection,
         mode=partition_set_def.mode,
     )
 
 
-def external_sensor_data_from_def(sensor_def):
+def external_sensor_data_from_def(sensor_def: SensorDefinition) -> ExternalSensorData:
     first_target = sensor_def.targets[0] if sensor_def.targets else None
 
     asset_keys = None
@@ -973,7 +999,7 @@ def external_sensor_data_from_def(sensor_def):
     )
 
 
-def external_preset_data_from_def(preset_def):
+def external_preset_data_from_def(preset_def: PresetDefinition) -> ExternalPresetData:
     check.inst_param(preset_def, "preset_def", PresetDefinition)
     return ExternalPresetData(
         name=preset_def.name,

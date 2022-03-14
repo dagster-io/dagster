@@ -15,6 +15,7 @@ import {PartitionHealthSummary, usePartitionHealthData} from '../../assets/Parti
 import {AssetKey} from '../../assets/types';
 import {DagsterTypeSummary} from '../../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../../dagstertype/types/DagsterTypeFragment';
+import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntry';
 import {Description} from '../../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';
 import {pluginForMetadata} from '../../plugins';
@@ -161,6 +162,9 @@ export const SIDEBAR_ASSET_FRAGMENT = gql`
   fragment SidebarAssetFragment on AssetNode {
     id
     description
+    metadataEntries {
+      ...MetadataEntryFragment
+    }
     partitionDefinition
     assetKey {
       path
@@ -185,6 +189,7 @@ export const SIDEBAR_ASSET_FRAGMENT = gql`
     ...AssetNodeOpMetadataFragment
   }
   ${ASSET_NODE_OP_METADATA_FRAGMENT}
+  ${METADATA_ENTRY_FRAGMENT}
 `;
 
 const SIDEBAR_ASSET_QUERY = gql`

@@ -452,7 +452,7 @@ class GraphDefinition(NodeDefinition):
         name: Optional[str] = None,
         description: Optional[str] = None,
         resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
-        config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
+        config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
         tags: Optional[Dict[str, Any]] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,

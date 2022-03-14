@@ -15,8 +15,8 @@ import React from 'react';
 import {useHistory} from 'react-router-dom';
 import * as yaml from 'yaml';
 
-import {AppContext} from '../../app/AppContext';
-import {SharedToaster} from '../../app/DomUtils';
+import {showCustomAlert} from '../../app/CustomAlertProvider';
+import {PythonErrorInfo} from '../../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../../app/Util';
 import {PartitionHealthSummary, usePartitionHealthData} from '../../assets/PartitionHealthSummary';
 import {AssetKey} from '../../assets/types';
@@ -32,7 +32,8 @@ import {
 } from '../../partitions/PartitionRangeInput';
 import {
   LAUNCH_PARTITION_BACKFILL_MUTATION,
-  messageForLaunchBackfillError,
+  showBackfillErrorToast,
+  showBackfillSuccessToast,
 } from '../../partitions/PartitionsBackfill';
 import {
   LaunchPartitionBackfill,
@@ -83,7 +84,6 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
   }`;
 
   const client = useApolloClient();
-  const {basePath} = React.useContext(AppContext);
   const history = useHistory();
 
   // Find the partition set name. This seems like a bit of a hack, unclear
@@ -109,10 +109,15 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
     setLaunching(true);
 
     if (!partitionSet) {
-      SharedToaster.show({
-        message: 'No partition set was found on the job for this asset graph',
-        icon: 'error',
-        intent: 'danger',
+      const error =
+        partitionSetsData?.partitionSetsOrError.__typename === 'PythonError'
+          ? partitionSetsData.partitionSetsOrError
+          : {message: 'No details provided.'};
+
+      setLaunching(false);
+      showCustomAlert({
+        title: `Unable to find partition set on ${assetJobName}`,
+        body: <PythonErrorInfo error={error} />,
       });
       return;
     }
@@ -144,14 +149,25 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
 
       const {partition} = tagAndConfigData.partitionSetOrError;
 
-      let tags: {key: string; value: string}[] = [];
-      if (partition.tagsOrError.__typename !== 'PythonError') {
-        tags = [...partition.tagsOrError.results];
+      if (partition.tagsOrError.__typename === 'PythonError') {
+        setLaunching(false);
+        showCustomAlert({
+          title: 'Unable to load tags',
+          body: <PythonErrorInfo error={partition.tagsOrError} />,
+        });
+        return;
       }
-      let runConfigData = {};
-      if (partition.runConfigOrError.__typename !== 'PythonError') {
-        runConfigData = yaml.parse(partition.runConfigOrError.yaml || '') || {};
+      if (partition.runConfigOrError.__typename === 'PythonError') {
+        setLaunching(false);
+        showCustomAlert({
+          title: 'Unable to load tags',
+          body: <PythonErrorInfo error={partition.runConfigOrError} />,
+        });
+        return;
       }
+
+      const tags = [...partition.tagsOrError.results];
+      const runConfigData = yaml.parse(partition.runConfigOrError.yaml || '') || {};
 
       const launchResult = await client.mutate<
         LaunchPipelineExecution,
@@ -175,9 +191,14 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
         },
       });
 
-      handleLaunchResult(basePath, assetJobName, launchResult, {});
+      setLaunching(false);
+      handleLaunchResult(assetJobName, launchResult, history, {behavior: 'toast'});
+
+      if (launchResult.data?.launchPipelineExecution.__typename === 'LaunchRunSuccess') {
+        setOpen(false);
+      }
     } else {
-      const launchBackfillResult = await client.mutate<
+      const {data: launchBackfillData} = await client.mutate<
         LaunchPartitionBackfill,
         LaunchPartitionBackfillVariables
       >({
@@ -199,17 +220,13 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
         },
       });
 
-      if (
-        launchBackfillResult.data?.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess'
-      ) {
-        history.push('/instance/backfills');
+      setLaunching(false);
+
+      if (launchBackfillData?.launchPartitionBackfill.__typename === 'LaunchBackfillSuccess') {
+        showBackfillSuccessToast(history, launchBackfillData?.launchPartitionBackfill.backfillId);
+        setOpen(false);
       } else {
-        setLaunching(false);
-        SharedToaster.show({
-          message: messageForLaunchBackfillError(launchBackfillResult.data),
-          icon: 'error',
-          intent: 'danger',
-        });
+        showBackfillErrorToast(launchBackfillData);
       }
     }
   };
@@ -328,6 +345,9 @@ const ASSET_JOB_PARTITION_SETS_QUERY = gql`
       }
     ) {
       __typename
+      ... on PythonError {
+        message
+      }
       ... on PartitionSets {
         __typename
         results {

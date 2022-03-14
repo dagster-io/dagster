@@ -201,7 +201,7 @@ def build_run_status_sensor_context(
 
 
 def pipeline_failure_sensor(
-    name: Union[Callable[..., Any], Optional[str]] = None,
+    name: Optional[Union[Callable[..., Any], str]] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     pipeline_selection: Optional[List[str]] = None,
@@ -259,7 +259,7 @@ def pipeline_failure_sensor(
 
 
 def run_failure_sensor(
-    name: Union[Callable[..., Any], Optional[str]] = None,
+    name: Optional[Union[Callable[..., Any], str]] = None,
     minimum_interval_seconds: Optional[int] = None,
     description: Optional[str] = None,
     job_selection: Optional[List[Union[PipelineDefinition, GraphDefinition]]] = None,

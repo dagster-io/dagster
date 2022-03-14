@@ -1,11 +1,29 @@
 import functools
 import os
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
+import re
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidMetadata
 from dagster.serdes import whitelist_for_serdes
-from dagster.utils.backcompat import deprecation_warning, experimental, experimental_class_warning
+from dagster.utils.backcompat import (
+    canonicalize_backcompat_args,
+    deprecation_warning,
+    experimental,
+    experimental_class_warning,
+)
 
 from .table import TableColumn, TableColumnConstraints, TableConstraints, TableRecord, TableSchema
 
@@ -21,6 +39,9 @@ RawMetadataValue = Union[
     str,
 ]
 
+MetadataMapping = Mapping[str, "MetadataValue"]
+MetadataUserInput = Mapping[str, RawMetadataValue]
+
 
 def last_file_comp(path: str) -> str:
     return os.path.basename(os.path.normpath(path))
@@ -32,8 +53,8 @@ def last_file_comp(path: str) -> str:
 
 
 def normalize_metadata(
-    metadata: Dict[str, RawMetadataValue],
-    metadata_entries: List[Union["MetadataEntry", "PartitionMetadataEntry"]],
+    metadata: Mapping[str, RawMetadataValue],
+    metadata_entries: Sequence[Union["MetadataEntry", "PartitionMetadataEntry"]],
     allow_invalid: bool = False,
 ) -> List[Union["MetadataEntry", "PartitionMetadataEntry"]]:
     if metadata and metadata_entries:
@@ -80,43 +101,51 @@ def normalize_metadata(
     ]
 
 
-def package_metadata_value(label: str, value: RawMetadataValue) -> "MetadataEntry":
-    check.str_param(label, "label")
+def normalize_metadata_value(raw_value: RawMetadataValue):
 
-    if isinstance(value, (MetadataEntry, PartitionMetadataEntry)):
-        raise DagsterInvalidMetadata(
-            f"Expected a metadata value, found an instance of {value.__class__.__name__}. Consider "
-            "instead using a MetadataValue wrapper for the value."
-        )
-
-    if isinstance(value, MetadataValue):
-        return MetadataEntry(label, None, value)
-
-    if isinstance(value, str):
-        return MetadataEntry.text(value, label)
-
-    if isinstance(value, float):
-        return MetadataEntry.float(value, label)
-
-    if isinstance(value, int):
-        return MetadataEntry.int(value, label)
-
-    if isinstance(value, dict):
+    if isinstance(raw_value, MetadataValue):
+        return raw_value
+    elif isinstance(raw_value, str):
+        return MetadataValue.text(raw_value)
+    elif isinstance(raw_value, float):
+        return MetadataValue.float(raw_value)
+    elif isinstance(raw_value, int):
+        return MetadataValue.int(raw_value)
+    elif isinstance(raw_value, dict):
         try:
             # check that the value is JSON serializable
-            seven.dumps(value)
-            return MetadataEntry.json(value, label)
+            seven.dumps(raw_value)
+            return MetadataValue.json(raw_value)
         except TypeError:
             raise DagsterInvalidMetadata(
-                f'Could not resolve the metadata value for "{label}" to a JSON serializable value. '
+                "Value is a dictionary but is not JSON serializable. "
                 "Consider wrapping the value with the appropriate MetadataValue type."
             )
 
+    if isinstance(raw_value, os.PathLike):
+        return MetadataValue.path(raw_value)
+
     raise DagsterInvalidMetadata(
-        f'Could not resolve the metadata value for "{label}" to a known type. '
-        f"Its type was {type(value)}. Consider wrapping the value with the appropriate "
+        f"Its type was {type(raw_value)}. Consider wrapping the value with the appropriate "
         "MetadataValue type."
     )
+
+
+def package_metadata_value(label: str, raw_value: RawMetadataValue) -> "MetadataEntry":
+    check.str_param(label, "label")
+
+    if isinstance(raw_value, (MetadataEntry, PartitionMetadataEntry)):
+        raise DagsterInvalidMetadata(
+            f"Expected a metadata value, found an instance of {raw_value.__class__.__name__}. Consider "
+            "instead using a MetadataValue wrapper for the value."
+        )
+    try:
+        value = normalize_metadata_value(raw_value)
+    except DagsterInvalidMetadata as e:
+        raise DagsterInvalidMetadata(
+            f'Could not resolve the metadata value for "{label}" to a known type. {e}'
+        ) from None
+    return MetadataEntry(label=label, value=value)
 
 
 # ########################
@@ -188,7 +217,7 @@ class MetadataValue:
         return UrlMetadataValue(url)
 
     @staticmethod
-    def path(path: str) -> "PathMetadataValue":
+    def path(path: Union[str, os.PathLike]) -> "PathMetadataValue":
         """Static constructor for a metadata value wrapping a path as
         :py:class:`PathMetadataValue`. For example:
 
@@ -485,23 +514,17 @@ class UrlMetadataValue(  # type: ignore
 
 @whitelist_for_serdes(storage_name="PathMetadataEntryData")
 class PathMetadataValue(  # type: ignore
-    NamedTuple(
-        "_PathMetadataValue",
-        [
-            ("path", Optional[str]),
-        ],
-    ),
-    MetadataValue,
+    NamedTuple("_PathMetadataValue", [("path", Optional[str])]), MetadataValue
 ):
     """Container class for path metadata entry data.
 
     Args:
-        path (Optional[str]): The path as a string.
+        path (Optional[str]): The path as a string or conforming to os.PathLike.
     """
 
-    def __new__(cls, path: Optional[str]):
+    def __new__(cls, path: Optional[Union[str, os.PathLike]]):
         return super(PathMetadataValue, cls).__new__(
-            cls, check.opt_str_param(path, "path", default="")
+            cls, check.opt_path_param(path, "path", default="")
         )
 
 
@@ -719,7 +742,16 @@ def deprecated_metadata_entry_constructor(fn):
         deprecation_warning(
             f"Function `MetadataEntry.{fn.__name__}`",
             "0.15.0",
-            additional_warn_txt="In the future, construct `MetadataEntry` by calling the constructor directly and passing a `MetadataValue`.",
+            additional_warn_txt=re.sub(
+                r"\n\s*",
+                " ",
+                """
+            The recommended way to supply metadata is to pass a `Dict[str,
+            MetadataValue]` to the `metadata` keyword argument. To construct `MetadataEntry`
+            directly, call constructor and pass a `MetadataValue`: `MetadataEntry(label="foo",
+            value=MetadataValue.text("bar")",
+            """,
+            ),
         )
         return fn(*args, **kwargs)
 
@@ -728,6 +760,10 @@ def deprecated_metadata_entry_constructor(fn):
 
 # NOTE: This would better be implemented as a generic with `MetadataValue` set as a
 # typevar, but as of 2022-01-25 mypy does not support generics on NamedTuple.
+#
+# NOTE: This currently stores value in the `entry_data` NamedTuple attribute. In the next release,
+# we will change the name of the NamedTuple property to `value`, and need to implement custom
+# serialization so that it continues to be saved as `entry_data` for backcompat purposes.
 @whitelist_for_serdes(storage_name="EventMetadataEntry")
 class MetadataEntry(
     NamedTuple(
@@ -751,22 +787,45 @@ class MetadataEntry(
     Args:
         label (str): Short display label for this metadata entry.
         description (Optional[str]): A human-readable description of this metadata entry.
-        entry_data (MetadataValue): Typed metadata entry data. The different types allow
+        value (MetadataValue): Typed metadata entry data. The different types allow
             for customized display in tools like dagit.
     """
 
-    def __new__(cls, label: str, description: Optional[str], entry_data: "MetadataValue"):
+    def __new__(
+        cls,
+        label: str,
+        description: Optional[str] = None,
+        entry_data: Optional["RawMetadataValue"] = None,
+        value: Optional["RawMetadataValue"] = None,
+    ):
         if description is not None:
             deprecation_warning(
                 'The "description" attribute on "MetadataEntry"',
                 "0.15.0",
             )
+        value = cast(
+            RawMetadataValue,
+            canonicalize_backcompat_args(
+                new_val=value,
+                new_arg="value",
+                old_val=entry_data,
+                old_arg="entry_data",
+                breaking_version="0.15.0",
+            ),
+        )
+        value = normalize_metadata_value(value)
+
         return super(MetadataEntry, cls).__new__(
             cls,
             check.str_param(label, "label"),
             check.opt_str_param(description, "description"),
-            check.inst_param(entry_data, "entry_data", MetadataValue),
+            check.inst_param(value, "value", MetadataValue),
         )
+
+    @property
+    def value(self):
+        """Alias of `entry_data`."""
+        return self.entry_data
 
     @staticmethod
     @deprecated_metadata_entry_constructor
