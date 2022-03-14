@@ -293,6 +293,10 @@
           {
             "title": "Run Coordinators - Limiting Run Concurrency",
             "path": "/deployment/run-coordinator"
+          },
+          {
+            "title": "Run Monitoring - Handling Failures",
+            "path": "/deployment/run-monitoring"
           }
         ]
       },
