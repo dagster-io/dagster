@@ -11,11 +11,11 @@ from .sensors.slack_on_failure_sensor import make_slack_on_failure_sensor
 
 
 @repository
-def hacker_news_assets(env: Optional[str]):
-    asset_group = build_asset_group(env)
+def hacker_news_assets(deployment_name: Optional[str]):
+    asset_group = build_asset_group(deployment_name)
 
     return [
-        build_asset_group(env),
+        build_asset_group(deployment_name),
         schedule_from_partitions(build_download_job(asset_group)),
         make_slack_on_failure_sensor(base_url="my_dagit_url.com"),
         make_hn_tables_updated_sensor(build_activity_stats_job(asset_group)),
