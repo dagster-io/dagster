@@ -1,3 +1,4 @@
+import warnings
 from abc import ABC, abstractmethod
 from types import FunctionType
 from typing import (
@@ -19,6 +20,7 @@ from dagster import check
 from dagster.core.asset_defs.source_asset import SourceAsset
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.utils import merge_dicts
+from dagster.utils.backcompat import ExperimentalWarning
 
 from .events import AssetKey
 from .graph_definition import GraphDefinition, SubselectedGraphDefinition
@@ -692,17 +694,20 @@ class CachingRepositoryData(RepositoryData):
 
             elif isinstance(definition, AssetGroup):
                 asset_group = definition
+
                 if asset_group.all_assets_job_name() in pipelines_or_jobs:
                     raise DagsterInvalidDefinitionError(
                         "When constructing repository, attempted to pass multiple AssetGroups. There can only be one AssetGroup per repository."
                     )
-                pipelines_or_jobs[asset_group.all_assets_job_name()] = build_assets_job(
-                    asset_group.all_assets_job_name(),
-                    assets=asset_group.assets,
-                    source_assets=asset_group.source_assets,
-                    resource_defs=asset_group.resource_defs,
-                    executor_def=asset_group.executor_def,
-                )
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore", category=ExperimentalWarning)
+                    pipelines_or_jobs[asset_group.all_assets_job_name()] = build_assets_job(
+                        asset_group.all_assets_job_name(),
+                        assets=asset_group.assets,
+                        source_assets=asset_group.source_assets,
+                        resource_defs=asset_group.resource_defs,
+                        executor_def=asset_group.executor_def,
+                    )
                 source_assets = {
                     source_asset.key: source_asset for source_asset in asset_group.source_assets
                 }

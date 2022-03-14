@@ -1,3 +1,4 @@
+import warnings
 from typing import (
     AbstractSet,
     Any,
@@ -24,7 +25,7 @@ from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.core.definitions.utils import NoValueSentinel
 from dagster.core.errors import DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterType
-from dagster.utils.backcompat import experimental_decorator
+from dagster.utils.backcompat import ExperimentalWarning, experimental_decorator
 
 from .asset import AssetsDefinition
 from .asset_in import AssetIn
@@ -189,20 +190,22 @@ class _Asset:
             asset_partitions_def=self.partitions_def,
             asset_partitions=partition_fn,
         )
-        op = _Op(
-            name="__".join(out_asset_key.path),
-            description=self.description,
-            ins=asset_ins,
-            out=out,
-            required_resource_keys=self.required_resource_keys,
-            tags={"kind": self.compute_kind} if self.compute_kind else None,
-            config_schema={
-                "assets": {
-                    "input_partitions": Field(dict, is_required=False),
-                    "output_partitions": Field(dict, is_required=False),
-                }
-            },
-        )(fn)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+            op = _Op(
+                name="__".join(out_asset_key.path),
+                description=self.description,
+                ins=asset_ins,
+                out=out,
+                required_resource_keys=self.required_resource_keys,
+                tags={"kind": self.compute_kind} if self.compute_kind else None,
+                config_schema={
+                    "assets": {
+                        "input_partitions": Field(dict, is_required=False),
+                        "output_partitions": Field(dict, is_required=False),
+                    }
+                },
+            )(fn)
 
         # NOTE: we can `cast` below because we know the Ins returned by `build_asset_ins` always
         # have a plain AssetKey asset key. Dynamic asset keys will be deprecated in 0.15.0, when
@@ -272,14 +275,16 @@ def multi_asset(
         asset_ins = build_asset_ins(fn, None, ins or {}, non_argument_deps)
         asset_outs = build_asset_outs(op_name, outs, asset_ins, internal_asset_deps or {})
 
-        op = _Op(
-            name=op_name,
-            description=description,
-            ins=asset_ins,
-            out=asset_outs,
-            required_resource_keys=required_resource_keys,
-            tags={"kind": compute_kind} if compute_kind else None,
-        )(fn)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+            op = _Op(
+                name=op_name,
+                description=description,
+                ins=asset_ins,
+                out=asset_outs,
+                required_resource_keys=required_resource_keys,
+                tags={"kind": compute_kind} if compute_kind else None,
+            )(fn)
 
         # NOTE: we can `cast` below because we know the Ins returned by `build_asset_ins` always
         # have a plain AssetKey asset key. Dynamic asset keys will be deprecated in 0.15.0, when

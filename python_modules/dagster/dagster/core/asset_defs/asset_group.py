@@ -2,6 +2,7 @@ import inspect
 import os
 import pkgutil
 import re
+import warnings
 from importlib import import_module
 from types import ModuleType
 from typing import (
@@ -23,6 +24,7 @@ from dagster import check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.utils import merge_dicts
+from dagster.utils.backcompat import ExperimentalWarning
 
 from ..definitions.executor_definition import ExecutorDefinition
 from ..definitions.job_definition import JobDefinition
@@ -213,13 +215,15 @@ class AssetGroup(
         executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
         description = check.opt_str_param(description, "description")
 
-        mega_job_def = build_assets_job(
-            name=name,
-            assets=self.assets,
-            source_assets=self.source_assets,
-            resource_defs=self.resource_defs,
-            executor_def=self.executor_def,
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+            mega_job_def = build_assets_job(
+                name=name,
+                assets=self.assets,
+                source_assets=self.source_assets,
+                resource_defs=self.resource_defs,
+                executor_def=self.executor_def,
+            )
 
         if selection:
             op_selection = self._parse_asset_selection(selection, job_name=name)
@@ -245,15 +249,18 @@ class AssetGroup(
             # accidentally add to the original list
             excluded_assets = list(self.source_assets)
 
-        return build_assets_job(
-            name=name,
-            assets=included_assets,
-            source_assets=excluded_assets,
-            resource_defs=self.resource_defs,
-            executor_def=self.executor_def,
-            description=description,
-            tags=tags,
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+            asset_job = build_assets_job(
+                name=name,
+                assets=included_assets,
+                source_assets=excluded_assets,
+                resource_defs=self.resource_defs,
+                executor_def=self.executor_def,
+                description=description,
+                tags=tags,
+            )
+        return asset_job
 
     def _parse_asset_selection(self, selection: Union[str, List[str]], job_name: str) -> List[str]:
         """Convert selection over asset keys to selection over ops"""

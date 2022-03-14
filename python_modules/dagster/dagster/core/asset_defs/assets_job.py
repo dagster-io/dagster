@@ -1,4 +1,5 @@
 import itertools
+import warnings
 from typing import AbstractSet, Any, Dict, Mapping, Optional, Sequence, Tuple, Union, cast
 
 from dagster import check
@@ -23,7 +24,7 @@ from dagster.core.execution.context.input import InputContext, build_input_conte
 from dagster.core.execution.context.output import build_output_context
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.storage.root_input_manager import RootInputManagerDefinition, root_input_manager
-from dagster.utils.backcompat import experimental
+from dagster.utils.backcompat import ExperimentalWarning, experimental
 from dagster.utils.merger import merge_dicts
 
 from .asset import AssetsDefinition
@@ -239,39 +240,43 @@ def build_root_manager(
     source_asset_io_manager_keys = {
         source_asset.io_manager_key for source_asset in source_assets_by_key.values()
     }
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-    @root_input_manager(required_resource_keys=source_asset_io_manager_keys)
-    def _root_manager(input_context: InputContext) -> Any:
-        source_asset_key = cast(AssetKey, input_context.asset_key)
-        source_asset = source_assets_by_key[source_asset_key]
+        @root_input_manager(required_resource_keys=source_asset_io_manager_keys)
+        def _root_manager(input_context: InputContext) -> Any:
+            source_asset_key = cast(AssetKey, input_context.asset_key)
+            source_asset = source_assets_by_key[source_asset_key]
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore", category=ExperimentalWarning)
 
-        @op(out={source_asset_key.path[-1]: Out(asset_key=source_asset_key)})
-        def _op():
-            pass
+                @op(out={source_asset_key.path[-1]: Out(asset_key=source_asset_key)})
+                def _op():
+                    pass
 
-        resource_config = input_context.step_context.resolved_run_config.resources[
-            source_asset.io_manager_key
-        ].config
+            resource_config = input_context.step_context.resolved_run_config.resources[
+                source_asset.io_manager_key
+            ].config
 
-        output_context = build_output_context(
-            name=source_asset_key.path[-1],
-            step_key="none",
-            solid_def=_op,
-            metadata=cast(Dict[str, Any], source_asset.metadata),
-            resource_config=resource_config,
-        )
-        input_context_with_upstream = build_input_context(
-            name=input_context.name,
-            metadata=input_context.metadata,
-            config=input_context.config,
-            dagster_type=input_context.dagster_type,
-            upstream_output=output_context,
-            op_def=input_context.op_def,
-            step_context=input_context.step_context,
-            resource_config=resource_config,
-        )
+            output_context = build_output_context(
+                name=source_asset_key.path[-1],
+                step_key="none",
+                solid_def=_op,
+                metadata=cast(Dict[str, Any], source_asset.metadata),
+                resource_config=resource_config,
+            )
+            input_context_with_upstream = build_input_context(
+                name=input_context.name,
+                metadata=input_context.metadata,
+                config=input_context.config,
+                dagster_type=input_context.dagster_type,
+                upstream_output=output_context,
+                op_def=input_context.op_def,
+                step_context=input_context.step_context,
+                resource_config=resource_config,
+            )
 
-        io_manager = getattr(cast(Any, input_context.resources), source_asset.io_manager_key)
-        return io_manager.load_input(input_context_with_upstream)
+            io_manager = getattr(cast(Any, input_context.resources), source_asset.io_manager_key)
+            return io_manager.load_input(input_context_with_upstream)
 
     return _root_manager

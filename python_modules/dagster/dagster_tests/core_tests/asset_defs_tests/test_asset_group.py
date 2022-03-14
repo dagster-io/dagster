@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 
 from dagster import (
@@ -14,6 +16,20 @@ from dagster import (
     resource,
 )
 from dagster.core.asset_defs import AssetGroup, AssetIn, SourceAsset, asset, multi_asset
+
+
+@pytest.fixture(autouse=True)
+def check_experimental_warnings():
+    with warnings.catch_warnings(record=True) as record:
+        yield
+
+        raises_warning = False
+        for w in record:
+            if "build_assets_job" in w.message.args[0] or "root_input_manager" in w.message.args[0]:
+                raises_warning = True
+                break
+
+        assert not raises_warning
 
 
 def test_asset_group_from_list():
