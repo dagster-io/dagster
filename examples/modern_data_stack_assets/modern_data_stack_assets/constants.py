@@ -29,7 +29,6 @@ PG_DESTINATION_CONFIG = {
     "database": "postgres_replica",
 }
 
-
 AIRBYTE_CONFIG = {"host": "localhost", "port": "8000"}
 DBT_PROJECT_DIR = file_relative_path(__file__, "../mds_dbt")
 DBT_PROFILES_DIR = file_relative_path(__file__, "../mds_dbt/config")
