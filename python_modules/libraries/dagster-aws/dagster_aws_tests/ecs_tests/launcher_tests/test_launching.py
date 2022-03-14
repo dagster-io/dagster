@@ -4,7 +4,6 @@ import dagster_aws
 import pytest
 from botocore.exceptions import ClientError
 from dagster_aws.ecs import EcsEventualConsistencyTimeout
-from dagster_aws.ecs.utils import sanitize_family
 
 from dagster.check import CheckError
 from dagster.core.events import MetadataEntry

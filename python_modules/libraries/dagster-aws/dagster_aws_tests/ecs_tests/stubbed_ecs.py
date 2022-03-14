@@ -1,6 +1,6 @@
 import copy
-import re
 import itertools
+import re
 import uuid
 from collections import defaultdict
 from operator import itemgetter
