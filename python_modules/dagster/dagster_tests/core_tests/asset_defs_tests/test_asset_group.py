@@ -321,61 +321,57 @@ def test_asset_group_build_subset_job():
 def test_asset_group_from_package_name():
     from . import asset_package
 
-    group = AssetGroup.from_package_name(asset_package.__name__)
-    assert len(group.assets) == 6
-    assert {asset.op.name for asset in group.assets} == {
-        "little_richard",
-        "miles_davis",
-        "chuck_berry",
-        "bb_king",
-        "james_brown",
-        "fats_domino",
-    }
-    assert {source_asset.key for source_asset in group.source_assets} == {
-        AssetKey("elvis_presley"),
-        AssetKey("buddy_holly"),
-        AssetKey("jerry_lee_lewis"),
-    }
+    collection_1 = AssetGroup.from_package_name(asset_package.__name__)
+    assert len(collection_1.assets) == 6
+
+    assets_1 = [asset.op.name for asset in collection_1.assets]
+    source_assets_1 = [source_asset.key for source_asset in collection_1.source_assets]
+
+    collection_2 = AssetGroup.from_package_name(asset_package.__name__)
+    assert len(collection_2.assets) == 6
+
+    assets_2 = [asset.op.name for asset in collection_2.assets]
+    source_assets_2 = [source_asset.key for source_asset in collection_2.source_assets]
+
+    assert assets_1 == assets_2
+    assert source_assets_1 == source_assets_2
 
 
 def test_asset_group_from_package_module():
     from . import asset_package
 
-    group = AssetGroup.from_package_module(asset_package)
-    assert len(group.assets) == 6
-    assert {asset.op.name for asset in group.assets} == {
-        "little_richard",
-        "miles_davis",
-        "chuck_berry",
-        "bb_king",
-        "james_brown",
-        "fats_domino",
-    }
-    assert {source_asset.key for source_asset in group.source_assets} == {
-        AssetKey("elvis_presley"),
-        AssetKey("buddy_holly"),
-        AssetKey("jerry_lee_lewis"),
-    }
+    collection_1 = AssetGroup.from_package_module(asset_package)
+    assert len(collection_1.assets) == 6
+
+    assets_1 = [asset.op.name for asset in collection_1.assets]
+    source_assets_1 = [source_asset.key for source_asset in collection_1.source_assets]
+
+    collection_2 = AssetGroup.from_package_module(asset_package)
+    assert len(collection_2.assets) == 6
+
+    assets_2 = [asset.op.name for asset in collection_2.assets]
+    source_assets_2 = [source_asset.key for source_asset in collection_2.source_assets]
+
+    assert assets_1 == assets_2
+    assert source_assets_1 == source_assets_2
 
 
 def test_asset_group_from_modules():
     from . import asset_package
     from .asset_package import module_with_assets
 
-    group = AssetGroup.from_modules([asset_package, module_with_assets])
-    assert {asset.op.name for asset in group.assets} == {
-        "little_richard",
-        "chuck_berry",
-        "miles_davis",
-        "james_brown",
-        "fats_domino",
-    }
-    assert len(group.assets) == 5
-    assert {source_asset.key for source_asset in group.source_assets} == {
-        AssetKey("elvis_presley"),
-        AssetKey("buddy_holly"),
-        AssetKey("jerry_lee_lewis"),
-    }
+    collection_1 = AssetGroup.from_modules([asset_package, module_with_assets])
+
+    assets_1 = [asset.op.name for asset in collection_1.assets]
+    source_assets_1 = [source_asset.key for source_asset in collection_1.source_assets]
+
+    collection_2 = AssetGroup.from_modules([asset_package, module_with_assets])
+
+    assets_2 = [asset.op.name for asset in collection_2.assets]
+    source_assets_2 = [source_asset.key for source_asset in collection_2.source_assets]
+
+    assert assets_1 == assets_2
+    assert source_assets_1 == source_assets_2
 
 
 @asset
