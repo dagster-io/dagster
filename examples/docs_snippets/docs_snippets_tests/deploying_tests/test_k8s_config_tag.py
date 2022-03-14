@@ -13,7 +13,9 @@ def test_k8s_tag_job():
         dagster_home="/opt/dagster/dagster_home",
         instance_config_map="test",
     )
-    job = construct_dagster_k8s_job(cfg, [], "job123", user_defined_k8s_config=user_defined_cfg)
+    job = construct_dagster_k8s_job(
+        cfg, [], "job123", user_defined_k8s_config=user_defined_cfg
+    )
 
     assert job.to_dict()["spec"]["template"]["spec"]["containers"][0]["resources"] == {
         "requests": {"cpu": "250m", "memory": "64Mi"},
@@ -30,7 +32,9 @@ def test_k8s_tag_op():
         dagster_home="/opt/dagster/dagster_home",
         instance_config_map="test",
     )
-    job = construct_dagster_k8s_job(cfg, [], "job123", user_defined_k8s_config=user_defined_cfg)
+    job = construct_dagster_k8s_job(
+        cfg, [], "job123", user_defined_k8s_config=user_defined_cfg
+    )
 
     assert job.to_dict()["spec"]["template"]["spec"]["containers"][0]["resources"] == {
         "requests": {"cpu": "200m", "memory": "32Mi"},

@@ -20,7 +20,7 @@ interface ITypeListContainerProps {
   repoAddress?: RepoAddress;
 }
 
-export const TypeListContainer: React.FunctionComponent<ITypeListContainerProps> = ({
+export const TypeListContainer: React.FC<ITypeListContainerProps> = ({
   explorerPath,
   repoAddress,
 }) => {

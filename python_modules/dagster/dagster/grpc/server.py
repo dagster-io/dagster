@@ -6,7 +6,6 @@ import sys
 import threading
 import time
 import uuid
-from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event as ThreadingEventType
 from time import sleep
@@ -738,12 +737,12 @@ def _get_current_image():
 
 
 @whitelist_for_serdes
-class GrpcServerStartedEvent(namedtuple("GrpcServerStartedEvent", "")):
+class GrpcServerStartedEvent(NamedTuple("_GrpcServerStartedEvent", [])):
     pass
 
 
 @whitelist_for_serdes
-class GrpcServerFailedToBindEvent(namedtuple("GrpcServerStartedEvent", "")):
+class GrpcServerFailedToBindEvent(NamedTuple("_GrpcServerFailedToBindEvent", [])):
     pass
 
 

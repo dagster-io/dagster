@@ -27,7 +27,7 @@ import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
 import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/LaunchedRunListQuery';
 import {TickTagFragment} from './types/TickTagFragment';
 
-export const TickTag: React.FunctionComponent<{
+export const TickTag: React.FC<{
   tick: TickTagFragment;
   instigationType?: InstigationType;
 }> = ({tick, instigationType}) => {
@@ -75,23 +75,26 @@ export const TickTag: React.FunctionComponent<{
         return <TagWIP intent="danger">Failure</TagWIP>;
       } else {
         const error = tick.error;
+        const showError = () =>
+          showCustomAlert({
+            title: instigationType
+              ? instigationType === InstigationType.SCHEDULE
+                ? 'Schedule Response'
+                : 'Sensor Response'
+              : 'Python Error',
+            body: <PythonErrorInfo error={error} />,
+          });
         return (
-          <LinkButton
-            onClick={() =>
-              showCustomAlert({
-                title: instigationType
-                  ? instigationType === InstigationType.SCHEDULE
-                    ? 'Schedule Response'
-                    : 'Sensor Response'
-                  : 'Python Error',
-                body: <PythonErrorInfo error={error} />,
-              })
-            }
-          >
-            <TagWIP minimal={true} intent="danger">
-              Failure
-            </TagWIP>
-          </LinkButton>
+          <>
+            <LinkButton onClick={showError}>
+              <TagWIP minimal={true} intent="danger">
+                Failure
+              </TagWIP>
+            </LinkButton>
+            <ButtonLink onClick={showError} style={{marginLeft: 8, fontSize: 14}}>
+              View error
+            </ButtonLink>
+          </>
         );
       }
     default:
@@ -99,7 +102,7 @@ export const TickTag: React.FunctionComponent<{
   }
 };
 
-export const RunList: React.FunctionComponent<{
+export const RunList: React.FC<{
   runIds: string[];
 }> = ({runIds}) => {
   const {data, loading} = useQuery<LaunchedRunListQuery, LaunchedRunListQueryVariables>(
@@ -133,7 +136,7 @@ export const RunList: React.FunctionComponent<{
   );
 };
 
-export const FailedRunList: React.FunctionComponent<{
+export const FailedRunList: React.FC<{
   originRunIds?: string[];
 }> = ({originRunIds}) => {
   if (!originRunIds || !originRunIds.length) {

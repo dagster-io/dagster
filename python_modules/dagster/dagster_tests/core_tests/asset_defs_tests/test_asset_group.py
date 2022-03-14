@@ -11,7 +11,6 @@ from dagster import (
     graph,
     in_process_executor,
     io_manager,
-    job,
     mem_io_manager,
     repository,
     resource,
@@ -338,32 +337,40 @@ def test_asset_group_build_subset_job():
 def test_asset_group_from_package_name():
     from . import asset_package
 
-    collection = AssetGroup.from_package_name(asset_package.__name__)
-    assert len(collection.assets) == 4
-    assert {asset.op.name for asset in collection.assets} == {
+    group = AssetGroup.from_package_name(asset_package.__name__)
+    assert len(group.assets) == 6
+    assert {asset.op.name for asset in group.assets} == {
         "little_richard",
         "miles_davis",
         "chuck_berry",
         "bb_king",
+        "james_brown",
+        "fats_domino",
     }
-    assert {source_asset.key for source_asset in collection.source_assets} == {
-        AssetKey("elvis_presley")
+    assert {source_asset.key for source_asset in group.source_assets} == {
+        AssetKey("elvis_presley"),
+        AssetKey("buddy_holly"),
+        AssetKey("jerry_lee_lewis"),
     }
 
 
 def test_asset_group_from_package_module():
     from . import asset_package
 
-    collection = AssetGroup.from_package_module(asset_package)
-    assert len(collection.assets) == 4
-    assert {asset.op.name for asset in collection.assets} == {
+    group = AssetGroup.from_package_module(asset_package)
+    assert len(group.assets) == 6
+    assert {asset.op.name for asset in group.assets} == {
         "little_richard",
         "miles_davis",
         "chuck_berry",
         "bb_king",
+        "james_brown",
+        "fats_domino",
     }
-    assert {source_asset.key for source_asset in collection.source_assets} == {
-        AssetKey("elvis_presley")
+    assert {source_asset.key for source_asset in group.source_assets} == {
+        AssetKey("elvis_presley"),
+        AssetKey("buddy_holly"),
+        AssetKey("jerry_lee_lewis"),
     }
 
 
@@ -371,16 +378,38 @@ def test_asset_group_from_modules():
     from . import asset_package
     from .asset_package import module_with_assets
 
-    collection = AssetGroup.from_modules([asset_package, module_with_assets])
-    assert {asset.op.name for asset in collection.assets} == {
+    group = AssetGroup.from_modules([asset_package, module_with_assets])
+    assert {asset.op.name for asset in group.assets} == {
         "little_richard",
         "chuck_berry",
         "miles_davis",
+        "james_brown",
+        "fats_domino",
     }
-    assert len(collection.assets) == 3
-    assert {source_asset.key for source_asset in collection.source_assets} == {
-        AssetKey("elvis_presley")
+    assert len(group.assets) == 5
+    assert {source_asset.key for source_asset in group.source_assets} == {
+        AssetKey("elvis_presley"),
+        AssetKey("buddy_holly"),
+        AssetKey("jerry_lee_lewis"),
     }
+
+
+@asset
+def asset_in_current_module():
+    pass
+
+
+source_asset_in_current_module = SourceAsset(AssetKey("source_asset_in_current_module"))
+
+
+def test_asset_group_from_current_module():
+    group = AssetGroup.from_current_module()
+    assert {asset.op.name for asset in group.assets} == {"asset_in_current_module"}
+    assert len(group.assets) == 1
+    assert {source_asset.key for source_asset in group.source_assets} == {
+        AssetKey("source_asset_in_current_module")
+    }
+    assert len(group.source_assets) == 1
 
 
 def test_default_io_manager():
@@ -393,7 +422,6 @@ def test_default_io_manager():
         group.resource_defs["io_manager"]  # pylint: disable=comparison-with-callable
         == fs_asset_io_manager
     )
-    assert group.resource_defs["io_manager"] == fs_asset_io_manager
 
 
 def test_repo_with_multiple_asset_groups():
@@ -404,7 +432,7 @@ def test_repo_with_multiple_asset_groups():
     ):
 
         @repository
-        def the_repo():
+        def the_repo():  # pylint: disable=unused-variable
             return [AssetGroup(assets=[]), AssetGroup(assets=[])]
 
 
@@ -420,5 +448,5 @@ def test_job_with_reserved_name():
     ):
 
         @repository
-        def the_repo():
+        def the_repo():  # pylint: disable=unused-variable
             return [the_job]

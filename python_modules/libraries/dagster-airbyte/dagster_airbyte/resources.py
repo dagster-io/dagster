@@ -100,7 +100,7 @@ class AirbyteResource:
         self,
         connection_id: str,
         poll_interval: float = DEFAULT_POLL_INTERVAL_SECONDS,
-        poll_timeout: float = None,
+        poll_timeout: Optional[float] = None,
     ):
         """
         Initializes a sync operation for the given connector, and polls until it completes.

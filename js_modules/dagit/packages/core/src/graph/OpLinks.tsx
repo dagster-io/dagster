@@ -105,7 +105,7 @@ export const OpLinks = React.memo(
 
 OpLinks.displayName = 'OpLinks';
 
-const DynamicMarker: React.FunctionComponent<{
+const DynamicMarker: React.FC<{
   x: number;
   y: number;
   direction: 'output' | 'collect';

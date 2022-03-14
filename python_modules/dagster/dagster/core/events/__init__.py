@@ -733,7 +733,7 @@ class DagsterEvent(
     def asset_materialization(
         step_context: IStepContext,
         materialization: Union[AssetMaterialization, Materialization],
-        asset_lineage: List[AssetLineageInfo] = None,
+        asset_lineage: Optional[List[AssetLineageInfo]] = None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,

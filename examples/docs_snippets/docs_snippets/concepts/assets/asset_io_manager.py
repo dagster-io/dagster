@@ -1,7 +1,8 @@
 # pylint: disable=redefined-outer-name
 # start_marker
-from dagster import AssetGroup, asset
 from dagster_aws.s3 import s3_pickle_asset_io_manager, s3_resource
+
+from dagster import AssetGroup, asset
 
 
 @asset

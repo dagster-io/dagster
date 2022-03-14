@@ -180,9 +180,20 @@ export const AssetNode: React.FC<{
             )}
             {definition.opName && displayName !== definition.opName && (
               <StatsRow>
-                <Box flex={{gap: 4, alignItems: 'flex-end'}} style={{marginLeft: -2}}>
+                <Box
+                  flex={{gap: 4, alignItems: 'flex-end'}}
+                  style={{marginLeft: -2, overflow: 'hidden'}}
+                >
                   <IconWIP name="op" size={16} />
-                  {definition.opName}
+                  <div
+                    style={{
+                      minWidth: 0,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                  >
+                    {definition.opName}
+                  </div>
                 </Box>
               </StatsRow>
             )}
@@ -247,6 +258,9 @@ export const ASSET_NODE_FRAGMENT = gql`
     id
     opName
     description
+    metadataEntries {
+      ...MetadataEntryFragment
+    }
     partitionDefinition
     assetKey {
       path
@@ -260,6 +274,7 @@ export const ASSET_NODE_FRAGMENT = gql`
       }
     }
   }
+  ${METADATA_ENTRY_FRAGMENT}
 `;
 
 export const getNodeDimensions = (def: {
@@ -275,7 +290,7 @@ export const getNodeDimensions = (def: {
   if (def.opName && displayName !== def.opName) {
     height += 25;
   }
-  return {width: Math.max(250, displayName.length * 9.5) + 25, height};
+  return {width: Math.max(250, displayName.length * 8.0) + 25, height};
 };
 
 const BoxColors = {

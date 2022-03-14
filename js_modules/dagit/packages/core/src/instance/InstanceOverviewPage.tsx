@@ -38,6 +38,7 @@ import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {RunStatus} from '../types/globalTypes';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -204,7 +205,9 @@ export const InstanceOverviewPage = () => {
         (r) =>
           r.repository.name === repoAddress.name &&
           r.repositoryLocation.name === repoAddress.location,
-      ) && job.name.toLocaleLowerCase().includes(searchToLower);
+      ) &&
+      job.name.toLocaleLowerCase().includes(searchToLower) &&
+      job.name !== __ASSET_GROUP;
 
     const {failed, inProgress, queued, succeeded, neverRan} = bucketed;
     return {
@@ -449,6 +452,7 @@ const JobSection = (props: JobSectionProps) => {
         <tbody>
           {jobs.map(({job, repoAddress, runs, schedules, sensors}) => {
             const jobKey = makeJobKey(repoAddress, job.name);
+            const repoAddressString = repoAddressAsString(repoAddress);
             return (
               <tr key={jobKey}>
                 <td>
@@ -469,12 +473,12 @@ const JobSection = (props: JobSectionProps) => {
                         {!job.isJob ? <LegacyPipelineTag /> : null}
                       </Box>
                       <Body color={ColorsWIP.Gray400} style={{fontFamily: FontFamily.monospace}}>
-                        {repoAddressAsString(repoAddress)}
+                        {repoAddressString}
                       </Body>
                     </Box>
                     {runs ? (
                       <Box margin={{top: 4}}>
-                        <RunStatusPezList fade runs={runs} />
+                        <RunStatusPezList fade runs={runs} repoAddress={repoAddressString} />
                       </Box>
                     ) : null}
                   </Box>

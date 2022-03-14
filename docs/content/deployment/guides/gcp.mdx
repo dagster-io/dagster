@@ -63,9 +63,10 @@ You'll probably also want to configure a GCS bucket to store op outputs via pers
 You'll first need to need to create a job using <PyObject module="dagster_gcp.gcs" object="gcs_pickle_io_manager"/> as its IO Manager (or [define a custom IO Manager](/concepts/io-management/io-managers#defining-an-io-manager)):
 
 ```python file=/deploying/gcp/gcp_job.py
-from dagster import job
 from dagster_gcp.gcs.io_manager import gcs_pickle_io_manager
 from dagster_gcp.gcs.resources import gcs_resource
+
+from dagster import job
 
 
 @job(

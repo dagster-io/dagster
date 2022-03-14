@@ -6,7 +6,9 @@ from contextlib import contextmanager
 
 from .telemetry import MAX_BYTES, get_dir_from_dagster_home
 
-DAGSTER_TELEMETRY_URL = "http://telemetry.dagster.io/actions"
+
+def get_dagster_telemetry_url():
+    return os.getenv("DAGSTER_TELEMETRY_URL", default="http://telemetry.dagster.io/actions")
 
 
 def is_running_in_test():
@@ -116,7 +118,7 @@ def _upload_logs(dagster_log_dir, log_size, dagster_log_queue_dir, raise_errors)
 
                     data = zlib.compress(byte, zlib.Z_BEST_COMPRESSION)
                     headers = {"content-encoding": "gzip"}
-                    r = requests.post(DAGSTER_TELEMETRY_URL, data=data, headers=headers)
+                    r = requests.post(get_dagster_telemetry_url(), data=data, headers=headers)
                     if r.status_code == 200:
                         success = True
                     retry_num += 1

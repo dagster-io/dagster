@@ -68,8 +68,8 @@ class RunRequest(
     def __new__(
         cls,
         run_key: Optional[str],
-        run_config: Mapping[str, Any] = None,
-        tags: Mapping[str, str] = None,
+        run_config: Optional[Mapping[str, Any]] = None,
+        tags: Optional[Mapping[str, str]] = None,
         job_name: Optional[str] = None,
     ):
         return super(RunRequest, cls).__new__(

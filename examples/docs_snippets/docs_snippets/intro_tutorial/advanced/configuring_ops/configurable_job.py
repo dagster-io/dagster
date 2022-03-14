@@ -2,6 +2,7 @@
 import csv
 
 import requests
+
 from dagster import get_dagster_logger, job, op
 
 

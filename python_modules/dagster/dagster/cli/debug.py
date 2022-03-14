@@ -1,12 +1,13 @@
 from gzip import GzipFile
+from typing import Tuple
 
 import click
 from tqdm import tqdm
 
-from dagster import DagsterInstance, check
+from dagster import DagsterInstance
 from dagster.core.debug import DebugRunPayload
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.serdes import deserialize_as
 
 
 def _recent_failed_runs_text(instance):
@@ -59,13 +60,12 @@ def export_command(run_id, output_file):
     name="import", help="Import the relevant artifacts for a pipeline/job run from a file."
 )
 @click.argument("input_files", nargs=-1, type=click.Path(exists=True))
-def import_command(input_files):
+def import_command(input_files: Tuple[str, ...]):
     debug_payloads = []
     for input_file in input_files:
         with GzipFile(input_file, "rb") as file:
             blob = file.read().decode("utf-8")
-            debug_payload = deserialize_json_to_dagster_namedtuple(blob)
-            check.invariant(isinstance(debug_payload, DebugRunPayload))
+            debug_payload = deserialize_as(blob, DebugRunPayload)
             debug_payloads.append(debug_payload)
 
     with DagsterInstance.get() as instance:

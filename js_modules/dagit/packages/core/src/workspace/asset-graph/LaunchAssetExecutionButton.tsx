@@ -29,7 +29,7 @@ export const LaunchAssetExecutionButton: React.FC<{
 
   let disabledReason = '';
   if (!assets.every((a) => a.opName)) {
-    disabledReason = 'One or more foreign assets are selected and cannot be materialized.';
+    disabledReason = 'One or more source assets are selected and cannot be materialized.';
   }
   if (
     !assets.every(
@@ -89,6 +89,7 @@ export const LaunchAssetExecutionButton: React.FC<{
           disabled={!!disabledReason}
           title={title}
           icon="materialization"
+          behavior="toast"
           getVariables={() => ({
             executionParams: {
               mode: 'default',

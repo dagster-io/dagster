@@ -65,8 +65,9 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
                 "DefaultRunLauncher requires a workspace to be included in its LaunchRunContext"
             )
 
+        external_pipeline_origin = check.not_none(run.external_pipeline_origin)
         repository_location = context.workspace.get_location(
-            run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
+            external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
         )
 
         check.inst(
@@ -95,7 +96,7 @@ class DefaultRunLauncher(RunLauncher, ConfigurableClass):
         res = deserialize_as(
             repository_location.client.start_run(
                 ExecuteExternalPipelineArgs(
-                    pipeline_origin=run.external_pipeline_origin,
+                    pipeline_origin=external_pipeline_origin,
                     pipeline_run_id=run.run_id,
                     instance_ref=self._instance.get_ref(),
                 )

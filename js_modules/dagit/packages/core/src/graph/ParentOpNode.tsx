@@ -25,7 +25,7 @@ interface ParentOpNodeProps {
   onHighlightEdges: (edges: Edge[]) => void;
 }
 
-export const ParentOpNode: React.FunctionComponent<ParentOpNodeProps> = (props) => {
+export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
   const {layout, op, minified} = props;
 
   const def = props.op.definition;

@@ -290,7 +290,7 @@ class DagsterK8sJobConfig(
             ),
             env_config_maps=check.opt_list_param(env_config_maps, "env_config_maps", of_type=str),
             env_secrets=check.opt_list_param(env_secrets, "env_secrets", of_type=str),
-            env_vars=check.opt_list_param(env_vars, "env_secrets", of_type=str),
+            env_vars=check.opt_list_param(env_vars, "env_vars", of_type=str),
             volume_mounts=[
                 k8s_snake_case_dict(kubernetes.client.V1VolumeMount, mount)
                 for mount in check.opt_list_param(volume_mounts, "volume_mounts")

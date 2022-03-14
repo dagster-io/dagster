@@ -109,7 +109,7 @@ def graph(
 
 
 def graph(
-    name: Union[Callable[..., Any], Optional[str]] = None,
+    name: Optional[Union[Callable[..., Any], str]] = None,
     description: Optional[str] = None,
     input_defs: Optional[List[InputDefinition]] = None,
     output_defs: Optional[List[OutputDefinition]] = None,

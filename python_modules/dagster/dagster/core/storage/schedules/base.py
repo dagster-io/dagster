@@ -1,5 +1,5 @@
 import abc
-from typing import Iterable
+from typing import Iterable, List, Mapping, Optional, Sequence
 
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.instance import MayHaveInstanceWeakref
@@ -15,7 +15,9 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
 
     @abc.abstractmethod
     def all_instigator_state(
-        self, repository_origin_id: str = None, instigator_type: InstigatorType = None
+        self,
+        repository_origin_id: Optional[str] = None,
+        instigator_type: Optional[InstigatorType] = None,
     ) -> Iterable[InstigatorState]:
         """Return all InstigationStates present in storage
 
@@ -56,9 +58,26 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
             origin_id (str): The id of the instigator target to delete
         """
 
+    @property
+    def supports_batch_queries(self):
+        return False
+
+    def get_batch_ticks(
+        self,
+        origin_ids: Sequence[str],
+        limit: Optional[int] = None,
+        statuses: Optional[Sequence[TickStatus]] = None,
+    ) -> Mapping[str, Iterable[InstigatorTick]]:
+        raise NotImplementedError()
+
     @abc.abstractmethod
     def get_ticks(
-        self, origin_id: str, before: float = None, after: float = None, limit: int = None
+        self,
+        origin_id: str,
+        before: Optional[float] = None,
+        after: Optional[float] = None,
+        limit: Optional[int] = None,
+        statuses: Optional[List[TickStatus]] = None,
     ) -> Iterable[InstigatorTick]:
         """Get the ticks for a given instigator.
 

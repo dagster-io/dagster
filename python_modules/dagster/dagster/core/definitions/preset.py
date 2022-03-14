@@ -19,8 +19,8 @@ class PresetDefinition(
             ("name", str),
             ("run_config", Optional[Dict[str, object]]),
             ("solid_selection", Optional[List[str]]),
-            ("mode", Optional[str]),
-            ("tags", Dict[str, object]),
+            ("mode", str),
+            ("tags", Dict[str, str]),
         ],
     )
 ):
@@ -57,7 +57,7 @@ class PresetDefinition(
         run_config: Optional[Dict[str, object]] = None,
         solid_selection: Optional[List[str]] = None,
         mode: Optional[str] = None,
-        tags: Dict[str, object] = None,
+        tags: Optional[Dict[str, object]] = None,
     ):
 
         return super(PresetDefinition, cls).__new__(
