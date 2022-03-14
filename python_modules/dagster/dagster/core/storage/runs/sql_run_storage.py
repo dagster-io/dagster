@@ -649,10 +649,6 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 root_run_id_to_group[pipeline_run.run_id].append(pipeline_run)
                 root_run_id_to_count[pipeline_run.run_id] = count + 1
 
-        print("x" * 100)
-        print(root_run_id_to_group)
-        print("x" * 10000)
-        print("\n")
         return {
             root_run_id: {
                 "runs": list(run_group),

@@ -7,6 +7,7 @@ from dagster.core.execution.retries import RetryMode
 from dagster.core.storage.pipeline_run import PipelineRun
 
 if TYPE_CHECKING:
+    from dagster.core.events.log import EventLogEntry
     from dagster.core.execution.plan.state import KnownExecutionState
 
 
@@ -23,7 +24,7 @@ class StepRunRef(
             ("prior_attempts_count", int),
             ("known_state", Optional["KnownExecutionState"]),
             ("run_group", Sequence[PipelineRun]),
-            ("upstream_output_logs", Sequence["EventLogEntry"]),
+            ("upstream_output_events", Sequence["EventLogEntry"]),
         ],
     )
 ):
@@ -43,7 +44,7 @@ class StepRunRef(
         prior_attempts_count: int,
         known_state: Optional["KnownExecutionState"],
         run_group: Optional[Sequence[PipelineRun]],
-        upstream_output_logs: Optional[Sequence["EventLogEntry"]],
+        upstream_output_events: Optional[Sequence["EventLogEntry"]],
     ):
         from dagster.core.execution.plan.state import KnownExecutionState
         from dagster.core.storage.event_log import EventLogEntry
@@ -60,7 +61,7 @@ class StepRunRef(
             check.opt_inst_param(known_state, "known_state", KnownExecutionState),
             check.opt_list_param(run_group, "run_group", of_type=PipelineRun),
             check.opt_list_param(
-                upstream_output_logs, "upstream_output_logs", of_type=EventLogEntry
+                upstream_output_events, "upstream_output_events", of_type=EventLogEntry
             ),
         )
 

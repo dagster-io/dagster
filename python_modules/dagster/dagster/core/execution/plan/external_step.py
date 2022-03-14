@@ -189,7 +189,7 @@ def step_context_to_step_run_ref(
                 solids_to_execute=recon_pipeline.solids_to_execute,
             )
 
-    upstream_output_logs, runs = _upstream_events_and_runs(step_context)
+    upstream_output_events, run_group = _upstream_events_and_runs(step_context)
     return StepRunRef(
         run_config=step_context.run_config,
         pipeline_run=step_context.pipeline_run,
@@ -199,8 +199,8 @@ def step_context_to_step_run_ref(
         recon_pipeline=recon_pipeline,  # type: ignore
         prior_attempts_count=prior_attempts_count,
         known_state=step_context.execution_plan.known_state,
-        run_group=runs,
-        upstream_output_logs=upstream_output_logs,
+        run_group=run_group,
+        upstream_output_events=upstream_output_events,
     )
 
 
@@ -221,12 +221,12 @@ def external_instance_from_step_run_ref(
     """
     instance = DagsterInstance.ephemeral()
     # re-execution expects the parent run(s) to be available on the instance, so add these
-    for run in step_run_ref.run_group or []:
+    for run in step_run_ref.run_group:
         # remove the pipeline_snapshot_id, as this instance doesn't have any snapshots
         instance.add_run(run._replace(pipeline_snapshot_id=None))
     # the can_load() function on the step context currently depends on reading output events
     # from the instance, so we make sure the remote instance has the relevant events
-    for entry in step_run_ref.upstream_output_logs or []:
+    for entry in step_run_ref.upstream_output_events:
         instance.handle_new_event(entry)
     if event_listener_fn:
         instance.add_event_listener(step_run_ref.run_id, event_listener_fn)
