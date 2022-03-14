@@ -82,6 +82,7 @@ if TYPE_CHECKING:
     from dagster.core.launcher import RunLauncher
     from dagster.core.run_coordinator import RunCoordinator
     from dagster.core.scheduler import Scheduler
+    from dagster.core.scheduler.instigation import InstigatorTick, TickStatus
     from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
     from dagster.core.storage.compute_log_manager import ComputeLogManager
     from dagster.core.storage.event_log import EventLogStorage
@@ -1753,6 +1754,20 @@ records = instance.get_event_records(
 
     def delete_instigator_state(self, origin_id):
         return self._schedule_storage.delete_instigator_state(origin_id)
+
+    @property
+    def supports_batch_tick_queries(self):
+        return self._schedule_storage and self._schedule_storage.supports_batch_queries
+
+    def get_batch_ticks(
+        self,
+        origin_ids: Sequence[str],
+        limit: Optional[int] = None,
+        statuses: Optional[Sequence["TickStatus"]] = None,
+    ) -> Mapping[str, Iterable["InstigatorTick"]]:
+        if not self._schedule_storage:
+            return {}
+        return self._schedule_storage.get_batch_ticks(origin_ids, limit, statuses)
 
     @traced
     def get_tick(self, origin_id, timestamp):

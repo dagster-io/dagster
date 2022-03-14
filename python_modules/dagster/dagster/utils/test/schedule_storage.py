@@ -451,10 +451,12 @@ class TestScheduleStorage:
         with pytest.raises(Exception):
             storage.add_instigator_state(state)
 
-    def build_sensor_tick(self, current_time, status=TickStatus.STARTED, run_id=None, error=None):
+    def build_sensor_tick(
+        self, current_time, status=TickStatus.STARTED, run_id=None, error=None, name="my_sensor"
+    ):
         return TickData(
-            "my_sensor",
-            "my_sensor",
+            name,
+            name,
             InstigatorType.SENSOR,
             status,
             current_time,
@@ -620,3 +622,26 @@ class TestScheduleStorage:
             "my_sensor", statuses=[TickStatus.STARTED, TickStatus.SUCCESS, TickStatus.FAILURE]
         )
         assert len(non_skips) == 3
+
+    def test_ticks_batched(self, storage):
+        if not storage.supports_batch_queries:
+            pytest.skip("storage cannot batch")
+
+        _a = storage.create_tick(
+            self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS, name="sensor_one")
+        )
+        b = storage.create_tick(
+            self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS, name="sensor_one")
+        )
+        _c = storage.create_tick(
+            self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS, name="sensor_two")
+        )
+        d = storage.create_tick(
+            self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS, name="sensor_two")
+        )
+
+        ticks_by_origin = storage.get_batch_ticks(["sensor_one", "sensor_two"], limit=1)
+        assert set(ticks_by_origin.keys()) == {"sensor_one", "sensor_two"}
+        assert len(ticks_by_origin["sensor_one"]) == 1
+        assert ticks_by_origin["sensor_one"][0].tick_id == b.tick_id
+        assert ticks_by_origin["sensor_two"][0].tick_id == d.tick_id

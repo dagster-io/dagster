@@ -1,5 +1,5 @@
 import abc
-from typing import Iterable, List, Optional
+from typing import Iterable, List, Mapping, Optional, Sequence
 
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.instance import MayHaveInstanceWeakref
@@ -57,6 +57,18 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         Args:
             origin_id (str): The id of the instigator target to delete
         """
+
+    @property
+    def supports_batch_queries(self):
+        return False
+
+    def get_batch_ticks(
+        self,
+        origin_ids: Sequence[str],
+        limit: Optional[int] = None,
+        statuses: Optional[Sequence[TickStatus]] = None,
+    ) -> Mapping[str, Iterable[InstigatorTick]]:
+        raise NotImplementedError()
 
     @abc.abstractmethod
     def get_ticks(
