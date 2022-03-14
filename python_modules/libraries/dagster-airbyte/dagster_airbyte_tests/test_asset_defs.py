@@ -41,7 +41,7 @@ def test_assets(schema_prefix):
     responses.add(
         method=responses.POST,
         url=ab_resource.api_base_url + "/connections/get",
-        json=get_sample_connection_json(schema_prefix=schema_prefix),
+        json=get_sample_connection_json(prefix=schema_prefix),
         status=200,
     )
     responses.add(
@@ -97,3 +97,4 @@ def test_assets(schema_prefix):
         )
         in materializations[0].metadata_entries,
     )
+    assert False

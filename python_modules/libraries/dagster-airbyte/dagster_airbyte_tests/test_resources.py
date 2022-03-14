@@ -198,9 +198,8 @@ def test_assets():
     airbyte_output = ab_resource.sync_and_poll("some_connection", 0, None)
 
     materializations = list(generate_materializations(airbyte_output, []))
-    assert len(materializations) == 2
+    assert len(materializations) == 3
 
-    assert MetadataEntry.text("a,b", "columns") in materializations[0].metadata_entries
     assert MetadataEntry.int(1234, "bytesEmitted") in materializations[0].metadata_entries
     assert MetadataEntry.int(4321, "recordsCommitted") in materializations[0].metadata_entries
 

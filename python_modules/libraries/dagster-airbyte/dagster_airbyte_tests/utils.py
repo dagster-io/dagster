@@ -1,4 +1,5 @@
 from dagster_airbyte import AirbyteState
+
 from dagster.utils.merger import deep_merge_dicts
 
 
@@ -37,6 +38,17 @@ def get_sample_connection_json(**kwargs):
                                 }
                             },
                         },
+                        "config": {"selected": True},
+                    },
+                    {
+                        "stream": {
+                            "name": "qux",
+                            "jsonSchema": {
+                                "properties": {
+                                    "e": {"type": "str"},
+                                }
+                            },
+                        },
                         "config": {"selected": False},
                     },
                 ]
@@ -46,7 +58,7 @@ def get_sample_connection_json(**kwargs):
     )
 
 
-def get_sample_job_json(schema_prefix):
+def get_sample_job_json(schema_prefix=""):
     return {
         "job": {"id": 1, "status": AirbyteState.SUCCEEDED},
         "attempts": [
