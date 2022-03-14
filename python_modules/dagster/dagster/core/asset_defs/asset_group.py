@@ -2,7 +2,6 @@ import inspect
 import os
 import pkgutil
 import re
-from collections import OrderedDict
 from importlib import import_module
 from types import ModuleType
 from typing import (
