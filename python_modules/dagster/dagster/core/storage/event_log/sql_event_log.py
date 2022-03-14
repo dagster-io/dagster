@@ -134,11 +134,11 @@ class SqlEventLogStorage(EventLogStorage):
                 last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
             )
 
-        with self.index_connection() as conn:
-            try:
-                conn.execute(insert_statement)
-            except db.exc.IntegrityError:
-                conn.execute(update_statement)
+            with self.index_connection() as conn:
+                try:
+                    conn.execute(insert_statement)
+                except db.exc.IntegrityError:
+                    conn.execute(update_statement)
 
     def store_asset_materialization(self, event):
         # We switched to storing the entire event record of the last materialization instead of just
