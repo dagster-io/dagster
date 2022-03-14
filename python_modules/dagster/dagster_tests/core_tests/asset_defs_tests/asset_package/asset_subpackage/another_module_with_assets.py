@@ -1,6 +1,6 @@
 from dagster import AssetKey, SourceAsset, asset
 
-elvis_presley = SourceAsset(key=AssetKey("patsy_cline"))
+patsy_cline = SourceAsset(key=AssetKey("patsy_cline"))
 
 
 @asset
