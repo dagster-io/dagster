@@ -2,23 +2,11 @@ from dagster import job, op
 
 
 # fmt: off
-# start_k8s_config_op
-@op(
-    tags={
-        "dagster-k8s/config": {
-            "container_config": {
-                "resources": {
-                    "requests": {"cpu": "200m", "memory": "32Mi"},
-                }
-            },
-        }
-    }
-)
+@op
 def my_op(context):
     context.log.info("running")
-# end_k8s_config_op
 
-# start_k8s_config_job
+# start_k8s_config
 @job(
     tags={
         "dagster-k8s/config": {
@@ -59,5 +47,5 @@ def my_op(context):
 )
 def my_job():
     my_op()
-# end_k8s_config_job
+# end_k8s_config
 # fmt: on

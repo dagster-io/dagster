@@ -1,7 +1,8 @@
 from dagster_k8s import DagsterK8sJobConfig, construct_dagster_k8s_job
 from dagster_k8s.job import get_user_defined_k8s_config
 
-from docs_snippets.deploying.kubernetes.k8s_config_tag import my_job, my_op
+from docs_snippets.deploying.kubernetes.k8s_config_tag_job import my_job
+from docs_snippets.deploying.kubernetes.k8s_config_tag_op import my_op
 
 
 def test_k8s_tag_job():

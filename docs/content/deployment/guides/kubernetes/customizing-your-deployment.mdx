@@ -23,7 +23,7 @@ The values for each of these keys is a dictionary with the YAML configuration fo
 
 If your instance is using the <PyObject module="dagster_k8s" object="K8sRunLauncher" /> or <PyObject module="dagster_celery_k8s" object="CeleryK8sRunLauncher" />, you can use the `dagster-k8s/config` tag on a Dagster job. For example:
 
-```python file=/deploying/kubernetes/k8s_config_tag.py startafter=start_k8s_config_job endbefore=end_k8s_config_job
+```python file=/deploying/kubernetes/k8s_config_tag_job.py startafter=start_k8s_config endbefore=end_k8s_config
 @job(
     tags={
         "dagster-k8s/config": {
@@ -68,7 +68,7 @@ def my_job():
 
 If your Dagster job is configured with an executor that runs each op in its own pod, like the <PyObject module="dagster_k8s" object="k8s_job_executor" /> or <PyObject module="dagster_celery_k8s" object="celery_k8s_job_executor" />, you can also use the `dagster-k8s/config` tag on a Dagster op to control the Kubernetes configuration for that specific op. For example:
 
-```python file=/deploying/kubernetes/k8s_config_tag.py startafter=start_k8s_config_op endbefore=end_k8s_config_op
+```python file=/deploying/kubernetes/k8s_config_tag_op.py startafter=start_k8s_config endbefore=end_k8s_config
 @op(
     tags={
         "dagster-k8s/config": {
@@ -82,7 +82,13 @@ If your Dagster job is configured with an executor that runs each op in its own 
 )
 def my_op(context):
     context.log.info("running")
+
+@job(executor_def=k8s_job_executor)
+def my_job():
+    my_op()
 ```
+
+Non-k8s run launchers and executors will ignore the `dagster-k8s/config` tag.
 
 ## Configuring an External Database
 
