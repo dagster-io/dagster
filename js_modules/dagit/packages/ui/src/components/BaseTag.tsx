@@ -40,7 +40,7 @@ export const BaseTag = (props: Props) => {
       {icon || null}
       {label !== undefined && label !== null ? (
         <span
-          data-tooltip={label}
+          data-tooltip={typeof label === 'string' ? label : undefined}
           data-tooltip-style={JSON.stringify({
             ...BaseTagTooltipStyle,
             backgroundColor: fillColor,

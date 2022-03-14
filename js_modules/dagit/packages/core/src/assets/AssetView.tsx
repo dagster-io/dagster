@@ -1,5 +1,15 @@
 import {gql, useQuery} from '@apollo/client';
-import {Alert, Box, ButtonLink, ColorsWIP, NonIdealState, Spinner, Tab, Tabs} from '@dagster-io/ui';
+import {
+  Alert,
+  Box,
+  ButtonLink,
+  ColorsWIP,
+  NonIdealState,
+  Spinner,
+  Tab,
+  Tabs,
+  TagWIP,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {
@@ -11,6 +21,7 @@ import {displayNameForAssetKey} from '../app/Util';
 import {Timestamp} from '../app/time/Timestamp';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {RepositoryLink} from '../nav/RepositoryLink';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 import {LaunchAssetExecutionButton} from '../workspace/asset-graph/LaunchAssetExecutionButton';
 import {
@@ -23,6 +34,7 @@ import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetEvents} from './AssetEvents';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
+import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetKey} from './types';
 import {
@@ -109,7 +121,20 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     <div>
       <AssetPageHeader
         assetKey={assetKey}
-        repoAddress={repoAddress}
+        tags={
+          <>
+            {repoAddress ? (
+              <TagWIP icon="asset">
+                Asset in <RepositoryLink repoAddress={repoAddress} />
+              </TagWIP>
+            ) : (
+              <TagWIP icon="asset">Asset</TagWIP>
+            )}
+            {definition && repoAddress && (
+              <AssetNodeInstigatorTag assetNode={definition} repoAddress={repoAddress} />
+            )}
+          </>
+        }
         tabs={
           <Tabs size="large" selectedTabId={params.view || 'activity'}>
             <Tab
@@ -224,11 +249,14 @@ const ASSET_QUERY = gql`
               name
             }
           }
+
+          ...AssetNodeInstigatorsFragment
           ...AssetNodeDefinitionFragment
         }
       }
     }
   }
+  ${ASSET_NODE_INSTIGATORS_FRAGMENT}
   ${ASSET_NODE_DEFINITION_FRAGMENT}
 `;
 
