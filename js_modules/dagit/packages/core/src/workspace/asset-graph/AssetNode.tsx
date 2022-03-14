@@ -126,10 +126,10 @@ export const AssetNode: React.FC<{
                       to={
                         repoAddress.name
                           ? workspacePath(
-                            repoAddress.name,
-                            repoAddress.location,
-                            `jobs/${runOrError.pipelineName}`,
-                          )
+                              repoAddress.name,
+                              repoAddress.location,
+                              `jobs/${runOrError.pipelineName}`,
+                            )
                           : workspacePipelinePathGuessRepo(runOrError.pipelineName, true, '')
                       }
                     >
