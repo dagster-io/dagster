@@ -12,6 +12,7 @@ export * from './components/Checkbox';
 export * from './components/Colors';
 export * from './components/Countdown';
 export * from './components/CursorControls';
+export * from './components/CustomTooltipProvider';
 export * from './components/Icon';
 export * from './components/Dialog';
 export * from './components/Group';

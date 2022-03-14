@@ -1,7 +1,10 @@
 import {gql} from '@apollo/client';
+import {History} from 'history';
 import * as React from 'react';
 
+import {Mono} from '../../../ui/src';
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {SharedToaster} from '../app/DomUtils';
 import {PythonErrorInfo} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
 import {ExecutionParams, RunStatus} from '../types/globalTypes';
@@ -33,10 +36,10 @@ export function useDidLaunchEvent(cb: () => void) {
 }
 
 export function handleLaunchResult(
-  basePath: string,
   pipelineName: string,
   result: void | {data?: LaunchPipelineExecution | LaunchPipelineReexecution | null},
-  options: {openInTab?: boolean; querystring?: string},
+  history: History<unknown>,
+  options: {behavior: 'toast' | 'open' | 'open-in-new-tab'; preserveQuerystring?: boolean},
 ) {
   const obj =
     result && result.data && 'launchPipelineExecution' in result.data
@@ -51,11 +54,26 @@ export function handleLaunchResult(
   }
 
   if (obj.__typename === 'LaunchRunSuccess') {
-    const url = `${basePath}/instance/runs/${obj.run.runId}${options.querystring || ''}`;
-    if (options.openInTab) {
-      window.open(url, '_blank');
+    const pathname = `/instance/runs/${obj.run.runId}`;
+    const search = options.preserveQuerystring ? history.location.search : '';
+
+    if (options.behavior === 'open-in-new-tab') {
+      window.open(history.createHref({pathname, search}), '_blank');
+    } else if (options.behavior === 'open') {
+      history.push({pathname, search});
     } else {
-      window.location.href = url;
+      SharedToaster.show({
+        intent: 'success',
+        message: (
+          <div>
+            Launched run <Mono>{obj.run.runId.slice(0, 8)}</Mono>
+          </div>
+        ),
+        action: {
+          text: 'View',
+          onClick: () => history.push({pathname, search}),
+        },
+      });
     }
     document.dispatchEvent(new CustomEvent('run-launched'));
   } else if (obj.__typename === 'PythonError') {

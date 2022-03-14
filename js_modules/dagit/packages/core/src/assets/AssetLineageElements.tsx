@@ -61,7 +61,7 @@ const AssetLineageInfoElement: React.FC<{
 
 const MAX_COLLAPSED = 5;
 
-export const AssetLineageElements: React.FunctionComponent<{
+export const AssetLineageElements: React.FC<{
   elements: AssetLineageFragment[];
   timestamp: string;
 }> = ({elements, timestamp}) => {

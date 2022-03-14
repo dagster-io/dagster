@@ -68,6 +68,7 @@ The first thing we want to do is visualize the distribution of trip lengths. We 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+
 from dagster import AssetMaterialization, job, op
 
 
@@ -162,6 +163,7 @@ Fortunately, it's easy to write a factory function that will wrap any Pandera sc
 ```python file=/guides/dagster/dagster_type_factories/factory.py
 import pandas as pd
 import pandera as pa
+
 from dagster import DagsterType, TypeCheck
 
 
@@ -208,6 +210,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import pandera as pa
+
 from dagster import AssetMaterialization, In, Out, job, op
 from dagster.config.field import Field
 

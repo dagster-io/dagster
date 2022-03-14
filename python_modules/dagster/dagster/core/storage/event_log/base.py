@@ -255,14 +255,14 @@ class EventLogStorage(ABC, MayHaveInstanceWeakref):
     def get_asset_events(
         self,
         asset_key: AssetKey,
-        partitions: List[str] = None,
-        before_cursor: int = None,
-        after_cursor: int = None,
-        limit: int = None,
+        partitions: Optional[List[str]] = None,
+        before_cursor: Optional[int] = None,
+        after_cursor: Optional[int] = None,
+        limit: Optional[int] = None,
         ascending: bool = False,
         include_cursor: bool = False,
         before_timestamp=None,
-        cursor: int = None,  # deprecated
+        cursor: Optional[int] = None,  # deprecated
     ) -> Union[Iterable[EventLogEntry], Iterable[Tuple[int, EventLogEntry]]]:
         pass
 

@@ -1,5 +1,6 @@
 import {
   Box,
+  ButtonWIP,
   CountdownStatus,
   useCountdown,
   Group,
@@ -8,6 +9,7 @@ import {
   RefreshableCountdown,
   TagWIP,
   Heading,
+  FontFamily,
 } from '@dagster-io/ui';
 import * as React from 'react';
 
@@ -20,6 +22,7 @@ import {InstigationStatus, InstigationType} from '../types/globalTypes';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 
+import {EditCursorDialog} from './EditCursorDialog';
 import {SensorSwitch} from './SensorSwitch';
 import {SensorFragment} from './types/SensorFragment';
 
@@ -61,6 +64,12 @@ export const SensorDetails: React.FC<{
     metadata,
   } = sensor;
 
+  const [isCursorEditing, setCursorEditing] = React.useState(false);
+  const sensorSelector = {
+    sensorName: sensor.name,
+    repositoryName: repoAddress.name,
+    repositoryLocationName: repoAddress.location,
+  };
   const repo = useRepository(repoAddress);
   const pipelinesAndJobs = repo?.repository.pipelines;
 
@@ -92,6 +101,11 @@ export const SensorDetails: React.FC<{
     }
     return targetCount > 1 ? 'Jobs' : 'Job';
   }, [anyPipelines, targetCount]);
+
+  const cursor =
+    sensor.sensorState.typeSpecificData &&
+    sensor.sensorState.typeSpecificData.__typename === 'SensorData' &&
+    sensor.sensorState.typeSpecificData.lastCursor;
 
   return (
     <>
@@ -145,7 +159,6 @@ export const SensorDetails: React.FC<{
                     <TimestampDisplay timestamp={latestTick.timestamp} />
                     <TickTag tick={latestTick} instigationType={InstigationType.SENSOR} />
                   </Box>
-                  {latestTick.cursor ? <>Cursor: {latestTick.cursor}</> : null}
                 </>
               ) : (
                 'Sensor has never run'
@@ -168,6 +181,24 @@ export const SensorDetails: React.FC<{
                     ) : null,
                   )}
                 </Group>
+              </td>
+            </tr>
+          ) : null}
+          {cursor ? (
+            <tr>
+              <td>Cursor</td>
+              <td>
+                {isCursorEditing ? (
+                  <EditCursorDialog
+                    sensorSelector={sensorSelector}
+                    cursor={cursor}
+                    onClose={() => setCursorEditing(false)}
+                  />
+                ) : null}
+                <Box flex={{direction: 'row', alignItems: 'center'}}>
+                  <Box style={{fontFamily: FontFamily.monospace, marginRight: 10}}>{cursor}</Box>
+                  <ButtonWIP onClick={() => setCursorEditing(true)}>Edit</ButtonWIP>
+                </Box>
               </td>
             </tr>
           ) : null}

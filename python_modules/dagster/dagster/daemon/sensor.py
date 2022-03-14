@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from collections import namedtuple
+from typing import List, NamedTuple, Optional, cast
 
 import pendulum
 
@@ -34,7 +34,9 @@ class DagsterSensorDaemonError(DagsterError):
     """Error when running the SensorDaemon"""
 
 
-class SkippedSensorRun(namedtuple("SkippedSensorRun", "run_key existing_run")):
+class SkippedSensorRun(
+    NamedTuple("SkippedSensorRun", [("run_key", Optional[str]), ("existing_run", PipelineRun)])
+):
     """Placeholder for runs that are skipped during the run_key idempotence check"""
 
 
@@ -496,7 +498,13 @@ def _is_under_min_interval(state, external_sensor, now):
 
 
 def _get_or_create_sensor_run(
-    context, instance, repo_location, external_sensor, external_pipeline, run_request, target_data
+    context,
+    instance: DagsterInstance,
+    repo_location,
+    external_sensor,
+    external_pipeline,
+    run_request,
+    target_data,
 ):
 
     if not run_request.run_key:
@@ -513,6 +521,7 @@ def _get_or_create_sensor_run(
         )
     )
 
+    existing_runs = cast(List[PipelineRun], existing_runs)
     if len(existing_runs):
         run = existing_runs[0]
         if run.status != PipelineRunStatus.NOT_STARTED:

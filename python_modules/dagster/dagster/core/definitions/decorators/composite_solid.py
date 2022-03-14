@@ -17,7 +17,7 @@ class _CompositeSolid:
         input_defs: Optional[List[InputDefinition]] = None,
         output_defs: Optional[List[OutputDefinition]] = None,
         description: Optional[str] = None,
-        config_schema: Any = None,
+        config_schema: Optional[Any] = None,
         config_fn: Optional[Callable[[dict], dict]] = None,
     ):
         self.name = check.opt_str_param(name, "name")
@@ -89,7 +89,7 @@ def composite_solid(
 
 
 def composite_solid(
-    name: Union[Callable[..., Any], Optional[str]] = None,
+    name: Optional[Union[Callable[..., Any], str]] = None,
     input_defs: Optional[List[InputDefinition]] = None,
     output_defs: Optional[List[OutputDefinition]] = None,
     description: Optional[str] = None,

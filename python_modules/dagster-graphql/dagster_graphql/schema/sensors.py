@@ -7,7 +7,12 @@ from dagster.core.host_representation import ExternalSensor, ExternalTargetData,
 from dagster.core.scheduler.instigation import InstigatorState
 from dagster.core.workspace.permissions import Permissions
 
-from ..implementation.fetch_sensors import get_sensor_next_tick, start_sensor, stop_sensor
+from ..implementation.fetch_sensors import (
+    get_sensor_next_tick,
+    set_sensor_cursor,
+    start_sensor,
+    stop_sensor,
+)
 from .asset_key import GrapheneAssetKey
 from .errors import (
     GraphenePythonError,
@@ -126,7 +131,7 @@ class GrapheneStartSensorMutation(graphene.Mutation):
         name = "StartSensorMutation"
 
     @capture_error
-    @check_permission(Permissions.START_SENSOR)
+    @check_permission(Permissions.EDIT_SENSOR)
     def mutate(self, graphene_info, sensor_selector):
         return start_sensor(graphene_info, SensorSelector.from_graphql_input(sensor_selector))
 
@@ -166,9 +171,27 @@ class GrapheneStopSensorMutation(graphene.Mutation):
         name = "StopSensorMutation"
 
     @capture_error
-    @check_permission(Permissions.STOP_SENSOR)
+    @check_permission(Permissions.EDIT_SENSOR)
     def mutate(self, graphene_info, job_origin_id):
         return stop_sensor(graphene_info, job_origin_id)
+
+
+class GrapheneSetSensorCursorMutation(graphene.Mutation):
+    Output = graphene.NonNull(GrapheneSensorOrError)
+
+    class Arguments:
+        sensor_selector = graphene.NonNull(GrapheneSensorSelector)
+        cursor = graphene.String()
+
+    class Meta:
+        name = "SetSensorCursorMutation"
+
+    @capture_error
+    @check_permission(Permissions.EDIT_SENSOR)
+    def mutate(self, graphene_info, sensor_selector, cursor=None):
+        return set_sensor_cursor(
+            graphene_info, SensorSelector.from_graphql_input(sensor_selector), cursor
+        )
 
 
 types = [
@@ -180,4 +203,5 @@ types = [
     GrapheneStopSensorMutationResult,
     GrapheneStopSensorMutationResultOrError,
     GrapheneStopSensorMutation,
+    GrapheneSetSensorCursorMutation,
 ]

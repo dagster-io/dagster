@@ -3,8 +3,9 @@
 
 def scope_dbt_asset_mats():
     # start_marker_dbt_asset_mats
-    from dagster import op
     from dagster_dbt.utils import generate_materializations
+
+    from dagster import op
 
     @op(required_resource_keys={"dbt"})
     def dbt_run_with_custom_assets(context):
@@ -35,8 +36,9 @@ def scope_dbt_cli_resource_config():
 
 def scope_dbt_cli_run():
     # start_marker_dbt_cli_run_preconfig
-    from dagster import job
     from dagster_dbt import dbt_cli_resource, dbt_run_op
+
+    from dagster import job
 
     my_dbt_resource = dbt_cli_resource.configured(
         {"project_dir": "path/to/dbt/project"}
@@ -51,8 +53,9 @@ def scope_dbt_cli_run():
 
 def scope_dbt_cli_run_specific_models():
     # start_marker_dbt_cli_run_specific_models_preconfig
-    from dagster import job
     from dagster_dbt import dbt_cli_resource, dbt_run_op
+
+    from dagster import job
 
     my_dbt_resource = dbt_cli_resource.configured(
         {"project_dir": "path/to/dbt/project", "models": ["tag:staging"]}
@@ -81,8 +84,9 @@ def scope_dbt_cli_run_specific_models_runtime():
 
 def scope_dbt_cli_profile_modes():
     # start_marker_dbt_cli_profile_modes
-    from dagster import graph
     from dagster_dbt import dbt_cli_resource, dbt_run_op
+
+    from dagster import graph
 
     @graph
     def my_dbt():
@@ -109,8 +113,9 @@ def scope_dbt_cli_profile_modes():
 
 def scope_dbt_cli_run_after_another_op():
     # start_marker_dbt_cli_run_after_another_op
-    from dagster import job
     from dagster_dbt import dbt_cli_resource, dbt_run_op, dbt_test_op
+
+    from dagster import job
 
     my_dbt_resource = dbt_cli_resource.configured(
         {"project_dir": "path/to/dbt/project"}
@@ -137,8 +142,9 @@ def scope_dbt_rpc_run():
     my_remote_rpc = dbt_rpc_resource.configured({"host": "80.80.80.80", "port": 8080})
 
     # start_marker_dbt_rpc_run
-    from dagster import job
     from dagster_dbt import dbt_run_op
+
+    from dagster import job
 
     @job(resource_defs={"dbt": my_remote_rpc})
     def my_dbt_job():
@@ -150,8 +156,9 @@ def scope_dbt_rpc_run():
 def scope_dbt_rpc_run_specific_models():
 
     # start_marker_dbt_rpc_run_specific_models
-    from dagster import job, op
     from dagster_dbt import dbt_rpc_resource
+
+    from dagster import job, op
 
     my_remote_rpc = dbt_rpc_resource.configured({"host": "80.80.80.80", "port": 8080})
 
@@ -168,8 +175,9 @@ def scope_dbt_rpc_run_specific_models():
 
 def scope_dbt_rpc_run_and_wait():
     # start_marker_dbt_rpc_run_and_wait
-    from dagster import job, op
     from dagster_dbt import dbt_rpc_sync_resource
+
+    from dagster import job, op
 
     my_remote_sync_rpc = dbt_rpc_sync_resource.configured(
         {"host": "80.80.80.80", "port": 8080}
@@ -190,8 +198,9 @@ def scope_dbt_cli_config_profile_and_target():
     PROFILE_NAME, TARGET_NAME = "", ""
 
     # start_marker_dbt_cli_config_profile_and_target
-    from dagster import job
     from dagster_dbt import dbt_cli_resource
+
+    from dagster import job
 
     config = {"profile": PROFILE_NAME, "target": TARGET_NAME}
 
@@ -204,8 +213,9 @@ def scope_dbt_cli_config_profile_and_target():
 
 def scope_dbt_cli_config_executable():
     # start_marker_dbt_cli_config_executable
-    from dagster import job
     from dagster_dbt import dbt_cli_resource
+
+    from dagster import job
 
     config = {"dbt_executable": "path/to/dbt/executable"}
 
@@ -218,8 +228,9 @@ def scope_dbt_cli_config_executable():
 
 def scope_dbt_cli_config_select_models():
     # start_marker_dbt_cli_config_select_models
-    from dagster import job
     from dagster_dbt import dbt_cli_resource
+
+    from dagster import job
 
     config = {"models": ["my_dbt_model+", "path.to.models", "tag:nightly"]}
 
@@ -232,8 +243,9 @@ def scope_dbt_cli_config_select_models():
 
 def scope_dbt_cli_config_exclude_models():
     # start_marker_dbt_cli_config_exclude_models
-    from dagster import job
     from dagster_dbt import dbt_cli_resource
+
+    from dagster import job
 
     config = {"exclude": ["my_dbt_model+", "path.to.models", "tag:nightly"]}
 
@@ -246,8 +258,9 @@ def scope_dbt_cli_config_exclude_models():
 
 def scope_dbt_cli_config_vars():
     # start_marker_dbt_cli_config_vars
-    from dagster import job
     from dagster_dbt import dbt_cli_resource
+
+    from dagster import job
 
     config = {"vars": {"key": "value"}}
 
@@ -269,8 +282,9 @@ def scope_dbt_rpc_resource_example():
 
 def scope_dbt_run_disable_assets():
     # start_marker_dbt_rpc_config_disable_assets
-    from dagster import job
     from dagster_dbt import dbt_cli_resource, dbt_run_op
+
+    from dagster import job
 
     dbt_run_no_assets = dbt_run_op.configured(
         {"yield_materializations": False}, name="dbt_run_no_assets"

@@ -65,7 +65,9 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
       const opNames = [...explorerPath.opNames];
       const retValue = fn(opNames);
       if (retValue !== undefined) {
-        throw new Error('handleAdjustPath function is expected to mutate the array');
+        throw new Error(
+          'handleAdjustPath function is expected to mutate the array and return nothing',
+        );
       }
       onChangeExplorerPath({...explorerPath, opNames}, 'push');
     },
@@ -136,7 +138,9 @@ export const GraphExplorer: React.FC<GraphExplorerProps> = (props) => {
 
   React.useEffect(() => {
     if (invalidSelection || invalidParent) {
-      handleAdjustPath((opNames) => opNames.pop());
+      handleAdjustPath((opNames) => {
+        opNames.pop();
+      });
     }
   }, [handleAdjustPath, invalidSelection, invalidParent]);
 

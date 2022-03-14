@@ -1,4 +1,3 @@
-from collections import namedtuple
 from typing import Dict, List, NamedTuple, Optional
 
 from dagster import check
@@ -216,8 +215,10 @@ class ExecutionStepOutputSnap(
 
 
 @whitelist_for_serdes
-class ExecutionPlanMetadataItemSnap(namedtuple("_ExecutionPlanMetadataItemSnap", "key value")):
-    def __new__(cls, key, value):
+class ExecutionPlanMetadataItemSnap(
+    NamedTuple("_ExecutionPlanMetadataItemSnap", [("key", str), ("value", str)])
+):
+    def __new__(cls, key: str, value: str):
         return super(ExecutionPlanMetadataItemSnap, cls).__new__(
             cls,
             check.str_param(key, "key"),

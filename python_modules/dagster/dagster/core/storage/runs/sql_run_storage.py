@@ -67,13 +67,6 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         out-of-date instance of the storage up to date.
         """
 
-    @property
-    def supports_bucket_queries(self):
-        # This is a temporary stopgap until we can either pin SQLAlchemy>=1.4.0 (blocked by airflow
-        # compat issues) or switch the bucketing query to use backwards-compatible syntax (that
-        # avoids calling `.subquery` on a select statement).
-        return db.__version__ >= "1.4.0"
-
     def fetchall(self, query):
         with self.connect() as conn:
             result_proxy = conn.execute(query)
@@ -265,11 +258,11 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def _runs_query(
         self,
-        filters: RunsFilter = None,
-        cursor: str = None,
-        limit: int = None,
-        columns: List[str] = None,
-        order_by: str = None,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
+        columns: Optional[List[str]] = None,
+        order_by: Optional[str] = None,
         ascending: bool = False,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ):
@@ -315,8 +308,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
 
             base_query = self._add_filters_to_query(base_query, filters)
-            subquery = base_query.subquery()
-            query = db.select(subquery).order_by(subquery.c.rank.asc())
+            subquery = base_query.alias("subquery")
+            # select all the columns minus the rank column
+            subquery_columns = [getattr(subquery.c, column) for column in columns]
+            query = db.select(subquery_columns).order_by(subquery.c.rank.asc())
             if bucket_by.bucket_limit:
                 query = query.where(subquery.c.rank <= bucket_by.bucket_limit)
         else:
@@ -334,16 +329,16 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def get_runs(
         self,
-        filters: RunsFilter = None,
-        cursor: str = None,
-        limit: int = None,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[PipelineRun]:
         query = self._runs_query(filters, cursor, limit, bucket_by=bucket_by)
         rows = self.fetchall(query)
         return self._rows_to_runs(rows)
 
-    def get_runs_count(self, filters: RunsFilter = None) -> int:
+    def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
         subquery = self._runs_query(filters=filters).alias("subquery")
 
         # We use an alias here because Postgres requires subqueries to be
@@ -372,11 +367,11 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
     def get_run_records(
         self,
-        filters: RunsFilter = None,
-        limit: int = None,
-        order_by: str = None,
+        filters: Optional[RunsFilter] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[str] = None,
         ascending: bool = False,
-        cursor: str = None,
+        cursor: Optional[str] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
         filters = check.opt_inst_param(filters, "filters", RunsFilter, default=RunsFilter())
@@ -521,7 +516,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         return (root_run_id, [root_run] + run_group)
 
     def get_run_groups(
-        self, filters: RunsFilter = None, cursor: str = None, limit: int = None
+        self,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         # The runs that would be returned by calling RunStorage.get_runs with the same arguments
         runs = self._runs_query(
@@ -788,7 +786,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
     # Tracking data migrations over secondary indexes
 
     def _execute_data_migrations(
-        self, migrations, print_fn: Callable = None, force_rebuild_all: bool = False
+        self, migrations, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False
     ):
         for migration_name, migration_fn in migrations.items():
             if self.has_built_index(migration_name):
@@ -801,10 +799,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             if print_fn:
                 print_fn(f"Finished data migration: {migration_name}")
 
-    def migrate(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+    def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
         self._execute_data_migrations(REQUIRED_DATA_MIGRATIONS, print_fn, force_rebuild_all)
 
-    def optimize(self, print_fn: Callable = None, force_rebuild_all: bool = False):
+    def optimize(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
         self._execute_data_migrations(OPTIONAL_DATA_MIGRATIONS, print_fn, force_rebuild_all)
 
     def has_built_index(self, migration_name: str) -> bool:
@@ -893,7 +891,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
 
     def get_backfills(
-        self, status: BulkActionStatus = None, cursor: str = None, limit: int = None
+        self,
+        status: Optional[BulkActionStatus] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> List[PartitionBackfill]:
         check.opt_inst_param(status, "status", BulkActionStatus)
         query = db.select([BulkActionsTable.c.body])

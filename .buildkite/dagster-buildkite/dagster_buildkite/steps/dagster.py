@@ -316,6 +316,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             "-api_tests",
             "-cli_tests",
             "-core_tests",
+            "-core_tests_old_sqlalchemy",
             "-daemon_tests",
             "-general_tests",
             "-scheduler_tests",

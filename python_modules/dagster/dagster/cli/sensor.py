@@ -79,7 +79,7 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
         )
 
 
-def check_repo_and_scheduler(repository, instance):
+def check_repo_and_scheduler(repository: ExternalRepository, instance: DagsterInstance) -> None:
     check.inst_param(repository, "repository", ExternalRepository)
     check.inst_param(instance, "instance", DagsterInstance)
 

@@ -14,7 +14,7 @@ interface MappingLineProps {
   highlightedEdges: Edge[];
   onHighlightEdges: (edges: Edge[]) => void;
 }
-export const MappingLine: React.FunctionComponent<MappingLineProps> = ({
+export const MappingLine: React.FC<MappingLineProps> = ({
   source,
   target,
   minified,

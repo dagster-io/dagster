@@ -82,6 +82,7 @@ if TYPE_CHECKING:
     from dagster.core.launcher import RunLauncher
     from dagster.core.run_coordinator import RunCoordinator
     from dagster.core.scheduler import Scheduler
+    from dagster.core.scheduler.instigation import InstigatorTick, TickStatus
     from dagster.core.snap import ExecutionPlanSnapshot, PipelineSnapshot
     from dagster.core.storage.compute_log_manager import ComputeLogManager
     from dagster.core.storage.event_log import EventLogStorage
@@ -1061,31 +1062,34 @@ class DagsterInstance:
     @traced
     def get_runs(
         self,
-        filters: RunsFilter = None,
-        cursor: str = None,
-        limit: int = None,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> Iterable[PipelineRun]:
         return self._run_storage.get_runs(filters, cursor, limit, bucket_by)
 
     @traced
-    def get_runs_count(self, filters: RunsFilter = None) -> int:
+    def get_runs_count(self, filters: Optional[RunsFilter] = None) -> int:
         return self._run_storage.get_runs_count(filters)
 
     @traced
     def get_run_groups(
-        self, filters: RunsFilter = None, cursor: str = None, limit: int = None
+        self,
+        filters: Optional[RunsFilter] = None,
+        cursor: Optional[str] = None,
+        limit: Optional[int] = None,
     ) -> Dict[str, Dict[str, Union[Iterable[PipelineRun], int]]]:
         return self._run_storage.get_run_groups(filters=filters, cursor=cursor, limit=limit)
 
     @traced
     def get_run_records(
         self,
-        filters: RunsFilter = None,
-        limit: int = None,
-        order_by: str = None,
+        filters: Optional[RunsFilter] = None,
+        limit: Optional[int] = None,
+        order_by: Optional[str] = None,
         ascending: bool = False,
-        cursor: str = None,
+        cursor: Optional[str] = None,
         bucket_by: Optional[Union[JobBucket, TagBucket]] = None,
     ) -> List[RunRecord]:
         """Return a list of run records stored in the run storage, sorted by the given column in given order.
@@ -1123,7 +1127,7 @@ class DagsterInstance:
         self,
         run_id,
         cursor,
-        of_type: "DagsterEventType" = None,
+        of_type: Optional["DagsterEventType"] = None,
         limit: Optional[int] = None,
     ):
         return self._event_storage.get_logs_for_run(
@@ -1134,7 +1138,9 @@ class DagsterInstance:
         )
 
     @traced
-    def all_logs(self, run_id, of_type: Union["DagsterEventType", Set["DagsterEventType"]] = None):
+    def all_logs(
+        self, run_id, of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None
+    ):
         return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
 
     def watch_event_logs(self, run_id, cursor, cb):
@@ -1749,6 +1755,21 @@ records = instance.get_event_records(
     def delete_instigator_state(self, origin_id):
         return self._schedule_storage.delete_instigator_state(origin_id)
 
+    @property
+    def supports_batch_tick_queries(self):
+        return self._schedule_storage and self._schedule_storage.supports_batch_queries
+
+    @traced
+    def get_batch_ticks(
+        self,
+        origin_ids: Sequence[str],
+        limit: Optional[int] = None,
+        statuses: Optional[Sequence["TickStatus"]] = None,
+    ) -> Mapping[str, Iterable["InstigatorTick"]]:
+        if not self._schedule_storage:
+            return {}
+        return self._schedule_storage.get_batch_ticks(origin_ids, limit, statuses)
+
     @traced
     def get_tick(self, origin_id, timestamp):
         matches = self._schedule_storage.get_ticks(
@@ -1757,8 +1778,10 @@ records = instance.get_event_records(
         return matches[0] if len(matches) else None
 
     @traced
-    def get_ticks(self, origin_id, before=None, after=None, limit=None):
-        return self._schedule_storage.get_ticks(origin_id, before=before, after=after, limit=limit)
+    def get_ticks(self, origin_id, before=None, after=None, limit=None, statuses=None):
+        return self._schedule_storage.get_ticks(
+            origin_id, before=before, after=after, limit=limit, statuses=statuses
+        )
 
     def create_tick(self, tick_data):
         return self._schedule_storage.create_tick(tick_data)

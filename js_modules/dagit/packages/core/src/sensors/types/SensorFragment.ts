@@ -31,6 +31,7 @@ export interface SensorFragment_sensorState_repositoryOrigin {
 export interface SensorFragment_sensorState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface SensorFragment_sensorState_typeSpecificData_ScheduleData {

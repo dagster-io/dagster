@@ -1,8 +1,9 @@
 import pytest
 
-from dagster import AssetKey, DagsterInvariantViolationError, Out
+from dagster import AssetGroup, AssetKey, DagsterInvariantViolationError, Out
 from dagster.check import CheckError
 from dagster.core.asset_defs import AssetIn, SourceAsset, asset, build_assets_job, multi_asset
+from dagster.core.definitions.metadata import MetadataEntry, MetadataValue
 from dagster.core.host_representation.external_data import (
     ExternalAssetDependedBy,
     ExternalAssetDependency,
@@ -72,6 +73,59 @@ def test_two_asset_job():
             op_name="asset2",
             op_description=None,
             job_names=["assets_job"],
+            output_name="result",
+            output_description=None,
+        ),
+    ]
+
+
+def test_two_asset_job_with_group():
+    @asset
+    def asset1():
+        return 1
+
+    @asset
+    def asset2(asset1):
+        assert asset1 == 1
+
+    asset_group = AssetGroup(assets=[asset1, asset2])
+    asset_group_job = build_assets_job(
+        asset_group.all_assets_job_name(),
+        assets=asset_group.assets,
+        source_assets=asset_group.source_assets,
+        resource_defs=asset_group.resource_defs,
+        executor_def=asset_group.executor_def,
+    )
+    assets_job = asset_group.build_job(name="assets_job")
+
+    external_asset_nodes = external_asset_graph_from_defs(
+        [asset_group_job, assets_job], source_assets_by_key={}
+    )
+
+    assert external_asset_nodes == [
+        ExternalAssetNode(
+            asset_key=AssetKey("asset1"),
+            dependencies=[],
+            depended_by=[
+                ExternalAssetDependedBy(
+                    downstream_asset_key=AssetKey("asset2"), input_name="asset1"
+                )
+            ],
+            op_name="asset1",
+            op_description=None,
+            job_names=[AssetGroup.all_assets_job_name(), "assets_job"],
+            output_name="result",
+            output_description=None,
+        ),
+        ExternalAssetNode(
+            asset_key=AssetKey("asset2"),
+            dependencies=[
+                ExternalAssetDependency(upstream_asset_key=AssetKey("asset1"), input_name="asset1")
+            ],
+            depended_by=[],
+            op_name="asset2",
+            op_description=None,
+            job_names=[AssetGroup.all_assets_job_name(), "assets_job"],
             output_name="result",
             output_description=None,
         ),
@@ -328,6 +382,7 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
+            metadata_entries=[],
         ),
         ExternalAssetNode(
             asset_key=AssetKey(["in1"]),
@@ -342,6 +397,7 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
+            metadata_entries=[],
         ),
         ExternalAssetNode(
             asset_key=AssetKey(["in2"]),
@@ -355,6 +411,7 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="result",
+            metadata_entries=[],
         ),
         ExternalAssetNode(
             asset_key=AssetKey(["mixed"]),
@@ -376,6 +433,13 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="mixed",
+            metadata_entries=[
+                MetadataEntry(
+                    label=".dagster/asset_deps",
+                    description=None,
+                    entry_data=MetadataValue.text("[set] (unserializable)"),
+                )
+            ],
         ),
         ExternalAssetNode(
             asset_key=AssetKey(["only_in"]),
@@ -398,6 +462,7 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="only_in",
+            metadata_entries=[],
         ),
         ExternalAssetNode(
             asset_key=AssetKey(["only_out"]),
@@ -418,6 +483,13 @@ def test_inter_op_dependency():
             op_description=None,
             job_names=["assets_job"],
             output_name="only_out",
+            metadata_entries=[
+                MetadataEntry(
+                    label=".dagster/asset_deps",
+                    description=None,
+                    entry_data=MetadataValue.text("[set] (unserializable)"),
+                )
+            ],
         ),
     ]
 

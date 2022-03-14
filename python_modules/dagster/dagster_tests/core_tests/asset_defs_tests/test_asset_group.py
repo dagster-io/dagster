@@ -9,7 +9,6 @@ from dagster import (
     graph,
     in_process_executor,
     io_manager,
-    job,
     mem_io_manager,
     repository,
     resource,
@@ -323,13 +322,13 @@ def test_asset_group_from_package_name():
     from . import asset_package
 
     collection_1 = AssetGroup.from_package_name(asset_package.__name__)
-    assert len(collection_1.assets) == 4
+    assert len(collection_1.assets) == 6
 
     assets_1 = [asset.op.name for asset in collection_1.assets]
     source_assets_1 = [source_asset.key for source_asset in collection_1.source_assets]
 
     collection_2 = AssetGroup.from_package_name(asset_package.__name__)
-    assert len(collection_2.assets) == 4
+    assert len(collection_2.assets) == 6
 
     assets_2 = [asset.op.name for asset in collection_2.assets]
     source_assets_2 = [source_asset.key for source_asset in collection_2.source_assets]
@@ -342,13 +341,13 @@ def test_asset_group_from_package_module():
     from . import asset_package
 
     collection_1 = AssetGroup.from_package_module(asset_package)
-    assert len(collection_1.assets) == 4
+    assert len(collection_1.assets) == 6
 
     assets_1 = [asset.op.name for asset in collection_1.assets]
     source_assets_1 = [source_asset.key for source_asset in collection_1.source_assets]
 
     collection_2 = AssetGroup.from_package_module(asset_package)
-    assert len(collection_2.assets) == 4
+    assert len(collection_2.assets) == 6
 
     assets_2 = [asset.op.name for asset in collection_2.assets]
     source_assets_2 = [source_asset.key for source_asset in collection_2.source_assets]
@@ -375,6 +374,24 @@ def test_asset_group_from_modules():
     assert source_assets_1 == source_assets_2
 
 
+@asset
+def asset_in_current_module():
+    pass
+
+
+source_asset_in_current_module = SourceAsset(AssetKey("source_asset_in_current_module"))
+
+
+def test_asset_group_from_current_module():
+    group = AssetGroup.from_current_module()
+    assert {asset.op.name for asset in group.assets} == {"asset_in_current_module"}
+    assert len(group.assets) == 1
+    assert {source_asset.key for source_asset in group.source_assets} == {
+        AssetKey("source_asset_in_current_module")
+    }
+    assert len(group.source_assets) == 1
+
+
 def test_default_io_manager():
     @asset
     def asset_foo():
@@ -385,7 +402,6 @@ def test_default_io_manager():
         group.resource_defs["io_manager"]  # pylint: disable=comparison-with-callable
         == fs_asset_io_manager
     )
-    assert group.resource_defs["io_manager"] == fs_asset_io_manager
 
 
 def test_repo_with_multiple_asset_groups():
@@ -396,7 +412,7 @@ def test_repo_with_multiple_asset_groups():
     ):
 
         @repository
-        def the_repo():
+        def the_repo():  # pylint: disable=unused-variable
             return [AssetGroup(assets=[]), AssetGroup(assets=[])]
 
 
@@ -412,5 +428,5 @@ def test_job_with_reserved_name():
     ):
 
         @repository
-        def the_repo():
+        def the_repo():  # pylint: disable=unused-variable
             return [the_job]
