@@ -18,12 +18,12 @@ from dagster import (
     Output,
     OutputDefinition,
     RetryRequested,
+    job,
     op,
     pipeline,
     resource,
     seven,
     solid,
-    job,
 )
 from dagster.core.definitions import ExpectationResult
 from dagster.core.definitions.dependency import NodeHandle
