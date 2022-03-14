@@ -1,10 +1,5 @@
 import itertools
-<<<<<<< HEAD
-import warnings
-from typing import AbstractSet, Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union, cast
-=======
 from typing import AbstractSet, Any, Dict, Mapping, Optional, Sequence, Tuple, Union, cast
->>>>>>> master
 
 from dagster import check
 from dagster.core.definitions.config import ConfigMapping
