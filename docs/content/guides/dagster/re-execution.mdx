@@ -82,7 +82,6 @@ Again, let's revist the job `unreliable_job`, which has a op named `unreliable`.
 
 ```python file=/guides/dagster/reexecution/reexecution_api.py endbefore=end_initial_execution_marker
 from dagster import DagsterInstance, reexecute_pipeline
-
 from docs_snippets.guides.dagster.reexecution.unreliable_job import unreliable_job
 
 instance = DagsterInstance.ephemeral()

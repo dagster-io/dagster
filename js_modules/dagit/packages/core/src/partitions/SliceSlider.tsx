@@ -4,7 +4,7 @@ import moment from 'moment-timezone';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-export const SliceSlider: React.FunctionComponent<{
+export const SliceSlider: React.FC<{
   maxUnix: number;
   minUnix: number;
   value: number;

@@ -1,7 +1,6 @@
 from unittest import mock
 
 from dagster import DagsterEventType, ResourceDefinition, job, op
-
 from docs_snippets.concepts.solids_pipelines.op_hooks import (
     a,
     notif_all,

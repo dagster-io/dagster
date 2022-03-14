@@ -623,7 +623,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def _should_load_from_previous_runs(self, step_output_handle: StepOutputHandle) -> bool:
         return (  # this is re-execution
-            self.pipeline_run.parent_run_id
+            self.pipeline_run.parent_run_id is not None
             # we are not re-executing the entire pipeline
             and self.pipeline_run.step_keys_to_execute is not None
             # this step is not being executed

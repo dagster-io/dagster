@@ -90,7 +90,7 @@ class DagsterType:
         description: t.Optional[str] = None,
         loader: t.Optional[DagsterTypeLoader] = None,
         materializer: t.Optional[DagsterTypeMaterializer] = None,
-        required_resource_keys: t.Set[str] = None,
+        required_resource_keys: t.Optional[t.Set[str]] = None,
         kind: DagsterTypeKind = DagsterTypeKind.REGULAR,
         typing_type: t.Any = None,
         metadata_entries: t.Optional[t.List[MetadataEntry]] = None,

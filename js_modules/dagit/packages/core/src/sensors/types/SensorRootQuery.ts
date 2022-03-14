@@ -35,6 +35,7 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_repositoryOrig
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface SensorRootQuery_sensorOrError_Sensor_sensorState_typeSpecificData_ScheduleData {

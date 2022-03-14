@@ -1,6 +1,6 @@
 import inspect
 from collections import defaultdict
-from typing import Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
+from typing import AbstractSet, Any, Dict, Iterator, List, Optional, Set, Tuple, Union, cast
 
 from dagster import check
 from dagster.core.definitions import (
@@ -413,7 +413,7 @@ def _asset_key_and_partitions_for_output(
     output_context: OutputContext,
     output_def: OutputDefinition,
     output_manager: IOManager,
-) -> Tuple[Optional[AssetKey], Set[str]]:
+) -> Tuple[Optional[AssetKey], AbstractSet[str]]:
 
     manager_asset_key = output_manager.get_output_asset_key(output_context)
 
@@ -457,7 +457,7 @@ def _dedup_asset_lineage(asset_lineage: List[AssetLineageInfo]) -> List[AssetLin
 
 def _get_output_asset_materializations(
     asset_key: AssetKey,
-    asset_partitions: Set[str],
+    asset_partitions: AbstractSet[str],
     output: Union[Output, DynamicOutput],
     output_def: OutputDefinition,
     io_manager_metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]],

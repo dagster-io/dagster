@@ -133,7 +133,7 @@ def pipeline(
 
 
 def pipeline(
-    name: Union[Callable[..., Any], Optional[str]] = None,
+    name: Optional[Union[Callable[..., Any], str]] = None,
     description: Optional[str] = None,
     mode_defs: Optional[List[ModeDefinition]] = None,
     preset_defs: Optional[List[PresetDefinition]] = None,

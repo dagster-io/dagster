@@ -1,6 +1,7 @@
 import re
 
 import pytest
+
 from dagster import (
     AssetMaterialization,
     InputContext,

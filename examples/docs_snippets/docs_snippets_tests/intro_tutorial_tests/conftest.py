@@ -1,6 +1,7 @@
 import os
 
 import pytest
+
 from dagster.utils import file_relative_path
 from dagster.utils.test.postgres_instance import TestPostgresInstance
 

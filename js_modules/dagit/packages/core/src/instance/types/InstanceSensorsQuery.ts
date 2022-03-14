@@ -78,6 +78,7 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_typeSpecificData_ScheduleData {
@@ -207,6 +208,7 @@ export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_Instiga
 export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_typeSpecificData_ScheduleData {

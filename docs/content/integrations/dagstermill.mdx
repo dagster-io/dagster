@@ -40,6 +40,7 @@ We can simply turn a notebook into an op using <PyObject module="dagstermill" ob
 
 ```python file=/legacy/data_science/iris_classify.py
 import dagstermill as dm
+
 from dagster import job
 from dagster.utils import script_relative_path
 
@@ -96,9 +97,9 @@ We'll illustrate this process by adding a non-notebook op to our job, which will
 
 ```python literalinclude showLines emphasize-lines=2,10,16 caption=iris_classify_2.py file=/legacy/data_science/iris_classify_2.py
 import dagstermill as dm
+
 from dagster import InputDefinition, job
 from dagster.utils import script_relative_path
-
 from docs_snippets.legacy.data_science.download_file import download_file
 
 k_means_iris = dm.define_dagstermill_op(
@@ -223,9 +224,9 @@ For instance, suppose we want to make the number of clusters (the \_k\_ in k-mea
 
 ```python literalinclude showLines emphasize-lines=10-12 caption=iris_classify_3.py file=/legacy/data_science/iris_classify_3.py
 import dagstermill as dm
+
 from dagster import Field, InputDefinition, Int, job
 from dagster.utils import script_relative_path
-
 from docs_snippets.legacy.data_science.download_file import download_file
 
 k_means_iris = dm.define_dagstermill_op(

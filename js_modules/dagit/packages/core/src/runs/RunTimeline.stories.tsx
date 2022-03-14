@@ -3,6 +3,7 @@ import faker from 'faker';
 import * as React from 'react';
 
 import {RunTimeline} from '../runs/RunTimeline';
+import {generateRunMocks} from '../testing/generateRunMocks';
 import {RunStatus} from '../types/globalTypes';
 
 // eslint-disable-next-line import/no-default-export
@@ -11,27 +12,6 @@ export default {
   component: RunTimeline,
 } as Meta;
 
-const generateRuns = (runCount: number, range: [number, number]) => {
-  const [start, end] = range;
-  const now = Date.now();
-  return [...new Array(6)]
-    .map(() => faker.date.between(new Date(start), new Date(end)))
-    .map((startDate) => {
-      const endTime = Math.min(startDate.getTime() + faker.datatype.number() * 10, now);
-      const status =
-        endTime === now
-          ? RunStatus.STARTED
-          : faker.random.arrayElement([RunStatus.SUCCESS, RunStatus.FAILURE]);
-
-      return {
-        id: faker.datatype.uuid(),
-        status,
-        startTime: startDate.getTime(),
-        endTime,
-      };
-    });
-};
-
 export const OneRow = () => {
   const twoHoursAgo = React.useMemo(() => Date.now() - 6 * 60 * 60 * 1000, []);
   const now = React.useMemo(() => Date.now(), []);
@@ -39,7 +19,12 @@ export const OneRow = () => {
   const jobs = React.useMemo(() => {
     const jobKey = faker.random.words(2).split(' ').join('-').toLowerCase();
     return [
-      {key: jobKey, jobName: jobKey, path: `/${jobKey}`, runs: generateRuns(6, [twoHoursAgo, now])},
+      {
+        key: jobKey,
+        jobName: jobKey,
+        path: `/${jobKey}`,
+        runs: generateRunMocks(6, [twoHoursAgo, now]),
+      },
     ];
   }, [twoHoursAgo, now]);
 
@@ -52,7 +37,7 @@ export const RowWithOverlappingRuns = () => {
 
   const jobs = React.useMemo(() => {
     const jobKey = faker.random.words(2).split(' ').join('-').toLowerCase();
-    const [first, second, third] = generateRuns(3, [twoHoursAgo, now]);
+    const [first, second, third] = generateRunMocks(3, [twoHoursAgo, now]);
     return [
       {
         key: jobKey,
@@ -79,7 +64,7 @@ export const ManyRows = () => {
           key: jobKey,
           jobName: jobKey,
           path: `/${jobKey}`,
-          runs: generateRuns(6, [twoHoursAgo, now]),
+          runs: generateRunMocks(6, [twoHoursAgo, now]),
         },
       ];
     }, []);

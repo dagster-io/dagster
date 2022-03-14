@@ -52,7 +52,7 @@ class ConfigMapping(
     def __new__(
         cls,
         config_fn: Callable[[Any], Any],
-        config_schema: Any = None,
+        config_schema: Optional[Any] = None,
         receive_processed_config_values: Optional[bool] = None,
     ):
         return super(ConfigMapping, cls).__new__(

@@ -32,8 +32,8 @@ from ..decorator_utils import get_function_params
 from .events import AssetKey
 from .graph_definition import GraphDefinition
 from .job_definition import JobDefinition
-from .pipeline_definition import PipelineDefinition
 from .mode import DEFAULT_MODE_NAME
+from .pipeline_definition import PipelineDefinition
 from .run_request import PipelineRunReaction, RunRequest, SkipReason
 from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
@@ -315,7 +315,7 @@ class SensorDefinition:
         return self._min_interval
 
     @property
-    def targets(self) -> Optional[List[Union[DirectTarget, RepoRelativeTarget]]]:
+    def targets(self) -> List[Union[DirectTarget, RepoRelativeTarget]]:
         return self._targets
 
     @property
@@ -431,7 +431,7 @@ class SensorDefinition:
                 return True
         return False
 
-    def load_targets(self) -> List[DirectTarget]:
+    def load_targets(self) -> List[PipelineDefinition]:
         targets = []
         for target in self._targets:
             if isinstance(target, DirectTarget):

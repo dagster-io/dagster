@@ -10,5 +10,6 @@ required-version = "22.1.0"
 target-version = ['py36', 'py37', 'py38', 'py39', 'py310']
 
 [tool.isort]
+known_first_party = ['dagster']
 profile = 'black'  # sets line-length to 88
 case_sensitive = true
