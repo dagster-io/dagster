@@ -1759,6 +1759,7 @@ records = instance.get_event_records(
     def supports_batch_tick_queries(self):
         return self._schedule_storage and self._schedule_storage.supports_batch_queries
 
+    @traced
     def get_batch_ticks(
         self,
         origin_ids: Sequence[str],
