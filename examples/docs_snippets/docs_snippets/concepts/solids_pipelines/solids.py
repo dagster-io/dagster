@@ -51,7 +51,9 @@ def my_input_op(abc, xyz):
 
 # start_typed_input_op_marker
 
-MyDagsterType = DagsterType(type_check_fn=lambda _, value: value % 2 == 0, name="MyDagsterType")
+MyDagsterType = DagsterType(
+    type_check_fn=lambda _, value: value % 2 == 0, name="MyDagsterType"
+)
 
 
 @op(ins={"abc": In(dagster_type=MyDagsterType)})

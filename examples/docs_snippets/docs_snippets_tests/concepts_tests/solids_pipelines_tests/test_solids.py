@@ -5,9 +5,9 @@ from docs_snippets.concepts.solids_pipelines.solids import (
     my_input_op,
     my_multi_output_op,
     my_op,
+    my_op_factory,
     my_output_op,
     my_typed_input_op,
-    my_op_factory,
 )
 
 
