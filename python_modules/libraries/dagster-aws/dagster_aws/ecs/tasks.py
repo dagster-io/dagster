@@ -35,11 +35,11 @@ class EcsNoTasksFound(Exception):
 
 def default_ecs_task_definition(
     ecs,
+    family,
     metadata,
     image,
     container_name,
     command=None,
-    environment=None,
     secrets=None,
 ):
     # Start with the current process's task's definition but remove
@@ -52,17 +52,6 @@ def default_ecs_task_definition(
         (key, metadata.task_definition[key])
         for key in expected_keys
         if key in metadata.task_definition.keys()
-    )
-
-    environment_dict = (
-        {"environment": [{"key": key, "value": value} for key, value in environment.items()]}
-        if environment
-        else {}
-    )
-    secrets_dict = (
-        {"secrets": [{"name": key, "valueFrom": value} for key, value in secrets.items()]}
-        if secrets
-        else {}
     )
 
     # The current process might not be running in a container that has the
@@ -83,13 +72,12 @@ def default_ecs_task_definition(
                 "entryPoint": [],
                 "command": command if command else [],
             },
-            environment_dict,
-            secrets_dict,
+            secrets or {},
         )
     ]
     task_definition = {
         **task_definition,
-        "family": "dagster-run",
+        "family": family,
         "containerDefinitions": container_definitions,
     }
 
