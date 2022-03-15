@@ -223,17 +223,17 @@ def get_latest_asset_run_by_step_key(graphene_info, job_names, asset_nodes):
     }
 
     for asset_node in asset_nodes:
-        job_names = asset_node.job_names
+        asset_job_names = asset_node.job_names
         step_key = asset_node.op_name
 
         total_num_records = sum(
-            [len(run_records_by_job.get(job_name, [])) for job_name in job_names]
+            [len(run_records_by_job.get(job_name, [])) for job_name in asset_job_names]
         )
         if total_num_records == 0:
             latest_run_by_step[step_key] = GrapheneLatestRun(step_key, None)
 
         latest_run = None
-        for job_name in job_names:
+        for job_name in asset_job_names:
             record_step_keys = record_step_keys_by_job.get(job_name, [])
             for i in range(len(record_step_keys)):
                 if step_key in record_step_keys[i]:
