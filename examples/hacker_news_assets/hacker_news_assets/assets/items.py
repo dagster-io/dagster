@@ -62,4 +62,4 @@ def comments(items: SparkDF) -> SparkDF:
 
 @asset(io_manager_key="warehouse_io_manager", partitions_def=hourly_partitions)
 def stories(items: SparkDF) -> SparkDF:
-    return items.where(items["type"] == "stories")
+    return items.where(items["type"] == "story")
