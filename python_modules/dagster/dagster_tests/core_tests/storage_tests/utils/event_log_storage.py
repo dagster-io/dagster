@@ -1,3 +1,4 @@
+import datetime
 import re
 import time
 from collections import Counter
@@ -259,7 +260,7 @@ def cursor_datetime_args():
     # timezone-aware and timezone-naive datetimes
     yield None
     yield pendulum.now()
-    yield pendulum.now().naive()
+    yield datetime.datetime.now()
 
 
 class TestEventLogStorage:

@@ -303,21 +303,36 @@ class ScheduleTimeBasedPartitionsDefinition(
 
     def get_execution_time_to_partition_fn(self) -> Callable[[datetime], datetime]:
         if self.schedule_type is ScheduleType.HOURLY:
+            # Using subtract(minutes=d.minute) here instead of .replace(minute=0) because on
+            # pendulum 1, replace(minute=0) sometimes changes the timezone:
+            # >>> a = create_pendulum_time(2021, 11, 7, 0, 0, tz="US/Central")
+            #
+            # >>> a.add(hours=1)
+            # <Pendulum [2021-11-07T01:00:00-05:00]>
+            # >>> a.add(hours=1).replace(minute=0)
+            # <Pendulum [2021-11-07T01:00:00-06:00]>
             return lambda d: pendulum.instance(d).subtract(hours=self.offset, minutes=d.minute)
         elif self.schedule_type is ScheduleType.DAILY:
-            return lambda d: pendulum.instance(d).subtract(
-                days=self.offset, hours=d.hour, minutes=d.minute
+            return (
+                lambda d: pendulum.instance(d).replace(hour=0, minute=0).subtract(days=self.offset)
             )
         elif self.schedule_type is ScheduleType.WEEKLY:
             execution_day = cast(int, self.execution_day)
             day_difference = (execution_day - (self.start.weekday() + 1)) % 7
-            return lambda d: pendulum.instance(d).subtract(
-                weeks=self.offset, days=day_difference, hours=d.hour, minutes=d.minute
+            return (
+                lambda d: pendulum.instance(d)
+                .replace(hour=0, minute=0)
+                .subtract(
+                    weeks=self.offset,
+                    days=day_difference,
+                )
             )
         elif self.schedule_type is ScheduleType.MONTHLY:
             execution_day = cast(int, self.execution_day)
-            return lambda d: pendulum.instance(d).subtract(
-                months=self.offset, days=execution_day - 1, hours=d.hour, minutes=d.minute
+            return (
+                lambda d: pendulum.instance(d)
+                .replace(hour=0, minute=0)
+                .subtract(months=self.offset, days=execution_day - 1)
             )
         else:
             check.assert_never(self.schedule_type)
