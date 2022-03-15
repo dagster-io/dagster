@@ -17,11 +17,7 @@ from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import poll_for_finished_run
 from dagster.core.utils import make_new_run_id
 
-from .graphql_context_test_suite import (
-    ExecutingGraphQLContextTestMatrix,
-    GraphQLContextVariant,
-    make_graphql_context_test_suite,
-)
+from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .setup import csv_hello_world_solids_config, get_retry_multi_execution_params, retry_config
 from .utils import (
     get_all_logs_for_finished_run_via_subscription,
