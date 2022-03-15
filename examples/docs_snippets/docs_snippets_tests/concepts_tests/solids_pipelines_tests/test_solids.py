@@ -7,7 +7,7 @@ from docs_snippets.concepts.solids_pipelines.solids import (
     my_op,
     my_output_op,
     my_typed_input_op,
-    x_op,
+    my_op_factory,
 )
 
 
@@ -50,5 +50,5 @@ def test_my_configurable_op():
 
 
 def test_op_factory():
-    factory_op = x_op("test")
+    factory_op = my_op_factory("test")
     assert isinstance(factory_op, OpDefinition)
