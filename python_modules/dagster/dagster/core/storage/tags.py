@@ -5,8 +5,7 @@ from dagster import check
 SYSTEM_TAG_PREFIX = "dagster/"
 HIDDEN_TAG_PREFIX = ".dagster/"
 
-REPOSITORY_NAME_TAG = f"{HIDDEN_TAG_PREFIX}repository_name"
-REPOSITORY_LOCATION_NAME_TAG = f"{HIDDEN_TAG_PREFIX}repository_location_name"
+REPOSITORY_TAG = f"{HIDDEN_TAG_PREFIX}repository"
 
 SCHEDULE_NAME_TAG = "{prefix}schedule_name".format(prefix=SYSTEM_TAG_PREFIX)
 
