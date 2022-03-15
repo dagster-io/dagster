@@ -25,7 +25,7 @@ def _schedule_directory(base):
     return os.path.join(base, "schedules")
 
 
-def configurable_class_data(config_field):
+def configurable_class_data(config_field) -> ConfigurableClassData:
     return ConfigurableClassData(
         check.str_elem(config_field, "module"),
         check.str_elem(config_field, "class"),

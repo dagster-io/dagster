@@ -40,24 +40,24 @@ if TYPE_CHECKING:
     from dagster.core.execution.plan.plan import ExecutionPlan
     from dagster.core.execution.plan.step import ExecutionStep, StepKind
 
-    EventSpecificData = Union[
-        StepOutputData,
-        StepFailureData,
-        StepSuccessData,
-        "StepMaterializationData",
-        "StepExpectationResultData",
-        StepInputData,
-        "EngineEventData",
-        "HookErroredData",
-        StepRetryData,
-        "PipelineFailureData",
-        "PipelineCanceledData",
-        "ObjectStoreOperationResultData",
-        "HandledOutputData",
-        "LoadedInputData",
-        "ComputeLogsCaptureData",
-        "AssetObservationData",
-    ]
+EventSpecificData = Union[
+    "StepOutputData",
+    "StepFailureData",
+    "StepSuccessData",
+    "StepMaterializationData",
+    "StepExpectationResultData",
+    "StepInputData",
+    "EngineEventData",
+    "HookErroredData",
+    "StepRetryData",
+    "PipelineFailureData",
+    "PipelineCanceledData",
+    "ObjectStoreOperationResultData",
+    "HandledOutputData",
+    "LoadedInputData",
+    "ComputeLogsCaptureData",
+    "AssetObservationData",
+]
 
 
 class DagsterEventType(Enum):
@@ -203,7 +203,7 @@ def _assert_type(
     )
 
 
-def _validate_event_specific_data(
+def validate_event_specific_data(
     event_type: DagsterEventType, event_specific_data: Optional["EventSpecificData"]
 ) -> Optional["EventSpecificData"]:
     from dagster.core.execution.plan.inputs import StepInputData
@@ -307,7 +307,7 @@ class DagsterEvent(
             solid_handle=step_context.step.solid_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
-            event_specific_data=_validate_event_specific_data(event_type, event_specific_data),
+            event_specific_data=validate_event_specific_data(event_type, event_specific_data),
             message=check.opt_str_param(message, "message"),
             pid=os.getpid(),
         )
@@ -332,7 +332,7 @@ class DagsterEvent(
             event_type_value=check.inst_param(event_type, "event_type", DagsterEventType).value,
             pipeline_name=pipeline_context.pipeline_name,
             message=check.opt_str_param(message, "message"),
-            event_specific_data=_validate_event_specific_data(event_type, event_specific_data),
+            event_specific_data=validate_event_specific_data(event_type, event_specific_data),
             step_handle=step_handle,
             pid=os.getpid(),
         )
@@ -354,7 +354,7 @@ class DagsterEvent(
             DagsterEventType.ENGINE_EVENT.value,
             pipeline_name=pipeline_name,
             message=check.opt_str_param(message, "message"),
-            event_specific_data=_validate_event_specific_data(
+            event_specific_data=validate_event_specific_data(
                 DagsterEventType.ENGINE_EVENT, event_specific_data
             ),
             step_handle=execution_plan.step_handle_for_single_step_plans(),
@@ -400,7 +400,7 @@ class DagsterEvent(
             check.opt_inst_param(solid_handle, "solid_handle", NodeHandle),
             check.opt_str_param(step_kind_value, "step_kind_value"),
             check.opt_dict_param(logging_tags, "logging_tags"),
-            _validate_event_specific_data(DagsterEventType(event_type_value), event_specific_data),
+            validate_event_specific_data(DagsterEventType(event_type_value), event_specific_data),
             check.opt_str_param(message, "message"),
             check.opt_int_param(pid, "pid"),
             check.opt_str_param(step_key, "step_key"),
@@ -1114,7 +1114,7 @@ class DagsterEvent(
             solid_handle=step_context.step.solid_handle,
             step_kind_value=step_context.step.kind.value,
             logging_tags=step_context.logging_tags,
-            event_specific_data=_validate_event_specific_data(
+            event_specific_data=validate_event_specific_data(
                 event_type,
                 HookErroredData(
                     error=serializable_error_info_from_exc_info(error.original_exc_info)
