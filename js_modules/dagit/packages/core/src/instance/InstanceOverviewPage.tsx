@@ -273,9 +273,15 @@ export const InstanceOverviewPage = () => {
 
   if (!data && loading) {
     return (
-      <Box padding={64}>
-        <Spinner purpose="page" />
-      </Box>
+      <>
+        <PageHeader
+          title={<Heading>Instance status</Heading>}
+          tabs={<InstanceTabs tab="overview" refreshState={refreshState} />}
+        />
+        <Box padding={64}>
+          <Spinner purpose="section" />
+        </Box>
+      </>
     );
   }
 
