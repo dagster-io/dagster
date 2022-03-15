@@ -39,6 +39,12 @@ The `dbt_metrics` job is triggered by a different sensor, which will fire a run 
 
 Each job makes use of resources, which allows data to be read from and written to different locations based on the environment.
 
+## Running on your laptop
+
+```
+dagit -w workspace_local.yaml
+```
+
 ## Deploying
 
 The instructions below show you how to deploy this repository to a Dagster deployment in a Kubernetes cluster.
