@@ -99,6 +99,7 @@ export const ConfigEditorConfigPicker: React.FC<ConfigEditorConfigPickerProps> =
         base: {
           partitionsSetName: item.name,
           partitionName: null,
+          tags: base ? base.tags : null,
         },
       });
     } else {
