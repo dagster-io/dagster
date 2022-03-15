@@ -95,6 +95,5 @@ def test_assets(schema_prefix):
             ),
             "schema",
         )
-        in materializations[0].metadata_entries,
+        in materializations[0].metadata_entries
     )
-    assert False
