@@ -1,13 +1,21 @@
 import pytest
-from dagster import AssetKey, DagsterInvariantViolationError, Out, repository
+
+from dagster import (
+    AssetKey,
+    DagsterInvariantViolationError,
+    MetadataEntry,
+    MetadataValue,
+    Out,
+    repository,
+)
 from dagster.check import CheckError
 from dagster.core.asset_defs import (
+    AssetGroup,
     AssetIn,
     SourceAsset,
     asset,
     build_assets_job,
     multi_asset,
-    AssetGroup,
 )
 from dagster.core.host_representation.external_data import (
     ExternalAssetDependedBy,
@@ -345,7 +353,7 @@ def test_sliced_asset_group_repo():
         outs={"e": Out(), "f": Out(), "g": Out(), "h": Out()},
         can_subset=True,
     )
-    def bar(a, b, c, d):
+    def bar(a, b, c, d):  # pylint: disable=unused-argument
         pass
 
     ag = AssetGroup([foo, bar])

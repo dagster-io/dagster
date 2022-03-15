@@ -60,25 +60,6 @@ class AssetsDefinition:
     def partitions_def(self) -> Optional[PartitionsDefinition]:
         return self._partitions_def
 
-    def _subset_op(self, input_assets, output_assets) -> OpDefinition:
-        """Returns an op which will have a subset of the current op's inputs and outputs."""
-
-        # can't have different ops with the same name, so create a deterministic way of generating
-        # a new name from the asset keys
-        asset_hash = "".join("1" if ak in output_assets else "0" for ak in sorted(self.asset_keys))
-        return OpDefinition(
-            name=self.op.name + hex(int(asset_hash, 2)),
-            input_defs=[self.input_defs_by_asset_key[ak] for ak in input_assets],
-            output_defs=[self.output_defs_by_asset_key[ak] for ak in output_assets],
-            compute_fn=self.op.compute_fn,
-            config_schema=self.op.config_schema,
-            description=self.op.description,
-            tags=self.op.tags,
-            required_resource_keys=self.op.required_resource_keys,
-            version=self.op.version,
-            retry_policy=self.op.retry_policy,
-        )
-
     def subset_for(self, all_asset_keys: AbstractSet[AssetKey]) -> "AssetsDefinition":
         """
         Create a subset of this multi-asset that will only materialize the assets in the input set,
@@ -100,7 +81,7 @@ class AssetsDefinition:
         return AssetsDefinition(
             {ak: self.input_defs_by_asset_key[ak].name for ak in required_input_asset_keys},
             {ak: self.output_defs_by_asset_key[ak].name for ak in required_output_asset_keys},
-            self.op,  # _subset_op(required_input_asset_keys, required_output_asset_keys),
+            self.op,
             self.partitions_def,
             self._partition_mappings,
             self.can_subset,

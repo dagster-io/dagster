@@ -7,8 +7,6 @@ from dagster.core.selector.subset_selector import (
     Traverser,
     clause_to_subset,
     generate_dep_graph,
-    clause_to_subset,
-    generate_dep_graph,
     parse_clause,
     parse_solid_selection,
     parse_step_selection,

@@ -7,9 +7,9 @@ from dagster import (
     DagsterInvalidDefinitionError,
     IOManager,
     Out,
+    Output,
     fs_asset_io_manager,
     graph,
-    Output,
     in_process_executor,
     io_manager,
     mem_io_manager,
@@ -264,7 +264,7 @@ def test_asset_group_build_sliced_subset_job(
         else:
 
             @multi_asset(**props)
-            def _abc_asset(context, start_asset=None):
+            def _abc_asset(context, start_asset=None):  # pylint: disable=unused-argument
                 return abc_iter(context)
 
         return _abc_asset
@@ -302,13 +302,13 @@ def test_asset_group_build_sliced_subset_job(
         else:
 
             @multi_asset(**props)
-            def _def_asset(context, a=None, b=None, c=None):
+            def _def_asset(context, a=None, b=None, c=None):  # pylint: disable=unused-argument
                 return def_iter(context)
 
         return _def_asset
 
     @asset(compute_kind="foo")
-    def final_asset(a, d):
+    def final_asset(a, d):  # pylint: disable=unused-argument
         return "foo"
 
     _, io_manager_def = asset_aware_io_manager()

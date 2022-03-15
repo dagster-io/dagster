@@ -1,7 +1,6 @@
 import inspect
 import os
 import pkgutil
-import re
 import warnings
 from importlib import import_module
 from types import ModuleType
@@ -28,7 +27,6 @@ from dagster.utils.backcompat import ExperimentalWarning
 
 from ..definitions.executor_definition import ExecutorDefinition
 from ..definitions.job_definition import JobDefinition
-from ..definitions.op_definition import OpDefinition
 from ..definitions.resource_definition import ResourceDefinition
 from ..errors import DagsterInvalidDefinitionError
 from .asset import AssetsDefinition
@@ -233,7 +231,6 @@ class AssetGroup(
             excluded_assets = list(self.source_assets)
             excluded_multi_asset_keys = []
 
-        print(excluded_multi_asset_keys)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
             asset_job = build_assets_job(
@@ -254,7 +251,7 @@ class AssetGroup(
         return asset_job
 
     def _config_for_selected_asset_keys(self, job_selected_asset_keys, included_assets):
-        from dagster import ConfigMapping, Field, AssetKey
+        from dagster import ConfigMapping, Field
 
         job_selected_asset_keys = {".".join(ak.path) for ak in job_selected_asset_keys}
 

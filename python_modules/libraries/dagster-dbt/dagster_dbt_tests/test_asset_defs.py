@@ -7,7 +7,7 @@ from dagster_dbt.asset_defs import load_assets_from_dbt_manifest, load_assets_fr
 from dagster_dbt.errors import DagsterDbtCliFatalRuntimeError
 from dagster_dbt.types import DbtOutput
 
-from dagster import AssetKey, MetadataEntry, ResourceDefinition, AssetGroup, asset
+from dagster import AssetGroup, AssetKey, MetadataEntry, ResourceDefinition, asset
 from dagster.core.asset_defs import build_assets_job
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
 from dagster.utils import file_relative_path
