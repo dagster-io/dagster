@@ -8,7 +8,7 @@ from dagster.core.definitions.metadata.table import TableColumn, TableSchema
 
 def _materialization_for_stream(
     name: str,
-    stream_info: Dict[str, Any],
+    stream_schema_props: Dict[str, Any],
     stream_stats: Dict[str, Any],
     asset_key_prefix: List[str],
 ) -> AssetMaterialization:
@@ -19,13 +19,10 @@ def _materialization_for_stream(
             "schema": MetadataValue.table_schema(
                 TableSchema(
                     columns=[
-                        TableColumn(name=name, type=str(info["type"]))
-                        for name, info in stream_info["stream"]["jsonSchema"]["properties"].items()
+                        TableColumn(name=name, type=str(info.get("type", "unknown")))
+                        for name, info in stream_schema_props.items()
                     ]
                 )
-            ),
-            "columns": ",".join(
-                name for name in stream_info["stream"]["jsonSchema"]["properties"].keys()
             ),
             **{k: v for k, v in stream_stats.items() if v is not None},
         },
@@ -45,9 +42,13 @@ def generate_materializations(output: AirbyteOutput, asset_key_prefix: List[str]
     )
     for stats in stream_stats:
         name = stats["streamName"]
+
+        stream_schema_props = (
+            stream_info.get(name, {}).get("stream", {}).get("jsonSchema", {}).get("properties", {})
+        )
         yield _materialization_for_stream(
             name,
-            stream_info[name],
+            stream_schema_props,
             stats.get("stats", {}),
             asset_key_prefix=asset_key_prefix,
         )

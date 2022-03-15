@@ -5,6 +5,8 @@ from dagster_airbyte.utils import generate_materializations
 
 from dagster import Failure, MetadataEntry, build_init_resource_context
 
+from .utils import get_sample_connection_json, get_sample_job_json
+
 
 @responses.activate
 def test_trigger_connection():
@@ -51,7 +53,7 @@ def test_sync_and_poll(state):
     responses.add(
         method=responses.POST,
         url=ab_resource.api_base_url + "/connections/get",
-        json={"name": "some_connection"},
+        json=get_sample_connection_json(),
         status=200,
     )
     responses.add(
@@ -81,7 +83,10 @@ def test_sync_and_poll(state):
 
     else:
         r = ab_resource.sync_and_poll("some_connection", 0)
-        assert r == AirbyteOutput({"job": {"id": 1, "status": state}}, {"name": "some_connection"})
+        assert r == AirbyteOutput(
+            job_details={"job": {"id": 1, "status": state}},
+            connection_details=get_sample_connection_json(),
+        )
 
 
 @responses.activate
@@ -174,44 +179,7 @@ def test_assets():
     responses.add(
         method=responses.POST,
         url=ab_resource.api_base_url + "/connections/get",
-        json={
-            "name": "xyz",
-            "syncCatalog": {
-                "streams": [
-                    {
-                        "stream": {
-                            "name": "foo",
-                            "jsonSchema": {
-                                "properties": {"a": {"type": "str"}, "b": {"type": "int"}}
-                            },
-                        },
-                        "config": {"selected": True},
-                    },
-                    {
-                        "stream": {
-                            "name": "bar",
-                            "jsonSchema": {
-                                "properties": {
-                                    "c": {"type": "str"},
-                                }
-                            },
-                        },
-                        "config": {"selected": True},
-                    },
-                    {
-                        "stream": {
-                            "name": "baz",
-                            "jsonSchema": {
-                                "properties": {
-                                    "d": {"type": "str"},
-                                }
-                            },
-                        },
-                        "config": {"selected": False},
-                    },
-                ]
-            },
-        },
+        json=get_sample_connection_json(),
         status=200,
     )
     responses.add(
@@ -223,40 +191,15 @@ def test_assets():
     responses.add(
         method=responses.POST,
         url=ab_resource.api_base_url + "/jobs/get",
-        json={
-            "job": {"id": 1, "status": AirbyteState.SUCCEEDED},
-            "attempts": [
-                {
-                    "attempt": {
-                        "streamStats": [
-                            {
-                                "streamName": "foo",
-                                "stats": {
-                                    "bytesEmitted": 1234,
-                                    "recordsCommitted": 4321,
-                                },
-                            },
-                            {
-                                "streamName": "bar",
-                                "stats": {
-                                    "bytesEmitted": 1234,
-                                    "recordsCommitted": 4321,
-                                },
-                            },
-                        ]
-                    }
-                }
-            ],
-        },
+        json=get_sample_job_json(),
         status=200,
     )
 
     airbyte_output = ab_resource.sync_and_poll("some_connection", 0, None)
 
     materializations = list(generate_materializations(airbyte_output, []))
-    assert len(materializations) == 2
+    assert len(materializations) == 3
 
-    assert MetadataEntry.text("a,b", "columns") in materializations[0].metadata_entries
     assert MetadataEntry.int(1234, "bytesEmitted") in materializations[0].metadata_entries
     assert MetadataEntry.int(4321, "recordsCommitted") in materializations[0].metadata_entries
 

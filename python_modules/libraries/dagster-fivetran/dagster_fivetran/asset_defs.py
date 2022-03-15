@@ -80,6 +80,7 @@ def build_fivetran_assets(
             for key in tracked_asset_keys
         },
         required_resource_keys={"fivetran"},
+        compute_kind="fivetran",
     )
     def _assets(context):
         fivetran_output = context.resources.fivetran.sync_and_poll(
