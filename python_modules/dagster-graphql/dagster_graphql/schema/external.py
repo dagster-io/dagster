@@ -274,13 +274,16 @@ class GrapheneRepository(graphene.ObjectType):
         return get_in_progress_runs_by_step(graphene_info, job_names, asset_node_keys)
 
     def resolve_latestRunByStep(self, graphene_info):
+        job_names = [
+            job.name for job in self._repository.get_all_external_pipelines() if job.is_job
+        ]
+
+        asset_node = [node for node in self._repository.get_external_asset_nodes() if node.op_name]
+
         return get_asset_run_stats_by_step(
             graphene_info,
-            [
-                asset_node
-                for asset_node in self._repository.get_external_asset_nodes()
-                if asset_node.op_name
-            ],
+            job_names,
+            asset_node,
         )
 
 
