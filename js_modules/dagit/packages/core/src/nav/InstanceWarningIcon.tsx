@@ -36,16 +36,16 @@ export const InstanceWarningIcon = React.memo(() => {
     return {anySchedules, anySensors};
   }, [options]);
 
-  const allDaemons = healthData?.instance.daemonHealth.allDaemonStatuses;
-  const anyRequestedBackfills =
-    healthData?.partitionBackfillsOrError.__typename === 'PartitionBackfills'
-      ? healthData.partitionBackfillsOrError.results.length > 0
-      : false;
-
   const visibleErrorCount = React.useMemo(() => {
+    const allDaemons = healthData?.instance.daemonHealth.allDaemonStatuses;
     if (!allDaemons) {
       return 0;
     }
+
+    const anyRequestedBackfills =
+      healthData?.partitionBackfillsOrError.__typename === 'PartitionBackfills'
+        ? healthData.partitionBackfillsOrError.results.length > 0
+        : false;
 
     const errors = allDaemons
       .filter((daemon) => !daemon.healthy && daemon.required)
@@ -70,7 +70,7 @@ export const InstanceWarningIcon = React.memo(() => {
     // - If there is a sensor daemon error but there are no sensors, this will be zero.
     // - If there is a backfill daemon error but there are no backfills, this will be zero.
     return Number(scheduleError) + Number(sensorError) + Number(backfillsError);
-  }, [anySchedules, anySensors, anyRequestedBackfills, allDaemons]);
+  }, [anySchedules, anySensors, healthData]);
 
   if (visibleErrorCount) {
     return (

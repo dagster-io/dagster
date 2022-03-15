@@ -14,6 +14,11 @@ export const defaultMocks = {
   Asset: () => ({
     id: randomId,
   }),
+  AssetNode: () => ({
+    id: randomId,
+    opName: hyphenatedName,
+    metadataEntries: () => [],
+  }),
   ISolidDefinition: () => ({
     __typename: 'SolidDefinition',
   }),
