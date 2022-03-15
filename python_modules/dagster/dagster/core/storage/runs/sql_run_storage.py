@@ -333,8 +333,6 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             # a separate join
             filtered_query = db.select([RunsTable.c.run_id]).select_from(
                 RunsTable.join(RunTagsTable, RunsTable.c.run_id == RunTagsTable.c.run_id)
-                if filters.tags
-                else RunsTable
             )
             filtered_query = self._add_filters_to_query(filtered_query, filters)
             filtered_query = filtered_query.alias("filtered_query")
