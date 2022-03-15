@@ -43,6 +43,7 @@ class WorkerStatus(Enum):
     FAILED = "FAILED"
     SUCCESS = "SUCCESS"
     UNKNOWN = "UNKNOWN"
+    WAITING = "WAITING"
 
 
 class CheckRunHealthResult(NamedTuple):

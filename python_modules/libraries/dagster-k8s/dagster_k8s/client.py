@@ -120,6 +120,7 @@ class KubernetesWaitingReasons:
     ContainerCreating = "ContainerCreating"
     ErrImagePull = "ErrImagePull"
     ImagePullBackOff = "ImagePullBackOff"
+    ErrImageNeverPull = "ErrImageNeverPull"
     CrashLoopBackOff = "CrashLoopBackOff"
     RunContainerError = "RunContainerError"
     CreateContainerConfigError = "CreateContainerConfigError"

@@ -1,6 +1,7 @@
 import sys
 
 import kubernetes
+from dagster_k8s.client import KubernetesWaitingReasons
 
 from dagster import Field, MetadataEntry, StringSource, check
 from dagster.cli.api import ExecuteRunArgs
@@ -61,6 +62,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         env_secrets=None,
         env_vars=None,
         k8s_client_batch_api=None,
+        k8s_client_core_api=None,
         volume_mounts=None,
         volumes=None,
         labels=None,
@@ -82,6 +84,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             kubernetes.config.load_kube_config(kubeconfig_file)
 
         self._fixed_batch_api = k8s_client_batch_api
+        self._fixed_core_api = k8s_client_core_api
 
         self._job_config = None
         self._job_image = check.opt_str_param(job_image, "job_image")
@@ -154,6 +157,10 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
     @property
     def _batch_api(self):
         return self._fixed_batch_api if self._fixed_batch_api else kubernetes.client.BatchV1Api()
+
+    @property
+    def _core_api(self):
+        return self._fixed_core_api if self._fixed_core_api else kubernetes.client.CoreV1Api()
 
     @classmethod
     def config_type(cls):
@@ -393,10 +400,44 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             job = self._batch_api.read_namespaced_job(namespace=self.job_namespace, name=job_name)
         except Exception:
             return CheckRunHealthResult(
-                WorkerStatus.UNKNOWN, str(serializable_error_info_from_exc_info(sys.exc_info()))
+                WorkerStatus.UNKNOWN,
+                f"Error checking Kubernetes Job: {str(serializable_error_info_from_exc_info(sys.exc_info()))}",
             )
         if job.status.failed:
-            return CheckRunHealthResult(WorkerStatus.FAILED, "K8s job failed")
+            return CheckRunHealthResult(
+                WorkerStatus.FAILED, "Kubernetes Job failed due to a Pod failure"
+            )
         if job.status.succeeded:
-            return CheckRunHealthResult(WorkerStatus.SUCCESS)
-        return CheckRunHealthResult(WorkerStatus.RUNNING)
+            return CheckRunHealthResult(WorkerStatus.SUCCESS, "Kubernetes Job succeeded")
+
+        pods = self._core_api.list_namespaced_pod(
+            namespace=self.job_namespace, label_selector=f"job-name={job_name}"
+        ).items
+
+        if not pods:
+            return CheckRunHealthResult(
+                WorkerStatus.WAITING, "Kuberetes Job does not have a Pod yet"
+            )
+
+        # NOTE: There's a chance of 2 pods if a node was shutdown. We'll need to handle that.
+        pod = pods[0]
+
+        if pod.status.container_statuses:
+            container_statuses = pod.status.container_statuses[0]
+            if container_statuses.state.waiting:
+                if container_statuses.state.waiting.reason in [
+                    KubernetesWaitingReasons.ErrImagePull,
+                    KubernetesWaitingReasons.ImagePullBackOff,
+                    KubernetesWaitingReasons.ErrImageNeverPull,
+                ]:
+                    return CheckRunHealthResult(
+                        WorkerStatus.FAILED,
+                        f"Kubernetes Job failed to pull image: {container_statuses.state.waiting.reason}",
+                    )
+
+        if pod.status.phase == "Pending":
+            return CheckRunHealthResult(WorkerStatus.WAITING, "Kubernetes Job is pending")
+
+        return CheckRunHealthResult(
+            WorkerStatus.RUNNING, f"Kuberetes Job is running with Pod in phase {pod.status.phase}"
+        )
