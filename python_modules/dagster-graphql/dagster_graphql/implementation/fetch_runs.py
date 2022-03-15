@@ -172,7 +172,7 @@ def get_in_progress_runs_by_step(graphene_info, job_names, step_keys):
     ]
 
 
-def get_asset_run_stats_by_step(graphene_info, asset_nodes):
+def get_asset_run_stats_by_step(graphene_info, job_names, asset_nodes):
     # This is a utility method that gets the latest run that selected an asset,
     # by searching within the last 5 runs of each job the asset belongs in.
     # If none of the most recent runs selected the asset, we return back a GrapheneJobRunsCount
@@ -180,7 +180,7 @@ def get_asset_run_stats_by_step(graphene_info, asset_nodes):
     # asset materialization (or the total number of job runs if the asset has never been
     # materialized).
 
-    latest_run_by_step = get_latest_asset_run_by_step_key(graphene_info, asset_nodes)
+    latest_run_by_step = get_latest_asset_run_by_step_key(graphene_info, job_names, asset_nodes)
     assets_to_fetch_run_count = [
         asset_node
         for asset_node in asset_nodes
@@ -194,7 +194,7 @@ def get_asset_run_stats_by_step(graphene_info, asset_nodes):
     ]
 
 
-def get_latest_asset_run_by_step_key(graphene_info, asset_nodes):
+def get_latest_asset_run_by_step_key(graphene_info, job_names, asset_nodes):
     from ..schema.pipelines.pipeline import GrapheneLatestRun, GrapheneRun
 
     # This method returns the latest run that has occurred for a given step.
@@ -207,30 +207,40 @@ def get_latest_asset_run_by_step_key(graphene_info, asset_nodes):
 
     latest_run_by_step: Dict[str, PipelineRun] = {}
 
+    run_records_by_job = {
+        job_name: instance.get_run_records(RunsFilter(pipeline_name=job_name), limit=5)
+        for job_name in job_names
+    }
+
+    get_step_keys = lambda record: graphene_info.context.instance.get_execution_plan_snapshot(
+        record.pipeline_run.execution_plan_snapshot_id
+    ).step_keys_to_execute
+
+    # step_keys list is in same order as records list in get_step_keys
+    record_step_keys_by_job = {
+        job_name: [get_step_keys(record) for record in run_records]
+        for job_name, run_records in run_records_by_job.items()
+    }
+
     for asset_node in asset_nodes:
         job_names = asset_node.job_names
         step_key = asset_node.op_name
 
-        run_records = []
-        for job_name in job_names:
-            run_records.extend(
-                instance.get_run_records(RunsFilter(pipeline_name=job_name), limit=5)
-            )
-
-        if len(run_records) == 0:
+        total_num_records = sum(
+            [len(run_records_by_job.get(job_name, [])) for job_name in job_names]
+        )
+        if total_num_records == 0:
             latest_run_by_step[step_key] = GrapheneLatestRun(step_key, None)
 
         latest_run = None
-        for record in run_records:
-            run = record.pipeline_run
+        for job_name in job_names:
+            record_step_keys = record_step_keys_by_job.get(job_name, [])
+            for i in range(len(record_step_keys)):
+                if step_key in record_step_keys[i]:
+                    record = run_records_by_job.get(job_name)[i]
+                    if latest_run == None or record.create_timestamp > latest_run.create_timestamp:
+                        latest_run = record
 
-            asset_names = graphene_info.context.instance.get_execution_plan_snapshot(
-                run.execution_plan_snapshot_id
-            ).step_keys_to_execute
-
-            if step_key in asset_names:
-                if latest_run == None or record.create_timestamp > latest_run.create_timestamp:
-                    latest_run = record
         if latest_run:
             latest_run_by_step[step_key] = GrapheneLatestRun(step_key, GrapheneRun(latest_run))
 
