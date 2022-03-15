@@ -105,3 +105,50 @@ def gcs_pickle_io_manager(init_context):
         init_context.resource_config["gcs_prefix"],
     )
     return pickled_io_manager
+
+class PickledObjectGCSAssetIOManager(PickledObjectGCSIOManager):
+    def _get_path(self, context):
+        return "/".join([self.prefix, *context.asset_key.path])
+
+@io_manager(
+    config_schema={
+        "gcs_bucket": Field(StringSource),
+        "gcs_prefix": Field(StringSource, is_required=False, default_value="dagster"),
+    },
+    required_resource_keys={"gcs"},
+)
+def gcs_pickle_asset_io_manager(init_context):
+    """Persistent IO manager using GCS for storage, meant for use with software-defined assets.
+
+    Each asset is assigned to a single filesystem path, so subsequent materializations of an asset
+    will overwrite previous materializations of that asset.
+
+    Serializes objects via pickling. Suitable for objects storage for distributed executors, so long
+    as each execution node has network connectivity and credentials for GCS and the backing bucket.
+
+    Attach this resource definition to your job to make it available to your ops.
+
+    .. code-block:: python
+
+        asset_group = AssetGroup(
+            assets...,
+            resource_defs={'io_manager': gcs_pickle_asset_io_manager, "gcs": gcs_resource, ...}),
+        )
+
+    You may configure this IO manager as follows:
+
+    .. code-block:: YAML
+
+        resources:
+            io_manager:
+                config:
+                    gcs_bucket: my-cool-bucket
+                    gcs_prefix: good/prefix-for-files-
+    """
+    client = init_context.resources.gcs
+    pickled_io_manager = PickledObjectGCSAssetIOManager(
+        init_context.resource_config["gcs_bucket"],
+        client,
+        init_context.resource_config["gcs_prefix"],
+    )
+    return pickled_io_manager
