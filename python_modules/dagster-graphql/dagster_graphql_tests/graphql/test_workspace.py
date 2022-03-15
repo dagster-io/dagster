@@ -1,5 +1,6 @@
 import sys
 import time
+from typing import Any
 from unittest import mock
 
 from dagster_graphql.test.utils import execute_dagster_graphql
@@ -50,12 +51,12 @@ query {
 }
 """
 
+BaseTestSuite: Any = make_graphql_context_test_suite(
+    context_variants=[GraphQLContextVariant.non_launchable_in_memory_instance_multi_location()]
+)
 
-class TestLoadWorkspace(
-    make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.non_launchable_in_memory_instance_multi_location()]
-    )
-):
+
+class TestLoadWorkspace(BaseTestSuite):
     def test_load_workspace(self, graphql_context):
         # Add an error origin
         original_origins = location_origins_from_yaml_paths(

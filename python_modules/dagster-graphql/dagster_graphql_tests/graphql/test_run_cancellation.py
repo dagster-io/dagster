@@ -1,5 +1,6 @@
 import os
 import time
+from typing import Any
 
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
@@ -63,13 +64,12 @@ mutation TerminatePipeline($runId: String!) {
 """
 
 
-class TestQueuedRunTermination(
-    make_graphql_context_test_suite(
-        context_variants=[
-            GraphQLContextVariant.sqlite_with_queued_run_coordinator_managed_grpc_env()
-        ]
-    )
-):
+QueuedRunCoordinatorTestSuite: Any = make_graphql_context_test_suite(
+    context_variants=[GraphQLContextVariant.sqlite_with_queued_run_coordinator_managed_grpc_env()]
+)
+
+
+class TestQueuedRunTermination(QueuedRunCoordinatorTestSuite):
     def test_cancel_queued_run(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "infinite_loop_pipeline")
         with safe_tempfile_path() as path:
@@ -131,11 +131,12 @@ class TestQueuedRunTermination(
             assert result.data["terminatePipelineExecution"]["__typename"] == "TerminateRunSuccess"
 
 
-class TestRunVariantTermination(
-    make_graphql_context_test_suite(
-        context_variants=[GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env()]
-    )
-):
+RunTerminationTestSuite: Any = make_graphql_context_test_suite(
+    context_variants=[GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env()]
+)
+
+
+class TestRunVariantTermination(RunTerminationTestSuite):
     def test_basic_termination(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "infinite_loop_pipeline")
         with safe_tempfile_path() as path:

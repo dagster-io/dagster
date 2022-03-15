@@ -544,9 +544,7 @@ def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):
     return retry_one
 
 
-class TestRetryExecutionAsyncOnlyBehavior(
-    make_graphql_context_test_suite(context_variants=GraphQLContextVariant.all_executing_variants())
-):
+class TestRetryExecutionAsyncOnlyBehavior(ExecutingGraphQLContextTestMatrix):
     def test_retry_requires_intermediates_async_only(self, graphql_context):
         run_id = make_new_run_id()
         reexecution_run_id = make_new_run_id()
