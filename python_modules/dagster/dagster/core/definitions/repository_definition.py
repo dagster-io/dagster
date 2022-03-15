@@ -965,7 +965,7 @@ class CachingRepositoryData(RepositoryData):
                     solid_defs[solid_def.name] = solid_def
                     solid_to_pipeline[solid_def.name] = pipeline.name
 
-                if not solid_defs[solid_def.name] is solid_def:
+                if not solid_defs[solid_def.name] == solid_def:
                     first_name, second_name = sorted(
                         [solid_to_pipeline[solid_def.name], pipeline.name]
                     )

@@ -201,6 +201,7 @@ def load_assets_from_dbt_project(
     manifest_json, cli_output = _load_manifest_for_project(
         project_dir, profiles_dir, target_dir, select or "*"
     )
+
     selected_unique_ids: Set[str] = set(
         filter(None, (line.get("unique_id") for line in cli_output.logs))
     )

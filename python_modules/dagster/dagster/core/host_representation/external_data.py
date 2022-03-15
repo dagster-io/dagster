@@ -782,6 +782,15 @@ def external_asset_graph_from_defs(
     all_upstream_asset_keys: Set[AssetKey] = set()
 
     for pipeline in pipelines:
+
+        import json
+
+        excluded_assets = set(
+            [
+                AssetKey(ak.split("."))
+                for ak in json.loads(pipeline.tags.get(".dagster/excluded_multi_asset_keys", []))
+            ]
+        )
         for node_def in pipeline.all_node_defs:
             input_name_by_asset_key = {
                 id.hardcoded_asset_key: id.name
@@ -802,7 +811,7 @@ def external_asset_graph_from_defs(
 
             for output_def in node_def.output_defs:
                 output_asset_key = output_def.hardcoded_asset_key
-                if not output_asset_key:
+                if not output_asset_key or output_asset_key in excluded_assets:
                     continue
 
                 node_defs_by_asset_key[output_asset_key].append((output_def, node_def, pipeline))
@@ -821,13 +830,13 @@ def external_asset_graph_from_defs(
                         continue
                     deps[output_asset_key][upstream_asset_key] = ExternalAssetDependency(
                         upstream_asset_key=upstream_asset_key,
-                        input_name=input_name_by_asset_key.get(upstream_asset_key),
-                        output_name=output_name_by_asset_key.get(upstream_asset_key),
+                        input_name=input_name,
+                        output_name=output_name,
                     )
                     dep_by[upstream_asset_key][output_asset_key] = ExternalAssetDependedBy(
                         downstream_asset_key=output_asset_key,
-                        input_name=input_name_by_asset_key.get(upstream_asset_key),
-                        output_name=output_name_by_asset_key.get(upstream_asset_key),
+                        input_name=input_name,
+                        output_name=output_name,
                     )
     asset_keys_without_definitions = all_upstream_asset_keys.difference(
         node_defs_by_asset_key.keys()

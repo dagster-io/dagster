@@ -220,7 +220,9 @@ class AssetGroup(
         if selection:
             selected_asset_keys = parse_asset_selection(self.assets, selection)
 
-            included_assets, excluded_assets = self._subset_asset_defs(selected_asset_keys)
+            included_assets, excluded_assets, excluded_multi_asset_keys = self._subset_asset_defs(
+                selected_asset_keys
+            )
         else:
             selected_asset_keys = set()
             for asset in self.assets:
@@ -229,7 +231,9 @@ class AssetGroup(
             # Call to list(...) serves as a copy constructor, so that we don't
             # accidentally add to the original list
             excluded_assets = list(self.source_assets)
+            excluded_multi_asset_keys = []
 
+        print(excluded_multi_asset_keys)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=ExperimentalWarning)
             asset_job = build_assets_job(
@@ -239,7 +243,12 @@ class AssetGroup(
                 resource_defs=self.resource_defs,
                 executor_def=self.executor_def,
                 description=description,
-                tags=tags,
+                tags={
+                    **(tags or {}),
+                    ".dagster/excluded_multi_asset_keys": [
+                        ".".join(ak.path) for ak in excluded_multi_asset_keys
+                    ],
+                },
                 config=self._config_for_selected_asset_keys(selected_asset_keys, included_assets),
             )
         return asset_job
@@ -277,6 +286,7 @@ class AssetGroup(
     def _subset_asset_defs(self, selected_asset_keys):
         included_assets = set()
         excluded_assets = set()
+        excluded_multi_asset_keys = set()
         for asset in self.assets:
             selected_subset = selected_asset_keys.intersection(asset.asset_keys)
             # all assets selected
@@ -288,14 +298,18 @@ class AssetGroup(
             # subset selected
             else:
                 if asset.can_subset:
+                    # subset of asset that we want
                     included_asset = asset.subset_for(selected_asset_keys)
                     included_assets.add(included_asset)
-                    excluded_asset = asset.subset_for(asset.asset_keys - included_asset.asset_keys)
+                    # subset of asset that we don't want
+                    excluded_keys = asset.asset_keys - included_asset.asset_keys
+                    excluded_asset = asset.subset_for(excluded_keys)
                     excluded_assets.add(excluded_asset)
+                    # keep track of the keys inside the multi asset that we don't want
+                    excluded_multi_asset_keys.update(excluded_keys)
                 else:
-                    # TODO: warn -- this will just add all assets to the set
                     included_assets.add(asset)
-        return list(included_assets), list(excluded_assets)
+        return list(included_assets), list(excluded_assets), list(excluded_multi_asset_keys)
 
     @staticmethod
     def from_package_module(

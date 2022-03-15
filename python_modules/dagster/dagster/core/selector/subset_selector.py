@@ -64,7 +64,6 @@ def generate_asset_dep_graph(asset_defs):
                 )
                 graph["downstream"][upstream_item_name].add(item_name)
 
-    print(graph)
     return graph
 
 

@@ -363,7 +363,7 @@ def test_sliced_asset_group_repo():
             ag.build_job("a8", "*g"),
             ag.build_job("a9", "++h"),
             ag.build_job("a10", ["a", "b", "c"]),
-            ag.build_job("a11", ["+h", "b++", "*"]),
+            ag.build_job("a11", ["+h", "b++"]),
             ag.build_job("a12", ["c*", "*c"]),
             ag.build_job("a13", ["e*", "f*", "g+"]),
         ]

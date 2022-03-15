@@ -229,7 +229,7 @@ def asset_aware_io_manager():
 def test_asset_group_build_sliced_subset_job(
     use_non_arg_deps, job_selection, config_selection, expected_assets
 ):
-    @asset
+    @asset(compute_kind="foo")
     def start_asset():
         return "foo"
 
@@ -247,6 +247,7 @@ def test_asset_group_build_sliced_subset_job(
                 "c": {AssetKey("b")},
             },
             can_subset=True,
+            compute_kind="foo",
         )
 
         def abc_iter(context):
@@ -284,6 +285,7 @@ def test_asset_group_build_sliced_subset_job(
                 "f": {AssetKey("d"), AssetKey("e")},
             },
             can_subset=True,
+            compute_kind="foo",
         )
 
         def def_iter(context):
@@ -305,7 +307,7 @@ def test_asset_group_build_sliced_subset_job(
 
         return _def_asset
 
-    @asset
+    @asset(compute_kind="foo")
     def final_asset(a, d):
         return "foo"
 
@@ -314,8 +316,10 @@ def test_asset_group_build_sliced_subset_job(
         [start_asset, _get_abc_assets(), _get_def_assets(), final_asset],
         resource_defs={"io_manager": io_manager_def},
     )
+    job = group.build_job("assets_job", selection=job_selection)
+    assert [op.tags == {"kind": "foo"} for op in job.graph.node_defs]
 
-    result = group.build_job("assets_job", selection=job_selection).execute_in_process(
+    result = job.execute_in_process(
         run_config={"selected_assets": config_selection.split(",")} if config_selection else None
     )
     expected_asset_keys = set((AssetKey(a) for a in expected_assets.split(",")))

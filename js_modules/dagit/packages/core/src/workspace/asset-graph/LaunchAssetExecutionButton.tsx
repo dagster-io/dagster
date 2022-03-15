@@ -94,7 +94,7 @@ export const LaunchAssetExecutionButton: React.FC<{
             executionParams: {
               mode: 'default',
               executionMetadata: {},
-              runConfigData: {},
+              runConfigData: {"selected_assets": assets.map((o) => o.assetKey.path.join("."))},
               stepKeys: assets.map((o) => o.opName!),
               selector: {
                 repositoryLocationName: repoAddress.location,
