@@ -22,6 +22,7 @@ from dagster.seven import funcsigs
 from ...decorator_utils import (
     get_function_params,
     get_valid_name_permutations,
+    param_is_var_keyword,
     positional_arg_name_list,
 )
 from ..inference import infer_input_props, infer_output_props
@@ -45,6 +46,12 @@ class DecoratedSolidFunction(NamedTuple):
         params = get_function_params(self.decorated_fn)
         input_args = params[1:] if self.has_context_arg() else params
         return positional_arg_name_list(input_args)
+
+    @lru_cache(maxsize=1)
+    def has_var_kwargs(self) -> bool:
+        params = get_function_params(self.decorated_fn)
+        # var keyword arg has to be the last argument
+        return len(params) > 0 and param_is_var_keyword(params[-1])
 
 
 class NoContextDecoratedSolidFunction(DecoratedSolidFunction):

@@ -55,6 +55,10 @@ def positional_arg_name_list(params: List[funcsigs.Parameter]) -> List[str]:
     return [p.name for p in params if p.kind in accepted_param_types]
 
 
+def param_is_var_keyword(param: funcsigs.Parameter) -> bool:
+    return param.kind == funcsigs.Parameter.VAR_KEYWORD
+
+
 def format_docstring_for_description(fn: Callable) -> Optional[str]:
     if fn.__doc__ is not None:
         docstring = fn.__doc__

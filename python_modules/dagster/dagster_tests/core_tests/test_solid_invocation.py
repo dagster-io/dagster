@@ -13,6 +13,7 @@ from dagster import (
     ExpectationResult,
     Failure,
     Field,
+    In,
     InputDefinition,
     Materialization,
     Noneable,
@@ -1019,3 +1020,30 @@ def test_log_metadata_after_dynamic_output():
         match="In op 'the_op', attempted to log output metadata for output 'result' with mapping_key 'one' which has already been yielded. Metadata must be logged before the output is yielded.",
     ):
         list(the_op(build_op_context()))
+
+
+def test_kwarg_inputs():
+    @op(ins={"the_in": In(str)})
+    def the_op(**kwargs) -> str:
+        return kwargs["the_in"] + "foo"
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match="op 'the_op' has 0 positional inputs, but 1 positional inputs were provided.",
+    ):
+        the_op("bar")
+
+    assert the_op(the_in="bar") == "barfoo"
+
+    with pytest.raises(
+        DagsterInvalidInvocationError,
+        match=r"Invocation had extra inputs \['bad_val'\], and was missing inputs "
+        r"\['the_in'\].",
+    ):
+        the_op(bad_val="bar")
+
+    @op(ins={"the_in": In(), "kwarg_in": In(), "kwarg_in_two": In()})
+    def the_op(the_in, **kwargs):
+        return the_in + kwargs["kwarg_in"] + kwargs["kwarg_in_two"]
+
+    assert the_op("foo", kwarg_in="bar", kwarg_in_two="baz") == "foobarbaz"
