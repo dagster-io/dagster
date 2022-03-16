@@ -1,4 +1,3 @@
-import logging
 import sys
 from contextlib import ExitStack
 from typing import Iterator, List, cast
@@ -12,7 +11,7 @@ from dagster.core.errors import (
     HookExecutionError,
     user_code_error_boundary,
 )
-from dagster.core.events import DagsterEvent
+from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.context.system import PlanExecutionContext, StepExecutionContext
 from dagster.core.execution.plan.execute_step import core_dagster_event_sequence_for_step
 from dagster.core.execution.plan.objects import (
@@ -70,13 +69,15 @@ def inner_plan_execution_iterator(
                         )
                     )
                 except Exception as e:
-                    log_capture_error = e
-                    logging.exception(
-                        "Exception while setting up compute log capture for step %s in run %s: %s",
-                        step_context.step.key,
-                        step_context.pipeline_run.run_id,
-                        e,
+                    yield DagsterEvent.engine_event(
+                        pipeline_context=pipeline_context,
+                        message="Exception while setting up compute log capture",
+                        event_specific_data=EngineEventData(
+                            error=serializable_error_info_from_exc_info(sys.exc_info())
+                        ),
+                        step_handle=step_context.step.handle,
                     )
+                    log_capture_error = e
 
                 if not log_capture_error:
                     yield DagsterEvent.capture_logs(
@@ -93,12 +94,14 @@ def inner_plan_execution_iterator(
 
                 try:
                     stack.close()
-                except Exception as e:
-                    logging.exception(
-                        "Exception while cleaning up compute log capture for step %s in run %s: %s",
-                        step_context.step.key,
-                        step_context.pipeline_run.run_id,
-                        e,
+                except Exception:
+                    yield DagsterEvent.engine_event(
+                        pipeline_context=pipeline_context,
+                        message="Exception while cleaning up compute log capture",
+                        event_specific_data=EngineEventData(
+                            error=serializable_error_info_from_exc_info(sys.exc_info())
+                        ),
+                        step_handle=step_context.step.handle,
                     )
 
             # process skips from failures or uncovered inputs
