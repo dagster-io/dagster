@@ -29,6 +29,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         container_name="run",
         secrets=None,
         secrets_tag="dagster",
+        use_sidecars=False,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -51,6 +52,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             self.secrets = {secret["name"]: secret["valueFrom"] for secret in self.secrets}
 
         self.secrets_tag = secrets_tag
+        self.use_sidecars = use_sidecars
 
         if self.task_definition:
             task_definition = self.ecs.describe_task_definition(taskDefinition=task_definition)
@@ -110,6 +112,15 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 description=(
                     "AWS Secrets Manager secrets with this tag will be mounted as "
                     "environment variables in the container. Defaults to 'dagster'."
+                ),
+            ),
+            "use_sidecars": Field(
+                bool,
+                is_required=False,
+                default_value=False,
+                description=(
+                    "Whether each run should use the same sidecars as the task that launches it. "
+                    "Defaults to False."
                 ),
             ),
         }
@@ -311,6 +322,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             image,
             self.container_name,
             secrets=secrets_dict,
+            use_sidecars=self.use_sidecars,
         )
 
     def _task_metadata(self):
