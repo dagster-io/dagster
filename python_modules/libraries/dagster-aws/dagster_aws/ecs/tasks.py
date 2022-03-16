@@ -41,6 +41,7 @@ def default_ecs_task_definition(
     container_name,
     command=None,
     secrets=None,
+    include_sidecars=False,
 ):
     # Start with the current process's task's definition but remove
     # extra keys that aren't useful for creating a new task definition
@@ -62,19 +63,25 @@ def default_ecs_task_definition(
     # entryPoint and containerOverrides are specified, they're concatenated
     # and the command will fail
     # https://aws.amazon.com/blogs/opensource/demystifying-entrypoint-cmd-docker/
-    container_definitions = [
-        merge_dicts(
-            {
-                **metadata.container_definition,
-                "name": container_name,
-                "image": image,
-                "entryPoint": [],
-                "command": command if command else [],
-                "dependsOn": [],  # Remove any other container dependencies as well
-            },
-            secrets or {},
-        )
-    ]
+    new_container_definition = merge_dicts(
+        {
+            **metadata.container_definition,
+            "name": container_name,
+            "image": image,
+            "entryPoint": [],
+            "command": command if command else [],
+        },
+        secrets or {},
+        {} if include_sidecars else {"dependsOn": []},
+    )
+
+    if include_sidecars:
+        container_definitions = metadata.task_definition.get("containerDefinitions")
+        container_definitions.remove(metadata.container_definition)
+        container_definitions.append(new_container_definition)
+    else:
+        container_definitions = [new_container_definition]
+
     task_definition = {
         **task_definition,
         "family": family,

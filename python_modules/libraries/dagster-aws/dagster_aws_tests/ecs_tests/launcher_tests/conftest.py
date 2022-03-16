@@ -193,3 +193,16 @@ def other_run(instance, pipeline, other_external_pipeline):
         external_pipeline_origin=other_external_pipeline.get_external_origin(),
         pipeline_code_origin=other_external_pipeline.get_python_origin(),
     )
+
+
+@pytest.fixture
+def launch_run(pipeline, external_pipeline, workspace):
+    def _launch_run(instance):
+        run = instance.create_run_for_pipeline(
+            pipeline,
+            external_pipeline_origin=external_pipeline.get_external_origin(),
+            pipeline_code_origin=external_pipeline.get_python_origin(),
+        )
+        instance.launch_run(run.run_id, workspace)
+
+    return _launch_run
