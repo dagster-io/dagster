@@ -163,24 +163,29 @@ export const buildLayout = (params: BuildLayoutParams) => {
   return {boxes, markers: []} as GanttChartLayout;
 };
 
-const ensureChildrenAfterParentInArray = (
+const ensureSubtreeAfterParentInArray = (
   boxes: GanttChartBox[],
-  childIdx: number,
-  parentIdx: number,
+  parent: GanttChartBox,
+  box: GanttChartBox,
 ) => {
-  if (parentIdx <= childIdx) {
+  const parentIdx = boxes.indexOf(parent);
+  const boxIdx = boxes.indexOf(box);
+  if (parentIdx <= boxIdx) {
     return;
   }
-  const [child] = boxes.splice(childIdx, 1);
-  boxes.push(child);
-  const newIdx = boxes.length - 1;
-  for (const subchild of child.children) {
-    ensureChildrenAfterParentInArray(boxes, boxes.indexOf(subchild), newIdx);
+  boxes.splice(boxIdx, 1);
+  boxes.push(box);
+
+  // Note: It's important that we don't cache or pass indexes during this recursion.
+  // Visiting a child below could cause boxes earlier in the array to be pulled to the
+  // end. Our `parentIdx` above is not stable within the box.children loop below.
+
+  for (const child of box.children) {
+    ensureSubtreeAfterParentInArray(boxes, box, child);
   }
 };
 
 const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLayoutParams) => {
-  const idx = boxes.indexOf(box);
   const seen: string[] = [];
   const added: GanttChartBox[] = [];
 
@@ -214,7 +219,7 @@ const addChildren = (boxes: GanttChartBox[], box: GanttChartBox, params: BuildLa
         added.push(depBox);
       } else {
         depBox = boxes[depBoxIdx];
-        ensureChildrenAfterParentInArray(boxes, depBoxIdx, idx);
+        ensureSubtreeAfterParentInArray(boxes, box, depBox);
       }
 
       box.children.push(depBox);
