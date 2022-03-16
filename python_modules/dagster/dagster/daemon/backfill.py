@@ -88,11 +88,14 @@ def execute_backfill_iteration(instance, workspace, logger, debug_crash_flags=No
                 _check_for_debug_crash(debug_crash_flags, "BEFORE_SUBMIT")
 
                 if chunk:
-
                     for _run_id in submit_backfill_runs(
                         instance, workspace, repo_location, backfill_job, chunk
                     ):
                         yield
+                        # before submitting, refetch the backfill job to check for status changes
+                        backfill_job = instance.get_backfill(backfill_job.backfill_id)
+                        if backfill_job.status != BulkActionStatus.REQUESTED:
+                            return
 
                 _check_for_debug_crash(debug_crash_flags, "AFTER_SUBMIT")
 
