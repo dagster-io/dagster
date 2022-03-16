@@ -41,7 +41,7 @@ def default_ecs_task_definition(
     container_name,
     command=None,
     secrets=None,
-    use_sidecars=False,
+    include_sidecars=False,
 ):
     # Start with the current process's task's definition but remove
     # extra keys that aren't useful for creating a new task definition
@@ -72,11 +72,11 @@ def default_ecs_task_definition(
             "command": command if command else [],
         },
         secrets or {},
-        {} if use_sidecars else {"dependsOn": []},
+        {} if include_sidecars else {"dependsOn": []},
     )
 
-    if use_sidecars:
-        container_definitions = task_definition.get("containerDefinitions")
+    if include_sidecars:
+        container_definitions = metadata.task_definition.get("containerDefinitions")
         container_definitions.remove(metadata.container_definition)
         container_definitions.append(new_container_definition)
     else:

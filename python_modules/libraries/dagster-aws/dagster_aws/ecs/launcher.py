@@ -29,7 +29,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         container_name="run",
         secrets=None,
         secrets_tag="dagster",
-        use_sidecars=False,
+        include_sidecars=False,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -52,7 +52,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             self.secrets = {secret["name"]: secret["valueFrom"] for secret in self.secrets}
 
         self.secrets_tag = secrets_tag
-        self.use_sidecars = use_sidecars
+        self.include_sidecars = include_sidecars
 
         if self.task_definition:
             task_definition = self.ecs.describe_task_definition(taskDefinition=task_definition)
@@ -114,7 +114,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     "environment variables in the container. Defaults to 'dagster'."
                 ),
             ),
-            "use_sidecars": Field(
+            "include_sidecars": Field(
                 bool,
                 is_required=False,
                 default_value=False,
@@ -322,7 +322,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             image,
             self.container_name,
             secrets=secrets_dict,
-            use_sidecars=self.use_sidecars,
+            include_sidecars=self.include_sidecars,
         )
 
     def _task_metadata(self):

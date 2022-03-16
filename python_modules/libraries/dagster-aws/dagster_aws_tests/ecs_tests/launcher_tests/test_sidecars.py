@@ -14,8 +14,8 @@ def test_default(ecs, instance, launch_run):
     assert not container_definitions[0].get("dependsOn")
 
 
-def test_use_sidecars_with_depends_on(ecs, instance_cm, launch_run, task_definition):
-    with instance_cm({"use_sidecars": True}) as instance:
+def test_include_sidecars_with_depends_on(ecs, instance_cm, launch_run, task_definition):
+    with instance_cm({"include_sidecars": True}) as instance:
         initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
 
         launch_run(instance)
