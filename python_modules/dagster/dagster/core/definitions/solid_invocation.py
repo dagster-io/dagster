@@ -152,9 +152,10 @@ def _resolve_inputs(
             kwargs[positional_input] if positional_input in kwargs else input_def.default_value
         )
 
-    unused_kwargs = {k: v for k, v in kwargs.items() if k not in input_dict}
-    if unused_kwargs and cast("DecoratedSolidFunction", solid_def.compute_fn).has_var_kwargs():
-        for k, v in unused_kwargs.items():
+    unassigned_kwargs = {k: v for k, v in kwargs.items() if k not in input_dict}
+    # If there are unassigned inputs, then they may be intended for use with a variadic keyword argument.
+    if unassigned_kwargs and cast("DecoratedSolidFunction", solid_def.compute_fn).has_var_kwargs():
+        for k, v in unassigned_kwargs.items():
             input_dict[k] = v
 
     # Error if any inputs are not represented in input_dict
@@ -165,9 +166,12 @@ def _resolve_inputs(
     extra_inputs = provided_input_names - input_def_names
 
     if missing_inputs or extra_inputs:
-        raise DagsterInvalidInvocationError(
-            f"Invocation had extra inputs {list(extra_inputs)}, and was missing inputs {list(missing_inputs)}."
-        )
+        error_msg = ""
+        if extra_inputs:
+            error_msg += f"Invocation had extra inputs {list(extra_inputs)}."
+        if missing_inputs:
+            error_msg += f"Invocation had missing inputs {list(missing_inputs)}."
+        raise DagsterInvalidInvocationError(error_msg)
 
     # Type check inputs
     op_label = context.describe_op()

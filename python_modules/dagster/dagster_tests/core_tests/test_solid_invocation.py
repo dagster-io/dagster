@@ -1037,8 +1037,7 @@ def test_kwarg_inputs():
 
     with pytest.raises(
         DagsterInvalidInvocationError,
-        match=r"Invocation had extra inputs \['bad_val'\], and was missing inputs "
-        r"\['the_in'\].",
+        match="Invocation had extra inputs \['bad_val'\].Invocation had missing inputs \['the_in'\].",
     ):
         the_op(bad_val="bar")
 
