@@ -1015,7 +1015,7 @@ def test_path_param():
 
     assert check.path_param("/a/b.csv", "path_param") == "/a/b.csv"
     if sys.platform.startswith("win32"):
-        assert check.opt_path_param(Path("c:/a/b.csv"), "path_param") == "c:/a/b.csv"
+        assert check.opt_path_param(Path("c:\\a\\b.csv"), "path_param") == "c:\\a\\b.csv"
     else:
         assert check.opt_path_param(Path("/a/b.csv"), "path_param") == "/a/b.csv"
 
@@ -1031,7 +1031,7 @@ def test_opt_path_param():
 
     assert check.opt_path_param("/a/b.csv", "path_param") == "/a/b.csv"
     if sys.platform.startswith("win32"):
-        assert check.opt_path_param(Path("c:/a/b.csv"), "path_param") == "c:/a/b.csv"
+        assert check.opt_path_param(Path("c:\\a\\b.csv"), "path_param") == "c:\\a\\b.csv"
     else:
         assert check.opt_path_param(Path("/a/b.csv"), "path_param") == "/a/b.csv"
     assert check.opt_path_param(None, "path_param") is None
