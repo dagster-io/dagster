@@ -318,6 +318,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             "-core_tests",
             "-core_tests_old_sqlalchemy",
             "-daemon_tests",
+            "-definitions_tests_old_pendulum",
             "-general_tests",
             "-scheduler_tests",
             "-scheduler_tests_old_pendulum",
