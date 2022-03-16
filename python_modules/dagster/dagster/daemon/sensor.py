@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, NamedTuple, Optional
 
 import pendulum
 
