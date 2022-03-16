@@ -160,11 +160,10 @@ class GrapheneAssetNode(graphene.ObjectType):
     ) -> List[GrapheneMaterializationEvent]:
         from ..implementation.fetch_assets import get_asset_materializations
 
+        beforeTimestampMillis: Optional[str] = kwargs.get("beforeTimestampMillis")
         try:
             before_timestamp = (
-                int(kwargs.get("beforeTimestampMillis")) / 1000.0
-                if kwargs.get("beforeTimestampMillis")
-                else None
+                int(beforeTimestampMillis) / 1000.0 if beforeTimestampMillis else None
             )
         except ValueError:
             before_timestamp = None

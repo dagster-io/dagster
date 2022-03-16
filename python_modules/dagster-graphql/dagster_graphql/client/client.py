@@ -106,14 +106,9 @@ class DagsterGraphQLClient:
         repo_connection_status = query_res["__typename"]
         if repo_connection_status == "RepositoryConnection":
             valid_nodes: Iterable[PipelineInfo] = chain(
-                map(PipelineInfo.from_node, query_res["nodes"])
+                *map(PipelineInfo.from_node, query_res["nodes"])
             )
-            return [
-                repo_node_tuple
-                for repo_node_tuple_lst in valid_nodes
-                for repo_node_tuple in repo_node_tuple_lst
-                if repo_node_tuple.pipeline_name == pipeline_name
-            ]
+            return [info for info in valid_nodes if info.pipeline_name == pipeline_name]
         else:
             raise DagsterGraphQLClientError(repo_connection_status, query_res["message"])
 
