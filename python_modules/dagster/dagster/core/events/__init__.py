@@ -74,6 +74,7 @@ class DagsterEventType(Enum):
     STEP_RESTARTED = "STEP_RESTARTED"
 
     ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
+    ASSET_INTENT_TO_MATERIALIZE = "ASSET_INTENT_TO_MATERIALIZE"
     ASSET_OBSERVATION = "ASSET_OBSERVATION"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
 
@@ -186,6 +187,8 @@ EVENT_TYPE_TO_PIPELINE_RUN_STATUS = {
 
 PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN_STATUS.items()}
 
+# TODO: Add ASSET_INTENT_TO_MATERIALIZE event to access assets in run
+# when error occurs before materialization or observation occurs
 ASSET_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
@@ -509,6 +512,8 @@ class DagsterEvent(
             return self.step_materialization_data.materialization.asset_key
         elif self.event_type == DagsterEventType.ASSET_OBSERVATION:
             return self.asset_observation_data.asset_observation.asset_key
+        elif self.event_type == DagsterEventType.ASSET_INTENT_TO_MATERIALIZE:
+            return self.asset_intent_to_materialize_data.asset_key
         else:
             return None
 
@@ -565,6 +570,15 @@ class DagsterEvent(
     def asset_observation_data(self) -> "AssetObservationData":
         _assert_type("asset_observation_data", DagsterEventType.ASSET_OBSERVATION, self.event_type)
         return cast(AssetObservationData, self.event_specific_data)
+
+    @property
+    def asset_intent_to_materialize_data(self) -> "AssetIntentToMaterializeData":
+        _assert_type(
+            "asset_intent_to_materialize_data",
+            DagsterEventType.ASSET_INTENT_TO_MATERIALIZE,
+            self.event_type,
+        )
+        return cast(AssetIntentToMaterializeData, self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
@@ -746,6 +760,18 @@ class DagsterEvent(
                 if materialization.label
                 else ""
             ),
+        )
+
+    @staticmethod
+    def asset_intent_to_materialize(
+        pipeline_context: IPlanContext,
+        asset_key: AssetKey,
+    ) -> "DagsterEvent":
+        return DagsterEvent.from_pipeline(
+            DagsterEventType.ASSET_INTENT_TO_MATERIALIZE,
+            pipeline_context=pipeline_context,
+            message=f"{pipeline_context.pipeline_name} intends to materialize asset {asset_key.to_string()}",
+            event_specific_data=AssetIntentToMaterializeData(asset_key),
         )
 
     @staticmethod
@@ -1233,6 +1259,16 @@ class StepMaterializationData(
             asset_lineage=check.opt_list_param(
                 asset_lineage, "asset_lineage", of_type=AssetLineageInfo
             ),
+        )
+
+
+@whitelist_for_serdes
+class AssetIntentToMaterializeData(
+    NamedTuple("_AssetIntentToMaterializeData", [("asset_key", AssetKey)])
+):
+    def __new__(cls, asset_key: AssetKey):
+        return super(AssetIntentToMaterializeData, cls).__new__(
+            cls, asset_key=check.inst_param(asset_key, "asset_key", AssetKey)
         )
 
 

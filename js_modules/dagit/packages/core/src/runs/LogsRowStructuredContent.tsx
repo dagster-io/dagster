@@ -143,6 +143,13 @@ export const LogsRowStructuredContent: React.FC<IStructuredContentProps> = ({nod
           timestamp={node.timestamp}
         />
       );
+    case 'AssetIntentToMaterializeEvent':
+      return (
+        <DefaultContent
+          message={node.message}
+          eventType={eventType}
+        />
+      );
     case 'ObjectStoreOperationEvent':
       return (
         <DefaultContent message={node.message} eventType={eventType}>

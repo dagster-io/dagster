@@ -412,6 +412,29 @@ class PipelineDefinition:
     def solids_in_topological_order(self):
         return self._graph_def.solids_in_topological_order
 
+    @property
+    def is_asset_job(self):
+        return any(
+            [
+                any([output_def.hardcoded_asset_key for output_def in node.output_defs])
+                for node in self.all_node_defs
+            ]
+        )
+
+    def get_asset_keys_for_steps(self, step_keys):
+        from dagster.core.definitions.events import AssetKey
+
+        if not self.is_asset_job:
+            raise DagsterInvariantViolationError('Method can only be called on asset jobs.')
+
+        asset_keys_by_step: Dict[str, List[AssetKey]] = {}
+        for node_name, node_def in self._all_node_defs.items():
+            if node_name in step_keys:
+                asset_keys_by_step[node_name] = []
+                for output_def in node_def.output_dict.values():
+                    asset_keys_by_step[node_name].append(output_def.hardcoded_asset_key)
+        return asset_keys_by_step
+
     def all_dagster_types(self):
         return self._graph_def.all_dagster_types()
 

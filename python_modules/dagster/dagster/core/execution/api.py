@@ -777,6 +777,17 @@ def pipeline_execution_iterator(
     if not pipeline_context.resume_from_failure:
         yield DagsterEvent.pipeline_start(pipeline_context)
 
+        if pipeline_context.pipeline.get_definition().is_asset_job:
+            asset_keys_by_step = (
+                pipeline_context.pipeline.get_definition().get_asset_keys_for_steps(
+                    execution_plan.step_keys_to_execute
+                )
+            )
+
+            for step, asset_keys in asset_keys_by_step.items():
+                for asset_key in asset_keys:
+                    yield DagsterEvent.asset_intent_to_materialize(pipeline_context, asset_key)
+
     pipeline_exception_info = None
     pipeline_canceled_info = None
     failed_steps = []
