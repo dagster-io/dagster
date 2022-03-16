@@ -944,7 +944,7 @@ class DagsterEvent(
         pipeline_context: IPlanContext,
         message: str,
         event_specific_data: Optional["EngineEventData"] = None,
-        step_handle: Optional[StepHandle] = None,
+        step_handle: Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]] = None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_pipeline(
             DagsterEventType.ENGINE_EVENT,
