@@ -27,8 +27,9 @@ import {LaunchAssetExecutionButton} from '../workspace/asset-graph/LaunchAssetEx
 import {
   buildGraphDataFromSingleNode,
   buildLiveData,
-  IN_PROGRESS_RUNS_FRAGMENT,
+  REPOSITORY_LIVE_FRAGMENT,
   LiveData,
+  toGraphId,
 } from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
@@ -38,9 +39,9 @@ import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNo
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetKey} from './types';
 import {
-  AssetNodeDefinitionRunsQuery,
-  AssetNodeDefinitionRunsQueryVariables,
-} from './types/AssetNodeDefinitionRunsQuery';
+  AssetNodeDefinitionLiveQuery,
+  AssetNodeDefinitionLiveQueryVariables,
+} from './types/AssetNodeDefinitionLiveQuery';
 import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
 
 interface Props {
@@ -64,9 +65,6 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     notifyOnNetworkStatusChange: true,
   });
 
-  // Refresh immediately when a run is launched from this page
-  useDidLaunchEvent(queryResult.refetch);
-
   const {assetOrError} = queryResult.data || queryResult.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
   const lastMaterializedAt = asset?.assetMaterializations[0]?.timestamp;
@@ -76,10 +74,10 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;
 
-  const inProgressRunsQuery = useQuery<
-    AssetNodeDefinitionRunsQuery,
-    AssetNodeDefinitionRunsQueryVariables
-  >(ASSET_NODE_DEFINITION_RUNS_QUERY, {
+  const liveQueryResult = useQuery<
+    AssetNodeDefinitionLiveQuery,
+    AssetNodeDefinitionLiveQueryVariables
+  >(ASSET_NODE_DEFINITION_LIVE_QUERY, {
     skip: !repoAddress,
     variables: {
       repositorySelector: {
@@ -91,16 +89,20 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   });
 
   const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
-  useQueryRefreshAtInterval(inProgressRunsQuery, FIFTEEN_SECONDS);
+  useQueryRefreshAtInterval(liveQueryResult, FIFTEEN_SECONDS);
+
+  // Refresh immediately when a run is launched from this page
+  useDidLaunchEvent(queryResult.refetch);
+  useDidLaunchEvent(liveQueryResult.refetch);
 
   let liveDataByNode: LiveData = {};
 
-  if (definition) {
-    const inProgressRuns =
-      inProgressRunsQuery.data?.repositoryOrError.__typename === 'Repository'
-        ? inProgressRunsQuery.data.repositoryOrError.inProgressRunsByStep
-        : [];
+  const repo =
+    liveQueryResult.data?.repositoryOrError.__typename === 'Repository'
+      ? liveQueryResult.data.repositoryOrError
+      : null;
 
+  if (definition && repo) {
     const nodesWithLatestMaterialization = [
       definition,
       ...definition.dependencies.map((d) => d.asset),
@@ -109,7 +111,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     liveDataByNode = buildLiveData(
       buildGraphDataFromSingleNode(definition),
       nodesWithLatestMaterialization,
-      inProgressRuns,
+      [repo],
     );
   }
 
@@ -209,16 +211,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             params={params}
             paramsTimeWindowOnly={!!params.asOf}
             setParams={setParams}
-            liveData={definition ? liveDataByNode[definition.id] : undefined}
-            repository={
-              definition?.repository
-                ? {
-                    repositoryLocationName: definition?.repository.location.name,
-                    repositoryName: definition.repository.name,
-                  }
-                : undefined
-            }
-            opName={definition?.opName}
+            liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
           />
         ))}
     </div>
@@ -260,20 +253,18 @@ const ASSET_QUERY = gql`
   ${ASSET_NODE_DEFINITION_FRAGMENT}
 `;
 
-const ASSET_NODE_DEFINITION_RUNS_QUERY = gql`
-  query AssetNodeDefinitionRunsQuery($repositorySelector: RepositorySelector!) {
+const ASSET_NODE_DEFINITION_LIVE_QUERY = gql`
+  query AssetNodeDefinitionLiveQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       __typename
       ... on Repository {
         id
         name
-        inProgressRunsByStep {
-          ...InProgressRunsFragment
-        }
+        ...RepositoryLiveFragment
       }
     }
   }
-  ${IN_PROGRESS_RUNS_FRAGMENT}
+  ${REPOSITORY_LIVE_FRAGMENT}
 `;
 
 const HistoricalViewAlert: React.FC<{
