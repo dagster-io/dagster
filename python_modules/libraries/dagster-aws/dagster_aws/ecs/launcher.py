@@ -300,7 +300,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             if (
                 container_definition.get("image") == image
                 and container_definition.get("name") == self.container_name
-                and container_definition.get("secrets") == secrets_dict.get("secrets")
+                and container_definition.get("secrets") == secrets_dict.get("secrets", [])
             ):
                 return task_definition
 
