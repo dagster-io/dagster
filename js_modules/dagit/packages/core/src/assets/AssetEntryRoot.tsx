@@ -23,12 +23,12 @@ export const AssetEntryRoot = () => {
 
   return queryResult.loading ? (
     <Page>
-      <AssetPageHeader assetKey={{path: currentPath}} repoAddress={null} />
+      <AssetPageHeader assetKey={{path: currentPath}} />
       <Loading queryResult={queryResult}>{() => null}</Loading>
     </Page>
   ) : queryResult.data?.assetOrError.__typename === 'AssetNotFoundError' ? (
     <Page>
-      <AssetPageHeader assetKey={{path: currentPath}} repoAddress={null} />
+      <AssetPageHeader assetKey={{path: currentPath}} />
       <AssetsCatalogTable prefixPath={currentPath} />
     </Page>
   ) : (

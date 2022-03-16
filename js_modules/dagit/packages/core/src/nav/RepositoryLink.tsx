@@ -25,12 +25,12 @@ export const RepositoryLink: React.FC<{
   ].join('@');
 
   return (
-    <Box flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}}>
+    <Box
+      flex={{display: 'inline-flex', direction: 'row', alignItems: 'center'}}
+      title={repoAddressAsString(repoAddress)}
+    >
       {showIcon && <IconWIP name="folder" style={{marginRight: 8}} color={ColorsWIP.Gray400} />}
-      <RepositoryName
-        to={workspacePathFromAddress(repoAddress)}
-        title={repoAddressAsString(repoAddress)}
-      >
+      <RepositoryName to={workspacePathFromAddress(repoAddress)}>
         {repoAddressTruncated}
       </RepositoryName>
       {canReloadRepositoryLocation && showRefresh ? (
