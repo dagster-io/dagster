@@ -24,7 +24,9 @@ setup(
         "dagster-slack",
         "dagster-postgres",
         "dbt-core",
+        "dbt-duckdb",
         "dbt-snowflake",
+        "duckdb",
         "mock",
         # DataFrames were not written to Snowflake, causing errors
         "pandas<1.4.0",
