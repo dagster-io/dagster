@@ -503,9 +503,13 @@ def _is_under_min_interval(state, external_sensor, now):
 
 def _fetch_existing_runs(instance, external_sensor, run_requests):
     run_keys = [run_request.run_key for run_request in run_requests if run_request.run_key]
+
+    if not run_keys:
+        return {}
+
     existing_runs = {}
 
-    if run_keys and instance.supports_bucket_queries:
+    if instance.supports_bucket_queries:
         runs = instance.get_runs(
             filters=RunsFilter(
                 tags=PipelineRun.tags_for_sensor(external_sensor),
@@ -519,11 +523,12 @@ def _fetch_existing_runs(instance, external_sensor, run_requests):
         for run in runs:
             tags = run.tags or {}
             run_key = tags.get(RUN_KEY_TAG)
-            if run_key:
-                existing_runs[run_key] = [run]
-    elif run_keys:
+            existing_runs[run_key] = run
+        return existing_runs
+
+    else:
         for run_key in run_keys:
-            existing_runs[run_key] = instance.get_runs(
+            runs = instance.get_runs(
                 filters=RunsFilter(
                     tags=merge_dicts(
                         PipelineRun.tags_for_sensor(external_sensor),
@@ -532,6 +537,8 @@ def _fetch_existing_runs(instance, external_sensor, run_requests):
                 ),
                 limit=1,
             )
+            if runs:
+                existing_runs[run_key] = runs[0]
     return existing_runs
 
 
@@ -543,7 +550,7 @@ def _get_or_create_sensor_run(
     external_pipeline,
     run_request,
     target_data,
-    existing_runs_by_key: Dict[str, List[PipelineRun]],
+    existing_runs_by_key: Dict[str, PipelineRun],
 ):
 
     if not run_request.run_key:
@@ -551,10 +558,9 @@ def _get_or_create_sensor_run(
             instance, repo_location, external_sensor, external_pipeline, run_request, target_data
         )
 
-    runs = existing_runs_by_key.get(run_request.run_key, [])
+    run = existing_runs_by_key.get(run_request.run_key)
 
-    if len(runs):
-        run = runs[0]
+    if run:
         if run.status != PipelineRunStatus.NOT_STARTED:
             # A run already exists and was launched for this time period,
             # but the daemon must have crashed before the tick could be put

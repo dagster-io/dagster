@@ -21,8 +21,13 @@ def create_non_bucket_sqlite_run_storage():
 
 
 class NonBucketQuerySqliteRunStorage(SqliteRunStorage):
-    def supports_bucket_query(self):
+    @property
+    def supports_bucket_queries(self):
         return False
+
+    @staticmethod
+    def from_config_value(inst_data, config_value):
+        return NonBucketQuerySqliteRunStorage.from_local(inst_data=inst_data, **config_value)
 
 
 @contextmanager
