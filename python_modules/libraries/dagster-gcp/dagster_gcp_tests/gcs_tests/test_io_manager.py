@@ -1,12 +1,13 @@
 from dagster_gcp.gcs.io_manager import (
     PickledObjectGCSIOManager,
+    gcs_pickle_asset_io_manager,
     gcs_pickle_io_manager,
-    gcs_pickle_asset_io_manager
 )
 from dagster_gcp.gcs.resources import gcs_resource
 from google.cloud import storage  # type: ignore
 
 from dagster import (
+    AssetGroup,
     DagsterInstance,
     DynamicOut,
     DynamicOutput,
@@ -14,12 +15,11 @@ from dagster import (
     Int,
     Out,
     PipelineRun,
+    asset,
     build_input_context,
     build_output_context,
     job,
     op,
-    asset,
-    AssetGroup
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType
@@ -149,6 +149,7 @@ def test_dynamic(gcs_bucket):
     )
     assert result.success
 
+
 def test_asset_io_manager(gcs_bucket):
     @asset
     def upstream():
@@ -158,18 +159,14 @@ def test_asset_io_manager(gcs_bucket):
     def downstream(upstream):
         return 1 + upstream
 
-    asset_group = AssetGroup([upstream, downstream], resource_defs={'io_manager': gcs_pickle_asset_io_manager, "gcs": gcs_resource})
+    asset_group = AssetGroup(
+        [upstream, downstream],
+        resource_defs={"io_manager": gcs_pickle_asset_io_manager, "gcs": gcs_resource},
+    )
     asset_job = asset_group.build_job(name="my_asset_job")
 
     run_config = {
-        "resources": {
-            "io_manager": {
-                "config": {
-                    "gcs_bucket": gcs_bucket,
-                    "gcs_prefix": "assets"
-                }
-            }
-        }
+        "resources": {"io_manager": {"config": {"gcs_bucket": gcs_bucket, "gcs_prefix": "assets"}}}
     }
 
     result = asset_job.execute_in_process(run_config=run_config)

@@ -106,9 +106,11 @@ def gcs_pickle_io_manager(init_context):
     )
     return pickled_io_manager
 
+
 class PickledObjectGCSAssetIOManager(PickledObjectGCSIOManager):
     def _get_path(self, context):
         return "/".join([self.prefix, *context.asset_key.path])
+
 
 @io_manager(
     config_schema={
