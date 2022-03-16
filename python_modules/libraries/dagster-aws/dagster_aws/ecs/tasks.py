@@ -62,7 +62,6 @@ def default_ecs_task_definition(
     # entryPoint and containerOverrides are specified, they're concatenated
     # and the command will fail
     # https://aws.amazon.com/blogs/opensource/demystifying-entrypoint-cmd-docker/
-    container_definitions = task_definition["containerDefinitions"]
     container_definitions = [
         merge_dicts(
             {
@@ -71,6 +70,7 @@ def default_ecs_task_definition(
                 "image": image,
                 "entryPoint": [],
                 "command": command if command else [],
+                "dependsOn": [],  # Remove any other container dependencies as well
             },
             secrets or {},
         )
