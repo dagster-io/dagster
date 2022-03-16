@@ -26,13 +26,16 @@ export const RunsQueryRefetchContext = React.createContext<{
   refetch: () => void;
 }>({refetch: () => {}});
 
-export function useDidLaunchEvent(cb: () => void) {
+export function useDidLaunchEvent(cb: () => void, delay = 1500) {
   React.useEffect(() => {
-    document.addEventListener('run-launched', cb);
-    return () => {
-      document.removeEventListener('run-launched', cb);
+    const handler = () => {
+      setTimeout(cb, delay);
     };
-  }, [cb]);
+    document.addEventListener('run-launched', handler);
+    return () => {
+      document.removeEventListener('run-launched', handler);
+    };
+  }, [cb, delay]);
 }
 
 export function handleLaunchResult(

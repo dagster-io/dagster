@@ -4,7 +4,7 @@ import {useHistory} from 'react-router-dom';
 
 import {AssetNode} from '../workspace/asset-graph/AssetNode';
 import {ForeignNode} from '../workspace/asset-graph/ForeignNode';
-import {LiveData} from '../workspace/asset-graph/Utils';
+import {LiveData, toGraphId} from '../workspace/asset-graph/Utils';
 
 import {AssetNodeDefinitionFragment_dependencies} from './types/AssetNodeDefinitionFragment';
 
@@ -42,7 +42,7 @@ export const AssetNodeList: React.FC<{
                 inAssetCatalog
                 jobName={asset.jobNames[0]}
                 selected={false}
-                liveData={liveDataByNode[asset.id]}
+                liveData={liveDataByNode[toGraphId(asset.assetKey)]}
               />
             ) : (
               <ForeignNode assetKey={asset.assetKey} />
