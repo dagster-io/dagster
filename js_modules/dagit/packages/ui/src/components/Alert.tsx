@@ -73,9 +73,9 @@ export const Alert: React.FC<Props> = (props) => {
           </Group>
         </Group>
         {hasCloseButton ? (
-          <div onClick={onClose} style={{cursor: 'pointer'}}>
+          <ButtonWrapper onClick={onClose}>
             <IconWIP name="close" color={textColor} />
-          </div>
+          </ButtonWrapper>
         ) : null}
       </Box>
     </AlertContainer>
@@ -85,6 +85,17 @@ export const Alert: React.FC<Props> = (props) => {
 Alert.defaultProps = {
   intent: 'info',
 };
+
+const ButtonWrapper = styled.button`
+  background: none;
+  color: inherit;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  flex-direction: column;
+  height: fit-content;
+`;
 
 const AlertContainer = styled(Box)<{$borderColor: string; $textColor: string}>`
   box-shadow: inset 4px 0 ${({$borderColor}) => $borderColor};
