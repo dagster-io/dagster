@@ -52,12 +52,12 @@ from dagster.core.storage.pipeline_run import (
     RunsFilter,
     TagBucket,
 )
-from dagster.core.storage.tags import MEMOIZED_RUN_TAG
+from dagster.core.storage.tags import PARENT_RUN_ID_TAG, RESUME_RETRY_TAG, ROOT_RUN_ID_TAG
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import str_format_list
 from dagster.serdes import ConfigurableClass
 from dagster.seven import get_current_datetime_in_utc
-from dagster.utils import traced
+from dagster.utils import merge_dicts, traced
 from dagster.utils.backcompat import experimental_functionality_warning
 from dagster.utils.error import serializable_error_info_from_exc_info
 
@@ -78,7 +78,11 @@ if TYPE_CHECKING:
     from dagster.core.events import DagsterEvent, DagsterEventType
     from dagster.core.events.log import EventLogEntry
     from dagster.core.execution.stats import RunStepKeyStatsSnapshot
-    from dagster.core.host_representation import HistoricalPipeline
+    from dagster.core.host_representation import (
+        ExternalPipeline,
+        HistoricalPipeline,
+        RepositoryLocation,
+    )
     from dagster.core.launcher import RunLauncher
     from dagster.core.run_coordinator import RunCoordinator
     from dagster.core.scheduler import Scheduler
@@ -995,6 +999,76 @@ class DagsterInstance:
             self._log_asset_materialization_planned_events(pipeline_run, execution_plan_snapshot)
 
         return pipeline_run
+
+    def create_reexecuted_run_from_failure(
+        self,
+        parent_run: PipelineRun,
+        repo_location: "RepositoryLocation",
+        external_pipeline: "ExternalPipeline",
+        tags: Optional[Dict[str, Any]] = None,
+        run_config: Optional[Dict[str, Any]] = None,
+        mode: Optional[str] = None,
+    ) -> PipelineRun:
+        from dagster.core.execution.plan.resume_retry import get_retry_steps_from_parent_run
+        from dagster.core.host_representation import ExternalPipeline, RepositoryLocation
+
+        check.inst_param(parent_run, "parent_run", PipelineRun)
+        check.inst_param(repo_location, "repo_location", RepositoryLocation)
+        check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
+        check.opt_dict_param(tags, "tags", key_type=str)
+        check.opt_dict_param(run_config, "run_config", key_type=str)
+        check.opt_str_param(mode, "mode")
+        check.invariant(
+            parent_run.status == PipelineRunStatus.FAILURE,
+            "Cannot reexecute from failure a run that is not failed",
+        )
+
+        root_run_id = parent_run.root_run_id or parent_run.run_id
+        parent_run_id = parent_run.run_id
+
+        new_tags = merge_dicts(
+            tags or {},
+            external_pipeline.tags,
+            {
+                PARENT_RUN_ID_TAG: parent_run_id,
+                ROOT_RUN_ID_TAG: root_run_id,
+                RESUME_RETRY_TAG: "true",
+            },
+        )
+        mode = cast(str, mode if mode is not None else parent_run.mode)
+        run_config = run_config if run_config is not None else parent_run.run_config
+
+        step_keys_to_execute, known_state = get_retry_steps_from_parent_run(
+            self, parent_run=parent_run
+        )
+
+        external_execution_plan = repo_location.get_external_execution_plan(
+            external_pipeline,
+            run_config,
+            mode=mode,
+            step_keys_to_execute=step_keys_to_execute,
+            known_state=known_state,
+            instance=self,
+        )
+
+        return self.create_run(
+            pipeline_name=parent_run.pipeline_name,
+            run_id=None,
+            run_config=run_config,
+            mode=mode,
+            solids_to_execute=parent_run.solids_to_execute,
+            step_keys_to_execute=step_keys_to_execute,
+            status=PipelineRunStatus.NOT_STARTED,
+            tags=new_tags,
+            root_run_id=root_run_id,
+            parent_run_id=parent_run_id,
+            pipeline_snapshot=external_pipeline.pipeline_snapshot,
+            execution_plan_snapshot=external_execution_plan.execution_plan_snapshot,
+            parent_pipeline_snapshot=external_pipeline.parent_pipeline_snapshot,
+            solid_selection=parent_run.solid_selection,
+            external_pipeline_origin=external_pipeline.get_external_origin(),
+            pipeline_code_origin=external_pipeline.get_python_origin(),
+        )
 
     def register_managed_run(
         self,
