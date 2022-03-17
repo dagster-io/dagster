@@ -1,13 +1,14 @@
 import warnings
-from typing import AbstractSet, Dict, Iterable, Mapping, Optional, Set, cast
+from typing import AbstractSet, Dict, Iterable, Mapping, Optional, Sequence, Set, cast
 
 from dagster import check
-from dagster.core.definitions import GraphDefinition, NodeDefinition, OpDefinition
+from dagster.core.definitions import GraphDefinition, NodeDefinition, NodeHandle, OpDefinition
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
 from dagster.utils.backcompat import ExperimentalWarning, experimental
 
 from .partition_mapping import PartitionMapping
+from .source_asset import SourceAsset
 
 
 class AssetsDefinition:
@@ -190,6 +191,24 @@ class AssetsDefinition:
                 partitions_def=self.partitions_def,
                 partition_mappings=self._partition_mappings,
             )
+
+    def to_source_assets(self) -> Sequence[SourceAsset]:
+        result = []
+        for output_name, asset_key in self.asset_keys_by_output_name.items():
+            # This could maybe be sped up by batching
+            output_def = self.node_def.resolve_output_to_origin(
+                output_name, NodeHandle(self.node_def.name, parent=None)
+            )[0]
+            result.append(
+                SourceAsset(
+                    key=asset_key,
+                    metadata=output_def.metadata,
+                    io_manager_key=output_def.io_manager_key,
+                    description=output_def.description,
+                )
+            )
+
+        return result
 
 
 def _infer_asset_keys_by_input_names(

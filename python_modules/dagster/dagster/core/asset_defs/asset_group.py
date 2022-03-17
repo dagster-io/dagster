@@ -357,11 +357,22 @@ class AssetGroup:
                 )
         return op_selection
 
+    def to_source_assets(self) -> Sequence[SourceAsset]:
+        """
+        Returns a list of source assets corresponding to all the non-source assets in this group.
+        """
+        return [
+            source_asset
+            for assets_def in self.assets
+            for source_asset in assets_def.to_source_assets()
+        ]
+
     @staticmethod
     def from_package_module(
         package_module: ModuleType,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
+        extra_source_assets: Optional[Sequence[SourceAsset]] = None,
     ) -> "AssetGroup":
         """
         Constructs an AssetGroup that includes all asset definitions and source assets in all
@@ -375,6 +386,8 @@ class AssetGroup:
                 definitions to include on the returned asset group.
             executor_def (Optional[ExecutorDefinition]): An executor to include on the returned
                 asset group.
+            extra_source_assets (Optional[Sequence[SourceAsset]]): Source assets to include in the
+                group in addition to the source assets found in the package.
 
         Returns:
             AssetGroup: An asset group with all the assets in the package.
@@ -383,6 +396,7 @@ class AssetGroup:
             _find_modules_in_package(package_module),
             resource_defs=resource_defs,
             executor_def=executor_def,
+            extra_source_assets=extra_source_assets,
         )
 
     @staticmethod
@@ -390,6 +404,7 @@ class AssetGroup:
         package_name: str,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
+        extra_source_assets: Optional[Sequence[SourceAsset]] = None,
     ) -> "AssetGroup":
         """
         Constructs an AssetGroup that includes all asset definitions and source assets in all
@@ -401,13 +416,18 @@ class AssetGroup:
                 definitions to include on the returned asset group.
             executor_def (Optional[ExecutorDefinition]): An executor to include on the returned
                 asset group.
+            extra_source_assets (Optional[Sequence[SourceAsset]]): Source assets to include in the
+                group in addition to the source assets found in the package.
 
         Returns:
             AssetGroup: An asset group with all the assets in the package.
         """
         package_module = import_module(package_name)
         return AssetGroup.from_package_module(
-            package_module, resource_defs=resource_defs, executor_def=executor_def
+            package_module,
+            resource_defs=resource_defs,
+            executor_def=executor_def,
+            extra_source_assets=extra_source_assets,
         )
 
     @staticmethod
@@ -415,6 +435,7 @@ class AssetGroup:
         modules: Iterable[ModuleType],
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
+        extra_source_assets: Optional[Sequence[SourceAsset]] = None,
     ) -> "AssetGroup":
         """
         Constructs an AssetGroup that includes all asset definitions and source assets in the given
@@ -426,13 +447,19 @@ class AssetGroup:
                 definitions to include on the returned asset group.
             executor_def (Optional[ExecutorDefinition]): An executor to include on the returned
                 asset group.
+            extra_source_assets (Optional[Sequence[SourceAsset]]): Source assets to include in the
+                group in addition to the source assets found in the modules.
 
         Returns:
             AssetGroup: An asset group with all the assets defined in the given modules.
         """
         asset_ids: Set[int] = set()
         asset_keys: Dict[AssetKey, ModuleType] = dict()
-        source_assets: List[SourceAsset] = []
+        source_assets: List[SourceAsset] = list(
+            check.opt_sequence_param(
+                extra_source_assets, "extra_source_assets", of_type=SourceAsset
+            )
+        )
         assets: List[AssetsDefinition] = []
         for module in modules:
             for asset in _find_assets_in_module(module):
@@ -465,6 +492,7 @@ class AssetGroup:
     def from_current_module(
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
+        extra_source_assets: Optional[Sequence[SourceAsset]] = None,
     ) -> "AssetGroup":
         """
         Constructs an AssetGroup that includes all asset definitions and source assets in the module
@@ -475,6 +503,8 @@ class AssetGroup:
                 definitions to include on the returned asset group.
             executor_def (Optional[ExecutorDefinition]): An executor to include on the returned
                 asset group.
+            extra_source_assets (Optional[Sequence[SourceAsset]]): Source assets to include in the
+                group in addition to the source assets found in the module.
 
         Returns:
             AssetGroup: An asset group with all the assets defined in the module.
@@ -483,7 +513,9 @@ class AssetGroup:
         module = inspect.getmodule(caller[0])
         if module is None:
             check.failed("Could not find a module for the caller")
-        return AssetGroup.from_modules([module], resource_defs, executor_def)
+        return AssetGroup.from_modules(
+            [module], resource_defs, executor_def, extra_source_assets=extra_source_assets
+        )
 
     def materialize(
         self, selection: Optional[Union[str, List[str]]] = None

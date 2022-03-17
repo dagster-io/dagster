@@ -345,31 +345,3 @@ def test_op_tags():
         ...
 
     assert my_asset.op.tags == tags_stringified
-
-
-def test_with_replaced_asset_keys():
-    @asset(ins={"input2": AssetIn(namespace="something_else")})
-    def asset1(input1, input2):
-        assert input1
-        assert input2
-
-    replaced = asset1.with_replaced_asset_keys(
-        output_asset_key_replacements={
-            AssetKey(["asset1"]): AssetKey(["prefix1", "asset1_changed"])
-        },
-        input_asset_key_replacements={
-            AssetKey(["something_else", "input2"]): AssetKey(["apple", "banana"])
-        },
-    )
-
-    assert set(replaced.dependency_asset_keys) == {
-        AssetKey("input1"),
-        AssetKey(["apple", "banana"]),
-    }
-    assert replaced.asset_keys == {AssetKey(["prefix1", "asset1_changed"])}
-
-    assert replaced.asset_keys_by_input_name["input1"] == AssetKey("input1")
-
-    assert replaced.asset_keys_by_input_name["input2"] == AssetKey(["apple", "banana"])
-
-    assert replaced.asset_keys_by_output_name["result"] == AssetKey(["prefix1", "asset1_changed"])

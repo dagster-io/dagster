@@ -10,6 +10,7 @@ from dagster import (
     HourlyPartitionsDefinition,
     IOManager,
     Out,
+    Output,
     ResourceDefinition,
     fs_asset_io_manager,
     graph,
@@ -713,3 +714,25 @@ def test_add_asset_groups_different_executors():
 
     with pytest.raises(DagsterInvalidDefinitionError):
         group1 + group2  # pylint: disable=pointless-statement
+
+
+def test_to_source_assets():
+    @asset
+    def my_asset():
+        ...
+
+    @multi_asset(
+        outs={
+            "my_out_name": Out(asset_key=AssetKey("my_asset_name")),
+            "my_other_out_name": Out(asset_key=AssetKey("my_other_asset")),
+        }
+    )
+    def my_multi_asset():
+        yield Output(1, "my_out_name")
+        yield Output(2, "my_other_out_name")
+
+    assert AssetGroup([my_asset, my_multi_asset]).to_source_assets() == [
+        SourceAsset(AssetKey(["my_asset"])),
+        SourceAsset(AssetKey(["my_asset_name"])),
+        SourceAsset(AssetKey(["my_other_asset"])),
+    ]
