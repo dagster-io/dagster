@@ -249,6 +249,15 @@ def test_register_task_definition(ecs):
     )
     assert response["taskDefinition"]["networkMode"] == "bridge"
 
+    # Secrets default to an empty list
+    response = ecs.register_task_definition(
+        family="secrets",
+        containerDefinitions=[{"image": "hello_world:latest"}],
+        memory="512",
+        cpu="256",
+    )
+    assert response["taskDefinition"]["containerDefinitions"][0]["secrets"] == []
+
 
 def test_run_task(ecs, ec2, subnet):
     with pytest.raises(ParamValidationError):
