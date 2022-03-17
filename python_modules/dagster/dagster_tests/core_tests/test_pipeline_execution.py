@@ -1,4 +1,5 @@
 import uuid
+import warnings
 
 import pytest
 
@@ -251,11 +252,15 @@ def test_create_pipeline_with_empty_solids_list():
 def test_singleton_pipeline():
     stub_solid = define_stub_solid("stub", [{"a key": "a value"}])
 
-    @pipeline
-    def single_solid_pipeline():
-        stub_solid()
+    # will fail if any warning is emitted
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
 
-    assert execute_pipeline(single_solid_pipeline).success
+        @pipeline
+        def single_solid_pipeline():
+            stub_solid()
+
+        assert execute_pipeline(single_solid_pipeline).success
 
 
 def test_two_root_solid_pipeline_with_empty_dependency_definition():

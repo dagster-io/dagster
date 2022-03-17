@@ -16,6 +16,7 @@ from dagster.core.definitions import (
     NodeHandle,
 )
 from dagster.core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
+from dagster.core.definitions.metadata import MetadataValue
 from dagster.core.errors import DagsterError, HookExecutionError
 from dagster.core.execution.context.hook import HookContext
 from dagster.core.execution.context.system import (
@@ -874,13 +875,15 @@ class DagsterEvent(
     ) -> "DagsterEvent":
 
         metadata_entries = []
-        for resource_key in resource_instances.keys():
-            resource_obj = resource_instances[resource_key]
-            resource_time = resource_init_times[resource_key]
-            metadata_entries.append(
-                MetadataEntry.python_artifact(
-                    resource_obj.__class__, resource_key, "Initialized in {}".format(resource_time)
-                )
+        for key in resource_instances.keys():
+            metadata_entries.extend(
+                [
+                    MetadataEntry(
+                        key,
+                        value=MetadataValue.python_artifact(resource_instances[key].__class__),
+                    ),
+                    MetadataEntry(f"{key}:init_time_ms", value=resource_init_times[key]),
+                ]
             )
 
         return DagsterEvent.from_resource(
@@ -1328,9 +1331,9 @@ class EngineEventData(
         pid: int, step_keys_to_execute: Optional[List[str]] = None, marker_end: Optional[str] = None
     ) -> "EngineEventData":
         return EngineEventData(
-            metadata_entries=[MetadataEntry.text(str(pid), "pid")]
+            metadata_entries=[MetadataEntry("pid", value=str(pid))]
             + (
-                [MetadataEntry.text(str(step_keys_to_execute), "step_keys")]
+                [MetadataEntry("step_keys", value=str(step_keys_to_execute))]
                 if step_keys_to_execute
                 else []
             ),
