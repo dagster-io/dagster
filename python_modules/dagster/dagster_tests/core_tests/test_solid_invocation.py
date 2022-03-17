@@ -1060,6 +1060,6 @@ def test_kwargs_via_partial_functools():
 
     new_func = partial(fake_func, foo=1, bar=2)
 
-    new_op = op(name='new_func')(new_func)
+    new_op = op(name="new_func")(new_func)
 
     assert new_op() == 3
