@@ -9,35 +9,83 @@ import { RepositorySelector, AssetKeyInput, RunStatus } from "./../../../types/g
 // GraphQL query operation: AssetGraphLiveQuery
 // ====================================================
 
-export interface AssetGraphLiveQuery_repositoryOrError_PythonError {
-  __typename: "PythonError" | "RepositoryNotFoundError";
+export interface AssetGraphLiveQuery_repositoriesOrError_PythonError {
+  __typename: "PythonError";
 }
 
-export interface AssetGraphLiveQuery_repositoryOrError_Repository_inProgressRunsByStep_unstartedRuns {
+export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
+export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep_unstartedRuns {
   __typename: "Run";
   id: string;
 }
 
-export interface AssetGraphLiveQuery_repositoryOrError_Repository_inProgressRunsByStep_inProgressRuns {
+export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep_inProgressRuns {
   __typename: "Run";
   id: string;
 }
 
-export interface AssetGraphLiveQuery_repositoryOrError_Repository_inProgressRunsByStep {
+export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep {
   __typename: "InProgressRunsByStep";
   stepKey: string;
-  unstartedRuns: AssetGraphLiveQuery_repositoryOrError_Repository_inProgressRunsByStep_unstartedRuns[];
-  inProgressRuns: AssetGraphLiveQuery_repositoryOrError_Repository_inProgressRunsByStep_inProgressRuns[];
+  unstartedRuns: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep_unstartedRuns[];
+  inProgressRuns: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep_inProgressRuns[];
 }
 
-export interface AssetGraphLiveQuery_repositoryOrError_Repository {
+export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep_LatestRun_run {
+  __typename: "Run";
+  id: string;
+  status: RunStatus;
+}
+
+export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep_LatestRun {
+  __typename: "LatestRun";
+  stepKey: string;
+  run: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep_LatestRun_run | null;
+}
+
+export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep_JobRunsCount {
+  __typename: "JobRunsCount";
+  stepKey: string;
+  jobNames: string[];
+  count: number;
+  sinceLatestMaterialization: boolean;
+}
+
+export type AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep = AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep_LatestRun | AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep_JobRunsCount;
+
+export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes {
   __typename: "Repository";
   id: string;
   name: string;
-  inProgressRunsByStep: AssetGraphLiveQuery_repositoryOrError_Repository_inProgressRunsByStep[];
+  location: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_location;
+  inProgressRunsByStep: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_inProgressRunsByStep[];
+  latestRunByStep: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes_latestRunByStep[];
 }
 
-export type AssetGraphLiveQuery_repositoryOrError = AssetGraphLiveQuery_repositoryOrError_PythonError | AssetGraphLiveQuery_repositoryOrError_Repository;
+export interface AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection {
+  __typename: "RepositoryConnection";
+  nodes: AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection_nodes[];
+}
+
+export type AssetGraphLiveQuery_repositoriesOrError = AssetGraphLiveQuery_repositoriesOrError_PythonError | AssetGraphLiveQuery_repositoriesOrError_RepositoryConnection;
+
+export interface AssetGraphLiveQuery_assetNodes_repository_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
+export interface AssetGraphLiveQuery_assetNodes_repository {
+  __typename: "Repository";
+  id: string;
+  name: string;
+  location: AssetGraphLiveQuery_assetNodes_repository_location;
+}
 
 export interface AssetGraphLiveQuery_assetNodes_assetKey {
   __typename: "AssetKey";
@@ -253,16 +301,17 @@ export interface AssetGraphLiveQuery_assetNodes {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  repository: AssetGraphLiveQuery_assetNodes_repository;
   assetKey: AssetGraphLiveQuery_assetNodes_assetKey;
   assetMaterializations: AssetGraphLiveQuery_assetNodes_assetMaterializations[];
 }
 
 export interface AssetGraphLiveQuery {
-  repositoryOrError: AssetGraphLiveQuery_repositoryOrError;
+  repositoriesOrError: AssetGraphLiveQuery_repositoriesOrError;
   assetNodes: AssetGraphLiveQuery_assetNodes[];
 }
 
 export interface AssetGraphLiveQueryVariables {
-  repositorySelector: RepositorySelector;
+  repositorySelector?: RepositorySelector | null;
   assetKeys?: AssetKeyInput[] | null;
 }

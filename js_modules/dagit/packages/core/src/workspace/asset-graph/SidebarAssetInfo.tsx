@@ -56,6 +56,19 @@ export const SidebarAssetInfo: React.FC<{
     <>
       <Header assetKey={assetKey} opName={asset.op?.name} />
 
+      <AssetEvents
+        assetKey={assetKey}
+        assetLastMaterializedAt={lastMaterialization?.timestamp}
+        assetHasDefinedPartitions={!!asset.partitionDefinition}
+        asSidebarSection
+        liveData={liveData}
+        paramsTimeWindowOnly={false}
+        params={{}}
+        setParams={() => {}}
+      />
+
+      <div style={{borderBottom: `2px solid ${ColorsWIP.Gray300}`}} />
+
       {(asset.description || !(asset.description || assetType || assetMetadata)) && (
         <DescriptionSidebarSection asset={asset} repoAddress={repoAddress} />
       )}
@@ -76,19 +89,6 @@ export const SidebarAssetInfo: React.FC<{
           </Box>
         </SidebarSection>
       )}
-
-      <div style={{borderBottom: `2px solid ${ColorsWIP.Gray300}`}} />
-
-      <AssetEvents
-        assetKey={assetKey}
-        assetLastMaterializedAt={lastMaterialization?.timestamp}
-        assetHasDefinedPartitions={!!asset.partitionDefinition}
-        asSidebarSection
-        liveData={liveData}
-        paramsTimeWindowOnly={false}
-        params={{}}
-        setParams={() => {}}
-      />
     </>
   );
 };

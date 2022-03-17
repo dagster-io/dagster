@@ -21,7 +21,7 @@ parameters:
 jobs:
   - job: "dagster"
     pool:
-      vmImage: "vs2017-win2016"
+      vmImage: "windows-2019"
     strategy:
       matrix:
         ${{ each py_version in parameters.py3_versions }}:

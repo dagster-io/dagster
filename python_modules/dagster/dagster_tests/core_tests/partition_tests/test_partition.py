@@ -127,6 +127,7 @@ def test_time_based_partitions_invariants(
         "partition_days_offset",
         "current_time",
         "expected_partitions",
+        "timezone",
     ],
     ids=[
         "partition days offset == 0",
@@ -140,6 +141,10 @@ def test_time_based_partitions_invariants(
         "different start/end year",
         "leap year",
         "not leap year",
+        "partition days offset == 0, spring DST",
+        "partition days offset == 1, spring DST",
+        "partition days offset == 0, fall DST",
+        "partition days offset == 1, fall DST",
     ],
     argvalues=[
         (
@@ -149,6 +154,7 @@ def test_time_based_partitions_invariants(
             0,
             create_pendulum_time(2021, 1, 6, 1, 20),
             ["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-04", "2021-01-05", "2021-01-06"],
+            None,
         ),
         (
             datetime(year=2021, month=1, day=1),
@@ -157,6 +163,7 @@ def test_time_based_partitions_invariants(
             1,
             create_pendulum_time(2021, 1, 6, 1, 20),
             ["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-04", "2021-01-05"],
+            None,
         ),
         (
             datetime(year=2021, month=1, day=1),
@@ -165,6 +172,7 @@ def test_time_based_partitions_invariants(
             2,
             create_pendulum_time(2021, 1, 6, 1, 20),
             ["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-04"],
+            None,
         ),
         (
             datetime(year=2021, month=1, day=1),
@@ -173,6 +181,7 @@ def test_time_based_partitions_invariants(
             2,
             create_pendulum_time(2021, 1, 5, 1, 20),
             ["2021-01-01", "2021-01-02", "2021-01-03"],
+            None,
         ),
         (
             datetime(year=2021, month=1, day=1),
@@ -181,6 +190,7 @@ def test_time_based_partitions_invariants(
             2,
             create_pendulum_time(2021, 1, 7, 1, 20),
             ["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-04", "2021-01-05"],
+            None,
         ),
         (
             datetime(year=2021, month=1, day=1),
@@ -189,6 +199,7 @@ def test_time_based_partitions_invariants(
             2,
             create_pendulum_time(2021, 1, 8, 1, 20),
             ["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-04", "2021-01-05", "2021-01-06"],
+            None,
         ),
         (
             datetime(year=2021, month=1, day=1),
@@ -197,6 +208,7 @@ def test_time_based_partitions_invariants(
             2,
             create_pendulum_time(2022, 1, 8, 1, 20),
             ["2021-01-01", "2021-01-02", "2021-01-03", "2021-01-04", "2021-01-05", "2021-01-06"],
+            None,
         ),
         (
             datetime(year=2021, month=1, day=1),
@@ -213,6 +225,7 @@ def test_time_based_partitions_invariants(
                 "2021-01-06",
                 "2021-01-07",
             ],
+            None,
         ),
         (
             datetime(year=2020, month=12, day=29),
@@ -221,6 +234,7 @@ def test_time_based_partitions_invariants(
             0,
             create_pendulum_time(2021, 1, 3, 1, 20),
             ["2020-12-29", "2020-12-30", "2020-12-31", "2021-01-01", "2021-01-02", "2021-01-03"],
+            None,
         ),
         (
             datetime(year=2020, month=2, day=28),
@@ -229,6 +243,7 @@ def test_time_based_partitions_invariants(
             0,
             create_pendulum_time(2020, 3, 3, 1, 20),
             ["2020-02-28", "2020-02-29", "2020-03-01", "2020-03-02", "2020-03-03"],
+            None,
         ),
         (
             datetime(year=2021, month=2, day=28),
@@ -237,16 +252,54 @@ def test_time_based_partitions_invariants(
             0,
             create_pendulum_time(2021, 3, 3, 1, 20),
             ["2021-02-28", "2021-03-01", "2021-03-02", "2021-03-03"],
+            None,
+        ),
+        (
+            datetime(year=2019, month=3, day=9),
+            time(7, 30),
+            None,
+            0,
+            create_pendulum_time(2019, 3, 12, 8, 30),
+            ["2019-03-09", "2019-03-10", "2019-03-11", "2019-03-12"],
+            "US/Eastern",
+        ),
+        (
+            datetime(year=2019, month=3, day=9),
+            time(7, 30),
+            None,
+            1,
+            create_pendulum_time(2019, 3, 12, 8, 30),
+            ["2019-03-09", "2019-03-10", "2019-03-11"],
+            "US/Eastern",
+        ),
+        (
+            datetime(year=2021, month=11, day=6),
+            time(7, 30),
+            None,
+            0,
+            create_pendulum_time(2021, 11, 9, 8, 30),
+            ["2021-11-06", "2021-11-07", "2021-11-08", "2021-11-09"],
+            "US/Eastern",
+        ),
+        (
+            datetime(year=2021, month=11, day=6),
+            time(7, 30),
+            None,
+            1,
+            create_pendulum_time(2021, 11, 9, 8, 30),
+            ["2021-11-06", "2021-11-07", "2021-11-08"],
+            "US/Eastern",
         ),
     ],
 )
 def test_time_partitions_daily_partitions(
     start: datetime,
     execution_time: time,
-    end: datetime,
+    end: Optional[datetime],
     partition_days_offset: Optional[int],
     current_time,
     expected_partitions: List[str],
+    timezone: Optional[str],
 ):
     with pendulum.test(current_time):
         partitions = ScheduleTimeBasedPartitionsDefinition(
@@ -255,6 +308,7 @@ def test_time_partitions_daily_partitions(
             execution_time=execution_time,
             end=end,
             offset=partition_days_offset,
+            timezone=timezone,
         )
 
         assert_expected_partitions(partitions.get_partitions(), expected_partitions)

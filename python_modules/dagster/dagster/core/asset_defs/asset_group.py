@@ -440,9 +440,11 @@ class AssetGroup(
                     keys = asset.asset_keys if isinstance(asset, AssetsDefinition) else [asset.key]
                     for key in keys:
                         if key in asset_keys:
+                            modules_str = ", ".join(
+                                set([asset_keys[key].__name__, module.__name__])
+                            )
                             raise DagsterInvalidDefinitionError(
-                                "Asset key {key} is defined multiple times. Definitions in "
-                                f"module {asset_keys[key].__name__} and {module.__name__}."
+                                f"Asset key {key} is defined multiple times. Definitions found in modules: {modules_str}."
                             )
                         else:
                             asset_keys[key] = module

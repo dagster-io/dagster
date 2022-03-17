@@ -11,7 +11,8 @@ from dagster_graphql.test.utils import (
 from dagster import AssetKey
 from dagster.utils import safe_tempfile_path
 
-from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
+# from .graphql_context_test_suite import GraphQLContextVariant, make_graphql_context_test_suite
+from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 
 GET_ASSET_KEY_QUERY = """
     query AssetKeyQuery {
@@ -270,15 +271,7 @@ def _create_run(graphql_context, pipeline_name, mode="default", step_keys=None):
     return result.data["launchPipelineExecution"]["run"]["runId"]
 
 
-class TestAssetAwareEventLog(
-    make_graphql_context_test_suite(
-        context_variants=[
-            GraphQLContextVariant.consolidated_sqlite_instance_managed_grpc_env(),
-            GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(),
-            GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(),
-        ]
-    )
-):
+class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
     def test_all_asset_keys(self, graphql_context, snapshot):
         _create_run(graphql_context, "multi_asset_pipeline")
         result = execute_dagster_graphql(graphql_context, GET_ASSET_KEY_QUERY)
@@ -777,14 +770,7 @@ class TestAssetAwareEventLog(
         assert result["asset_2"]["sinceLatestMaterialization"] == False
 
 
-class TestPersistentInstanceAssetInProgress(
-    make_graphql_context_test_suite(
-        context_variants=[
-            GraphQLContextVariant.sqlite_with_default_run_launcher_managed_grpc_env(),
-            GraphQLContextVariant.postgres_with_default_run_launcher_managed_grpc_env(),
-        ]
-    )
-):
+class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):
     def test_asset_in_progress(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "hanging_job")
         run_id = "foo"

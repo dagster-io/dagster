@@ -103,6 +103,11 @@ module.exports = {
             message: 'Please import from `@apollo/client`.',
           },
           {
+            name: 'graphql.macro',
+            importNames: ['gql'],
+            message: 'Please import from `@apollo/client`.',
+          },
+          {
             name: 'styled-components',
             message: 'Please import from `styled-components/macro`.',
           },

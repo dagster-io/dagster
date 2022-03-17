@@ -364,10 +364,13 @@ const RunTimelineSection = ({jobs, loading}: {jobs: JobItem[]; loading: boolean}
     }
   }, [loading]);
 
-  const now = nowRef.current;
+  const nowSecs = Math.floor(nowRef.current / 1000);
   const range: [number, number] = React.useMemo(() => {
-    return [now - Number(hourWindow) * ONE_HOUR, now + LOOKAHEAD_HOURS * ONE_HOUR];
-  }, [hourWindow, now]);
+    return [
+      nowSecs * 1000 - Number(hourWindow) * ONE_HOUR,
+      nowSecs * 1000 + LOOKAHEAD_HOURS * ONE_HOUR,
+    ];
+  }, [hourWindow, nowSecs]);
 
   const [start, end] = React.useMemo(() => {
     const [unvalidatedStart, unvalidatedEnd] = range;

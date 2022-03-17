@@ -1,10 +1,12 @@
 import sys
 from collections import namedtuple
+from typing import cast
 
 from graphql.execution.base import ResolveInfo
 
 from dagster import check
 from dagster.core.host_representation import GraphSelector, PipelineSelector
+from dagster.core.workspace.context import BaseWorkspaceRequestContext
 from dagster.utils.error import serializable_error_info_from_exc_info
 
 
@@ -23,7 +25,8 @@ def check_permission(permission):
 def assert_permission(graphene_info: ResolveInfo, permission: str) -> None:
     from dagster_graphql.schema.errors import GrapheneUnauthorizedError
 
-    if not graphene_info.context.has_permission(permission):
+    context = cast(BaseWorkspaceRequestContext, graphene_info.context)
+    if not context.has_permission(permission):
         raise UserFacingGraphQLError(GrapheneUnauthorizedError())
 
 

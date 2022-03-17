@@ -12,29 +12,43 @@ import {
   AssetGraphQuery_assetNodes_assetKey,
 } from './types/AssetGraphQuery';
 import {AssetNodeLiveFragment} from './types/AssetNodeLiveFragment';
-import {InProgressRunsFragment} from './types/InProgressRunsFragment';
+import {
+  RepositoryLiveFragment,
+  RepositoryLiveFragment_latestRunByStep_JobRunsCount,
+  RepositoryLiveFragment_latestRunByStep_LatestRun_run,
+} from './types/RepositoryLiveFragment';
 
 type AssetNode = AssetGraphQuery_assetNodes;
 type AssetKey = AssetGraphQuery_assetNodes_assetKey;
 
 export const __ASSET_GROUP = '__ASSET_GROUP';
 
+// IMPORTANT: We use this, rather than AssetNode.id throughout this file because
+// the GraphQL interface exposes dependencyKeys, not dependencyIds. We also need
+// ways to "build" GraphId's locally, they can't always be server-provided.
+//
+// This value is NOT the same as AssetNode.id values provided by the server,
+// because JSON.stringify's whitespace behavior is different than Python's.
+//
+export type GraphId = string;
+export const toGraphId = (key: AssetKey): GraphId => JSON.stringify(key.path);
+
 export interface Node {
-  id: string;
+  id: GraphId;
   assetKey: AssetKey;
   definition: AssetNode;
 }
 interface LayoutNode {
-  id: string;
+  id: GraphId;
   x: number;
   y: number;
   width: number;
   height: number;
 }
 export interface GraphData {
-  nodes: {[assetId: string]: Node};
-  downstream: {[assetId: string]: {[childAssetId: string]: boolean}};
-  upstream: {[assetId: string]: {[parentAssetId: string]: boolean}};
+  nodes: {[assetId: GraphId]: Node};
+  downstream: {[assetId: GraphId]: {[childAssetId: GraphId]: boolean}};
+  upstream: {[assetId: GraphId]: {[parentAssetId: GraphId]: boolean}};
 }
 interface IPoint {
   x: number;
@@ -53,28 +67,28 @@ export const buildGraphData = (assetNodes: AssetNode[]) => {
     upstream: {},
   };
 
-  const addEdge = (upstreamKeyJson: string, downstreamKeyJson: string) => {
-    data.downstream[upstreamKeyJson] = {
-      ...(data.downstream[upstreamKeyJson] || {}),
-      [downstreamKeyJson]: true,
+  const addEdge = (upstreamGraphId: string, downstreamGraphId: string) => {
+    data.downstream[upstreamGraphId] = {
+      ...(data.downstream[upstreamGraphId] || {}),
+      [downstreamGraphId]: true,
     };
-    data.upstream[downstreamKeyJson] = {
-      ...(data.upstream[downstreamKeyJson] || {}),
-      [upstreamKeyJson]: true,
+    data.upstream[downstreamGraphId] = {
+      ...(data.upstream[downstreamGraphId] || {}),
+      [upstreamGraphId]: true,
     };
   };
 
   assetNodes.forEach((definition: AssetNode) => {
-    const assetKeyJson = JSON.stringify(definition.assetKey.path);
-    definition.dependencyKeys.forEach(({path}) => {
-      addEdge(JSON.stringify(path), assetKeyJson);
+    const id = toGraphId(definition.assetKey);
+    definition.dependencyKeys.forEach((key) => {
+      addEdge(toGraphId(key), id);
     });
-    definition.dependedByKeys.forEach(({path}) => {
-      addEdge(assetKeyJson, JSON.stringify(path));
+    definition.dependedByKeys.forEach((key) => {
+      addEdge(id, toGraphId(key));
     });
 
-    data.nodes[assetKeyJson] = {
-      id: assetKeyJson,
+    data.nodes[id] = {
+      id: id,
       assetKey: definition.assetKey,
       definition,
     };
@@ -84,36 +98,39 @@ export const buildGraphData = (assetNodes: AssetNode[]) => {
 };
 
 export const buildGraphDataFromSingleNode = (assetNode: AssetNodeDefinitionFragment) => {
+  const id = toGraphId(assetNode.assetKey);
   const graphData: GraphData = {
     downstream: {
-      [assetNode.id]: {},
+      [id]: {},
     },
     nodes: {
-      [assetNode.id]: {
-        id: assetNode.id,
+      [id]: {
+        id: id,
         assetKey: assetNode.assetKey,
         definition: {...assetNode, dependencyKeys: [], dependedByKeys: []},
       },
     },
     upstream: {
-      [assetNode.id]: {},
+      [id]: {},
     },
   };
 
   for (const {asset} of assetNode.dependencies) {
-    graphData.upstream[assetNode.id][asset.id] = true;
-    graphData.downstream[asset.id] = {...graphData.downstream[asset.id], [assetNode.id]: true};
-    graphData.nodes[asset.id] = {
-      id: asset.id,
+    const depId = toGraphId(asset.assetKey);
+    graphData.upstream[id][depId] = true;
+    graphData.downstream[depId] = {...graphData.downstream[depId], [id]: true};
+    graphData.nodes[depId] = {
+      id: depId,
       assetKey: asset.assetKey,
       definition: {...asset, dependencyKeys: [], dependedByKeys: []},
     };
   }
   for (const {asset} of assetNode.dependedBy) {
-    graphData.upstream[asset.id] = {...graphData.upstream[asset.id], [assetNode.id]: true};
-    graphData.downstream[assetNode.id][asset.id] = true;
-    graphData.nodes[asset.id] = {
-      id: asset.id,
+    const depId = toGraphId(asset.assetKey);
+    graphData.upstream[depId] = {...graphData.upstream[depId], [id]: true};
+    graphData.downstream[id][depId] = true;
+    graphData.nodes[depId] = {
+      id: depId,
       assetKey: asset.assetKey,
       definition: {...asset, dependencyKeys: [], dependedByKeys: []},
     };
@@ -252,24 +269,27 @@ export interface LiveDataForNode {
   computeStatus: Status;
   unstartedRunIds: string[]; // run in progress and step not started
   inProgressRunIds: string[]; // run in progress and step in progress
+  runsSinceMaterialization: RepositoryLiveFragment_latestRunByStep_JobRunsCount | null;
+  runWhichFailedToMaterialize: RepositoryLiveFragment_latestRunByStep_LatestRun_run | null;
   lastMaterialization: AssetGraphLiveQuery_assetNodes_assetMaterializations | null;
   lastStepStart: number;
 }
 export interface LiveData {
-  [assetId: string]: LiveDataForNode;
+  [assetId: GraphId]: LiveDataForNode;
 }
 
 export const buildLiveData = (
   graph: GraphData,
   nodes: AssetNodeLiveFragment[],
-  inProgressRunsByStep: InProgressRunsFragment[],
+  repos: RepositoryLiveFragment[],
 ) => {
   const data: LiveData = {};
 
   for (const liveNode of nodes) {
-    const graphNodeKey = JSON.stringify(liveNode.assetKey.path);
-    const graphNode = graph.nodes[graphNodeKey];
+    const graphId = toGraphId(liveNode.assetKey);
+    const graphNode = graph.nodes[graphId];
     if (!graphNode) {
+      console.warn(`buildLiveData could not find the graph node matching ${graphId}`);
       continue;
     }
 
@@ -277,14 +297,32 @@ export const buildLiveData = (
     const lastStepStart = lastMaterialization?.stepStats?.startTime || 0;
     const isForeignNode = !liveNode.opName;
     const isPartitioned = graphNode.definition.partitionDefinition;
+    const repo = repos.find(
+      (r) =>
+        r.location.name === liveNode.repository.location.name &&
+        r.name === liveNode.repository.name,
+    );
 
-    const runs = inProgressRunsByStep.find((r) => r.stepKey === liveNode.opName);
+    const runs = repo?.inProgressRunsByStep.find((r) => r.stepKey === liveNode.opName);
+    const info = repo?.latestRunByStep.find((r) => r.stepKey === liveNode.opName);
 
-    data[graphNodeKey] = {
+    const runsSinceMaterialization = info?.__typename === 'JobRunsCount' ? info : null;
+    const latestRunForStepKey = info?.__typename === 'LatestRun' ? info.run : null;
+
+    const runWhichFailedToMaterialize =
+      (!runsSinceMaterialization &&
+        latestRunForStepKey?.status === 'FAILURE' &&
+        (!lastMaterialization || lastMaterialization.runId !== latestRunForStepKey?.id) &&
+        latestRunForStepKey) ||
+      null;
+
+    data[graphId] = {
       lastStepStart,
       lastMaterialization,
       inProgressRunIds: runs?.inProgressRuns.map((r) => r.id) || [],
       unstartedRunIds: runs?.unstartedRuns.map((r) => r.id) || [],
+      runsSinceMaterialization,
+      runWhichFailedToMaterialize,
       computeStatus: isForeignNode
         ? 'good' // foreign nodes are always considered up-to-date
         : isPartitioned
@@ -337,4 +375,43 @@ export const IN_PROGRESS_RUNS_FRAGMENT = gql`
       id
     }
   }
+`;
+
+export const LAST_RUNS_WARNINGS_FRAGMENT = gql`
+  fragment LastRunsWarningsFragment on RunStatsByStep {
+    __typename
+    ... on LatestRun {
+      stepKey
+      run {
+        id
+        status
+      }
+    }
+    ... on JobRunsCount {
+      stepKey
+      jobNames
+      count
+      sinceLatestMaterialization
+    }
+  }
+`;
+
+export const REPOSITORY_LIVE_FRAGMENT = gql`
+  fragment RepositoryLiveFragment on Repository {
+    id
+    name
+    location {
+      id
+      name
+    }
+    inProgressRunsByStep {
+      ...InProgressRunsFragment
+    }
+    latestRunByStep {
+      __typename
+      ...LastRunsWarningsFragment
+    }
+  }
+  ${IN_PROGRESS_RUNS_FRAGMENT}
+  ${LAST_RUNS_WARNINGS_FRAGMENT}
 `;
