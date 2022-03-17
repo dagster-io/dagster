@@ -994,7 +994,8 @@ class DagsterInstance:
             pipeline_code_origin=pipeline_code_origin,
         )
 
-        self._store_asset_intent_to_materialize_events(pipeline_run, execution_plan_snapshot)
+        if execution_plan_snapshot:
+            self._store_asset_intent_to_materialize_events(pipeline_run, execution_plan_snapshot)
 
         return self._run_storage.add_run(pipeline_run)
 
