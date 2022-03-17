@@ -85,9 +85,7 @@ def build_assets_job(
     source_assets_by_key = build_source_assets_by_key(source_assets)
 
     op_defs = build_op_deps(assets, source_assets_by_key.keys())
-    root_manager = build_root_manager(
-        build_source_assets_by_key(source_assets + assets)
-    )  # source_assets_by_key)
+    root_manager = build_root_manager(source_assets_by_key)
     partitioned_config = build_job_partitions_from_assets(assets, source_assets or [])
 
     return GraphDefinition(
