@@ -74,7 +74,7 @@ export const Alert: React.FC<Props> = (props) => {
         </Group>
         {hasCloseButton ? (
           <div onClick={onClose} style={{cursor: 'pointer'}}>
-            <IconWIP name="close" />
+            <IconWIP name="close" color={textColor} />
           </div>
         ) : null}
       </Box>
