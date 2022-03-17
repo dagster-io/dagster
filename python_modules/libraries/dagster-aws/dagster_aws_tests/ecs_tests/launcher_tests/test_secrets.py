@@ -148,4 +148,4 @@ def test_empty_secrets(
     task_definition = task_definition["taskDefinition"]
 
     # No secrets
-    assert "secrets" not in task_definition["containerDefinitions"][0]
+    assert not task_definition["containerDefinitions"][0].get("secrets")
