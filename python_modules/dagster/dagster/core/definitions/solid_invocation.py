@@ -162,17 +162,6 @@ def _resolve_inputs(
     input_def_names = set(input_defs_by_name.keys())
     provided_input_names = set(input_dict.keys())
 
-    missing_inputs = input_def_names - provided_input_names
-    extra_inputs = provided_input_names - input_def_names
-
-    if missing_inputs or extra_inputs:
-        error_msg = ""
-        if extra_inputs:
-            error_msg += f"Invocation had extra inputs {list(extra_inputs)}."
-        if missing_inputs:
-            error_msg += f"Invocation had missing inputs {list(missing_inputs)}."
-        raise DagsterInvalidInvocationError(error_msg)
-
     # Type check inputs
     op_label = context.describe_op()
 

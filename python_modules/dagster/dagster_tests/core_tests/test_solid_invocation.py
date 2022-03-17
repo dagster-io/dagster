@@ -1035,10 +1035,7 @@ def test_kwarg_inputs():
 
     assert the_op(the_in="bar") == "barfoo"
 
-    with pytest.raises(
-        DagsterInvalidInvocationError,
-        match="Invocation had extra inputs \['bad_val'\].Invocation had missing inputs \['the_in'\].",
-    ):
+    with pytest.raises(KeyError):
         the_op(bad_val="bar")
 
     @op(ins={"the_in": In(), "kwarg_in": In(), "kwarg_in_two": In()})
@@ -1046,3 +1043,25 @@ def test_kwarg_inputs():
         return the_in + kwargs["kwarg_in"] + kwargs["kwarg_in_two"]
 
     assert the_op("foo", kwarg_in="bar", kwarg_in_two="baz") == "foobarbaz"
+
+
+def test_default_kwarg_inputs():
+    @op
+    def the_op(x=1, y=2):
+        return x + y
+
+    assert the_op() == 3
+
+
+def test_kwargs_via_partial_functools():
+    from dagster import op
+    from functools import partial
+
+    def fake_func(foo, bar):
+        return foo + bar
+
+    new_func = partial(fake_func, foo=1, bar=2)
+
+    new_op = op(name='new_func')(new_func)
+
+    assert new_op() == 3
