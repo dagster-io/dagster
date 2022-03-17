@@ -16,7 +16,7 @@ dbt_prod_resource = dbt_cli_resource.configured(
 )
 
 
-assets = load_assets_from_dbt_manifest(
+dbt_assets = load_assets_from_dbt_manifest(
     json.load(open(os.path.join(DBT_PROJECT_DIR, "target", "manifest.json"))),
     io_manager_key="warehouse_io_manager",
 )

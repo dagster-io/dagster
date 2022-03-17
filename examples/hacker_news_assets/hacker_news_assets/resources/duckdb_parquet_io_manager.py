@@ -3,7 +3,7 @@ import os
 import duckdb
 import pandas as pd
 
-from dagster import Field, check, io_manager
+from dagster import Field, MetadataValue, check, io_manager
 from dagster.seven.temp_dir import get_system_temp_directory
 
 from .parquet_io_manager import PartitionedParquetIOManager
@@ -14,7 +14,7 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
 
     def handle_output(self, context, obj):
         if obj is not None:  # if this is a dbt output, then the value will be None
-            yield from super().handle_output(context, obj)
+            super().handle_output(context, obj)
             con = self._connect_duckdb(context)
 
             path = self._get_path(context)
@@ -26,6 +26,16 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
             con.execute(
                 f"create or replace view {self._table_path(context)} as "
                 f"select * from parquet_scan('{to_scan}');"
+            )
+        else:
+            con = self._connect_duckdb(context)
+            sample = con.execute(f"SELECT * FROM {self._table_path(context)} LIMIT 5").fetchdf()
+            num_rows = int(
+                con.execute(f"SELECT COUNT(*) FROM {self._table_path(context)}").fetchdf().iat[0, 0]
+            )
+
+            context.add_output_metadata(
+                {"Sample": MetadataValue.md(sample.to_markdown()), "Row count": num_rows}
             )
 
     def load_input(self, context):

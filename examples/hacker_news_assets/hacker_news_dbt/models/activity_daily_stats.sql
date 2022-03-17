@@ -1,4 +1,6 @@
-SELECT *
-FROM {{ ref('comment_daily_stats') }}
-FULL OUTER JOIN {{ ref('story_daily_stats') }}
-USING (date)
+select *
+from {{ ref('comment_daily_stats') }}
+full outer join {{ ref('story_daily_stats') }}
+using (date)
+
+

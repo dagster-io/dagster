@@ -4,7 +4,16 @@ from typing import Union
 import pandas
 import pyspark
 
-from dagster import Field, IOManager, MetadataEntry, OutputContext, check, io_manager
+from dagster import (
+    Field,
+    IOManager,
+    MetadataValue,
+    OutputContext,
+    TableColumn,
+    TableSchema,
+    check,
+    io_manager,
+)
 from dagster.seven.temp_dir import get_system_temp_directory
 
 
@@ -38,8 +47,22 @@ class PartitionedParquetIOManager(IOManager):
             obj.write.parquet(path=path, mode="overwrite")
         else:
             raise Exception(f"Outputs of type {type(obj)} not supported.")
-        yield MetadataEntry.int(value=row_count, label="row_count")
-        yield MetadataEntry.path(path=path, label="path")
+
+        context.add_output_metadata(
+            {
+                "Row count": row_count,
+                "Path": MetadataValue.path(path),
+                "Sample": MetadataValue.md(obj.head(5).to_markdown()),
+                "Columns": MetadataValue.table_schema(
+                    TableSchema(
+                        [
+                            TableColumn(col_name, str(dtype))
+                            for col_name, dtype in obj.dtypes.iteritems()
+                        ]
+                    )
+                ),
+            }
+        )
 
     def load_input(self, context) -> Union[pyspark.sql.DataFrame, str]:
         path = self._get_path(context.upstream_output)

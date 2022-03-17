@@ -1,15 +1,14 @@
 from hacker_news_assets.resources import RESOURCES_LOCAL
 
-from dagster import AssetGroup, repository
-
-core_assets = AssetGroup.from_package_name(
-    "hacker_news_assets.assets.core", resource_defs=RESOURCES_LOCAL
-)
+from dagster import AssetGroup, ScheduleDefinition, repository
 
 
 @repository
 def core():
-    return [core_assets]
+    assets = AssetGroup.from_package_name(
+        "hacker_news_assets.assets.core", resource_defs=RESOURCES_LOCAL
+    )
+    return [assets]
 
 
 @repository
@@ -17,7 +16,12 @@ def activity_analytics():
     assets = AssetGroup.from_package_name(
         "hacker_news_assets.assets.activity_analytics", resource_defs=RESOURCES_LOCAL
     )
-    return [assets]
+    return [
+        assets,
+        ScheduleDefinition(
+            job=assets.build_job("daily_activity_analytics"), cron_schedule="@daily"
+        ),
+    ]
 
 
 @repository
