@@ -7,8 +7,8 @@ from dagster.core.definitions import (
     MetadataEntry,
     NodeHandle,
 )
-from dagster.serdes import whitelist_for_serdes
 from dagster.core.definitions.events import AssetKey
+from dagster.serdes import whitelist_for_serdes
 
 from .handle import UnresolvedStepHandle
 from .objects import TypeCheckData
@@ -33,7 +33,7 @@ class StepOutputProperties(
         is_dynamic: bool,
         is_asset: bool,
         should_materialize: bool,
-        asset_key: Optional[AssetKey],
+        asset_key: Optional[AssetKey] = None,
     ):
         return super(StepOutputProperties, cls).__new__(
             cls,
