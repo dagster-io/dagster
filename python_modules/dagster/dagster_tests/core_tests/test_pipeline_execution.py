@@ -1,4 +1,5 @@
 import uuid
+import warnings
 
 import pytest
 
@@ -255,7 +256,9 @@ def test_singleton_pipeline():
     def single_solid_pipeline():
         stub_solid()
 
-    assert execute_pipeline(single_solid_pipeline).success
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        assert execute_pipeline(single_solid_pipeline).success
 
 
 def test_two_root_solid_pipeline_with_empty_dependency_definition():
