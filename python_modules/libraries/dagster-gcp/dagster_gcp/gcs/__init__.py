@@ -6,3 +6,4 @@ from .io_manager import (
     gcs_pickle_io_manager,
 )
 from .resources import gcs_file_manager, gcs_resource
+from .gcs_fake_resource import FakeGCSBlob, FakeGCSBucket, FakeGCSClient
