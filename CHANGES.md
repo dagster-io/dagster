@@ -13,6 +13,10 @@
 - [dagit] Dagit now performs "middle truncation" on gantt chart steps and graph nodes, making it much easier to differentiate long assets and ops.
 - [dagit] Dagit no longer refreshes data when tabs are in the background, lowering browser CPU usage.
 - `dagster-k8s`, `dagster-celery-k8s`, and `dagster-docker` now name step workers `dagster-step-...` rather than `dagster-job-...`.
+- [dagit] The launchpad is significantly more responsive when you're working with very large partition sets.
+- [dagit] We now show an informative message on the Asset catalog table when there are no matching assets to display. Previously, we would show a blank white space.
+- [dagit] Running Dagit without a backfill daemon no longer generates a warning unless queued backfills are present. Similarly, a missing sensor or schedule daemon only yields a warning if sensors or schedules are turned on.
+- [dagit] On the instance summary page, hovering over a recent run’s status dot shows a more helpful tooltip.
 - [dagster-k8s] Improved performance of the `k8s_job_executor` for runs with many user logs
 - [dagster-k8s] When using the `dagster-k8s/config` tag to configure Dagster Kubernetes pods, the tags can now accept any valid Kubernetes config, and can be written in either snake case (`node_selector_terms`) or camel case (`nodeSelectorTerms`). See [the docs](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment) for more information.
 - [dagster-aws] You can now [set secrets on the `EcsRunLauncher` using the same syntax](https://docs.dagster.io/0.14.4/deployment/guides/aws#secrets-management-in-ecs) that you use to set secrets in the ECS API.
@@ -43,11 +47,7 @@
 - Fixed an issue where daily schedules sometimes produced an incorrect partition name on spring Daylight Savings time boundaries.
 - [dagit] Certain workspace or repo-scoped pages relied on versions of the `SQLAlchemy` package to be `1.4` or greater to be installed. We are now using queries supported by `SQLAlchemy>=1.3`. Previously we would raise an error including the message: `'Select' object has no attribute 'filter'`.
 - [dagit] Certain workspace or repo-scoped pages relied on versions of `sqlite` to be `3.25.0` or greater to be installed. This has been relaxed to support older versions of sqlite. This was previously marked as fixed in our `0.14.0` notes, but a handful of cases that were still broken have now been fixed. Previously we would raise an error (`sqlite3.OperationalError`).
-- [dagit] The launchpad is significantly more responsive when you're working with very large partition sets.
-- [dagit] We now show an informative message on the Asset catalog table when there are no matching assets to display. Previously, we would show a blank white space.
 - [dagit] When changing presets / partitions in the launchpad, Dagit preserves user-entered tags and replaces only the tags inherited from the previous base.
-- [dagit] Running Dagit without a backfill daemon no longer generates a warning unless queued backfills are present. Similarly, a missing sensor or schedule daemon only yields a warning if sensors or schedules are turned on.
-- [dagit] On the instance summary page, hovering over a recent run’s status dot shows a more helpful tooltip.
 - [dagit] Dagit no longer hangs when rendering the run gantt chart for certain graph structures.
 - [dagster-airbyte] Fixed issues that could cause failures when generating asset materializations from an Airbyte API response.
 - [dagster-aws] 0.14.3 removed the ability for the `EcsRunLauncher` to use sidecars without you providing your own custom task definition. Now, you can continue to inherit sidecars from the launching task’s task definition by setting `include_sidecars: True` in your run launcher config.
