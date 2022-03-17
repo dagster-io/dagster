@@ -41,7 +41,6 @@ export const Intents = () => {
             intent={intent}
             title="You can dismiss me."
             description="This alert can be dismissed."
-            hasCloseButton={true}
             onClose={() => setClosed(i, true)}
           />
         ) : null,

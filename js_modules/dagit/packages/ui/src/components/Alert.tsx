@@ -12,12 +12,11 @@ interface Props {
   intent: AlertIntent;
   title: React.ReactNode;
   description?: React.ReactNode;
-  hasCloseButton?: boolean;
   onClose?: () => void;
 }
 
 export const Alert: React.FC<Props> = (props) => {
-  const {intent, title, description, hasCloseButton, onClose} = props;
+  const {intent, title, description, onClose} = props;
 
   const {backgroundColor, borderColor, icon, iconColor, textColor} = React.useMemo(() => {
     switch (intent) {
@@ -72,7 +71,7 @@ export const Alert: React.FC<Props> = (props) => {
             {description ? <AlertDescription>{description}</AlertDescription> : null}
           </Group>
         </Group>
-        {hasCloseButton ? (
+        {!!onClose ? (
           <ButtonWrapper onClick={onClose}>
             <IconWIP name="close" color={textColor} />
           </ButtonWrapper>
