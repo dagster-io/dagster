@@ -13,6 +13,7 @@
     "check-prettier": "prettier --list-different \"./src/**/*.tsx\"",
     "ts": "tsc -p .",
     "generate-graphql": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generateGraphQLTypes.ts",
+    "generate-perms": "ts-node -O '{\"module\": \"commonjs\"}' ./src/scripts/generatePermissions.ts",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
     "analyze": "source-map-explorer 'build/static/js/*.js'"
