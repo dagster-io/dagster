@@ -1,4 +1,4 @@
-from typing import AbstractSet, Mapping, Optional
+from typing import AbstractSet, Mapping, Optional, Sequence
 
 from dagster import check
 from dagster.core.definitions import OpDefinition
@@ -6,6 +6,7 @@ from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
 
 from .partition_mapping import PartitionMapping
+from .source_asset import SourceAsset
 
 
 class AssetsDefinition:
@@ -61,3 +62,18 @@ class AssetsDefinition:
             in_asset_key,
             self._partitions_def.get_default_partition_mapping(),
         )
+
+    def to_source_assets(self) -> Sequence[SourceAsset]:
+        result = []
+        for asset_key in self.asset_keys:
+            output_def = self.output_defs_by_asset_key[asset_key]
+            result.append(
+                SourceAsset(
+                    key=asset_key,
+                    metadata=output_def.metadata,
+                    io_manager_key=output_def.io_manager_key,
+                    description=output_def.description,
+                )
+            )
+
+        return result

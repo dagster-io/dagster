@@ -347,6 +347,16 @@ class AssetGroup(
                 )
         return op_selection
 
+    def assets_to_source_assets(self) -> Sequence[SourceAsset]:
+        """
+        Returns a list of source assets corresponding to all the non-source assets in this group.
+        """
+        return [
+            source_asset
+            for assets_def in self.assets
+            for source_asset in assets_def.to_source_assets(assets_def)
+        ]
+
     @staticmethod
     def from_package_module(
         package_module: ModuleType,
