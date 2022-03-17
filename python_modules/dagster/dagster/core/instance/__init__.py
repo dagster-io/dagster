@@ -994,7 +994,8 @@ class DagsterInstance:
             pipeline_code_origin=pipeline_code_origin,
         )
 
-        self._store_asset_intent_to_materialize_events(pipeline_run, execution_plan_snapshot)
+        if execution_plan_snapshot:
+            self._store_asset_intent_to_materialize_events(pipeline_run, execution_plan_snapshot)
 
         return self._run_storage.add_run(pipeline_run)
 
@@ -1178,8 +1179,9 @@ class DagsterInstance:
     def all_logs(
         self, run_id, of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None
     ):
-        # This method is used for internal purposes and the logs are not
-        # surfaced to Dagit. We do not remove ASSET_INTENT_TO_MATERIALIZE events here
+        # This method is used for internal purposes and the logs are not surfaced to Dagit.
+        # These logs will contain ASSET_INTENT_TO_MATERIALIZE events, which are hidden in
+        # Dagit run logs.
         return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
 
     def watch_event_logs(self, run_id, cursor, cb):
