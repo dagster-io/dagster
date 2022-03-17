@@ -9,8 +9,7 @@ export type PermissionsFromJSON = {
   launch_pipeline_reexecution?: boolean;
   start_schedule?: boolean;
   stop_running_schedule?: boolean;
-  start_sensor?: boolean;
-  stop_sensor?: boolean;
+  edit_sensor?: boolean;
   terminate_pipeline_execution?: boolean;
   delete_pipeline_run?: boolean;
   reload_repository_location?: boolean;
@@ -31,8 +30,8 @@ const extractPermissions = (permissions: PermissionFragment[]) => {
     canLaunchPipelineReexecution: !!permsMap.launch_pipeline_reexecution,
     canStartSchedule: !!permsMap.start_schedule,
     canStopRunningSchedule: !!permsMap.stop_running_schedule,
-    canStartSensor: !!permsMap.start_sensor,
-    canStopSensor: !!permsMap.stop_sensor,
+    canStartSensor: !!permsMap.edit_sensor,
+    canStopSensor: !!permsMap.edit_sensor,
     canTerminatePipelineExecution: !!permsMap.terminate_pipeline_execution,
     canDeletePipelineRun: !!permsMap.delete_pipeline_run,
     canReloadRepositoryLocation: !!permsMap.reload_repository_location,
