@@ -1,5 +1,6 @@
 import asyncio
 import re
+from functools import partial
 
 import pytest
 
@@ -1054,9 +1055,6 @@ def test_default_kwarg_inputs():
 
 
 def test_kwargs_via_partial_functools():
-    from dagster import op
-    from functools import partial
-
     def fake_func(foo, bar):
         return foo + bar
 
