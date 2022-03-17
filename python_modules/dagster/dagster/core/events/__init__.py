@@ -188,8 +188,8 @@ EVENT_TYPE_TO_PIPELINE_RUN_STATUS = {
 
 PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN_STATUS.items()}
 
-# TODO: Add ASSET_INTENT_TO_MATERIALIZE event to access assets in run
-# when error occurs before materialization or observation occurs
+# ASSET_INTENT_TO_MATERIALIZE event is not listed because these events
+# should not show up in Dagit
 ASSET_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
