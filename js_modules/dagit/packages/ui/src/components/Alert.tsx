@@ -12,10 +12,12 @@ interface Props {
   intent: AlertIntent;
   title: React.ReactNode;
   description?: React.ReactNode;
+  hasCloseButton?: boolean;
+  onClose?: () => void;
 }
 
 export const Alert: React.FC<Props> = (props) => {
-  const {intent, title, description} = props;
+  const {intent, title, description, hasCloseButton, onClose} = props;
 
   const {backgroundColor, borderColor, icon, iconColor, textColor} = React.useMemo(() => {
     switch (intent) {
@@ -62,13 +64,20 @@ export const Alert: React.FC<Props> = (props) => {
       $textColor={textColor}
       padding={{horizontal: 16, vertical: 12}}
     >
-      <Group direction="row" spacing={12} alignItems="flex-start">
-        <IconWIP name={icon as IconName} color={iconColor} />
-        <Group direction="column" spacing={8}>
-          <AlertTitle>{title}</AlertTitle>
-          {description ? <AlertDescription>{description}</AlertDescription> : null}
+      <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+        <Group direction="row" spacing={12} alignItems="flex-start">
+          <IconWIP name={icon as IconName} color={iconColor} />
+          <Group direction="column" spacing={8}>
+            <AlertTitle>{title}</AlertTitle>
+            {description ? <AlertDescription>{description}</AlertDescription> : null}
+          </Group>
         </Group>
-      </Group>
+        {hasCloseButton ? (
+          <div onClick={onClose} style={{cursor: 'pointer'}}>
+            <IconWIP name="close" />
+          </div>
+        ) : null}
+      </Box>
     </AlertContainer>
   );
 };
