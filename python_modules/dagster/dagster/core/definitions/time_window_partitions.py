@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 import pendulum
 
@@ -164,6 +164,17 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         )
 
 
+def wrap_time_window_tags_fn(
+    tags_fn: Optional[Callable[[datetime, datetime], Dict[str, str]]]
+) -> Callable[[Partition], Dict[str, str]]:
+    def _tag_wrapper(partition: Partition) -> Dict[str, str]:
+        if not tags_fn:
+            return {}
+        return tags_fn(cast(datetime, partition.value[0]), cast(datetime, partition.value[1]))
+
+    return _tag_wrapper
+
+
 def daily_partitioned_config(
     start_date: Union[datetime, str],
     timezone: Optional[str] = None,
@@ -206,11 +217,7 @@ def daily_partitioned_config(
                 start_date=start_date, timezone=timezone, fmt=fmt, end_offset=end_offset
             ),
             decorated_fn=fn,
-            tags_for_partition_fn=lambda partition: tags_for_partition_fn(
-                partition.value[0], partition.value[1]
-            )
-            if tags_for_partition_fn
-            else None,
+            tags_for_partition_fn=wrap_time_window_tags_fn(tags_for_partition_fn),
         )
 
     return inner
@@ -295,11 +302,7 @@ def hourly_partitioned_config(
                 start_date=start_date, timezone=timezone, fmt=fmt, end_offset=end_offset
             ),
             decorated_fn=fn,
-            tags_for_partition_fn=lambda partition: tags_for_partition_fn(
-                partition.value[0], partition.value[1]
-            )
-            if tags_for_partition_fn
-            else None,
+            tags_for_partition_fn=wrap_time_window_tags_fn(tags_for_partition_fn),
         )
 
     return inner
@@ -387,11 +390,7 @@ def monthly_partitioned_config(
                 end_offset=end_offset,
             ),
             decorated_fn=fn,
-            tags_for_partition_fn=lambda partition: tags_for_partition_fn(
-                partition.value[0], partition.value[1]
-            )
-            if tags_for_partition_fn
-            else None,
+            tags_for_partition_fn=wrap_time_window_tags_fn(tags_for_partition_fn),
         )
 
     return inner
@@ -479,11 +478,7 @@ def weekly_partitioned_config(
                 end_offset=end_offset,
             ),
             decorated_fn=fn,
-            tags_for_partition_fn=lambda partition: tags_for_partition_fn(
-                partition.value[0], partition.value[1]
-            )
-            if tags_for_partition_fn
-            else None,
+            tags_for_partition_fn=wrap_time_window_tags_fn(tags_for_partition_fn),
         )
 
     return inner

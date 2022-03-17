@@ -765,7 +765,7 @@ class PartitionedConfig(Generic[T]):
         return self._run_config_for_partition_fn
 
     @property
-    def tags_for_partition_fn(self) -> Optional[Callable[[Partition[T]], Dict[str, Any]]]:
+    def tags_for_partition_fn(self) -> Optional[Callable[[Partition[T]], Dict[str, str]]]:
         return self._tags_for_partition_fn
 
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> List[str]:

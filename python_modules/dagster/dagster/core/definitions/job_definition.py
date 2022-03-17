@@ -34,7 +34,6 @@ from dagster.core.selector.subset_selector import (
     parse_op_selection,
 )
 from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
-from dagster.core.storage.tags import PARTITION_NAME_TAG
 from dagster.core.utils import str_format_set
 
 from .executor_definition import ExecutorDefinition
@@ -245,12 +244,15 @@ class JobDefinition(PipelineDefinition):
 
         if not self._cached_partition_set:
 
+            tags_fn = mode.partitioned_config.tags_for_partition_fn
+            if not tags_fn:
+                tags_fn = lambda _: {}
             self._cached_partition_set = PartitionSetDefinition(
                 job_name=self.name,
                 name=f"{self.name}_partition_set",
                 partitions_def=mode.partitioned_config.partitions_def,
                 run_config_fn_for_partition=mode.partitioned_config.run_config_for_partition_fn,
-                tags_fn_for_partition=mode.partitioned_config.tags_for_partition_fn,
+                tags_fn_for_partition=tags_fn,
                 mode=mode.name,
             )
 
