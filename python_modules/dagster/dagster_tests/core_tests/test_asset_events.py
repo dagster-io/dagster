@@ -1,14 +1,14 @@
 from dagster import (
+    AssetKey,
+    DagsterEventType,
+    EventRecordsFilter,
+    Out,
+    Output,
     asset,
     build_assets_job,
-    DagsterEventType,
-    AssetKey,
-    EventRecordsFilter,
-    op,
-    multi_asset,
-    Out,
     job,
-    Output,
+    multi_asset,
+    op,
 )
 from dagster.core.test_utils import instance_for_test
 

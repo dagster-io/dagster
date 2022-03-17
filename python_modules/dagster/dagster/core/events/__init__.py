@@ -57,6 +57,7 @@ if TYPE_CHECKING:
         "LoadedInputData",
         "ComputeLogsCaptureData",
         "AssetObservationData",
+        "AssetIntentToMaterializeData",
     ]
 
 
@@ -228,6 +229,8 @@ def _validate_event_specific_data(
         check.inst_param(event_specific_data, "event_specific_data", EngineEventData)
     elif event_type == DagsterEventType.HOOK_ERRORED:
         check.inst_param(event_specific_data, "event_specific_data", HookErroredData)
+    elif event_type == DagsterEventType.ASSET_INTENT_TO_MATERIALIZE:
+        check.inst_param(event_specific_data, "event_specific_data", AssetIntentToMaterializeData)
 
     return event_specific_data
 

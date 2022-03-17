@@ -421,11 +421,11 @@ class PipelineDefinition:
             ]
         )
 
-    def get_asset_keys_for_steps(self, step_keys):
+    def get_asset_keys_by_step(self, step_keys):
         from dagster.core.definitions.events import AssetKey
 
         if not self.is_asset_job:
-            raise DagsterInvariantViolationError('Method can only be called on asset jobs.')
+            raise DagsterInvariantViolationError("Method can only be called on asset jobs.")
 
         asset_keys_by_step: Dict[str, List[AssetKey]] = {}
         for node_name, node_def in self._all_node_defs.items():
