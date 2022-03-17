@@ -1,4 +1,5 @@
-from typing import Union, Optional
+from typing import Optional, Union
+
 
 class FakeGCSBlob:
     def __init__(self, name: str, bucket: "FakeGCSBucket"):
@@ -70,7 +71,13 @@ class FakeGCSClient:
         for bucket in self.buckets.values():
             yield bucket
 
-    def list_blobs(self, bucket_or_name: Union[FakeGCSBucket, str], *args, prefix: Optional[str] = None, **kwargs):
+    def list_blobs(
+        self,
+        bucket_or_name: Union[FakeGCSBucket, str],
+        *args,
+        prefix: Optional[str] = None,
+        **kwargs,
+    ):
         self.mock_extras.list_blobs(*args, **kwargs)
 
         if isinstance(bucket_or_name, str):

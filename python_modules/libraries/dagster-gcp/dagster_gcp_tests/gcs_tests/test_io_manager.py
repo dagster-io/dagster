@@ -1,10 +1,10 @@
+from dagster_gcp.gcs import FakeGCSClient
 from dagster_gcp.gcs.io_manager import (
     PickledObjectGCSIOManager,
     gcs_pickle_asset_io_manager,
     gcs_pickle_io_manager,
 )
 from dagster_gcp.gcs.resources import gcs_resource
-from dagster_gcp.gcs import FakeGCSClient
 from google.cloud import storage  # type: ignore
 
 from dagster import (
@@ -21,7 +21,7 @@ from dagster import (
     build_output_context,
     job,
     op,
-    resource
+    resource,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType

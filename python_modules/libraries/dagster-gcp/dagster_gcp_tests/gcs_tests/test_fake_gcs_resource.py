@@ -1,5 +1,6 @@
 from dagster_gcp.gcs import FakeGCSBlob, FakeGCSBucket, FakeGCSClient
 
+
 def test_fake_blob_read_write():
     bucket = FakeGCSBucket("my_bucket")
     blob = FakeGCSBlob("my_blob", bucket)
@@ -13,6 +14,7 @@ def test_fake_blob_read_write():
     my_bytes = b"these are some bytes"
     blob.upload_from_string(my_bytes)
     assert blob.download_as_bytes() == my_bytes
+
 
 def test_blob_delete():
     bucket = FakeGCSBucket("my_bucket")
@@ -34,6 +36,7 @@ def test_blob_delete():
 
     assert "bar" not in bucket.blobs.keys()
 
+
 def test_bucket():
     bucket = FakeGCSBucket("my_bucket")
 
@@ -44,6 +47,7 @@ def test_bucket():
 
     assert bucket.blob("foo") == foo
     assert bucket.blob("bar") == bar
+
 
 def test_client_blobs():
     client = FakeGCSClient()
@@ -59,6 +63,7 @@ def test_client_blobs():
 
     assert [baz] == list(client.list_blobs("foo", prefix="baz"))
     assert [] == list(client.list_blobs("foo", prefix="xyz"))
+
 
 def test_client_bucekts():
     client = FakeGCSClient()
