@@ -57,7 +57,7 @@ if TYPE_CHECKING:
         "LoadedInputData",
         "ComputeLogsCaptureData",
         "AssetObservationData",
-        "AssetIntentToMaterializeData",
+        "RegisterRunAssetData",
     ]
 
 
@@ -75,7 +75,7 @@ class DagsterEventType(Enum):
     STEP_RESTARTED = "STEP_RESTARTED"
 
     ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
-    ASSET_INTENT_TO_MATERIALIZE = "ASSET_INTENT_TO_MATERIALIZE"
+    REGISTER_RUN_ASSET = "REGISTER_RUN_ASSET"
     ASSET_OBSERVATION = "ASSET_OBSERVATION"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
 
@@ -188,7 +188,7 @@ EVENT_TYPE_TO_PIPELINE_RUN_STATUS = {
 
 PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN_STATUS.items()}
 
-# ASSET_INTENT_TO_MATERIALIZE event is not listed because these events
+# REGISTER_RUN_ASSET event is not listed because these events
 # should not show up in Dagit
 ASSET_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
@@ -229,8 +229,8 @@ def _validate_event_specific_data(
         check.inst_param(event_specific_data, "event_specific_data", EngineEventData)
     elif event_type == DagsterEventType.HOOK_ERRORED:
         check.inst_param(event_specific_data, "event_specific_data", HookErroredData)
-    elif event_type == DagsterEventType.ASSET_INTENT_TO_MATERIALIZE:
-        check.inst_param(event_specific_data, "event_specific_data", AssetIntentToMaterializeData)
+    elif event_type == DagsterEventType.REGISTER_RUN_ASSET:
+        check.inst_param(event_specific_data, "event_specific_data", RegisterRunAssetData)
 
     return event_specific_data
 
@@ -515,8 +515,8 @@ class DagsterEvent(
             return self.step_materialization_data.materialization.asset_key
         elif self.event_type == DagsterEventType.ASSET_OBSERVATION:
             return self.asset_observation_data.asset_observation.asset_key
-        elif self.event_type == DagsterEventType.ASSET_INTENT_TO_MATERIALIZE:
-            return self.asset_intent_to_materialize_data.asset_key
+        elif self.event_type == DagsterEventType.REGISTER_RUN_ASSET:
+            return self.register_run_asset_data.asset_key
         else:
             return None
 
@@ -575,13 +575,13 @@ class DagsterEvent(
         return cast(AssetObservationData, self.event_specific_data)
 
     @property
-    def asset_intent_to_materialize_data(self) -> "AssetIntentToMaterializeData":
+    def register_run_asset_data(self) -> "RegisterRunAssetData":
         _assert_type(
-            "asset_intent_to_materialize_data",
-            DagsterEventType.ASSET_INTENT_TO_MATERIALIZE,
+            "register_run_asset_data",
+            DagsterEventType.REGISTER_RUN_ASSET,
             self.event_type,
         )
-        return cast(AssetIntentToMaterializeData, self.event_specific_data)
+        return cast(RegisterRunAssetData, self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
@@ -766,15 +766,15 @@ class DagsterEvent(
         )
 
     @staticmethod
-    def asset_intent_to_materialize(
+    def register_run_asset(
         pipeline_name: str,
         asset_key: AssetKey,
     ) -> "DagsterEvent":
         return DagsterEvent(
-            event_type_value=DagsterEventType.ASSET_INTENT_TO_MATERIALIZE.value,
+            event_type_value=DagsterEventType.REGISTER_RUN_ASSET.value,
             pipeline_name=pipeline_name,
             message=f"{pipeline_name} intends to materialize asset {asset_key.to_string()}",
-            event_specific_data=AssetIntentToMaterializeData(asset_key),
+            event_specific_data=RegisterRunAssetData(asset_key),
         )
 
     @staticmethod
@@ -1266,11 +1266,9 @@ class StepMaterializationData(
 
 
 @whitelist_for_serdes
-class AssetIntentToMaterializeData(
-    NamedTuple("_AssetIntentToMaterializeData", [("asset_key", AssetKey)])
-):
+class RegisterRunAssetData(NamedTuple("_RegisterRunAssetData", [("asset_key", AssetKey)])):
     def __new__(cls, asset_key: AssetKey):
-        return super(AssetIntentToMaterializeData, cls).__new__(
+        return super(RegisterRunAssetData, cls).__new__(
             cls, asset_key=check.inst_param(asset_key, "asset_key", AssetKey)
         )
 

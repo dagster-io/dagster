@@ -13,7 +13,7 @@ from dagster import (
 from dagster.core.test_utils import instance_for_test
 
 
-def test_asset_intent_to_materialize_event_yielded():
+def test_register_run_asset_event_yielded():
     @asset
     def asset_one():
         raise Exception("foo")
@@ -43,7 +43,7 @@ def test_asset_intent_to_materialize_event_yielded():
         assert instance.run_ids_for_asset_key(AssetKey("never_runs_asset")) == [run_id]
 
 
-def test_non_assets_job_no_intent_event():
+def test_non_assets_job_no_register_event():
     @op
     def my_op():
         pass
@@ -56,15 +56,13 @@ def test_non_assets_job_no_intent_event():
         result = my_job.execute_in_process(instance=instance)
         events = result.all_events
         intent_to_materialize_events = [
-            event
-            for event in events
-            if event.event_type == DagsterEventType.ASSET_INTENT_TO_MATERIALIZE
+            event for event in events if event.event_type == DagsterEventType.REGISTER_RUN_ASSET
         ]
 
         assert intent_to_materialize_events == []
 
 
-def test_multi_asset_intent_to_materialize():
+def test_multi_asset_register_run_asset():
     @multi_asset(
         outs={
             "my_out_name": Out(asset_key=AssetKey("my_asset_name")),

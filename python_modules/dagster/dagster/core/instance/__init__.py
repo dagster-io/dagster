@@ -932,7 +932,7 @@ class DagsterInstance:
 
         return execution_plan_snapshot_id
 
-    def _store_asset_intent_to_materialize_events(self, pipeline_run, execution_plan_snapshot):
+    def _register_run_asset_events(self, pipeline_run, execution_plan_snapshot):
         from dagster.core.events import DagsterEvent
         from dagster.core.events.log import EventLogEntry
 
@@ -943,7 +943,7 @@ class DagsterInstance:
                 for output in step.outputs:
                     asset_key = output.properties.asset_key
                     if asset_key:
-                        event = DagsterEvent.asset_intent_to_materialize(pipeline_name, asset_key)
+                        event = DagsterEvent.register_run_asset(pipeline_name, asset_key)
                         event_record = EventLogEntry(
                             user_message="",
                             level=logging.INFO,
@@ -995,7 +995,7 @@ class DagsterInstance:
         )
 
         if execution_plan_snapshot:
-            self._store_asset_intent_to_materialize_events(pipeline_run, execution_plan_snapshot)
+            self._register_run_asset_events(pipeline_run, execution_plan_snapshot)
 
         return self._run_storage.add_run(pipeline_run)
 
@@ -1159,7 +1159,7 @@ class DagsterInstance:
     ):
         from dagster.core.events import DagsterEventType
 
-        # We remove ASSET_INTENT_TO_MATERIALIZE events here because these events
+        # We remove REGISTER_RUN_ASSET events here because these events
         # should not display in Dagit's run logs
         return [
             log
@@ -1171,7 +1171,7 @@ class DagsterInstance:
             )
             if (
                 not log.is_dagster_event
-                or log.dagster_event_type != DagsterEventType.ASSET_INTENT_TO_MATERIALIZE
+                or log.dagster_event_type != DagsterEventType.REGISTER_RUN_ASSET
             )
         ]
 
@@ -1180,8 +1180,7 @@ class DagsterInstance:
         self, run_id, of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None
     ):
         # This method is used for internal purposes and the logs are not surfaced to Dagit.
-        # These logs will contain ASSET_INTENT_TO_MATERIALIZE events, which are hidden in
-        # Dagit run logs.
+        # These logs will contain REGISTER_RUN_ASSET events, which are hidden in Dagit run logs.
         return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
 
     def watch_event_logs(self, run_id, cursor, cb):
