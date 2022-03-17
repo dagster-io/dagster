@@ -335,7 +335,7 @@ class GrapheneTerminateRunMutation(graphene.Mutation):
     @check_permission(Permissions.TERMINATE_PIPELINE_EXECUTION)
     def mutate(self, graphene_info, **kwargs):
         return terminate_pipeline_execution(
-            graphene_info,
+            graphene_info.context.instance,
             kwargs["runId"],
             kwargs.get("terminatePolicy", GrapheneTerminateRunPolicy.SAFE_TERMINATE),
         )

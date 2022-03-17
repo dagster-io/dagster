@@ -228,7 +228,7 @@ def test_deploy_docker():
         assert (
             terminate_res["data"]["terminatePipelineExecution"]["__typename"]
             == "TerminateRunSuccess"
-        )
+        ), str(terminate_res)
 
         _wait_for_run_status(hanging_run_id, dagit_host, PipelineRunStatus.CANCELED)
 
