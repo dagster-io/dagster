@@ -15,6 +15,9 @@
 - `dagster-k8s`, `dagster-celery-k8s`, and `dagster-docker` now name step workers `dagster-step-...` rather than `dagster-job-...`.
 - [dagster-k8s] Improved performance of the `k8s_job_executor` for runs with many user logs
 - [dagster-k8s] When using the `dagster-k8s/config` tag to configure Dagster Kubernetes pods, the tags can now accept any valid Kubernetes config, and can be written in either snake case (`node_selector_terms`) or camel case (`nodeSelectorTerms`). See [the docs](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment) for more information.
+- [dagster-aws] You can now [set secrets on the `EcsRunLauncher` using the same syntax](https://docs.dagster.io/0.14.4/deployment/guides/aws#secrets-management-in-ecs) that you use to set secrets in the ECS API.
+- [dagster-aws] The `EcsRunLauncher` now attempts to reuse task definitions instead of registering a new task definition for every run.
+- [dagster-aws] The `EcsRunLauncher` now raises the underlying ECS API failure if it cannot successfully start a task.
 
 ### Software-Defined Assets
 
@@ -47,7 +50,7 @@
 - [dagit] On the instance summary page, hovering over a recent run’s status dot shows a more helpful tooltip.
 - [dagit] Dagit no longer hangs when rendering the run gantt chart for certain graph structures.
 - [dagster-airbyte] Fixed issues that could cause failures when generating asset materializations from an Airbyte API response.
-
+- [dagster-aws] 0.14.3 removed the ability for the `EcsRunLauncher` to use sidecars without you providing your own custom task definition. Now, you can continue to inherit sidecars from the launching task’s task definition by setting `include_sidecars: True` in your run launcher config.
 
 
 ### Breaking Changes
