@@ -158,10 +158,6 @@ def _resolve_inputs(
         for k, v in unassigned_kwargs.items():
             input_dict[k] = v
 
-    # Error if any inputs are not represented in input_dict
-    input_def_names = set(input_defs_by_name.keys())
-    provided_input_names = set(input_dict.keys())
-
     # Type check inputs
     op_label = context.describe_op()
 
