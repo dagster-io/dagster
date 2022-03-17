@@ -767,13 +767,13 @@ class DagsterEvent(
 
     @staticmethod
     def asset_intent_to_materialize(
-        pipeline_context: IPlanContext,
+        pipeline_name: str,
         asset_key: AssetKey,
     ) -> "DagsterEvent":
-        return DagsterEvent.from_pipeline(
-            DagsterEventType.ASSET_INTENT_TO_MATERIALIZE,
-            pipeline_context=pipeline_context,
-            message=f"{pipeline_context.pipeline_name} intends to materialize asset {asset_key.to_string()}",
+        return DagsterEvent(
+            event_type_value=DagsterEventType.ASSET_INTENT_TO_MATERIALIZE.value,
+            pipeline_name=pipeline_name,
+            message=f"{pipeline_name} intends to materialize asset {asset_key.to_string()}",
             event_specific_data=AssetIntentToMaterializeData(asset_key),
         )
 

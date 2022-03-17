@@ -777,13 +777,6 @@ def pipeline_execution_iterator(
     if not pipeline_context.resume_from_failure:
         yield DagsterEvent.pipeline_start(pipeline_context)
 
-        for step_key in execution_plan.step_keys_to_execute:
-            exec_step = execution_plan.get_step_by_key(step_key)
-            for output in exec_step.step_outputs:
-                asset_key = output.asset_key
-                if asset_key:
-                    yield DagsterEvent.asset_intent_to_materialize(pipeline_context, asset_key)
-
     pipeline_exception_info = None
     pipeline_canceled_info = None
     failed_steps = []
