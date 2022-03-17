@@ -102,7 +102,7 @@ def _dbt_nodes_to_assets(
         internal_asset_deps[node_name] = asset_deps
 
     @multi_asset(
-        name="dbt_project",
+        name="run_dbt_project",
         non_argument_deps=sources,
         outs=outs,
         required_resource_keys={"dbt"},
