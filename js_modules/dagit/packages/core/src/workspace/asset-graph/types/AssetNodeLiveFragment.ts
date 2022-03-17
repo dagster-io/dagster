@@ -9,6 +9,19 @@ import { RunStatus } from "./../../../types/globalTypes";
 // GraphQL fragment: AssetNodeLiveFragment
 // ====================================================
 
+export interface AssetNodeLiveFragment_repository_location {
+  __typename: "RepositoryLocation";
+  id: string;
+  name: string;
+}
+
+export interface AssetNodeLiveFragment_repository {
+  __typename: "Repository";
+  id: string;
+  name: string;
+  location: AssetNodeLiveFragment_repository_location;
+}
+
 export interface AssetNodeLiveFragment_assetKey {
   __typename: "AssetKey";
   path: string[];
@@ -223,6 +236,7 @@ export interface AssetNodeLiveFragment {
   __typename: "AssetNode";
   id: string;
   opName: string | null;
+  repository: AssetNodeLiveFragment_repository;
   assetKey: AssetNodeLiveFragment_assetKey;
   assetMaterializations: AssetNodeLiveFragment_assetMaterializations[];
 }

@@ -6,7 +6,7 @@ schema {
 
 type DagitQuery {
   version: String!
-  repositoriesOrError: RepositoriesOrError!
+  repositoriesOrError(repositorySelector: RepositorySelector): RepositoriesOrError!
   repositoryOrError(repositorySelector: RepositorySelector!): RepositoryOrError!
   workspaceOrError: WorkspaceOrError!
   pipelineOrError(params: PipelineSelector!): PipelineOrError!
@@ -1368,15 +1368,15 @@ type JobRunsCount {
   sinceLatestMaterialization: Boolean!
 }
 
-union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
-
-type RepositoryNotFoundError implements Error {
-  message: String!
+input RepositorySelector {
   repositoryName: String!
   repositoryLocationName: String!
 }
 
-input RepositorySelector {
+union RepositoryOrError = PythonError | Repository | RepositoryNotFoundError
+
+type RepositoryNotFoundError implements Error {
+  message: String!
   repositoryName: String!
   repositoryLocationName: String!
 }

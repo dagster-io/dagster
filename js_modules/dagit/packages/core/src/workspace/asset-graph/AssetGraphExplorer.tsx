@@ -46,7 +46,7 @@ import {
   buildLiveData,
   GraphData,
   graphHasCycles,
-  IN_PROGRESS_RUNS_FRAGMENT,
+  REPOSITORY_LIVE_FRAGMENT,
   layoutGraph,
   LiveData,
   Node,
@@ -124,10 +124,12 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
       skip: graphAssetKeys.length === 0,
       variables: {
         assetKeys: graphAssetKeys,
-        repositorySelector: {
-          repositoryLocationName: pipelineSelector?.repositoryLocationName || '',
-          repositoryName: pipelineSelector?.repositoryName || '',
-        },
+        repositorySelector: pipelineSelector
+          ? {
+              repositoryLocationName: pipelineSelector.repositoryLocationName,
+              repositoryName: pipelineSelector.repositoryName,
+            }
+          : undefined,
       },
       notifyOnNetworkStatusChange: true,
     },
@@ -140,11 +142,11 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
       return {};
     }
 
-    const {repositoryOrError, assetNodes: liveAssetNodes} = liveResult.data;
-    const inProgressRunsByStep =
-      repositoryOrError.__typename === 'Repository' ? repositoryOrError.inProgressRunsByStep : [];
+    const {repositoriesOrError, assetNodes: liveAssetNodes} = liveResult.data;
+    const repos =
+      repositoriesOrError.__typename === 'RepositoryConnection' ? repositoriesOrError.nodes : [];
 
-    return buildLiveData(assetGraphData, liveAssetNodes, inProgressRunsByStep);
+    return buildLiveData(assetGraphData, liveAssetNodes, repos);
   }, [assetGraphData, liveResult]);
 
   useDocumentTitle('Assets');
@@ -437,17 +439,14 @@ const AssetGraphExplorerWithData: React.FC<
 };
 
 const ASSETS_GRAPH_LIVE_QUERY = gql`
-  query AssetGraphLiveQuery(
-    $repositorySelector: RepositorySelector!
-    $assetKeys: [AssetKeyInput!]
-  ) {
-    repositoryOrError(repositorySelector: $repositorySelector) {
+  query AssetGraphLiveQuery($repositorySelector: RepositorySelector, $assetKeys: [AssetKeyInput!]) {
+    repositoriesOrError(repositorySelector: $repositorySelector) {
       __typename
-      ... on Repository {
-        id
-        name
-        inProgressRunsByStep {
-          ...InProgressRunsFragment
+      ... on RepositoryConnection {
+        nodes {
+          __typename
+          id
+          ...RepositoryLiveFragment
         }
       }
     }
@@ -456,7 +455,7 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
       ...AssetNodeLiveFragment
     }
   }
-  ${IN_PROGRESS_RUNS_FRAGMENT}
+  ${REPOSITORY_LIVE_FRAGMENT}
   ${ASSET_NODE_LIVE_FRAGMENT}
 `;
 

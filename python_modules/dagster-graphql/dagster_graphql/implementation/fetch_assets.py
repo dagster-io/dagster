@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Mapping
+from typing import TYPE_CHECKING, Dict, Mapping
 
 from dagster import AssetKey, DagsterEventType, EventRecordsFilter, check, seven
 from dagster.core.events import ASSET_EVENTS
@@ -64,15 +64,12 @@ def get_asset_nodes_by_asset_key(graphene_info) -> Mapping[AssetKey, "GrapheneAs
 
     from ..schema.asset_graph import GrapheneAssetNode
 
-    asset_nodes_by_asset_key = {}
+    asset_nodes_by_asset_key: Dict[AssetKey, GrapheneAssetNode] = {}
     for location in graphene_info.context.repository_locations:
         for repository in location.get_repositories().values():
             for external_asset_node in repository.get_external_asset_nodes():
                 preexisting_node = asset_nodes_by_asset_key.get(external_asset_node.asset_key)
-                if (
-                    preexisting_node is None
-                    or preexisting_node.get_external_asset_node().op_name is None
-                ):
+                if preexisting_node is None or preexisting_node.external_asset_node.op_name is None:
                     asset_nodes_by_asset_key[external_asset_node.asset_key] = GrapheneAssetNode(
                         location, repository, external_asset_node
                     )

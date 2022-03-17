@@ -158,7 +158,9 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     }
 
     if (!presetsForMode.length && partitionSetsForMode.length === 1) {
-      return {base: {partitionsSetName: partitionSetsForMode[0].name, partitionName: null}};
+      return {
+        base: {partitionsSetName: partitionSetsForMode[0].name, partitionName: null, tags: null},
+      };
     }
 
     return {};
@@ -362,15 +364,34 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
     return responseToYamlValidationResult(configJSON, data.isPipelineConfigValid);
   };
 
+  const tagsApplyingNewBaseTags = (newBaseTags: PipelineRunTag[]) => {
+    // If you choose a new base (preset or partition), we want to make a best-effort to preserve
+    // the tags you've manually typed in, but remove:
+    // - Tags that were in your previous base and are unchanged
+    // - Tags that are specified in the new base
+    const preservedUserTags = currentSession.base
+      ? tagsFromSession.filter(
+          (t) =>
+            currentSession.base?.tags &&
+            !currentSession.base?.tags.some((bt) => bt.key === t.key && bt.value === t.value) &&
+            !newBaseTags.some((bt) => bt.key === t.key),
+        )
+      : [];
+
+    return [...newBaseTags, ...preservedUserTags];
+  };
+
   const onSelectPreset = async (preset: Preset) => {
+    const newBaseTags = preset.tags.map(onlyKeyAndValue);
+
     onSaveSession({
-      base: {presetName: preset.name},
+      base: {presetName: preset.name, tags: newBaseTags},
       name: preset.name,
       runConfigYaml: preset.runConfigYaml || '',
       solidSelection: preset.solidSelection,
       solidSelectionQuery: preset.solidSelection === null ? '*' : preset.solidSelection.join(','),
       mode: preset.mode,
-      tags: preset.tags.map(onlyKeyAndValue),
+      tags: tagsApplyingNewBaseTags(newBaseTags),
       needsRefresh: false,
     });
   };
@@ -404,13 +425,13 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
 
       const {partition} = data.partitionSetOrError;
 
-      let tags: {key: string; value: string}[] = [];
+      let newBaseTags: {key: string; value: string}[] = [];
       if (partition.tagsOrError.__typename === 'PythonError') {
         showCustomAlert({
           body: <PythonErrorInfo error={partition.tagsOrError} />,
         });
       } else {
-        tags = [...partition.tagsOrError.results];
+        newBaseTags = partition.tagsOrError.results.map(onlyKeyAndValue);
       }
 
       let runConfigYaml;
@@ -427,14 +448,12 @@ const LaunchpadSessionContainer: React.FC<LaunchpadSessionContainerProps> = (pro
 
       onSaveSession({
         name: partition.name,
-        base: Object.assign({}, base, {
-          partitionName: partition.name,
-        }),
+        base: Object.assign({}, base, {partitionName: partition.name, tags: newBaseTags}),
         runConfigYaml,
         solidSelection,
         solidSelectionQuery: solidSelection === null ? '*' : solidSelection.join(','),
         mode: partition.mode,
-        tags,
+        tags: tagsApplyingNewBaseTags(newBaseTags),
         needsRefresh: false,
       });
     } catch {}

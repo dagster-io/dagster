@@ -28,6 +28,9 @@ describe('PipelineRoot', () => {
       modes: () => [...new Array(1)],
       isAssetJob: () => false,
     }),
+    SolidDefinition: () => ({
+      assetNodes: () => [],
+    }),
     PipelineSnapshot: () => ({
       runs: () => [],
       schedules: () => [],

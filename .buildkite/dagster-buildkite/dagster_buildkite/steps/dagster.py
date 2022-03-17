@@ -318,6 +318,7 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
             "-core_tests",
             "-core_tests_old_sqlalchemy",
             "-daemon_tests",
+            "-definitions_tests_old_pendulum",
             "-general_tests",
             "-scheduler_tests",
             "-scheduler_tests_old_pendulum",
@@ -447,6 +448,18 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
     ModuleBuildSpec(
         "python_modules/libraries/dagster-pandera",
         supported_pythons=(
+            [
+                SupportedPython.V3_7,
+                SupportedPython.V3_8,
+                SupportedPython.V3_9,
+            ]
+            if (branch_name == "master" or is_release_branch(branch_name))
+            else [SupportedPython.V3_9]
+        ),
+    ),
+    ModuleBuildSpec(
+        "python_modules/libraries/dagster-snowflake",
+        supported_pythons=(  # dropped python 3.6 support
             [
                 SupportedPython.V3_7,
                 SupportedPython.V3_8,

@@ -94,15 +94,13 @@ def context_op(context):
 # end_op_context_marker
 
 # start_op_factory_pattern_marker
-def x_op(
-    arg,
+def my_op_factory(
     name="default_name",
     ins=None,
     **kwargs,
 ):
     """
     Args:
-        args (any): One or more arguments used to generate the new op
         name (str): The name of the new op.
         ins (Dict[str, In]): Any Ins for the new op. Default: None.
 
@@ -111,11 +109,11 @@ def x_op(
     """
 
     @op(name=name, ins=ins or {"start": In(Nothing)}, **kwargs)
-    def _x_op():
+    def my_inner_op(**kwargs):
         # Op logic here
         pass
 
-    return _x_op
+    return my_inner_op
 
 
 # end_op_factory_pattern_marker

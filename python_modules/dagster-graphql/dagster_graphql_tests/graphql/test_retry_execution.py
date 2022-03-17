@@ -17,11 +17,7 @@ from dagster.core.storage.tags import RESUME_RETRY_TAG
 from dagster.core.test_utils import poll_for_finished_run
 from dagster.core.utils import make_new_run_id
 
-from .graphql_context_test_suite import (
-    ExecutingGraphQLContextTestMatrix,
-    GraphQLContextVariant,
-    make_graphql_context_test_suite,
-)
+from .graphql_context_test_suite import ExecutingGraphQLContextTestMatrix
 from .setup import csv_hello_world_solids_config, get_retry_multi_execution_params, retry_config
 from .utils import (
     get_all_logs_for_finished_run_via_subscription,
@@ -544,9 +540,7 @@ def _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id):
     return retry_one
 
 
-class TestRetryExecutionAsyncOnlyBehavior(
-    make_graphql_context_test_suite(context_variants=GraphQLContextVariant.all_executing_variants())
-):
+class TestRetryExecutionAsyncOnlyBehavior(ExecutingGraphQLContextTestMatrix):
     def test_retry_requires_intermediates_async_only(self, graphql_context):
         run_id = make_new_run_id()
         reexecution_run_id = make_new_run_id()

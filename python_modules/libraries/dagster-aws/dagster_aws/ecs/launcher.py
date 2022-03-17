@@ -1,5 +1,6 @@
 import warnings
 from collections import namedtuple
+from contextlib import suppress
 
 import boto3
 from botocore.exceptions import ClientError
@@ -13,6 +14,7 @@ from dagster.utils import merge_dicts
 
 from ..secretsmanager import get_secrets_from_arns, get_tagged_secrets
 from .tasks import default_ecs_task_definition, default_ecs_task_metadata
+from .utils import sanitize_family
 
 Tags = namedtuple("Tags", ["arn", "cluster", "cpu", "memory"])
 
@@ -27,6 +29,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         container_name="run",
         secrets=None,
         secrets_tag="dagster",
+        include_sidecars=False,
     ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
@@ -49,6 +52,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             self.secrets = {secret["name"]: secret["valueFrom"] for secret in self.secrets}
 
         self.secrets_tag = secrets_tag
+        self.include_sidecars = include_sidecars
 
         if self.task_definition:
             task_definition = self.ecs.describe_task_definition(taskDefinition=task_definition)
@@ -110,6 +114,15 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                     "environment variables in the container. Defaults to 'dagster'."
                 ),
             ),
+            "include_sidecars": Field(
+                bool,
+                is_required=False,
+                default_value=False,
+                description=(
+                    "Whether each run should use the same sidecars as the task that launches it. "
+                    "Defaults to False."
+                ),
+            ),
         }
 
     @staticmethod
@@ -148,10 +161,13 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         docker-compose when you use the Dagster ECS reference deployment.
         """
         run = context.pipeline_run
+        family = sanitize_family(
+            run.external_pipeline_origin.external_repository_origin.repository_location_origin.location_name
+        )
         metadata = self._task_metadata()
         pipeline_origin = context.pipeline_code_origin
         image = pipeline_origin.repository_origin.container_image
-        task_definition = self._task_definition(metadata, image)["family"]
+        task_definition = self._task_definition(family, metadata, image)["family"]
 
         args = ExecuteRunArgs(
             pipeline_origin=pipeline_origin,
@@ -257,7 +273,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
         self.ecs.stop_task(task=tags.arn, cluster=tags.cluster)
         return True
 
-    def _task_definition(self, metadata, image):
+    def _task_definition(self, family, metadata, image):
         """
         Return the launcher's task definition if it's configured.
 
@@ -270,19 +286,43 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             task_definition = self.ecs.describe_task_definition(taskDefinition=self.task_definition)
             return task_definition["taskDefinition"]
 
+        secrets = merge_dicts(
+            (
+                get_tagged_secrets(self.secrets_manager, self.secrets_tag)
+                if self.secrets_tag
+                else {}
+            ),
+            self.secrets,
+        )
+        secrets_dict = (
+            {"secrets": [{"name": key, "valueFrom": value} for key, value in secrets.items()]}
+            if secrets
+            else {}
+        )
+
+        task_definition = {}
+        with suppress(ClientError):
+            task_definition = self.ecs.describe_task_definition(taskDefinition=family)[
+                "taskDefinition"
+            ]
+
+        container_definitions = task_definition.get("containerDefinitions", [{}])
+        for container_definition in container_definitions:
+            if (
+                container_definition.get("image") == image
+                and container_definition.get("name") == self.container_name
+                and container_definition.get("secrets") == secrets_dict.get("secrets", [])
+            ):
+                return task_definition
+
         return default_ecs_task_definition(
             self.ecs,
+            family,
             metadata,
             image,
             self.container_name,
-            secrets=merge_dicts(
-                (
-                    get_tagged_secrets(self.secrets_manager, self.secrets_tag)
-                    if self.secrets_tag
-                    else {}
-                ),
-                self.secrets,
-            ),
+            secrets=secrets_dict,
+            include_sidecars=self.include_sidecars,
         )
 
     def _task_metadata(self):

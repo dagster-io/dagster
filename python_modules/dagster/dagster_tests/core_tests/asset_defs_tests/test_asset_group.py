@@ -1,3 +1,4 @@
+import re
 import warnings
 
 import pytest
@@ -372,7 +373,7 @@ def test_asset_group_from_package_module():
     assert source_assets_1 == source_assets_2
 
 
-def test_asset_group_from_modules():
+def test_asset_group_from_modules(monkeypatch):
     from . import asset_package
     from .asset_package import module_with_assets
 
@@ -388,6 +389,22 @@ def test_asset_group_from_modules():
 
     assert assets_1 == assets_2
     assert source_assets_1 == source_assets_2
+
+    with monkeypatch.context() as m:
+
+        @asset
+        def little_richard():
+            pass
+
+        m.setattr(asset_package, "little_richard_dup", little_richard, raising=False)
+        with pytest.raises(
+            DagsterInvalidDefinitionError,
+            match=re.escape(
+                "Asset key AssetKey(['little_richard']) is defined multiple times. "
+                "Definitions found in modules: dagster_tests.core_tests.asset_defs_tests.asset_package."
+            ),
+        ):
+            AssetGroup.from_modules([asset_package, module_with_assets])
 
 
 @asset

@@ -1,3 +1,5 @@
+from typing import Any
+
 from dagster_graphql.client.query import LAUNCH_PIPELINE_EXECUTION_MUTATION
 from dagster_graphql.test.utils import execute_dagster_graphql, infer_pipeline_selector
 
@@ -20,9 +22,12 @@ query RunQuery($runId: ID!) {
 """
 
 
-class TestBasicLaunch(
-    make_graphql_context_test_suite(context_variants=GraphQLContextVariant.all_executing_variants())
-):
+BaseTestSuite: Any = make_graphql_context_test_suite(
+    context_variants=GraphQLContextVariant.all_executing_variants()
+)
+
+
+class TestBasicLaunch(BaseTestSuite):
     def test_run_launcher(self, graphql_context):
         selector = infer_pipeline_selector(graphql_context, "no_config_pipeline")
         result = execute_dagster_graphql(

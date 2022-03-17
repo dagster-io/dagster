@@ -156,19 +156,38 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         if (
             event.is_dagster_event
-            and event.dagster_event.is_step_materialization
+            and (
+                event.dagster_event.is_step_materialization
+                or event.dagster_event.is_asset_observation
+            )
             and event.dagster_event.asset_key
         ):
-            # Currently, only materializations are stored in the asset catalog.
-            # We will store observations after adding a column migration to
-            # store latest asset observation timestamp in the asset key table.
             self.store_asset(event)
 
-    def store_asset(self, event):
-        check.inst_param(event, "event", EventLogEntry)
-        if not event.is_dagster_event or not event.dagster_event.asset_key:
-            return
+    def store_asset_observation(self, event):
+        # last_materialization_timestamp is updated upon observation or materialization
+        # See store_asset method in SqlEventLogStorage for more details
+        if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
+            with self.index_connection() as conn:
+                conn.execute(
+                    db.dialects.postgresql.insert(AssetKeyTable)
+                    .values(
+                        asset_key=event.dagster_event.asset_key.to_string(),
+                        last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
+                    )
+                    .on_conflict_do_update(
+                        index_elements=[AssetKeyTable.c.asset_key],
+                        set_=dict(
+                            last_materialization_timestamp=utc_datetime_from_timestamp(
+                                event.timestamp
+                            ),
+                        ),
+                    )
+                )
 
+    def store_asset_materialization(self, event):
+        # last_materialization_timestamp is updated upon observation or materialization
+        # See store_asset method in SqlEventLogStorage for more details
         materialization = event.dagster_event.step_materialization_data.materialization
         if self.has_secondary_index(ASSET_KEY_INDEX_COLS):
             with self.index_connection() as conn:

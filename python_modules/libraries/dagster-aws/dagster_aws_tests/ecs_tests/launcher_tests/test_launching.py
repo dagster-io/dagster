@@ -36,12 +36,15 @@ def test_default_launcher(
     task_definition = task_definition["taskDefinition"]
 
     # It has a new family, name, and image
-    assert task_definition["family"] == "dagster-run"
+    # We get the family name from the location name. With the InProcessExecutor that we use in tests,
+    # the location name is always <<in_process>>. And we sanitize it so it's compatible with the ECS API.
+    assert task_definition["family"] == "in_process"
     assert len(task_definition["containerDefinitions"]) == 1
     container_definition = task_definition["containerDefinitions"][0]
     assert container_definition["name"] == "run"
     assert container_definition["image"] == image
     assert not container_definition.get("entryPoint")
+    assert not container_definition.get("dependsOn")
     # But other stuff is inhereted from the parent task definition
     assert container_definition["environment"] == environment
 
@@ -82,6 +85,47 @@ def test_default_launcher(
     assert MetadataEntry.text(task_arn, "ECS Task ARN") in event_metadata
     assert MetadataEntry.text(cluster_arn, "ECS Cluster") in event_metadata
     assert MetadataEntry.text(run.run_id, "Run ID") in event_metadata
+
+
+def test_task_definition_registration(
+    ecs, instance, workspace, run, other_workspace, other_run, secrets_manager
+):
+    initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    initial_tasks = ecs.list_tasks()["taskArns"]
+
+    instance.launch_run(run.run_id, workspace)
+
+    # A new task definition is created
+    task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    assert len(task_definitions) == len(initial_task_definitions) + 1
+
+    # Launching another run reuses an existing task definition
+    instance.launch_run(run.run_id, workspace)
+    assert task_definitions == ecs.list_task_definitions()["taskDefinitionArns"]
+
+    # Register a new task definition if the image changes
+    instance.launch_run(other_run.run_id, other_workspace)
+    assert len(ecs.list_task_definitions()["taskDefinitionArns"]) == len(task_definitions) + 1
+
+    # Relaunching another run with the new image reuses an existing task definition
+    task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    instance.launch_run(other_run.run_id, other_workspace)
+    assert task_definitions == ecs.list_task_definitions()["taskDefinitionArns"]
+
+    # Register a new task definition if secrets change
+    secrets_manager.create_secret(
+        Name="hello",
+        SecretString="hello",
+        Tags=[{"Key": "dagster", "Value": "true"}],
+    )
+
+    instance.launch_run(other_run.run_id, other_workspace)
+    assert len(ecs.list_task_definitions()["taskDefinitionArns"]) == len(task_definitions) + 1
+
+    # Relaunching another run with the same secrets reuses an existing task definition
+    task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    instance.launch_run(other_run.run_id, other_workspace)
+    assert task_definitions == ecs.list_task_definitions()["taskDefinitionArns"]
 
 
 def test_launching_custom_task_definition(
