@@ -33,6 +33,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
           "name": "result",
           "properties": {
             "__class__": "StepOutputProperties",
+            "asset_key": null,
             "is_asset": false,
             "is_dynamic": false,
             "is_required": true,
@@ -102,6 +103,7 @@ snapshots['test_create_execution_plan_with_dep 1'] = '''{
           "name": "result",
           "properties": {
             "__class__": "StepOutputProperties",
+            "asset_key": null,
             "is_asset": false,
             "is_dynamic": false,
             "is_required": true,
@@ -155,6 +157,7 @@ snapshots['test_create_noop_execution_plan 1'] = '''{
           "name": "result",
           "properties": {
             "__class__": "StepOutputProperties",
+            "asset_key": null,
             "is_asset": false,
             "is_dynamic": false,
             "is_required": true,
@@ -219,6 +222,7 @@ snapshots['test_create_noop_execution_plan_with_tags 1'] = '''{
           "name": "result",
           "properties": {
             "__class__": "StepOutputProperties",
+            "asset_key": null,
             "is_asset": false,
             "is_dynamic": false,
             "is_required": true,
@@ -338,6 +342,7 @@ snapshots['test_create_with_composite 1'] = '''{
           "name": "result",
           "properties": {
             "__class__": "StepOutputProperties",
+            "asset_key": null,
             "is_asset": false,
             "is_dynamic": false,
             "is_required": true,
@@ -411,6 +416,7 @@ snapshots['test_create_with_composite 1'] = '''{
           "name": "result",
           "properties": {
             "__class__": "StepOutputProperties",
+            "asset_key": null,
             "is_asset": false,
             "is_dynamic": false,
             "is_required": true,
@@ -458,6 +464,7 @@ snapshots['test_create_with_composite 1'] = '''{
           "name": "out_num",
           "properties": {
             "__class__": "StepOutputProperties",
+            "asset_key": null,
             "is_asset": false,
             "is_dynamic": false,
             "is_required": true,
@@ -539,6 +546,7 @@ snapshots['test_create_with_composite 1'] = '''{
           "name": "result",
           "properties": {
             "__class__": "StepOutputProperties",
+            "asset_key": null,
             "is_asset": false,
             "is_dynamic": false,
             "is_required": true,
@@ -586,6 +594,7 @@ snapshots['test_create_with_composite 1'] = '''{
           "name": "out_num",
           "properties": {
             "__class__": "StepOutputProperties",
+            "asset_key": null,
             "is_asset": false,
             "is_dynamic": false,
             "is_required": true,
