@@ -1,5 +1,10 @@
 # Changelog
 
+# 0.14.5
+### Bugfixes
+
+- [dagit] Fixed issue where sensors could not be turned on/off in dagit.
+
 # 0.14.4
 ### New
 
