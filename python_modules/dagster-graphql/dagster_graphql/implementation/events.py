@@ -155,7 +155,6 @@ def from_dagster_event_record(event_record, pipeline_name):
     from ..schema.logs.events import (
         GrapheneAlertStartEvent,
         GrapheneAlertSuccessEvent,
-        GrapheneAssetIntentToMaterializeEvent,
         GrapheneEngineEvent,
         GrapheneExecutionStepFailureEvent,
         GrapheneExecutionStepInputEvent,
@@ -223,8 +222,6 @@ def from_dagster_event_record(event_record, pipeline_name):
     elif dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION:
         asset_lineage = dagster_event.step_materialization_data.asset_lineage
         return GrapheneMaterializationEvent(event=event_record, assetLineage=asset_lineage)
-    elif dagster_event.event_type == DagsterEventType.ASSET_INTENT_TO_MATERIALIZE:
-        return GrapheneAssetIntentToMaterializeEvent(event=event_record)
     elif dagster_event.event_type == DagsterEventType.ASSET_OBSERVATION:
         return GrapheneObservationEvent(
             event=event_record,

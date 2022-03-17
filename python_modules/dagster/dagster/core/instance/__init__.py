@@ -1156,17 +1156,30 @@ class DagsterInstance:
         of_type: Optional["DagsterEventType"] = None,
         limit: Optional[int] = None,
     ):
-        return self._event_storage.get_logs_for_run(
-            run_id,
-            cursor=cursor,
-            of_type=of_type,
-            limit=limit,
-        )
+        from dagster.core.events import DagsterEventType
+
+        # We remove ASSET_INTENT_TO_MATERIALIZE events here because these events
+        # should not display in Dagit's run logs
+        return [
+            log
+            for log in self._event_storage.get_logs_for_run(
+                run_id,
+                cursor=cursor,
+                of_type=of_type,
+                limit=limit,
+            )
+            if (
+                not log.is_dagster_event
+                or log.dagster_event_type != DagsterEventType.ASSET_INTENT_TO_MATERIALIZE
+            )
+        ]
 
     @traced
     def all_logs(
         self, run_id, of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None
     ):
+        # This method is used for internal purposes and the logs are not
+        # surfaced to Dagit. We do not remove ASSET_INTENT_TO_MATERIALIZE events here
         return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
 
     def watch_event_logs(self, run_id, cursor, cb):
