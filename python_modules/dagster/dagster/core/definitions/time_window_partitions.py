@@ -169,6 +169,7 @@ def daily_partitioned_config(
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
     end_offset: int = 0,
+    tags_for_partition_fn: Optional[Callable[[datetime, datetime], Dict[str, str]]] = None,
 ) -> Callable[[Callable[[datetime, datetime], Dict[str, Any]]], PartitionedConfig]:
     """Defines run config over a set of daily partitions.
 
@@ -205,6 +206,11 @@ def daily_partitioned_config(
                 start_date=start_date, timezone=timezone, fmt=fmt, end_offset=end_offset
             ),
             decorated_fn=fn,
+            tags_for_partition_fn=lambda partition: tags_for_partition_fn(
+                partition.value[0], partition.value[1]
+            )
+            if tags_for_partition_fn
+            else None,
         )
 
     return inner
@@ -252,6 +258,7 @@ def hourly_partitioned_config(
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
     end_offset: int = 0,
+    tags_for_partition_fn: Optional[Callable[[datetime, datetime], Dict[str, str]]] = None,
 ) -> Callable[[Callable[[datetime, datetime], Dict[str, Any]]], PartitionedConfig]:
     """Defines run config over a set of hourly partitions.
 
@@ -288,6 +295,11 @@ def hourly_partitioned_config(
                 start_date=start_date, timezone=timezone, fmt=fmt, end_offset=end_offset
             ),
             decorated_fn=fn,
+            tags_for_partition_fn=lambda partition: tags_for_partition_fn(
+                partition.value[0], partition.value[1]
+            )
+            if tags_for_partition_fn
+            else None,
         )
 
     return inner
@@ -335,6 +347,7 @@ def monthly_partitioned_config(
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
     end_offset: int = 0,
+    tags_for_partition_fn: Optional[Callable[[datetime, datetime], Dict[str, str]]] = None,
 ) -> Callable[[Callable[[datetime, datetime], Dict[str, Any]]], PartitionedConfig]:
     """Defines run config over a set of monthly partitions.
 
@@ -374,6 +387,11 @@ def monthly_partitioned_config(
                 end_offset=end_offset,
             ),
             decorated_fn=fn,
+            tags_for_partition_fn=lambda partition: tags_for_partition_fn(
+                partition.value[0], partition.value[1]
+            )
+            if tags_for_partition_fn
+            else None,
         )
 
     return inner
@@ -421,6 +439,7 @@ def weekly_partitioned_config(
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
     end_offset: int = 0,
+    tags_for_partition_fn: Optional[Callable[[datetime, datetime], Dict[str, str]]] = None,
 ) -> Callable[[Callable[[datetime, datetime], Dict[str, Any]]], PartitionedConfig]:
     """Defines run config over a set of weekly partitions.
 
@@ -460,6 +479,11 @@ def weekly_partitioned_config(
                 end_offset=end_offset,
             ),
             decorated_fn=fn,
+            tags_for_partition_fn=lambda partition: tags_for_partition_fn(
+                partition.value[0], partition.value[1]
+            )
+            if tags_for_partition_fn
+            else None,
         )
 
     return inner

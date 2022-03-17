@@ -176,6 +176,7 @@ class JobDefinition(PipelineDefinition):
             version_strategy=self.version_strategy,
         ).get_job_def_for_op_selection(op_selection)
 
+        tags = None
         if partition_key:
             if not base_mode.partitioned_config:
                 check.failed(
@@ -186,6 +187,7 @@ class JobDefinition(PipelineDefinition):
                 "Cannot provide both run_config and partition_key arguments to `execute_in_process`",
             )
             run_config = base_mode.partitioned_config.get_run_config(partition_key)
+            tags = base_mode.partitioned_config.get_tags(partition_key)
 
         return core_execute_in_process(
             node=self._graph_def,
@@ -194,7 +196,7 @@ class JobDefinition(PipelineDefinition):
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
-            run_tags={PARTITION_NAME_TAG: partition_key} if partition_key else None,
+            run_tags=tags,
         )
 
     @property
@@ -248,6 +250,7 @@ class JobDefinition(PipelineDefinition):
                 name=f"{self.name}_partition_set",
                 partitions_def=mode.partitioned_config.partitions_def,
                 run_config_fn_for_partition=mode.partitioned_config.run_config_for_partition_fn,
+                tags_fn_for_partition=mode.partitioned_config.tags_for_partition_fn,
                 mode=mode.name,
             )
 

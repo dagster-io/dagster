@@ -20,7 +20,9 @@ RUN_CONFIG = {"ops": {"my_op": {"config": "hello"}}}
 
 
 def test_static_partitioned_job():
-    @static_partitioned_config(["blah"])
+    @static_partitioned_config(
+        ["blah"], tags_for_partition_fn=lambda partition_key: {"foo": partition_key}
+    )
     def my_static_partitioned_config(_partition_key: str):
         return RUN_CONFIG
 
@@ -35,6 +37,7 @@ def test_static_partitioned_job():
 
     result = my_job.execute_in_process(partition_key="blah")
     assert result.success
+    assert result.dagster_run.tags["foo"] == "blah"
 
     with pytest.raises(
         DagsterUnknownPartitionError, match="Could not find a partition with key `doesnotexist`"
@@ -43,7 +46,10 @@ def test_static_partitioned_job():
 
 
 def test_time_based_partitioned_job():
-    @daily_partitioned_config(start_date="2021-05-05")
+    @daily_partitioned_config(
+        start_date="2021-05-05",
+        tags_for_partition_fn=lambda start, end: {"foo": start.strftime("%Y-%m-%d")},
+    )
     def my_daily_partitioned_config(_start, _end):
         return RUN_CONFIG
 
@@ -63,6 +69,7 @@ def test_time_based_partitioned_job():
 
     result = my_job.execute_in_process(partition_key=partition_key)
     assert result.success
+    assert result.dagster_run.tags["foo"] == "2021-05-05"
 
     with pytest.raises(
         DagsterUnknownPartitionError, match="Could not find a partition with key `doesnotexist`"
@@ -74,7 +81,9 @@ def test_dynamic_partitioned_config():
     def partition_fn(_current_time=None):
         return ["blah"]
 
-    @dynamic_partitioned_config(partition_fn)
+    @dynamic_partitioned_config(
+        partition_fn, tags_for_partition_fn=lambda partition_key: {"foo": partition_key}
+    )
     def my_dynamic_partitioned_config(_partition_key):
         return RUN_CONFIG
 
@@ -89,6 +98,7 @@ def test_dynamic_partitioned_config():
 
     result = my_job.execute_in_process(partition_key="blah")
     assert result.success
+    assert result.dagster_run.tags["foo"] == "blah"
 
     with pytest.raises(
         DagsterUnknownPartitionError, match="Could not find a partition with key `doesnotexist`"
