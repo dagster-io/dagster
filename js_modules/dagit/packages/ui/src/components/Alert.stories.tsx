@@ -13,6 +13,13 @@ export default {
 const intents: AlertIntent[] = ['info', 'warning', 'error', 'success'];
 
 export const Intents = () => {
+  const [isClosed, updateClosed] = React.useState<boolean[]>(intents.map(() => false));
+  const setClosed = (index: number, closed: boolean) => {
+    const newClosed = Array.from(isClosed);
+    newClosed[index] = closed;
+    updateClosed(newClosed);
+  };
+
   return (
     <Box flex={{direction: 'column', gap: 8}}>
       {intents.map((intent) => (
@@ -27,6 +34,17 @@ export const Intents = () => {
           }
         />
       ))}
+      {intents.map((intent, i) =>
+        !isClosed[i] ? (
+          <Alert
+            key={`${intent}-closable`}
+            intent={intent}
+            title="You can dismiss me."
+            description="This alert can be dismissed."
+            onClose={() => setClosed(i, true)}
+          />
+        ) : null,
+      )}
     </Box>
   );
 };
