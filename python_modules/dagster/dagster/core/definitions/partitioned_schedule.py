@@ -67,9 +67,11 @@ def build_schedule_from_partitioned_job(
         )
 
     if partitions_def.schedule_type == ScheduleType.MONTHLY:
-        execution_day = check.opt_int_param(day_of_month, "day_of_month", default=1)
+        default = partitions_def.start_day_of_window or 1
+        execution_day = check.opt_int_param(day_of_month, "day_of_month", default=default)
     elif partitions_def.schedule_type == ScheduleType.WEEKLY:
-        execution_day = check.opt_int_param(day_of_week, "day_of_week", default=0)
+        default = partitions_def.start_day_of_window or 0
+        execution_day = check.opt_int_param(day_of_week, "day_of_week", default=default)
     else:
         execution_day = 0
 
