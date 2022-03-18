@@ -1878,7 +1878,7 @@ union LaunchRunReexecutionResult =
   | ConflictingExecutionParamsError
   | NoModeProvidedError
 
-union ScheduleMutationResult = PythonError | ScheduleStateResult
+union ScheduleMutationResult = PythonError | UnauthorizedError | ScheduleStateResult
 
 type ScheduleStateResult {
   scheduleState: InstigationState!
