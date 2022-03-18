@@ -9,8 +9,8 @@ if TYPE_CHECKING:
 class Permissions(str, Enum):
     LAUNCH_PIPELINE_EXECUTION = "launch_pipeline_execution"
     LAUNCH_PIPELINE_REEXECUTION = "launch_pipeline_reexecution"
-    START_SCHEDULE = "start_schedule"
-    STOP_RUNNING_SCHEDULE = "stop_running_schedule"
+    START_SCHEDULE = "edit_schedule"
+    STOP_RUNNING_SCHEDULE = "edit_schedule"
     EDIT_SENSOR = "edit_sensor"
     TERMINATE_PIPELINE_EXECUTION = "terminate_pipeline_execution"
     DELETE_PIPELINE_RUN = "delete_pipeline_run"
