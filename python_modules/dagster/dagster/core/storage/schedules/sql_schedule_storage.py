@@ -144,6 +144,11 @@ class SqlScheduleStorage(ScheduleStorage):
     def supports_batch_queries(self):
         return True
 
+    def has_instigators_table(self):
+        with self.connect() as conn:
+            table_names = db.inspect(conn).get_table_names()
+            return "instigators" in table_names
+
     def get_batch_ticks(
         self,
         origin_ids: Sequence[str],

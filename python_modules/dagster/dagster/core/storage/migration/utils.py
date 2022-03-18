@@ -5,6 +5,7 @@ from alembic import op
 from sqlalchemy.engine import reflection
 
 from dagster import check
+from dagster.core.storage.sql import get_current_timestamp
 
 
 def get_inspector():
@@ -259,3 +260,28 @@ def create_schedule_secondary_index_table():
             db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
             db.Column("migration_completed", db.DateTime),
         )
+
+
+def create_instigators_table():
+    if not has_table("instigators") and not has_table("jobs"):
+        # not a schedule storage db
+        return
+
+    if has_table("instigators"):
+        # already migrated
+        return
+
+    op.create_table(
+        "instigators",
+        db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+        db.Column("selector_id", db.String(255), unique=True),
+        db.Column("repository_name", db.Text),
+        db.Column("status", db.String(63)),
+        db.Column("instigator_type", db.String(63), index=True),
+        db.Column("instigator_body", db.Text),
+        db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+        db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    )
+
+    op.add_column("jobs", db.Column("selector_id", db.String(255)))
+    op.add_column("job_ticks", db.Column("selector_id", db.String(255)))
