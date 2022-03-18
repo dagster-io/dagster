@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional, Union, Dict
 
 
 class FakeGCSBlob:
@@ -6,7 +6,7 @@ class FakeGCSBlob:
         from unittest import mock
 
         self.name = name
-        self.data = None
+        self.data = b""
         self.bucket = bucket
         self.mock_extras = mock.MagicMock()
 
@@ -35,7 +35,7 @@ class FakeGCSBucket:
         from unittest import mock
 
         self.name = name
-        self.blobs = {}
+        self.blobs: Dict[str, FakeGCSBlob] = {}
         self.mock_extras = mock.MagicMock()
 
     def blob(self, blob_name: str, *args, **kwargs):
@@ -55,7 +55,7 @@ class FakeGCSClient:
     def __init__(self):
         from unittest import mock
 
-        self.buckets = {}
+        self.buckets: Dict[str, FakeGCSBucket] = {}
         self.mock_extras = mock.MagicMock()
 
     def bucket(self, bucket_name: str, *args, **kwargs):
