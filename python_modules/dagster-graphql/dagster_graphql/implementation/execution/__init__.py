@@ -1,7 +1,11 @@
+import sys
+
 from graphql.execution.base import ResolveInfo
 from rx import Observable
 
 from dagster import check
+from dagster.core.events import EngineEventData
+from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
 from dagster.serdes import serialize_dagster_namedtuple
@@ -19,11 +23,9 @@ from .backfill import (
 from .launch_execution import launch_pipeline_execution, launch_pipeline_reexecution
 
 
-def _force_mark_as_canceled(graphene_info, run_id):
+def _force_mark_as_canceled(instance, run_id):
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.roots.mutation import GrapheneTerminateRunSuccess
-
-    instance = graphene_info.context.instance
 
     reloaded_record = instance.get_run_records(RunsFilter(run_ids=[run_id]))[0]
 
@@ -39,7 +41,7 @@ def _force_mark_as_canceled(graphene_info, run_id):
 
 
 @capture_error
-def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
+def terminate_pipeline_execution(instance, run_id, terminate_policy):
     from ...schema.errors import GrapheneRunNotFoundError
     from ...schema.pipelines.pipeline import GrapheneRun
     from ...schema.roots.mutation import (
@@ -48,10 +50,9 @@ def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
         GrapheneTerminateRunSuccess,
     )
 
-    check.inst_param(graphene_info, "graphene_info", ResolveInfo)
+    check.inst_param(instance, "instance", DagsterInstance)
     check.str_param(run_id, "run_id")
 
-    instance = graphene_info.context.instance
     records = instance.get_run_records(RunsFilter(run_ids=[run_id]))
 
     force_mark_as_canceled = (
@@ -78,24 +79,30 @@ def terminate_pipeline_execution(graphene_info, run_id, terminate_policy):
             ),
         )
 
+    if force_mark_as_canceled:
+        try:
+            if instance.run_coordinator and instance.run_coordinator.can_cancel_run(run_id):
+                instance.run_coordinator.cancel_run(run_id)
+        except:
+            instance.report_engine_event(
+                "Exception while attempting to force-terminate run. Run will still be marked as canceled.",
+                pipeline_name=run.pipeline_name,
+                run_id=run.run_id,
+                engine_event_data=EngineEventData(
+                    error=serializable_error_info_from_exc_info(sys.exc_info()),
+                ),
+            )
+        return _force_mark_as_canceled(instance, run_id)
+
     if (
-        graphene_info.context.instance.run_coordinator
-        and graphene_info.context.instance.run_coordinator.can_cancel_run(run_id)
-        and graphene_info.context.instance.run_coordinator.cancel_run(run_id)
+        instance.run_coordinator
+        and instance.run_coordinator.can_cancel_run(run_id)
+        and instance.run_coordinator.cancel_run(run_id)
     ):
+        return GrapheneTerminateRunSuccess(graphene_run)
 
-        return (
-            _force_mark_as_canceled(graphene_info, run_id)
-            if force_mark_as_canceled
-            else GrapheneTerminateRunSuccess(graphene_run)
-        )
-
-    return (
-        _force_mark_as_canceled(graphene_info, run_id)
-        if force_mark_as_canceled
-        else GrapheneTerminateRunFailure(
-            run=graphene_run, message="Unable to terminate run {run_id}".format(run_id=run.run_id)
-        )
+    return GrapheneTerminateRunFailure(
+        run=graphene_run, message="Unable to terminate run {run_id}".format(run_id=run.run_id)
     )
 
 
