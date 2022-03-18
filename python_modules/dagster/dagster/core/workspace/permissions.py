@@ -9,8 +9,7 @@ if TYPE_CHECKING:
 class Permissions(str, Enum):
     LAUNCH_PIPELINE_EXECUTION = "launch_pipeline_execution"
     LAUNCH_PIPELINE_REEXECUTION = "launch_pipeline_reexecution"
-    START_SCHEDULE = "edit_schedule"
-    STOP_RUNNING_SCHEDULE = "edit_schedule"
+    EDIT_SCHEDULE = "edit_schedule"
     EDIT_SENSOR = "edit_sensor"
     TERMINATE_PIPELINE_EXECUTION = "terminate_pipeline_execution"
     DELETE_PIPELINE_RUN = "delete_pipeline_run"
@@ -27,8 +26,7 @@ class Permissions(str, Enum):
 VIEWER_PERMISSIONS: Dict[str, bool] = {
     Permissions.LAUNCH_PIPELINE_EXECUTION: False,
     Permissions.LAUNCH_PIPELINE_REEXECUTION: False,
-    Permissions.START_SCHEDULE: False,
-    Permissions.STOP_RUNNING_SCHEDULE: False,
+    Permissions.EDIT_SCHEDULE: False,
     Permissions.EDIT_SENSOR: False,
     Permissions.TERMINATE_PIPELINE_EXECUTION: False,
     Permissions.DELETE_PIPELINE_RUN: False,
@@ -42,8 +40,7 @@ VIEWER_PERMISSIONS: Dict[str, bool] = {
 EDITOR_PERMISSIONS: Dict[str, bool] = {
     Permissions.LAUNCH_PIPELINE_EXECUTION: True,
     Permissions.LAUNCH_PIPELINE_REEXECUTION: True,
-    Permissions.START_SCHEDULE: True,
-    Permissions.STOP_RUNNING_SCHEDULE: True,
+    Permissions.EDIT_SCHEDULE: True,
     Permissions.EDIT_SENSOR: True,
     Permissions.TERMINATE_PIPELINE_EXECUTION: True,
     Permissions.DELETE_PIPELINE_RUN: True,
