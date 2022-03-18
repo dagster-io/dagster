@@ -497,13 +497,14 @@ class TickData(
             )
         )
 
-    def with_run(self, run_id, run_key=None):
-        check.str_param(run_id, "run_id")
+    def with_run(self, run_id=None, run_key=None):
+        check.opt_str_param(run_id, "run_id")
+        check.opt_str_param(run_key, "run_key")
         return TickData(
             **merge_dicts(
                 self._asdict(),
                 {
-                    "run_ids": [*self.run_ids, run_id],
+                    "run_ids": [*self.run_ids, run_id] if run_id else self.run_ids,
                     "run_keys": [*self.run_keys, run_key] if run_key else self.run_keys,
                 },
             )

@@ -835,6 +835,10 @@ def test_launch_once(capfd):
                 freeze_datetime,
                 TickStatus.SKIPPED,
             )
+            assert ticks[0].run_keys
+            assert len(ticks[0].run_keys) == 1
+            assert not ticks[0].run_ids
+
             captured = capfd.readouterr()
             assert (
                 'Skipping 1 run for sensor run_key_sensor already completed with run keys: ["only_once"]'
