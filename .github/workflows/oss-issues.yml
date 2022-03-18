@@ -1,0 +1,56 @@
+# This is a workflow for automatically adding new issues to the OSS Issues project
+name: OSS Issues Project Automation
+
+on:
+  issues:
+    types:
+      - opened
+
+jobs:
+  add_issue_to_project:
+    name: Add new issues to OSS Issues project
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate Github App token
+        id: generate_token
+        uses: tibdex/github-app-token@36464acb844fc53b9b8b2401da68844f6b05ebb0
+        with:
+          app_id: ${{ secrets.PROJECT_AUTOMATION_APP_ID }}
+          private_key: ${{ secrets.PROJECT_AUTOMATION_APP_PEM }}
+      
+      - name: Get project data
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+          ORGANIZATION: dagster-io
+          PROJECT_NUMBER: 2
+        run: |
+          gh api graphql -f query='
+            query($org: String!, $number: Int!) {
+              organization(login: $org){
+                projectNext(number: $number) {
+                  id
+                  fields(first:20) {
+                    nodes {
+                      id
+                      name
+                      settings
+                    }
+                  }
+                }
+              }
+            }' -f org=$ORGANIZATION -F number=$PROJECT_NUMBER > project_data.json
+
+          echo 'PROJECT_ID='$(jq '.data.organization.projectNext.id' project_data.json) >> $GITHUB_ENV
+
+      - name: Add new issue to project
+        env:
+          GITHUB_TOKEN: ${{ steps.generate_token.outputs.token }}
+        run: |
+          gh api graphql -f query='
+            mutation($project:ID!, $issue:ID!) { 
+              addProjectNextItem(input: {projectId: $project, contentId: $issue}) { 
+                projectNextItem { 
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f issue=${{ github.event.issue.node_id }}
