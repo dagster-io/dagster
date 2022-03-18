@@ -685,9 +685,9 @@ class ExternalAssetNode(
         "_ExternalAssetNode",
         [
             ("asset_key", AssetKey),
-            ("compute_kind", Optional[str]),
             ("dependencies", Sequence[ExternalAssetDependency]),
             ("depended_by", Sequence[ExternalAssetDependedBy]),
+            ("compute_kind", Optional[str]),
             ("op_name", Optional[str]),
             ("op_description", Optional[str]),
             ("job_names", Sequence[str]),
