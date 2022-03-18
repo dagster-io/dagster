@@ -548,12 +548,8 @@ class JsonMetadataValue(
             # check that the value is JSON serializable
             seven.dumps(data)
         except TypeError:
-            raise DagsterInvalidMetadata(
-                "Value is a dictionary but is not JSON serializable."
-            )
-        return super(JsonMetadataValue, cls).__new__(
-            cls, data
-        )
+            raise DagsterInvalidMetadata("Value is a dictionary but is not JSON serializable.")
+        return super(JsonMetadataValue, cls).__new__(cls, data)
 
 
 @whitelist_for_serdes(storage_name="MarkdownMetadataEntryData")
@@ -714,7 +710,7 @@ class TableMetadataValue(
 
     def __new__(cls, records: List[TableRecord], schema: Optional[TableSchema]):
 
-        check.list_param(records, "records", of_type=TableRecord),
+        check.list_param(records, "records", of_type=TableRecord)
         check.opt_inst_param(schema, "schema", TableSchema)
 
         if len(records) == 0:
