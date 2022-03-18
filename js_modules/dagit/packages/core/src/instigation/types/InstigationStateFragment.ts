@@ -64,6 +64,7 @@ export interface InstigationStateFragment_ticks {
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: InstigationStateFragment_ticks_error | null;
 }
 

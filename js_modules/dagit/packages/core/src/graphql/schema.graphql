@@ -1180,6 +1180,7 @@ type InstigationTick {
   status: InstigationTickStatus!
   timestamp: Float!
   runIds: [String!]!
+  runKeys: [String!]!
   error: PythonError
   skipReason: String
   cursor: String

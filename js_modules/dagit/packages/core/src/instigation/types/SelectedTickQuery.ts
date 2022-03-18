@@ -35,6 +35,7 @@ export interface SelectedTickQuery_instigationStateOrError_InstigationState_tick
   runIds: string[];
   originRunIds: string[];
   error: SelectedTickQuery_instigationStateOrError_InstigationState_tick_error | null;
+  runKeys: string[];
 }
 
 export interface SelectedTickQuery_instigationStateOrError_InstigationState {

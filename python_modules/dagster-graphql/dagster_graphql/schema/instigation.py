@@ -99,6 +99,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
     status = graphene.NonNull(GrapheneInstigationTickStatus)
     timestamp = graphene.NonNull(graphene.Float)
     runIds = non_null_list(graphene.String)
+    runKeys = non_null_list(graphene.String)
     error = graphene.Field(GraphenePythonError)
     skipReason = graphene.String()
     cursor = graphene.String()
@@ -115,6 +116,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
             status=tick.status,
             timestamp=tick.timestamp,
             runIds=tick.run_ids,
+            runKeys=tick.run_keys,
             error=tick.error,
             skipReason=tick.skip_reason,
             originRunIds=tick.origin_run_ids,

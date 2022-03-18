@@ -70,6 +70,7 @@ export interface ScheduleFragment_scheduleState_ticks {
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: ScheduleFragment_scheduleState_ticks_error | null;
 }
 
