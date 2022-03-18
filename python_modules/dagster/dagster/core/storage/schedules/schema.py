@@ -9,10 +9,24 @@ JobTable = db.Table(
     ScheduleStorageSqlMetadata,
     db.Column("id", db.Integer, primary_key=True, autoincrement=True),
     db.Column("job_origin_id", db.String(255), unique=True),
+    db.Column("selector_id", db.String(255)),
     db.Column("repository_origin_id", db.String(255)),
     db.Column("status", db.String(63)),
     db.Column("job_type", db.String(63), index=True),
     db.Column("job_body", db.Text),
+    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
+)
+
+InstigatorTable = db.Table(
+    "instigators",
+    ScheduleStorageSqlMetadata,
+    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column("selector_id", db.String(255), unique=True),
+    db.Column("repository_name", db.Text),
+    db.Column("status", db.String(63)),
+    db.Column("instigator_type", db.String(63), index=True),
+    db.Column("instigator_body", db.Text),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
     db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
@@ -22,6 +36,7 @@ JobTickTable = db.Table(
     ScheduleStorageSqlMetadata,
     db.Column("id", db.Integer, primary_key=True, autoincrement=True),
     db.Column("job_origin_id", db.String(255), index=True),
+    db.Column("selector_id", db.String(255)),
     db.Column("status", db.String(63)),
     db.Column("type", db.String(63)),
     db.Column("timestamp", db.types.TIMESTAMP),
