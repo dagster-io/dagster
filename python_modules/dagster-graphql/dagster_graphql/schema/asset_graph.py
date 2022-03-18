@@ -78,6 +78,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         beforeTimestampMillis=graphene.String(),
         limit=graphene.Int(),
     )
+    computeKind: graphene.String
     dependedBy = non_null_list(GrapheneAssetDependency)
     dependedByKeys = non_null_list(GrapheneAssetKey)
     dependencies = non_null_list(GrapheneAssetDependency)
@@ -198,6 +199,9 @@ class GrapheneAssetNode(graphene.ObjectType):
             )
         ]
 
+    def resolve_computeKind(self, _graphene_info) -> Optional[str]:
+        return self._external_asset_node.compute_kind
+
     def resolve_dependedBy(self, graphene_info) -> List[GrapheneAssetDependency]:
         if not self._external_asset_node.depended_by:
             return []
@@ -249,7 +253,7 @@ class GrapheneAssetNode(graphene.ObjectType):
             for dep in self._external_asset_node.dependencies
         ]
 
-    def resolve_jobNames(self, _graphene_info) -> List[graphene.String]:
+    def resolve_jobNames(self, _graphene_info) -> List[str]:
         return self._external_asset_node.job_names
 
     def resolve_jobs(self, _graphene_info) -> List[GraphenePipeline]:
@@ -324,13 +328,13 @@ class GrapheneAssetNode(graphene.ObjectType):
         else:
             return None
 
-    def resolve_partitionDefinition(self, _graphene_info) -> Optional[graphene.String]:
+    def resolve_partitionDefinition(self, _graphene_info) -> Optional[str]:
         partitions_def_data = self._external_asset_node.partitions_def_data
         if partitions_def_data:
             return str(partitions_def_data.get_partitions_definition())
         return None
 
-    def resolve_partitionKeys(self, _graphene_info) -> List[graphene.String]:
+    def resolve_partitionKeys(self, _graphene_info) -> List[str]:
         return self.get_partition_keys()
 
     def resolve_repository(self, graphene_info) -> "GrapheneRepository":

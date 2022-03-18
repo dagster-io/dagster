@@ -687,6 +687,7 @@ class ExternalAssetNode(
             ("asset_key", AssetKey),
             ("dependencies", Sequence[ExternalAssetDependency]),
             ("depended_by", Sequence[ExternalAssetDependedBy]),
+            ("compute_kind", Optional[str]),
             ("op_name", Optional[str]),
             ("op_description", Optional[str]),
             ("job_names", Sequence[str]),
@@ -707,6 +708,7 @@ class ExternalAssetNode(
         asset_key: AssetKey,
         dependencies: Sequence[ExternalAssetDependency],
         depended_by: Sequence[ExternalAssetDependedBy],
+        compute_kind: Optional[str] = None,
         op_name: Optional[str] = None,
         op_description: Optional[str] = None,
         job_names: Optional[Sequence[str]] = None,
@@ -724,6 +726,7 @@ class ExternalAssetNode(
             depended_by=check.opt_sequence_param(
                 depended_by, "depended_by", of_type=ExternalAssetDependedBy
             ),
+            compute_kind=check.opt_str_param(compute_kind, "compute_kind"),
             op_name=check.opt_str_param(op_name, "op_name"),
             op_description=check.opt_str_param(
                 op_description or output_description, "op_description"
@@ -893,6 +896,7 @@ def external_asset_graph_from_defs(
                 asset_key=asset_key,
                 dependencies=list(deps[asset_key].values()),
                 depended_by=list(dep_by[asset_key].values()),
+                compute_kind=node_def.tags.get("kind"),
                 op_name=node_def.name,
                 op_description=node_def.description,
                 job_names=job_names,
