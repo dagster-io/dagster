@@ -382,9 +382,7 @@ def test_optional_outputs():
 def throw():
     raise Failure(
         description="it Failure",
-        metadata_entries=[
-            MetadataEntry.text(label="label", text="text", description="description")
-        ],
+        metadata_entries=[MetadataEntry("label", value="text")],
     )
 
 

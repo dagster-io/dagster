@@ -51,15 +51,15 @@ class ConstraintWithMetadataException(Exception):
         )
 
     def convert_to_metadata(self):
-        return MetadataEntry.json(
-            {
+        return MetadataEntry(
+            "constraint-metadata",
+            value={
                 "constraint_name": self.constraint_name,
                 "constraint_description": self.constraint_description,
                 "expected": self.expectation,
                 "offending": self.offending,
                 "actual": self.actual,
             },
-            "constraint-metadata",
         )
 
     def return_as_typecheck(self):

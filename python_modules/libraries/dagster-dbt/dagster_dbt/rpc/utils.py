@@ -51,35 +51,33 @@ def raise_for_rpc_error(context: SolidExecutionContext, resp: Response) -> None:
             raise Failure(
                 description=error["message"],
                 metadata_entries=[
-                    MetadataEntry.text(text=str(error["code"]), label="RPC Error Code"),
-                    MetadataEntry.text(
-                        text=error["data"]["cause"]["message"], label="RPC Error Cause"
-                    ),
+                    MetadataEntry("RPC Error Code", value=str(error["code"])),
+                    MetadataEntry("RPC Error Cause", value=error["data"]["cause"]["message"]),
                 ],
             )
         elif error["code"] == DBTErrors.rpc_process_killed_error.value:
             raise Failure(
                 description=error["message"],
                 metadata_entries=[
-                    MetadataEntry.text(text=str(error["code"]), label="RPC Error Code"),
-                    MetadataEntry.text(text=str(error["data"]["signum"]), label="RPC Signum"),
-                    MetadataEntry.text(text=error["data"]["message"], label="RPC Error Message"),
+                    MetadataEntry("RPC Error Code", value=str(error["code"])),
+                    MetadataEntry("RPC Signum", value=str(error["data"]["signum"])),
+                    MetadataEntry("RPC Error Message", value=error["data"]["message"]),
                 ],
             )
         elif error["code"] == DBTErrors.rpc_timeout_error.value:
             raise Failure(
                 description=error["message"],
                 metadata_entries=[
-                    MetadataEntry.text(text=str(error["code"]), label="RPC Error Code"),
-                    MetadataEntry.text(text=str(error["data"]["timeout"]), label="RPC Timeout"),
-                    MetadataEntry.text(text=error["data"]["message"], label="RPC Error Message"),
+                    MetadataEntry("RPC Error Code", value=str(error["code"])),
+                    MetadataEntry("RPC Timeout", value=str(error["data"]["timeout"])),
+                    MetadataEntry("RPC Error Message", value=error["data"]["message"]),
                 ],
             )
         else:
             raise Failure(
                 description=error["message"],
                 metadata_entries=[
-                    MetadataEntry.text(text=str(error["code"]), label="RPC Error Code"),
+                    MetadataEntry("RPC Error Code", value=str(error["code"])),
                 ],
             )
 

@@ -225,9 +225,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             run,
             EngineEventData(
                 [
-                    MetadataEntry.text(job_name, "Kubernetes Job name"),
-                    MetadataEntry.text(job_namespace, "Kubernetes Namespace"),
-                    MetadataEntry.text(run.run_id, "Run ID"),
+                    MetadataEntry("Kubernetes Job name", value=job_name),
+                    MetadataEntry("Kubernetes Namespace", value=job_namespace),
+                    MetadataEntry("Run ID", value=run.run_id),
                 ]
             ),
             cls=self.__class__,
@@ -239,9 +239,9 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             run,
             EngineEventData(
                 [
-                    MetadataEntry.text(job_name, "Kubernetes Job name"),
-                    MetadataEntry.text(job_namespace, "Kubernetes Namespace"),
-                    MetadataEntry.text(run.run_id, "Run ID"),
+                    MetadataEntry("Kubernetes Job name", value=job_name),
+                    MetadataEntry("Kubernetes Namespace", value=job_namespace),
+                    MetadataEntry("Run ID", value=run.run_id),
                 ]
             ),
             cls=self.__class__,

@@ -384,8 +384,8 @@ def define_custom_dict(name, permitted_key_names):
         return TypeCheck(
             True,
             metadata_entries=[
-                MetadataEntry.text(label="row_count", text=str(len(value))),
-                MetadataEntry.text(label="series_names", text=", ".join(value.keys())),
+                MetadataEntry("row_count", value=str(len(value))),
+                MetadataEntry("series_names", value=", ".join(value.keys())),
             ],
         )
 
@@ -461,7 +461,7 @@ def test_raise_on_error_true_type_check_returns_unsuccessful_type_check():
     FalsyType = DagsterType(
         name="FalsyType",
         type_check_fn=lambda _, _val: TypeCheck(
-            success=False, metadata_entries=[MetadataEntry.text("foo", "bar", "baz")]
+            success=False, metadata_entries=[MetadataEntry("bar", value="foo")]
         ),
     )
 
@@ -550,7 +550,7 @@ def test_raise_on_error_true_type_check_returns_successful_type_check():
     TruthyExceptionType = DagsterType(
         name="TruthyExceptionType",
         type_check_fn=lambda _, _val: TypeCheck(
-            success=True, metadata_entries=[MetadataEntry.text("foo", "bar", "baz")]
+            success=True, metadata_entries=[MetadataEntry("bar", value="foo")]
         ),
     )
 

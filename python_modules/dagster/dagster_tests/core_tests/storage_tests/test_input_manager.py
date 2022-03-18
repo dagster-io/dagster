@@ -164,9 +164,7 @@ def test_input_manager_with_failure():
     def should_fail(_):
         raise Failure(
             description="Foolure",
-            metadata_entries=[
-                MetadataEntry.text(label="label", text="text", description="description")
-            ],
+            metadata_entries=[MetadataEntry("label", value="text")],
         )
 
     @solid(input_defs=[InputDefinition("_fail_input", root_manager_key="should_fail")])

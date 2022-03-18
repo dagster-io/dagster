@@ -121,9 +121,12 @@ def normalize_metadata_value(raw_value: RawMetadataValue):
                 "Value is a dictionary but is not JSON serializable. "
                 "Consider wrapping the value with the appropriate MetadataValue type."
             )
-
-    if isinstance(raw_value, os.PathLike):
+    elif isinstance(raw_value, os.PathLike):
         return MetadataValue.path(raw_value)
+    elif isinstance(raw_value, AssetKey):
+        return MetadataValue.asset(raw_value)
+    elif isinstance(raw_value, TableSchema):
+        return MetadataValue.table_schema(raw_value)
 
     raise DagsterInvalidMetadata(
         f"Its type was {type(raw_value)}. Consider wrapping the value with the appropriate "
@@ -390,7 +393,9 @@ class MetadataValue:
 
     @staticmethod
     @experimental
-    def table(records: List[TableRecord], schema: TableSchema) -> "TableMetadataValue":
+    def table(
+        records: List[TableRecord], schema: Optional[TableSchema] = None
+    ) -> "TableMetadataValue":
         """Static constructor for a metadata value wrapping arbitrary tabular data as
         :py:class:`TableMetadataValue`. Can be used as the value type for the `metadata`
         parameter for supported events. For example:
@@ -420,7 +425,7 @@ class MetadataValue:
 
         Args:
             records (List[TableRecord]): The data as a list of records (i.e. rows).
-            schema (TableSchema): A schema for the table.
+            schema (Optional[TableSchema]): A schema for the table.
         """
         return TableMetadataValue(records, schema)
 
@@ -706,11 +711,30 @@ class TableMetadataValue(
         else:
             return "string"
 
-    def __new__(cls, records: List[TableRecord], schema: TableSchema):
+    def __new__(cls, records: List[TableRecord], schema: Optional[TableSchema]):
+
+        check.list_param(records, "records", of_type=TableRecord),
+        check.opt_inst_param(schema, "schema", TableSchema)
+
+        if len(records) == 0:
+            schema = check.not_none(schema, "schema must be provided if records is empty")
+        else:
+            columns = set(records[0].data.keys())
+            for record in records[1:]:
+                check.invariant(
+                    set(record.data.keys()) == columns, "All records must have the same fields"
+                )
+            schema = schema or TableSchema(
+                columns=[
+                    TableColumn(name=k, type=TableMetadataValue.infer_column_type(v))
+                    for k, v in records[0].data.items()
+                ]
+            )
+
         return super(TableMetadataValue, cls).__new__(
             cls,
-            check.list_param(records, "records", of_type=TableRecord),
-            check.inst_param(schema, "schema", TableSchema),
+            records,
+            schema,
         )
 
 
@@ -1124,20 +1148,6 @@ class MetadataEntry(
                 `"bool"` or `"float"` inferred from the first record's values. If a value does
                 not directly match one of the above types, it will be treated as a string.
         """
-        if len(records) == 0:
-            schema = check.not_none(schema, "schema must be provided if records is empty")
-        else:
-            columns = set(records[0].data.keys())
-            for record in records[1:]:
-                check.invariant(
-                    set(record.data.keys()) == columns, "All records must have the same fields"
-                )
-            schema = schema or TableSchema(
-                columns=[
-                    TableColumn(name=k, type=TableMetadataValue.infer_column_type(v))
-                    for k, v in records[0].data.items()
-                ]
-            )
         return MetadataEntry(label, description, TableMetadataValue(records, schema))
 
     @staticmethod

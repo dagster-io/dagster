@@ -232,9 +232,9 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             pipeline_run=run,
             engine_event_data=EngineEventData(
                 [
-                    MetadataEntry.text(arn, "ECS Task ARN"),
-                    MetadataEntry.text(metadata.cluster, "ECS Cluster"),
-                    MetadataEntry.text(run.run_id, "Run ID"),
+                    MetadataEntry("ECS Task ARN", value=arn),
+                    MetadataEntry("ECS Cluster", value=metadata.cluster),
+                    MetadataEntry("Run ID", value=run.run_id),
                 ]
             ),
             cls=self.__class__,

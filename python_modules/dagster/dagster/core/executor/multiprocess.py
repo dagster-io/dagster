@@ -70,8 +70,8 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
                 self.pipeline_run,
                 EngineEventData(
                     [
-                        MetadataEntry.text(str(os.getpid()), "pid"),
-                        MetadataEntry.text(self.step_key, "step_key"),
+                        MetadataEntry("pid", value=str(os.getpid())),
+                        MetadataEntry("step_key", value=self.step_key),
                     ],
                     marker_end=DELEGATE_MARKER,
                 ),
