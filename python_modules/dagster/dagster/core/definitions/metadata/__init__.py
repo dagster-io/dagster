@@ -102,6 +102,7 @@ def normalize_metadata(
 
 
 def normalize_metadata_value(raw_value: RawMetadataValue):
+    from dagster.core.definitions.events import AssetKey
 
     if isinstance(raw_value, MetadataValue):
         return raw_value
@@ -112,15 +113,7 @@ def normalize_metadata_value(raw_value: RawMetadataValue):
     elif isinstance(raw_value, int):
         return MetadataValue.int(raw_value)
     elif isinstance(raw_value, dict):
-        try:
-            # check that the value is JSON serializable
-            seven.dumps(raw_value)
-            return MetadataValue.json(raw_value)
-        except TypeError:
-            raise DagsterInvalidMetadata(
-                "Value is a dictionary but is not JSON serializable. "
-                "Consider wrapping the value with the appropriate MetadataValue type."
-            )
+        return MetadataValue.json(raw_value)
     elif isinstance(raw_value, os.PathLike):
         return MetadataValue.path(raw_value)
     elif isinstance(raw_value, AssetKey):
@@ -550,8 +543,16 @@ class JsonMetadataValue(
     """
 
     def __new__(cls, data: Optional[Dict[str, Any]]):
+        data = check.opt_dict_param(data, "data", key_type=str)
+        try:
+            # check that the value is JSON serializable
+            seven.dumps(data)
+        except TypeError:
+            raise DagsterInvalidMetadata(
+                "Value is a dictionary but is not JSON serializable."
+            )
         return super(JsonMetadataValue, cls).__new__(
-            cls, check.opt_dict_param(data, "data", key_type=str)
+            cls, data
         )
 
 

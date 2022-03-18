@@ -207,8 +207,8 @@ class K8sStepHandler(StepHandler):
                 message=f"Executing step {step_key} in Kubernetes job {job_name}",
                 event_specific_data=EngineEventData(
                     [
-                        MetadataEntry("Step key", step_key),
-                        MetadataEntry("Kubernetes Job name", job_name),
+                        MetadataEntry("Step key", value=step_key),
+                        MetadataEntry("Kubernetes Job name", value=job_name),
                     ],
                 ),
             )

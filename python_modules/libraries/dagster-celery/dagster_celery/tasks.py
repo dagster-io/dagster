@@ -47,8 +47,8 @@ def create_task(celery_app, **task_kwargs):
             pipeline_run,
             EngineEventData(
                 [
-                    MetadataEntry("step_keys", step_keys_str),
-                    MetadataEntry("Celery worker", self.request.hostname),
+                    MetadataEntry("step_keys", value=step_keys_str),
+                    MetadataEntry("Celery worker", value=self.request.hostname),
                 ],
                 marker_end=DELEGATE_MARKER,
             ),
