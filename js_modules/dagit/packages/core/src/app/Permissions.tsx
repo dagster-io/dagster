@@ -4,6 +4,23 @@ import * as React from 'react';
 import {PermissionFragment} from './types/PermissionFragment';
 import {PermissionsQuery} from './types/PermissionsQuery';
 
+// used in tests, to ensure against permission renames.  Should make sure that the mapping in
+// extractPermissions is handled correctly
+export const EXPECTED_PERMISSIONS = {
+  launch_pipeline_execution: true,
+  launch_pipeline_reexecution: true,
+  start_schedule: true,
+  stop_running_schedule: true,
+  edit_sensor: true,
+  terminate_pipeline_execution: true,
+  delete_pipeline_run: true,
+  reload_repository_location: true,
+  reload_workspace: true,
+  wipe_assets: true,
+  launch_partition_backfill: true,
+  cancel_partition_backfill: true,
+};
+
 export type PermissionsFromJSON = {
   launch_pipeline_execution?: boolean;
   launch_pipeline_reexecution?: boolean;

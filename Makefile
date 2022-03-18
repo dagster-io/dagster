@@ -13,7 +13,7 @@ pylint:
 #
 # NOTE: Use `extend-exclude` instead of `exclude`. If `exclude` is provided, it stops black from
 # reading gitignore. `extend-exclude` is layered on top of gitignore. See:
-#   https://black.readthedocs.io/en/stable/usage_and_configuration/file_collection_and_discovery.html#gitignore 
+#   https://black.readthedocs.io/en/stable/usage_and_configuration/file_collection_and_discovery.html#gitignore
 black:
 	black --fast \
     --extend-exclude="examples/docs_snippets|snapshots" \
@@ -60,7 +60,7 @@ install_dev_python_modules_verbose:
 	python scripts/install_dev_python_modules.py
 
 graphql:
-	cd js_modules/dagit/; make generate-graphql
+	cd js_modules/dagit/; make generate-graphql; make generate-perms
 
 sanity_check:
 #NOTE:  fails on nonPOSIX-compliant shells (e.g. CMD, powershell)
