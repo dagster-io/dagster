@@ -571,9 +571,7 @@ def test_raise_on_error_true_type_check_returns_successful_type_check():
                 event.event_specific_data.type_check_data.metadata_entries[0].entry_data.text
                 == "foo"
             )
-            assert (
-                event.event_specific_data.type_check_data.metadata_entries[0]
-            )
+            assert event.event_specific_data.type_check_data.metadata_entries[0]
 
     pipeline_result = execute_pipeline(foo_pipeline, raise_on_error=False)
     assert pipeline_result.success
