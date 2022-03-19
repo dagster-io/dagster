@@ -83,17 +83,17 @@ def test_assets(schema_prefix):
         AssetKey(["some", "prefix", schema_prefix + "bar"]),
         AssetKey(["some", "prefix", schema_prefix + "baz"]),
     }
-    assert MetadataEntry.int(1234, "bytesEmitted") in materializations[0].metadata_entries
-    assert MetadataEntry.int(4321, "recordsCommitted") in materializations[0].metadata_entries
+    assert MetadataEntry("bytesEmitted", value=1234) in materializations[0].metadata_entries
+    assert MetadataEntry("recordsCommitted", value=4321) in materializations[0].metadata_entries
     assert (
-        MetadataEntry.table_schema(
-            TableSchema(
+        MetadataEntry(
+            "schema",
+            value=TableSchema(
                 columns=[
                     TableColumn(name="a", type="str"),
                     TableColumn(name="b", type="int"),
                 ]
             ),
-            "schema",
         )
         in materializations[0].metadata_entries
     )

@@ -2,7 +2,7 @@ from typing import Any, Dict, Iterator, List, Optional
 
 import dateutil
 
-from dagster import AssetMaterialization, MetadataEntry, check
+from dagster import AssetMaterialization, MetadataEntry, MetadataValue, check
 
 from .types import DbtOutput
 
@@ -19,14 +19,14 @@ def _get_asset_materialization(
 
 def _node_result_to_metadata(node_result: Dict[str, Any]) -> List[MetadataEntry]:
     return [
-        MetadataEntry.text(
-            text=node_result["config"]["materialized"],
-            label="Materialization Strategy",
+        MetadataEntry(
+            "Materialization Strategy",
+            value=node_result["config"]["materialized"],
         ),
-        MetadataEntry.text(text=node_result["database"], label="Database"),
-        MetadataEntry.text(text=node_result["schema"], label="Schema"),
-        MetadataEntry.text(text=node_result["alias"], label="Alias"),
-        MetadataEntry.text(text=node_result["description"], label="Description"),
+        MetadataEntry("Database", value=node_result["database"]),
+        MetadataEntry("Schema", value=node_result["schema"]),
+        MetadataEntry("Alias", value=node_result["alias"]),
+        MetadataEntry("Description", value=node_result["description"]),
     ]
 
 
@@ -45,13 +45,11 @@ def _timing_to_metadata(timings: List[Dict[str, Any]]) -> List[MetadataEntry]:
         duration = completed_at - started_at
         metadata.extend(
             [
-                MetadataEntry.text(
-                    text=started_at.isoformat(timespec="seconds"), label=f"{desc} Started At"
+                MetadataEntry(f"{desc} Started At", value=started_at.isoformat(timespec="seconds")),
+                MetadataEntry(
+                    f"{desc} Completed At", value=started_at.isoformat(timespec="seconds")
                 ),
-                MetadataEntry.text(
-                    text=started_at.isoformat(timespec="seconds"), label=f"{desc} Completed At"
-                ),
-                MetadataEntry.float(value=duration.total_seconds(), label=f"{desc} Duration"),
+                MetadataEntry(f"{desc} Duration", value=duration.total_seconds()),
             ]
         )
     return metadata
@@ -82,7 +80,7 @@ def result_to_materialization(
 
     # all versions represent timing the same way
     metadata = [
-        MetadataEntry.float(value=result["execution_time"], label="Execution Time (seconds)")
+        MetadataEntry("Execution Time (seconds)", value=result["execution_time"])
     ] + _timing_to_metadata(result["timing"])
 
     # working with a response that contains the node block (RPC and CLI 0.18.x)
@@ -101,7 +99,7 @@ def result_to_materialization(
 
     if docs_url:
         metadata = [
-            MetadataEntry.url(url=f"{docs_url}#!/model/{unique_id}", label="docs_url")
+            MetadataEntry("docs_url", value=MetadataValue.url(f"{docs_url}#!/model/{unique_id}"))
         ] + metadata
 
     return AssetMaterialization(

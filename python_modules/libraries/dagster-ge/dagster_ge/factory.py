@@ -9,6 +9,7 @@ from dagster import (
     ExpectationResult,
     InputDefinition,
     MetadataEntry,
+    MetadataValue,
     Noneable,
     Output,
     OutputDefinition,
@@ -100,7 +101,7 @@ def core_ge_validation_factory(
         )
         md_str = " ".join(DefaultMarkdownPageView().render(rendered_document_content_list))
 
-        meta_stats = MetadataEntry.md(md_str=md_str, label="Expectation Results")
+        meta_stats = MetadataEntry("Expectation Results", value=MetadataValue.md(md_str))
         yield ExpectationResult(
             success=res["success"],
             metadata_entries=[
@@ -253,7 +254,7 @@ def core_ge_validation_factory_v3(
         )
         md_str = "".join(DefaultMarkdownPageView().render(rendered_document_content_list))
 
-        meta_stats = MetadataEntry.md(md_str=md_str, label="Expectation Results")
+        meta_stats = MetadataEntry("Expectation Results", value=MetadataValue.md(md_str))
         yield ExpectationResult(
             success=bool(results["success"]),
             metadata_entries=[meta_stats],

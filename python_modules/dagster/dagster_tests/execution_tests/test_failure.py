@@ -6,9 +6,7 @@ def test_failure():
     def throw():
         raise Failure(
             description="it Failure",
-            metadata_entries=[
-                MetadataEntry.text(label="label", text="text", description="description")
-            ],
+            metadata_entries=[MetadataEntry("label", value="text")],
         )
 
     @pipeline
@@ -26,5 +24,4 @@ def test_failure():
     # from Failure
     assert failure_data.user_failure_data.description == "it Failure"
     assert failure_data.user_failure_data.metadata_entries[0].label == "label"
-    assert failure_data.user_failure_data.metadata_entries[0].entry_data.text == "text"
-    assert failure_data.user_failure_data.metadata_entries[0].description == "description"
+    assert failure_data.user_failure_data.metadata_entries[0].value.text == "text"
