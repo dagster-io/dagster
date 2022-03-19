@@ -16,6 +16,7 @@ from dagster import (
     TypeCheck,
     TypeCheckContext,
 )
+from dagster.core.definitions.metadata import MetadataValue
 from dagster.core.utils import check_dagster_package_version
 
 from .version import __version__
@@ -108,7 +109,7 @@ def pandera_schema_to_dagster_type(
         name=name,
         description=norm_schema.description,
         metadata_entries=[
-            MetadataEntry("schema", value=tschema),
+            MetadataEntry("schema", value=MetadataValue.table_schema(tschema)),
         ],
     )
 
