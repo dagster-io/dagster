@@ -34,6 +34,7 @@ from dagster.core.host_representation.external import (
     ExternalPipeline,
     ExternalRepository,
 )
+from dagster.core.host_representation.external_data import ExternalRepositoryData
 from dagster.core.host_representation.grpc_server_registry import GrpcServerRegistry
 from dagster.core.host_representation.handle import PipelineHandle, RepositoryHandle
 from dagster.core.host_representation.origin import (
@@ -262,6 +263,14 @@ class RepositoryLocation(AbstractContextManager):
             entry_point=self.entry_point,
         )
 
+    @abstractmethod
+    def get_external_repository_data(self) -> ExternalRepositoryData:
+        pass
+
+    @abstractmethod
+    def update_external_repositories(self, cross_repo_asset_deps):
+        pass
+
 
 class InProcessRepositoryLocation(RepositoryLocation):
     def __init__(self, origin: InProcessRepositoryLocationOrigin):
@@ -466,6 +475,9 @@ class InProcessRepositoryLocation(RepositoryLocation):
     def get_external_notebook_data(self, notebook_path: str) -> bytes:
         check.str_param(notebook_path, "notebook_path")
         return get_notebook_data(notebook_path)
+
+    def get_repository_location_with_asset_data(self, cross_repo_asset_deps):
+        return InProcessRepositoryLocation()
 
 
 class GrpcServerRepositoryLocation(RepositoryLocation):
@@ -779,3 +791,20 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
     def get_external_notebook_data(self, notebook_path: str) -> bytes:
         check.str_param(notebook_path, "notebook_path")
         return sync_get_streaming_external_notebook_data_grpc(self.client, notebook_path)
+
+    def get_external_repositories_data(self) -> Dict[str, ExternalRepositoryData]:
+        return self._external_repositories_data
+
+    def update_external_repositories(self, external_repositories_data):
+        # add try catch
+        self._external_repositories_data = external_repositories_data
+        self.external_repositories = {
+            repo_name: ExternalRepository(
+                repo_data,
+                RepositoryHandle(
+                    repository_name=repo_name,
+                    repository_location=self,
+                ),
+            )
+            for repo_name, repo_data in self._external_repositories_data.items()
+        }

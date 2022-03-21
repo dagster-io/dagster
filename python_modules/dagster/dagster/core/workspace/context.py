@@ -1,3 +1,4 @@
+import copy
 import sys
 import threading
 import time
@@ -639,6 +640,39 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._location_entry_dict = OrderedDict()
 
     def create_request_context(self, source=None) -> WorkspaceRequestContext:
+        # here is where the snapshot is created and the context is created
+        workspace_snapshot = self.create_snapshot()
+
+        snapshot_with_cross_asset_deps = {}
+
+        for location_name, location_entry in workspace_snapshot.items():
+            repo_location = location_entry.repository_location
+            external_repos_data = repo_location.get_external_repositories_data()
+
+            for repo_name, repo_data in external_repos_data.items():
+                new_external_asset_graph_data = []
+                for external_asset_node in repo_data.external_asset_graph_data:
+                    pass
+                new_external_repository_data = ExternalRepositoryData(
+                    external_pipeline_datas=repo_data.external_pipeline_datas,
+                    external_schedule_datas=repo_data.external_schedule_datas,
+                    external_partition_set_datas=repo_data.external_partition_set_datas,
+                    external_sensor_datas=repo_data.external_sensor_datas,
+                )
+
+            # update external repository data
+
+            snapshot_with_cross_asset_deps[location] = WorkspaceLocationEntry(
+                origin=location_entry.origin,
+                repository_location=new_repository_location,
+                load_error=location_entry.load_error,
+                load_status=location_entry.load_status,
+                display_metadata=location_entry.display_metadata,
+                update_timestamp=time.time(),
+            )
+
+        # try to replace the snapshot with new snapshot including cross repo
+        # asset defs
         return WorkspaceRequestContext(
             instance=self._instance,
             workspace_snapshot=self.create_snapshot(),
@@ -646,6 +680,38 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
             version=self.version,
             source=source,
         )
+
+    def get_cross_repo_asset_deps(self):
+        # Returns mapping of source assets and the repos they exist in to the
+        # repo where they are defined as assets
+        # {
+        #   repo_name: {
+        #     source_asset_key: asset_definition_repo_name
+        #   }
+        # }
+
+        # build mapping of assets to the source assets that refer to them
+        map_source_asset_to_location = {} # dict value is tuple (location_name, repo_name)
+        map_non_source_asset_to_location = {} # dict value is tuple (location_name, repo_name)
+        for location_entry in self.repository_locations():
+            repositories = location_entry.get_repositories()
+            for repo_name, external_repo in repositories.items():
+                asset_nodes = external_repo.get_external_asset_nodes()
+                for asset_node in asset_nodes:
+                    if not asset_node.op_name:  # is source asset
+                        map_source_asset_to_location[asset_node.asset_key] = repo_name
+                    else:
+                        non_source_asset_by_repo[asset_node.asset_key] = repo_name
+
+        # finish up this stuff
+        defined_asset_mapped_to_source_assets = {}
+        for source_asset, source_asset_repo in map_source_asset_to_location.items():
+            repo_name = map_non_source_asset_to_location.get(source_asset, None)
+            if repo_name:
+                defined_asset_mapped_to_source_assets[]
+            source_asset_mapped_to_definition_repo[source_asset_repo][source_asset] = repo_name
+
+        return source_asset_mapped_to_definition_repo
 
     @property
     def location_state_events(self) -> "Subject":
