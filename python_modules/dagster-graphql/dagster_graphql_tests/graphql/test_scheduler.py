@@ -24,6 +24,8 @@ from dagster.core.scheduler.instigation import (
 from dagster.seven.compat.pendulum import create_pendulum_time
 from dagster.utils import Counter, traced_counter
 
+from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
+
 GET_SCHEDULES_QUERY = """
 query SchedulesQuery($repositorySelector: RepositorySelector!) {
   schedulesOrError(repositorySelector: $repositorySelector) {
@@ -134,6 +136,7 @@ mutation(
   startSchedule(
     scheduleSelector: $scheduleSelector,
   ) {
+    __typename
     ... on PythonError {
       message
       className
@@ -588,3 +591,24 @@ def test_start_schedule_with_default_status(graphql_context):
         start_result.data["startSchedule"]["scheduleState"]["status"]
         == InstigatorStatus.RUNNING.value
     )
+
+
+class TestSchedulePermissions(ReadonlyGraphQLContextTestMatrix):
+    def test_start_schedule_failure(self, graphql_context):
+        assert graphql_context.read_only == True
+
+        schedule_selector = infer_schedule_selector(
+            graphql_context, "no_config_pipeline_hourly_schedule"
+        )
+
+        # Start a single schedule
+        result = execute_dagster_graphql(
+            graphql_context,
+            START_SCHEDULES_QUERY,
+            variables={"scheduleSelector": schedule_selector},
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert result.data["startSchedule"]["__typename"] == "UnauthorizedError"
