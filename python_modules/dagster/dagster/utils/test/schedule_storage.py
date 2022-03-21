@@ -228,6 +228,7 @@ class TestScheduleStorage:
             [run_id] if run_id else [],
             [],
             error,
+            selector_id="my_schedule",
         )
 
     def test_create_tick(self, storage):
@@ -462,6 +463,7 @@ class TestScheduleStorage:
             current_time,
             [run_id] if run_id else [],
             error=error,
+            selector_id=name,
         )
 
     def test_create_sensor_tick(self, storage):

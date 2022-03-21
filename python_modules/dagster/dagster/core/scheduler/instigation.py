@@ -427,6 +427,7 @@ class TickData(
             ("cursor", Optional[str]),
             ("origin_run_ids", List[str]),
             ("failure_count", int),
+            ("selector_id", str),
         ],
     )
 ):
@@ -464,6 +465,7 @@ class TickData(
         cursor: Optional[str] = None,
         origin_run_ids: Optional[List[str]] = None,
         failure_count: Optional[int] = None,
+        selector_id: Optional[str] = None,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         return super(TickData, cls).__new__(
@@ -480,6 +482,7 @@ class TickData(
             cursor=check.opt_str_param(cursor, "cursor"),
             origin_run_ids=check.opt_list_param(origin_run_ids, "origin_run_ids", of_type=str),
             failure_count=check.opt_int_param(failure_count, "failure_count", 0),
+            selector_id=check.opt_str_param(selector_id, "selector_id"),
         )
 
     def with_status(self, status, error=None, timestamp=None, failure_count=None):

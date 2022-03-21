@@ -340,6 +340,7 @@ def launch_scheduled_runs_for_schedule(
                     instigator_type=InstigatorType.SCHEDULE,
                     status=TickStatus.STARTED,
                     timestamp=schedule_timestamp,
+                    selector_id=external_schedule.selector_id,
                 )
             )
 
