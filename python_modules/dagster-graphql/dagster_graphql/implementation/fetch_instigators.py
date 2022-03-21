@@ -1,6 +1,6 @@
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
-from dagster.core.host_representation import InstigationSelector
+from dagster.core.host_representation import InstigatorSelector
 from dagster.core.scheduler.instigation import InstigatorStatus
 
 from .utils import capture_error
@@ -44,7 +44,7 @@ def get_unloadable_instigator_states_or_error(graphene_info, instigator_type=Non
 def get_instigator_state_or_error(graphene_info, selector):
     from ..schema.instigation import GrapheneInstigationState
 
-    check.inst_param(selector, "selector", InstigationSelector)
+    check.inst_param(selector, "selector", InstigatorSelector)
     location = graphene_info.context.get_repository_location(selector.location_name)
     repository = location.get_repository(selector.repository_name)
 

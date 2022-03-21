@@ -14,6 +14,7 @@ from dagster.core.execution.plan.handle import ResolvedFromDynamicStepHandle, St
 from dagster.core.origin import PipelinePythonOrigin
 from dagster.core.snap import ExecutionPlanSnapshot
 from dagster.core.utils import toposort
+from dagster.serdes import create_snapshot_id
 from dagster.utils.schedules import schedule_execution_time_iterator
 
 from .external_data import (
@@ -27,6 +28,7 @@ from .external_data import (
 from .handle import InstigatorHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
+from .selector import InstigatorSelector
 
 if TYPE_CHECKING:
     from dagster.core.scheduler.instigation import InstigatorState
@@ -443,6 +445,10 @@ class ExternalSchedule:
         self._handle = InstigatorHandle(
             self._external_schedule_data.name, check.inst_param(handle, "handle", RepositoryHandle)
         )
+        self._selector = InstigatorSelector(
+            handle.location_name, handle.repository_name, external_schedule_data.name
+        )
+        self._selector_id = None
 
     @property
     def name(self):
@@ -489,6 +495,12 @@ class ExternalSchedule:
 
     def get_external_origin_id(self):
         return self.get_external_origin().get_id()
+
+    @property
+    def selector_id(self):
+        if self._selector_id is None:
+            self._selector_id = create_snapshot_id(self._selector)
+        return self._selector_id
 
     @property
     def default_status(self) -> DefaultScheduleStatus:
@@ -544,6 +556,10 @@ class ExternalSensor:
         self._handle = InstigatorHandle(
             self._external_sensor_data.name, check.inst_param(handle, "handle", RepositoryHandle)
         )
+        self._selector = InstigatorSelector(
+            handle.location_name, handle.repository_name, external_sensor_data.name
+        )
+        self._selector_id = None
 
     @property
     def name(self):
@@ -601,6 +617,12 @@ class ExternalSensor:
 
     def get_external_origin_id(self):
         return self.get_external_origin().get_id()
+
+    @property
+    def selector_id(self):
+        if self._selector_id is None:
+            self._selector_id = create_snapshot_id(self._selector)
+        return self._selector_id
 
     def get_current_instigator_state(self, stored_state: Optional["InstigatorState"]):
         from dagster.core.scheduler.instigation import (

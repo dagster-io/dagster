@@ -433,14 +433,14 @@ class SqlEventLogStorage(EventLogStorage):
         if self.has_secondary_index(migration_name):
             if not force:
                 if print_fn:
-                    print_fn("Skipping already reindexed summary: {}".format(migration_name))
+                    print_fn("Skipping already applied migration: {}".format(migration_name))
                 return
         if print_fn:
-            print_fn("Starting reindex: {}".format(migration_name))
+            print_fn(f"Starting data migration: {migration_name}")
         migration_fn()(self, print_fn)
         self.enable_secondary_index(migration_name)
         if print_fn:
-            print_fn("Finished reindexing: {}".format(migration_name))
+            print_fn(f"Finished data migration: {migration_name}")
 
     def reindex_events(self, print_fn=None, force=False):
         """Call this method to run any data migrations across the event_log table"""

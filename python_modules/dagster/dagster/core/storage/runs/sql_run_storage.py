@@ -823,6 +823,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         for migration_name, migration_fn in migrations.items():
             if self.has_built_index(migration_name):
                 if not force_rebuild_all:
+                    if print_fn:
+                        print_fn("Skipping already applied migration: {}".format(migration_name))
                     continue
             if print_fn:
                 print_fn(f"Starting data migration: {migration_name}")

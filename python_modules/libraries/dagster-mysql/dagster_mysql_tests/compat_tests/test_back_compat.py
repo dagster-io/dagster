@@ -70,3 +70,63 @@ def test_instigators_table_backcompat(hostname, conn_string):
         instance.upgrade()
 
         assert instance.schedule_storage.has_instigators_table()
+
+
+def test_jobs_selector_id_migration(hostname, conn_string):
+    import sqlalchemy as db
+
+    from dagster.core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
+    from dagster.core.storage.schedules.schema import InstigatorTable, JobTable, JobTickTable
+
+    _reconstruct_from_file(
+        hostname,
+        file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration.sql"),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        instance = DagsterInstance.from_config(tempdir)
+
+        # runs the required data migrations
+        instance.upgrade()
+
+        assert instance.schedule_storage.has_built_index(SCHEDULE_JOBS_SELECTOR_ID)
+        legacy_count = len(instance.all_instigator_state())
+        migrated_instigator_count = instance.schedule_storage.execute(
+            db.select([db.func.count()]).select_from(InstigatorTable)
+        )[0][0]
+        assert migrated_instigator_count == legacy_count
+
+        migrated_job_count = instance.schedule_storage.execute(
+            db.select([db.func.count()])
+            .select_from(JobTable)
+            .where(JobTable.c.selector_id.isnot(None))
+        )[0][0]
+        assert migrated_job_count == legacy_count
+
+        legacy_tick_count = instance.schedule_storage.execute(
+            db.select([db.func.count()]).select_from(JobTickTable)
+        )[0][0]
+        assert legacy_tick_count > 0
+
+        # tick migrations are optional
+        migrated_tick_count = instance.schedule_storage.execute(
+            db.select([db.func.count()])
+            .select_from(JobTickTable)
+            .where(JobTickTable.c.selector_id.isnot(None))
+        )[0][0]
+        assert migrated_tick_count == 0
+
+        # run the optional migrations
+        instance.reindex()
+
+        migrated_tick_count = instance.schedule_storage.execute(
+            db.select([db.func.count()])
+            .select_from(JobTickTable)
+            .where(JobTickTable.c.selector_id.isnot(None))
+        )[0][0]
+        assert migrated_tick_count == legacy_tick_count

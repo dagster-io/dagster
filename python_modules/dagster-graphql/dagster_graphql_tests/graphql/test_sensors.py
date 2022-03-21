@@ -610,6 +610,7 @@ def test_sensor_ticks_filtered(graphql_context):
             instigator_type=InstigatorType.SENSOR,
             status=TickStatus.STARTED,
             timestamp=now.timestamp(),
+            selector_id=external_sensor.selector_id,
         )
     )
 
@@ -621,6 +622,7 @@ def test_sensor_ticks_filtered(graphql_context):
             instigator_type=InstigatorType.SENSOR,
             status=TickStatus.SKIPPED,
             timestamp=now.timestamp(),
+            selector_id=external_sensor.selector_id,
         )
     )
 
@@ -633,6 +635,7 @@ def test_sensor_ticks_filtered(graphql_context):
             status=TickStatus.FAILURE,
             timestamp=now.timestamp(),
             error=SerializableErrorInfo(message="foobar", stack=[], cls_name=None, cause=None),
+            selector_id=external_sensor.selector_id,
         )
     )
 

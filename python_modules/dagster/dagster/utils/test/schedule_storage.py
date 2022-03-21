@@ -190,8 +190,9 @@ class TestScheduleStorage:
             pytest.skip("Storage cannot delete")
 
         schedule = self.build_schedule("my_schedule", "* * * * *")
+        selector_id = schedule.get_selector_id()
         storage.add_instigator_state(schedule)
-        storage.delete_instigator_state(schedule.instigator_origin_id)
+        storage.delete_instigator_state(schedule.instigator_origin_id, selector_id)
 
         schedules = storage.all_instigator_state(
             self.fake_repo_target().get_id(), InstigatorType.SCHEDULE
@@ -205,9 +206,10 @@ class TestScheduleStorage:
             pytest.skip("Storage cannot delete")
 
         schedule = self.build_schedule("my_schedule", "* * * * *")
+        selector_id = schedule.get_selector_id()
 
         with pytest.raises(Exception):
-            storage.delete_instigator_state(schedule.instigator_origin_id)
+            storage.delete_instigator_state(schedule.instigator_origin_id, selector_id)
 
     def test_add_schedule_with_same_name(self, storage):
         assert storage
@@ -228,6 +230,7 @@ class TestScheduleStorage:
             [run_id] if run_id else [],
             [],
             error,
+            selector_id="my_schedule",
         )
 
     def test_create_tick(self, storage):
@@ -425,8 +428,9 @@ class TestScheduleStorage:
             pytest.skip("Storage cannot delete")
 
         state = self.build_sensor("my_sensor")
+        selector_id = state.get_selector_id()
         storage.add_instigator_state(state)
-        storage.delete_instigator_state(state.instigator_origin_id)
+        storage.delete_instigator_state(state.instigator_origin_id, selector_id)
 
         states = storage.all_instigator_state(self.fake_repo_target().get_id())
         assert len(states) == 0
@@ -438,9 +442,10 @@ class TestScheduleStorage:
             pytest.skip("Storage cannot delete")
 
         state = self.build_sensor("my_sensor")
+        selector_id = state.get_selector_id()
 
         with pytest.raises(Exception):
-            storage.delete_instigator_state(state.instigator_origin_id)
+            storage.delete_instigator_state(state.instigator_origin_id, selector_id)
 
     def test_add_state_with_same_name(self, storage):
         assert storage
@@ -462,6 +467,7 @@ class TestScheduleStorage:
             current_time,
             [run_id] if run_id else [],
             error=error,
+            selector_id=name,
         )
 
     def test_create_sensor_tick(self, storage):

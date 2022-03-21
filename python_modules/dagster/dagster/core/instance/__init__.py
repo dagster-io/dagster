@@ -1754,8 +1754,8 @@ records = instance.get_event_records(
     def update_instigator_state(self, state):
         return self._schedule_storage.update_instigator_state(state)
 
-    def delete_instigator_state(self, origin_id):
-        return self._schedule_storage.delete_instigator_state(origin_id)
+    def delete_instigator_state(self, origin_id, selector_id):
+        return self._schedule_storage.delete_instigator_state(origin_id, selector_id)
 
     @property
     def supports_batch_tick_queries(self):

@@ -653,6 +653,7 @@ def test_old_tick_schedule(instance, workspace, external_repo):
                 instigator_type=InstigatorType.SCHEDULE,
                 status=TickStatus.STARTED,
                 timestamp=pendulum.now("UTC").subtract(days=3).timestamp(),
+                selector_id=external_schedule.selector_id,
             )
         )
 

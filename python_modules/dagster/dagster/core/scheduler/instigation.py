@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Type, Union
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation.origin import ExternalInstigatorOrigin
+from dagster.core.host_representation.selector import InstigatorSelector
+from dagster.serdes import create_snapshot_id
 from dagster.serdes.serdes import (
     DefaultNamedTupleSerializer,
     WhitelistMap,
@@ -201,6 +203,14 @@ class InstigatorState(
     def instigator_origin_id(self):
         return self.origin.get_id()
 
+    def get_selector_id(self):
+        selector = InstigatorSelector(
+            self.origin.external_repository_origin.repository_location_origin.location_name,
+            self.origin.external_repository_origin.repository_name,
+            self.origin.instigator_name,
+        )
+        return create_snapshot_id(selector)
+
     def with_status(self, status):
         check.inst_param(status, "status", InstigatorStatus)
         return InstigatorState(
@@ -310,6 +320,10 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
     @property
     def instigator_origin_id(self):
         return self.tick_data.instigator_origin_id
+
+    @property
+    def selector_id(self):
+        return self.tick_data.selector_id
 
     @property
     def instigator_name(self):
@@ -427,6 +441,7 @@ class TickData(
             ("cursor", Optional[str]),
             ("origin_run_ids", List[str]),
             ("failure_count", int),
+            ("selector_id", Optional[str]),
         ],
     )
 ):
@@ -464,6 +479,7 @@ class TickData(
         cursor: Optional[str] = None,
         origin_run_ids: Optional[List[str]] = None,
         failure_count: Optional[int] = None,
+        selector_id: Optional[str] = None,
     ):
         _validate_tick_args(instigator_type, status, run_ids, error, skip_reason)
         return super(TickData, cls).__new__(
@@ -480,6 +496,7 @@ class TickData(
             cursor=check.opt_str_param(cursor, "cursor"),
             origin_run_ids=check.opt_list_param(origin_run_ids, "origin_run_ids", of_type=str),
             failure_count=check.opt_int_param(failure_count, "failure_count", 0),
+            selector_id=check.opt_str_param(selector_id, "selector_id"),
         )
 
     def with_status(self, status, error=None, timestamp=None, failure_count=None):
