@@ -168,11 +168,7 @@ def create_pg_connection(engine, dunder_file, storage_type_desc=None):
     try:
         # Retry connection to gracefully handle transient connection issues
         conn = retry_pg_connection_fn(engine.connect)
-        with handle_schema_errors(
-            conn,
-            pg_alembic_config(dunder_file),
-            msg="Postgres {}storage requires migration".format(storage_type_desc),
-        ):
+        with handle_schema_errors(conn, pg_alembic_config(dunder_file)):
             yield conn
     finally:
         if conn:
