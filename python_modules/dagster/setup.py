@@ -128,11 +128,13 @@ if __name__ == "__main__":
                 "types-croniter",  # version will be resolved against croniter
                 "types-mock",  # version will be resolved against mock
                 "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)
+                "types-protobuf",  # version will be resolved against protobuf
                 "types-python-dateutil",  # version will be resolved against python-dateutil
                 "types-PyYAML",  # version will be resolved against PyYAML
                 "types-pytz",  # version will be resolved against pytz
                 "types-requests",  # version will be resolved against requests
                 "types-tabulate",  # version will be resolved against tabulate
+                "types-toml",  # version will be resolved against toml
             ],
         },
         entry_points={
