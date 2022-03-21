@@ -3,6 +3,7 @@ import {Box, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
@@ -110,9 +111,7 @@ const PIPELINE_PARTITIONS_ROOT_QUERY = gql`
       ... on PipelineNotFoundError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
       ... on PartitionSets {
         results {
           id
@@ -122,4 +121,6 @@ const PIPELINE_PARTITIONS_ROOT_QUERY = gql`
       }
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;

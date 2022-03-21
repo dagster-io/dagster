@@ -2,7 +2,7 @@ import {gql} from '@apollo/client';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 
 import {StartSensor_startSensor_PythonError, StartSensor} from './types/StartSensor';
 import {StopSensor_stopSensor_PythonError, StopSensor} from './types/StopSensor';
@@ -18,12 +18,11 @@ export const START_SENSOR_MUTATION = gql`
           status
         }
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const STOP_SENSOR_MUTATION = gql`
@@ -36,12 +35,11 @@ export const STOP_SENSOR_MUTATION = gql`
           status
         }
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 type PythonError = StartSensor_startSensor_PythonError | StopSensor_stopSensor_PythonError;

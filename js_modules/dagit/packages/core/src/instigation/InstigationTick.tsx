@@ -226,9 +226,7 @@ const LAUNCHED_RUN_LIST_QUERY = gql`
       ... on InvalidPipelineRunsFilterError {
         message
       }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
     }
   }
   ${RUN_TABLE_RUN_FRAGMENT}

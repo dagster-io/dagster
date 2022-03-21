@@ -40,10 +40,17 @@ export interface LaunchPipelineExecution_launchPipelineExecution_RunConfigValida
   errors: LaunchPipelineExecution_launchPipelineExecution_RunConfigValidationInvalid_errors[];
 }
 
+export interface LaunchPipelineExecution_launchPipelineExecution_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface LaunchPipelineExecution_launchPipelineExecution_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
+  cause: LaunchPipelineExecution_launchPipelineExecution_PythonError_cause | null;
 }
 
 export type LaunchPipelineExecution_launchPipelineExecution = LaunchPipelineExecution_launchPipelineExecution_InvalidStepError | LaunchPipelineExecution_launchPipelineExecution_LaunchRunSuccess | LaunchPipelineExecution_launchPipelineExecution_PipelineNotFoundError | LaunchPipelineExecution_launchPipelineExecution_RunConfigValidationInvalid | LaunchPipelineExecution_launchPipelineExecution_PythonError;

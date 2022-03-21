@@ -4,6 +4,7 @@ import {isEqual} from 'lodash';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {colorHash} from '../app/Util';
 
 import {PartitionGraphFragment} from './types/PartitionGraphFragment';
@@ -19,9 +20,7 @@ export const PARTITION_GRAPH_FRAGMENT = gql`
         endTime
         materializations
       }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
     }
     stepStats {
       __typename
@@ -37,6 +36,8 @@ export const PARTITION_GRAPH_FRAGMENT = gql`
       }
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const getPipelineDurationForRun = (run: PartitionGraphFragment) => {

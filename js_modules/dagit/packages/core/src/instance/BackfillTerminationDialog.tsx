@@ -2,6 +2,7 @@ import {gql, useMutation} from '@apollo/client';
 import {ButtonWIP, DialogBody, DialogFooter, DialogWIP} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {doneStatuses} from '../runs/RunStatuses';
 import {TerminationDialog} from '../runs/TerminationDialog';
 import {BulkActionStatus} from '../types/globalTypes';
@@ -84,9 +85,9 @@ const CANCEL_BACKFILL_MUTATION = gql`
       ... on CancelBackfillSuccess {
         backfillId
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;
