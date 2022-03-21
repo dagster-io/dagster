@@ -338,7 +338,7 @@ class IContainsGenerator:
 
 class ScopedResourcesBuilder(
     NamedTuple(
-        "ScopedResourcesBuilder",
+        "_ScopedResourcesBuilder",
         [("resource_instance_dict", Mapping[str, object]), ("contains_generator", bool)],
     )
 ):
