@@ -1310,7 +1310,9 @@ def _get_steps_to_execute_by_level(
 
 
 def _get_executable_step_deps(
-    step_dict, step_handles_to_execute, executable_map
+    step_dict,
+    step_handles_to_execute,
+    executable_map,
 ) -> Dict[str, Set[str]]:
     """
     Returns:
@@ -1329,8 +1331,11 @@ def _get_executable_step_deps(
         filtered_deps = []
         depends_on_unresolved = False
         for dep in step.get_execution_dependency_keys():
-            if dep in executable_map and dep not in unresolved_set:
-                filtered_deps.append(dep)
+            if dep in executable_map:
+                if dep not in unresolved_set:
+                    filtered_deps.append(dep)
+                else:
+                    depends_on_unresolved = True
             elif dep in step_keys_to_execute:
                 depends_on_unresolved = True
 

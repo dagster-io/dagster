@@ -108,7 +108,7 @@ def pandera_schema_to_dagster_type(
         name=name,
         description=norm_schema.description,
         metadata_entries=[
-            MetadataEntry.table_schema(tschema, label="schema"),
+            MetadataEntry("schema", value=tschema),
         ],
     )
 

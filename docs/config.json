@@ -49,7 +49,5 @@
       "text": ".section p, .section li"
     }
   },
-  "js_render": true,
-  "js_wait": 5,
   "nb_hits": 9458
 }

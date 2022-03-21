@@ -23,6 +23,7 @@ from dagster.utils.backcompat import experimental_class_param_warning
 
 from .metadata import (
     MetadataEntry,
+    MetadataValue,
     PartitionMetadataEntry,
     RawMetadataValue,
     last_file_comp,
@@ -434,7 +435,7 @@ class AssetMaterialization(
         return AssetMaterialization(
             asset_key=cast(Union[str, AssetKey, List[str]], asset_key),
             description=description,
-            metadata_entries=[MetadataEntry.fspath(path)],
+            metadata_entries=[MetadataEntry("path", value=MetadataValue.path(path))],
         )
 
 
@@ -541,7 +542,7 @@ class Materialization(
         return Materialization(
             label=last_file_comp(path),
             description=description,
-            metadata_entries=[MetadataEntry.fspath(path)],
+            metadata_entries=[MetadataEntry("path", value=MetadataValue.path(path))],
             asset_key=asset_key,
         )
 

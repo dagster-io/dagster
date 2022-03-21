@@ -1,5 +1,12 @@
 # Changelog
 
+# 0.14.5
+### Bugfixes
+
+- [dagit] Fixed issue where sensors could not be turned on/off in dagit.
+- Fixed a bug with direct op invocation when used with `funcsigs.partial` that would cause incorrect `InvalidInvocationErrors` to be thrown.
+- Internal code no longer triggers deprecation warnings for all runs.
+
 # 0.14.4
 ### New
 

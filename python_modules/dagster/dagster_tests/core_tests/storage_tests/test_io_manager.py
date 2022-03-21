@@ -836,7 +836,7 @@ def test_context_logging_metadata():
                 self.values[keys] = obj
 
                 context.add_output_metadata({"foo": "bar"})
-                yield MetadataEntry.text(label="baz", text="baz")
+                yield MetadataEntry("baz", value="baz")
                 context.add_output_metadata({"bar": "bar"})
                 yield materialization
 
@@ -893,7 +893,7 @@ def test_metadata_dynamic_outputs():
             keys = tuple(context.get_output_identifier())
             self.values[keys] = obj
 
-            yield MetadataEntry.text(label="handle_output", text="I come from handle_output")
+            yield MetadataEntry("handle_output", value="I come from handle_output")
 
         def load_input(self, context):
             keys = tuple(context.upstream_output.get_output_identifier())
