@@ -1157,30 +1157,17 @@ class DagsterInstance:
         of_type: Optional["DagsterEventType"] = None,
         limit: Optional[int] = None,
     ):
-        from dagster.core.events import DagsterEventType
-
-        # We remove REGISTER_RUN_ASSET events here because these events
-        # should not display in Dagit's run logs
-        return [
-            log
-            for log in self._event_storage.get_logs_for_run(
-                run_id,
-                cursor=cursor,
-                of_type=of_type,
-                limit=limit,
-            )
-            if (
-                not log.is_dagster_event
-                or log.dagster_event_type != DagsterEventType.REGISTER_RUN_ASSET
-            )
-        ]
+        return self._event_storage.get_logs_for_run(
+            run_id,
+            cursor=cursor,
+            of_type=of_type,
+            limit=limit,
+        )
 
     @traced
     def all_logs(
         self, run_id, of_type: Optional[Union["DagsterEventType", Set["DagsterEventType"]]] = None
     ):
-        # This method is used for internal purposes and the logs are not surfaced to Dagit.
-        # These logs will contain REGISTER_RUN_ASSET events, which are hidden in Dagit run logs.
         return self._event_storage.get_logs_for_run(run_id, of_type=of_type)
 
     def watch_event_logs(self, run_id, cursor, cb):
