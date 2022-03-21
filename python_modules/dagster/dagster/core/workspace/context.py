@@ -29,6 +29,7 @@ from dagster.core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEventType,
     LocationStateSubscriber,
 )
+from dagster.core.host_representation.external_data import ExternalAssetNode, ExternalRepositoryData
 from dagster.core.host_representation.origin import GrpcServerRepositoryLocationOrigin
 from dagster.core.instance import DagsterInstance
 from dagster.grpc.server_watcher import create_grpc_watch_thread
@@ -640,42 +641,51 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._location_entry_dict = OrderedDict()
 
     def create_request_context(self, source=None) -> WorkspaceRequestContext:
-        # here is where the snapshot is created and the context is created
-        workspace_snapshot = self.create_snapshot()
+        cross_repo_asset_deps = self.get_cross_repo_asset_deps()
 
-        snapshot_with_cross_asset_deps = {}
+        workspace_snapshot = self.create_snapshot()
 
         for location_name, location_entry in workspace_snapshot.items():
             repo_location = location_entry.repository_location
-            external_repos_data = repo_location.get_external_repositories_data()
+            if repo_location:
+                external_repos_data = repo_location.get_external_repositories_data()
 
-            for repo_name, repo_data in external_repos_data.items():
-                new_external_asset_graph_data = []
-                for external_asset_node in repo_data.external_asset_graph_data:
-                    pass
-                new_external_repository_data = ExternalRepositoryData(
-                    external_pipeline_datas=repo_data.external_pipeline_datas,
-                    external_schedule_datas=repo_data.external_schedule_datas,
-                    external_partition_set_datas=repo_data.external_partition_set_datas,
-                    external_sensor_datas=repo_data.external_sensor_datas,
-                )
+                new_external_repositories_data = {}
+                for repo_name, repo_data in external_repos_data.items():
+                    new_external_asset_graph_data = []
+                    repo_asset_deps = cross_repo_asset_deps.get((repo_location.name, repo_name), {})
+                    for external_asset_node in repo_data.external_asset_graph_data:
+                        source_asset_depended_by = repo_asset_deps.get(
+                            external_asset_node.asset_key, []
+                        )
+                        new_depended_by = external_asset_node.depended_by
+                        new_depended_by.extend(source_asset_depended_by)
+                        new_external_asset_node = ExternalAssetNode(
+                            external_asset_node.asset_key,
+                            external_asset_node.dependencies,
+                            new_depended_by,
+                            external_asset_node.op_name,
+                            external_asset_node.op_description,
+                            external_asset_node.job_names,
+                            external_asset_node.partitions_def_data,
+                            external_asset_node.output_name,
+                            external_asset_node.output_description,
+                            external_asset_node.metadata_entries,
+                        )
+                        new_external_asset_graph_data.append(new_external_asset_node)
+                    new_external_repositories_data[repo_name] = ExternalRepositoryData(
+                        name=repo_data.name,
+                        external_pipeline_datas=repo_data.external_pipeline_datas,
+                        external_schedule_datas=repo_data.external_schedule_datas,
+                        external_partition_set_datas=repo_data.external_partition_set_datas,
+                        external_sensor_datas=repo_data.external_sensor_datas,
+                        external_asset_graph_data=new_external_asset_graph_data,
+                    )
+                repo_location.update_external_repositories(new_external_repositories_data)
 
-            # update external repository data
-
-            snapshot_with_cross_asset_deps[location] = WorkspaceLocationEntry(
-                origin=location_entry.origin,
-                repository_location=new_repository_location,
-                load_error=location_entry.load_error,
-                load_status=location_entry.load_status,
-                display_metadata=location_entry.display_metadata,
-                update_timestamp=time.time(),
-            )
-
-        # try to replace the snapshot with new snapshot including cross repo
-        # asset defs
         return WorkspaceRequestContext(
             instance=self._instance,
-            workspace_snapshot=self.create_snapshot(),
+            workspace_snapshot=workspace_snapshot,
             process_context=self,
             version=self.version,
             source=source,
@@ -691,27 +701,47 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         # }
 
         # build mapping of assets to the source assets that refer to them
-        map_source_asset_to_location = {} # dict value is tuple (location_name, repo_name)
-        map_non_source_asset_to_location = {} # dict value is tuple (location_name, repo_name)
-        for location_entry in self.repository_locations():
-            repositories = location_entry.get_repositories()
-            for repo_name, external_repo in repositories.items():
-                asset_nodes = external_repo.get_external_asset_nodes()
-                for asset_node in asset_nodes:
-                    if not asset_node.op_name:  # is source asset
-                        map_source_asset_to_location[asset_node.asset_key] = repo_name
-                    else:
-                        non_source_asset_by_repo[asset_node.asset_key] = repo_name
+        map_source_asset_to_location = {}  # dict value is tuple (location_name, repo_name)
+        depended_by_assets_by_source_asset = {}
+        map_non_source_asset_to_location = {}  # dict value is tuple (location_name, repo_name)
+        for location_entry in self._location_entry_dict.values():
+            repo_location = location_entry.repository_location
+            if repo_location:
+                repositories = repo_location.get_repositories()
+                for repo_name, external_repo in repositories.items():
+                    asset_nodes = external_repo.get_external_asset_nodes()
+                    for asset_node in asset_nodes:
+                        if not asset_node.op_name:  # is source asset
+                            if asset_node.asset_key not in map_source_asset_to_location:
+                                map_source_asset_to_location[asset_node.asset_key] = []
+                            map_source_asset_to_location[asset_node.asset_key].append(
+                                (repo_location.name, repo_name)
+                            )
+                            if asset_node.asset_key not in depended_by_assets_by_source_asset:
+                                depended_by_assets_by_source_asset[asset_node.asset_key] = []
+                            depended_by_assets_by_source_asset[asset_node.asset_key].extend(
+                                asset_node.depended_by
+                            )
+                        else:
+                            map_non_source_asset_to_location[asset_node.asset_key] = (
+                                repo_location.name,
+                                repo_name,
+                            )
 
-        # finish up this stuff
-        defined_asset_mapped_to_source_assets = {}
-        for source_asset, source_asset_repo in map_source_asset_to_location.items():
-            repo_name = map_non_source_asset_to_location.get(source_asset, None)
-            if repo_name:
-                defined_asset_mapped_to_source_assets[]
-            source_asset_mapped_to_definition_repo[source_asset_repo][source_asset] = repo_name
+        defined_asset_mapped_to_downstream_assets = (
+            {}
+        )  # nested dict that maps by location to defined asset key
+        for source_asset, source_asset_location in map_source_asset_to_location.items():
+            asset_def_location = map_non_source_asset_to_location.get(source_asset, None)
+            if asset_def_location not in defined_asset_mapped_to_downstream_assets:
+                defined_asset_mapped_to_downstream_assets[asset_def_location] = {}
+            if source_asset not in defined_asset_mapped_to_downstream_assets[asset_def_location]:
+                defined_asset_mapped_to_downstream_assets[asset_def_location][source_asset] = []
+            defined_asset_mapped_to_downstream_assets[asset_def_location][source_asset].extend(
+                depended_by_assets_by_source_asset.get(source_asset, [])
+            )
 
-        return source_asset_mapped_to_definition_repo
+        return defined_asset_mapped_to_downstream_assets
 
     @property
     def location_state_events(self) -> "Subject":
