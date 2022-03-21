@@ -1,15 +1,11 @@
 import {gql} from '@apollo/client';
-import {ContextMenu2 as ContextMenu} from '@blueprintjs/popover2';
 import {
   ColorsWIP,
   IconWIP,
   markdownToPlaintext,
-  MenuItemWIP,
-  MenuWIP,
   Spinner,
   Tooltip,
   FontFamily,
-  MenuLink,
   Box,
 } from '@dagster-io/ui';
 import {isEqual} from 'lodash';
@@ -31,18 +27,14 @@ import {workspacePath, workspacePipelinePathGuessRepo} from '../workspacePath';
 
 import {LiveDataForNode, __ASSET_GROUP} from './Utils';
 import {AssetNodeFragment} from './types/AssetNodeFragment';
-import {useLaunchSingleAssetJob} from './useLaunchSingleAssetJob';
 
 export const AssetNode: React.FC<{
   definition: AssetNodeFragment;
   liveData?: LiveDataForNode;
   metadata: {key: string; value: string}[];
   selected: boolean;
-  jobName: string;
   inAssetCatalog?: boolean;
-}> = React.memo(({definition, metadata, selected, liveData, jobName, inAssetCatalog}) => {
-  const launch = useLaunchSingleAssetJob();
-
+}> = React.memo(({definition, metadata, selected, liveData, inAssetCatalog}) => {
   const event = liveData?.lastMaterialization;
   const runOrError = event?.runOrError;
   const kind = metadata.find((m) => m.key === 'kind')?.value;
@@ -54,174 +46,146 @@ export const AssetNode: React.FC<{
   const displayName = displayNameForAssetKey(definition.assetKey);
 
   return (
-    <ContextMenu
-      content={
-        <MenuWIP>
-          <MenuItemWIP
-            icon="materialization"
-            onClick={(e) => {
-              launch(repoAddress, jobName, definition.opName);
-              e.stopPropagation();
-            }}
-            text={
-              <span>
-                {event ? 'Rematerialize ' : 'Materialize '}
-                <span style={{fontFamily: 'monospace', fontWeight: 600}}>{displayName}</span>
-              </span>
-            }
-          />
-          {!inAssetCatalog && (
-            <MenuLink
-              icon="link"
-              to={`/instance/assets/${definition.assetKey.path.join('/')}`}
-              onClick={(e) => e.stopPropagation()}
-              text="View in Asset Catalog"
-            />
-          )}
-        </MenuWIP>
-      }
-    >
-      <AssetNodeContainer $selected={selected}>
-        <AssetNodeBox>
-          <Name>
-            <span style={{marginTop: 1}}>
-              <IconWIP name="asset" />
-            </span>
-            <div style={{overflow: 'hidden', textOverflow: 'ellipsis', marginTop: -1}}>
-              {displayName}
-            </div>
-            <div style={{flex: 1}} />
-            {liveData && liveData.inProgressRunIds.length > 0 ? (
-              <Tooltip content="A run is currently rematerializing this asset.">
-                <Spinner purpose="body-text" />
-              </Tooltip>
-            ) : liveData && liveData.unstartedRunIds.length > 0 ? (
-              <Tooltip content="A run has started that will rematerialize this asset soon.">
-                <Spinner purpose="body-text" stopped />
-              </Tooltip>
-            ) : liveData &&
-              (liveData.runWhichFailedToMaterialize || liveData.runsSinceMaterialization) ? (
-              <Tooltip content="This asset was not materialized by one or more recent runs.">
-                <IconWIP name="warning" color={ColorsWIP.Gray400} />
-              </Tooltip>
-            ) : undefined}
+    <AssetNodeContainer $selected={selected}>
+      <AssetNodeBox>
+        <Name>
+          <span style={{marginTop: 1}}>
+            <IconWIP name="asset" />
+          </span>
+          <div style={{overflow: 'hidden', textOverflow: 'ellipsis', marginTop: -1}}>
+            {displayName}
+          </div>
+          <div style={{flex: 1}} />
+          {liveData && liveData.inProgressRunIds.length > 0 ? (
+            <Tooltip content="A run is currently rematerializing this asset.">
+              <Spinner purpose="body-text" />
+            </Tooltip>
+          ) : liveData && liveData.unstartedRunIds.length > 0 ? (
+            <Tooltip content="A run has started that will rematerialize this asset soon.">
+              <Spinner purpose="body-text" stopped />
+            </Tooltip>
+          ) : liveData &&
+            (liveData.runWhichFailedToMaterialize || liveData.runsSinceMaterialization) ? (
+            <Tooltip content="This asset was not materialized by one or more recent runs.">
+              <IconWIP name="warning" color={ColorsWIP.Gray400} />
+            </Tooltip>
+          ) : undefined}
 
-            {liveData?.computeStatus === 'old' && (
-              <UpstreamNotice>
-                upstream
-                <br />
-                changed
-              </UpstreamNotice>
-            )}
-          </Name>
-          {definition.description && !inAssetCatalog && (
-            <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
+          {liveData?.computeStatus === 'old' && (
+            <UpstreamNotice>
+              upstream
+              <br />
+              changed
+            </UpstreamNotice>
           )}
-          <Stats>
-            {runOrError?.__typename === 'Run' && event ? (
-              <>
-                <StatsRow>
-                  {runOrError.pipelineName !== __ASSET_GROUP ? (
-                    <Link
-                      data-tooltip={runOrError.pipelineName}
-                      data-tooltip-style={RunLinkTooltipStyle}
-                      style={{overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 8}}
-                      target={inAssetCatalog ? '_blank' : undefined}
-                      onClick={(e) => e.stopPropagation()}
-                      to={
-                        repoAddress.name
-                          ? workspacePath(
-                              repoAddress.name,
-                              repoAddress.location,
-                              `jobs/${runOrError.pipelineName}`,
-                            )
-                          : workspacePipelinePathGuessRepo(runOrError.pipelineName, true, '')
-                      }
-                    >
-                      {runOrError.pipelineName}
-                    </Link>
-                  ) : (
-                    <span />
-                  )}
-                  <Link
-                    style={{fontFamily: FontFamily.monospace, fontSize: 14}}
-                    to={`/instance/runs/${runOrError.runId}?${qs.stringify({
-                      timestamp: event.stepStats.endTime,
-                      selection: event.stepStats.stepKey,
-                      logs: `step:${event.stepStats.stepKey}`,
-                    })}`}
-                    onClick={(e) => e.stopPropagation()}
-                    target="_blank"
-                  >
-                    {titleForRun({runId: runOrError.runId})}
-                  </Link>
-                </StatsRow>
-                <StatsRow>
-                  {event.stepStats.endTime ? (
-                    <TimestampDisplay
-                      timestamp={event.stepStats.endTime}
-                      timeFormat={{showSeconds: false, showTimezone: false}}
-                    />
-                  ) : (
-                    'Never'
-                  )}
-                  <TimeElapsed
-                    startUnix={event.stepStats.startTime}
-                    endUnix={event.stepStats.endTime}
-                  />
-                </StatsRow>
-              </>
-            ) : (
-              <>
-                <StatsRow style={{opacity: 0.5}}>
-                  <span>No materializations</span>
-                  <span>—</span>
-                </StatsRow>
-                <StatsRow style={{opacity: 0.5}}>
-                  <span>—</span>
-                  <span>—</span>
-                </StatsRow>
-              </>
-            )}
-            {definition.opName && displayName !== definition.opName && (
+        </Name>
+        {definition.description && !inAssetCatalog && (
+          <Description>{markdownToPlaintext(definition.description).split('\n')[0]}</Description>
+        )}
+        <Stats>
+          {runOrError?.__typename === 'Run' && event ? (
+            <>
               <StatsRow>
-                <Box
-                  flex={{gap: 4, alignItems: 'flex-end'}}
-                  style={{marginLeft: -2, overflow: 'hidden'}}
-                >
-                  <IconWIP name="op" size={16} />
-                  <div
-                    style={{
-                      minWidth: 0,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
+                {runOrError.pipelineName !== __ASSET_GROUP ? (
+                  <Link
+                    data-tooltip={runOrError.pipelineName}
+                    data-tooltip-style={RunLinkTooltipStyle}
+                    style={{overflow: 'hidden', textOverflow: 'ellipsis', paddingRight: 8}}
+                    target={inAssetCatalog ? '_blank' : undefined}
+                    onClick={(e) => e.stopPropagation()}
+                    to={
+                      repoAddress.name
+                        ? workspacePath(
+                            repoAddress.name,
+                            repoAddress.location,
+                            `jobs/${runOrError.pipelineName}`,
+                          )
+                        : workspacePipelinePathGuessRepo(runOrError.pipelineName, true, '')
+                    }
                   >
-                    {definition.opName}
-                  </div>
-                </Box>
+                    {runOrError.pipelineName}
+                  </Link>
+                ) : (
+                  <span />
+                )}
+                <Link
+                  style={{fontFamily: FontFamily.monospace, fontSize: 14}}
+                  to={`/instance/runs/${runOrError.runId}?${qs.stringify({
+                    timestamp: event.stepStats.endTime,
+                    selection: event.stepStats.stepKey,
+                    logs: `step:${event.stepStats.stepKey}`,
+                  })}`}
+                  onClick={(e) => e.stopPropagation()}
+                  target="_blank"
+                >
+                  {titleForRun({runId: runOrError.runId})}
+                </Link>
               </StatsRow>
-            )}
-          </Stats>
-          {kind && (
-            <OpTags
-              minified={false}
-              style={{right: -2, paddingTop: 5}}
-              tags={[
-                {
-                  label: kind,
-                  onClick: () => {
-                    window.requestAnimationFrame(() =>
-                      document.dispatchEvent(new Event('show-kind-info')),
-                    );
-                  },
-                },
-              ]}
-            />
+              <StatsRow>
+                {event.stepStats.endTime ? (
+                  <TimestampDisplay
+                    timestamp={event.stepStats.endTime}
+                    timeFormat={{showSeconds: false, showTimezone: false}}
+                  />
+                ) : (
+                  'Never'
+                )}
+                <TimeElapsed
+                  startUnix={event.stepStats.startTime}
+                  endUnix={event.stepStats.endTime}
+                />
+              </StatsRow>
+            </>
+          ) : (
+            <>
+              <StatsRow style={{opacity: 0.5}}>
+                <span>No materializations</span>
+                <span>—</span>
+              </StatsRow>
+              <StatsRow style={{opacity: 0.5}}>
+                <span>—</span>
+                <span>—</span>
+              </StatsRow>
+            </>
           )}
-        </AssetNodeBox>
-      </AssetNodeContainer>
-    </ContextMenu>
+          {definition.opName && displayName !== definition.opName && (
+            <StatsRow>
+              <Box
+                flex={{gap: 4, alignItems: 'flex-end'}}
+                style={{marginLeft: -2, overflow: 'hidden'}}
+              >
+                <IconWIP name="op" size={16} />
+                <div
+                  style={{
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {definition.opName}
+                </div>
+              </Box>
+            </StatsRow>
+          )}
+        </Stats>
+        {kind && (
+          <OpTags
+            minified={false}
+            style={{right: -2, paddingTop: 5}}
+            tags={[
+              {
+                label: kind,
+                onClick: () => {
+                  window.requestAnimationFrame(() =>
+                    document.dispatchEvent(new Event('show-kind-info')),
+                  );
+                },
+              },
+            ]}
+          />
+        )}
+      </AssetNodeBox>
+    </AssetNodeContainer>
   );
 }, isEqual);
 
