@@ -268,7 +268,9 @@ class RepositoryLocation(AbstractContextManager):
         pass
 
     @abstractmethod
-    def update_external_repositories_data(self, new_external_repositories_data):
+    def update_external_repositories_data(
+        self, new_external_repositories_data: Dict[str, ExternalRepositoryData]
+    ):
         pass
 
 
@@ -485,8 +487,9 @@ class InProcessRepositoryLocation(RepositoryLocation):
             for repo_name, repo_def in self._repositories.items()
         }
 
-    def update_external_repositories_data(self, new_external_repositories_data):
-        # TODO: checks to ensure that dict is same len
+    def update_external_repositories_data(
+        self, new_external_repositories_data: Dict[str, ExternalRepositoryData]
+    ):
         self.external_repositories = {
             repo_name: ExternalRepository(
                 repo_data,
@@ -814,10 +817,10 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
     def get_external_repositories_data(self) -> Dict[str, ExternalRepositoryData]:
         return self._external_repositories_data
 
-    def update_external_repositories(self, external_repositories_data):
-        # TODO: checks to ensure that dict is same len
-        # TODO: add try catch
-        self._external_repositories_data = external_repositories_data
+    def update_external_repositories_data(
+        self, new_external_repositories_data: Dict[str, ExternalRepositoryData]
+    ):
+        self._external_repositories_data = new_external_repositories_data
         self.external_repositories = {
             repo_name: ExternalRepository(
                 repo_data,

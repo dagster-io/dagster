@@ -641,9 +641,25 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._location_entry_dict = OrderedDict()
 
     def create_request_context(self, source=None) -> WorkspaceRequestContext:
-        cross_repo_asset_deps = self.get_cross_repo_asset_deps()
-
         workspace_snapshot = self.create_snapshot()
+
+        self.update_workspace_snapshot_with_cross_repo_asset_deps(workspace_snapshot)
+
+        return WorkspaceRequestContext(
+            instance=self._instance,
+            workspace_snapshot=workspace_snapshot,
+            process_context=self,
+            version=self.version,
+            source=source,
+        )
+
+    def update_workspace_snapshot_with_cross_repo_asset_deps(self, workspace_snapshot):
+        # Updates RepositoryLocation object to use ExternalRepositoryData objects containing
+        # cross repo asset dependencies.
+        # For all source assets that have an asset definition in another repository, attach
+        # the DependedBy asset nodes to the original asset definition to define edges
+        # from the defined assets to downstream assets in other repositories.
+        cross_repo_asset_deps = self.get_cross_repo_asset_deps()
 
         for location_name, location_entry in workspace_snapshot.items():
             repo_location = location_entry.repository_location
@@ -681,29 +697,15 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                         external_sensor_datas=repo_data.external_sensor_datas,
                         external_asset_graph_data=new_external_asset_graph_data,
                     )
-                repo_location.update_external_repositories(new_external_repositories_data)
-
-        return WorkspaceRequestContext(
-            instance=self._instance,
-            workspace_snapshot=workspace_snapshot,
-            process_context=self,
-            version=self.version,
-            source=source,
-        )
+                repo_location.update_external_repositories_data(new_external_repositories_data)
 
     def get_cross_repo_asset_deps(self):
-        # Returns mapping of source assets and the repos they exist in to the
-        # repo where they are defined as assets
-        # {
-        #   repo_name: {
-        #     source_asset_key: asset_definition_repo_name
-        #   }
-        # }
-
-        # build mapping of assets to the source assets that refer to them
-        map_source_asset_to_location = {}  # dict value is tuple (location_name, repo_name)
-        depended_by_assets_by_source_asset = {}
-        map_non_source_asset_to_location = {}  # dict value is tuple (location_name, repo_name)
+        depended_by_assets_by_source_asset = (
+            {}
+        )  # key is asset key, value is list of DependedBy ExternalAssetNodes
+        map_defined_asset_to_location = (
+            {}
+        )  # key is asset key, value is tuple (location_name, repo_name)
         for location_entry in self._location_entry_dict.values():
             repo_location = location_entry.repository_location
             if repo_location:
@@ -712,34 +714,33 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
                     asset_nodes = external_repo.get_external_asset_nodes()
                     for asset_node in asset_nodes:
                         if not asset_node.op_name:  # is source asset
-                            if asset_node.asset_key not in map_source_asset_to_location:
-                                map_source_asset_to_location[asset_node.asset_key] = []
-                            map_source_asset_to_location[asset_node.asset_key].append(
-                                (repo_location.name, repo_name)
-                            )
                             if asset_node.asset_key not in depended_by_assets_by_source_asset:
                                 depended_by_assets_by_source_asset[asset_node.asset_key] = []
                             depended_by_assets_by_source_asset[asset_node.asset_key].extend(
                                 asset_node.depended_by
                             )
                         else:
-                            map_non_source_asset_to_location[asset_node.asset_key] = (
+                            map_defined_asset_to_location[asset_node.asset_key] = (
                                 repo_location.name,
                                 repo_name,
                             )
 
         defined_asset_mapped_to_downstream_assets = (
             {}
-        )  # nested dict that maps by location to defined asset key
-        for source_asset, source_asset_location in map_source_asset_to_location.items():
-            asset_def_location = map_non_source_asset_to_location.get(source_asset, None)
-            if asset_def_location not in defined_asset_mapped_to_downstream_assets:
-                defined_asset_mapped_to_downstream_assets[asset_def_location] = {}
-            if source_asset not in defined_asset_mapped_to_downstream_assets[asset_def_location]:
-                defined_asset_mapped_to_downstream_assets[asset_def_location][source_asset] = []
-            defined_asset_mapped_to_downstream_assets[asset_def_location][source_asset].extend(
-                depended_by_assets_by_source_asset.get(source_asset, [])
-            )
+        )  # nested dict that maps dependedby assets by asset key by location tuple (repo_location.name, repo_name)
+        for source_asset, depended_by_assets in depended_by_assets_by_source_asset.items():
+            asset_def_location = map_defined_asset_to_location.get(source_asset, None)
+            if asset_def_location:  # source asset is defined as asset in another repository
+                if asset_def_location not in defined_asset_mapped_to_downstream_assets:
+                    defined_asset_mapped_to_downstream_assets[asset_def_location] = {}
+                if (
+                    source_asset
+                    not in defined_asset_mapped_to_downstream_assets[asset_def_location]
+                ):
+                    defined_asset_mapped_to_downstream_assets[asset_def_location][source_asset] = []
+                defined_asset_mapped_to_downstream_assets[asset_def_location][source_asset].extend(
+                    depended_by_assets
+                )
 
         return defined_asset_mapped_to_downstream_assets
 
