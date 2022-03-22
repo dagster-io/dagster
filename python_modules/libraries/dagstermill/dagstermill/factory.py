@@ -22,7 +22,7 @@ from dagster import (
 )
 from dagster.core.definitions.events import AssetMaterialization, Failure, RetryRequested
 from dagster.core.definitions.metadata import MetadataEntry, MetadataValue
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.definitions.utils import validate_tags
 from dagster.core.execution.context.compute import SolidExecutionContext
 from dagster.core.execution.context.input import build_input_context

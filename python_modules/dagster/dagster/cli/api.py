@@ -10,7 +10,7 @@ from dagster.cli.workspace.cli_target import (
     get_working_directory_from_kwargs,
     python_origin_target_argument,
 )
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.errors import DagsterExecutionInterruptedError
 from dagster.core.events import DagsterEvent, DagsterEventType, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator

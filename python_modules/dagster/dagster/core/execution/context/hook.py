@@ -4,7 +4,7 @@ from typing import AbstractSet, Any, Dict, Optional, Set, Union
 from dagster import check
 
 from ...definitions.composition import PendingNodeInvocation
-from ...definitions.decorators.graph import graph
+from ...definitions.decorators.graph_decorator import graph
 from ...definitions.dependency import Node
 from ...definitions.hook_definition import HookDefinition
 from ...definitions.mode import ModeDefinition

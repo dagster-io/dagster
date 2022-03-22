@@ -14,7 +14,7 @@ from dagster.core.definitions import (
     SolidDefinition,
     TypeCheck,
 )
-from dagster.core.definitions.decorators.solid import DecoratedSolidFunction
+from dagster.core.definitions.decorators.solid_decorator import DecoratedSolidFunction
 from dagster.core.definitions.events import AssetLineageInfo, DynamicOutput
 from dagster.core.definitions.metadata import (
     MetadataEntry,

@@ -8,10 +8,7 @@ import pendulum
 
 from dagster import check
 from dagster.core.definitions import ScheduleEvaluationContext
-from dagster.core.definitions.reconstructable import (
-    ReconstructablePipeline,
-    ReconstructableRepository,
-)
+from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster.core.definitions.sensor_definition import SensorEvaluationContext
 from dagster.core.errors import (
     DagsterExecutionInterruptedError,
