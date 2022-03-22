@@ -246,7 +246,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
 
     def get_step_events(self, run_id: str, step_key: str, retry_number: int):
         # events for each retry written to a different file
-        path = self._dbfs_path(run_id, step_key, f"{retry_number}{PICKLED_EVENTS_FILE_NAME}")
+        path = self._dbfs_path(run_id, step_key, f"{retry_number}_{PICKLED_EVENTS_FILE_NAME}")
 
         def _get_step_records():
             serialized_records = self.databricks_runner.client.read_file(path)

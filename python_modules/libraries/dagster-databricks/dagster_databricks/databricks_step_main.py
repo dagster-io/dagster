@@ -96,7 +96,7 @@ def main(
         step_run_dir = os.path.dirname(step_run_ref_filepath)
         # write events for each retry to different file
         events_filepath = os.path.join(
-            step_run_dir, f"{step_run_ref.prior_attempts_count}{PICKLED_EVENTS_FILE_NAME}"
+            step_run_dir, f"{step_run_ref.prior_attempts_count}_{PICKLED_EVENTS_FILE_NAME}"
         )
         exception_filepath = os.path.join(step_run_dir, PICKLED_EXCEPTION_FILE_NAME)
         stdout_filepath = os.path.join(step_run_dir, "stdout")

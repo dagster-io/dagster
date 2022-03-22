@@ -257,7 +257,7 @@ def poll_run_state(
     start_poll_time: float,
     databricks_run_id: int,
     max_wait_time_sec: float,
-    error_path: str,
+    error_path: str = None,
 ):
     run_state = client.get_run_state(databricks_run_id)
     if run_state.has_terminated():
@@ -267,9 +267,12 @@ def poll_run_state(
         else:
             # attempt to get the serialized exception, otherwise create a placeholder
             error = None
-            try:
-                error = pickle.loads(client.read_file(error_path))
-            except Exception:
+            if error_path:
+                try:
+                    error = pickle.loads(client.read_file(error_path))
+                except Exception:
+                    pass
+            if error is None:
                 error_message = "Run %s failed with result state: %s. Message: %s" % (
                     databricks_run_id,
                     run_state.result_state,
