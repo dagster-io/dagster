@@ -29,7 +29,7 @@ from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.policy import RetryPolicy
-from dagster.core.definitions.reconstructable_definition import ReconstructablePipeline
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher

@@ -4,7 +4,7 @@ import pytest
 
 from dagster import check
 from dagster.core.code_pointer import ModuleCodePointer
-from dagster.core.definitions.reconstructable_definition import ReconstructableRepository
+from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.host_representation.origin import (
     ExternalPipelineOrigin,
     ExternalRepositoryOrigin,

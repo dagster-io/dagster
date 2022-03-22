@@ -103,7 +103,7 @@ from .partitioned_schedule import build_schedule_from_partitioned_job, schedule_
 from .pipeline_base import IPipeline
 from .pipeline_definition import PipelineDefinition
 from .preset import PresetDefinition
-from .reconstructable_definition import (
+from .reconstruct import (
     ReconstructablePipeline,
     build_reconstructable_job,
     build_reconstructable_pipeline,

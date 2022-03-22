@@ -21,7 +21,7 @@ from dagster.api.snapshot_repository import sync_get_streaming_external_reposito
 from dagster.api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 from dagster.api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
 from dagster.core.code_pointer import CodePointer
-from dagster.core.definitions.reconstructable_definition import (
+from dagster.core.definitions.reconstruct import (
     ReconstructablePipeline,
     ReconstructableRepository,
 )

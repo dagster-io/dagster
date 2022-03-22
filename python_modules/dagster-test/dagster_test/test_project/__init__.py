@@ -7,7 +7,7 @@ from contextlib import contextmanager
 
 from dagster import check
 from dagster.core.code_pointer import FileCodePointer
-from dagster.core.definitions.reconstructable_definition import (
+from dagster.core.definitions.reconstruct import (
     ReconstructablePipeline,
     ReconstructableRepository,
 )

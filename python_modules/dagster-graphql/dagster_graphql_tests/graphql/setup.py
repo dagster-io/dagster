@@ -82,7 +82,7 @@ from dagster.core.asset_defs import SourceAsset, asset, build_assets_job
 from dagster.core.definitions.decorators.sensor_decorator import sensor
 from dagster.core.definitions.executor_definition import in_process_executor
 from dagster.core.definitions.metadata import MetadataValue
-from dagster.core.definitions.reconstructable_definition import ReconstructableRepository
+from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.definitions.sensor_definition import RunRequest, SkipReason
 from dagster.core.log_manager import coerce_valid_log_level
 from dagster.core.storage.fs_io_manager import fs_io_manager

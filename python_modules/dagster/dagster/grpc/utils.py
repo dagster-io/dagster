@@ -1,7 +1,7 @@
 import os
 
 from dagster import check
-from dagster.core.definitions.reconstructable_definition import (
+from dagster.core.definitions.reconstruct import (
     load_def_in_module,
     load_def_in_package,
     load_def_in_python_file,
