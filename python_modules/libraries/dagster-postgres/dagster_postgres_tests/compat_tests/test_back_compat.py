@@ -401,3 +401,31 @@ def test_0_13_12_add_start_time_end_time(hostname, conn_string):
         # Verify that historical records also get updated via data migration
         earliest_run_record = instance.get_run_records()[-1]
         assert earliest_run_record.end_time > earliest_run_record.start_time
+
+
+def test_schedule_secondary_index_table_backcompat(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(
+            __file__, "snapshot_0_14_6_schedule_migration_table/postgres/pg_dump.txt"
+        ),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        instance = DagsterInstance.from_config(tempdir)
+
+        # secondary indexes should exist because it's colocated in this database from the run
+        # storage
+        assert instance.schedule_storage.has_secondary_index_table()
+
+        # this should succeed without raising any issues
+        instance.upgrade()
+
+        # no-op
+        assert instance.schedule_storage.has_secondary_index_table()
