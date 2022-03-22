@@ -61,7 +61,7 @@ if __name__ == "__main__":
             "coloredlogs>=6.1, <=14.0",
             "contextvars; python_version < '3.7'",
             # https://github.com/dagster-io/dagster/issues/4167
-            "Jinja2<3.0",
+            "Jinja2>=3.0",
             "markupsafe<=2.0.1",
             "PyYAML>=5.1",
             # core (not explicitly expressed atm)
