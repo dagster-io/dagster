@@ -782,3 +782,18 @@ def test_legacy_event_log_load():
 
     result = _deserialize_json(storage_str, legacy_env)
     assert result.message is not None
+
+
+def test_schedule_secondary_index_table_backcompat():
+    src_dir = file_relative_path(__file__, "snapshot_0_14_6_schedule_migration_table/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "schedules", "schedules.db")
+
+        assert get_current_alembic_version(db_path) == "0da417ae1b81"
+
+        assert "secondary_indexes" not in get_sqlite3_tables(db_path)
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
+
+        assert "secondary_indexes" in get_sqlite3_tables(db_path)

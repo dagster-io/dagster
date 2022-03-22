@@ -1,6 +1,7 @@
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Iterable, Mapping, Optional, Sequence, cast
+from datetime import datetime
+from typing import Callable, Iterable, Mapping, Optional, Sequence, cast
 
 import sqlalchemy as db
 
@@ -18,7 +19,8 @@ from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dag
 from dagster.utils import utc_datetime_from_timestamp
 
 from .base import ScheduleStorage
-from .schema import JobTable, JobTickTable
+from .migration import OPTIONAL_SCHEDULE_DATA_MIGRATIONS, REQUIRED_SCHEDULE_DATA_MIGRATIONS
+from .schema import JobTable, JobTickTable, SecondaryIndexMigrationTable
 
 
 class SqlScheduleStorage(ScheduleStorage):
@@ -299,3 +301,65 @@ class SqlScheduleStorage(ScheduleStorage):
             # https://stackoverflow.com/a/54386260/324449
             conn.execute(JobTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(JobTickTable.delete())  # pylint: disable=no-value-for-parameter
+
+    # MIGRATIONS
+
+    def has_secondary_index_table(self):
+        with self.connect() as conn:
+            return "secondary_indexes" in db.inspect(conn).get_table_names()
+
+    def has_built_index(self, migration_name: str) -> bool:
+        if not self.has_secondary_index_table():
+            return False
+
+        query = (
+            db.select([1])
+            .where(SecondaryIndexMigrationTable.c.name == migration_name)
+            .where(SecondaryIndexMigrationTable.c.migration_completed != None)
+            .limit(1)
+        )
+        with self.connect() as conn:
+            results = conn.execute(query).fetchall()
+
+        return len(results) > 0
+
+    def mark_index_built(self, migration_name: str):
+        query = (
+            SecondaryIndexMigrationTable.insert().values(  # pylint: disable=no-value-for-parameter
+                name=migration_name,
+                migration_completed=datetime.now(),
+            )
+        )
+        with self.connect() as conn:
+            try:
+                conn.execute(query)
+            except db.exc.IntegrityError:
+                conn.execute(
+                    SecondaryIndexMigrationTable.update()  # pylint: disable=no-value-for-parameter
+                    .where(SecondaryIndexMigrationTable.c.name == migration_name)
+                    .values(migration_completed=datetime.now())
+                )
+
+    def _execute_data_migrations(
+        self, migrations, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False
+    ):
+        for migration_name, migration_fn in migrations.items():
+            if self.has_built_index(migration_name):
+                if not force_rebuild_all:
+                    continue
+            if print_fn:
+                print_fn(f"Starting data migration: {migration_name}")
+            migration_fn()(self, print_fn)
+            self.mark_index_built(migration_name)
+            if print_fn:
+                print_fn(f"Finished data migration: {migration_name}")
+
+    def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
+        self._execute_data_migrations(
+            REQUIRED_SCHEDULE_DATA_MIGRATIONS, print_fn, force_rebuild_all
+        )
+
+    def optimize(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
+        self._execute_data_migrations(
+            OPTIONAL_SCHEDULE_DATA_MIGRATIONS, print_fn, force_rebuild_all
+        )
