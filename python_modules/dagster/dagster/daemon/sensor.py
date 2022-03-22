@@ -89,8 +89,8 @@ class SensorLaunchContext:
         if origin_run_id:
             self._tick = self._tick.with_origin_run(origin_run_id)
 
-    def add_run(self, run_id, run_key=None):
-        self._tick = self._tick.with_run(run_id, run_key)
+    def add_run_info(self, run_id=None, run_key=None):
+        self._tick = self._tick.with_run_info(run_id, run_key)
 
     def set_should_update_cursor_on_failure(self, should_update_cursor_on_failure: bool):
         self._should_update_cursor_on_failure = should_update_cursor_on_failure
@@ -442,6 +442,7 @@ def _evaluate_sensor(
 
         if isinstance(run, SkippedSensorRun):
             skipped_runs.append(run)
+            context.add_run_info(run_id=None, run_key=run_request.run_key)
             yield
             continue
 
@@ -469,7 +470,7 @@ def _evaluate_sensor(
 
         _check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
 
-        context.add_run(run_id=run.run_id, run_key=run_request.run_key)
+        context.add_run_info(run_id=run.run_id, run_key=run_request.run_key)
 
     if skipped_runs:
         run_keys = [skipped.run_key for skipped in skipped_runs]
@@ -562,10 +563,8 @@ def _get_or_create_sensor_run(
 
     if run:
         if run.status != PipelineRunStatus.NOT_STARTED:
-            # A run already exists and was launched for this time period,
-            # but the daemon must have crashed before the tick could be put
-            # into a SUCCESS state
-            context.logger.info(f"Skipping run for {run_request.run_key}, found {run.run_id}.")
+            # A run already exists and was launched for this run key, but the daemon must have
+            # crashed before the tick could be updated
             return SkippedSensorRun(run_key=run_request.run_key, existing_run=run)
         else:
             context.logger.info(
