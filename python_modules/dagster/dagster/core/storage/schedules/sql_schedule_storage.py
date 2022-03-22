@@ -20,7 +20,7 @@ from dagster.utils import utc_datetime_from_timestamp
 
 from .base import ScheduleStorage
 from .migration import OPTIONAL_SCHEDULE_DATA_MIGRATIONS, REQUIRED_SCHEDULE_DATA_MIGRATIONS
-from .schema import JobTable, JobTickTable, SecondaryIndexMigrationTable
+from .schema import InstigatorTable, JobTable, JobTickTable, SecondaryIndexMigrationTable
 
 
 class SqlScheduleStorage(ScheduleStorage):
@@ -70,6 +70,40 @@ class SqlScheduleStorage(ScheduleStorage):
         rows = self.execute(query)
         return self._deserialize_rows(rows[:1])[0] if len(rows) else None
 
+    def _has_instigator_state_by_selector(self, selector_id):
+        check.str_param(selector_id, "selector_id")
+
+        query = (
+            db.select([Table.c.job_body])
+            .select_from(JobTable)
+            .where(JobTable.c.selector_id == selector_id)
+        )
+
+        rows = self.execute(query)
+        return self._deserialize_rows(rows[:1])[0] if len(rows) else None
+
+    def _add_or_update_instigators_table(self, conn, state):
+        selector_id = state.get_selector_id()
+        try:
+            conn.execute(
+                InstigatorTable.insert().values(  # pylint: disable=no-value-for-parameter
+                    selector_id=selector_id,
+                    status=state.status.value,
+                    instigator_type=state.instigator_type.value,
+                    instigator_body=serialize_dagster_namedtuple(state),
+                )
+            )
+        except db.exc.IntegrityError as exc:
+            conn.execute(
+                InstigatorTable.update()
+                .where(InstigatorTable.c.selector_id == selector_id)
+                .values(
+                    status=state.status.value,
+                    instigator_type=state.instigator_type.value,
+                    instigator_body=serialize_dagster_namedtuple(state),
+                )
+            )
+
     def add_instigator_state(self, state):
         check.inst_param(state, "state", InstigatorState)
         with self.connect() as conn:
@@ -87,6 +121,10 @@ class SqlScheduleStorage(ScheduleStorage):
                 raise DagsterInvariantViolationError(
                     f"InstigatorState {state.instigator_origin_id} is already present in storage"
                 ) from exc
+
+            # try writing to the instigators table
+            if self._has_instigators_table(conn):
+                self._add_or_update_instigators_table(conn, state)
 
         return state
 
@@ -108,6 +146,8 @@ class SqlScheduleStorage(ScheduleStorage):
                     job_body=serialize_dagster_namedtuple(state),
                 )
             )
+            if self._has_instigators_table(conn):
+                self._add_or_update_instigators_table(conn, state)
 
     def delete_instigator_state(self, origin_id, selector_id):
         check.str_param(origin_id, "origin_id")
@@ -124,6 +164,28 @@ class SqlScheduleStorage(ScheduleStorage):
                     JobTable.c.job_origin_id == origin_id
                 )
             )
+
+        if self.has_instigators_table():
+            if not self._jobs_table_has_selector_state(selector_id):
+                with self.connect() as conn:
+                    conn.execute(
+                        InstigatorTable.delete().where(  # pylint: disable=no-value-for-parameter
+                            InstigatorTable.c.selector_id == selector_id
+                        )
+                    )
+
+    def _jobs_has_selector_state(selector_id):
+        query = (
+            db.select([db.func.count()])
+            .select_from(JobTable)
+            .where(JobTable.c.selector_id == selector_id)
+        )
+        with self.connect() as conn:
+            result = conn.execute(query)
+            row = result_proxy.fetchone()
+            result.close()
+
+        return row[0] > 0
 
     def _add_filter_limit(self, query, before=None, after=None, limit=None, statuses=None):
         check.opt_float_param(before, "before")
@@ -147,8 +209,11 @@ class SqlScheduleStorage(ScheduleStorage):
 
     def has_instigators_table(self):
         with self.connect() as conn:
-            table_names = db.inspect(conn).get_table_names()
-            return "instigators" in table_names
+            return self._has_instigators_table(conn)
+
+    def _has_instigators_table(self, conn):
+        table_names = db.inspect(conn).get_table_names()
+        return "instigators" in table_names
 
     def get_batch_ticks(
         self,
@@ -227,17 +292,21 @@ class SqlScheduleStorage(ScheduleStorage):
     def create_tick(self, tick_data):
         check.inst_param(tick_data, "tick_data", TickData)
 
+        values = {
+            "job_origin_id": tick_data.instigator_origin_id,
+            "status": tick_data.status.value,
+            "type": tick_data.instigator_type.value,
+            "timestamp": utc_datetime_from_timestamp(tick_data.timestamp),
+            "tick_body": serialize_dagster_namedtuple(tick_data),
+        }
+        if self.has_instigators_table() and tick_data.selector_id:
+            values["selector_id"] = tick_data.selector_id
+
         with self.connect() as conn:
             try:
-                tick_insert = (
-                    JobTickTable.insert().values(  # pylint: disable=no-value-for-parameter
-                        job_origin_id=tick_data.instigator_origin_id,
-                        status=tick_data.status.value,
-                        type=tick_data.instigator_type.value,
-                        timestamp=utc_datetime_from_timestamp(tick_data.timestamp),
-                        tick_body=serialize_dagster_namedtuple(tick_data),
-                    )
-                )
+                tick_insert = JobTickTable.insert().values(
+                    **values
+                )  # pylint: disable=no-value-for-parameter
                 result = conn.execute(tick_insert)
                 tick_id = result.inserted_primary_key[0]
                 return InstigatorTick(tick_id, tick_data)
@@ -249,16 +318,20 @@ class SqlScheduleStorage(ScheduleStorage):
     def update_tick(self, tick):
         check.inst_param(tick, "tick", InstigatorTick)
 
+        values = {
+            "status": tick.status.value,
+            "type": tick.instigator_type.value,
+            "timestamp": utc_datetime_from_timestamp(tick.timestamp),
+            "tick_body": serialize_dagster_namedtuple(tick.tick_data),
+        }
+        if self.has_instigators_table() and tick_data.selector_id:
+            values["selector_id"] = tick_data.selector_id
+
         with self.connect() as conn:
             conn.execute(
                 JobTickTable.update()  # pylint: disable=no-value-for-parameter
                 .where(JobTickTable.c.id == tick.tick_id)
-                .values(
-                    status=tick.status.value,
-                    type=tick.instigator_type.value,
-                    timestamp=utc_datetime_from_timestamp(tick.timestamp),
-                    tick_body=serialize_dagster_namedtuple(tick.tick_data),
-                )
+                .values(**values)
             )
 
         return tick
