@@ -1,4 +1,5 @@
 import base64
+import pickle
 import time
 
 import requests.exceptions
@@ -33,7 +34,7 @@ class DatabricksClient:
         """Submit a run directly to the 'Runs Submit' API."""
         return self.client.jobs.submit_run(*args, **kwargs)["run_id"]  # pylint: disable=no-member
 
-    def read_file(self, dbfs_path, block_size=1024**2):
+    def read_file(self, dbfs_path, block_size=1024 ** 2):
         """Read a file from DBFS to a **byte string**."""
 
         if dbfs_path.startswith("dbfs://"):
@@ -50,7 +51,7 @@ class DatabricksClient:
             data += base64.b64decode(jdoc["data"])
         return data
 
-    def put_file(self, file_obj, dbfs_path, overwrite=False, block_size=1024**2):
+    def put_file(self, file_obj, dbfs_path, overwrite=False, block_size=1024 ** 2):
         """Upload an arbitrary large file to DBFS.
 
         This doesn't use the DBFS `Put` API because that endpoint is limited to 1MB.
@@ -256,6 +257,7 @@ def poll_run_state(
     start_poll_time: float,
     databricks_run_id: int,
     max_wait_time_sec: float,
+    error_path: str,
 ):
     run_state = client.get_run_state(databricks_run_id)
     if run_state.has_terminated():
@@ -263,13 +265,20 @@ def poll_run_state(
             log.info("Run %s completed successfully" % databricks_run_id)
             return True
         else:
-            error_message = "Run %s failed with result state: %s. Message: %s" % (
-                databricks_run_id,
-                run_state.result_state,
-                run_state.state_message,
-            )
-            log.error(error_message)
-            raise DatabricksError(error_message)
+            # attempt to get the actual error, otherwise create a placeholder
+            error = None
+            try:
+                serialized_error = client.read_file(error_path)
+                error = pickle.loads(serialized_error)
+            finally:
+                if not error:
+                    error_message = "Run %s failed with result state: %s. Message: %s" % (
+                        databricks_run_id,
+                        run_state.result_state,
+                        run_state.state_message,
+                    )
+                    error = DatabricksError(error_message)
+            raise error
     else:
         log.info("Run %s in state %s" % (databricks_run_id, run_state))
     if time.time() - start_poll_time > max_wait_time_sec:

@@ -12,6 +12,7 @@ from dagster import (
     Field,
     ModeDefinition,
     ResourceDefinition,
+    RetryPolicy,
     RetryRequested,
     String,
     execute_pipeline,
@@ -77,6 +78,25 @@ class RequestRetryLocalExternalStepLauncher(LocalExternalStepLauncher):
 @resource(config_schema=local_external_step_launcher.config_schema)
 def request_retry_local_external_step_launcher(context):
     return RequestRetryLocalExternalStepLauncher(**context.resource_config)
+
+
+def _define_retry_job():
+    @op(required_resource_keys={"step_launcher"}, retry_policy=RetryPolicy(max_retries=3))
+    def retry_op(context):
+        if context.retry_number < 3:
+            raise Exception()
+        return context.retry_number
+
+    @job(
+        resource_defs={
+            "step_launcher": local_external_step_launcher,
+            "io_manager": fs_io_manager,
+        }
+    )
+    def retry_job():
+        retry_op()
+
+    return retry_job
 
 
 def _define_dynamic_job(launch_initial, launch_final):
@@ -386,6 +406,24 @@ def test_reexecution(job_fn):
             )
             assert run2.success
             assert run2.result_for_solid("combine").output_value() == 3
+
+
+def test_retry_policy():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        run_config = {
+            "resources": {
+                "step_launcher": {"config": {"scratch_dir": tmpdir}},
+                "io_manager": {"config": {"base_dir": tmpdir}},
+            }
+        }
+        with instance_for_test() as instance:
+            run = execute_pipeline(
+                pipeline=reconstructable(_define_retry_job),
+                run_config=run_config,
+                instance=instance,
+            )
+            assert run.success
+            assert run.result_for_solid("retry_op").output_value() == 3
 
 
 def test_launcher_requests_retry():

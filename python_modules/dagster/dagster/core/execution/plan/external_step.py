@@ -1,5 +1,6 @@
 import os
 import pickle
+import shutil
 import subprocess
 import sys
 from typing import TYPE_CHECKING, Iterator, Optional, cast
@@ -22,6 +23,7 @@ from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
 from dagster.serdes import deserialize_value
 
 PICKLED_EVENTS_FILE_NAME = "events.pkl"
+PICKLED_ERROR_FILE_NAME = "error.pkl"
 PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"
 
 if TYPE_CHECKING:
@@ -55,6 +57,9 @@ class LocalExternalStepLauncher(StepLauncher):
         run_id = step_context.pipeline_run.run_id
 
         step_run_dir = os.path.join(self.scratch_dir, run_id, step_run_ref.step_key)
+        # clean up old info if it exists (e.g. this step is being retried)
+        if os.path.exists(step_run_dir):
+            shutil.rmtree(step_run_dir)
         os.makedirs(step_run_dir)
 
         step_run_ref_file_path = os.path.join(step_run_dir, PICKLED_STEP_RUN_REF_FILE_NAME)
@@ -74,6 +79,7 @@ class LocalExternalStepLauncher(StepLauncher):
             subprocess.call(command_tokens, stdout=sys.stdout, stderr=sys.stderr)
 
         events_file_path = os.path.join(step_run_dir, PICKLED_EVENTS_FILE_NAME)
+        error_file_path = os.path.join(step_run_dir, PICKLED_ERROR_FILE_NAME)
         file_manager = LocalFileManager(".")
         events_file_handle = LocalFileHandle(events_file_path)
         events_data = file_manager.read_data(events_file_handle)
@@ -84,6 +90,9 @@ class LocalExternalStepLauncher(StepLauncher):
             step_context.instance.handle_new_event(event)
             if event.is_dagster_event:
                 yield event.dagster_event
+        # if error was raised in child process, re-raise it from this host process
+        if os.path.exists(error_file_path):
+            raise pickle.loads(file_manager.read_data(LocalFileHandle(error_file_path)))
 
 
 def _module_in_package_dir(file_path: str, package_dir: str) -> str:
@@ -126,14 +135,12 @@ def _upstream_events_and_runs(step_context: StepExecutionContext):
             if output_handle in upstream_output_handles:
                 events.append(r)
                 upstream_output_handles.remove(output_handle)
-        # found all the necessary events
-        if not upstream_output_handles:
-            break
 
         if current_run.parent_run_id is None:
-            step_context.log.warn(
-                f"Could not find outputs in the logs for output handles: {upstream_output_handles}"
-            )
+            if upstream_output_handles:
+                step_context.log.warn(
+                    f"Could not find outputs in the logs for output handles: {upstream_output_handles}"
+                )
             break
 
         # else, keep looking backwards

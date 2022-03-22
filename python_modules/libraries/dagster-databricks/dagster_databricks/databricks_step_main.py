@@ -22,6 +22,7 @@ from queue import Empty, Queue
 from threading import Thread
 
 from dagster.core.execution.plan.external_step import (
+    PICKLED_ERROR_FILE_NAME,
     PICKLED_EVENTS_FILE_NAME,
     external_instance_from_step_run_ref,
     run_step_from_ref,
@@ -91,7 +92,20 @@ def main(
             step_run_ref = pickle.load(handle)
         print("Running dagster job")  # noqa pylint: disable=print-call
 
-        events_filepath = os.path.dirname(step_run_ref_filepath) + "/" + PICKLED_EVENTS_FILE_NAME
+        step_run_dir = os.path.dirname(step_run_ref_filepath)
+        # write events for each retry to different file
+        events_filepath = os.path.join(
+            step_run_dir, f"{step_run_ref.prior_attempts_count}{PICKLED_EVENTS_FILE_NAME}"
+        )
+        error_filepath = os.path.join(step_run_dir, PICKLED_ERROR_FILE_NAME)
+        stdout_filepath = os.path.join(step_run_dir, "stdout")
+        stderr_filepath = os.path.join(step_run_dir, "stderr")
+
+        # create empty files for the events/error/stdout/stderr
+        with open(events_filepath, "wb"), open(error_filepath, "wb"), open(
+            stdout_filepath, "wb"
+        ), open(stderr_filepath, "wb"):
+            pass
 
         def put_events(events):
             with open(events_filepath, "wb") as handle:
@@ -116,18 +130,20 @@ def main(
                 # consume iterator
                 list(run_step_from_ref(step_run_ref, instance))
             except Exception as e:
-                # ensure that exceptiosn make their way into stdout
                 traceback.print_exc()
+                # pickle the original exception so we can re-raise it in the host process
+                with open(error_filepath, "wb") as handle:
+                    handle.write(pickle.dumps(e))
                 raise e
             finally:
                 events_queue.put(DONE)
                 event_writing_thread.join()
                 # write final stdout and stderr
-                with open(os.path.dirname(step_run_ref_filepath) + "/stderr", "wb") as handle:
+                with open(stderr_filepath, "wb") as handle:
                     stderr_str = stderr.getvalue()
                     sys.stderr.write(stderr_str)
                     handle.write(stderr_str.encode())
-                with open(os.path.dirname(step_run_ref_filepath) + "/stdout", "wb") as handle:
+                with open(stdout_filepath, "wb") as handle:
                     stdout_str = stdout.getvalue()
                     sys.stdout.write(stdout_str)
                     handle.write(stdout_str.encode())
