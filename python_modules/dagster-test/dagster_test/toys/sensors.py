@@ -2,7 +2,16 @@ import os
 
 from slack_sdk.web.client import WebClient
 
-from dagster import AssetKey, PipelineFailureSensorContext, RunRequest, SkipReason, asset_sensor, check, pipeline_failure_sensor, sensor
+from dagster import (
+    AssetKey,
+    PipelineFailureSensorContext,
+    RunRequest,
+    SkipReason,
+    asset_sensor,
+    check,
+    pipeline_failure_sensor,
+    sensor,
+)
 
 
 def get_directory_files(directory_name, since=None):
