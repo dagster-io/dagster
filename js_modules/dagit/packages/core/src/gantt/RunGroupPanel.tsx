@@ -5,6 +5,7 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {SidebarSection} from '../pipelines/SidebarComponents';
 import {RunStatusIndicator} from '../runs/RunStatusDots';
 import {DagsterTag} from '../runs/RunTag';
@@ -137,9 +138,7 @@ const RUN_GROUP_PANEL_QUERY = gql`
   query RunGroupPanelQuery($runId: ID!) {
     runGroupOrError(runId: $runId) {
       __typename
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
       ... on RunGroup {
         rootRunId
         runs {
@@ -159,6 +158,7 @@ const RUN_GROUP_PANEL_QUERY = gql`
     }
   }
   ${RUN_TIME_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 const RunGroupRun = styled(Link)<{selected: boolean}>`

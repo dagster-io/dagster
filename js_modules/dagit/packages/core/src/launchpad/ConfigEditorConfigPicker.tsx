@@ -417,9 +417,7 @@ const CONFIG_PARTITIONS_QUERY = gql`
               name
             }
           }
-          ... on PythonError {
-            ...PythonErrorFragment
-          }
+          ...PythonErrorFragment
         }
       }
     }
@@ -447,9 +445,7 @@ export const CONFIG_PARTITION_SELECTION_QUERY = gql`
             ... on PartitionRunConfig {
               yaml
             }
-            ... on PythonError {
-              ...PythonErrorFragment
-            }
+            ...PythonErrorFragment
           }
           mode
           tagsOrError {
@@ -459,9 +455,7 @@ export const CONFIG_PARTITION_SELECTION_QUERY = gql`
                 value
               }
             }
-            ... on PythonError {
-              ...PythonErrorFragment
-            }
+            ...PythonErrorFragment
           }
         }
       }

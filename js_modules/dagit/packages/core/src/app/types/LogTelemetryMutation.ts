@@ -12,10 +12,17 @@ export interface LogTelemetryMutation_logTelemetry_LogTelemetrySuccess {
   action: string;
 }
 
+export interface LogTelemetryMutation_logTelemetry_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface LogTelemetryMutation_logTelemetry_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
+  cause: LogTelemetryMutation_logTelemetry_PythonError_cause | null;
 }
 
 export type LogTelemetryMutation_logTelemetry = LogTelemetryMutation_logTelemetry_LogTelemetrySuccess | LogTelemetryMutation_logTelemetry_PythonError;

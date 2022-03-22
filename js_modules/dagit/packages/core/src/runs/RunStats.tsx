@@ -55,9 +55,7 @@ const RUN_STATS_QUERY = gql`
   query RunStatsQuery($runId: ID!) {
     pipelineRunOrError(runId: $runId) {
       __typename
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
       ... on RunNotFoundError {
         message
       }
@@ -73,9 +71,7 @@ const RUN_STATS_QUERY = gql`
             expectations
             materializations
           }
-          ... on PythonError {
-            ...PythonErrorFragment
-          }
+          ...PythonErrorFragment
         }
       }
     }

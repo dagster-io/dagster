@@ -25,10 +25,17 @@ export interface StartSchedule_startSchedule_ScheduleStateResult {
   scheduleState: StartSchedule_startSchedule_ScheduleStateResult_scheduleState;
 }
 
+export interface StartSchedule_startSchedule_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface StartSchedule_startSchedule_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
+  cause: StartSchedule_startSchedule_PythonError_cause | null;
 }
 
 export type StartSchedule_startSchedule = StartSchedule_startSchedule_UnauthorizedError | StartSchedule_startSchedule_ScheduleStateResult | StartSchedule_startSchedule_PythonError;

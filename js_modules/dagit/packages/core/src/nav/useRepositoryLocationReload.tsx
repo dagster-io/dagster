@@ -183,9 +183,7 @@ const RELOAD_REPOSITORY_LOCATION_MUTATION = gql`
       ... on RepositoryLocationNotFound {
         message
       }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
     }
   }
   ${PYTHON_ERROR_FRAGMENT}
@@ -212,15 +210,11 @@ const REPOSITORY_LOCATION_STATUS_QUERY = gql`
                 }
               }
             }
-            ... on PythonError {
-              ...PythonErrorFragment
-            }
+            ...PythonErrorFragment
           }
         }
       }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
     }
   }
   ${PYTHON_ERROR_FRAGMENT}

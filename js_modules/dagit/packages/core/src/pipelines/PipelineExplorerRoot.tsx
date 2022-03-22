@@ -2,6 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import * as React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {Loading} from '../ui/Loading';
 import {buildPipelineSelector} from '../workspace/WorkspaceContext';
@@ -157,12 +158,11 @@ export const PIPELINE_EXPLORER_ROOT_QUERY = gql`
       ... on PipelineSnapshotNotFoundError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
   }
   ${GRAPH_EXPLORER_FRAGMENT}
   ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
   ${GRAPH_EXPLORER_ASSET_NODE_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

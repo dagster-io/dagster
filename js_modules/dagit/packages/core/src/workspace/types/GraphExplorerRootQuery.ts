@@ -1471,10 +1471,17 @@ export interface GraphExplorerRootQuery_graphOrError_GraphNotFoundError {
   message: string;
 }
 
+export interface GraphExplorerRootQuery_graphOrError_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface GraphExplorerRootQuery_graphOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
+  cause: GraphExplorerRootQuery_graphOrError_PythonError_cause | null;
 }
 
 export type GraphExplorerRootQuery_graphOrError = GraphExplorerRootQuery_graphOrError_Graph | GraphExplorerRootQuery_graphOrError_GraphNotFoundError | GraphExplorerRootQuery_graphOrError_PythonError;

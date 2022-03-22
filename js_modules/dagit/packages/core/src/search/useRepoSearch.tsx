@@ -171,9 +171,7 @@ const SEARCH_BOOTSTRAP_QUERY = gql`
   query SearchBootstrapQuery {
     workspaceOrError {
       __typename
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
       ... on Workspace {
         locationEntries {
           __typename
