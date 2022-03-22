@@ -200,11 +200,7 @@ class SqliteEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             conn = engine.connect()
 
             try:
-                with handle_schema_errors(
-                    conn,
-                    get_alembic_config(__file__),
-                    msg="SqliteEventLogStorage for shard {shard}".format(shard=shard),
-                ):
+                with handle_schema_errors(conn, get_alembic_config(__file__)):
                     yield conn
             finally:
                 conn.close()

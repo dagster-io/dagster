@@ -23,7 +23,7 @@ from dagster import (
 )
 from dagster.cli.debug import DebugRunPayload
 from dagster.core.definitions.dependency import NodeHandle
-from dagster.core.errors import DagsterInstanceMigrationRequired
+from dagster.core.errors import DagsterInstanceSchemaOutdated
 from dagster.core.events import DagsterEvent
 from dagster.core.events.log import EventLogEntry
 from dagster.core.instance import DagsterInstance, InstanceRef
@@ -45,7 +45,7 @@ from dagster.utils.test import copy_directory
 
 
 def _migration_regex(warning, current_revision, expected_revision=None):
-    instruction = re.escape("Please run `dagster instance migrate`.")
+    instruction = re.escape("To migrate, run `dagster instance migrate`.")
     if expected_revision:
         revision = re.escape(
             "Database is at revision {}, head is {}.".format(current_revision, expected_revision)
@@ -57,23 +57,21 @@ def _migration_regex(warning, current_revision, expected_revision=None):
 
 def _run_storage_migration_regex(current_revision, expected_revision=None):
     warning = re.escape(
-        "Instance is out of date and must be migrated (Sqlite run storage requires migration)."
+        "Raised an exception that may indicate that the Dagster database needs to be be migrated."
     )
     return _migration_regex(warning, current_revision, expected_revision)
 
 
 def _schedule_storage_migration_regex(current_revision, expected_revision=None):
     warning = re.escape(
-        "Instance is out of date and must be migrated (Sqlite schedule storage requires migration)."
+        "Raised an exception that may indicate that the Dagster database needs to be be migrated."
     )
     return _migration_regex(warning, current_revision, expected_revision)
 
 
 def _event_log_migration_regex(run_id, current_revision, expected_revision=None):
     warning = re.escape(
-        "Instance is out of date and must be migrated (SqliteEventLogStorage for run {}).".format(
-            run_id
-        )
+        "Raised an exception that may indicate that the Dagster database needs to be be migrated."
     )
     return _migration_regex(warning, current_revision, expected_revision)
 
@@ -162,7 +160,7 @@ def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
             noop_solid()
 
         with pytest.raises(
-            DagsterInstanceMigrationRequired,
+            DagsterInstanceSchemaOutdated,
             match=_run_storage_migration_regex(current_revision="9fe9e746268c"),
         ):
             execute_pipeline(noop_pipeline, instance=instance)
@@ -555,8 +553,8 @@ def test_pipeline_run_dagster_run():
     ):
         pass
 
-    @_whitelist_for_serdes(legacy_env)  # pylint: disable=unused-variable
-    class PipelineRunStatus(Enum):
+    @_whitelist_for_serdes(legacy_env)
+    class PipelineRunStatus(Enum):  # pylint: disable=unused-variable
         QUEUED = "QUEUED"
         NOT_STARTED = "NOT_STARTED"
 
@@ -728,7 +726,7 @@ def test_legacy_event_log_load():
         whitelist_map=legacy_env,
         storage_name="EventLogEntry",  # use this to avoid collision with current EventLogEntry
     )
-    class OldEventLogEntry(
+    class OldEventLogEntry(  # pylint: disable=unused-variable
         NamedTuple(
             "_OldEventLogEntry",
             [

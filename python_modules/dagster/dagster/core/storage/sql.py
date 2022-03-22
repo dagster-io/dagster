@@ -1,5 +1,4 @@
 # pylint chokes on the perfectly ok import from alembic.migration
-import sys
 import threading
 from contextlib import contextmanager
 from functools import lru_cache
@@ -11,7 +10,7 @@ from alembic.migration import MigrationContext  # pylint: disable=import-error
 from alembic.script import ScriptDirectory
 from sqlalchemy.ext.compiler import compiles
 
-from dagster.core.errors import DagsterInstanceMigrationRequired
+from dagster.core.errors import DagsterInstanceSchemaOutdated
 from dagster.utils import file_relative_path
 from dagster.utils.log import quieten
 
@@ -58,10 +57,10 @@ def check_alembic_revision(alembic_config, conn):
 
 
 @contextmanager
-def handle_schema_errors(conn, alembic_config, msg=None):
+def handle_schema_errors(conn, alembic_config):
     try:
         yield
-    except (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError):
+    except (db.exc.OperationalError, db.exc.ProgrammingError, db.exc.StatementError) as e:
         db_revision, head_revision = (None, None)
 
         try:
@@ -73,15 +72,10 @@ def handle_schema_errors(conn, alembic_config, msg=None):
             pass
 
         if db_revision != head_revision:
-            # Disable exception chaining since the original exception is included in the
-            # message, and the fact that the instance needs migrating should be the first
-            # thing the user sees
-            raise DagsterInstanceMigrationRequired(
-                msg=msg,
+            raise DagsterInstanceSchemaOutdated(
                 db_revision=db_revision,
                 head_revision=head_revision,
-                original_exc_info=sys.exc_info(),
-            ) from None
+            ) from e
 
         raise
 
