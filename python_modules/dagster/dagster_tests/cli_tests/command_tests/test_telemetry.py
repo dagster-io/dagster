@@ -27,7 +27,6 @@ EXPECTED_KEYS = set(
         "run_storage_id",
         "python_version",
         "metadata",
-        "version",
         "os_desc",
         "os_platform",
         "dagster_version",
