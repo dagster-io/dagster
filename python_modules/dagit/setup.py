@@ -56,7 +56,7 @@ if __name__ == "__main__":
             # notebooks support
             "nbconvert>=5.4.0,<6.0.0",
             "starlette",
-            "uvicorn[standard]",
+            "uvicorn[standard]>=0.12.0",
         ],
         entry_points={
             "console_scripts": ["dagit = dagit.cli:main", "dagit-debug = dagit.debug:main"]
