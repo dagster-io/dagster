@@ -42,27 +42,27 @@ class PartitionedParquetIOManager(IOManager):
             row_count = len(obj)
             context.log.info(f"Row count: {row_count}")
             obj.to_parquet(path=path, index=False)
+
+            context.add_output_metadata(
+                {
+                    "Row count": row_count,
+                    "Path": MetadataValue.path(path),
+                    "Sample": MetadataValue.md(obj.head(5).to_markdown()),
+                    "Columns": MetadataValue.table_schema(
+                        TableSchema(
+                            [
+                                TableColumn(col_name, str(dtype))
+                                for col_name, dtype in obj.dtypes.iteritems()
+                            ]
+                        )
+                    ),
+                }
+            )
         elif isinstance(obj, pyspark.sql.DataFrame):
             row_count = obj.count()
             obj.write.parquet(path=path, mode="overwrite")
         else:
             raise Exception(f"Outputs of type {type(obj)} not supported.")
-
-        context.add_output_metadata(
-            {
-                "Row count": row_count,
-                "Path": MetadataValue.path(path),
-                "Sample": MetadataValue.md(obj.head(5).to_markdown()),
-                "Columns": MetadataValue.table_schema(
-                    TableSchema(
-                        [
-                            TableColumn(col_name, str(dtype))
-                            for col_name, dtype in obj.dtypes.iteritems()
-                        ]
-                    )
-                ),
-            }
-        )
 
     def load_input(self, context) -> Union[pyspark.sql.DataFrame, str]:
         path = self._get_path(context.upstream_output)

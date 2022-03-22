@@ -19,7 +19,11 @@ def activity_analytics():
     return [
         assets,
         ScheduleDefinition(
-            job=assets.build_job("daily_activity_analytics"), cron_schedule="@daily"
+            job=assets.build_job(
+                "daily_stats_job",
+                selection=["comment_daily_stats", "story_daily_stats", "activity_daily_stats"],
+            ),
+            cron_schedule="0 0 * * *",
         ),
     ]
 
