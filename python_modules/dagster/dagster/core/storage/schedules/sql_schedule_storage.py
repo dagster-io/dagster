@@ -109,8 +109,9 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
             )
 
-    def delete_instigator_state(self, origin_id):
+    def delete_instigator_state(self, origin_id, selector_id):
         check.str_param(origin_id, "origin_id")
+        check.str_param(selector_id, "selector_id")
 
         if not self.get_instigator_state(origin_id):
             raise DagsterInvariantViolationError(

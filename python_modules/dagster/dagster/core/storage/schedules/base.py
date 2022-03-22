@@ -51,7 +51,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def delete_instigator_state(self, origin_id: str):
+    def delete_instigator_state(self, origin_id: str, selector_id: str):
         """Delete a state in storage.
 
         Args:
