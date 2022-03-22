@@ -515,7 +515,7 @@ class PartitionSetDefinition(Generic[T]):
             if partition.name == name:
                 return partition
 
-        check.failed("Partition name {} not found!".format(name))
+        raise DagsterUnknownPartitionError(f"Could not find a partition with key `{name}`")
 
     def get_partition_names(self, current_time: Optional[datetime] = None) -> List[str]:
         return [part.name for part in self.get_partitions(current_time)]
@@ -770,35 +770,6 @@ class PartitionedConfig(Generic[T]):
 
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> List[str]:
         return [partition.name for partition in self.partitions_def.get_partitions(current_time)]
-
-    def get_run_config(self, partition_key: str) -> Dict[str, Any]:
-        matching = [
-            partition
-            for partition in self.partitions_def.get_partitions()
-            if partition.name == partition_key
-        ]
-        if not matching:
-            raise DagsterUnknownPartitionError(
-                f"Could not find a partition with key `{partition_key}`"
-            )
-        return self.run_config_for_partition_fn(matching[0])
-
-    def get_tags(self, partition_key: str) -> Dict[str, Any]:
-        matching = [
-            partition
-            for partition in self.partitions_def.get_partitions()
-            if partition.name == partition_key
-        ]
-        if not matching:
-            raise DagsterUnknownPartitionError(
-                f"Could not find a partition with key `{partition_key}`"
-            )
-        if not self.tags_for_partition_fn:
-            return {PARTITION_NAME_TAG: partition_key}
-
-        return merge_dicts(
-            self.tags_for_partition_fn(matching[0]), {PARTITION_NAME_TAG: partition_key}
-        )
 
     def __call__(self, *args, **kwargs):
         if self._decorated_fn is None:

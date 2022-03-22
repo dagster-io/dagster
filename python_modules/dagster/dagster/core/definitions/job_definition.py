@@ -185,8 +185,10 @@ class JobDefinition(PipelineDefinition):
                 not run_config,
                 "Cannot provide both run_config and partition_key arguments to `execute_in_process`",
             )
-            run_config = base_mode.partitioned_config.get_run_config(partition_key)
-            tags = base_mode.partitioned_config.get_tags(partition_key)
+            partition_set = self.get_partition_set_def()
+            partition = partition_set.get_partition(partition_key)
+            run_config = partition_set.run_config_for_partition(partition)
+            tags = partition_set.tags_for_partition(partition)
 
         return core_execute_in_process(
             node=self._graph_def,
