@@ -3,10 +3,11 @@ import pickle
 import sys
 from typing import List
 
+from dagster.core.definitions.events import Failure, RetryRequested
 from dagster.core.events.log import EventLogEntry
 from dagster.core.execution.plan.external_step import (
-    PICKLED_ERROR_FILE_NAME,
     PICKLED_EVENTS_FILE_NAME,
+    PICKLED_EXCEPTION_FILE_NAME,
     external_instance_from_step_run_ref,
     run_step_from_ref,
 )
@@ -28,9 +29,13 @@ def main(step_run_ref_path: str) -> None:
         # consume entire step iterator
         list(run_step_from_ref(step_run_ref, instance))
     except Exception as e:
-        error_out_path = os.path.join(os.path.dirname(step_run_ref_path), PICKLED_ERROR_FILE_NAME)
-        with open(error_out_path, "wb") as error_file:
-            pickle.dump(e, error_file)
+        # these exceptions alter control flow, and should be replicated
+        if isinstance(e, (Failure, RetryRequested)):
+            exception_out_path = os.path.join(
+                os.path.dirname(step_run_ref_path), PICKLED_EXCEPTION_FILE_NAME
+            )
+            with open(exception_out_path, "wb") as exception_file:
+                pickle.dump(e, exception_file)
         raise e
     finally:
         events_out_path = os.path.join(os.path.dirname(step_run_ref_path), PICKLED_EVENTS_FILE_NAME)

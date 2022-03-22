@@ -9,7 +9,9 @@ import pytest
 from dagster import (
     DynamicOut,
     DynamicOutput,
+    Failure,
     Field,
+    MetadataEntry,
     ModeDefinition,
     ResourceDefinition,
     RetryPolicy,
@@ -80,11 +82,14 @@ def request_retry_local_external_step_launcher(context):
     return RequestRetryLocalExternalStepLauncher(**context.resource_config)
 
 
-def _define_retry_job():
-    @op(required_resource_keys={"step_launcher"}, retry_policy=RetryPolicy(max_retries=3))
+def _define_failing_job(has_policy: bool):
+    @op(
+        required_resource_keys={"step_launcher"},
+        retry_policy=RetryPolicy(max_retries=3) if has_policy else None,
+    )
     def retry_op(context):
         if context.retry_number < 3:
-            raise Exception()
+            raise Failure(description="some failure description", metadata={"foo": 1.23})
         return context.retry_number
 
     @job(
@@ -97,6 +102,14 @@ def _define_retry_job():
         retry_op()
 
     return retry_job
+
+
+def _define_retry_job():
+    return _define_failing_job(has_policy=True)
+
+
+def _define_error_job():
+    return _define_failing_job(has_policy=False)
 
 
 def _define_dynamic_job(launch_initial, launch_final):
@@ -424,6 +437,28 @@ def test_retry_policy():
             )
             assert run.success
             assert run.result_for_solid("retry_op").output_value() == 3
+
+
+def test_explicit_failure():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        run_config = {
+            "resources": {
+                "step_launcher": {"config": {"scratch_dir": tmpdir}},
+                "io_manager": {"config": {"base_dir": tmpdir}},
+            }
+        }
+        with instance_for_test() as instance:
+            run = execute_pipeline(
+                pipeline=reconstructable(_define_error_job),
+                run_config=run_config,
+                instance=instance,
+                raise_on_error=False,
+            )
+            fd = run.result_for_solid("retry_op").failure_data
+            assert fd.user_failure_data.description == "some failure description"
+            assert fd.user_failure_data.metadata_entries == [
+                MetadataEntry.float(label="foo", value=1.23)
+            ]
 
 
 def test_launcher_requests_retry():

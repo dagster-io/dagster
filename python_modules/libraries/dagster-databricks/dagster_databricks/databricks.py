@@ -265,19 +265,17 @@ def poll_run_state(
             log.info("Run %s completed successfully" % databricks_run_id)
             return True
         else:
-            # attempt to get the actual error, otherwise create a placeholder
+            # attempt to get the serialized exception, otherwise create a placeholder
             error = None
             try:
-                serialized_error = client.read_file(error_path)
-                error = pickle.loads(serialized_error)
-            finally:
-                if not error:
-                    error_message = "Run %s failed with result state: %s. Message: %s" % (
-                        databricks_run_id,
-                        run_state.result_state,
-                        run_state.state_message,
-                    )
-                    error = DatabricksError(error_message)
+                error = pickle.loads(client.read_file(error_path))
+            except Exception:
+                error_message = "Run %s failed with result state: %s. Message: %s" % (
+                    databricks_run_id,
+                    run_state.result_state,
+                    run_state.state_message,
+                )
+                error = DatabricksError(error_message)
             raise error
     else:
         log.info("Run %s in state %s" % (databricks_run_id, run_state))

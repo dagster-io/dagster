@@ -17,8 +17,8 @@ from dagster import Bool, Field, IntSource, StringSource, check, resource
 from dagster.core.definitions.step_launcher import StepLauncher
 from dagster.core.errors import raise_execution_interrupts
 from dagster.core.execution.plan.external_step import (
-    PICKLED_ERROR_FILE_NAME,
     PICKLED_EVENTS_FILE_NAME,
+    PICKLED_EXCEPTION_FILE_NAME,
     PICKLED_STEP_RUN_REF_FILE_NAME,
     step_context_to_step_run_ref,
 )
@@ -227,7 +227,7 @@ class DatabricksPySparkStepLauncher(StepLauncher):
                         start,
                         databricks_run_id,
                         self.databricks_runner.max_wait_time_sec,
-                        self._dbfs_path(step_context.run_id, step_key, PICKLED_ERROR_FILE_NAME),
+                        self._dbfs_path(step_context.run_id, step_key, PICKLED_EXCEPTION_FILE_NAME),
                     )
                 finally:
                     all_events = self.get_step_events(

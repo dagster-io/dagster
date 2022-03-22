@@ -23,7 +23,7 @@ from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
 from dagster.serdes import deserialize_value
 
 PICKLED_EVENTS_FILE_NAME = "events.pkl"
-PICKLED_ERROR_FILE_NAME = "error.pkl"
+PICKLED_EXCEPTION_FILE_NAME = "exception.pkl"
 PICKLED_STEP_RUN_REF_FILE_NAME = "step_run_ref.pkl"
 
 if TYPE_CHECKING:
@@ -79,7 +79,7 @@ class LocalExternalStepLauncher(StepLauncher):
             subprocess.call(command_tokens, stdout=sys.stdout, stderr=sys.stderr)
 
         events_file_path = os.path.join(step_run_dir, PICKLED_EVENTS_FILE_NAME)
-        error_file_path = os.path.join(step_run_dir, PICKLED_ERROR_FILE_NAME)
+        exception_file_path = os.path.join(step_run_dir, PICKLED_EXCEPTION_FILE_NAME)
         file_manager = LocalFileManager(".")
         events_file_handle = LocalFileHandle(events_file_path)
         events_data = file_manager.read_data(events_file_handle)
@@ -90,9 +90,9 @@ class LocalExternalStepLauncher(StepLauncher):
             step_context.instance.handle_new_event(event)
             if event.is_dagster_event:
                 yield event.dagster_event
-        # if error was raised in child process, re-raise it from this host process
-        if os.path.exists(error_file_path):
-            raise pickle.loads(file_manager.read_data(LocalFileHandle(error_file_path)))
+        # if Failure or RetryRequested was raised in child process, re-raise it from this host process
+        if os.path.exists(exception_file_path):
+            raise pickle.loads(file_manager.read_data(LocalFileHandle(exception_file_path)))
 
 
 def _module_in_package_dir(file_path: str, package_dir: str) -> str:
