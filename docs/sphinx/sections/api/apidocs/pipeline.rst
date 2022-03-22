@@ -44,7 +44,7 @@ Reconstructable pipelines
 .. autoclass:: reconstructable
    :noindex:
 
-.. currentmodule:: dagster.core.definitions.reconstructable
+.. currentmodule:: dagster.core.definitions.reconstructable_definition
 
 .. autoclass:: ReconstructablePipeline
    :members:
