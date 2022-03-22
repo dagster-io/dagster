@@ -70,6 +70,7 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks 
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error | null;
 }
 

@@ -116,6 +116,7 @@ export interface InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_n
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: InstanceSensorsQuery_repositoriesOrError_RepositoryConnection_nodes_sensors_sensorState_ticks_error | null;
 }
 
@@ -246,6 +247,7 @@ export interface InstanceSensorsQuery_unloadableInstigationStatesOrError_Instiga
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: InstanceSensorsQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error | null;
 }
 

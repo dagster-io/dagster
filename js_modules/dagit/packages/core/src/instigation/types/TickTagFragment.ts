@@ -29,5 +29,6 @@ export interface TickTagFragment {
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: TickTagFragment_error | null;
 }
