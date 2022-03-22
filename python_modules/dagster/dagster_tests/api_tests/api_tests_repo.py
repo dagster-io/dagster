@@ -15,6 +15,7 @@ from dagster import (
 )
 from dagster.core.definitions.decorators.sensor_decorator import sensor
 from dagster.core.definitions.sensor_definition import RunRequest
+from dagster.core.errors import DagsterError
 from dagster.core.test_utils import default_mode_def_for_test
 
 
@@ -165,6 +166,11 @@ def sensor_error(_):
     raise Exception("womp womp")
 
 
+@sensor(pipeline_name="foo")
+def sensor_raises_dagster_error(_):
+    raise DagsterError("Dagster error")
+
+
 @repository
 def bar_repo():
     return {
@@ -176,7 +182,11 @@ def bar_repo():
         },
         "schedules": define_bar_schedules(),
         "partition_sets": define_baz_partitions(),
-        "sensors": {"sensor_foo": sensor_foo, "sensor_error": lambda: sensor_error},
+        "sensors": {
+            "sensor_foo": sensor_foo,
+            "sensor_error": lambda: sensor_error,
+            "sensor_raises_dagster_error": lambda: sensor_raises_dagster_error,
+        },
     }
 
 
