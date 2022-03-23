@@ -614,9 +614,7 @@ const INSTANCE_OVERVIEW_INITIAL_QUERY = gql`
                 }
               }
             }
-            ... on PythonError {
-              ...PythonErrorFragment
-            }
+            ...PythonErrorFragment
           }
         }
       }
@@ -656,9 +654,7 @@ const LAST_TEN_RUNS_PER_JOB_QUERY = gql`
                 }
               }
             }
-            ... on PythonError {
-              ...PythonErrorFragment
-            }
+            ...PythonErrorFragment
           }
         }
       }

@@ -638,9 +638,9 @@ const RESUME_BACKFILL_MUTATION = gql`
       ... on UnauthorizedError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;

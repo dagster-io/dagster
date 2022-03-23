@@ -6,7 +6,7 @@ from difflib import SequenceMatcher
 from click.testing import CliRunner
 
 from dagster.cli.pipeline import pipeline_execute_command
-from dagster.core.definitions.reconstructable import get_ephemeral_repository_name
+from dagster.core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster.core.telemetry import (
     UPDATE_REPO_STATS,
     get_dir_from_dagster_home,
@@ -27,7 +27,6 @@ EXPECTED_KEYS = set(
         "run_storage_id",
         "python_version",
         "metadata",
-        "version",
         "os_desc",
         "os_platform",
         "dagster_version",

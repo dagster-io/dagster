@@ -70,8 +70,8 @@ class MultiprocessExecutorChildProcessCommand(ChildProcessCommand):
                 self.pipeline_run,
                 EngineEventData(
                     [
-                        MetadataEntry.text(str(os.getpid()), "pid"),
-                        MetadataEntry.text(self.step_key, "step_key"),
+                        MetadataEntry("pid", value=str(os.getpid())),
+                        MetadataEntry("step_key", value=self.step_key),
                     ],
                     marker_end=DELEGATE_MARKER,
                 ),
@@ -132,16 +132,16 @@ class MultiprocessExecutor(Executor):
 
             # or if the reconstructable pipeline has a module target, we will use that
             elif pipeline.get_module():
-                preload = [
-                    # we import this module first to avoid user code like
-                    #  pyspark.serializers._hijack_namedtuple from breaking us
-                    "dagster.core.executor.multiprocess",
-                    pipeline.get_module(),
-                ]
+                preload = [pipeline.get_module()]
 
             # base case is to preload the dagster library
             else:
                 preload = ["dagster"]
+
+            # we import this module first to avoid user code like
+            # pyspark.serializers._hijack_namedtuple from breaking us
+            if "dagster.core.executor.multiprocess" not in preload:
+                preload = ["dagster.core.executor.multiprocess"] + preload
 
             multiproc_ctx.set_forkserver_preload(preload)
 

@@ -67,12 +67,14 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
 
         self._disposed = False
 
-        self._event_watcher = PostgresEventWatcher(self.postgres_url)
-
         # Default to not holding any connections open to prevent accumulating connections per DagsterInstance
         self._engine = create_engine(
             self.postgres_url, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
         )
+
+        # lazy init
+        self._event_watcher: Optional[PostgresEventWatcher] = None
+
         self._secondary_index_cache = {}
 
         table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
@@ -257,9 +259,15 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
             del self._secondary_index_cache[name]
 
     def watch(self, run_id, start_cursor, callback):
+        if self._event_watcher is None:
+            self._event_watcher = PostgresEventWatcher(self.postgres_url, self._engine)
+
         self._event_watcher.watch_run(run_id, start_cursor, callback)
 
     def end_watch(self, run_id, handler):
+        if self._event_watcher is None:
+            return
+
         self._event_watcher.unwatch_run(run_id, handler)
 
     def __del__(self):
@@ -269,7 +277,8 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
     def dispose(self):
         if not self._disposed:
             self._disposed = True
-            self._event_watcher.close()
+            if self._event_watcher:
+                self._event_watcher.close()
 
 
 POLLING_CADENCE = 0.25
@@ -277,6 +286,7 @@ POLLING_CADENCE = 0.25
 
 def watcher_thread(
     conn_string: str,
+    engine: db.engine.Engine,
     handlers_dict: MutableMapping[str, List[CallbackAfterCursor]],
     dict_lock: threading.Lock,
     watcher_thread_exit: threading.Event,
@@ -303,9 +313,6 @@ def watcher_thread(
             with dict_lock:
                 handlers = handlers_dict.get(run_id, [])
 
-            engine = create_engine(
-                conn_string, isolation_level="AUTOCOMMIT", poolclass=db.pool.NullPool
-            )
             try:
                 with engine.connect() as conn:
                     cursor_res = conn.execute(
@@ -330,8 +337,9 @@ def watcher_thread(
 
 
 class PostgresEventWatcher:
-    def __init__(self, conn_string: str):
+    def __init__(self, conn_string: str, engine: db.engine.Engine):
         self._conn_string: str = check.str_param(conn_string, "conn_string")
+        self._engine = engine
         self._handlers_dict: MutableMapping[str, List[CallbackAfterCursor]] = defaultdict(list)
         self._dict_lock: threading.Lock = threading.Lock()
         self._watcher_thread_exit: Optional[threading.Event] = None
@@ -356,6 +364,7 @@ class PostgresEventWatcher:
                 target=watcher_thread,
                 args=(
                     self._conn_string,
+                    self._engine,
                     self._handlers_dict,
                     self._dict_lock,
                     self._watcher_thread_exit,

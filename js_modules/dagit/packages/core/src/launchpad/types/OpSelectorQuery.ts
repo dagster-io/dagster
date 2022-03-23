@@ -279,9 +279,17 @@ export interface OpSelectorQuery_pipelineOrError_InvalidSubsetError {
   message: string;
 }
 
+export interface OpSelectorQuery_pipelineOrError_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface OpSelectorQuery_pipelineOrError_PythonError {
   __typename: "PythonError";
   message: string;
+  stack: string[];
+  cause: OpSelectorQuery_pipelineOrError_PythonError_cause | null;
 }
 
 export type OpSelectorQuery_pipelineOrError = OpSelectorQuery_pipelineOrError_Pipeline | OpSelectorQuery_pipelineOrError_PipelineNotFoundError | OpSelectorQuery_pipelineOrError_InvalidSubsetError | OpSelectorQuery_pipelineOrError_PythonError;

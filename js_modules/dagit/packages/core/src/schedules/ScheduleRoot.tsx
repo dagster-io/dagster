@@ -3,6 +3,7 @@ import {Box, Tabs, Tab, Page, NonIdealState} from '@dagster-io/ui';
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
 import {TicksTable} from '../instigation/TickHistory';
@@ -157,10 +158,7 @@ const SCHEDULE_ROOT_QUERY = gql`
       ... on ScheduleNotFoundError {
         message
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
     instance {
       ...InstanceHealthFragment
@@ -176,6 +174,7 @@ const SCHEDULE_ROOT_QUERY = gql`
 
   ${SCHEDULE_FRAGMENT}
   ${INSTANCE_HEALTH_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 const PREVIOUS_RUNS_FOR_SCHEDULE_QUERY = gql`

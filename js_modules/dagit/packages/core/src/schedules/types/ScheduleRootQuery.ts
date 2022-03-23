@@ -70,6 +70,7 @@ export interface ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks 
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: ScheduleRootQuery_scheduleOrError_Schedule_scheduleState_ticks_error | null;
 }
 
@@ -116,10 +117,17 @@ export interface ScheduleRootQuery_scheduleOrError_ScheduleNotFoundError {
   message: string;
 }
 
+export interface ScheduleRootQuery_scheduleOrError_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface ScheduleRootQuery_scheduleOrError_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
+  cause: ScheduleRootQuery_scheduleOrError_PythonError_cause | null;
 }
 
 export type ScheduleRootQuery_scheduleOrError = ScheduleRootQuery_scheduleOrError_Schedule | ScheduleRootQuery_scheduleOrError_ScheduleNotFoundError | ScheduleRootQuery_scheduleOrError_PythonError;

@@ -39,7 +39,7 @@ export const TickTag: React.FC<{
       if (!tick.runIds.length) {
         return <TagWIP intent="primary">Requested</TagWIP>;
       }
-      return (
+      const tag = (
         <>
           <TagWIP intent="primary" interactive>
             <ButtonLink underline="never" onClick={() => setOpen(true)}>
@@ -61,15 +61,35 @@ export const TickTag: React.FC<{
           </DialogWIP>
         </>
       );
-    case InstigationTickStatus.SKIPPED:
-      if (!tick.skipReason) {
-        return <TagWIP intent="warning">Skipped</TagWIP>;
+      if (tick.runKeys.length > tick.runIds.length) {
+        const message = `${tick.runKeys.length} runs requested, but ${
+          tick.runKeys.length - tick.runIds.length
+        } skipped because the runs already exist for those requested keys.`;
+        return (
+          <Tooltip position="right" content={message}>
+            {tag}
+          </Tooltip>
+        );
       }
-      return (
-        <Tooltip position="right" content={tick.skipReason} targetTagName="div">
-          <TagWIP intent="warning">Skipped</TagWIP>
-        </Tooltip>
-      );
+      return tag;
+
+    case InstigationTickStatus.SKIPPED:
+      if (tick.runKeys) {
+        const message = `${tick.runKeys.length} runs requested, but skipped because the runs already exist for the requested keys.`;
+        return (
+          <Tooltip position="right" content={message}>
+            <TagWIP intent="warning">Skipped</TagWIP>
+          </Tooltip>
+        );
+      }
+      if (tick.skipReason) {
+        return (
+          <Tooltip position="right" content={tick.skipReason} targetTagName="div">
+            <TagWIP intent="warning">Skipped</TagWIP>
+          </Tooltip>
+        );
+      }
+      return <TagWIP intent="warning">Skipped</TagWIP>;
     case InstigationTickStatus.FAILURE:
       if (!tick.error) {
         return <TagWIP intent="danger">Failure</TagWIP>;
@@ -186,6 +206,7 @@ export const TICK_TAG_FRAGMENT = gql`
     timestamp
     skipReason
     runIds
+    runKeys
     error {
       ...PythonErrorFragment
     }
@@ -205,9 +226,7 @@ const LAUNCHED_RUN_LIST_QUERY = gql`
       ... on InvalidPipelineRunsFilterError {
         message
       }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
     }
   }
   ${RUN_TABLE_RUN_FRAGMENT}

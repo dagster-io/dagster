@@ -190,8 +190,8 @@ class DockerStepHandler(StepHandler):
                 message="Launching step in Docker container",
                 event_specific_data=EngineEventData(
                     [
-                        MetadataEntry.text(step_key, "Step key"),
-                        MetadataEntry.text(step_container.id, "Docker container id"),
+                        MetadataEntry("Step key", value=step_key),
+                        MetadataEntry("Docker container id", value=step_container.id),
                     ],
                 ),
             )

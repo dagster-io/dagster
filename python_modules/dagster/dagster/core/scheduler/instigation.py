@@ -298,8 +298,8 @@ class InstigatorTick(NamedTuple("_InstigatorTick", [("tick_id", int), ("tick_dat
         check.opt_str_param(skip_reason, "skip_reason")
         return self._replace(tick_data=self.tick_data.with_reason(skip_reason))
 
-    def with_run(self, run_id, run_key=None):
-        return self._replace(tick_data=self.tick_data.with_run(run_id, run_key))
+    def with_run_info(self, run_id=None, run_key=None):
+        return self._replace(tick_data=self.tick_data.with_run_info(run_id, run_key))
 
     def with_cursor(self, cursor):
         return self._replace(tick_data=self.tick_data.with_cursor(cursor))
@@ -497,13 +497,14 @@ class TickData(
             )
         )
 
-    def with_run(self, run_id, run_key=None):
-        check.str_param(run_id, "run_id")
+    def with_run_info(self, run_id=None, run_key=None):
+        check.opt_str_param(run_id, "run_id")
+        check.opt_str_param(run_key, "run_key")
         return TickData(
             **merge_dicts(
                 self._asdict(),
                 {
-                    "run_ids": [*self.run_ids, run_id],
+                    "run_ids": [*self.run_ids, run_id] if run_id else self.run_ids,
                     "run_keys": [*self.run_keys, run_key] if run_key else self.run_keys,
                 },
             )

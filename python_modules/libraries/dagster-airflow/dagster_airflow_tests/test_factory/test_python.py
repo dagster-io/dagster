@@ -15,7 +15,7 @@ from dagster_airflow_tests.test_fixtures import (  # pylint: disable=unused-impo
 )
 from dagster_test.test_project import get_test_project_environments_path
 
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.utils import make_new_run_id
 from dagster.utils import load_yaml_from_glob_list
 

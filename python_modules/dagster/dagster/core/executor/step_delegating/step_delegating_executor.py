@@ -171,7 +171,9 @@ class StepDelegatingExecutor(Executor):
                             "run will be resumed",
                             EngineEventData(
                                 metadata_entries=[
-                                    MetadataEntry.text(str(running_steps.keys()), "steps_in_flight")
+                                    MetadataEntry(
+                                        "steps_in_flight", value=str(running_steps.keys())
+                                    )
                                 ]
                             ),
                         )

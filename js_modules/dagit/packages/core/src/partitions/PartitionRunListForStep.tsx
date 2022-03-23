@@ -146,9 +146,7 @@ const PARTITION_RUN_LIST_FOR_STEP_QUERY = gql`
       ... on InvalidPipelineRunsFilterError {
         message
       }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
     }
   }
   ${RUN_TABLE_RUN_FRAGMENT}

@@ -5,7 +5,7 @@ import * as React from 'react';
 import {Mono} from '../../../ui/src';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
-import {PythonErrorInfo} from '../app/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {Timestamp} from '../app/time/Timestamp';
 import {ExecutionParams, RunStatus} from '../types/globalTypes';
 
@@ -191,21 +191,18 @@ export const LAUNCH_PIPELINE_EXECUTION_MUTATION = gql`
           message
         }
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const DELETE_MUTATION = gql`
   mutation Delete($runId: String!) {
     deletePipelineRun(runId: $runId) {
       __typename
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
       ... on UnauthorizedError {
         message
       }
@@ -214,6 +211,8 @@ export const DELETE_MUTATION = gql`
       }
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const TERMINATE_MUTATION = gql`
@@ -236,11 +235,11 @@ export const TERMINATE_MUTATION = gql`
       ... on UnauthorizedError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
@@ -264,12 +263,11 @@ export const LAUNCH_PIPELINE_REEXECUTION_MUTATION = gql`
           message
         }
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 interface RunTimeProps {

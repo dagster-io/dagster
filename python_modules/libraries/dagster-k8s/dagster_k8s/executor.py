@@ -196,6 +196,7 @@ class K8sStepHandler(StepHandler):
             labels={
                 "dagster/job": step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
                 "dagster/op": step_key,
+                "dagster/run-id": step_handler_context.execute_step_args.pipeline_run_id,
             },
         )
 
@@ -207,8 +208,8 @@ class K8sStepHandler(StepHandler):
                 message=f"Executing step {step_key} in Kubernetes job {job_name}",
                 event_specific_data=EngineEventData(
                     [
-                        MetadataEntry.text(step_key, "Step key"),
-                        MetadataEntry.text(job_name, "Kubernetes Job name"),
+                        MetadataEntry("Step key", value=step_key),
+                        MetadataEntry("Kubernetes Job name", value=job_name),
                     ],
                 ),
             )

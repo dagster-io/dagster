@@ -68,7 +68,6 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
             with handle_schema_errors(
                 conn,
                 get_alembic_config(__file__),
-                msg="Sqlite schedule storage requires migration",
             ):
                 yield conn
         finally:

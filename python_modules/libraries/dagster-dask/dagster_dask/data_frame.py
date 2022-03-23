@@ -483,7 +483,7 @@ def df_type_check(_, value):
         success=True,
         metadata_entries=[
             # string cast columns since they may be things like datetime
-            MetadataEntry.json({"columns": list(map(str, value.columns))}, "metadata"),
+            MetadataEntry("metadata", value={"columns": list(map(str, value.columns))}),
         ],
     )
 

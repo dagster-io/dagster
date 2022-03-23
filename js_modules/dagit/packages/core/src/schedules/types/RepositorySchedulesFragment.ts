@@ -76,6 +76,7 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_ticks {
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: RepositorySchedulesFragment_schedules_scheduleState_ticks_error | null;
 }
 

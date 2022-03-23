@@ -18,7 +18,7 @@ from dagster import (
     reconstructable,
     solid,
 )
-from dagster.core.errors import DagsterInstanceMigrationRequired
+from dagster.core.errors import DagsterInstanceSchemaOutdated
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import PARTITION_NAME_TAG, PARTITION_SET_TAG
@@ -53,7 +53,7 @@ def test_0_7_6_postgres_pre_add_pipeline_snapshot(hostname, conn_string):
             noop_solid()
 
         with pytest.raises(
-            DagsterInstanceMigrationRequired, match=_migration_regex("run", current_revision=None)
+            DagsterInstanceSchemaOutdated, match=_migration_regex(current_revision=None)
         ):
             execute_pipeline(noop_pipeline, instance=instance)
 
@@ -111,8 +111,8 @@ def test_0_9_22_postgres_pre_asset_partition(hostname, conn_string):
             asset_solid()
 
         with pytest.raises(
-            DagsterInstanceMigrationRequired,
-            match=_migration_regex("run", current_revision="c9159e740d7e"),
+            DagsterInstanceSchemaOutdated,
+            match=_migration_regex(current_revision="c9159e740d7e"),
         ):
             execute_pipeline(asset_pipeline, instance=instance)
 
@@ -148,8 +148,8 @@ def test_0_9_22_postgres_pre_run_partition(hostname, conn_string):
         tags = {PARTITION_NAME_TAG: "my_partition", PARTITION_SET_TAG: "my_partition_set"}
 
         with pytest.raises(
-            DagsterInstanceMigrationRequired,
-            match=_migration_regex("run", current_revision="3e0770016702"),
+            DagsterInstanceSchemaOutdated,
+            match=_migration_regex(current_revision="3e0770016702"),
         ):
             execute_pipeline(simple_pipeline, tags=tags, instance=instance)
 
@@ -191,7 +191,7 @@ def test_0_10_6_add_bulk_actions_table(hostname, conn_string):
                 template = template_fd.read().format(hostname=hostname)
                 target_fd.write(template)
 
-        with pytest.raises(DagsterInstanceMigrationRequired):
+        with pytest.raises(DagsterInstanceSchemaOutdated):
             with DagsterInstance.from_config(tempdir) as instance:
                 instance.get_backfills()
 
@@ -218,8 +218,8 @@ def test_0_11_0_add_asset_details(hostname, conn_string):
         with DagsterInstance.from_config(tempdir) as instance:
             storage = instance._event_storage
             with pytest.raises(
-                DagsterInstanceMigrationRequired,
-                match=_migration_regex("event log", current_revision="3e71cf573ba6"),
+                DagsterInstanceSchemaOutdated,
+                match=_migration_regex(current_revision="3e71cf573ba6"),
             ):
                 storage.all_asset_keys()
             instance.upgrade()
@@ -262,8 +262,8 @@ def test_0_12_0_add_mode_column(hostname, conn_string):
         # Ensure that migration required exception throws, since you are trying to use the
         # migration-required column.
         with pytest.raises(
-            DagsterInstanceMigrationRequired,
-            match=_migration_regex("run", current_revision="7cba9eeaaf1d"),
+            DagsterInstanceSchemaOutdated,
+            match=_migration_regex(current_revision="7cba9eeaaf1d"),
         ):
             instance.get_runs(filters=RunsFilter(mode="the_mode"))
 
@@ -338,11 +338,9 @@ def _reconstruct_from_file(hostname, conn_string, path, username="test", passwor
     )
 
 
-def _migration_regex(storage_name, current_revision, expected_revision=None):
+def _migration_regex(current_revision, expected_revision=None):
     warning = re.escape(
-        "Instance is out of date and must be migrated (Postgres {} storage requires migration).".format(
-            storage_name
-        )
+        "Raised an exception that may indicate that the Dagster database needs to be be migrated."
     )
 
     if expected_revision:
@@ -351,7 +349,7 @@ def _migration_regex(storage_name, current_revision, expected_revision=None):
         )
     else:
         revision = "Database is at revision {}, head is [a-z0-9]+.".format(current_revision)
-    instruction = re.escape("Please run `dagster instance migrate`.")
+    instruction = re.escape("To migrate, run `dagster instance migrate`.")
 
     return "{} {} {}".format(warning, revision, instruction)
 

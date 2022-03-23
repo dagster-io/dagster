@@ -2,6 +2,7 @@ import {gql, RefetchQueriesFunction, useMutation} from '@apollo/client';
 import {ButtonWIP, DialogBody, DialogFooter, DialogWIP, Group} from '@dagster-io/ui';
 import * as React from 'react';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../app/Util';
 
 interface AssetKey {
@@ -67,10 +68,9 @@ const ASSET_WIPE_MUTATION = gql`
           path
         }
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;

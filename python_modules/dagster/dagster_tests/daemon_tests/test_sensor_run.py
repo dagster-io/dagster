@@ -22,7 +22,7 @@ from dagster import (
     run_failure_sensor,
     solid,
 )
-from dagster.core.definitions.decorators.sensor import asset_sensor, sensor
+from dagster.core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.run_status_sensor_definition import run_status_sensor
 from dagster.core.definitions.sensor_definition import DefaultSensorStatus, RunRequest, SkipReason
@@ -835,6 +835,10 @@ def test_launch_once(capfd):
                 freeze_datetime,
                 TickStatus.SKIPPED,
             )
+            assert ticks[0].run_keys
+            assert len(ticks[0].run_keys) == 1
+            assert not ticks[0].run_ids
+
             captured = capfd.readouterr()
             assert (
                 'Skipping 1 run for sensor run_key_sensor already completed with run keys: ["only_once"]'
