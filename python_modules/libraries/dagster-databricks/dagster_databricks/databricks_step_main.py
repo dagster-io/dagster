@@ -91,7 +91,17 @@ def main(
             step_run_ref = pickle.load(handle)
         print("Running dagster job")  # noqa pylint: disable=print-call
 
-        events_filepath = os.path.dirname(step_run_ref_filepath) + "/" + PICKLED_EVENTS_FILE_NAME
+        step_run_dir = os.path.dirname(step_run_ref_filepath)
+        events_filepath = os.path.join(
+            step_run_dir,
+            f"{step_run_ref.prior_attempts_count}_{PICKLED_EVENTS_FILE_NAME}",
+        )
+        stdout_filepath = os.path.join(step_run_dir, "stdout")
+        stderr_filepath = os.path.join(step_run_dir, "stderr")
+
+        # create empty files
+        with open(events_filepath, "wb"), open(stdout_filepath, "wb"), open(stderr_filepath, "wb"):
+            pass
 
         def put_events(events):
             with open(events_filepath, "wb") as handle:

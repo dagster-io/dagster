@@ -164,7 +164,9 @@ def _trigger_hook(
             yield DagsterEvent.hook_completed(step_context, hook_def)
 
 
-def _dagster_event_sequence_for_step(step_context: StepExecutionContext) -> Iterator[DagsterEvent]:
+def _dagster_event_sequence_for_step(
+    step_context: StepExecutionContext, force_local_execution: bool = False
+) -> Iterator[DagsterEvent]:
     """
     Yield a sequence of dagster events for the given step with the step context.
 
@@ -214,7 +216,7 @@ def _dagster_event_sequence_for_step(step_context: StepExecutionContext) -> Iter
     check.inst_param(step_context, "step_context", StepExecutionContext)
 
     try:
-        if step_context.step_launcher:
+        if step_context.step_launcher and not force_local_execution:
             # info all on step_context - should deprecate second arg
             step_events = step_context.step_launcher.launch_step(
                 step_context, step_context.previous_attempt_count
