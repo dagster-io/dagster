@@ -97,13 +97,104 @@ def do_stuff_partitioned():
 In addition to the <PyObject object="daily_partitioned_config" decorator /> decorator, Dagster also provides <PyObject object="monthly_partitioned_config" decorator />, <PyObject object="weekly_partitioned_config" decorator />, <PyObject object="hourly_partitioned_config" decorator />.
 
 By default, these decorators create partitions as follows:
-<PyObject object="hourly_partitioned_config" decorator /> - a partition is a single hour spanning minute 0 to minute 0
 
-* Example: (2022-03-12T02:00, 2022-03-12T03:00), (2022-03-12T03:00, 2022-03-12T04:00), ...
-<PyObject object="daily_partitioned_config" decorator /> - a partition is single day spanning midnight to midnight:
-* Example: (2022-03-12T00:00, 2022-03-13T00:00), (2022-03-13T00:00, 2022-03-14T00:00), ...
-<PyObject object="weekly_partitioned_config" decorator />
+<PyObject object="hourly_partitioned_config" decorator /> - a partition is a single
+hour spanning minute 0 to minute 0. For example, defining a partition:
 
+```python file=/concepts/partitions_schedules_sensors/partition_defs.py startafter=start_hourly_partition_def endbefore=end_hourly_partition_def
+@hourly_partitioned_config(start_date=datetime(2022, 3, 12))
+def my_hourly_partitioned_config(start: datetime, _end: datetime):
+    return {
+        "ops": {
+            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
+        }
+    }
+```
+
+will create partitions of the form `(2022-03-12T00:00, 2022-03-12T01:00), (2022-03-12T01:00, 2022-03-12T02:00), ...`
+
+<PyObject object="daily_partitioned_config" decorator /> - a partition is single
+day spanning midnight to midnight. For example, defining a partition:
+
+```python file=/concepts/partitions_schedules_sensors/partition_defs.py startafter=start_daily_partition_def endbefore=end_daily_partition_def
+@daily_partitioned_config(start_date="2022-03-12")
+def my_daily_partitioned_config(start: datetime, _end: datetime):
+    return {
+        "ops": {
+            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
+        }
+    }
+```
+
+will create partitions of the form `(2022-03-12T00:00, 2022-03-13T00:00), (2022-03-13T00:00, 2022-03-14T00:00), ...`
+
+<PyObject object="weekly_partitioned_config" decorator /> - a partition is a week
+spanning Sunday to Sunday. The first partition begins the first Sunday following
+the given start date. For example, defining a partition:
+
+```python file=/concepts/partitions_schedules_sensors/partition_defs.py startafter=start_weekly_partition_def endbefore=end_weekly_partition_def
+@weekly_partitioned_config(start_date="2022-03-12")
+def my_weekly_partitioned_config(start: datetime, _end: datetime):
+    return {
+        "ops": {
+            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
+        }
+    }
+```
+
+will create partitions of the form `(2022-03-13T00:00, 2022-03-20T00:00), (2022-03-20T00:00, 2022-03-27T00:00), ...`
+
+<PyObject object="monthly_partitioned_config" decorator /> - a partition is a month
+spanning the first to the first. The first partition begins the on the soonest first
+of the month following the given start date. For example, defining a partition:
+
+```python file=/concepts/partitions_schedules_sensors/partition_defs.py startafter=start_monthly_partition_def endbefore=end_monthly_partition_def
+@monthly_partitioned_config(start_date="2022-03-12")
+def my_monthly_partitioned_config(start: datetime, _end: datetime):
+    return {
+        "ops": {
+            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
+        }
+    }
+```
+
+will create partitions of the form `(2022-04-01T00:00, 2022-05-01T00:00), (2022-05-01T00:00, 2022-06-01T00:00), ...`
+
+You can specify the partitions more granularly using `minute_offset`, `hour_offset`, and `day_offset` in the partitioned config decorator. For example, you can create a hourly partition that splits at the 15 minute mark by doing the following:
+
+```python file=/concepts/partitions_schedules_sensors/partition_defs.py startafter=start_hourly_offset_partition_def endbefore=end_hourly_offset_partition_def
+@hourly_partitioned_config(start_date=datetime(2022, 3, 12), minute_offset=15)
+def my_hourly_offset_partitioned_config(start: datetime, _end: datetime):
+    return {
+        "ops": {
+            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
+        }
+    }
+```
+
+You can have a weekly partiton that splits on each Wednesday at 4:15pm by writing the following:
+
+```python file=/concepts/partitions_schedules_sensors/partition_defs.py startafter=start_weekly_offset_partition_def endbefore=end_weekly_offset_partition_def
+@weekly_partitioned_config(start_date="2022-03-12", minute_offset=15, hour_offset=16, day_offset=3)
+def my_weekly_offset_partitioned_config(start: datetime, _end: datetime):
+    return {
+        "ops": {
+            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
+        }
+    }
+```
+
+Or you can have your monthly partitions split on the 15th by writing:
+
+```python file=/concepts/partitions_schedules_sensors/partition_defs.py startafter=start_monthly_offset_partition_def endbefore=end_monthly_offset_partition_def
+@monthly_partitioned_config(start_date="2022-03-12", day_offset=15)
+def my_monthly_offset_partitioned_config(start: datetime, _end: datetime):
+    return {
+        "ops": {
+            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
+        }
+    }
+```
 
 ### Defining a Job with Static Partitions
 
