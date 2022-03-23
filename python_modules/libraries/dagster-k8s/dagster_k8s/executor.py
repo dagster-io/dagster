@@ -196,6 +196,7 @@ class K8sStepHandler(StepHandler):
             labels={
                 "dagster/job": step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
                 "dagster/op": step_key,
+                "dagster/run-id": step_handler_context.execute_step_args.pipeline_run_id,
             },
         )
 
