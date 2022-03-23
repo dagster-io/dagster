@@ -133,11 +133,11 @@ def main(
                 events_queue.put(DONE)
                 event_writing_thread.join()
                 # write final stdout and stderr
-                with open(os.path.dirname(step_run_ref_filepath) + "/stderr", "wb") as handle:
+                with open(stderr_filepath, "wb") as handle:
                     stderr_str = stderr.getvalue()
                     sys.stderr.write(stderr_str)
                     handle.write(stderr_str.encode())
-                with open(os.path.dirname(step_run_ref_filepath) + "/stdout", "wb") as handle:
+                with open(stdout_filepath, "wb") as handle:
                     stdout_str = stdout.getvalue()
                     sys.stdout.write(stdout_str)
                     handle.write(stdout_str.encode())
