@@ -29,7 +29,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-mysql"],
+        packages=["dagster_mysql"],
         package_data={
             "dagster-mysql": [
                 "dagster_mysql/alembic/*",

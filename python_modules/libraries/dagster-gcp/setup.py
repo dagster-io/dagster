@@ -32,7 +32,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-gcp"],
+        packages=["dagster_gcp"],
         install_requires=[
             f"dagster{pin}",
             f"dagster_pandas{pin}",

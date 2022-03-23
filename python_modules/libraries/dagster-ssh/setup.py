@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-ssh"],
+        packages=["dagster_ssh"],
         install_requires=[f"dagster{pin}", "sshtunnel", "paramiko"],
         extras_require={"test": ["cryptography==2.6.1", "pytest-sftpserver==1.2.0"]},
         zip_safe=False,

@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-aws"],
+        packages=["dagster_aws"],
         include_package_data=True,
         install_requires=[
             "boto3",

@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-airflow"],
+        packages=["dagster_airflow"],
         install_requires=[
             f"dagster{pin}",
             "docker",

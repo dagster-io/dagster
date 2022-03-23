@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-prometheus"],
+        packages=["dagster_prometheus"],
         install_requires=[f"dagster{pin}", "prometheus_client"],
         zip_safe=False,
     )

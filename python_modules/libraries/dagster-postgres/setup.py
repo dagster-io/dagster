@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-postgres"],
+        packages=["dagster_postgres"],
         package_data={
             "dagster-postgres": [
                 "dagster_postgres/alembic/*",

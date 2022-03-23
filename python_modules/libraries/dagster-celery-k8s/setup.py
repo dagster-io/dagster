@@ -30,7 +30,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-celery-k8s"],
+        packages=["dagster_celery_k8s"],
         install_requires=[
             f"dagster{pin}",
             f"dagster-k8s{pin}",

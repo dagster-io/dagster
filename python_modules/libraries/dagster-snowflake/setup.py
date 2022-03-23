@@ -30,7 +30,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-snowflake"],
+        packages=["dagster_snowflake"],
         install_requires=[f"dagster{pin}", "snowflake-connector-python>=2.1.0"],
         extras_require={"snowflake.sqlalchemy": ["sqlalchemy", "snowflake-sqlalchemy"]},
         zip_safe=False,

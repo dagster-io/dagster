@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-celery"],
+        packages=["dagster_celery"],
         entry_points={"console_scripts": ["dagster-celery = dagster_celery.cli:main"]},
         install_requires=[
             f"dagster{pin}",

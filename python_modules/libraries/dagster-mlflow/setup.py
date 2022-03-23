@@ -28,7 +28,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-mlflow"],
+        packages=["dagster_mlflow"],
         install_requires=["dagster", "mlflow", "pandas"],
         zip_safe=False,
     )

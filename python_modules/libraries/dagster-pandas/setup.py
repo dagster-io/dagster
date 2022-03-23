@@ -43,7 +43,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-pandas"],
+        packages=["dagster_pandas"],
         include_package_data=True,
         install_requires=[f"dagster{pin}", "pandas"],
     )

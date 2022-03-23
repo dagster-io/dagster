@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-airbyte"],
+        packages=["dagster_airbyte"],
         install_requires=[
             f"dagster{pin}",
             "requests",

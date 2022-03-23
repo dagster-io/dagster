@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-k8s"],
+        packages=["dagster_k8s"],
         install_requires=[f"dagster{pin}", "kubernetes"],
         zip_safe=False,
     )

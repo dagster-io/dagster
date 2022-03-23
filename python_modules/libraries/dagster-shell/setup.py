@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-shell"],
+        packages=["dagster_shell"],
         install_requires=[f"dagster{pin}"],
         extras_require={"test": ["psutil"]},
         zip_safe=False,

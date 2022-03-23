@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-pyspark"],
+        packages=["dagster_pyspark"],
         install_requires=[
             f"dagster{pin}",
             f"dagster_spark{pin}",

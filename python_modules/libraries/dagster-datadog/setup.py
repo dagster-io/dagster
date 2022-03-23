@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-datadog"],
+        packages=["dagster_datadog"],
         install_requires=[f"dagster{pin}", "datadog"],
         zip_safe=False,
     )

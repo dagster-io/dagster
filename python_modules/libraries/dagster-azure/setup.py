@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-azure"],
+        packages=["dagster_azure"],
         include_package_data=True,
         install_requires=[
             "azure-core<2.0.0,>=1.7.0",

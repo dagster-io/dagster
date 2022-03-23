@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster-dask"],
+        packages=["dagster_dask"],
         install_requires=[
             "bokeh",
             f"dagster{pin}",
