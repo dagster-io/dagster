@@ -1,6 +1,6 @@
 import os
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 
 def long_description():
@@ -39,7 +39,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagit"],
+        packages=find_packages(exclude=["dagit_tests*"]),
         include_package_data=True,
         install_requires=[
             "PyYAML",

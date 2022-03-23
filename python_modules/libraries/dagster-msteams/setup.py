@@ -26,7 +26,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster_msteams"],
+        packages=find_packages(exclude=["dagster_msteams_tests*"]),
         install_requires=[
             "dagster",
             "requests>=2,<3",

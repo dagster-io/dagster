@@ -1,6 +1,6 @@
 from typing import Dict
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 
 def get_version() -> str:
@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster_spark"],
+        packages=find_packages(exclude=["dagster_spark_tests*"]),
         install_requires=[f"dagster{pin}"],
         zip_safe=False,
     )

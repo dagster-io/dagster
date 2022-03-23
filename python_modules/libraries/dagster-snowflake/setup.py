@@ -1,6 +1,6 @@
 from typing import Dict
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 
 def get_version() -> str:
@@ -30,7 +30,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster_snowflake"],
+        packages=find_packages(exclude=["dagster_snowflake_tests*"]),
         install_requires=[f"dagster{pin}", "snowflake-connector-python>=2.1.0"],
         extras_require={"snowflake.sqlalchemy": ["sqlalchemy", "snowflake-sqlalchemy"]},
         zip_safe=False,

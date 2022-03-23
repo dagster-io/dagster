@@ -1,6 +1,6 @@
 from typing import Dict
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 
 def get_version() -> str:
@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster_graphql"],
+        packages=find_packages(exclude=["dagster_graphql_tests*"]),
         install_requires=[
             f"dagster{pin}",
             "graphene>=2.1.3,<3",  # compatability with graphql-ws in dagit

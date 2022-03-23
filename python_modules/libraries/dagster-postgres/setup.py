@@ -1,6 +1,6 @@
 from typing import Dict
 
-from setuptools import setup
+from setuptools import find_packages, setup
 
 
 def get_version() -> str:
@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster_postgres"],
+        packages=find_packages(exclude=["dagster_postgres_tests*"]),
         package_data={
             "dagster-postgres": [
                 "dagster_postgres/alembic/*",

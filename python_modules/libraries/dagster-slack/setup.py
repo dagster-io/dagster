@@ -29,7 +29,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster_slack"],
+        packages=find_packages(exclude=["dagster_slack_tests*"]),
         install_requires=[
             f"dagster{pin}",
             "slack_sdk",
