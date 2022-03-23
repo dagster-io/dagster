@@ -1,50 +1,9 @@
 # pylint: disable=redefined-outer-name
 # pylint: disable=unused-argument
 # pylint: disable=unused-variable
-import json
-from collections import namedtuple
 from unittest.mock import MagicMock, patch
 
 import pytest
-
-Secret = namedtuple("Secret", ["name", "arn"])
-
-
-@pytest.fixture
-def tagged_secret(secrets_manager):
-    # A secret tagged with "dagster"
-    name = "tagged_secret"
-    arn = secrets_manager.create_secret(
-        Name=name,
-        SecretString="hello",
-        Tags=[{"Key": "dagster", "Value": "true"}],
-    )["ARN"]
-
-    yield Secret(name, arn)
-
-
-@pytest.fixture
-def other_secret(secrets_manager):
-    # A secret without a tag
-    name = "other_secret"
-    arn = secrets_manager.create_secret(
-        Name=name,
-        SecretString="hello",
-    )["ARN"]
-
-    yield Secret(name, arn)
-
-
-@pytest.fixture
-def configured_secret(secrets_manager):
-    # A secret explicitly included in the launcher config
-    name = "configured_secret"
-    arn = secrets_manager.create_secret(
-        Name=name,
-        SecretString=json.dumps({"hello": "world"}),
-    )["ARN"]
-
-    yield Secret(name, arn)
 
 
 def test_secrets(
@@ -69,6 +28,44 @@ def test_secrets(
 
     with instance_cm(config) as instance:
         launch_run(instance)
+
+    # A new task definition is created
+    task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+    assert len(task_definitions) == len(initial_task_definitions) + 1
+    task_definition_arn = list(set(task_definitions).difference(initial_task_definitions))[0]
+    task_definition = ecs.describe_task_definition(taskDefinition=task_definition_arn)
+    task_definition = task_definition["taskDefinition"]
+
+    # It includes tagged secrets
+    secrets = task_definition["containerDefinitions"][0]["secrets"]
+    assert {"name": tagged_secret.name, "valueFrom": tagged_secret.arn} in secrets
+
+    # And configured secrets
+    assert {
+        "name": "HELLO",
+        "valueFrom": configured_secret.arn + "/hello",
+    } in secrets
+
+    # But no other secrets
+    assert len(secrets) == 2
+
+
+def test_secrets_with_container_context(
+    ecs,
+    secrets_manager,
+    instance_cm,
+    launch_run_with_container_context,
+    tagged_secret,
+    other_secret,
+    configured_secret,
+):
+    initial_task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
+
+    # Secrets config is pulled from container context on the run, rather than run launcher config
+    config = {"secrets_tag": None, "secrets": []}
+
+    with instance_cm(config) as instance:
+        launch_run_with_container_context(instance)
 
     # A new task definition is created
     task_definitions = ecs.list_task_definitions()["taskDefinitionArns"]
