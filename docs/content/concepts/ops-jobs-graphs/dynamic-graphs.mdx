@@ -55,12 +55,12 @@ def load_pieces():
 
 Then after creating ops for our downstream operations, we can put them all together in a job.
 
-```python file=/concepts/solids_pipelines/dynamic.py startafter=dyn_out_start endbefore=dyn_out_end
-@op(out=DynamicOut())
-def load_pieces():
-    large_data = load_big_data()
-    for idx, piece in large_data.chunk():
-        yield DynamicOutput(piece, mapping_key=idx)
+```python file=/concepts/solids_pipelines/dynamic.py startafter=dyn_job_start endbefore=dyn_job_end
+@job
+def dynamic_graph():
+    pieces = load_pieces()
+    results = pieces.map(compute_piece)
+    merge_and_analyze(results.collect())
 ```
 
 Within our `@job` decorated composition function, the object representing the dynamic output can not be passed directly to another op. Either `map` or `collect` must be invoked on it.
