@@ -257,6 +257,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             user_defined_k8s_config=user_defined_k8s_config,
             labels={
                 "dagster/job": pipeline_origin.pipeline_name,
+                "dagster/run-id": run.run_id,
             },
         )
 

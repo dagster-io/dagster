@@ -215,6 +215,7 @@ class CeleryK8sRunLauncher(RunLauncher, ConfigurableClass):
             env_vars=env_vars,
             labels={
                 "dagster/job": pipeline_origin.pipeline_name,
+                "dagster/run-id": run.run_id,
             },
         )
 
