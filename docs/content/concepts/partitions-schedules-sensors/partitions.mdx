@@ -96,6 +96,15 @@ def do_stuff_partitioned():
 
 In addition to the <PyObject object="daily_partitioned_config" decorator /> decorator, Dagster also provides <PyObject object="monthly_partitioned_config" decorator />, <PyObject object="weekly_partitioned_config" decorator />, <PyObject object="hourly_partitioned_config" decorator />.
 
+By default, these decorators create partitions as follows:
+<PyObject object="hourly_partitioned_config" decorator /> - a partition is a single hour spanning minute 0 to minute 0
+
+* Example: (2022-03-12T02:00, 2022-03-12T03:00), (2022-03-12T03:00, 2022-03-12T04:00), ...
+<PyObject object="daily_partitioned_config" decorator /> - a partition is single day spanning midnight to midnight:
+* Example: (2022-03-12T00:00, 2022-03-13T00:00), (2022-03-13T00:00, 2022-03-14T00:00), ...
+<PyObject object="weekly_partitioned_config" decorator />
+
+
 ### Defining a Job with Static Partitions
 
 Not all jobs are partitioned by time. Here's a partitioned job where the partitions are continents:

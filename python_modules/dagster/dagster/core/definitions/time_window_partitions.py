@@ -165,11 +165,16 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         """A set of daily partitions.
 
         The first partition in the set will start at the start_date. The last partition in the set will
-        end before the current time, unless the end_offset argument is set to a positive number.
+        end before the current time, unless the end_offset argument is set to a positive number. If
+        minute_offset and/or hour_offset are used, the start and end times of each partition will be
+        hour_offset:minute_offset of each day.
 
         Args:
             start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
                 provide in either a datetime or string format.
+            minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
+                to 0.
+            hour_offset (int): Number of hours past 00:00 to "split" the partition. Defaults to 0.
             timezone (Optional[str]): The timezone in which each date should exist.
                 Supported strings for timezones are the ones provided by the
                 `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
@@ -210,11 +215,16 @@ def daily_partitioned_config(
 
     The resulting object created by this decorator can be provided to the config argument of a Job.
     The first partition in the set will start at the start_date. The last partition in the set will
-    end before the current time, unless the end_offset argument is set to a positive number.
+    end before the current time, unless the end_offset argument is set to a positive number. If
+    minute_offset and/or hour_offset are used, the start and end times of each partition will be
+    hour_offset:minute_offset of each day.
 
     Args:
         start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
             provide in either a datetime or string format.
+        minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
+            to 0.
+        hour_offset (int): Number of hours past 00:00 to "split" the partition. Defaults to 0.
         timezone (Optional[str]): The timezone in which each date should exist.
             Supported strings for timezones are the ones provided by the
             `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
@@ -258,11 +268,15 @@ class HourlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         """A set of hourly partitions.
 
         The first partition in the set will start at the start_date. The last partition in the set will
-        end before the current time, unless the end_offset argument is set to a positive number.
+        end before the current time, unless the end_offset argument is set to a positive number. If
+        minute_offset is provided, the start and end times of each partition will be minute_offset
+        past the hour.
 
         Args:
             start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
                 provide in either a datetime or string format.
+            minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
+                to 0.
             fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
             timezone (Optional[str]): The timezone in which each date should exist.
                 Supported strings for timezones are the ones provided by the
@@ -301,11 +315,15 @@ def hourly_partitioned_config(
 
     The resulting object created by this decorator can be provided to the config argument of a Job.
     The first partition in the set will start at the start_date. The last partition in the set will
-    end before the current time, unless the end_offset argument is set to a positive number.
+    end before the current time, unless the end_offset argument is set to a positive number. If
+    minute_offset is provided, the start and end times of each partition will be minute_offset
+    past the hour.
 
     Args:
         start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
             provide in either a datetime or string format.
+        minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
+            to 0.
         fmt (Optional[str]): The date format to use. Defaults to `%Y-%m-%d`.
         timezone (Optional[str]): The timezone in which each date should exist.
             Supported strings for timezones are the ones provided by the
@@ -342,7 +360,7 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         start_date: Union[datetime, str],
         minute_offset: int = 0,
         hour_offset: int = 0,
-        day_offset: Optional[int] = None,
+        day_offset: int = 1,
         timezone: Optional[str] = None,
         fmt: Optional[str] = None,
         end_offset: int = 0,
@@ -350,11 +368,18 @@ class MonthlyPartitionsDefinition(TimeWindowPartitionsDefinition):
         """A set of monthly partitions.
 
         The first partition in the set will start at the start_date. The last partition in the set will
-        end before the current time, unless the end_offset argument is set to a positive number.
+        end before the current time, unless the end_offset argument is set to a positive number. If
+        day_offset is provided, the start and end date of each partition will be day_offset. If
+        minute_offset and/or hour_offset are used, the start and end times of each partition will be
+        hour_offset:minute_offset of each day.
 
         Args:
             start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
                 provide in either a datetime or string format.
+            minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
+                to 0.
+            hour_offset (int): Number of hours past 00:00 to "split" the partition. Defaults to 0.
+            day_offset (int): Day of the month to "split" the partition. Defaults to 1.
             timezone (Optional[str]): The timezone in which each date should exist.
                 Supported strings for timezones are the ones provided by the
                 `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
@@ -383,7 +408,7 @@ def monthly_partitioned_config(
     start_date: Union[datetime, str],
     minute_offset: int = 0,
     hour_offset: int = 0,
-    day_offset: Optional[int] = None,
+    day_offset: int = 1,
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
     end_offset: int = 0,
@@ -397,11 +422,18 @@ def monthly_partitioned_config(
 
     The resulting object created by this decorator can be provided to the config argument of a Job.
     The first partition in the set will start at the start_date. The last partition in the set will
-    end before the current time, unless the end_offset argument is set to a positive number.
+    end before the current time, unless the end_offset argument is set to a positive number. If
+    day_offset is provided, the start and end date of each partition will be day_offset. If
+    minute_offset and/or hour_offset are used, the start and end times of each partition will be
+    hour_offset:minute_offset of each day.
 
     Args:
         start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
             provide in either a datetime or string format.
+        minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
+            to 0.
+        hour_offset (int): Number of hours past 00:00 to "split" the partition. Defaults to 0.
+        day_offset (int): Day of the month to "split" the partition. Defaults to 1.
         timezone (Optional[str]): The timezone in which each date should exist.
             Supported strings for timezones are the ones provided by the
             `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
@@ -440,7 +472,7 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
         start_date: Union[datetime, str],
         minute_offset: int = 0,
         hour_offset: int = 0,
-        day_offset: Optional[int] = None,
+        day_offset: int = 0,
         timezone: Optional[str] = None,
         fmt: Optional[str] = None,
         end_offset: int = 0,
@@ -448,11 +480,19 @@ class WeeklyPartitionsDefinition(TimeWindowPartitionsDefinition):
         """Defines a set of weekly partitions.
 
         The first partition in the set will start at the start_date. The last partition in the set will
-        end before the current time, unless the end_offset argument is set to a positive number.
+        end before the current time, unless the end_offset argument is set to a positive number. If
+        day_offset is provided, the start and end date of each partition will be day of the week
+        corresponding to day_offset (0 indexed with Sunday as the start of the week). If
+        minute_offset and/or hour_offset are used, the start and end times of each partition will be
+        hour_offset:minute_offset of each day.
 
         Args:
             start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
                 provide in either a datetime or string format.
+            minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
+                to 0.
+            hour_offset (int): Number of hours past 00:00 to "split" the partition. Defaults to 0.
+            day_offset (int): Day of the week to "split" the partition. Defaults to 0 (Sunday).
             timezone (Optional[str]): The timezone in which each date should exist.
                 Supported strings for timezones are the ones provided by the
                 `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
@@ -481,7 +521,7 @@ def weekly_partitioned_config(
     start_date: Union[datetime, str],
     minute_offset: int = 0,
     hour_offset: int = 0,
-    day_offset: Optional[int] = None,
+    day_offset: int = 0,
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
     end_offset: int = 0,
@@ -495,11 +535,19 @@ def weekly_partitioned_config(
 
     The resulting object created by this decorator can be provided to the config argument of a Job.
     The first partition in the set will start at the start_date. The last partition in the set will
-    end before the current time, unless the end_offset argument is set to a positive number.
+    end before the current time, unless the end_offset argument is set to a positive number. If
+    day_offset is provided, the start and end date of each partition will be day of the week
+    corresponding to day_offset (0 indexed with Sunday as the start of the week). If
+    minute_offset and/or hour_offset are used, the start and end times of each partition will be
+    hour_offset:minute_offset of each day.
 
     Args:
         start_date (Union[datetime.datetime, str]): The first date in the set of partitions. Can
             provide in either a datetime or string format.
+        minute_offset (int): Number of minutes past the hour to "split" the partition. Defaults
+            to 0.
+        hour_offset (int): Number of hours past 00:00 to "split" the partition. Defaults to 0.
+        day_offset (int): Day of the week to "split" the partition. Defaults to 0 (Sunday).
         timezone (Optional[str]): The timezone in which each date should exist.
             Supported strings for timezones are the ones provided by the
             `IANA time zone database <https://www.iana.org/time-zones>` - e.g. "America/Los_Angeles".
