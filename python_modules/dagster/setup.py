@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Dict
 
-from setuptools import find_packages, setup  # type: ignore
+from setuptools import setup
 
 
 def get_description() -> str:
@@ -44,7 +44,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=find_packages(exclude=["dagster_tests"]),
+        packages=["dagster"],
         package_data={
             "dagster": [
                 "dagster/core/storage/event_log/sqlite/alembic/*",

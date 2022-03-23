@@ -1,4 +1,4 @@
-from setuptools import find_packages, setup
+from setuptools import setup
 
 setup(
     name="automation",
@@ -14,7 +14,7 @@ setup(
         "License :: OSI Approved :: Apache Software License",
         "Operating System :: OS Independent",
     ],
-    packages=find_packages(exclude=["test"]),
+    packages=["automation"],
     install_requires=[
         "autoflake",
         "boto3",

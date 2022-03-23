@@ -22,7 +22,7 @@ if __name__ == "__main__":
         author="Elementl",
         author_email="hello@elementl.com",
         license="Apache-2.0",
-        packages=find_packages(exclude=["dagstermill_tests"]),
+        packages=["dagstermill"],
         classifiers=[
             "Programming Language :: Python :: 3.6",
             "Programming Language :: Python :: 3.7",

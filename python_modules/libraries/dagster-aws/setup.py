@@ -1,6 +1,6 @@
 from typing import Dict
 
-from setuptools import find_packages, setup  # type: ignore
+from setuptools import setup
 
 
 def get_version() -> str:
@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=find_packages(exclude=["test"]),
+        packages=["dagster-aws"],
         include_package_data=True,
         install_requires=[
             "boto3",
