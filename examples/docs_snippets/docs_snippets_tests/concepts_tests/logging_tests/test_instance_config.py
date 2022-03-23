@@ -11,17 +11,6 @@ def test_valid_managed_loggers_instance_yaml():
         config_filename="python_logging_managed_loggers_config.yaml",
     )
     instance = DagsterInstance.from_ref(ref)
-    assert instance.managed_python_loggers == ["root"]
-
-
-def test_valid_managed_loggers_instance_yaml_2():
-    ref = InstanceRef.from_dir(
-        base_dir=file_relative_path(
-            __file__, "../../../docs_snippets/concepts/logging"
-        ),
-        config_filename="python_logging_managed_loggers_config2.yaml",
-    )
-    instance = DagsterInstance.from_ref(ref)
     assert instance.managed_python_loggers == ["my_logger", "my_other_logger"]
 
 
