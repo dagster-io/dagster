@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import find_packages, setup
 
 if __name__ == "__main__":
     setup(
@@ -17,7 +17,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=["dagster_test"],
+        packages=find_packages(exclude=["dagster_test_tests*"]),
         install_requires=[
             "dagster",
             "pyspark",
