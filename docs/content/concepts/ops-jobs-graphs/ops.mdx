@@ -133,7 +133,7 @@ All definitions in dagster expose a `config_schema`, making them configurable an
 
 Op definitions can specify a `config_schema` for the op's configuration. The configuration is accessible through the [op context](#op-context) at runtime. Therefore, op configuration can be used to specify op behavior at runtime, making ops more flexible and reusable.
 
-For example, we can define an op where the API endpoint it queries is define through it's configuration:
+For example, we can define an op where the API endpoint it queries is defined through its configuration:
 
 ```python file=/concepts/solids_pipelines/solids.py startafter=start_configured_op_marker endbefore=end_configured_op_marker
 @op(config_schema={"api_endpoint": str})

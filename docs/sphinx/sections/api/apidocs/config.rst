@@ -20,6 +20,8 @@ builtin types above.
 
 .. autoclass:: Shape
 
+.. autoclass:: Map
+
 .. autoclass:: Array
 
 .. autoclass:: Noneable

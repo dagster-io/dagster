@@ -360,9 +360,7 @@ const JOB_TICK_HISTORY_QUERY = gql`
           ...TickTagFragment
         }
       }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
     }
   }
   ${PYTHON_ERROR_FRAGMENT}

@@ -16,7 +16,7 @@ import {useHistory} from 'react-router-dom';
 import * as yaml from 'yaml';
 
 import {showCustomAlert} from '../../app/CustomAlertProvider';
-import {PythonErrorInfo} from '../../app/PythonErrorInfo';
+import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../../app/PythonErrorInfo';
 import {displayNameForAssetKey} from '../../app/Util';
 import {PartitionHealthSummary, usePartitionHealthData} from '../../assets/PartitionHealthSummary';
 import {AssetKey} from '../../assets/types';
@@ -345,9 +345,7 @@ const ASSET_JOB_PARTITION_SETS_QUERY = gql`
       }
     ) {
       __typename
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
       ... on PartitionSets {
         __typename
         results {
@@ -359,4 +357,6 @@ const ASSET_JOB_PARTITION_SETS_QUERY = gql`
       }
     }
   }
+
+  ${PYTHON_ERROR_FRAGMENT}
 `;

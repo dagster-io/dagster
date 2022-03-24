@@ -17,6 +17,7 @@ import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -269,9 +270,7 @@ const RUNS_ROOT_QUERY = gql`
       ... on InvalidPipelineRunsFilterError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
     queuedCount: pipelineRunsOrError(filter: $queuedFilter) {
       ...CountFragment
@@ -283,6 +282,7 @@ const RUNS_ROOT_QUERY = gql`
 
   ${RUN_TABLE_RUN_FRAGMENT}
   ${COUNT_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 const QueueDaemonAlert = () => {

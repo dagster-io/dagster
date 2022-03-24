@@ -117,6 +117,7 @@ export interface InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: InstanceSchedulesQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_error | null;
 }
 
@@ -242,6 +243,7 @@ export interface InstanceSchedulesQuery_unloadableInstigationStatesOrError_Insti
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: InstanceSchedulesQuery_unloadableInstigationStatesOrError_InstigationStates_results_ticks_error | null;
 }
 

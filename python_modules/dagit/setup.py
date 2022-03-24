@@ -39,7 +39,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=find_packages(exclude=["dagit_tests"]),
+        packages=find_packages(exclude=["dagit_tests*"]),
         include_package_data=True,
         install_requires=[
             "PyYAML",

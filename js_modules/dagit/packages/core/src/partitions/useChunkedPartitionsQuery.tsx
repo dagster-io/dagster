@@ -341,9 +341,7 @@ const PARTITION_SET_LOADER_QUERY = gql`
       ... on InvalidPipelineRunsFilterError {
         message
       }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
     }
   }
   ${PARTITION_SET_LOADER_RUN_FRAGMENT}
@@ -371,9 +369,7 @@ const PARTITION_SET_NAMES_QUERY = gql`
               name
             }
           }
-          ... on PythonError {
-            ...PythonErrorFragment
-          }
+          ...PythonErrorFragment
         }
       }
     }

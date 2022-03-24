@@ -100,11 +100,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         engine = create_engine(self._conn_string, poolclass=NullPool)
         conn = engine.connect()
         try:
-            with handle_schema_errors(
-                conn,
-                get_alembic_config(__file__),
-                msg="Sqlite run storage requires migration",
-            ):
+            with handle_schema_errors(conn, get_alembic_config(__file__)):
                 yield conn
         finally:
             conn.close()

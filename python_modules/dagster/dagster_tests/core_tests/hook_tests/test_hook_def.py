@@ -18,7 +18,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions import NodeHandle, PresetDefinition, failure_hook, success_hook
-from dagster.core.definitions.decorators.hook import event_list_hook
+from dagster.core.definitions.decorators.hook_decorator import event_list_hook
 from dagster.core.definitions.events import HookExecutionResult
 from dagster.core.definitions.policy import RetryPolicy
 from dagster.core.errors import DagsterInvalidDefinitionError

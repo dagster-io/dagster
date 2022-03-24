@@ -4,6 +4,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {filterByQuery} from '../app/GraphQueryImpl';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {ShortcutHandler} from '../app/ShortcutHandler';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
@@ -46,12 +47,11 @@ const SOLID_SELECTOR_QUERY = gql`
       ... on InvalidSubsetError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
   }
   ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 export const OpSelector = (props: IOpSelectorProps) => {

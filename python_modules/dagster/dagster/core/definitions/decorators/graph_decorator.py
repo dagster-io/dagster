@@ -55,7 +55,7 @@ class _Graph:
             check.dict_param(self.out, "out", key_type=str, value_type=GraphOut)
             output_defs = [out.to_definition(name=name) for name, out in self.out.items()]
 
-        from dagster.core.definitions.decorators.composite_solid import do_composition
+        from dagster.core.definitions.decorators.composite_solid_decorator import do_composition
 
         (
             input_mappings,

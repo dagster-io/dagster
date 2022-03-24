@@ -3,6 +3,7 @@ import * as React from 'react';
 import {Redirect, useParams} from 'react-router-dom';
 
 import {usePermissions} from '../app/Permissions';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {explorerPathFromString, useStripSnapshotFromPath} from '../pipelines/PipelinePathUtils';
 import {useJobTitle} from '../pipelines/useJobTitle';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
@@ -156,9 +157,7 @@ const PIPELINE_EXECUTION_ROOT_QUERY = gql`
       ... on PipelineNotFoundError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
       ... on Pipeline {
         id
         ...LaunchpadSessionContainerPipelineFragment
@@ -176,12 +175,11 @@ const PIPELINE_EXECUTION_ROOT_QUERY = gql`
       ... on PipelineNotFoundError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
   }
 
   ${EXECUTION_SESSION_CONTAINER_PIPELINE_FRAGMENT}
   ${EXECUTION_SESSION_CONTAINER_PARTITION_SETS_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

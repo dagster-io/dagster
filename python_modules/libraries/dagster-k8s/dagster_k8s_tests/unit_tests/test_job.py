@@ -619,6 +619,7 @@ def test_construct_dagster_k8s_job_with_labels():
         labels={
             "dagster/job": "some_job",
             "dagster/op": "some_op",
+            "dagster/run-id": "some_run_id",
         },
     ).to_dict()
     expected_labels1 = dict(
@@ -626,6 +627,7 @@ def test_construct_dagster_k8s_job_with_labels():
         **{
             "dagster/job": "some_job",
             "dagster/op": "some_op",
+            "dagster/run-id": "some_run_id",
         },
     )
 
@@ -642,6 +644,7 @@ def test_construct_dagster_k8s_job_with_labels():
         labels={
             "dagster/job": "long_job_name_64____01234567890123456789012345678901234567890123",
             "dagster/op": "long_op_name_64_____01234567890123456789012345678901234567890123",
+            "dagster/run_id": "long_run_id_64______01234567890123456789012345678901234567890123",
         },
     ).to_dict()
     expected_labels2 = dict(
@@ -650,6 +653,7 @@ def test_construct_dagster_k8s_job_with_labels():
             # The last character should be truncated.
             "dagster/job": "long_job_name_64____0123456789012345678901234567890123456789012",
             "dagster/op": "long_op_name_64_____0123456789012345678901234567890123456789012",
+            "dagster/run_id": "long_run_id_64______0123456789012345678901234567890123456789012",
         },
     )
     assert job2["metadata"]["labels"] == expected_labels2

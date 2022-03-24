@@ -1195,6 +1195,7 @@ type InstigationTick {
   status: InstigationTickStatus!
   timestamp: Float!
   runIds: [String!]!
+  runKeys: [String!]!
   error: PythonError
   skipReason: String
   cursor: String
@@ -1893,7 +1894,7 @@ union LaunchRunReexecutionResult =
   | ConflictingExecutionParamsError
   | NoModeProvidedError
 
-union ScheduleMutationResult = PythonError | ScheduleStateResult
+union ScheduleMutationResult = PythonError | UnauthorizedError | ScheduleStateResult
 
 type ScheduleStateResult {
   scheduleState: InstigationState!

@@ -111,6 +111,7 @@ export interface SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nod
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: SchedulerInfoQuery_repositoriesOrError_RepositoryConnection_nodes_schedules_scheduleState_ticks_error | null;
 }
 
