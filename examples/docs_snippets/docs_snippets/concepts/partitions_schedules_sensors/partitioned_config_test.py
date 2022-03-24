@@ -48,7 +48,7 @@ def my_offset_partitioned_config(start: datetime, _end: datetime):
 
 def test_my_offset_partitioned_config():
     # test that the first partition is as expected
-    partitions = my_offset_partitioned_config.get_partitions()
+    partitions = my_offset_partitioned_config.partitions_def.get_partitions()
     assert str(partitions[0].value.start) == "2020-01-01T03:00:00+00:00"
     assert str(partitions[0].value.end) == "2021-01-02T03:00:00+00:00"
 
