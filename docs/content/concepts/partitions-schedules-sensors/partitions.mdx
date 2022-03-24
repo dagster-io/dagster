@@ -94,109 +94,7 @@ def do_stuff_partitioned():
     process_data_for_date()
 ```
 
-In addition to the <PyObject object="daily_partitioned_config" decorator /> decorator, Dagster also provides <PyObject object="monthly_partitioned_config" decorator />, <PyObject object="weekly_partitioned_config" decorator />, <PyObject object="hourly_partitioned_config" decorator />.
-
-By default, these decorators create partitions as follows:
-
-<PyObject object="hourly_partitioned_config" decorator /> - a partition is a single
-hour spanning minute 0 to minute 0. For example, defining a partition:
-
-```python file=/concepts/partitions_schedules_sensors/partition_defs.py startafter=start_hourly_partition_def endbefore=end_hourly_partition_def
-@hourly_partitioned_config(start_date=datetime(2022, 3, 12))
-def my_hourly_partitioned_config(start: datetime, _end: datetime):
-    return {
-        "ops": {
-            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
-        }
-    }
-```
-
-will create partitions of the form `(2022-03-12T00:00, 2022-03-12T01:00), (2022-03-12T01:00, 2022-03-12T02:00), ...`
-
-<PyObject object="daily_partitioned_config" decorator /> - a partition is single
-day spanning midnight to midnight. For example, defining a partition:
-
-```python file=/concepts/partitions_schedules_sensors/partition_defs.py startafter=start_daily_partition_def endbefore=end_daily_partition_def
-@daily_partitioned_config(start_date="2022-03-12")
-def my_daily_partitioned_config(start: datetime, _end: datetime):
-    return {
-        "ops": {
-            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
-        }
-    }
-```
-
-will create partitions of the form `(2022-03-12T00:00, 2022-03-13T00:00), (2022-03-13T00:00, 2022-03-14T00:00), ...`
-
-<PyObject object="weekly_partitioned_config" decorator /> - a partition is a week
-spanning Sunday to Sunday. The first partition begins the first Sunday following
-the given start date. For example, defining a partition:
-
-```python file=/concepts/partitions_schedules_sensors/partition_defs.py startafter=start_weekly_partition_def endbefore=end_weekly_partition_def
-@weekly_partitioned_config(start_date="2022-03-12")
-def my_weekly_partitioned_config(start: datetime, _end: datetime):
-    return {
-        "ops": {
-            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
-        }
-    }
-```
-
-will create partitions of the form `(2022-03-13T00:00, 2022-03-20T00:00), (2022-03-20T00:00, 2022-03-27T00:00), ...`
-
-<PyObject object="monthly_partitioned_config" decorator /> - a partition is a month
-spanning the first to the first. The first partition begins the on the soonest first
-of the month following the given start date. For example, defining a partition:
-
-```python file=/concepts/partitions_schedules_sensors/partition_defs.py startafter=start_monthly_partition_def endbefore=end_monthly_partition_def
-@monthly_partitioned_config(start_date="2022-03-12")
-def my_monthly_partitioned_config(start: datetime, _end: datetime):
-    return {
-        "ops": {
-            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
-        }
-    }
-```
-
-will create partitions of the form `(2022-04-01T00:00, 2022-05-01T00:00), (2022-05-01T00:00, 2022-06-01T00:00), ...`
-
-You can specify the partitions more granularly using `minute_offset`, `hour_offset`, and `day_offset` in the partitioned config decorator. For example, you can create a hourly partition that splits at the 15 minute mark by doing the following:
-
-```python file=/concepts/partitions_schedules_sensors/partition_defs.py startafter=start_hourly_offset_partition_def endbefore=end_hourly_offset_partition_def
-@hourly_partitioned_config(start_date=datetime(2022, 3, 12), minute_offset=15)
-def my_hourly_offset_partitioned_config(start: datetime, _end: datetime):
-    return {
-        "ops": {
-            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
-        }
-    }
-```
-
-You can have a weekly partiton that splits on each Wednesday at 4:15pm by writing the following:
-
-```python file=/concepts/partitions_schedules_sensors/partition_defs.py startafter=start_weekly_offset_partition_def endbefore=end_weekly_offset_partition_def
-@weekly_partitioned_config(
-    start_date="2022-03-12", minute_offset=15, hour_offset=16, day_offset=3
-)
-def my_weekly_offset_partitioned_config(start: datetime, _end: datetime):
-    return {
-        "ops": {
-            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
-        }
-    }
-```
-
-Or you can have your monthly partitions split on the 15th by writing:
-
-```python file=/concepts/partitions_schedules_sensors/partition_defs.py startafter=start_monthly_offset_partition_def endbefore=end_monthly_offset_partition_def
-@monthly_partitioned_config(start_date="2022-03-12", day_offset=15)
-def my_monthly_offset_partitioned_config(start: datetime, _end: datetime):
-    return {
-        "ops": {
-            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
-        }
-    }
-```
+In addition to the <PyObject object="daily_partitioned_config" decorator /> decorator, Dagster also provides <PyObject object="monthly_partitioned_config" decorator />, <PyObject object="weekly_partitioned_config" decorator />, <PyObject object="hourly_partitioned_config" decorator />. See the API docs for each of these decorators for more information on how partitions are built based on different `start_date`, `minute_offset`, `hour_offset`, and `day_offset` inputs.
 
 ### Defining a Job with Static Partitions
 
@@ -322,6 +220,7 @@ def my_offset_partitioned_config(start: datetime, _end: datetime):
         }
     }
 
+
 def test_my_offset_partitioned_config():
     # test that the first partition is as expected
     partitions = my_offset_partitioned_config.get_partitions()
@@ -330,8 +229,12 @@ def test_my_offset_partitioned_config():
 
     # get a partition for a datetime and assert the output of my_offset_partitioned_config is valid
     # configutation for the do_stuff_partitioned_job
-    partition_key = my_offset_partitioned_config().get_partition_keys(datetime(2020, 2, 1))
-    run_config = my_offset_partitioned_config().get_run_config(partition_key=partition_key[0])
+    partition_key = my_offset_partitioned_config().get_partition_keys(
+        datetime(2020, 2, 1)
+    )
+    run_config = my_offset_partitioned_config().get_run_config(
+        partition_key=partition_key[0]
+    )
     assert validate_run_config(do_stuff_partitioned, run_config)
 ```
 
@@ -350,7 +253,7 @@ def test_do_stuff_partitioned():
 
 In Dagit, you can view runs by partition in the Partitions tab of a Job page.
 
-In the "Run Matrix", each column corresponds to one of the partitions in the job. Each row corresponds to one of the steps in the job.
+In the "Run Matrix", each column corresponds to one of the partitions in the job. The time listed corresponds to the start time of the partition. Each row corresponds to one of the steps in the job.
 
 <!-- This was generated from go/prod -->
 
