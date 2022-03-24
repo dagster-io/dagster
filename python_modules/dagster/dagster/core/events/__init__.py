@@ -266,6 +266,16 @@ def log_resource_event(log_manager: DagsterLogManager, event: "DagsterEvent") ->
     log_manager.log_dagster_event(level=log_level, msg=event.message or "", dagster_event=event)
 
 
+def log_asset_materialization_planned_event(
+    log_manager: DagsterLogManager, event: "DagsterEvent"
+) -> None:
+    # asset_materialization_planned events have a log level "DEBUG" in order to hide these
+    # events by default in Dagit. Modifying filtering to select DEBUG events will show these events
+    # in Dagit run logs.
+    log_level = logging.DEBUG
+    log_manager.log_dagster_event(level=log_level, msg=event.message or "", dagster_event=event)
+
+
 @whitelist_for_serdes
 class DagsterEvent(
     NamedTuple(
@@ -369,6 +379,21 @@ class DagsterEvent(
             pid=os.getpid(),
         )
         log_resource_event(log_manager, event)
+        return event
+
+    @staticmethod
+    def asset_materialization_planned(
+        pipeline_name: str,
+        asset_key: AssetKey,
+        log_manager: DagsterLogManager,
+    ) -> "DagsterEvent":
+        event = DagsterEvent(
+            event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+            pipeline_name=pipeline_name,
+            message=f"{pipeline_name} intends to materialize asset {asset_key.to_string()}",
+            event_specific_data=AssetMaterializationPlannedData(asset_key),
+        )
+        log_asset_materialization_planned_event(log_manager, event)
         return event
 
     def __new__(
@@ -765,18 +790,6 @@ class DagsterEvent(
                 if materialization.label
                 else ""
             ),
-        )
-
-    @staticmethod
-    def asset_materialization_planned(
-        pipeline_name: str,
-        asset_key: AssetKey,
-    ) -> "DagsterEvent":
-        return DagsterEvent(
-            event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
-            pipeline_name=pipeline_name,
-            message=f"{pipeline_name} intends to materialize asset {asset_key.to_string()}",
-            event_specific_data=AssetMaterializationPlannedData(asset_key),
         )
 
     @staticmethod
