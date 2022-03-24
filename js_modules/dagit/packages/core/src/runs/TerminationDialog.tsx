@@ -187,20 +187,23 @@ export const TerminationDialog = (props: Props) => {
             </div>
             <div>
               {showCheckbox ? (
-                <Checkbox
-                  checked={state.mustForce}
-                  size="small"
-                  label={
-                    <Box flex={{display: 'flex', direction: 'row', gap: 8}}>
+                <>
+                  <Checkbox
+                    checked={state.mustForce}
+                    size="small"
+                    label="Force termination immediately"
+                    onChange={onToggleForce}
+                  />
+                  {state.mustForce ? (
+                    <Box flex={{display: 'flex', direction: 'row', gap: 8}} margin={{top: 8}}>
                       <IconWIP name="warning" color={ColorsWIP.Yellow500} />
                       <div>
-                        Force termination immediately. <strong>Warning:</strong> computational
-                        resources created by runs may not be cleaned up.
+                        <strong>Warning:</strong> computational resources created by runs may not be
+                        cleaned up.
                       </div>
                     </Box>
-                  }
-                  onChange={onToggleForce}
-                />
+                  ) : null}
+                </>
               ) : (
                 <Group direction="row" spacing={8}>
                   <IconWIP name="warning" color={ColorsWIP.Yellow500} />

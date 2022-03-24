@@ -82,9 +82,9 @@ def test_default_launcher(
     latest_event = events[-1]
     assert latest_event.message == "[EcsRunLauncher] Launching run in ECS task"
     event_metadata = latest_event.dagster_event.engine_event_data.metadata_entries
-    assert MetadataEntry.text(task_arn, "ECS Task ARN") in event_metadata
-    assert MetadataEntry.text(cluster_arn, "ECS Cluster") in event_metadata
-    assert MetadataEntry.text(run.run_id, "Run ID") in event_metadata
+    assert MetadataEntry("ECS Task ARN", value=task_arn) in event_metadata
+    assert MetadataEntry("ECS Cluster", value=cluster_arn) in event_metadata
+    assert MetadataEntry("Run ID", value=run.run_id) in event_metadata
 
 
 def test_task_definition_registration(

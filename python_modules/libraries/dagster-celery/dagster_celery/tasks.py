@@ -1,5 +1,5 @@
 from dagster import DagsterInstance, MetadataEntry, check
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.events import EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_plan_iterator
 from dagster.grpc.types import ExecuteStepArgs
@@ -47,8 +47,8 @@ def create_task(celery_app, **task_kwargs):
             pipeline_run,
             EngineEventData(
                 [
-                    MetadataEntry.text(step_keys_str, "step_keys"),
-                    MetadataEntry.text(self.request.hostname, "Celery worker"),
+                    MetadataEntry("step_keys", value=step_keys_str),
+                    MetadataEntry("Celery worker", value=self.request.hostname),
                 ],
                 marker_end=DELEGATE_MARKER,
             ),

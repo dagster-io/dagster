@@ -10,6 +10,7 @@ import {
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {
   FIFTEEN_SECONDS,
   QueryRefreshCountdown,
@@ -155,11 +156,10 @@ const PIPELINE_RUNS_ROOT_QUERY = gql`
       ... on InvalidPipelineRunsFilterError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
   }
 
   ${RUN_TABLE_RUN_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

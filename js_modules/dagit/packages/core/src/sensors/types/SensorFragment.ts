@@ -69,6 +69,7 @@ export interface SensorFragment_sensorState_ticks {
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: SensorFragment_sensorState_ticks_error | null;
 }
 

@@ -21,8 +21,8 @@ export interface PipelineRunTag {
 }
 
 export type SessionBase =
-  | {presetName: string}
-  | {partitionsSetName: string; partitionName: string | null};
+  | {presetName: string; tags: PipelineRunTag[] | null}
+  | {partitionsSetName: string; partitionName: string | null; tags: PipelineRunTag[] | null};
 
 export interface IExecutionSession {
   key: string;

@@ -264,7 +264,6 @@ def test_dagit_logs(_, caplog):
                         "python_version",
                         "run_storage_id",
                         "metadata",
-                        "version",
                         "dagster_version",
                         "os_desc",
                         "os_platform",

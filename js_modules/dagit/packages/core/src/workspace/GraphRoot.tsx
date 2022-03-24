@@ -3,6 +3,7 @@ import {Box, ColorsWIP, NonIdealState, PageHeader, TagWIP, Heading} from '@dagst
 import React from 'react';
 import {useHistory, useParams} from 'react-router-dom';
 
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {explodeCompositesInHandleGraph} from '../pipelines/CompositeSupport';
@@ -160,12 +161,10 @@ const GRAPH_EXPLORER_ROOT_QUERY = gql`
       ... on GraphNotFoundError {
         message
       }
-      ... on PythonError {
-        message
-        stack
-      }
+      ...PythonErrorFragment
     }
   }
   ${GRAPH_EXPLORER_FRAGMENT}
   ${GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

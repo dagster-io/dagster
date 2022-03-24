@@ -1014,26 +1014,30 @@ def test_path_param():
     from pathlib import Path
 
     assert check.path_param("/a/b.csv", "path_param") == "/a/b.csv"
-    assert check.path_param(Path("/a/b.csv"), "path_param") == "/a/b.csv"
+    if sys.platform.startswith("win32"):
+        assert check.opt_path_param(Path("c:\\a\\b.csv"), "path_param") == "c:\\a\\b.csv"
+    else:
+        assert check.opt_path_param(Path("/a/b.csv"), "path_param") == "/a/b.csv"
 
     with pytest.raises(ParameterCheckError):
-        check.path_param(None, "path_param")
+        check.path_param(None, "path_param")  # type: ignore
 
     with pytest.raises(ParameterCheckError):
-        check.path_param(0, "path_param")
+        check.path_param(0, "path_param")  # type: ignore
 
 
 def test_opt_path_param():
     from pathlib import Path
 
     assert check.opt_path_param("/a/b.csv", "path_param") == "/a/b.csv"
-    assert check.opt_path_param(Path("/a/b.csv"), "path_param") == "/a/b.csv"
+    if sys.platform.startswith("win32"):
+        assert check.opt_path_param(Path("c:\\a\\b.csv"), "path_param") == "c:\\a\\b.csv"
+    else:
+        assert check.opt_path_param(Path("/a/b.csv"), "path_param") == "/a/b.csv"
     assert check.opt_path_param(None, "path_param") is None
-    assert check.opt_path_param(None, "path_param", "/a/b/c.csv") == "/a/b/c.csv"
-    assert check.opt_path_param(None, "path_param", Path("/a/b/c.csv")) == "/a/b/c.csv"
 
     with pytest.raises(ParameterCheckError):
-        check.opt_path_param(0, "path_param")
+        check.opt_path_param(0, "path_param")  # type: ignore
 
 
 # ########################
@@ -1046,10 +1050,10 @@ def test_set_param():
     assert check.set_param(frozenset(), "set_param") == set()
 
     with pytest.raises(ParameterCheckError):
-        check.set_param(None, "set_param")
+        check.set_param(None, "set_param")  # type: ignore
 
     with pytest.raises(ParameterCheckError):
-        check.set_param("3u4", "set_param")
+        check.set_param("3u4", "set_param")  # type: ignore
 
     obj_set = {1}
     assert check.set_param(obj_set, "set_param") == obj_set
@@ -1073,13 +1077,10 @@ def test_opt_set_param():
     assert check.opt_set_param({3}, "set_param") == {3}
 
     with pytest.raises(ParameterCheckError):
-        check.opt_set_param(0, "set_param")
+        check.opt_set_param(0, "set_param")  # type: ignore
 
     with pytest.raises(ParameterCheckError):
-        check.opt_set_param("", "set_param")
-
-    with pytest.raises(ParameterCheckError):
-        check.opt_set_param("3u4", "set_param")
+        check.opt_set_param("3u4", "set_param")  # type: ignore
 
 
 # ########################

@@ -458,6 +458,18 @@ DAGSTER_PACKAGES_WITH_CUSTOM_TESTS = [
         ),
     ),
     ModuleBuildSpec(
+        "python_modules/libraries/dagster-snowflake",
+        supported_pythons=(  # dropped python 3.6 support
+            [
+                SupportedPython.V3_7,
+                SupportedPython.V3_8,
+                SupportedPython.V3_9,
+            ]
+            if (branch_name == "master" or is_release_branch(branch_name))
+            else [SupportedPython.V3_9]
+        ),
+    ),
+    ModuleBuildSpec(
         "python_modules/libraries/dagster-postgres", extra_cmds_fn=postgres_extra_cmds_fn
     ),
     ModuleBuildSpec(

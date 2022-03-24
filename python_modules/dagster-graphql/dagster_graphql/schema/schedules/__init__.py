@@ -76,7 +76,7 @@ class GrapheneScheduleStateResult(graphene.ObjectType):
 
 class GrapheneScheduleMutationResult(graphene.Union):
     class Meta:
-        types = (GraphenePythonError, GrapheneScheduleStateResult)
+        types = (GraphenePythonError, GrapheneUnauthorizedError, GrapheneScheduleStateResult)
         name = "ScheduleMutationResult"
 
 
@@ -89,6 +89,8 @@ class GrapheneStartScheduleMutation(graphene.Mutation):
     class Meta:
         name = "StartScheduleMutation"
 
+    @capture_error
+    @check_permission(Permissions.START_SCHEDULE)
     def mutate(self, graphene_info, schedule_selector):
         return start_schedule(graphene_info, ScheduleSelector.from_graphql_input(schedule_selector))
 
@@ -102,6 +104,8 @@ class GrapheneStopRunningScheduleMutation(graphene.Mutation):
     class Meta:
         name = "StopRunningScheduleMutation"
 
+    @capture_error
+    @check_permission(Permissions.STOP_RUNNING_SCHEDULE)
     def mutate(self, graphene_info, schedule_origin_id):
         return stop_schedule(graphene_info, schedule_origin_id)
 

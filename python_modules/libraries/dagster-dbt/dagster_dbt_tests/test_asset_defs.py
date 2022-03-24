@@ -69,8 +69,8 @@ def test_runtime_metadata_fn():
     ]
     assert len(materializations) == 4
     assert materializations[0].metadata_entries == [
-        MetadataEntry.text(dbt_assets[0].op.name, label="op_name"),
-        MetadataEntry.text(materializations[0].asset_key.path[0], label="dbt_model"),
+        MetadataEntry("op_name", value=dbt_assets[0].op.name),
+        MetadataEntry("dbt_model", value=materializations[0].asset_key.path[0]),
     ]
 
 

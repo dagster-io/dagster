@@ -73,6 +73,7 @@ export interface SensorRootQuery_sensorOrError_Sensor_sensorState_ticks {
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: SensorRootQuery_sensorOrError_Sensor_sensorState_ticks_error | null;
 }
 

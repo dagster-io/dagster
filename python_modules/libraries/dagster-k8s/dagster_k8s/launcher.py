@@ -257,6 +257,7 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             user_defined_k8s_config=user_defined_k8s_config,
             labels={
                 "dagster/job": pipeline_origin.pipeline_name,
+                "dagster/run-id": run.run_id,
             },
         )
 
@@ -265,9 +266,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             run,
             EngineEventData(
                 [
-                    MetadataEntry.text(job_name, "Kubernetes Job name"),
-                    MetadataEntry.text(self.job_namespace, "Kubernetes Namespace"),
-                    MetadataEntry.text(run.run_id, "Run ID"),
+                    MetadataEntry("Kubernetes Job name", value=job_name),
+                    MetadataEntry("Kubernetes Namespace", value=self.job_namespace),
+                    MetadataEntry("Run ID", value=run.run_id),
                 ]
             ),
             cls=self.__class__,
@@ -279,9 +280,9 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
             run,
             EngineEventData(
                 [
-                    MetadataEntry.text(job_name, "Kubernetes Job name"),
-                    MetadataEntry.text(self.job_namespace, "Kubernetes Namespace"),
-                    MetadataEntry.text(run.run_id, "Run ID"),
+                    MetadataEntry("Kubernetes Job name", value=job_name),
+                    MetadataEntry("Kubernetes Namespace", value=self.job_namespace),
+                    MetadataEntry("Run ID", value=run.run_id),
                 ]
             ),
             cls=self.__class__,

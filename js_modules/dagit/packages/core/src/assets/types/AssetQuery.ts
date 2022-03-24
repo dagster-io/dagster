@@ -3,7 +3,7 @@
 // @generated
 // This file was automatically generated and should not be edited.
 
-import { AssetKeyInput, RunStatus } from "./../../types/globalTypes";
+import { AssetKeyInput, InstigationStatus, RunStatus } from "./../../types/globalTypes";
 
 // ====================================================
 // GraphQL query operation: AssetQuery
@@ -34,6 +34,42 @@ export interface AssetQuery_assetOrError_Asset_definition_repository {
   id: string;
   name: string;
   location: AssetQuery_assetOrError_Asset_definition_repository_location;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_jobs_schedules_scheduleState {
+  __typename: "InstigationState";
+  id: string;
+  status: InstigationStatus;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_jobs_schedules {
+  __typename: "Schedule";
+  id: string;
+  name: string;
+  cronSchedule: string;
+  scheduleState: AssetQuery_assetOrError_Asset_definition_jobs_schedules_scheduleState;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_jobs_sensors_sensorState {
+  __typename: "InstigationState";
+  id: string;
+  status: InstigationStatus;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_jobs_sensors {
+  __typename: "Sensor";
+  id: string;
+  jobOriginId: string;
+  name: string;
+  sensorState: AssetQuery_assetOrError_Asset_definition_jobs_sensors_sensorState;
+}
+
+export interface AssetQuery_assetOrError_Asset_definition_jobs {
+  __typename: "Pipeline";
+  id: string;
+  name: string;
+  schedules: AssetQuery_assetOrError_Asset_definition_jobs_schedules[];
+  sensors: AssetQuery_assetOrError_Asset_definition_jobs_sensors[];
 }
 
 export interface AssetQuery_assetOrError_Asset_definition_metadataEntries_PathMetadataEntry {
@@ -3345,6 +3381,7 @@ export interface AssetQuery_assetOrError_Asset_definition {
   id: string;
   partitionDefinition: string | null;
   repository: AssetQuery_assetOrError_Asset_definition_repository;
+  jobs: AssetQuery_assetOrError_Asset_definition_jobs[];
   description: string | null;
   opName: string | null;
   jobNames: string[];

@@ -1,8 +1,14 @@
-from dagster_gcp.gcs.io_manager import PickledObjectGCSIOManager, gcs_pickle_io_manager
+from dagster_gcp.gcs import FakeGCSClient
+from dagster_gcp.gcs.io_manager import (
+    PickledObjectGCSIOManager,
+    gcs_pickle_asset_io_manager,
+    gcs_pickle_io_manager,
+)
 from dagster_gcp.gcs.resources import gcs_resource
 from google.cloud import storage  # type: ignore
 
 from dagster import (
+    AssetGroup,
     DagsterInstance,
     DynamicOut,
     DynamicOutput,
@@ -10,10 +16,12 @@ from dagster import (
     Int,
     Out,
     PipelineRun,
+    asset,
     build_input_context,
     build_output_context,
     job,
     op,
+    resource,
 )
 from dagster.core.definitions.pipeline_base import InMemoryPipeline
 from dagster.core.events import DagsterEventType
@@ -22,6 +30,11 @@ from dagster.core.execution.plan.outputs import StepOutputHandle
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.system_config.objects import ResolvedRunConfig
 from dagster.core.utils import make_new_run_id
+
+
+@resource
+def mock_gcs_resource(_):
+    return FakeGCSClient()
 
 
 def get_step_output(step_events, step_key, output_name="result"):
@@ -134,11 +147,34 @@ def test_dynamic(gcs_bucket):
     def echo(_, x):
         return x
 
-    @job(resource_defs={"io_manager": gcs_pickle_io_manager, "gcs": gcs_resource})
+    @job(resource_defs={"io_manager": gcs_pickle_io_manager, "gcs": mock_gcs_resource})
     def dynamic():
         numbers().map(echo)  # pylint: disable=no-member
 
     result = dynamic.execute_in_process(
         run_config={"resources": {"io_manager": {"config": {"gcs_bucket": gcs_bucket}}}}
     )
+    assert result.success
+
+
+def test_asset_io_manager(gcs_bucket):
+    @asset
+    def upstream():
+        return 2
+
+    @asset
+    def downstream(upstream):
+        return 1 + upstream
+
+    asset_group = AssetGroup(
+        [upstream, downstream],
+        resource_defs={"io_manager": gcs_pickle_asset_io_manager, "gcs": mock_gcs_resource},
+    )
+    asset_job = asset_group.build_job(name="my_asset_job")
+
+    run_config = {
+        "resources": {"io_manager": {"config": {"gcs_bucket": gcs_bucket, "gcs_prefix": "assets"}}}
+    }
+
+    result = asset_job.execute_in_process(run_config=run_config)
     assert result.success

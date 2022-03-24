@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-from typing import List, NamedTuple, Optional, cast
+from typing import Dict, NamedTuple, Optional
 
 import pendulum
 
@@ -18,7 +18,7 @@ from dagster.core.scheduler.instigation import (
     TickData,
     TickStatus,
 )
-from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter
+from dagster.core.storage.pipeline_run import PipelineRun, PipelineRunStatus, RunsFilter, TagBucket
 from dagster.core.storage.tags import RUN_KEY_TAG, check_tags
 from dagster.core.telemetry import SENSOR_RUN_CREATED, hash_name, log_action
 from dagster.core.workspace import IWorkspace
@@ -89,8 +89,8 @@ class SensorLaunchContext:
         if origin_run_id:
             self._tick = self._tick.with_origin_run(origin_run_id)
 
-    def add_run(self, run_id, run_key=None):
-        self._tick = self._tick.with_run(run_id, run_key)
+    def add_run_info(self, run_id=None, run_key=None):
+        self._tick = self._tick.with_run_info(run_id, run_key)
 
     def set_should_update_cursor_on_failure(self, should_update_cursor_on_failure: bool):
         self._should_update_cursor_on_failure = should_update_cursor_on_failure
@@ -415,8 +415,11 @@ def _evaluate_sensor(
         return
 
     skipped_runs = []
-    for run_request in sensor_runtime_data.run_requests:
+    existing_runs_by_key = _fetch_existing_runs(
+        instance, external_sensor, sensor_runtime_data.run_requests
+    )
 
+    for run_request in sensor_runtime_data.run_requests:
         target_data = external_sensor.get_target_data(run_request.job_name)
 
         pipeline_selector = PipelineSelector(
@@ -434,10 +437,12 @@ def _evaluate_sensor(
             external_pipeline,
             run_request,
             target_data,
+            existing_runs_by_key,
         )
 
         if isinstance(run, SkippedSensorRun):
             skipped_runs.append(run)
+            context.add_run_info(run_id=None, run_key=run_request.run_key)
             yield
             continue
 
@@ -465,7 +470,7 @@ def _evaluate_sensor(
 
         _check_for_debug_crash(sensor_debug_crash_flags, "RUN_LAUNCHED")
 
-        context.add_run(run_id=run.run_id, run_key=run_request.run_key)
+        context.add_run_info(run_id=run.run_id, run_key=run_request.run_key)
 
     if skipped_runs:
         run_keys = [skipped.run_key for skipped in skipped_runs]
@@ -497,6 +502,47 @@ def _is_under_min_interval(state, external_sensor, now):
     return elapsed < external_sensor.min_interval_seconds
 
 
+def _fetch_existing_runs(instance, external_sensor, run_requests):
+    run_keys = [run_request.run_key for run_request in run_requests if run_request.run_key]
+
+    if not run_keys:
+        return {}
+
+    existing_runs = {}
+
+    if instance.supports_bucket_queries:
+        runs = instance.get_runs(
+            filters=RunsFilter(
+                tags=PipelineRun.tags_for_sensor(external_sensor),
+            ),
+            bucket_by=TagBucket(
+                tag_key=RUN_KEY_TAG,
+                bucket_limit=1,
+                tag_values=run_keys,
+            ),
+        )
+        for run in runs:
+            tags = run.tags or {}
+            run_key = tags.get(RUN_KEY_TAG)
+            existing_runs[run_key] = run
+        return existing_runs
+
+    else:
+        for run_key in run_keys:
+            runs = instance.get_runs(
+                filters=RunsFilter(
+                    tags=merge_dicts(
+                        PipelineRun.tags_for_sensor(external_sensor),
+                        {RUN_KEY_TAG: run_key},
+                    )
+                ),
+                limit=1,
+            )
+            if runs:
+                existing_runs[run_key] = runs[0]
+    return existing_runs
+
+
 def _get_or_create_sensor_run(
     context,
     instance: DagsterInstance,
@@ -505,6 +551,7 @@ def _get_or_create_sensor_run(
     external_pipeline,
     run_request,
     target_data,
+    existing_runs_by_key: Dict[str, PipelineRun],
 ):
 
     if not run_request.run_key:
@@ -512,23 +559,12 @@ def _get_or_create_sensor_run(
             instance, repo_location, external_sensor, external_pipeline, run_request, target_data
         )
 
-    existing_runs = instance.get_runs(
-        RunsFilter(
-            tags=merge_dicts(
-                PipelineRun.tags_for_sensor(external_sensor),
-                {RUN_KEY_TAG: run_request.run_key},
-            )
-        )
-    )
+    run = existing_runs_by_key.get(run_request.run_key)
 
-    existing_runs = cast(List[PipelineRun], existing_runs)
-    if len(existing_runs):
-        run = existing_runs[0]
+    if run:
         if run.status != PipelineRunStatus.NOT_STARTED:
-            # A run already exists and was launched for this time period,
-            # but the daemon must have crashed before the tick could be put
-            # into a SUCCESS state
-            context.logger.info(f"Skipping run for {run_request.run_key}, found {run.run_id}.")
+            # A run already exists and was launched for this run key, but the daemon must have
+            # crashed before the tick could be updated
             return SkippedSensorRun(run_key=run_request.run_key, existing_run=run)
         else:
             context.logger.info(

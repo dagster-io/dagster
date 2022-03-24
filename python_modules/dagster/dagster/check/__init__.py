@@ -820,7 +820,7 @@ def opt_path_param(obj: None, param_name: str, default: Union[str, PathLike]) ->
 
 @overload
 def opt_path_param(
-    obj: Union[str, PathLike], param_name: str, default: Union[str, PathLike]
+    obj: Union[str, PathLike], param_name: str, default: Optional[Union[str, PathLike]] = ...
 ) -> str:
     ...
 

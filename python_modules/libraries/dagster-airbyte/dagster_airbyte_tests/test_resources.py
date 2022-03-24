@@ -200,8 +200,8 @@ def test_assets():
     materializations = list(generate_materializations(airbyte_output, []))
     assert len(materializations) == 3
 
-    assert MetadataEntry.int(1234, "bytesEmitted") in materializations[0].metadata_entries
-    assert MetadataEntry.int(4321, "recordsCommitted") in materializations[0].metadata_entries
+    assert MetadataEntry("bytesEmitted", value=1234) in materializations[0].metadata_entries
+    assert MetadataEntry("recordsCommitted", value=4321) in materializations[0].metadata_entries
 
 
 @responses.activate

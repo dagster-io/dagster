@@ -50,6 +50,7 @@ from ..backfill import (
 )
 from ..external import (
     GrapheneRepositoriesOrError,
+    GrapheneRepositoryConnection,
     GrapheneRepositoryOrError,
     GrapheneWorkspaceOrError,
 )
@@ -98,7 +99,11 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     version = graphene.NonNull(graphene.String)
 
-    repositoriesOrError = graphene.NonNull(GrapheneRepositoriesOrError)
+    repositoriesOrError = graphene.Field(
+        graphene.NonNull(GrapheneRepositoriesOrError),
+        repositorySelector=graphene.Argument(GrapheneRepositorySelector),
+    )
+
     repositoryOrError = graphene.Field(
         graphene.NonNull(GrapheneRepositoryOrError),
         repositorySelector=graphene.NonNull(GrapheneRepositorySelector),
@@ -262,7 +267,16 @@ class GrapheneDagitQuery(graphene.ObjectType):
 
     permissions = graphene.Field(non_null_list(GraphenePermission))
 
-    def resolve_repositoriesOrError(self, graphene_info):
+    def resolve_repositoriesOrError(self, graphene_info, **kwargs):
+        if kwargs.get("repositorySelector"):
+            return GrapheneRepositoryConnection(
+                nodes=[
+                    fetch_repository(
+                        graphene_info,
+                        RepositorySelector.from_graphql_input(kwargs.get("repositorySelector")),
+                    )
+                ]
+            )
         return fetch_repositories(graphene_info)
 
     def resolve_repositoryOrError(self, graphene_info, **kwargs):

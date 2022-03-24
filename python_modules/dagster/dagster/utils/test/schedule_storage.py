@@ -250,7 +250,7 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_tick(self.build_schedule_tick(current_time))
 
-        updated_tick = tick.with_status(TickStatus.SUCCESS).with_run(run_id="1234")
+        updated_tick = tick.with_status(TickStatus.SUCCESS).with_run_info(run_id="1234")
         assert updated_tick.status == TickStatus.SUCCESS
 
         storage.update_tick(updated_tick)
@@ -507,7 +507,7 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_tick(self.build_sensor_tick(current_time))
 
-        updated_tick = tick.with_status(TickStatus.SUCCESS).with_run(run_id="1234")
+        updated_tick = tick.with_status(TickStatus.SUCCESS).with_run_info(run_id="1234")
         assert updated_tick.status == TickStatus.SUCCESS
 
         storage.update_tick(updated_tick)

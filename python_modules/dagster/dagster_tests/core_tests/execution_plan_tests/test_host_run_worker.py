@@ -9,7 +9,7 @@ from dagster import (
     resource,
     solid,
 )
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.host_mode import execute_run_host_mode
 from dagster.core.execution.retries import RetryMode

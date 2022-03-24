@@ -8,14 +8,10 @@ import pendulum
 
 from dagster import check
 from dagster.core.definitions import ScheduleEvaluationContext
-from dagster.core.definitions.reconstructable import (
-    ReconstructablePipeline,
-    ReconstructableRepository,
-)
+from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster.core.definitions.sensor_definition import SensorEvaluationContext
 from dagster.core.errors import (
     DagsterExecutionInterruptedError,
-    DagsterInvalidSubsetError,
     DagsterRunNotFoundError,
     PartitionExecutionError,
     ScheduleExecutionError,
@@ -212,7 +208,7 @@ def get_external_pipeline_subset_result(
         try:
             sub_pipeline = recon_pipeline.subset_for_execution(solid_selection)
             definition = sub_pipeline.get_definition()
-        except DagsterInvalidSubsetError:
+        except Exception:
             return ExternalPipelineSubsetResult(
                 success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
             )
@@ -254,7 +250,7 @@ def get_external_schedule_execution(
                 "{schedule_name}".format(schedule_name=schedule_def.name),
             ):
                 return schedule_def.evaluate_tick(schedule_context)
-        except ScheduleExecutionError:
+        except Exception:
             return ExternalScheduleExecutionErrorData(
                 serializable_error_info_from_exc_info(sys.exc_info())
             )
@@ -286,7 +282,7 @@ def get_external_sensor_execution(
                 "{sensor_name}".format(sensor_name=sensor_def.name),
             ):
                 return sensor_def.evaluate_tick(sensor_context)
-        except SensorExecutionError:
+        except Exception:
             return ExternalSensorExecutionErrorData(
                 serializable_error_info_from_exc_info(sys.exc_info())
             )
@@ -306,7 +302,7 @@ def get_partition_config(recon_repo, partition_set_name, partition_name):
         ):
             run_config = partition_set_def.run_config_for_partition(partition)
             return ExternalPartitionConfigData(name=partition.name, run_config=run_config)
-    except PartitionExecutionError:
+    except Exception:
         return ExternalPartitionExecutionErrorData(
             serializable_error_info_from_exc_info(sys.exc_info())
         )
@@ -331,7 +327,7 @@ def get_partition_names(recon_repo, partition_set_name):
             return ExternalPartitionNamesData(
                 partition_names=partition_set_def.get_partition_names()
             )
-    except PartitionExecutionError:
+    except Exception:
         return ExternalPartitionExecutionErrorData(
             serializable_error_info_from_exc_info(sys.exc_info())
         )
@@ -349,7 +345,7 @@ def get_partition_tags(recon_repo, partition_set_name, partition_name):
         ):
             tags = partition_set_def.tags_for_partition(partition)
             return ExternalPartitionTagsData(name=partition.name, tags=tags)
-    except PartitionExecutionError:
+    except Exception:
         return ExternalPartitionExecutionErrorData(
             serializable_error_info_from_exc_info(sys.exc_info())
         )
@@ -422,7 +418,7 @@ def get_partition_set_execution_param_data(recon_repo, partition_set_name, parti
 
         return ExternalPartitionSetExecutionParamData(partition_data=partition_data)
 
-    except PartitionExecutionError:
+    except Exception:
         return ExternalPartitionExecutionErrorData(
             serializable_error_info_from_exc_info(sys.exc_info())
         )

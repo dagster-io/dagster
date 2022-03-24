@@ -1,17 +1,12 @@
 import {BreadcrumbProps, Breadcrumbs} from '@blueprintjs/core';
-import {Box, ColorsWIP, PageHeader, TagWIP, Heading} from '@dagster-io/ui';
+import {Box, ColorsWIP, PageHeader, Heading} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {RepositoryLink} from '../nav/RepositoryLink';
-import {RepoAddress} from '../workspace/types';
+type Props = {assetKey: {path: string[]}} & Partial<React.ComponentProps<typeof PageHeader>>;
 
-type Props = {assetKey: {path: string[]}; repoAddress: RepoAddress | null} & Partial<
-  React.ComponentProps<typeof PageHeader>
->;
-
-export const AssetPageHeader: React.FC<Props> = ({assetKey, repoAddress, ...extra}) => {
+export const AssetPageHeader: React.FC<Props> = ({assetKey, ...extra}) => {
   const breadcrumbs = React.useMemo(() => {
     if (assetKey.path.length === 1) {
       return [{text: assetKey.path[0], href: '/instance/assets'}];
@@ -41,15 +36,6 @@ export const AssetPageHeader: React.FC<Props> = ({assetKey, repoAddress, ...extr
             currentBreadcrumbRenderer={({text}) => <Heading>{text}</Heading>}
           />
         </Box>
-      }
-      tags={
-        repoAddress ? (
-          <TagWIP icon="asset">
-            Asset in <RepositoryLink repoAddress={repoAddress} />
-          </TagWIP>
-        ) : (
-          <TagWIP icon="asset">Asset</TagWIP>
-        )
       }
       {...extra}
     />

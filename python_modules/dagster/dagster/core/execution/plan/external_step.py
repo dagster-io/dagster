@@ -6,10 +6,7 @@ from typing import TYPE_CHECKING, Iterator, Optional, cast
 
 from dagster import Field, StringSource, check, resource
 from dagster.core.code_pointer import FileCodePointer, ModuleCodePointer
-from dagster.core.definitions.reconstructable import (
-    ReconstructablePipeline,
-    ReconstructableRepository,
-)
+from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster.core.definitions.step_launcher import StepLauncher, StepRunRef
 from dagster.core.errors import raise_execution_interrupts
 from dagster.core.events import DagsterEvent, DagsterEventType

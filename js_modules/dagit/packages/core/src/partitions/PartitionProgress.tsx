@@ -298,9 +298,7 @@ const PARTITION_PROGRESS_QUERY = gql`
           }
         }
       }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
     }
   }
   ${PYTHON_ERROR_FRAGMENT}

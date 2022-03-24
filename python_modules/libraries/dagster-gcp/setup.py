@@ -1,6 +1,6 @@
 from typing import Dict
 
-from setuptools import find_packages, setup  # type: ignore
+from setuptools import find_packages, setup
 
 
 def get_version() -> str:
@@ -32,7 +32,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=find_packages(exclude=["test"]),
+        packages=find_packages(exclude=["dagster_gcp_tests*"]),
         install_requires=[
             f"dagster{pin}",
             f"dagster_pandas{pin}",

@@ -20,7 +20,7 @@ from dagster import (
     solid,
 )
 from dagster.core.definitions import Partition, PartitionSetDefinition
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.execution.api import execute_pipeline
 from dagster.core.execution.backfill import BulkActionStatus, PartitionBackfill
 from dagster.core.host_representation import (
@@ -318,6 +318,41 @@ def test_simple_backfill():
         assert two.tags[PARTITION_NAME_TAG] == "two"
         assert three.tags[BACKFILL_ID_TAG] == "simple"
         assert three.tags[PARTITION_NAME_TAG] == "three"
+
+
+def test_canceled_backfill():
+    with instance_for_context(default_repo) as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        external_partition_set = external_repo.get_external_partition_set("simple_partition_set")
+        instance.add_backfill(
+            PartitionBackfill(
+                backfill_id="simple",
+                partition_set_origin=external_partition_set.get_external_origin(),
+                status=BulkActionStatus.REQUESTED,
+                partition_names=["one", "two", "three"],
+                from_failure=False,
+                reexecution_steps=None,
+                tags=None,
+                backfill_timestamp=pendulum.now().timestamp(),
+            )
+        )
+        assert instance.get_runs_count() == 0
+
+        iterator = execute_backfill_iteration(
+            instance, workspace, get_default_daemon_logger("BackfillDaemon")
+        )
+        next(iterator)
+        assert instance.get_runs_count() == 1
+        backfill = instance.get_backfills()[0]
+        assert backfill.status == BulkActionStatus.REQUESTED
+        instance.update_backfill(backfill.with_status(BulkActionStatus.CANCELED))
+        list(iterator)
+        backfill = instance.get_backfill(backfill.backfill_id)
+        assert backfill.status == BulkActionStatus.CANCELED
+        assert instance.get_runs_count() == 1
 
 
 def test_failure_backfill():

@@ -50,16 +50,22 @@ class ConstraintWithMetadataException(Exception):
             )
         )
 
+    def normalize_metadata_json_value(self, val):
+        if isinstance(val, set):
+            return list(val)
+        else:
+            return val
+
     def convert_to_metadata(self):
-        return MetadataEntry.json(
-            {
+        return MetadataEntry(
+            "constraint-metadata",
+            value={
                 "constraint_name": self.constraint_name,
                 "constraint_description": self.constraint_description,
-                "expected": self.expectation,
-                "offending": self.offending,
-                "actual": self.actual,
+                "expected": self.normalize_metadata_json_value(self.expectation),
+                "offending": self.normalize_metadata_json_value(self.offending),
+                "actual": self.normalize_metadata_json_value(self.actual),
             },
-            "constraint-metadata",
         )
 
     def return_as_typecheck(self):

@@ -4,6 +4,9 @@ dev_webapp:
 generate-graphql:
 	yarn workspace @dagster-io/dagit-core generate-graphql
 
+generate-perms:
+	yarn workspace @dagster-io/dagit-core generate-perms
+
 ts:
 	yarn workspace @dagster-io/dagit-app ts && yarn workspace @dagster-io/dagit-core ts && yarn workspace @dagster-io/ui ts
 

@@ -8,6 +8,7 @@ from dagster import (
     AssetMaterialization,
     AssetObservation,
     DagsterInvalidConfigError,
+    DagsterInvalidDefinitionError,
     DagsterInvariantViolationError,
     DagsterType,
     DagsterTypeCheckDidNotPass,
@@ -748,3 +749,32 @@ def test_implicit_op_output_with_asset_key():
     result = execute_op_in_graph(my_constant_asset_op)
     assert result.success
     assert len(result.asset_materializations_for_node(my_constant_asset_op.name)) == 1
+
+
+def test_args_kwargs_op():
+    with pytest.raises(
+        DagsterInvalidDefinitionError,
+        match=r"@op 'the_op' decorated function has positional vararg parameter "
+        r"'\*args'. @op decorated functions should only have keyword arguments "
+        r"that match input names and, if system information is required, a "
+        r"first positional parameter named 'context'.",
+    ):
+
+        @op(ins={"the_in": In()})
+        def the_op(*args):
+            pass
+
+    @op(ins={"the_in": In()})
+    def the_op(**kwargs):
+        return kwargs["the_in"]
+
+    @op
+    def emit_op():
+        return 1
+
+    @graph
+    def the_graph_provides_inputs():
+        the_op(emit_op())
+
+    result = the_graph_provides_inputs.execute_in_process()
+    assert result.success

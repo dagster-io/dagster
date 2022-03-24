@@ -1,5 +1,81 @@
 # Changelog
 
+# 0.14.5
+### Bugfixes
+
+- [dagit] Fixed issue where sensors could not be turned on/off in dagit.
+- Fixed a bug with direct op invocation when used with `funcsigs.partial` that would cause incorrect `InvalidInvocationErrors` to be thrown.
+- Internal code no longer triggers deprecation warnings for all runs.
+
+# 0.14.4
+### New
+
+- Dagster now supports non-standard vixie-style cron strings, like `@hourly`, `@daily`, `@weekly`, and `@monthly` in addition to the standard 5-field cron strings (e.g. `* * * * *`).
+- `value` is now an alias argument of `entry_data` (deprecated) for the `MetadataEntry` constructor.
+- Typed metadata can now be attached to `SourceAssets` and is rendered in `dagit`.
+- When a step fails to upload its compute log to Dagster, it will now add an event to the event log with the stack trace of the error instead of only logging the error to the process output.
+- [dagit] Made a number of improvements to the Schedule/Sensor pages in Dagit, including showing a paginated table of tick information, showing historical cursor state, and adding the ability to set a cursor from Dagit. Previously, we only showed tick information on the timeline view and cursors could only be set using the `dagster` CLI.
+- [dagit] When materializing assets, Dagit presents a link to the run rather than jumping to it, and the status of the materialization (pending, running, failed) is shown on nodes in the asset graph.
+- [dagit] Dagit now shows sensor and schedule information at the top of asset pages based on the jobs in which the asset appears.
+- [dagit] Dagit now performs "middle truncation" on gantt chart steps and graph nodes, making it much easier to differentiate long assets and ops.
+- [dagit] Dagit no longer refreshes data when tabs are in the background, lowering browser CPU usage.
+- `dagster-k8s`, `dagster-celery-k8s`, and `dagster-docker` now name step workers `dagster-step-...` rather than `dagster-job-...`.
+- [dagit] The launchpad is significantly more responsive when you're working with very large partition sets.
+- [dagit] We now show an informative message on the Asset catalog table when there are no matching assets to display. Previously, we would show a blank white space.
+- [dagit] Running Dagit without a backfill daemon no longer generates a warning unless queued backfills are present. Similarly, a missing sensor or schedule daemon only yields a warning if sensors or schedules are turned on.
+- [dagit] On the instance summary page, hovering over a recent run’s status dot shows a more helpful tooltip.
+- [dagster-k8s] Improved performance of the `k8s_job_executor` for runs with many user logs
+- [dagster-k8s] When using the `dagster-k8s/config` tag to configure Dagster Kubernetes pods, the tags can now accept any valid Kubernetes config, and can be written in either snake case (`node_selector_terms`) or camel case (`nodeSelectorTerms`). See [the docs](https://docs.dagster.io/deployment/guides/kubernetes/customizing-your-deployment) for more information.
+- [dagster-aws] You can now [set secrets on the `EcsRunLauncher` using the same syntax](https://docs.dagster.io/0.14.4/deployment/guides/aws#secrets-management-in-ecs) that you use to set secrets in the ECS API.
+- [dagster-aws] The `EcsRunLauncher` now attempts to reuse task definitions instead of registering a new task definition for every run.
+- [dagster-aws] The `EcsRunLauncher` now raises the underlying ECS API failure if it cannot successfully start a task.
+
+### Software-Defined Assets
+
+- When loading assets from modules using `AssetGroup.from_package_name` and similar methods, lists of assets at module scope are now loaded.
+- Added the static methods `AssetGroup.from_modules` and `AssetGroup.from_current_module`, which automatically load assets at module scope from particular modules.
+- Software-defined assets jobs can now load partitioned assets that are defined outside the job.
+- `AssetGraph.from_modules` now correctly raises an error if multiple assets with the same key are detected.
+- The `InputContext` object provided to `IOManager.load_input` previously did not include resource config. Now it does.
+- Previously, if an assets job had a partitioned asset as well as a non-partitioned asset that depended on another non-partitioned asset, it would fail to run. Now it runs without issue.
+- [dagit] The asset "View Upstream Graph" links no longer select the current asset, making it easier to click "Materialize All".
+- [dagit] The asset page's "partition health bar" highlights missing partitions better in large partition sets.
+- [dagit] The asset "Materialize Partitions" modal now presents an error when partition config or tags cannot be generated.
+- [dagit] The right sidebar of the global asset graph no longer defaults to 0% wide in fresh / incognito browser windows, which made it difficult to click nodes in the global graph.
+- [dagit] In the asset catalog, the search bar now matches substrings so it's easier to find assets with long path prefixes.
+- [dagit] Dagit no longer displays duplicate downstream dependencies on the Asset Details page in some scenarios.
+- [dagster-fivetran] Assets created using `build_fivetran_assets` will now be properly tagged with a `fivetran` pill in Dagit.
+
+### Bugfixes
+
+- Fixed issue causing step launchers to fail in many scenarios involving re-execution or dynamic execution.
+- Previously, incorrect selections (generally, step selections) could be generated for strings of the form `++item`. This has been fixed.
+- Fixed an issue where run status sensors sometimes logged the wrong status to the event log if the run moved into a different status while the sensor was running.
+- Fixed an issue where daily schedules sometimes produced an incorrect partition name on spring Daylight Savings time boundaries.
+- [dagit] Certain workspace or repo-scoped pages relied on versions of the `SQLAlchemy` package to be `1.4` or greater to be installed. We are now using queries supported by `SQLAlchemy>=1.3`. Previously we would raise an error including the message: `'Select' object has no attribute 'filter'`.
+- [dagit] Certain workspace or repo-scoped pages relied on versions of `sqlite` to be `3.25.0` or greater to be installed. This has been relaxed to support older versions of sqlite. This was previously marked as fixed in our `0.14.0` notes, but a handful of cases that were still broken have now been fixed. Previously we would raise an error (`sqlite3.OperationalError`).
+- [dagit] When changing presets / partitions in the launchpad, Dagit preserves user-entered tags and replaces only the tags inherited from the previous base.
+- [dagit] Dagit no longer hangs when rendering the run gantt chart for certain graph structures.
+- [dagster-airbyte] Fixed issues that could cause failures when generating asset materializations from an Airbyte API response.
+- [dagster-aws] 0.14.3 removed the ability for the `EcsRunLauncher` to use sidecars without you providing your own custom task definition. Now, you can continue to inherit sidecars from the launching task’s task definition by setting `include_sidecars: True` in your run launcher config.
+
+
+### Breaking Changes
+
+* `dagster-snowflake` has dropped support for python 3.6. The library it is currently built on, `snowflake-connector-python,` dropped 3.6 support in their recent `2.7.5` release.
+
+### Community Contributions
+
+* `MetadataValue.path()` and `PathMetadataValue` now accept [`os.PathLike`](https://docs.python.org/3/library/os.html#os.PathLike) objects in addition to strings. Thanks[@abkfenris](https://github.com/abkfenris)!
+* [dagster-k8s] Fixed configuration of `env_vars` on the `k8s_job_executor`. Thanks [@kervel](https://github.com/kervel)!
+* Typo fix on the Create a New Project page. Thanks [@frcode](https://github.com/frcode)!
+
+### Documentation
+
+* Concepts sections added for Op Retries and Dynamic Graphs
+* The Hacker News Assets demo now uses `AssetGroup` instead of `build_assets_job`, and it can now be run entirely from a local machine with no additional infrastructure (storing data inside DuckDB).
+* The Software-Defined Assets guide in the docs now uses `AssetGroup` instead of `build_assets_job`.
+
 # 0.14.3
 
 ### New

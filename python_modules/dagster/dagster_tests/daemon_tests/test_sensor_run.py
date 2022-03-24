@@ -22,7 +22,7 @@ from dagster import (
     run_failure_sensor,
     solid,
 )
-from dagster.core.definitions.decorators.sensor import asset_sensor, sensor
+from dagster.core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.run_status_sensor_definition import run_status_sensor
 from dagster.core.definitions.sensor_definition import DefaultSensorStatus, RunRequest, SkipReason
@@ -789,6 +789,120 @@ def test_launch_once(capfd):
         "US/Central",
     )
     with instance_with_sensors() as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+
+            external_sensor = external_repo.get_external_sensor("run_key_sensor")
+            instance.add_instigator_state(
+                InstigatorState(
+                    external_sensor.get_external_origin(),
+                    InstigatorType.SENSOR,
+                    InstigatorStatus.RUNNING,
+                )
+            )
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_ticks(external_sensor.get_external_origin_id())
+            assert len(ticks) == 0
+
+            evaluate_sensors(instance, workspace)
+            wait_for_all_runs_to_start(instance)
+
+            assert instance.get_runs_count() == 1
+            run = instance.get_runs()[0]
+            ticks = instance.get_ticks(external_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                external_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+                expected_run_ids=[run.run_id],
+            )
+
+        # run again (after 30 seconds), to ensure that the run key maintains idempotence
+        freeze_datetime = freeze_datetime.add(seconds=30)
+        with pendulum.test(freeze_datetime):
+            evaluate_sensors(instance, workspace)
+            assert instance.get_runs_count() == 1
+            ticks = instance.get_ticks(external_sensor.get_external_origin_id())
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                external_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+            assert ticks[0].run_keys
+            assert len(ticks[0].run_keys) == 1
+            assert not ticks[0].run_ids
+
+            captured = capfd.readouterr()
+            assert (
+                'Skipping 1 run for sensor run_key_sensor already completed with run keys: ["only_once"]'
+                in captured.out
+            )
+
+            launched_run = instance.get_runs()[0]
+
+            # Manually create a new run with the same tags
+            execute_pipeline(
+                the_pipeline,
+                run_config=launched_run.run_config,
+                tags=launched_run.tags,
+                instance=instance,
+            )
+
+            # Sensor loop still executes
+        freeze_datetime = freeze_datetime.add(seconds=30)
+        with pendulum.test(freeze_datetime):
+            evaluate_sensors(instance, workspace)
+            ticks = instance.get_ticks(external_sensor.get_external_origin_id())
+
+            assert len(ticks) == 3
+            validate_tick(
+                ticks[0],
+                external_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+
+@contextmanager
+def instance_with_sensors_no_run_bucketing():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_with_sensors(
+            overrides={
+                "run_storage": {
+                    "module": "dagster_tests.core_tests.storage_tests.test_run_storage",
+                    "class": "NonBucketQuerySqliteRunStorage",
+                    "config": {"base_dir": temp_dir},
+                },
+            }
+        ) as (
+            instance,
+            workspace,
+            external_repo,
+        ):
+            yield instance, workspace, external_repo
+
+
+def test_launch_once_unbatched(capfd):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(
+            year=2019,
+            month=2,
+            day=27,
+            hour=23,
+            minute=59,
+            second=59,
+            tz="UTC",
+        ),
+        "US/Central",
+    )
+    with instance_with_sensors_no_run_bucketing() as (
         instance,
         workspace,
         external_repo,
