@@ -9,7 +9,6 @@ import pendulum
 from dateutil.relativedelta import relativedelta
 
 from dagster import check
-from dagster.core.storage.tags import PARTITION_NAME_TAG
 from dagster.serdes import whitelist_for_serdes
 
 from ...seven.compat.pendulum import PendulumDateTime, to_timezone
