@@ -1,4 +1,4 @@
-from typing import Generator, Union
+from typing import Iterator, Union
 
 from dagster_aws.s3.ops import S3Coordinate
 
@@ -40,7 +40,7 @@ and `file_cache` resource.
 )
 def cache_file_from_s3(
     context, s3_coordinate: S3Coordinate  # type: ignore
-) -> Generator[Union[ExpectationResult, Output], None, None]:
+) -> Iterator[Union[ExpectationResult, Output]]:
     target_key = context.solid_config.get("file_key", s3_coordinate["key"].split("/")[-1])
 
     file_cache = context.resources.file_cache
