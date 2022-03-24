@@ -1,5 +1,6 @@
 import os
 import pickle
+import shutil
 import subprocess
 import sys
 from typing import TYPE_CHECKING, Iterator, Optional, cast
@@ -13,7 +14,7 @@ from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context.system import StepExecutionContext
 from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
-from dagster.core.execution.plan.execute_step import core_dagster_event_sequence_for_step
+from dagster.core.execution.plan.execute_plan import dagster_event_sequence_for_step
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
 from dagster.serdes import deserialize_value
@@ -52,6 +53,8 @@ class LocalExternalStepLauncher(StepLauncher):
         run_id = step_context.pipeline_run.run_id
 
         step_run_dir = os.path.join(self.scratch_dir, run_id, step_run_ref.step_key)
+        if os.path.exists(step_run_dir):
+            shutil.rmtree(step_run_dir)
         os.makedirs(step_run_dir)
 
         step_run_ref_file_path = os.path.join(step_run_dir, PICKLED_STEP_RUN_REF_FILE_NAME)
@@ -123,14 +126,12 @@ def _upstream_events_and_runs(step_context: StepExecutionContext):
             if output_handle in upstream_output_handles:
                 events.append(r)
                 upstream_output_handles.remove(output_handle)
-        # found all the necessary events
-        if not upstream_output_handles:
-            break
 
         if current_run.parent_run_id is None:
-            step_context.log.warn(
-                f"Could not find outputs in the logs for output handles: {upstream_output_handles}"
-            )
+            if upstream_output_handles:
+                step_context.log.warn(
+                    f"Could not find outputs in the logs for output handles: {upstream_output_handles}"
+                )
             break
 
         # else, keep looking backwards
@@ -267,6 +268,7 @@ def step_run_ref_to_step_context(
     # Since we are launching from a PlanExecutionContext, the type will always be
     # StepExecutionContext.
     step_execution_context = cast(StepExecutionContext, step_execution_context)
+
     return step_execution_context
 
 
@@ -275,4 +277,7 @@ def run_step_from_ref(
 ) -> Iterator[DagsterEvent]:
     check.inst_param(instance, "instance", DagsterInstance)
     step_context = step_run_ref_to_step_context(step_run_ref, instance)
-    return core_dagster_event_sequence_for_step(step_context)
+
+    # The step should be forced to run locally with respect to the remote process that this step
+    # context is being deserialized in
+    return dagster_event_sequence_for_step(step_context, force_local_execution=True)
