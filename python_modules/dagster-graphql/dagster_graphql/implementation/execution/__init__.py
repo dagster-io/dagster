@@ -4,7 +4,7 @@ from graphql.execution.base import ResolveInfo
 from rx import Observable
 
 from dagster import check
-from dagster.core.events import DagsterEventType, EngineEventData
+from dagster.core.events import EngineEventData
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
