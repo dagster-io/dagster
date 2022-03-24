@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="modern_data_stack_assets",
-    version="dev",
+    version="0+dev",
     author="Elementl",
     author_email="hello@elementl.com",
     classifiers=[

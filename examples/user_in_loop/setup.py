@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="user_in_loop",
-    version="dev",
+    version="0+dev",
     author_email="hello@elementl.com",
     packages=["user_in_loop"],
     include_package_data=True,
