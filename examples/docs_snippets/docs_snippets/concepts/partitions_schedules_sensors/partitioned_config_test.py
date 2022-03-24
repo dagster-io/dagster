@@ -50,16 +50,12 @@ def test_my_offset_partitioned_config():
     # test that the first partition is as expected
     partitions = my_offset_partitioned_config.partitions_def.get_partitions()
     assert str(partitions[0].value.start) == "2020-01-01T03:00:00+00:00"
-    assert str(partitions[0].value.end) == "2021-01-02T03:00:00+00:00"
+    assert str(partitions[0].value.end) == "2020-01-02T03:00:00+00:00"
 
     # get a partition for a datetime and assert the output of my_offset_partitioned_config is valid
     # configutation for the do_stuff_partitioned_job
-    partition_key = my_offset_partitioned_config().get_partition_keys(
-        datetime(2020, 2, 1)
-    )
-    run_config = my_offset_partitioned_config().get_run_config(
-        partition_key=partition_key[0]
-    )
+
+    run_config = my_offset_partitioned_config.run_config_for_partition_fn(partitions[0])
     assert validate_run_config(do_stuff_partitioned, run_config)
 
 
