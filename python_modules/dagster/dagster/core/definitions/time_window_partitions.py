@@ -1,5 +1,5 @@
 from datetime import datetime, time
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union, cast
 
 import pendulum
 
@@ -198,6 +198,17 @@ class DailyPartitionsDefinition(TimeWindowPartitionsDefinition):
         )
 
 
+def wrap_time_window_tags_fn(
+    tags_fn: Optional[Callable[[datetime, datetime], Dict[str, str]]]
+) -> Callable[[Partition], Dict[str, str]]:
+    def _tag_wrapper(partition: Partition) -> Dict[str, str]:
+        if not tags_fn:
+            return {}
+        return tags_fn(cast(datetime, partition.value[0]), cast(datetime, partition.value[1]))
+
+    return _tag_wrapper
+
+
 def daily_partitioned_config(
     start_date: Union[datetime, str],
     minute_offset: int = 0,
@@ -205,6 +216,7 @@ def daily_partitioned_config(
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
     end_offset: int = 0,
+    tags_for_partition_fn: Optional[Callable[[datetime, datetime], Dict[str, str]]] = None,
 ) -> Callable[[Callable[[datetime, datetime], Dict[str, Any]]], PartitionedConfig]:
     """Defines run config over a set of daily partitions.
 
@@ -251,6 +263,7 @@ def daily_partitioned_config(
                 end_offset=end_offset,
             ),
             decorated_fn=fn,
+            tags_for_partition_fn=wrap_time_window_tags_fn(tags_for_partition_fn),
         )
 
     return inner
@@ -305,6 +318,7 @@ def hourly_partitioned_config(
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
     end_offset: int = 0,
+    tags_for_partition_fn: Optional[Callable[[datetime, datetime], Dict[str, str]]] = None,
 ) -> Callable[[Callable[[datetime, datetime], Dict[str, Any]]], PartitionedConfig]:
     """Defines run config over a set of hourly partitions.
 
@@ -349,6 +363,7 @@ def hourly_partitioned_config(
                 end_offset=end_offset,
             ),
             decorated_fn=fn,
+            tags_for_partition_fn=wrap_time_window_tags_fn(tags_for_partition_fn),
         )
 
     return inner
@@ -412,6 +427,7 @@ def monthly_partitioned_config(
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
     end_offset: int = 0,
+    tags_for_partition_fn: Optional[Callable[[datetime, datetime], Dict[str, str]]] = None,
 ) -> Callable[[Callable[[datetime, datetime], Dict[str, Any]]], PartitionedConfig]:
     """Defines run config over a set of monthly partitions.
 
@@ -461,6 +477,7 @@ def monthly_partitioned_config(
                 end_offset=end_offset,
             ),
             decorated_fn=fn,
+            tags_for_partition_fn=wrap_time_window_tags_fn(tags_for_partition_fn),
         )
 
     return inner
@@ -525,6 +542,7 @@ def weekly_partitioned_config(
     timezone: Optional[str] = None,
     fmt: Optional[str] = None,
     end_offset: int = 0,
+    tags_for_partition_fn: Optional[Callable[[datetime, datetime], Dict[str, str]]] = None,
 ) -> Callable[[Callable[[datetime, datetime], Dict[str, Any]]], PartitionedConfig]:
     """Defines run config over a set of weekly partitions.
 
@@ -575,6 +593,7 @@ def weekly_partitioned_config(
                 end_offset=end_offset,
             ),
             decorated_fn=fn,
+            tags_for_partition_fn=wrap_time_window_tags_fn(tags_for_partition_fn),
         )
 
     return inner
