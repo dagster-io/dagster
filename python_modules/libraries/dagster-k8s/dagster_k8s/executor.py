@@ -15,6 +15,7 @@ from dagster.core.executor.step_delegating.step_handler.base import StepHandlerC
 from dagster.core.types.dagster_type import Optional
 from dagster.utils import frozentags, merge_dicts
 
+from .container_context import K8sContainerContext
 from .job import (
     DagsterK8sJobConfig,
     construct_dagster_k8s_job,
@@ -71,39 +72,24 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         )
 
     exc_cfg = init_context.executor_config
-    job_config = DagsterK8sJobConfig(
-        dagster_home=run_launcher.dagster_home,
-        instance_config_map=run_launcher.instance_config_map,
-        postgres_password_secret=run_launcher.postgres_password_secret,
-        job_image=exc_cfg.get("job_image"),
-        image_pull_policy=(
-            exc_cfg.get("image_pull_policy")
-            if exc_cfg.get("image_pull_policy") != None
-            else run_launcher.image_pull_policy
-        ),
-        image_pull_secrets=run_launcher.image_pull_secrets
-        + (exc_cfg.get("image_pull_secrets") or []),
-        service_account_name=(
-            exc_cfg.get("service_account_name")
-            if exc_cfg.get("service_account_name") != None
-            else run_launcher.service_account_name
-        ),
-        env_config_maps=run_launcher.env_config_maps + (exc_cfg.get("env_config_maps") or []),
-        env_secrets=run_launcher.env_secrets + (exc_cfg.get("env_secrets") or []),
-        env_vars=run_launcher.env_vars + (exc_cfg.get("env_vars") or []),
-        volume_mounts=run_launcher.volume_mounts + (exc_cfg.get("volume_mounts") or []),
-        volumes=run_launcher.volumes + (exc_cfg.get("volumes") or []),
-        labels=merge_dicts(run_launcher.labels, exc_cfg.get("labels", {})),
+
+    k8s_container_context = K8sContainerContext(
+        image_pull_policy=exc_cfg.get("image_pull_policy"),
+        image_pull_secrets=exc_cfg.get("image_pull_secrets"),
+        service_account_name=exc_cfg.get("service_account_name"),
+        env_config_maps=exc_cfg.get("env_config_maps"),
+        env_secrets=exc_cfg.get("env_secrets"),
+        env_vars=exc_cfg.get("env_vars"),
+        volume_mounts=exc_cfg.get("volume_mounts"),
+        volumes=exc_cfg.get("volumes"),
+        labels=exc_cfg.get("labels"),
+        namespace=exc_cfg.get("job_namespace"),
     )
 
     return StepDelegatingExecutor(
         K8sStepHandler(
-            job_config=job_config,
-            job_namespace=(
-                exc_cfg.get("job_namespace")
-                if exc_cfg.get("job_namespace") != None
-                else run_launcher.job_namespace
-            ),
+            image=exc_cfg.get("job_image"),
+            container_context=k8s_container_context,
             load_incluster_config=run_launcher.load_incluster_config,
             kubeconfig_file=run_launcher.kubeconfig_file,
         ),
@@ -119,16 +105,19 @@ class K8sStepHandler(StepHandler):
 
     def __init__(
         self,
-        job_config: DagsterK8sJobConfig,
-        job_namespace: str,
+        image: Optional[str],
+        container_context: K8sContainerContext,
         load_incluster_config: bool,
         kubeconfig_file: Optional[str],
         k8s_client_batch_api=None,
     ):
         super().__init__()
 
-        self._job_config = job_config
-        self._job_namespace = job_namespace
+        self._executor_image = check.opt_str_param(image, "image")
+        self._executor_container_context = check.inst_param(
+            container_context, "container_context", K8sContainerContext
+        )
+
         self._fixed_k8s_client_batch_api = k8s_client_batch_api
 
         if load_incluster_config:
@@ -140,6 +129,12 @@ class K8sStepHandler(StepHandler):
         else:
             check.opt_str_param(kubeconfig_file, "kubeconfig_file")
             kubernetes.config.load_kube_config(kubeconfig_file)
+
+    def _get_container_context(self, step_handler_context: StepHandlerContext):
+        run_target = K8sContainerContext.create_for_run(
+            step_handler_context.pipeline_run, step_handler_context.instance.run_launcher
+        )
+        return run_target.merge(self._executor_container_context)
 
     @property
     def _batch_api(self):
@@ -173,7 +168,12 @@ class K8sStepHandler(StepHandler):
 
         args = step_handler_context.execute_step_args.get_command_args()
 
-        job_config = self._job_config
+        container_context = self._get_container_context(step_handler_context)
+
+        job_config = container_context.get_k8s_job_config(
+            self._executor_image, step_handler_context.instance.run_launcher
+        )
+
         if not job_config.job_image:
             job_config = job_config.with_image(
                 step_handler_context.execute_step_args.pipeline_origin.repository_origin.container_image
@@ -215,7 +215,7 @@ class K8sStepHandler(StepHandler):
             )
         )
 
-        self._batch_api.create_namespaced_job(body=job, namespace=self._job_namespace)
+        self._batch_api.create_namespaced_job(body=job, namespace=container_context.namespace)
 
         return events
 
@@ -227,7 +227,11 @@ class K8sStepHandler(StepHandler):
 
         job_name = self._get_k8s_step_job_name(step_handler_context)
 
-        job = self._batch_api.read_namespaced_job(namespace=self._job_namespace, name=job_name)
+        container_context = self._get_container_context(step_handler_context)
+
+        job = self._batch_api.read_namespaced_job(
+            namespace=container_context.namespace, name=job_name
+        )
         if job.status.failed:
             return [
                 DagsterEvent(
@@ -249,6 +253,7 @@ class K8sStepHandler(StepHandler):
         ), "Launching multiple steps is not currently supported"
 
         job_name = self._get_k8s_step_job_name(step_handler_context)
+        container_context = self._get_container_context(step_handler_context)
 
-        delete_job(job_name=job_name, namespace=self._job_namespace)
+        delete_job(job_name=job_name, namespace=container_context.namespace)
         return []
