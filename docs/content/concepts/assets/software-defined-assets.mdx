@@ -172,7 +172,7 @@ In any situation where you might use a source asset, you could also have the cod
 
 By default, materializing an asset will pickle it to a local file named "my_asset", in a temporary directory. You can specify this directory by providing a value for the `local_artifact_storage` property in your dagster.yaml file.
 
-[IO managers](/concepts/io-management/io-managers) enable fully overriding this behavior and storing asset contents in any way you wish - e.g. writing them as tables in a database or as objects in a cloud object store. Dagster also provides built-in IO managers that pickle assets to AWS S3, Azure Blob Storage, and GCS, or you can write your own.
+[IO managers](/concepts/io-management/io-managers) enable fully overriding this behavior and storing asset contents in any way you wish - e.g. writing them as tables in a database or as objects in a cloud object store. Dagster also provides built-in IO managers that pickle assets to AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_asset_io_manager" />), Azure Blob Storage, and GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_asset_io_manager" />), or you can write your own.
 
 To apply an IO manager to a set of assets, you can include it with them in an <PyObject object="AssetGroup" />.
 
