@@ -14,7 +14,7 @@ from dagster.core.events import DagsterEvent, DagsterEventType
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.context.system import StepExecutionContext
 from dagster.core.execution.context_creation_pipeline import PlanExecutionContextManager
-from dagster.core.execution.plan.execute_plan import _dagster_event_sequence_for_step
+from dagster.core.execution.plan.execute_plan import dagster_event_sequence_for_step
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.file_manager import LocalFileHandle, LocalFileManager
 from dagster.serdes import deserialize_value
@@ -280,4 +280,4 @@ def run_step_from_ref(
 
     # The step should be forced to run locally with respect to the remote process that this step
     # context is being deserialized in
-    return _dagster_event_sequence_for_step(step_context, force_local_execution=True)
+    return dagster_event_sequence_for_step(step_context, force_local_execution=True)

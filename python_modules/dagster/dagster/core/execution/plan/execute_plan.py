@@ -84,7 +84,7 @@ def inner_plan_execution_iterator(
                         step_context, log_key=step_context.step.key, steps=[step_context.step]
                     )
 
-                for step_event in check.generator(_dagster_event_sequence_for_step(step_context)):
+                for step_event in check.generator(dagster_event_sequence_for_step(step_context)):
                     check.inst(step_event, DagsterEvent)
                     step_event_list.append(step_event)
                     yield step_event
@@ -164,7 +164,7 @@ def _trigger_hook(
             yield DagsterEvent.hook_completed(step_context, hook_def)
 
 
-def _dagster_event_sequence_for_step(
+def dagster_event_sequence_for_step(
     step_context: StepExecutionContext, force_local_execution: bool = False
 ) -> Iterator[DagsterEvent]:
     """
@@ -211,6 +211,11 @@ def _dagster_event_sequence_for_step(
 
     For tools, however, this option should be false, and a sensible error message
     signaled to the user within that tool.
+
+    When we launch a step that has a step launcher, we use this function on both the host process
+    and the remote process. When we run the step in the remote process, to prevent an infinite loop
+    of launching steps that then launch steps, and so on, the remote process will run this with
+    the force_local_execution argument set to True.
     """
 
     check.inst_param(step_context, "step_context", StepExecutionContext)
