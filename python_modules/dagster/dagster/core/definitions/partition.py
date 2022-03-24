@@ -9,6 +9,7 @@ import pendulum
 from dateutil.relativedelta import relativedelta
 
 from dagster import check
+from dagster.core.storage.tags import PARTITION_NAME_TAG
 from dagster.serdes import whitelist_for_serdes
 
 from ...seven.compat.pendulum import PendulumDateTime, to_timezone
@@ -514,7 +515,7 @@ class PartitionSetDefinition(Generic[T]):
             if partition.name == name:
                 return partition
 
-        check.failed("Partition name {} not found!".format(name))
+        raise DagsterUnknownPartitionError(f"Could not find a partition with key `{name}`")
 
     def get_partition_names(self, current_time: Optional[datetime] = None) -> List[str]:
         return [part.name for part in self.get_partitions(current_time)]
@@ -744,12 +745,16 @@ class PartitionedConfig(Generic[T]):
         partitions_def: PartitionsDefinition[T],  # pylint: disable=unsubscriptable-object
         run_config_for_partition_fn: Callable[[Partition[T]], Dict[str, Any]],
         decorated_fn: Optional[Callable[..., Dict[str, Any]]] = None,
+        tags_for_partition_fn: Optional[Callable[[Partition[T]], Dict[str, str]]] = None,
     ):
         self._partitions = check.inst_param(partitions_def, "partitions_def", PartitionsDefinition)
         self._run_config_for_partition_fn = check.callable_param(
             run_config_for_partition_fn, "run_config_for_partition_fn"
         )
         self._decorated_fn = decorated_fn
+        self._tags_for_partition_fn = check.opt_callable_param(
+            tags_for_partition_fn, "tags_for_partition_fn"
+        )
 
     @property
     def partitions_def(self) -> PartitionsDefinition[T]:  # pylint: disable=unsubscriptable-object
@@ -759,20 +764,12 @@ class PartitionedConfig(Generic[T]):
     def run_config_for_partition_fn(self) -> Callable[[Partition[T]], Dict[str, Any]]:
         return self._run_config_for_partition_fn
 
+    @property
+    def tags_for_partition_fn(self) -> Optional[Callable[[Partition[T]], Dict[str, str]]]:
+        return self._tags_for_partition_fn
+
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> List[str]:
         return [partition.name for partition in self.partitions_def.get_partitions(current_time)]
-
-    def get_run_config(self, partition_key: str) -> Dict[str, Any]:
-        matching = [
-            partition
-            for partition in self.partitions_def.get_partitions()
-            if partition.name == partition_key
-        ]
-        if not matching:
-            raise DagsterUnknownPartitionError(
-                f"Could not find a partition with key `{partition_key}`"
-            )
-        return self.run_config_for_partition_fn(matching[0])
 
     def __call__(self, *args, **kwargs):
         if self._decorated_fn is None:
@@ -786,6 +783,7 @@ class PartitionedConfig(Generic[T]):
 
 def static_partitioned_config(
     partition_keys: List[str],
+    tags_for_partition_fn: Optional[Callable[[str], Dict[str, str]]] = None,
 ) -> Callable[[Callable[[str], Dict[str, Any]]], PartitionedConfig]:
     """Creates a static partitioned config for a job.
 
@@ -815,10 +813,14 @@ def static_partitioned_config(
         def _run_config_wrapper(partition: Partition[T]) -> Dict[str, Any]:
             return fn(partition.name)
 
+        def _tag_wrapper(partition: Partition[T]) -> Dict[str, str]:
+            return tags_for_partition_fn(partition.name) if tags_for_partition_fn else {}
+
         return PartitionedConfig(
             partitions_def=StaticPartitionsDefinition(partition_keys),
             run_config_for_partition_fn=_run_config_wrapper,
             decorated_fn=fn,
+            tags_for_partition_fn=_tag_wrapper,
         )
 
     return inner
@@ -826,6 +828,7 @@ def static_partitioned_config(
 
 def dynamic_partitioned_config(
     partition_fn: Callable[[Optional[datetime]], List[str]],
+    tags_for_partition_fn: Optional[Callable[[str], Dict[str, str]]] = None,
 ) -> Callable[[Callable[[str], Dict[str, Any]]], PartitionedConfig]:
     """Creates a dynamic partitioned config for a job.
 
@@ -850,10 +853,14 @@ def dynamic_partitioned_config(
         def _run_config_wrapper(partition: Partition[T]) -> Dict[str, Any]:
             return fn(partition.name)
 
+        def _tag_wrapper(partition: Partition[T]) -> Dict[str, str]:
+            return tags_for_partition_fn(partition.name) if tags_for_partition_fn else {}
+
         return PartitionedConfig(
             partitions_def=DynamicPartitionsDefinition(partition_fn),
             run_config_for_partition_fn=_run_config_wrapper,
             decorated_fn=fn,
+            tags_for_partition_fn=_tag_wrapper,
         )
 
     return inner
