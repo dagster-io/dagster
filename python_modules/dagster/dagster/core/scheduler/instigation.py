@@ -204,7 +204,7 @@ class InstigatorState(
         return self.origin.get_id()
 
     def get_selector_id(self):
-        selector = InstigationSelector(
+        selector = InstigatorSelector(
             state.origin.external_repository_origin.repository_location_origin.location_name,
             state.origin.external_repository_origin.repository_name,
             state.name,

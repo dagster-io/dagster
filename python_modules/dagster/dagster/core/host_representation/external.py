@@ -28,7 +28,7 @@ from .external_data import (
 from .handle import InstigatorHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
-from .selector import InstigationSelector
+from .selector import InstigatorSelector
 
 if TYPE_CHECKING:
     from dagster.core.scheduler.instigation import InstigatorState
@@ -445,7 +445,7 @@ class ExternalSchedule:
         self._handle = InstigatorHandle(
             self._external_schedule_data.name, check.inst_param(handle, "handle", RepositoryHandle)
         )
-        self._selector = InstigationSelector(
+        self._selector = InstigatorSelector(
             handle.location_name, handle.repository_name, external_schedule_data.name
         )
 
@@ -555,7 +555,7 @@ class ExternalSensor:
         self._handle = InstigatorHandle(
             self._external_sensor_data.name, check.inst_param(handle, "handle", RepositoryHandle)
         )
-        self._selector = InstigationSelector(
+        self._selector = InstigatorSelector(
             handle.location_name, handle.repository_name, external_sensor_data.name
         )
 

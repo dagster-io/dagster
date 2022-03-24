@@ -136,13 +136,13 @@ class SensorSelector(
         )
 
 
-class InstigationSelector(
+class InstigatorSelector(
     NamedTuple(
-        "_InstigationSelector", [("location_name", str), ("repository_name", str), ("name", str)]
+        "_InstigatorSelector", [("location_name", str), ("repository_name", str), ("name", str)]
     )
 ):
     def __new__(cls, location_name: str, repository_name: str, name: str):
-        return super(InstigationSelector, cls).__new__(
+        return super(InstigatorSelector, cls).__new__(
             cls,
             location_name=check.str_param(location_name, "location_name"),
             repository_name=check.str_param(repository_name, "repository_name"),
@@ -158,7 +158,7 @@ class InstigationSelector(
 
     @staticmethod
     def from_graphql_input(graphql_data):
-        return InstigationSelector(
+        return InstigatorSelector(
             location_name=graphql_data["repositoryLocationName"],
             repository_name=graphql_data["repositoryName"],
             name=graphql_data["name"],

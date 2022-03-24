@@ -165,26 +165,23 @@ class SqlScheduleStorage(ScheduleStorage):
                 )
             )
 
-        if self.has_instigators_table():
-            if not self._jobs_table_has_selector_state(selector_id):
-                with self.connect() as conn:
+            if self._has_instigators_table(conn):
+                if not self._jobs_has_selector_state(conn, selector_id):
                     conn.execute(
                         InstigatorTable.delete().where(  # pylint: disable=no-value-for-parameter
                             InstigatorTable.c.selector_id == selector_id
                         )
                     )
 
-    def _jobs_has_selector_state(selector_id):
+    def _jobs_has_selector_state(conn, selector_id):
         query = (
             db.select([db.func.count()])
             .select_from(JobTable)
             .where(JobTable.c.selector_id == selector_id)
         )
-        with self.connect() as conn:
-            result = conn.execute(query)
-            row = result_proxy.fetchone()
-            result.close()
-
+        result = conn.execute(query)
+        row = result_proxy.fetchone()
+        result.close()
         return row[0] > 0
 
     def _add_filter_limit(self, query, before=None, after=None, limit=None, statuses=None):
