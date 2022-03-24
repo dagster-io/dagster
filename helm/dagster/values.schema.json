@@ -60,6 +60,9 @@
         "migrate": {
             "$ref": "#/definitions/Migrate"
         },
+        "telemetry": {
+            "$ref": "#/definitions/Telemetry"
+        },
         "serviceAccount": {
             "$ref": "#/definitions/ServiceAccount"
         },
@@ -85,6 +88,7 @@
         "dagsterDaemon",
         "busybox",
         "migrate",
+        "telemetry",
         "serviceAccount",
         "global"
     ],
@@ -2309,6 +2313,20 @@
             "required": [
                 "enabled"
             ]
+        },
+        "Telemetry": {
+            "title": "Telemetry",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "enabled"
+            ],
+            "additionalProperties": false
         },
         "ServiceAccount": {
             "title": "ServiceAccount",
