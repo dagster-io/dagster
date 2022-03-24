@@ -285,7 +285,7 @@ enum DagsterEventType {
   STEP_UP_FOR_RETRY
   STEP_RESTARTED
   ASSET_MATERIALIZATION
-  REGISTER_RUN_ASSET
+  ASSET_MATERIALIZATION_PLANNED
   ASSET_OBSERVATION
   STEP_EXPECTATION_RESULT
   RUN_ENQUEUED
@@ -614,6 +614,7 @@ union DagsterRunEvent =
   | HookErroredEvent
   | AlertStartEvent
   | AlertSuccessEvent
+  | AssetMaterializationPlannedEvent
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   runId: String!
@@ -975,6 +976,19 @@ type AlertSuccessEvent implements MessageEvent & RunEvent {
   solidHandleID: String
   eventType: DagsterEventType
   pipelineName: String!
+}
+
+type AssetMaterializationPlannedEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+  assetKey: AssetKey
+  runOrError: RunOrError!
 }
 
 scalar Cursor

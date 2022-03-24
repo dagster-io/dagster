@@ -182,6 +182,7 @@ def from_dagster_event_record(event_record, pipeline_name):
         GrapheneRunStartingEvent,
         GrapheneRunSuccessEvent,
         GrapheneStepExpectationResultEvent,
+        GrapheneAssetMaterializationPlannedEvent,
     )
 
     # Lots of event types. Pylint thinks there are too many branches
@@ -226,6 +227,8 @@ def from_dagster_event_record(event_record, pipeline_name):
         return GrapheneObservationEvent(
             event=event_record,
         )
+    elif dagster_event.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
+        return GrapheneAssetMaterializationPlannedEvent(event=event_record)
     elif dagster_event.event_type == DagsterEventType.STEP_EXPECTATION_RESULT:
         expectation_result = dagster_event.event_specific_data.expectation_result
         return GrapheneStepExpectationResultEvent(

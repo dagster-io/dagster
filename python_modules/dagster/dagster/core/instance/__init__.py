@@ -932,7 +932,7 @@ class DagsterInstance:
 
         return execution_plan_snapshot_id
 
-    def _register_run_asset_events(self, pipeline_run, execution_plan_snapshot):
+    def _asset_materialization_planned_events(self, pipeline_run, execution_plan_snapshot):
         from dagster.core.events import DagsterEvent
         from dagster.core.events.log import EventLogEntry
 
@@ -943,10 +943,10 @@ class DagsterInstance:
                 for output in step.outputs:
                     asset_key = output.properties.asset_key
                     if asset_key:
-                        event = DagsterEvent.register_run_asset(pipeline_name, asset_key)
+                        event = DagsterEvent.asset_materialization_planned(pipeline_name, asset_key)
                         event_record = EventLogEntry(
                             user_message="",
-                            level=logging.INFO,
+                            level=logging.DEBUG,
                             pipeline_name=pipeline_name,
                             run_id=pipeline_run.run_id,
                             error_info=None,
@@ -995,7 +995,7 @@ class DagsterInstance:
         )
 
         if execution_plan_snapshot:
-            self._register_run_asset_events(pipeline_run, execution_plan_snapshot)
+            self._asset_materialization_planned_events(pipeline_run, execution_plan_snapshot)
 
         return self._run_storage.add_run(pipeline_run)
 

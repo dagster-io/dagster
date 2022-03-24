@@ -151,11 +151,6 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
     def _handle_events(payload):
         events, loading_past = payload
-        events = [
-            event
-            for event in events
-            if event.dagster_event_type != DagsterEventType.REGISTER_RUN_ASSET
-        ]
         return GraphenePipelineRunLogsSubscriptionSuccess(
             run=GrapheneRun(record),
             messages=[from_event_record(event, run.pipeline_name) for event in events],
