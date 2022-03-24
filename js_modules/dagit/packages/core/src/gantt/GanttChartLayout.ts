@@ -174,7 +174,7 @@ const ensureSubtreeAfterParentInArray = (
     return;
   }
   boxes.splice(boxIdx, 1);
-  boxes.push(box);
+  boxes.splice(parentIdx, 0, box);
 
   // Note: It's important that we don't cache or pass indexes during this recursion.
   // Visiting a child below could cause boxes earlier in the array to be pulled to the
@@ -399,7 +399,7 @@ export const adjustLayoutWithRunMetadata = (
     const widthForMs = ({start, end}: {start: number; end?: number}) =>
       Math.max(BOX_DOT_WIDTH_CUTOFF, ((end || nowMs) - start) * scale);
 
-    positionAndSplitBoxes(boxes, metadata, (box, run) => ({
+    positionAndSplitBoxes(boxes, metadata, (_box, run) => ({
       x: run ? xForMs(run.start) : 0,
       width: run ? widthForMs(run) : BOX_WIDTH,
     }));
@@ -442,12 +442,12 @@ export const adjustLayoutWithRunMetadata = (
       boxes = boxes.filter((b) => !!metadata.steps[b.node.name]?.state);
     }
   } else if (options.mode === GanttChartMode.WATERFALL) {
-    positionAndSplitBoxes(boxes, metadata, (box, run, runIdx) => ({
+    positionAndSplitBoxes(boxes, metadata, (box, _run, runIdx) => ({
       x: box.x + (runIdx ? (BOX_SPACING_X + BOX_WIDTH) * runIdx : 0),
       width: BOX_WIDTH,
     }));
   } else if (options.mode === GanttChartMode.FLAT) {
-    positionAndSplitBoxes(boxes, metadata, (box, run, runIdx) => ({
+    positionAndSplitBoxes(boxes, metadata, (box, _run, runIdx) => ({
       x: box.x + (runIdx ? (2 + BOX_WIDTH) * runIdx : 0),
       width: BOX_WIDTH,
     }));
