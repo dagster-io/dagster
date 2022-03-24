@@ -1,5 +1,38 @@
 # Changelog
 
+# 0.14.6
+
+### New
+
+* IO manager for materializing assets to GCS. Specify the GCS asset IO manager using the following config for `resource_defs` in `AssetGroup`:
+
+```
+`from dagster import AssetGroup, gcs_pickle_asset_io_manager, gcs_resource
+asset_group = AssetGroup(
+    [upstream_asset, downstream_asset],
+    resource_defs={"io_manager": gcs_pickle_asset_io_manager, "gcs": gcs_resource}
+)`
+```
+
+* Improved the performance of storage queries run by the sensor daemon to enforce the idempotency of run keys.  This should reduce the database CPU when evaluating sensors with a large volume of run requests with run keys that repeat across evaluations.
+* [dagit] Added information on sensor ticks to show when a sensor has requested runs that did not result in the creation of a new run due to the enforcement of idempotency using run keys.
+* [k8s] Run and step workers are now labeled with the Dagster run id that they are currently handling.
+* If a step launched with a StepLauncher encounters an exception, that exception / stack trace will now appear in the event log.
+
+### Bugfixes
+
+* Fixed a race condition where canceled backfills would resume under certain conditions.
+* Fixed an issue where exceptions that were raised during sensor and schedule execution didn’t always show a stack trace in Dagit.
+* During execution, dependencies will now resolve correctly for certain dynamic graph structures that were previously resolving incorrectly.
+* When using the forkserver start_method on the multiprocess executor, preload_modules have been adjusted to prevent libraries that change namedtuple serialization from causing unexpected exceptions.
+* Fixed a naming collision between dagster decorators and submodules that sometimes interfered with static type checkers (e.g. pyright).
+* [dagit] postgres database connection management has improved when watching actively executing runs
+* [dagster-databricks] The databricks_pyspark_step_launcher now supports steps with RetryPolicies defined, as well as `RetryRequested` exceptions.
+
+### Community Contributions
+
+* Docs spelling fixes - thanks @antquinonez!
+
 # 0.14.5
 ### Bugfixes
 
