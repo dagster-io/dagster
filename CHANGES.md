@@ -4,7 +4,7 @@
 
 ### New
 
-* IO manager for materializing assets to GCS. Specify the GCS asset IO manager using the following config for `resource_defs` in `AssetGroup`:
+* Added IO manager for materializing assets to GCS. You can specify the GCS asset IO manager by using the following config for `resource_defs` in `AssetGroup`:
 
 ```
 `from dagster import AssetGroup, gcs_pickle_asset_io_manager, gcs_resource
