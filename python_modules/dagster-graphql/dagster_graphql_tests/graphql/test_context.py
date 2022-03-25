@@ -6,9 +6,11 @@ from unittest import mock
 import pytest
 from dagster_graphql.test.utils import define_out_of_process_workspace, main_repo_location_name
 
-from dagster import lambda_solid, pipeline, repository
+from dagster import AssetKey, file_relative_path, lambda_solid, pipeline, repository
 from dagster.core.host_representation.repository_location import GrpcServerRepositoryLocation
 from dagster.core.test_utils import instance_for_test
+from dagster.core.workspace.context import WorkspaceProcessContext
+from dagster.core.workspace.load_target import PythonFileTarget
 
 
 def get_repo():
@@ -178,3 +180,36 @@ def test_handle_cleaup_by_gc_without_request_context():
             # There are no more references to the location, so it should be GC'd
             gc.collect()
             assert called["yup"]
+
+
+def test_cross_repo_asset_deps():
+    with instance_for_test() as instance:
+        with WorkspaceProcessContext(
+            instance,
+            PythonFileTarget(
+                python_file=file_relative_path(__file__, "multiple_repos.py"),
+                attribute=None,
+                working_directory=None,
+                location_name=None,
+            ),
+        ) as workspace_process_context:
+            request_context = workspace_process_context.create_request_context()
+            repo_location = request_context.repository_locations[0]
+
+            upstream_repo = repo_location.get_repository("upstream_repo")
+            downstream_repo = repo_location.get_repository("downstream_repo")
+
+            source_asset = upstream_repo.get_external_asset_node(AssetKey("my_source_asset"))
+            downstream_asset_keys = [
+                dependent_asset.downstream_asset_key for dependent_asset in source_asset.depended_by
+            ]
+            assert len(downstream_asset_keys) == 2
+            assert AssetKey("downstream_asset") in downstream_asset_keys
+            assert AssetKey("second_asset") in downstream_asset_keys
+
+            downstream_asset = downstream_repo.get_external_asset_node(AssetKey("downstream_asset"))
+            downstream_asset_dependency_keys = [
+                asset.upstream_asset_key for asset in downstream_asset.dependencies
+            ]
+            assert len(downstream_asset_dependency_keys) == 1
+            assert AssetKey("my_source_asset") in downstream_asset_dependency_keys

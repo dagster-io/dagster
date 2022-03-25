@@ -1,4 +1,3 @@
-import copy
 import sys
 import threading
 import time
@@ -20,6 +19,7 @@ from dagster.core.host_representation import (
     RepositoryLocation,
     RepositoryLocationOrigin,
 )
+from dagster.core.host_representation.external_data import ExternalAssetNode, ExternalRepositoryData
 from dagster.core.host_representation.grpc_server_registry import (
     GrpcServerRegistry,
     ProcessGrpcServerRegistry,
@@ -29,7 +29,6 @@ from dagster.core.host_representation.grpc_server_state_subscriber import (
     LocationStateChangeEventType,
     LocationStateSubscriber,
 )
-from dagster.core.host_representation.external_data import ExternalAssetNode, ExternalRepositoryData
 from dagster.core.host_representation.origin import GrpcServerRepositoryLocationOrigin
 from dagster.core.instance import DagsterInstance
 from dagster.grpc.server_watcher import create_grpc_watch_thread
@@ -661,7 +660,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         # from the defined assets to downstream assets in other repositories.
         cross_repo_asset_deps = self.get_cross_repo_asset_deps()
 
-        for location_name, location_entry in workspace_snapshot.items():
+        for location_entry in workspace_snapshot.values():
             repo_location = location_entry.repository_location
             if repo_location:
                 external_repos_data = repo_location.get_external_repositories_data()
