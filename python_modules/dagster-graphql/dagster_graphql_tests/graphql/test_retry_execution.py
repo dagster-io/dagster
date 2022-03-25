@@ -548,7 +548,7 @@ class TestRetryExecutionAsyncOnlyBehavior(ExecutingGraphQLContextTestMatrix):
         _do_retry_intermediates_test(graphql_context, run_id, reexecution_run_id)
         reexecution_run = graphql_context.instance.get_run_by_id(reexecution_run_id)
 
-        assert reexecution_run.is_failure
+        assert reexecution_run.is_failure_or_canceled
 
     def test_retry_early_terminate(self, graphql_context):
         instance = graphql_context.instance
