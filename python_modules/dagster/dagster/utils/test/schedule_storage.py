@@ -575,7 +575,7 @@ class TestScheduleStorage:
         latest_tick = ticks[0]
         assert latest_tick.tick_id == one_minute_tick.tick_id
 
-        storage.purge_ticks("my_sensor", TickStatus.SKIPPED, now.subtract(minutes=2).timestamp())
+        storage.purge_ticks("my_sensor", "my_sensor", TickStatus.SKIPPED, now.subtract(minutes=2).timestamp())
 
         ticks = storage.get_ticks("my_sensor")
         assert len(ticks) == 2

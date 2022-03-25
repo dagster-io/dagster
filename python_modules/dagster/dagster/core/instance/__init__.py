@@ -1795,8 +1795,8 @@ records = instance.get_event_records(
     def update_tick(self, tick):
         return self._schedule_storage.update_tick(tick)
 
-    def purge_ticks(self, origin_id, tick_status, before):
-        self._schedule_storage.purge_ticks(origin_id, tick_status, before)
+    def purge_ticks(self, origin_id, selector_id, tick_status, before):
+        self._schedule_storage.purge_ticks(origin_id, selector_id, tick_status, before)
 
     def wipe_all_schedules(self):
         if self._scheduler:
