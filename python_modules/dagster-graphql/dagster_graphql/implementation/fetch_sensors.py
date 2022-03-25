@@ -188,7 +188,9 @@ def get_sensor_next_tick(graphene_info, sensor_state):
     if not sensor_state.is_running:
         return None
 
-    ticks = graphene_info.context.instance.get_ticks(sensor_state.instigator_origin_id, limit=1)
+    ticks = graphene_info.context.instance.get_ticks(
+        sensor_state.instigator_origin_id, sensor_state.get_selector_id(), limit=1
+    )
     if not ticks:
         return None
     latest_tick = ticks[0]

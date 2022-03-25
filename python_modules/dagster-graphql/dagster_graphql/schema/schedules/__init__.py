@@ -3,7 +3,6 @@ import graphene
 from dagster import check
 from dagster.core.host_representation import ExternalSchedule, ScheduleSelector
 from dagster.core.host_representation.selector import RepositorySelector
-from dagster.core.scheduler.instigation import TickStatsSnapshot
 from dagster.core.workspace.permissions import Permissions
 
 from ...implementation.fetch_schedules import start_schedule, stop_schedule
@@ -46,25 +45,6 @@ class GrapheneSchedulerOrError(graphene.Union):
     class Meta:
         types = (GrapheneScheduler, GrapheneSchedulerNotDefinedError, GraphenePythonError)
         name = "SchedulerOrError"
-
-
-class GrapheneScheduleTickStatsSnapshot(graphene.ObjectType):
-    ticks_started = graphene.NonNull(graphene.Int)
-    ticks_succeeded = graphene.NonNull(graphene.Int)
-    ticks_skipped = graphene.NonNull(graphene.Int)
-    ticks_failed = graphene.NonNull(graphene.Int)
-
-    class Meta:
-        name = "ScheduleTickStatsSnapshot"
-
-    def __init__(self, stats):
-        super().__init__(
-            ticks_started=stats.ticks_started,
-            ticks_succeeded=stats.ticks_succeeded,
-            ticks_skipped=stats.ticks_skipped,
-            ticks_failed=stats.ticks_failed,
-        )
-        self._stats = check.inst_param(stats, "stats", TickStatsSnapshot)
 
 
 class GrapheneScheduleStateResult(graphene.ObjectType):
@@ -133,7 +113,6 @@ def types():
         GrapheneScheduleTick,
         GrapheneScheduleTickFailureData,
         GrapheneScheduleTickSpecificData,
-        GrapheneScheduleTickStatsSnapshot,
         GrapheneScheduleTickSuccessData,
         GrapheneStartScheduleMutation,
         GrapheneStopRunningScheduleMutation,

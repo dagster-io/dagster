@@ -260,7 +260,7 @@ def launch_scheduled_runs_for_schedule(
     end_datetime_utc = check.inst_param(end_datetime_utc, "end_datetime_utc", datetime.datetime)
 
     instigator_origin_id = external_schedule.get_external_origin_id()
-    ticks = instance.get_ticks(instigator_origin_id, limit=1)
+    ticks = instance.get_ticks(instigator_origin_id, external_schedule.selector_id, limit=1)
     latest_tick = ticks[0] if ticks else None
 
     instigator_data = cast(ScheduleInstigatorData, schedule_state.instigator_data)

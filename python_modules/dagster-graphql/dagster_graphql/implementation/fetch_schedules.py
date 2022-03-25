@@ -129,8 +129,7 @@ def get_schedule_or_error(graphene_info, schedule_selector):
         )
 
     schedule_state = graphene_info.context.instance.get_instigator_state(
-        external_schedule.get_external_origin_id(),
-        external_schedule.selector_id
+        external_schedule.get_external_origin_id(), external_schedule.selector_id
     )
     return GrapheneSchedule(external_schedule, schedule_state)
 

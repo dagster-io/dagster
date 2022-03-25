@@ -715,7 +715,7 @@ def test_schedule_namedtuple_job_instigator_backcompat():
             for state in states:
                 assert state.instigator_type
                 assert state.instigator_data
-                ticks = instance.get_ticks(state.instigator_origin_id)
+                ticks = instance.get_ticks(state.instigator_origin_id, state.get_selector_id())
                 check.is_list(ticks, of_type=InstigatorTick)
                 for tick in ticks:
                     assert tick.tick_data
