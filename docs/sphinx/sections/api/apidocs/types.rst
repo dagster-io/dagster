@@ -271,7 +271,7 @@ Built-in primitive types
 
     Use this type for inputs, or outputs that are dicts.
 
-    For inputs and outputs, you may optionally specify the key and value types using the square
+    For Ins and Outs, you must specify the key and value types using the square
     brackets syntax for Python typing.
 
     **Examples:**
@@ -284,7 +284,7 @@ Built-in primitive types
 
         # Explicit
         @op(
-            ins={'spec': In(Dict)},
+            ins={'spec': In(Dict[String, String])},
             out=Out(String),
         )
         def repeat(_, spec):

@@ -187,7 +187,9 @@ class JobDefinition(PipelineDefinition):
             )
             partition_set = self.get_partition_set_def()
             if not partition_set:
-                check.failed("Provided partition key for a non-partitioned job")
+                check.failed(
+                    f"Provided partition key `{partition_key}` for job `{self._name}` without a partitioned config"
+                )
 
             partition = partition_set.get_partition(partition_key)
             run_config = partition_set.run_config_for_partition(partition)
