@@ -2195,13 +2195,6 @@ type ScheduleTickFailureData {
   error: PythonError!
 }
 
-type ScheduleTickStatsSnapshot {
-  ticksStarted: Int!
-  ticksSucceeded: Int!
-  ticksSkipped: Int!
-  ticksFailed: Int!
-}
-
 type StartScheduleMutation {
   Output: ScheduleMutationResult!
 }

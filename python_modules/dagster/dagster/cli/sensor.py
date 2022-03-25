@@ -361,7 +361,9 @@ def execute_cursor_command(sensor_name, cli_args, print_fn):
             )
             check_repo_and_scheduler(external_repo, instance)
             external_sensor = external_repo.get_external_sensor(sensor_name)
-            job_state = instance.get_instigator_state(external_sensor.get_external_origin_id(), external_sensor.selector_id)
+            job_state = instance.get_instigator_state(
+                external_sensor.get_external_origin_id(), external_sensor.selector_id
+            )
             if not job_state:
                 instance.add_instigator_state(
                     InstigatorState(
