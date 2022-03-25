@@ -9,7 +9,7 @@ from dagster.cli.pipeline import pipeline_execute_command
 from dagster.core.definitions.reconstruct import get_ephemeral_repository_name
 from dagster.core.telemetry import (
     UPDATE_REPO_STATS,
-    get_dir_from_dagster_home,
+    get_or_create_dir_from_dagster_home,
     hash_name,
     log_workspace_stats,
 )
@@ -83,7 +83,9 @@ def test_dagster_telemetry_disabled(caplog):
                 ],
             )
 
-        assert not os.path.exists(os.path.join(get_dir_from_dagster_home("logs"), "event.log"))
+        assert not os.path.exists(
+            os.path.join(get_or_create_dir_from_dagster_home("logs"), "event.log")
+        )
         assert len(caplog.records) == 0
         assert result.exit_code == 0
 

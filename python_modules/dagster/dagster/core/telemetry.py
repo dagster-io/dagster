@@ -211,7 +211,7 @@ def _dagster_home_if_set():
     return os.path.expanduser(dagster_home_path)
 
 
-def get_dir_from_dagster_home(target_dir):
+def get_or_create_dir_from_dagster_home(target_dir):
     """
     If $DAGSTER_HOME is set, return $DAGSTER_HOME/<target_dir>/
     Otherwise, return ~/.dagster/<target_dir>/
@@ -275,11 +275,17 @@ def _check_telemetry_instance_param(args, kwargs, instance_index):
 
 
 def _get_telemetry_logger():
+
+    # If a concurrently running process deleted the logging directory since the
+    # last action, we need to make sure to re-create the directory
+    # (the logger does not do this itself.)
+    get_or_create_dir_from_dagster_home("logs")
+
     logger = logging.getLogger("dagster_telemetry_logger")
 
     if len(logger.handlers) == 0:
         handler = RotatingFileHandler(
-            os.path.join(get_dir_from_dagster_home("logs"), "event.log"),
+            os.path.join(get_or_create_dir_from_dagster_home("logs"), "event.log"),
             maxBytes=MAX_BYTES,
             backupCount=10,
         )
@@ -334,7 +340,7 @@ def _get_or_set_instance_id():
 
 # Gets the instance_id at $DAGSTER_HOME/.telemetry/id.yaml
 def _get_telemetry_instance_id():
-    telemetry_id_path = os.path.join(get_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
+    telemetry_id_path = os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
     if not os.path.exists(telemetry_id_path):
         return
 
@@ -352,7 +358,7 @@ def _set_telemetry_instance_id():
     click.secho(TELEMETRY_TEXT)
     click.secho(SLACK_PROMPT)
 
-    telemetry_id_path = os.path.join(get_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
+    telemetry_id_path = os.path.join(get_or_create_dir_from_dagster_home(TELEMETRY_STR), "id.yaml")
     instance_id = str(uuid.uuid4())
 
     try:  # In case we encounter an error while writing to user's file system
