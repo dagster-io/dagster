@@ -17,6 +17,7 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
     def all_instigator_state(
         self,
         repository_origin_id: Optional[str] = None,
+        repository_name: Optional[str] = None,
         instigator_type: Optional[InstigatorType] = None,
     ) -> Iterable[InstigatorState]:
         """Return all InstigationStates present in storage

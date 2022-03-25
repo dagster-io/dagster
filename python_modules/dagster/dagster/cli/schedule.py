@@ -30,7 +30,9 @@ def print_changes(external_repository, instance, print_fn=print, preview=False):
     errors = debug_info.errors
     external_schedules = external_repository.get_external_schedules()
     schedule_states = instance.all_instigator_state(
-        external_repository.get_external_origin_id(), InstigatorType.SCHEDULE
+        external_repository.get_external_origin_id(),
+        external_repository.name,
+        InstigatorType.SCHEDULE,
     )
     external_schedules_dict = {s.get_external_origin_id(): s for s in external_schedules}
     schedule_states_dict = {s.instigator_origin_id: s for s in schedule_states}
@@ -187,7 +189,9 @@ def execute_list_command(running_filter, stopped_filter, name_filter, cli_args, 
             stored_schedules_by_origin_id = {
                 stored_schedule_state.instigator_origin_id: stored_schedule_state
                 for stored_schedule_state in instance.all_instigator_state(
-                    external_repo.get_external_origin_id(), instigator_type=InstigatorType.SCHEDULE
+                    external_repo.get_external_origin_id(),
+                    external_repo.name,
+                    instigator_type=InstigatorType.SCHEDULE,
                 )
             }
 
@@ -394,7 +398,9 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
 
             if all_running_flag:
                 for schedule_state in instance.all_instigator_state(
-                    external_repo.get_external_origin_id(), InstigatorType.SCHEDULE
+                    external_repo.get_external_origin_id(),
+                    external_repo.name,
+                    InstigatorType.SCHEDULE,
                 ):
                     if schedule_state.status == InstigatorStatus.RUNNING:
                         try:
