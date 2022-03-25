@@ -412,6 +412,10 @@ class PipelineRun(
 
     @property
     def is_failure(self):
+        return self.status == PipelineRunStatus.FAILURE
+
+    @property
+    def is_failure_or_canceled(self):
         return self.status == PipelineRunStatus.FAILURE or self.status == PipelineRunStatus.CANCELED
 
     @property
