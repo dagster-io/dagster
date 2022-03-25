@@ -182,7 +182,7 @@ def test_custom_type_default():
         pass
 
     @op
-    def test_op(inp: Optional[CustomType] = None):
+    def test_op(_inp: Optional[CustomType] = None):
         return 1
 
     @job

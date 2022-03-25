@@ -22,7 +22,7 @@ from dagster.core.events import DagsterEvent
 from dagster.core.execution.context.logger import InitLoggerContext
 from dagster.core.execution.plan.objects import StepFailureData
 from dagster.core.execution.plan.outputs import StepOutputHandle
-from dagster.core.log_manager import DagsterLogManager, DagsterLoggingMetadata
+from dagster.core.log_manager import DagsterLogManager
 from dagster.core.test_utils import instance_for_test
 from dagster.loggers import colored_console_logger, json_console_logger
 from dagster.utils.error import SerializableErrorInfo
@@ -214,7 +214,7 @@ class CaptureHandler(logging.Handler):
 
     def emit(self, record):
         if self.output:
-            print(self.output + record.msg)
+            print(self.output + record.msg)   # pylint: disable=print-call
         self.captured.append(record)
 
 
@@ -250,7 +250,7 @@ def test_default_context_logging():
     @solid(input_defs=[], output_defs=[])
     def default_context_solid(context):
         called["yes"] = True
-        for logger in context.log._dagster_handler._loggers:
+        for logger in context.log._dagster_handler._loggers:   # pylint: disable=protected-access
             assert logger.level == logging.DEBUG
 
     execute_solid(default_context_solid)

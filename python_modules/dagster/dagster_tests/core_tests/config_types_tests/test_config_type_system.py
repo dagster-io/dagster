@@ -1102,7 +1102,8 @@ def test_typing_types_into_config():
     ]:
         with pytest.raises(DagsterInvalidDefinitionError):
 
-            @solid(config_schema=Field(ttype))
+            # pylint: disable=cell-var-from-loop; (false positive)
+            @solid(config_schema=Field(ttype))   
             def _solid(_):
                 pass
 

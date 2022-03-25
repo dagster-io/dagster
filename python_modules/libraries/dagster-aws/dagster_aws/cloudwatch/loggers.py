@@ -131,6 +131,7 @@ class CloudwatchLogsHandler(logging.Handler):
         if self.sequence_token is not None:
             params["sequenceToken"] = self.sequence_token
 
+        res = None
         try:
             res = self.client.put_log_events(**params)
             self.sequence_token = res["nextSequenceToken"]
@@ -143,25 +144,25 @@ class CloudwatchLogsHandler(logging.Handler):
                 self.retry(record)
             else:
                 self.log_error(record, exc)
-        except self.client.exceptions.DataAlreadyAcceptedException as exc:
+        except self.client.exceptions.DataAlreadyAcceptedException:
             logging.error("Cloudwatch logger: log events already accepted: {res}".format(res=res))
-        except self.client.exceptions.InvalidParameterException as exc:
+        except self.client.exceptions.InvalidParameterException:
             logging.error(
                 "Cloudwatch logger: Invalid parameter exception while logging: {res}".format(
                     res=res
                 )
             )
-        except self.client.exceptions.ResourceNotFoundException as exc:
+        except self.client.exceptions.ResourceNotFoundException:
             logging.error(
                 "Cloudwatch logger: Resource not found. Check that the log stream or log group "
                 "was not deleted: {res}".format(res=res)
             )
-        except self.client.exceptions.ServiceUnavailableException as exc:
+        except self.client.exceptions.ServiceUnavailableException:
             if not retry:
                 self.retry(record)
             else:
                 logging.error("Cloudwatch logger: Service unavailable: {res}".format(res=res))
-        except self.client.exceptions.ServiceUnavailableException as exc:
+        except self.client.exceptions.ServiceUnavailableException:
             if not retry:
                 self.retry(record)
             else:

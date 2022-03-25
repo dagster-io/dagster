@@ -202,6 +202,7 @@ def test_nested_dicts_and_maps():
     }
   }
 }"""
+    assert output == expected
 
 
 def test_nested_dict():

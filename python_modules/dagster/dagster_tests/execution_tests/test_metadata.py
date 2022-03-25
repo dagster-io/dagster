@@ -154,7 +154,7 @@ def test_parse_invalid_metadata():
 
     metadata = {"foo": object()}
 
-    with pytest.raises(DagsterInvalidMetadata) as exc_info:
+    with pytest.raises(DagsterInvalidMetadata) as _exc_info:
         normalize_metadata(metadata, [])
 
     entries = normalize_metadata(metadata, [], allow_invalid=True)

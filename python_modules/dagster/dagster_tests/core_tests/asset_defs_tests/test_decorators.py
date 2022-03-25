@@ -291,7 +291,8 @@ def test_invoking_simple_assets():
     assert out == [1, 2, 3, 4, 5, 6]
 
     @asset
-    def arg_kwarg_asset(arg1, kwarg1=[0]):
+    def arg_kwarg_asset(arg1, kwarg1=None):
+        kwarg1 = kwarg1 or [0]
         return arg1 + kwarg1
 
     out = arg_kwarg_asset([1, 2, 3], kwarg1=[3, 2, 1])

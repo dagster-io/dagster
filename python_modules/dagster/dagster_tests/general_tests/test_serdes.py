@@ -25,7 +25,7 @@ from dagster.serdes.serdes import (
     serialize_value,
     unpack_inner_value,
 )
-from dagster.serdes.utils import create_snapshot_id, hash_str
+from dagster.serdes.utils import hash_str
 
 
 def test_deserialize_value_ok():
@@ -476,7 +476,7 @@ def test_skip_when_empty():
     # Without setting skip_when_empty, the ID changes
 
     @_whitelist_for_serdes(whitelist_map=test_map)  # pylint: disable=function-redefined
-    class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):
+    class SameSnapshotTuple(namedtuple("_Tuple", "foo bar")):   # pylint: disable=function-redefined
         def __new__(cls, foo, bar=None):
             return super(SameSnapshotTuple, cls).__new__(  # pylint: disable=bad-super-call
                 cls, foo, bar
@@ -715,7 +715,7 @@ def test_whitelist_storage_name():
     wmap = WhitelistMap.create()
 
     @_whitelist_for_serdes(whitelist_map=wmap, storage_name="SerializedThing")
-    class Thing(NamedTuple):
+    class Thing(NamedTuple):   # pylint: disable=unused-variable
         name: str
 
     assert wmap.get_serialized_name("Thing") == "SerializedThing"

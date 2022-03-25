@@ -358,7 +358,7 @@ def test_list_command():
             )
 
 
-def test_job_command_only_selects_job(capsys):
+def test_job_command_only_selects_job(_capsys):
     with instance_for_test():
         runner = CliRunner()
         result = runner.invoke(

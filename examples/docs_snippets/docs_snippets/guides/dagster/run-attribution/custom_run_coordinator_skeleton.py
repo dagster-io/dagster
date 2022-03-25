@@ -1,4 +1,5 @@
 # isort: skip_file
+# pylint: disable=unused-variable
 CUSTOM_HEADER_NAME = "X-SOME-HEADER"
 # start_custom_run_coordinator_marker
 
