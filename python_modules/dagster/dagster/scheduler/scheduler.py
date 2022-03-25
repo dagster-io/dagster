@@ -532,6 +532,7 @@ def _create_scheduler_run(
         run_config,
         external_schedule.mode,
         step_keys_to_execute=None,
+        instance=instance,
         known_state=None,
     )
     execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
