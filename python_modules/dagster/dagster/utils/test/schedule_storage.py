@@ -309,38 +309,6 @@ class TestScheduleStorage:
         assert tick.run_ids == []
         assert tick.error == SerializableErrorInfo(message="Error", stack=[], cls_name="TestError")
 
-    def test_get_tick_stats(self, storage):
-        assert storage
-
-        current_time = time.time()
-
-        error = SerializableErrorInfo(message="Error", stack=[], cls_name="TestError")
-
-        # Create ticks
-        for x in range(2):
-            storage.create_tick(self.build_schedule_tick(current_time))
-
-        for x in range(3):
-            storage.create_tick(
-                self.build_schedule_tick(current_time, TickStatus.SUCCESS, run_id=str(x)),
-            )
-
-        for x in range(4):
-            storage.create_tick(
-                self.build_schedule_tick(current_time, TickStatus.SKIPPED),
-            )
-
-        for x in range(5):
-            storage.create_tick(
-                self.build_schedule_tick(current_time, TickStatus.FAILURE, error=error),
-            )
-
-        stats = storage.get_tick_stats("my_schedule")
-        assert stats.ticks_started == 2
-        assert stats.ticks_succeeded == 3
-        assert stats.ticks_skipped == 4
-        assert stats.ticks_failed == 5
-
     def test_basic_storage(self, storage):
         assert storage
         sensor_state = self.build_sensor("my_sensor")

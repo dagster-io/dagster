@@ -112,14 +112,6 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
         """
 
     @abc.abstractmethod
-    def get_tick_stats(self, origin_id: str):
-        """Get tick stats for a given instigator.
-
-        Args:
-            origin_id (str): The id of the instigator target
-        """
-
-    @abc.abstractmethod
     def upgrade(self):
         """Perform any needed migrations"""
 

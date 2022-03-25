@@ -592,30 +592,3 @@ def _validate_tick_args(instigator_type, status, run_ids=None, error=None, skip_
             status == TickStatus.SKIPPED,
             "Tick status was not SKIPPED but skip_reason was provided",
         )
-
-
-class TickStatsSnapshot(
-    NamedTuple(
-        "TickStatsSnapshot",
-        [
-            ("ticks_started", int),
-            ("ticks_succeeded", int),
-            ("ticks_skipped", int),
-            ("ticks_failed", int),
-        ],
-    )
-):
-    def __new__(
-        cls, ticks_started: int, ticks_succeeded: int, ticks_skipped: int, ticks_failed: int
-    ):
-        return super(TickStatsSnapshot, cls).__new__(
-            cls,
-            ticks_started=check.int_param(ticks_started, "ticks_started"),
-            ticks_succeeded=check.int_param(ticks_succeeded, "ticks_succeeded"),
-            ticks_skipped=check.int_param(ticks_skipped, "ticks_skipped"),
-            ticks_failed=check.int_param(ticks_failed, "ticks_failed"),
-        )
-
-
-# for internal backcompat
-JobTickStatsSnapshot = TickStatsSnapshot

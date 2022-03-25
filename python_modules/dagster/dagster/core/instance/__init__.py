@@ -1791,10 +1791,6 @@ records = instance.get_event_records(
     def update_tick(self, tick):
         return self._schedule_storage.update_tick(tick)
 
-    @traced
-    def get_tick_stats(self, origin_id):
-        return self._schedule_storage.get_tick_stats(origin_id)
-
     def purge_ticks(self, origin_id, tick_status, before):
         self._schedule_storage.purge_ticks(origin_id, tick_status, before)
 
