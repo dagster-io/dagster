@@ -8,11 +8,6 @@ from dagster import (
     schedule,
     sensor,
     solid,
-    SourceAsset,
-    Output,
-    AssetGroup,
-    AssetKey,
-    asset,
 )
 from dagster.core.definitions.decorators.graph import graph
 
@@ -129,31 +124,6 @@ process_customer_data_dump_dev = process_customer_data_dump.to_job(
     config={"solids": {"process_customer": {"config": {"customer_id": "test_customer"}}}}
 )
 
-# prod repo
-@asset
-def my_source_asset():
-    yield Output(5)
-
-
-@asset
-def second_asset(my_source_asset):
-    yield Output(1)
-
-
-prod_asset_group = AssetGroup(assets=[my_source_asset, second_asset])
-
-
-# dev repo
-my_source_asset = SourceAsset(key=AssetKey("my_source_asset"))
-
-
-@asset
-def yee_asset(my_source_asset):
-    yield Output(5)
-
-
-asset_group = AssetGroup(assets=[yee_asset], source_assets=[my_source_asset])
-
 
 @repository
 def graph_job_dev_repo():
@@ -163,7 +133,6 @@ def graph_job_dev_repo():
         crm_ingest_dev,
         content_recommender_training_dev,
         process_customer_data_dump_dev,
-        asset_group,
     ]
 
 
@@ -176,5 +145,4 @@ def graph_job_prod_repo():
         crm_ingest_instance2_schedule,
         content_recommender_training_prod,
         process_customer_data_dump,
-        prod_asset_group,
     ]

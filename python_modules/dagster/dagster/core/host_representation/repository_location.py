@@ -264,7 +264,7 @@ class RepositoryLocation(AbstractContextManager):
         )
 
     @abstractmethod
-    def get_external_repositories_data(self) -> Dict[str, ExternalRepositoryData]:
+    def get_external_repositories_data(self) -> Optional[Mapping[str, ExternalRepositoryData]]:
         pass
 
     @abstractmethod
@@ -478,10 +478,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         check.str_param(notebook_path, "notebook_path")
         return get_notebook_data(notebook_path)
 
-    def get_repository_location_with_asset_data(self, cross_repo_asset_deps):
-        return InProcessRepositoryLocation()
-
-    def get_external_repositories_data(self) -> Dict[str, ExternalRepositoryData]:
+    def get_external_repositories_data(self) -> Optional[Mapping[str, ExternalRepositoryData]]:
         return {
             repo_name: repo_def.external_repository_data
             for repo_name, repo_def in self._repositories.items()
@@ -490,7 +487,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
     def update_external_repositories_data(
         self, new_external_repositories_data: Dict[str, ExternalRepositoryData]
     ):
-        self.external_repositories = {
+        self._repositories = {
             repo_name: ExternalRepository(
                 repo_data,
                 RepositoryHandle(
@@ -498,7 +495,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
                     repository_location=self,
                 ),
             )
-            for repo_name, repo_data in self._external_repositories_data.items()
+            for repo_name, repo_data in new_external_repositories_data.items()
         }
 
 
@@ -814,7 +811,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         check.str_param(notebook_path, "notebook_path")
         return sync_get_streaming_external_notebook_data_grpc(self.client, notebook_path)
 
-    def get_external_repositories_data(self) -> Dict[str, ExternalRepositoryData]:
+    def get_external_repositories_data(self) -> Optional[Mapping[str, ExternalRepositoryData]]:
         return self._external_repositories_data
 
     def update_external_repositories_data(
