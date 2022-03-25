@@ -1741,8 +1741,12 @@ records = instance.get_event_records(
             return self.update_instigator_state(state.with_status(InstigatorStatus.STOPPED))
 
     @traced
-    def all_instigator_state(self, repository_origin_id=None, instigator_type=None):
-        return self._schedule_storage.all_instigator_state(repository_origin_id, instigator_type)
+    def all_instigator_state(
+        self, repository_origin_id=None, repository_name=None, instigator_type=None
+    ):
+        return self._schedule_storage.all_instigator_state(
+            repository_origin_id, repository_name, instigator_type
+        )
 
     @traced
     def get_instigator_state(self, origin_id):

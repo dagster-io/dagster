@@ -129,6 +129,7 @@ class RepositoryScopedBatchLoader:
         elif data_type == RepositoryDataType.SCHEDULE_STATES:
             schedule_states = self._instance.all_instigator_state(
                 repository_origin_id=self._repository.get_external_origin_id(),
+                repository_name=self._repository.name,
                 instigator_type=InstigatorType.SCHEDULE,
             )
             for state in schedule_states:
@@ -137,6 +138,7 @@ class RepositoryScopedBatchLoader:
         elif data_type == RepositoryDataType.SENSOR_STATES:
             sensor_states = self._instance.all_instigator_state(
                 repository_origin_id=self._repository.get_external_origin_id(),
+                repository_name=self._repository.name,
                 instigator_type=InstigatorType.SENSOR,
             )
             for state in sensor_states:

@@ -87,6 +87,7 @@ class TestScheduleStorage:
         storage.add_instigator_state(schedule)
         schedules = storage.all_instigator_state(
             self.fake_repo_target().get_id(),
+            self.fake_repo_target().repository_name,
             InstigatorType.SCHEDULE,
         )
         assert len(schedules) == 1
@@ -108,7 +109,9 @@ class TestScheduleStorage:
         storage.add_instigator_state(schedule_3)
 
         schedules = storage.all_instigator_state(
-            self.fake_repo_target().get_id(), InstigatorType.SCHEDULE
+            self.fake_repo_target().get_id(),
+            self.fake_repo_target().repository_name,
+            InstigatorType.SCHEDULE,
         )
         assert len(schedules) == 3
 
@@ -151,7 +154,9 @@ class TestScheduleStorage:
         storage.update_instigator_state(new_schedule)
 
         schedules = storage.all_instigator_state(
-            self.fake_repo_target().get_id(), InstigatorType.SCHEDULE
+            self.fake_repo_target().get_id(),
+            self.fake_repo_target().repository_name,
+            InstigatorType.SCHEDULE,
         )
         assert len(schedules) == 1
 
@@ -166,7 +171,9 @@ class TestScheduleStorage:
         storage.update_instigator_state(stopped_schedule)
 
         schedules = storage.all_instigator_state(
-            self.fake_repo_target().get_id(), InstigatorType.SCHEDULE
+            self.fake_repo_target().get_id(),
+            self.fake_repo_target().repository_name,
+            InstigatorType.SCHEDULE,
         )
         assert len(schedules) == 1
 
@@ -194,7 +201,9 @@ class TestScheduleStorage:
         storage.delete_instigator_state(schedule.instigator_origin_id, schedule.selector_id)
 
         schedules = storage.all_instigator_state(
-            self.fake_repo_target().get_id(), InstigatorType.SCHEDULE
+            self.fake_repo_target().get_id(),
+            self.fake_repo_target().repository_name,
+            InstigatorType.SCHEDULE,
         )
         assert len(schedules) == 0
 
@@ -313,7 +322,9 @@ class TestScheduleStorage:
         assert storage
         sensor_state = self.build_sensor("my_sensor")
         storage.add_instigator_state(sensor_state)
-        states = storage.all_instigator_state(self.fake_repo_target().get_id())
+        states = storage.all_instigator_state(
+            self.fake_repo_target().get_id(), self.fake_repo_target().repository_name
+        )
         assert len(states) == 1
 
         state = states[0]
@@ -330,7 +341,9 @@ class TestScheduleStorage:
         storage.add_instigator_state(state_2)
         storage.add_instigator_state(state_3)
 
-        states = storage.all_instigator_state(self.fake_repo_target().get_id())
+        states = storage.all_instigator_state(
+            self.fake_repo_target().get_id(), self.fake_repo_target().repository_name
+        )
         assert len(states) == 3
 
         assert any(s.instigator_name == "my_sensor" for s in states)
@@ -362,7 +375,9 @@ class TestScheduleStorage:
         new_state = state.with_status(InstigatorStatus.RUNNING)
         storage.update_instigator_state(new_state)
 
-        states = storage.all_instigator_state(self.fake_repo_target().get_id())
+        states = storage.all_instigator_state(
+            self.fake_repo_target().get_id(), self.fake_repo_target().repository_name
+        )
         assert len(states) == 1
 
         state = states[0]
@@ -372,7 +387,9 @@ class TestScheduleStorage:
         stopped_state = state.with_status(InstigatorStatus.STOPPED)
         storage.update_instigator_state(stopped_state)
 
-        states = storage.all_instigator_state(self.fake_repo_target().get_id())
+        states = storage.all_instigator_state(
+            self.fake_repo_target().get_id(), self.fake_repo_target().repository_name
+        )
         assert len(states) == 1
 
         state = states[0]
@@ -397,7 +414,9 @@ class TestScheduleStorage:
         storage.add_instigator_state(state)
         storage.delete_instigator_state(state.instigator_origin_id, state.selector_id)
 
-        states = storage.all_instigator_state(self.fake_repo_target().get_id())
+        states = storage.all_instigator_state(
+            self.fake_repo_target().get_id(), self.fake_repo_target().repository_name
+        )
         assert len(states) == 0
 
     def test_delete_state_not_found(self, storage):

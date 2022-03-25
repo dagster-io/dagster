@@ -72,6 +72,7 @@ def get_schedules_or_error(graphene_info, repository_selector):
         state.name: state
         for state in graphene_info.context.instance.all_instigator_state(
             repository_origin_id=repository.get_external_origin_id(),
+            repository_name=repository.name,
             instigator_type=InstigatorType.SCHEDULE,
         )
     }
