@@ -133,9 +133,11 @@ def adls2_pickle_io_manager(init_context):
     )
     return pickled_io_manager
 
+
 class PickledObjectADLS2AssetIOManager(PickledObjectADLS2IOManager):
     def _get_path(self, context):
         return "/".join([self.prefix, *context.asset_key.path])
+
 
 @io_manager(
     config_schema={
