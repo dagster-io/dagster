@@ -6,6 +6,7 @@ from typing import (
     Any,
     Callable,
     Generator,
+    Iterator,
     List,
     NamedTuple,
     Optional,
@@ -143,6 +144,11 @@ class SensorEvaluationContext:
 # Preserve SensorExecutionContext for backcompat so type annotations don't break.
 SensorExecutionContext = SensorEvaluationContext
 
+SensorEvaluationFunctionReturn = Union[Iterator[Union[SkipReason, RunRequest]], SkipReason, RunRequest]
+SensorEvaluationFunction = Union[
+    Callable[[SensorEvaluationContext], SensorEvaluationFunctionReturn],
+    Callable[[], SensorEvaluationFunctionReturn],
+]
 
 class SensorDefinition:
     """Define a sensor that initiates a set of runs based on some external state
@@ -175,12 +181,7 @@ class SensorDefinition:
     def __init__(
         self,
         name: Optional[str] = None,
-        evaluation_fn: Optional[
-            Callable[
-                ["SensorEvaluationContext"],
-                Union[Generator[Union[RunRequest, SkipReason], None, None], RunRequest, SkipReason],
-            ]
-        ] = None,
+        evaluation_fn: Optional[SensorEvaluationFunction] = None,
         pipeline_name: Optional[str] = None,
         solid_selection: Optional[List[Any]] = None,
         mode: Optional[str] = None,
@@ -240,9 +241,7 @@ class SensorDefinition:
             self._name = evaluation_fn.__name__
 
         self._raw_fn = check.callable_param(evaluation_fn, "evaluation_fn")
-        self._evaluation_fn: Callable[
-            [SensorEvaluationContext], Generator[Union[RunRequest, SkipReason], None, None]
-        ] = wrap_sensor_evaluation(self._name, evaluation_fn)
+        self._evaluation_fn: SensorEvaluationFunction = wrap_sensor_evaluation(self._name, evaluation_fn)
         self._min_interval = check.opt_int_param(
             minimum_interval_seconds, "minimum_interval_seconds", DEFAULT_SENSOR_DAEMON_INTERVAL
         )
@@ -545,6 +544,11 @@ def build_sensor_context(
         instance=instance,
     )
 
+AssetMaterializationFunctionReturn = Union[Iterator[Union[RunRequest, SkipReason]], RunRequest, SkipReason]
+AssetMaterializationFunction = Callable[
+    ["SensorExecutionContext", "EventLogEntry"],
+    AssetMaterializationFunctionReturn,
+]
 
 class AssetSensorDefinition(SensorDefinition):
     """Define an asset sensor that initiates a set of runs based on the materialization of a given
