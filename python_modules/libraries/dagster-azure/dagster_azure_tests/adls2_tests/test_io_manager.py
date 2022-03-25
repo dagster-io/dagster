@@ -153,6 +153,7 @@ def test_asset_io_manager(storage_account, file_system, credential):
 
     @asset
     def downstream(upstream):
+        assert upstream == 2
         return 1 + upstream
 
     asset_group = AssetGroup(

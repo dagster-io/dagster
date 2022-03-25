@@ -161,13 +161,10 @@ def adls2_pickle_asset_io_manager(init_context):
 
     .. code-block:: python
 
-        @job(resource_defs={
-            'io_manager': adls2_pickle_asset_io_manager,
-            'adls2': adls2_resource,
-            ...,
-        })
-        def my_job():
-            ...
+        asset_group = AssetGroup(
+            assets...,
+            resource_defs={'io_manager': adls2_pickle_io_manager, "adls2": adls2_resource, ...}),
+        )
 
     You may configure this storage as follows:
 
@@ -177,7 +174,7 @@ def adls2_pickle_asset_io_manager(init_context):
             io_manager:
                 config:
                     adls2_file_system: my-cool-file-system
-                    adls2_prefix: good/prefix-for-files-
+                    adls2_prefix: good/prefix-for-files
     """
     adls_resource = init_context.resources.adls2
     adls2_client = adls_resource.adls2_client
