@@ -15,6 +15,7 @@ export type NonIdealStateProps = React.DetailedHTMLProps<
   description?: React.ReactNode;
   action?: React.ReactNode;
   shrinkable?: boolean;
+  maxWidth?: number;
 };
 
 export const NonIdealState: React.FC<NonIdealStateProps> = ({
@@ -23,6 +24,7 @@ export const NonIdealState: React.FC<NonIdealStateProps> = ({
   icon,
   action,
   shrinkable,
+  maxWidth,
 }) => {
   const singleContentElement = [title, description, action].filter(Boolean).length === 1;
 
@@ -35,7 +37,7 @@ export const NonIdealState: React.FC<NonIdealStateProps> = ({
         margin: 'auto',
         borderRadius: 8,
         width: shrinkable ? 'initial' : 'max-content',
-        maxWidth: 500,
+        maxWidth: maxWidth ? maxWidth : 500,
       }}
     >
       {icon === 'spinner' ? (
@@ -51,6 +53,7 @@ export const NonIdealState: React.FC<NonIdealStateProps> = ({
           direction: 'column',
           alignItems: 'flex-start',
         }}
+        style={{maxWidth: '100%', minWidth: 0}}
       >
         {title && <Subheading style={{color: ColorsWIP.Gray900}}>{title}</Subheading>}
         {description && <div style={{color: ColorsWIP.Gray500}}>{description}</div>}
