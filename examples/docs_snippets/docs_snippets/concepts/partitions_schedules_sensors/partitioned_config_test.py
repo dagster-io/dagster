@@ -53,7 +53,7 @@ def test_my_offset_partitioned_config():
     assert str(partitions[0].value.end) == "2020-01-02T03:00:00+00:00"
 
     # get a partition for a datetime and assert the output of my_offset_partitioned_config is valid
-    # configutation for the do_stuff_partitioned_job
+    # configuration for the do_stuff_partitioned_job
 
     run_config = my_offset_partitioned_config.run_config_for_partition_fn(partitions[0])
     assert validate_run_config(do_stuff_partitioned, run_config)
