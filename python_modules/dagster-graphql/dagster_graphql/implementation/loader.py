@@ -157,6 +157,7 @@ class RepositoryScopedBatchLoader:
                     )
             else:
                 for schedule in self._repository.get_external_schedules():
+                    origin_id = schedule.get_external_origin_id()
                     fetched[origin_id] = self._instance.get_ticks(
                         origin_id, schedule.selector_id, limit=limit
                     )
