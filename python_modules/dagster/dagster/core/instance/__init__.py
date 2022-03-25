@@ -934,7 +934,6 @@ class DagsterInstance:
 
     def _log_asset_materialization_planned_events(self, pipeline_run, execution_plan_snapshot):
         from dagster.core.events import DagsterEvent
-        from dagster.core.events.log import EventLogEntry
         from dagster.core.execution.context_creation_pipeline import initialize_console_manager
 
         pipeline_name = pipeline_run.pipeline_name
@@ -988,10 +987,12 @@ class DagsterInstance:
             pipeline_code_origin=pipeline_code_origin,
         )
 
+        pipeline_run = self._run_storage.add_run(pipeline_run)
+
         if execution_plan_snapshot:
             self._log_asset_materialization_planned_events(pipeline_run, execution_plan_snapshot)
 
-        return self._run_storage.add_run(pipeline_run)
+        return pipeline_run
 
     def register_managed_run(
         self,

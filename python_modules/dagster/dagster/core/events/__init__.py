@@ -266,16 +266,6 @@ def log_resource_event(log_manager: DagsterLogManager, event: "DagsterEvent") ->
     log_manager.log_dagster_event(level=log_level, msg=event.message or "", dagster_event=event)
 
 
-def log_asset_materialization_planned_event(
-    log_manager: DagsterLogManager, event: "DagsterEvent"
-) -> None:
-    # asset_materialization_planned events have a log level "DEBUG" in order to hide these
-    # events by default in Dagit. Modifying filtering to select DEBUG events will show these events
-    # in Dagit run logs.
-    log_level = logging.DEBUG
-    log_manager.log_dagster_event(level=log_level, msg=event.message or "", dagster_event=event)
-
-
 @whitelist_for_serdes
 class DagsterEvent(
     NamedTuple(
@@ -393,7 +383,8 @@ class DagsterEvent(
             message=f"{pipeline_name} intends to materialize asset {asset_key.to_string()}",
             event_specific_data=AssetMaterializationPlannedData(asset_key),
         )
-        log_asset_materialization_planned_event(log_manager, event)
+        log_level = logging.DEBUG
+        log_manager.log_dagster_event(level=log_level, msg=event.message or "", dagster_event=event)
         return event
 
     def __new__(
