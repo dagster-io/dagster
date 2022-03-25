@@ -129,11 +129,9 @@ run_launcher:
   config:
     secrets:
       - name: "MY_API_TOKEN"
-        valueFrom: arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::
+        valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:token::"
       - name: "MY_PASSWORD"
-        valueFrom: arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::
-  ]
-}
+        valueFrom: "arn:aws:secretsmanager:us-east-1:123456789012:secret:FOO-AbCdEf:password::"
 ```
 
 Any secret tagged with `dagster` will be included in the environment. `MY_API_TOKEN` and `MY_PASSWORD` will also be included in the environment.
