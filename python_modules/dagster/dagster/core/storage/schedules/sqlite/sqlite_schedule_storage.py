@@ -57,6 +57,8 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
                 ScheduleStorageSqlMetadata.create_all(engine)
                 engine.execute("PRAGMA journal_mode=WAL;")
                 stamp_alembic_rev(alembic_config, connection)
+                self.migrate()
+                self.optimize()
 
         return SqliteScheduleStorage(conn_string, inst_data)
 
