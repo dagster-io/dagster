@@ -57,6 +57,7 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
         graphene_info, execution_params
     )
 
+    tags = merge_dicts(external_pipeline.tags, execution_params.execution_metadata.tags)
     external_execution_plan = get_external_execution_plan_or_raise(
         graphene_info=graphene_info,
         external_pipeline=external_pipeline,
@@ -64,8 +65,8 @@ def create_valid_pipeline_run(graphene_info, external_pipeline, execution_params
         run_config=execution_params.run_config,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
+        tags=tags,
     )
-    tags = merge_dicts(external_pipeline.tags, execution_params.execution_metadata.tags)
 
     pipeline_run = graphene_info.context.instance.create_run(
         pipeline_snapshot=external_pipeline.pipeline_snapshot,

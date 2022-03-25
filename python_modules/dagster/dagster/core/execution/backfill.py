@@ -261,6 +261,7 @@ def create_backfill_run(
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
         instance=instance,
+        tags=partition_data.tags,
     )
 
     log_action(

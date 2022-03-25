@@ -1,6 +1,6 @@
 import sys
 from contextlib import contextmanager
-from typing import Any, Dict, FrozenSet, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, FrozenSet, Iterator, List, Mapping, Optional, Tuple, Union
 
 from dagster import check
 from dagster.core.definitions import IPipeline, JobDefinition, PipelineDefinition
@@ -739,7 +739,7 @@ def create_execution_plan(
     step_keys_to_execute: Optional[List[str]] = None,
     known_state: Optional[KnownExecutionState] = None,
     instance_ref: Optional[InstanceRef] = None,
-    tags: Optional[Dict[str, str]] = None,
+    tags: Optional[Mapping[str, object]] = None,
 ) -> ExecutionPlan:
     pipeline = _check_pipeline(pipeline)
     pipeline_def = pipeline.get_definition()
@@ -748,7 +748,7 @@ def create_execution_plan(
     mode = check.opt_str_param(mode, "mode", default=pipeline_def.get_default_mode_name())
     check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
     check.opt_inst_param(instance_ref, "instance_ref", InstanceRef)
-    tags = check.opt_dict_param(tags, "tags", key_type=str, value_type=str)
+    tags = check.opt_dict_param(tags, "tags", key_type=str)
 
     resolved_run_config = ResolvedRunConfig.build(pipeline_def, run_config, mode=mode)
 

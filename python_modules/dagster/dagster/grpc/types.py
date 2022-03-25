@@ -1,4 +1,4 @@
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, List, Mapping, NamedTuple, Optional
 
 from dagster import check
 from dagster.core.code_pointer import CodePointer
@@ -29,6 +29,7 @@ class ExecutionPlanSnapshotArgs(
             ("pipeline_snapshot_id", str),
             ("known_state", Optional[KnownExecutionState]),
             ("instance_ref", Optional[InstanceRef]),
+            ("tags", Optional[Mapping[str, object]]),
         ],
     )
 ):
@@ -42,6 +43,7 @@ class ExecutionPlanSnapshotArgs(
         pipeline_snapshot_id: str,
         known_state: Optional[KnownExecutionState] = None,
         instance_ref: Optional[InstanceRef] = None,
+        tags: Optional[Mapping[str, object]] = None,
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,
@@ -57,6 +59,7 @@ class ExecutionPlanSnapshotArgs(
             pipeline_snapshot_id=check.str_param(pipeline_snapshot_id, "pipeline_snapshot_id"),
             known_state=check.opt_inst_param(known_state, "known_state", KnownExecutionState),
             instance_ref=check.opt_inst_param(instance_ref, "instance_ref", InstanceRef),
+            tags=check.opt_dict_param(tags, "tags", key_type=str),
         )
 
 

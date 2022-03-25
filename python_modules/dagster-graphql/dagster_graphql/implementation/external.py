@@ -93,6 +93,7 @@ def get_external_execution_plan_or_raise(
     run_config,
     step_keys_to_execute,
     known_state,
+    tags,
 ):
 
     return graphene_info.context.get_external_execution_plan(
@@ -101,6 +102,7 @@ def get_external_execution_plan_or_raise(
         mode=mode,
         step_keys_to_execute=step_keys_to_execute,
         known_state=known_state,
+        tags=tags,
     )
 
 

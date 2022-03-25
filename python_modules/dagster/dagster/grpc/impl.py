@@ -370,6 +370,7 @@ def get_external_execution_plan_snapshot(recon_pipeline, args):
                 step_keys_to_execute=args.step_keys_to_execute,
                 known_state=args.known_state,
                 instance_ref=args.instance_ref,
+                tags=args.tags,
             ),
             args.pipeline_snapshot_id,
         )

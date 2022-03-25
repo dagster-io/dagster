@@ -5,7 +5,7 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Union, cast
 
 from dagster import check
 from dagster.core.errors import DagsterInvariantViolationError, DagsterRepositoryLocationLoadError
@@ -200,6 +200,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
         mode: str,
         step_keys_to_execute: List[str],
         known_state: KnownExecutionState,
+        tags: Optional[Mapping[str, object]] = None,
     ) -> ExternalExecutionPlan:
         return self.get_repository_location(
             external_pipeline.handle.location_name
@@ -210,6 +211,7 @@ class BaseWorkspaceRequestContext(IWorkspace):
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance=self.instance,
+            tags=tags,
         )
 
     def get_external_partition_config(

@@ -26,6 +26,7 @@ def sync_get_external_execution_plan_grpc(
     step_keys_to_execute: Optional[List[str]] = None,
     known_state: Optional[KnownExecutionState] = None,
     instance: Optional[DagsterInstance] = None,
+    tags: Optional[Mapping[str, object]] = None,
 ) -> ExecutionPlanSnapshot:
     from dagster.grpc.client import DagsterGrpcClient
 
@@ -50,6 +51,7 @@ def sync_get_external_execution_plan_grpc(
                 pipeline_snapshot_id=pipeline_snapshot_id,
                 known_state=known_state,
                 instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
+                tags=tags,
             )
         ),
         (ExecutionPlanSnapshot, ExecutionPlanSnapshotErrorData),

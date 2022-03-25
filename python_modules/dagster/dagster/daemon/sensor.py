@@ -585,16 +585,6 @@ def _create_sensor_run(
 ):
     from dagster.daemon.daemon import get_telemetry_daemon_session_id
 
-    external_execution_plan = repo_location.get_external_execution_plan(
-        external_pipeline,
-        run_request.run_config,
-        target_data.mode,
-        step_keys_to_execute=None,
-        known_state=None,
-        instance=instance,
-    )
-    execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
-
     pipeline_tags = external_pipeline.tags or {}
     check_tags(pipeline_tags, "pipeline_tags")
     tags = merge_dicts(
@@ -603,6 +593,18 @@ def _create_sensor_run(
     )
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key
+
+    external_execution_plan = repo_location.get_external_execution_plan(
+        external_pipeline,
+        run_request.run_config,
+        target_data.mode,
+        step_keys_to_execute=None,
+        known_state=None,
+        instance=instance,
+        tags=tags,
+    )
+
+    execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     log_action(
         instance,

@@ -120,6 +120,7 @@ class RepositoryLocation(AbstractContextManager):
         step_keys_to_execute: Optional[List[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
+        tags: Optional[Mapping[str, object]] = None,
     ) -> ExternalExecutionPlan:
         pass
 
@@ -345,6 +346,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
         step_keys_to_execute: Optional[List[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
+        tags: Optional[Mapping[str, object]] = None,
     ) -> ExternalExecutionPlan:
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         check.dict_param(run_config, "run_config")
@@ -362,6 +364,7 @@ class InProcessRepositoryLocation(RepositoryLocation):
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance_ref=instance.get_ref() if instance and instance.is_persistent else None,
+            tags=tags,
         )
         return ExternalExecutionPlan(
             execution_plan_snapshot=snapshot_from_execution_plan(
@@ -649,6 +652,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
         step_keys_to_execute: Optional[List[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
+        tags: Optional[Mapping[str, object]] = None,
     ) -> ExternalExecutionPlan:
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
         run_config = check.dict_param(run_config, "run_config")
@@ -667,6 +671,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
             step_keys_to_execute=step_keys_to_execute,
             known_state=known_state,
             instance=instance,
+            tags=tags,
         )
 
         return ExternalExecutionPlan(execution_plan_snapshot=execution_plan_snapshot_or_error)

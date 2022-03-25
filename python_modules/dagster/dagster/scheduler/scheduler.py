@@ -527,15 +527,6 @@ def _create_scheduler_run(
     run_config = run_request.run_config
     schedule_tags = run_request.tags
 
-    external_execution_plan = repo_location.get_external_execution_plan(
-        external_pipeline,
-        run_config,
-        external_schedule.mode,
-        step_keys_to_execute=None,
-        known_state=None,
-    )
-    execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
-
     pipeline_tags = external_pipeline.tags or {}
     check_tags(pipeline_tags, "pipeline_tags")
     tags = merge_dicts(pipeline_tags, schedule_tags)
@@ -543,6 +534,16 @@ def _create_scheduler_run(
     tags[SCHEDULED_EXECUTION_TIME_TAG] = to_timezone(schedule_time, "UTC").isoformat()
     if run_request.run_key:
         tags[RUN_KEY_TAG] = run_request.run_key
+
+    external_execution_plan = repo_location.get_external_execution_plan(
+        external_pipeline,
+        run_config,
+        external_schedule.mode,
+        step_keys_to_execute=None,
+        known_state=None,
+        tags=tags,
+    )
+    execution_plan_snapshot = external_execution_plan.execution_plan_snapshot
 
     log_action(
         instance,
