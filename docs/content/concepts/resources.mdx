@@ -86,7 +86,7 @@ do_database_stuff_dev = do_database_stuff.to_job(
 )
 ```
 
-Supplying resources to the <PyObject object="job" decorator />, i.e. when there aren't multiple jobs for the same graph, is also useful. For example, if you want to use an off-the-shelf resource or supply configuration in one place instead of in every solid.
+Supplying resources to the <PyObject object="job" decorator />, i.e. when there aren't multiple jobs for the same graph, is also useful. For example, if you want to use an off-the-shelf resource or supply configuration in one place instead of in every op.
 
 ```python file=/concepts/resources/resources.py startafter=start_job_example endbefore=end_job_example
 from dagster import job
