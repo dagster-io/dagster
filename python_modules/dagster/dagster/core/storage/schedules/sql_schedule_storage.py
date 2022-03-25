@@ -225,7 +225,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
     @property
     def supports_batch_queries(self):
-        return not self.has_instigators_table()
+        return self.has_instigators_table() and self.has_built_index(SCHEDULE_TICKS_SELECTOR_ID)
 
     def has_instigators_table(self):
         with self.connect() as conn:
@@ -237,11 +237,11 @@ class SqlScheduleStorage(ScheduleStorage):
 
     def get_batch_ticks(
         self,
-        origin_ids: Sequence[str],
+        selector_ids: Sequence[str],
         limit: Optional[int] = None,
         statuses: Optional[Sequence[TickStatus]] = None,
     ) -> Mapping[str, Iterable[InstigatorTick]]:
-        check.list_param(origin_ids, "origin_ids", of_type=str)
+        check.list_param(selector_ids, "selector_ids", of_type=str)
         check.opt_int_param(limit, "limit")
         check.opt_list_param(statuses, "statuses", of_type=TickStatus)
 
@@ -249,7 +249,7 @@ class SqlScheduleStorage(ScheduleStorage):
             db.func.rank()
             .over(
                 order_by=db.desc(JobTickTable.c.timestamp),
-                partition_by=JobTickTable.c.job_origin_id,
+                partition_by=JobTickTable.c.selector_id,
             )
             .label("rank")
         )
@@ -257,13 +257,13 @@ class SqlScheduleStorage(ScheduleStorage):
             db.select(
                 [
                     JobTickTable.c.id,
-                    JobTickTable.c.job_origin_id,
+                    JobTickTable.c.selector_id,
                     JobTickTable.c.tick_body,
                     bucket_rank_column,
                 ]
             )
             .select_from(JobTickTable)
-            .where(JobTickTable.c.job_origin_id.in_(origin_ids))
+            .where(JobTickTable.c.selector_id.in_(selector_ids))
             .alias("subquery")
         )
         if statuses:
@@ -272,7 +272,7 @@ class SqlScheduleStorage(ScheduleStorage):
             )
 
         query = (
-            db.select([subquery.c.id, subquery.c.job_origin_id, subquery.c.tick_body])
+            db.select([subquery.c.id, subquery.c.selector_id, subquery.c.tick_body])
             .order_by(subquery.c.rank.asc())
             .where(subquery.c.rank <= limit)
         )
@@ -281,9 +281,9 @@ class SqlScheduleStorage(ScheduleStorage):
         results = defaultdict(list)
         for row in rows:
             tick_id = row[0]
-            origin_id = row[1]
+            selector_id = row[1]
             tick_data = cast(TickData, deserialize_json_to_dagster_namedtuple(row[2]))
-            results[origin_id].append(InstigatorTick(tick_id, tick_data))
+            results[selector_id].append(InstigatorTick(tick_id, tick_data))
         return results
 
     def get_ticks(self, origin_id, selector_id, before=None, after=None, limit=None, statuses=None):
