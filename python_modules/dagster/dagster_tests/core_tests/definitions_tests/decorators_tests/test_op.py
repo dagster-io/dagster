@@ -816,3 +816,23 @@ def test_generic_output_op():
         '"Int". Description: Value "foo" of python type "str" must be a int.',
     ):
         execute_op_in_graph(the_op_bad_type_match)
+
+
+def test_generic_output_tuple_op():
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op() -> Tuple[Output[str], Output[int]]:
+        return (Output("foo"), Output(5))
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op_bad_type_match() -> Tuple[Output[str], Output[int]]:
+        return (Output("foo"), Output("foo"))
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step output "out2" - expected type "Int". '
+        'Description: Value "foo" of python type "str" must be a int.',
+    ):
+        execute_op_in_graph(the_op_bad_type_match)
