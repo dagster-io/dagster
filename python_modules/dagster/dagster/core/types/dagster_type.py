@@ -4,11 +4,13 @@ from enum import Enum as PythonEnum
 from functools import partial
 from typing import cast
 
+from typing_compat import get_args, get_origin
+
 from dagster import check
 from dagster.builtins import BuiltinEnum
 from dagster.config.config_type import Array, ConfigType
 from dagster.config.config_type import Noneable as ConfigNoneable
-from dagster.core.definitions.events import TypeCheck
+from dagster.core.definitions.events import Output, TypeCheck
 from dagster.core.definitions.metadata import MetadataEntry, RawMetadataValue, normalize_metadata
 from dagster.core.errors import DagsterInvalidDefinitionError, DagsterInvariantViolationError
 from dagster.serdes import whitelist_for_serdes
@@ -825,6 +827,8 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
     if is_typing_type(dagster_type):
         dagster_type = transform_typing_type(dagster_type)
 
+    if get_origin(dagster_type) == Output:
+        dagster_type = get_args(dagster_type)[0]
     if isinstance(dagster_type, DagsterType):
         return dagster_type
 

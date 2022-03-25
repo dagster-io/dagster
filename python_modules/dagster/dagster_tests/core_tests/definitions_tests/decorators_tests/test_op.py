@@ -795,3 +795,24 @@ def test_args_kwargs_op():
 
     result = the_graph_provides_inputs.execute_in_process()
     assert result.success
+
+
+def test_generic_output_op():
+    @op
+    def the_op() -> Output[str]:
+        return Output("foo")
+
+    result = execute_op_in_graph(the_op)
+    assert result.success
+    assert result.output_for_node("the_op") == "foo"
+
+    @op
+    def the_op_bad_type_match() -> Output[int]:
+        return Output("foo")
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step output "result" - expected type '
+        '"Int". Description: Value "foo" of python type "str" must be a int.',
+    ):
+        execute_op_in_graph(the_op_bad_type_match)
