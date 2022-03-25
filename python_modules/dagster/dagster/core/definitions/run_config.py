@@ -1,4 +1,4 @@
-from typing import Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, cast, Any
+from typing import Any, Dict, Iterator, List, NamedTuple, Optional, Set, Tuple, cast
 
 from dagster.config import Field, Permissive, Selector
 from dagster.config.config_type import ALL_CONFIG_BUILTINS, Array, ConfigType
@@ -73,7 +73,7 @@ class RunConfigSchemaCreationData(NamedTuple):
     ignored_solids: List[Node]
     required_resources: Set[str]
     is_using_graph_job_op_apis: bool
-    top_level_inputs: Dict[str, Any]
+    top_level_inputs: Optional[Dict[str, Any]]
 
 
 def define_logger_dictionary_cls(creation_data: RunConfigSchemaCreationData) -> Shape:

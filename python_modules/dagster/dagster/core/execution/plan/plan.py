@@ -1,6 +1,7 @@
 from collections import OrderedDict, defaultdict
 from typing import (
     TYPE_CHECKING,
+    Any,
     Callable,
     Dict,
     FrozenSet,
@@ -10,7 +11,6 @@ from typing import (
     Set,
     Union,
     cast,
-    Any,
 )
 
 import dagster._check as check
@@ -54,9 +54,10 @@ from .inputs import (
     FromDynamicCollect,
     FromMultipleSources,
     FromPendingDynamicStepOutput,
-    FromRootInputConfig,
-    FromRootInputValue,
+    FromRootInputConfigPlaceholder,
     FromRootInputManager,
+    FromRootInputValuePlaceholder,
+    FromRootPlaceholder,
     FromStepOutput,
     FromUnresolvedStepOutput,
     StepInput,
@@ -314,7 +315,11 @@ class _PlanBuilder:
                         )
                     )
                 else:
-                    check.inst_param(step_input_source, "step_input_source", StepInputSource)
+                    check.inst_param(
+                        step_input_source,
+                        "step_input_source",
+                        (StepInputSource, FromRootPlaceholder),
+                    )
                     step_inputs.append(
                         StepInput(
                             name=input_name,
@@ -415,18 +420,18 @@ def get_root_graph_input_source(
     input_name: str,
     input_def: InputDefinition,
     pipeline_def: PipelineDefinition,
-) -> Optional[Union[FromRootInputConfig, FromRootInputValue]]:
+) -> Optional[Union[FromRootInputConfigPlaceholder, FromRootInputValuePlaceholder]]:
 
     if pipeline_def.is_job and input_name in cast(JobDefinition, pipeline_def)._input_values:
-        return FromRootInputValue(
-            input_name=input_name,
+        return FromRootInputValuePlaceholder(
+            top_level_input_name=input_name,
             input_value=cast(JobDefinition, pipeline_def)._input_values[input_name],
         )
 
     input_config = plan_builder.resolved_run_config.inputs
 
     if input_config and input_name in input_config:
-        return FromConfig(solid_handle=None, input_name=input_name)
+        return FromRootInputConfigPlaceholder(top_level_input_name=input_name)
 
     if input_def.dagster_type.is_nothing:
         return None
@@ -565,7 +570,11 @@ def get_step_input_source(
         parent_inputs = {step_input.name: step_input for step_input in parent_step_inputs}
         if parent_name in parent_inputs:
             parent_input = parent_inputs[parent_name]
-            return parent_input.source
+            if isinstance(parent_input.source, FromRootPlaceholder):
+                parent_input_source = parent_input.source.to_input_source(input_name, handle)
+            else:
+                parent_input_source = parent_input.source
+            return parent_input_source
         # else fall through to Nothing case or raise
 
     if solid.definition.input_has_default(input_name):

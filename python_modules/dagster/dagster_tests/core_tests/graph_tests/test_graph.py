@@ -54,8 +54,8 @@ def get_ops():
 
 def test_top_level_inputs_execution():
     @op
-    def the_op(the_in: int):
-        return the_in + 1
+    def the_op(leaf_in: int):
+        return leaf_in + 1
 
     @graph
     def the_graph(the_in):
@@ -64,6 +64,12 @@ def test_top_level_inputs_execution():
     result = the_graph.execute_in_process(input_values={"the_in": 2})
     assert result.success
     assert result.output_value() == 3
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step input "leaf_in" - expected type "Int". Description: Value "bad_value" of python type "str" must be a int.',
+    ):
+        the_graph.execute_in_process(input_values={"the_in": "bad_value"})
 
 
 def test_basic_graph():
