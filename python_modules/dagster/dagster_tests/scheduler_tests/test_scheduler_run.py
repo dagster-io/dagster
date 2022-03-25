@@ -1869,7 +1869,7 @@ def test_status_in_code_schedule(instance):
 
             assert len(instance.all_instigator_state()) == 1
 
-            instigator_state = instance.get_instigator_state(always_running_origin.get_id())
+            instigator_state = instance.get_instigator_state(always_running_origin.get_id(), running_schedule.selector_id)
 
             assert instigator_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
             assert (
@@ -2015,7 +2015,7 @@ def test_change_default_status(instance):
             assert len(ticks) == 0
 
             # AUTOMATICALLY_RUNNING row has been removed from the database
-            instigator_state = instance.get_instigator_state(never_running_origin.get_id())
+            instigator_state = instance.get_instigator_state(never_running_origin.get_id(), not_running_schedule.selector_id)
             assert not instigator_state
 
             # schedule can still be manually started

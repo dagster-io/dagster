@@ -148,7 +148,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
     def update_instigator_state(self, state):
         check.inst_param(state, "state", InstigatorState)
-        if not self.get_instigator_state(state.instigator_origin_id):
+        if not self.get_instigator_state(state.instigator_origin_id, state.get_selector_id()):
             raise DagsterInvariantViolationError(
                 "InstigatorState {id} is not present in storage".format(
                     id=state.instigator_origin_id
@@ -176,7 +176,7 @@ class SqlScheduleStorage(ScheduleStorage):
         check.str_param(origin_id, "origin_id")
         check.str_param(selector_id, "selector_id")
 
-        if not self.get_instigator_state(origin_id):
+        if not self.get_instigator_state(origin_id, selector_id):
             raise DagsterInvariantViolationError(
                 "InstigatorState {id} is not present in storage".format(id=origin_id)
             )
