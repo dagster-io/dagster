@@ -625,7 +625,7 @@ def test_error_sensor(capfd):
                 )
             )
 
-            state = instance.get_instigator_state(external_sensor.get_external_origin_id())
+            state = instance.get_instigator_state(external_sensor.get_external_origin_id(), external_sensor.selector_id)
             assert state.instigator_data is None
 
             assert instance.get_runs_count() == 0
@@ -652,7 +652,7 @@ def test_error_sensor(capfd):
             ) in captured.out
 
             # Tick updated the sensor's last tick time, but not its cursor (due to the failure)
-            state = instance.get_instigator_state(external_sensor.get_external_origin_id())
+            state = instance.get_instigator_state(external_sensor.get_external_origin_id(), external_sensor.selector_id)
             assert state.instigator_data.cursor is None
             assert state.instigator_data.last_tick_timestamp == freeze_datetime.timestamp()
 
@@ -2078,7 +2078,7 @@ def test_status_in_code_sensor():
                 assert instance.get_runs_count() == 0
 
                 assert len(instance.all_instigator_state()) == 1
-                instigator_state = instance.get_instigator_state(always_running_origin.get_id())
+                instigator_state = instance.get_instigator_state(always_running_origin.get_id(), running_sensor.selector_id)
                 assert instigator_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
 
                 ticks = instance.get_ticks(running_sensor.get_external_origin_id())

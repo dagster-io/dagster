@@ -124,7 +124,7 @@ class TestScheduleStorage:
 
         state = self.build_schedule("my_schedule", "* * * * *")
         storage.add_instigator_state(state)
-        schedule = storage.get_instigator_state(state.instigator_origin_id)
+        schedule = storage.get_instigator_state(state.instigator_origin_id, state.get_selector_id())
 
         assert schedule.instigator_name == "my_schedule"
         assert schedule.instigator_data.start_timestamp == None
@@ -132,8 +132,9 @@ class TestScheduleStorage:
     def test_get_schedule_state_not_found(self, storage):
         assert storage
 
-        storage.add_instigator_state(self.build_schedule("my_schedule", "* * * * *"))
-        schedule = storage.get_instigator_state("fake_id")
+        state = self.build_schedule("my_schedule", "* * * * *")
+        storage.add_instigator_state(state)
+        schedule = storage.get_instigator_state("fake_id", "fake_selector")
 
         assert schedule is None
 
@@ -355,7 +356,7 @@ class TestScheduleStorage:
 
         state = self.build_sensor("my_sensor")
         storage.add_instigator_state(state)
-        state = storage.get_instigator_state(state.instigator_origin_id)
+        state = storage.get_instigator_state(state.instigator_origin_id, state.get_selector_id())
 
         assert state.instigator_name == "my_sensor"
 
@@ -363,7 +364,7 @@ class TestScheduleStorage:
         assert storage
 
         storage.add_instigator_state(self.build_sensor("my_sensor"))
-        state = storage.get_instigator_state("fake_id")
+        state = storage.get_instigator_state("fake_id", "fake_selector")
         assert state is None
 
     def test_update_state(self, storage):

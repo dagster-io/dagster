@@ -1719,7 +1719,7 @@ records = instance.get_event_records(
             SensorInstigatorData,
         )
 
-        state = self.get_instigator_state(external_sensor.get_external_origin_id())
+        state = self.get_instigator_state(external_sensor.get_external_origin_id(), external_sensor.selector_id)
 
         if external_sensor.get_current_instigator_state(state).is_running:
             raise Exception(
@@ -1748,7 +1748,7 @@ records = instance.get_event_records(
             SensorInstigatorData,
         )
 
-        state = self.get_instigator_state(instigator_origin_id)
+        state = self.get_instigator_state(instigator_origin_id, external_sensor.selector_id)
 
         if not state:
             return self.add_instigator_state(
@@ -1771,8 +1771,8 @@ records = instance.get_event_records(
         )
 
     @traced
-    def get_instigator_state(self, origin_id):
-        return self._schedule_storage.get_instigator_state(origin_id)
+    def get_instigator_state(self, origin_id, selector_id):
+        return self._schedule_storage.get_instigator_state(origin_id, selector_id)
 
     def add_instigator_state(self, state):
         return self._schedule_storage.add_instigator_state(state)

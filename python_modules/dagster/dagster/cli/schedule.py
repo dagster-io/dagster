@@ -423,7 +423,8 @@ def execute_restart_command(schedule_name, all_running_flag, cli_args, print_fn)
             else:
                 external_schedule = external_repo.get_external_schedule(schedule_name)
                 schedule_state = instance.get_instigator_state(
-                    external_schedule.get_external_origin_id()
+                    external_schedule.get_external_origin_id(),
+                    external_schedule.selector_id,
                 )
                 if schedule_state != None and schedule_state.status != InstigatorStatus.RUNNING:
                     click.UsageError(
