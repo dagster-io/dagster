@@ -192,6 +192,7 @@ DROP TABLE IF EXISTS `instigators`;
 CREATE TABLE `instigators` (
   `id` int NOT NULL AUTO_INCREMENT,
   `selector_id` varchar(255) DEFAULT NULL,
+  `repository_name` text,
   `status` varchar(63) DEFAULT NULL,
   `instigator_type` varchar(63) DEFAULT NULL,
   `instigator_body` text,
