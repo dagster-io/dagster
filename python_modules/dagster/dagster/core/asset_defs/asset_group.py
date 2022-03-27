@@ -71,6 +71,9 @@ class AssetGroup(
             an error if provided by the user.
         executor_def (Optional[ExecutorDefinition]): The executor definition to
             use when re-materializing assets in this group.
+        default_namespace (Optional[Union[str, Sequence[str]]): Will be used as the namespace for
+            all assets in the group that do not have a namespace. I.e. it will be prepended to all
+            asset keys that only have a single component in their path.
 
     Examples:
 
@@ -107,8 +110,14 @@ class AssetGroup(
         source_assets: Optional[Sequence[SourceAsset]] = None,
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
+        default_namespace: Optional[Union[str, Sequence[str]]] = None,
     ):
         check.sequence_param(assets, "assets", of_type=AssetsDefinition)
+        if default_namespace:
+            if isinstance(default_namespace, str):
+                default_namespace = [default_namespace]
+            assets = [asset.with_default_namespace(default_namespace) for asset in assets]
+
         source_assets = check.opt_sequence_param(
             source_assets, "source_assets", of_type=SourceAsset
         )

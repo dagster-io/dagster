@@ -14,7 +14,6 @@ from dagster import (
 )
 from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
-from dagster.utils.backcompat import ExperimentalWarning
 
 
 @pytest.fixture(autouse=True)
@@ -22,13 +21,9 @@ def check_experimental_warnings():
     with warnings.catch_warnings(record=True) as record:
         yield
 
-        raises_warning = False
         for w in record:
             if "asset_key" in w.message.args[0]:
-                raises_warning = True
-                break
-
-        assert not raises_warning
+                assert False, f"Unexpected warning: {w.message.args[0]}"
 
 
 def test_asset_no_decorator_args():
@@ -290,7 +285,7 @@ def test_invoking_simple_assets():
     assert out == [1, 2, 3, 4, 5, 6]
 
     @asset
-    def arg_kwarg_asset(arg1, kwarg1=[0]):
+    def arg_kwarg_asset(arg1, kwarg1=[0]):  # pylint: disable=dangerous-default-value
         return arg1 + kwarg1
 
     out = arg_kwarg_asset([1, 2, 3], kwarg1=[3, 2, 1])
@@ -326,3 +321,29 @@ def test_invoking_asset_with_context():
     ctx = build_op_context()
     out = asset_with_context(ctx, 1)
     assert out == 1
+
+
+def test_with_default_namespace():
+    @asset(ins={"input2": AssetIn(namespace="something_else")})
+    def asset1(input1, input2):
+        assert input1
+        assert input2
+
+    namespaced = asset1.with_default_namespace(["abc", "123"])
+
+    assert namespaced.input_defs_by_asset_key[
+        AssetKey(["abc", "123", "input1"])
+    ].hardcoded_asset_key == AssetKey(["abc", "123", "input1"])
+    assert namespaced.input_defs_by_asset_key[AssetKey(["abc", "123", "input1"])].name == "input1"
+
+    assert namespaced.input_defs_by_asset_key[
+        AssetKey(["something_else", "input2"])
+    ].hardcoded_asset_key == AssetKey(["something_else", "input2"])
+    assert (
+        namespaced.input_defs_by_asset_key[AssetKey(["something_else", "input2"])].name == "input2"
+    )
+
+    assert namespaced.output_defs_by_asset_key[
+        AssetKey(["abc", "123", "asset1"])
+    ].hardcoded_asset_key == AssetKey(["abc", "123", "asset1"])
+    assert namespaced.output_defs_by_asset_key[AssetKey(["abc", "123", "asset1"])].name == "result"

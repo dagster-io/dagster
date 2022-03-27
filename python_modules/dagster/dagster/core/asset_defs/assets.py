@@ -1,9 +1,11 @@
-from typing import AbstractSet, Mapping, Optional
+import warnings
+from typing import AbstractSet, Mapping, Optional, Sequence
 
 from dagster import check
 from dagster.core.definitions import OpDefinition
 from dagster.core.definitions.events import AssetKey
 from dagster.core.definitions.partition import PartitionsDefinition
+from dagster.utils.backcompat import ExperimentalWarning
 
 from .partition_mapping import PartitionMapping
 
@@ -61,3 +63,21 @@ class AssetsDefinition:
             in_asset_key,
             self._partitions_def.get_default_partition_mapping(),
         )
+
+    def with_default_namespace(self, namespace: Sequence[str]) -> "AssetsDefinition":
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+
+            return self.__class__(
+                input_names_by_asset_key={
+                    key.with_default_namespace(namespace): input_def.name
+                    for key, input_def in self.input_defs_by_asset_key.items()
+                },
+                output_names_by_asset_key={
+                    key.with_default_namespace(namespace): output_def.name
+                    for key, output_def in self.output_defs_by_asset_key.items()
+                },
+                op=self.op.with_default_asset_namespace(namespace),
+                partitions_def=self.partitions_def,
+                partition_mappings=self._partition_mappings,
+            )

@@ -1,5 +1,16 @@
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Callable, Mapping, NamedTuple, Optional, Set, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Set,
+    Type,
+    Union,
+)
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey
@@ -272,6 +283,21 @@ class InputDefinition:
             asset_key=self._asset_key,
             asset_partitions=self._asset_partitions_fn,
         )
+
+    def with_default_asset_namespace(self, asset_namespace: Sequence[str]) -> "InputDefinition":
+        if len(self._asset_key.path) > 1:
+            return self
+        else:
+            return InputDefinition(
+                name=self.name,
+                dagster_type=self.dagster_type,
+                description=self.description,
+                default_value=self.default_value if self.has_default_value else None,
+                root_manager_key=self._root_manager_key,
+                metadata=self._metadata,
+                asset_key=self._asset_key.with_default_namespace(asset_namespace),
+                asset_partitions=self._asset_partitions_fn,
+            )
 
 
 def _checked_inferred_type(inferred: InferredInputProps, decorator_name: str) -> DagsterType:

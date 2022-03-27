@@ -260,6 +260,26 @@ class SolidDefinition(NodeDefinition):
             retry_policy=self.retry_policy,
         )
 
+    def with_default_asset_namespace(self, asset_namespace: Sequence[str]) -> "SolidDefinition":
+        return self.__class__(
+            name=self.name,
+            input_defs=[
+                input_def.with_default_asset_namespace(asset_namespace)
+                for input_def in self.input_defs
+            ],
+            compute_fn=self.compute_fn,
+            output_defs=[
+                output_def.with_default_asset_namespace(asset_namespace)
+                for output_def in self.output_defs
+            ],
+            config_schema=self.config_schema,
+            description=self.description,
+            tags=self.tags,
+            required_resource_keys=self.required_resource_keys,
+            version=self.version,
+            retry_policy=self.retry_policy,
+        )
+
     @property
     def retry_policy(self) -> Optional[RetryPolicy]:
         return self._retry_policy

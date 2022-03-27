@@ -116,6 +116,12 @@ class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
             return ASSET_KEY_STRUCTURED_DELIMITER.join(self.path)
         return seven.json.dumps(self.path)
 
+    def with_default_namespace(self, namespace: Sequence[str]) -> "AssetKey":
+        if len(self.path) > 1:
+            return self
+        else:
+            return self.__class__(namespace + self.path)
+
     @staticmethod
     def from_db_string(asset_key_string: Optional[str]) -> Optional["AssetKey"]:
         if not asset_key_string:

@@ -7,6 +7,7 @@ from typing import (
     List,
     NamedTuple,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
@@ -256,6 +257,22 @@ class OutputDefinition:
             asset_partitions=self._asset_partitions_fn,
             asset_partitions_def=self.asset_partitions_def,
         )
+
+    def with_default_asset_namespace(self, asset_namespace: Sequence[str]) -> "OutputDefinition":
+        if len(self._asset_key.path) > 1:
+            return self
+        else:
+            return self.__class__(
+                name=self.name,
+                dagster_type=self.dagster_type,
+                description=self.description,
+                is_required=self.is_required,
+                io_manager_key=self.io_manager_key,
+                metadata=self._metadata,
+                asset_key=self._asset_key.with_default_namespace(asset_namespace),
+                asset_partitions=self._asset_partitions_fn,
+                asset_partitions_def=self.asset_partitions_def,
+            )
 
 
 def _checked_inferred_type(inferred: Any) -> DagsterType:
