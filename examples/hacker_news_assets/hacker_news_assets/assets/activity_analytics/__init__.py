@@ -1,7 +1,8 @@
-def build_source_assets():
-    from hacker_news_assets.assets.core.items import comments, stories
+from hacker_news_assets.assets.core import core_source_assets
+from hacker_news_assets.resources import RESOURCES_LOCAL
 
-    return comments.to_source_assets() + stories.to_source_assets()
+from dagster import AssetGroup
 
-
-source_assets = build_source_assets()
+activity_analytics_asset_group = AssetGroup.from_package_name(
+    __name__, extra_source_assets=core_source_assets, resource_defs=RESOURCES_LOCAL
+)

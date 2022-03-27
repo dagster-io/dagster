@@ -1,25 +1,21 @@
-from hacker_news_assets.resources import RESOURCES_LOCAL
+from hacker_news_assets.assets.activity_analytics import activity_analytics_asset_group
+from hacker_news_assets.assets.core import core_asset_group
+from hacker_news_assets.assets.recommender import recommender_asset_group
 
-from dagster import AssetGroup, ScheduleDefinition, repository
+from dagster import ScheduleDefinition, repository
 
 
 @repository
 def core():
-    assets = AssetGroup.from_package_name(
-        "hacker_news_assets.assets.core", resource_defs=RESOURCES_LOCAL
-    )
-    return [assets]
+    return [core_asset_group]
 
 
 @repository
 def activity_analytics():
-    assets = AssetGroup.from_package_name(
-        "hacker_news_assets.assets.activity_analytics", resource_defs=RESOURCES_LOCAL
-    )
     return [
-        assets,
+        activity_analytics_asset_group,
         ScheduleDefinition(
-            job=assets.build_job(
+            job=activity_analytics_asset_group.build_job(
                 "daily_stats_job",
                 selection=["comment_daily_stats", "story_daily_stats", "activity_daily_stats"],
             ),
@@ -30,7 +26,4 @@ def activity_analytics():
 
 @repository
 def recommender():
-    assets = AssetGroup.from_package_name(
-        "hacker_news_assets.assets.recommender", resource_defs=RESOURCES_LOCAL
-    )
-    return [assets]
+    return [recommender_asset_group]
