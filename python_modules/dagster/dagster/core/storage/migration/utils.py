@@ -267,7 +267,11 @@ def create_instigators_table():
         # not a schedule storage db
         return
 
-    if has_table("instigators"):
+    if (
+        has_table("instigators")
+        and has_column("job_ticks", "selector_id")
+        and has_column("jobs", "selector_id")
+    ):
         # already migrated
         return
 
