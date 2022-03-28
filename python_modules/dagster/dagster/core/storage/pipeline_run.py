@@ -505,6 +505,9 @@ class RunsFilter(
         pipeline_name: Optional[str] = None,  # for backcompat purposes
     ):
         job_name = job_name or pipeline_name
+
+        check.invariant(run_ids != [], "When filtering on run ids, a non-empty list must be used.")
+
         return super(RunsFilter, cls).__new__(
             cls,
             run_ids=check.opt_list_param(run_ids, "run_ids", of_type=str),
