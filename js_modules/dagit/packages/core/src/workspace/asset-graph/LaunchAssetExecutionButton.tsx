@@ -3,6 +3,7 @@ import React from 'react';
 
 import {AssetKey} from '../../assets/types';
 import {LaunchRootExecutionButton} from '../../launchpad/LaunchRootExecutionButton';
+import {DagsterTag} from '../../runs/RunTag';
 import {buildRepoAddress} from '../buildRepoAddress';
 
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
@@ -93,7 +94,14 @@ export const LaunchAssetExecutionButton: React.FC<{
           getVariables={() => ({
             executionParams: {
               mode: 'default',
-              executionMetadata: {},
+              executionMetadata: {
+                tags: [
+                  {
+                    key: DagsterTag.StepSelection,
+                    value: assets.map((o) => o.opName!).join(','),
+                  },
+                ],
+              },
               runConfigData: {},
               stepKeys: assets.map((o) => o.opName!),
               selector: {
