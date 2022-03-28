@@ -383,6 +383,8 @@ class SqlScheduleStorage(ScheduleStorage):
             # https://stackoverflow.com/a/54386260/324449
             conn.execute(JobTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(JobTickTable.delete())  # pylint: disable=no-value-for-parameter
+            if self._has_instigators_table(conn):
+                conn.execute(InstigatorTable.delete())
 
     # MIGRATIONS
 
