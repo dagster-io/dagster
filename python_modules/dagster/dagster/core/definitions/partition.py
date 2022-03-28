@@ -770,6 +770,13 @@ class PartitionedConfig(Generic[T]):
     def get_partition_keys(self, current_time: Optional[datetime] = None) -> List[str]:
         return [partition.name for partition in self.partitions_def.get_partitions(current_time)]
 
+    def get_run_config_for_partition_key(self, key: str) -> Dict[str, Any]:
+        partitions = self.partitions_def.get_partitions()
+        partition = [p for p in partitions if p.name == key]
+        if len(partition) == 0:
+            raise DagsterInvalidInvocationError(f"No partition for partition key {key}.")
+        return self.run_config_for_partition_fn(partition[0])
+
     def __call__(self, *args, **kwargs):
         if self._decorated_fn is None:
             raise DagsterInvalidInvocationError(

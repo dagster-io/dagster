@@ -140,8 +140,8 @@ class TimeWindowPartitionsDefinition(
             ),
             execution_timezone=self.timezone,
         )
-        next(iterator)
-        return TimeWindow(start, next(iterator))
+
+        return TimeWindow(next(iterator), next(iterator))
 
     def start_time_for_partition_key(self, partition_key: str) -> datetime:
         return pendulum.instance(datetime.strptime(partition_key, self.fmt), tz=self.timezone)
