@@ -4,11 +4,16 @@ import os
 import subprocess
 import tempfile
 
+from sqlalchemy import create_engine
+
 from dagster.core.instance import DagsterInstance
 from dagster.utils import datetime_as_float, file_relative_path
 
 
-def _reconstruct_from_file(hostname, path, username="root", password="test"):
+def _reconstruct_from_file(hostname, conn_string, path, username="root", password="test"):
+    engine = create_engine(conn_string)
+    engine.execute("drop schema test;")
+    engine.execute("create schema test;")
     env = os.environ.copy()
     env["MYSQL_PWD"] = "test"
     subprocess.check_call(f"mysql -uroot -h{hostname} test < {path}", shell=True, env=env)
@@ -17,6 +22,7 @@ def _reconstruct_from_file(hostname, path, username="root", password="test"):
 def test_0_13_17_mysql_convert_float_cols(hostname, conn_string):
     _reconstruct_from_file(
         hostname,
+        conn_string,
         file_relative_path(__file__, "snapshot_0_13_18_start_end_timestamp.sql"),
     )
 
@@ -47,6 +53,7 @@ def test_0_13_17_mysql_convert_float_cols(hostname, conn_string):
 def test_instigators_table_backcompat(hostname, conn_string):
     _reconstruct_from_file(
         hostname,
+        conn_string,
         file_relative_path(__file__, "snapshot_0_14_6_instigators_table.sql"),
     )
 
