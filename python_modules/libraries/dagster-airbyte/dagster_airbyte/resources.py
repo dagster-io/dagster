@@ -77,7 +77,9 @@ class AirbyteResource:
                     timeout=15,
                 )
                 response.raise_for_status()
-                return response.json()
+                if response.status_code != 204:
+                    response = response.json()
+                return response
             except RequestException as e:
                 self._log.error("Request to Airbyte API failed: %s", e)
                 if num_retries == self._request_max_retries:
