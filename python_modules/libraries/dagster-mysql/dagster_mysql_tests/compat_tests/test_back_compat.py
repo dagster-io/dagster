@@ -80,6 +80,7 @@ def test_jobs_selector_id_migration(hostname, conn_string):
 
     _reconstruct_from_file(
         hostname,
+        conn_string,
         file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration.sql"),
     )
 
