@@ -1,5 +1,5 @@
 import os
-from typing import Dict, NamedTuple, Optional
+from typing import Dict, NamedTuple, Optional, Union
 
 import yaml
 
@@ -9,12 +9,12 @@ from dagster.serdes import ConfigurableClassData, class_from_code_pointer, white
 from .config import DAGSTER_CONFIG_YAML_FILENAME, dagster_instance_config
 
 
-def _runs_directory(base):
-    return os.path.join(base, "history", "")
-
-
 def compute_logs_directory(base):
     return os.path.join(base, "storage")
+
+
+def _runs_directory(base):
+    return os.path.join(base, "history", "")
 
 
 def _event_logs_directory(base):
@@ -42,15 +42,53 @@ def configurable_class_data_or_default(config_value, field_name, default):
 
 
 @whitelist_for_serdes
+class LegacyStorageRef(
+    NamedTuple(
+        "_LegacyStorageRef",
+        [
+            ("run_storage_data", ConfigurableClassData),
+            ("event_storage_data", ConfigurableClassData),
+            ("schedule_storage_data", ConfigurableClassData),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        run_storage_data: ConfigurableClassData,
+        event_storage_data: ConfigurableClassData,
+        schedule_storage_data: Optional[ConfigurableClassData],
+    ):
+        return super(cls, LegacyStorageRef).__new__(
+            cls,
+            run_storage_data=check.inst_param(
+                run_storage_data, "run_storage_data", ConfigurableClassData
+            ),
+            event_storage_data=check.inst_param(
+                event_storage_data, "event_storage_data", ConfigurableClassData
+            ),
+            schedule_storage_data=check.opt_inst_param(
+                schedule_storage_data, "schedule_storage_data", ConfigurableClassData
+            ),
+        )
+
+    def rehydrate(self):
+        from dagster.core.storage.legacy_storage import LegacyStorage
+
+        return LegacyStorage(
+            self.run_storage_data.rehydrate(),
+            self.event_storage_data.rehydrate(),
+            self.schedule_storage_data.rehydrate() if self.schedule_storage_data else None,
+        )
+
+
+@whitelist_for_serdes
 class InstanceRef(
     NamedTuple(
         "_InstanceRef",
         [
             ("local_artifact_storage_data", ConfigurableClassData),
-            ("run_storage_data", ConfigurableClassData),
-            ("event_storage_data", ConfigurableClassData),
+            ("storage_data", Union[ConfigurableClassData, LegacyStorageRef]),
             ("compute_logs_data", ConfigurableClassData),
-            ("schedule_storage_data", Optional[ConfigurableClassData]),
             ("scheduler_data", Optional[ConfigurableClassData]),
             ("run_coordinator_data", Optional[ConfigurableClassData]),
             ("run_launcher_data", Optional[ConfigurableClassData]),
@@ -67,10 +105,8 @@ class InstanceRef(
     def __new__(
         cls,
         local_artifact_storage_data: ConfigurableClassData,
-        run_storage_data: ConfigurableClassData,
-        event_storage_data: ConfigurableClassData,
+        storage_data: Union[ConfigurableClassData, LegacyStorageRef],
         compute_logs_data: ConfigurableClassData,
-        schedule_storage_data: Optional[ConfigurableClassData],
         scheduler_data: Optional[ConfigurableClassData],
         run_coordinator_data: Optional[ConfigurableClassData],
         run_launcher_data: Optional[ConfigurableClassData],
@@ -82,17 +118,11 @@ class InstanceRef(
             local_artifact_storage_data=check.inst_param(
                 local_artifact_storage_data, "local_artifact_storage_data", ConfigurableClassData
             ),
-            run_storage_data=check.inst_param(
-                run_storage_data, "run_storage_data", ConfigurableClassData
-            ),
-            event_storage_data=check.inst_param(
-                event_storage_data, "event_storage_data", ConfigurableClassData
+            storage_data=check.inst_param(
+                storage_data, "storage_data", (ConfigurableClassData, LegacyStorageRef)
             ),
             compute_logs_data=check.inst_param(
                 compute_logs_data, "compute_logs_data", ConfigurableClassData
-            ),
-            schedule_storage_data=check.opt_inst_param(
-                schedule_storage_data, "schedule_storage_data", ConfigurableClassData
             ),
             scheduler_data=check.opt_inst_param(
                 scheduler_data, "scheduler_data", ConfigurableClassData
@@ -119,25 +149,15 @@ class InstanceRef(
                 "LocalArtifactStorage",
                 yaml.dump({"base_dir": base_dir}, default_flow_style=False),
             ),
-            "run_storage": ConfigurableClassData(
-                "dagster.core.storage.runs",
-                "SqliteRunStorage",
-                yaml.dump({"base_dir": _runs_directory(base_dir)}, default_flow_style=False),
-            ),
-            "event_log_storage": ConfigurableClassData(
-                "dagster.core.storage.event_log",
-                "SqliteEventLogStorage",
-                yaml.dump({"base_dir": _event_logs_directory(base_dir)}, default_flow_style=False),
+            "storage": ConfigurableClassData(
+                "dagster.core.storage.sqlite_storage",
+                "DagsterSqliteStorage",
+                yaml.dump({"base_dir": base_dir}, default_flow_style=False),
             ),
             "compute_logs": ConfigurableClassData(
                 "dagster.core.storage.local_compute_log_manager",
                 "LocalComputeLogManager",
                 yaml.dump({"base_dir": compute_logs_directory(base_dir)}, default_flow_style=False),
-            ),
-            "schedule_storage": ConfigurableClassData(
-                "dagster.core.storage.schedules",
-                "SqliteScheduleStorage",
-                yaml.dump({"base_dir": _schedule_directory(base_dir)}, default_flow_style=False),
             ),
             "scheduler": ConfigurableClassData(
                 "dagster.core.scheduler",
@@ -151,6 +171,22 @@ class InstanceRef(
                 "dagster",
                 "DefaultRunLauncher",
                 yaml.dump({}),
+            ),
+            # LEGACY DEFAULTS
+            "run_storage": ConfigurableClassData(
+                "dagster.core.storage.runs",
+                "SqliteRunStorage",
+                yaml.dump({"base_dir": _runs_directory(base_dir)}, default_flow_style=False),
+            ),
+            "event_log_storage": ConfigurableClassData(
+                "dagster.core.storage.event_log",
+                "SqliteEventLogStorage",
+                yaml.dump({"base_dir": _event_logs_directory(base_dir)}, default_flow_style=False),
+            ),
+            "schedule_storage": ConfigurableClassData(
+                "dagster.core.storage.schedules",
+                "SqliteScheduleStorage",
+                yaml.dump({"base_dir": _schedule_directory(base_dir)}, default_flow_style=False),
             ),
         }
 
@@ -180,23 +216,42 @@ class InstanceRef(
             config_value, "local_artifact_storage", defaults["local_artifact_storage"]
         )
 
-        run_storage_data = configurable_class_data_or_default(
-            config_value, "run_storage", defaults["run_storage"]
-        )
-
-        event_storage_data = configurable_class_data_or_default(
-            config_value, "event_log_storage", defaults["event_log_storage"]
-        )
-
         compute_logs_data = configurable_class_data_or_default(
             config_value,
             "compute_logs",
             defaults["compute_logs"],
         )
 
-        schedule_storage_data = configurable_class_data_or_default(
-            config_value, "schedule_storage", defaults["schedule_storage"]
+        run_storage_data = configurable_class_data_or_default(config_value, "run_storage", None)
+        event_storage_data = configurable_class_data_or_default(
+            config_value, "event_log_storage", None
         )
+        schedule_storage_data = configurable_class_data_or_default(
+            config_value, "schedule_storage", None
+        )
+
+        has_legacy_storage = (
+            config_value.get("run_storage")
+            and config_value.get("event_log_storage")
+            and config_value.get("schedule_storage")
+        )
+
+        if has_legacy_storage:
+            storage_data = LegacyStorageRef(
+                run_storage_data=configurable_class_data_or_default(
+                    config_value, "run_storage", defaults["run_storage"]
+                ),
+                event_storage_data=configurable_class_data_or_default(
+                    config_value, "event_log_storage", defaults["event_log_storage"]
+                ),
+                schedule_storage_data=configurable_class_data_or_default(
+                    config_value, "schedule_storage", defaults["schedule_storage"]
+                ),
+            )
+        elif config_value.get("storage"):
+            storage_data = configurable_class_data(config_value["storage"])
+        else:
+            storage_data = defaults["storage"]
 
         scheduler_data = configurable_class_data_or_default(
             config_value, "scheduler", defaults["scheduler"]
@@ -219,10 +274,8 @@ class InstanceRef(
 
         return InstanceRef(
             local_artifact_storage_data=local_artifact_storage_data,
-            run_storage_data=run_storage_data,
-            event_storage_data=event_storage_data,
+            storage_data=storage_data,
             compute_logs_data=compute_logs_data,
-            schedule_storage_data=schedule_storage_data,
             scheduler_data=scheduler_data,
             run_coordinator_data=run_coordinator_data,
             run_launcher_data=run_launcher_data,
@@ -246,20 +299,24 @@ class InstanceRef(
         return self.local_artifact_storage_data.rehydrate()
 
     @property
-    def run_storage(self):
-        return self.run_storage_data.rehydrate()
+    def storage(self):
+        return self.storage_data.rehydrate()
 
-    @property
-    def event_storage(self):
-        return self.event_storage_data.rehydrate()
+    # @property
+    # def run_storage(self):
+    #     return self.storage.run_storage
+
+    # @property
+    # def event_storage(self):
+    #     return self.storage.event_storage
+
+    # @property
+    # def schedule_storage(self):
+    #     return self.storage.schedule_storage
 
     @property
     def compute_log_manager(self):
         return self.compute_logs_data.rehydrate()
-
-    @property
-    def schedule_storage(self):
-        return self.schedule_storage_data.rehydrate() if self.schedule_storage_data else None
 
     @property
     def scheduler(self):

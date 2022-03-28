@@ -61,6 +61,16 @@ def dagster_instance_config(
         custom_instance_class = None
         schema = dagster_instance_config_schema()
 
+    if "storage" in dagster_config_dict and (
+        "run_storage" in dagster_config_dict
+        or "event_log_storage" in dagster_config_dict
+        or "schedule_storage" in dagster_config_dict
+    ):
+        raise DagsterInvalidConfigError(
+            "Found config for `storage` which is incompatible with `run_storage`, "
+            "`event_log_storage`, and `schedule_storage` config entries."
+        )
+
     dagster_config = validate_config(schema, dagster_config_dict)
     if not dagster_config.success:
         raise DagsterInvalidConfigError(
@@ -104,6 +114,7 @@ def dagster_instance_config_schema():
     return {
         "local_artifact_storage": config_field_for_configurable_class(),
         "compute_logs": config_field_for_configurable_class(),
+        "storage": config_field_for_configurable_class(),
         "run_storage": config_field_for_configurable_class(),
         "event_log_storage": config_field_for_configurable_class(),
         "schedule_storage": config_field_for_configurable_class(),
