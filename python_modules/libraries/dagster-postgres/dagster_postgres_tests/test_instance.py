@@ -47,6 +47,19 @@ def full_pg_config(hostname):
     )
 
 
+def unified_pg_config(hostname):
+    return f"""
+      storage:
+        postgres:
+          postgres_db:
+            username: test
+            password: test
+            hostname: {hostname}
+            db_name: test
+
+    """
+
+
 def skip_autocreate_pg_config(hostname):
     return """
       run_storage:
@@ -135,6 +148,14 @@ def params_specified_pg_config(hostname):
     """.format(
         hostname=hostname
     )
+
+
+def test_load_instance(hostname):
+    with instance_for_test(overrides=yaml.safe_load(full_pg_config(hostname))):
+        pass
+
+    with instance_for_test(overrides=yaml.safe_load(unified_pg_config(hostname))):
+        pass
 
 
 def test_connection_leak(hostname, conn_string):
