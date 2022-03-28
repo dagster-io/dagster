@@ -6,7 +6,7 @@ from docs_snippets.concepts.partitions_schedules_sensors.partitioned_job import 
 )
 
 
-# start
+# start_partition_config
 from dagster import validate_run_config, daily_partitioned_config
 from datetime import datetime
 
@@ -32,4 +32,4 @@ def test_my_partitioned_config():
     assert validate_run_config(do_stuff_partitioned, run_config)
 
 
-# end
+# end_partition_config
