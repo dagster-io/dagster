@@ -33,30 +33,3 @@ def test_my_partitioned_config():
 
 
 # end_partition_config
-
-# start_partition_keys
-
-
-@daily_partitioned_config(start_date=datetime(2020, 1, 1), hour_offset=3)
-def my_offset_partitioned_config(start: datetime, _end: datetime):
-    return {
-        "ops": {
-            "process_data_for_date": {"config": {"date": start.strftime("%Y-%m-%d")}}
-        }
-    }
-
-
-def test_my_offset_partitioned_config():
-    # test that the first partition is as expected
-    partitions = my_offset_partitioned_config.partitions_def.get_partitions()
-    assert str(partitions[0].value.start) == "2020-01-01T03:00:00+00:00"
-    assert str(partitions[0].value.end) == "2020-01-02T03:00:00+00:00"
-
-    # get a partition for a datetime and assert the output of my_offset_partitioned_config is valid
-    # configuration for the do_stuff_partitioned_job
-
-    run_config = my_offset_partitioned_config.run_config_for_partition_fn(partitions[0])
-    assert validate_run_config(do_stuff_partitioned, run_config)
-
-
-# end_partition_keys
