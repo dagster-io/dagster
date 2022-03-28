@@ -7,6 +7,7 @@ from dagster_k8s.job import (
     UserDefinedDagsterK8sConfig,
     get_user_defined_k8s_config,
 )
+from dagster_k8s.utils import sanitize_k8s_label
 
 from dagster import __version__ as dagster_version
 from dagster import graph
@@ -598,7 +599,7 @@ def test_construct_dagster_k8s_job_with_labels():
     common_labels = {
         "app.kubernetes.io/name": "dagster",
         "app.kubernetes.io/instance": "dagster",
-        "app.kubernetes.io/version": dagster_version,
+        "app.kubernetes.io/version": sanitize_k8s_label(dagster_version),
         "app.kubernetes.io/part-of": "dagster",
     }
 

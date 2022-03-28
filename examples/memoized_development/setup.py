@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="memoized_development",
-    version="dev",
+    version="0+dev",
     author_email="hello@elementl.com",
     packages=["memoized_development"],  # same as name
     install_requires=["dagster"],  # external packages as dependencies

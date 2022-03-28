@@ -535,7 +535,7 @@ def construct_dagster_k8s_job(
     k8s_common_labels = {
         "app.kubernetes.io/name": "dagster",
         "app.kubernetes.io/instance": "dagster",
-        "app.kubernetes.io/version": dagster_version,
+        "app.kubernetes.io/version": sanitize_k8s_label(dagster_version),
         "app.kubernetes.io/part-of": "dagster",
     }
 
