@@ -1,7 +1,8 @@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {Colors, Icon} from '..';
+import {Colors} from './Colors';
+import {Icon} from './Icon';
 
 export const Warning: React.FC<{errorBackground?: boolean}> = ({errorBackground, children}) => {
   return (

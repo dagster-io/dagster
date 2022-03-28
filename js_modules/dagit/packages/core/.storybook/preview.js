@@ -1,5 +1,7 @@
 import {
   FontFamily,
+  GlobalInter,
+  GlobalInconsolata,
   GlobalDialogStyle,
   GlobalPopoverStyle,
   GlobalSuggestStyle,
@@ -12,6 +14,8 @@ import * as React from 'react';
 import {MemoryRouter} from 'react-router-dom';
 
 import {createGlobalStyle} from 'styled-components/macro';
+
+import '../src/app/blueprint.css';
 
 const GlobalStyle = createGlobalStyle`
   * {
@@ -69,6 +73,8 @@ export const decorators = [
   (Story) => (
     <MemoryRouter>
       <GlobalStyle />
+      <GlobalInter />
+      <GlobalInconsolata />
       <GlobalToasterStyle />
       <GlobalTooltipStyle />
       <GlobalPopoverStyle />

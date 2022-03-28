@@ -1,6 +1,3 @@
-import './css/fonts.css';
-import './css/blueprint.css';
-
 export * from './components/Alert';
 export * from './components/BaseButton';
 export * from './components/BaseTag';
@@ -43,6 +40,11 @@ export * from './components/Trace';
 export * from './components/Warning';
 export * from './components/styles';
 export * from './components/useSuggestionsForString';
+
+// Global font styles, exported as styled-component components to render in
+// your app tree root. E.g. <GlobalInconsolata />
+export * from './fonts/GlobalInconsolata';
+export * from './fonts/GlobalInter';
 
 // todo dish: Delete these when callsites are cleaned up.
 export {Button as ButtonWIP} from './components/Button';

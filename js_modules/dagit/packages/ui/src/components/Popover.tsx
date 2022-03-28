@@ -5,6 +5,8 @@ import deepmerge from 'deepmerge';
 import * as React from 'react';
 import {createGlobalStyle} from 'styled-components/macro';
 
+import searchSVG from '../icon-svgs/search.svg';
+
 import {Colors} from './Colors';
 import {FontFamily} from './styles';
 
@@ -23,7 +25,7 @@ export const GlobalPopoverStyle = createGlobalStyle`
         width: 16px;
         height: 16px;
         background: ${Colors.Gray900};
-        mask-image: url(${require('../icon-svgs/search.svg').default});
+        mask-image: url(${searchSVG});
         mask-size: cover;
         &::before { 
           content: '';
@@ -36,9 +38,7 @@ export const GlobalPopoverStyle = createGlobalStyle`
       .bp3-input {
         border: none;
         border-radius: 8px;
-        box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${
-  Colors.KeylineGray
-} inset 2px 2px 1.5px;
+        box-shadow: ${Colors.Gray300} inset 0px 0px 0px 1px, ${Colors.KeylineGray} inset 2px 2px 1.5px;
         font-family: ${FontFamily.default};
         ::placeholder {
           color: ${Colors.Gray500};

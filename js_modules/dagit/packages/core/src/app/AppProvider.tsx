@@ -17,6 +17,8 @@ import {
   GlobalTooltipStyle,
   FontFamily,
   CustomTooltipProvider,
+  GlobalInter,
+  GlobalInconsolata,
 } from '@dagster-io/ui';
 import * as React from 'react';
 import {BrowserRouter} from 'react-router-dom';
@@ -33,6 +35,8 @@ import {PermissionsProvider} from './Permissions';
 import {patchCopyToRemoveZeroWidthUnderscores} from './Util';
 import {WebSocketProvider} from './WebSocketProvider';
 import {TimezoneProvider} from './time/TimezoneContext';
+
+import './blueprint.css';
 
 // The solid sidebar and other UI elements insert zero-width spaces so solid names
 // break on underscores rather than arbitrary characters, but we need to remove these
@@ -162,6 +166,8 @@ export const AppProvider: React.FC<AppProviderProps> = (props) => {
   return (
     <AppContext.Provider value={appContextValue}>
       <WebSocketProvider websocketClient={websocketClient}>
+        <GlobalInter />
+        <GlobalInconsolata />
         <GlobalStyle />
         <GlobalToasterStyle />
         <GlobalTooltipStyle />

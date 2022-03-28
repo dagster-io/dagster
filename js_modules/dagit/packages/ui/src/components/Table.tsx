@@ -5,7 +5,7 @@ import {StyledTag} from './BaseTag';
 import {Colors} from './Colors';
 import {FontFamily} from './styles';
 
-interface TableProps extends IHTMLTableProps {
+export interface TableProps extends IHTMLTableProps {
   $compact?: boolean;
 }
 
