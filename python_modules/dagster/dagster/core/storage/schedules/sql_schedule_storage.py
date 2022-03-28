@@ -9,12 +9,7 @@ import sqlalchemy as db
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.scheduler.instigation import (
-    InstigatorState,
-    InstigatorTick,
-    TickData,
-    TickStatus,
-)
+from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick, TickData, TickStatus
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
 
@@ -60,9 +55,7 @@ class SqlScheduleStorage(ScheduleStorage):
             if instigator_type:
                 query = query.where(InstigatorTable.c.instigator_type == instigator_type.value)
         else:
-            query = db.select([JobTable.c.job_body, JobTable.c.selector_id]).select_from(
-                JobTable
-            )
+            query = db.select([JobTable.c.job_body, JobTable.c.selector_id]).select_from(JobTable)
             if repository_origin_id:
                 query = query.where(JobTable.c.repository_origin_id == repository_origin_id)
             if instigator_type:
@@ -77,7 +70,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
         if self.has_instigators_table() and self.has_built_index(SCHEDULE_JOBS_SELECTOR_ID):
             query = (
-                db.select([InstiagorTable.c.instigator_body])
+                db.select([InstigatorTable.c.instigator_body])
                 .select_from(InstigatorTable)
                 .where(InstigatorTable.c.selector_id == selector_id)
             )

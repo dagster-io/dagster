@@ -147,8 +147,7 @@ class RepositoryScopedBatchLoader:
         elif data_type == RepositoryDataType.SCHEDULE_TICKS:
             if self._instance.supports_batch_tick_queries:
                 selector_ids = [
-                    schedule.selector_id
-                    for schedule in self._repository.get_external_schedules()
+                    schedule.selector_id for schedule in self._repository.get_external_schedules()
                 ]
                 ticks_by_selector = self._instance.get_batch_ticks(selector_ids, limit=limit)
                 for schedule in self._repository.get_external_schedules():
@@ -165,8 +164,7 @@ class RepositoryScopedBatchLoader:
         elif data_type == RepositoryDataType.SENSOR_TICKS:
             if self._instance.supports_batch_tick_queries:
                 selector_ids = [
-                    schedule.selector_id
-                    for schedule in self._repository.get_external_sensors()
+                    schedule.selector_id for schedule in self._repository.get_external_sensors()
                 ]
                 ticks_by_selector = self._instance.get_batch_ticks(selector_ids, limit=limit)
                 for sensor in self._repository.get_external_sensors():
