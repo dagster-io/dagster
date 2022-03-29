@@ -54,7 +54,7 @@ from .inputs import (
     FromDynamicCollect,
     FromMultipleSources,
     FromPendingDynamicStepOutput,
-    FromRootInputConfigPlaceholder,
+    FromRootInputConfig,
     FromRootInputManager,
     FromRootInputValuePlaceholder,
     FromRootPlaceholder,
@@ -160,6 +160,7 @@ class _PlanBuilder:
 
     def build(self) -> "ExecutionPlan":
         """Builds the execution plan"""
+        from dagster.core.definitions.job_definition import get_input_values_from_job
 
         _check_persistent_storage_requirement(
             self.pipeline,
@@ -199,9 +200,7 @@ class _PlanBuilder:
             pipeline_def.solids_in_topological_order,
             pipeline_def.dependency_structure,
             parent_step_inputs=root_inputs,
-            top_level_inputs=cast(JobDefinition, pipeline_def)._input_values
-            if pipeline_def.is_job
-            else None,
+            top_level_inputs=get_input_values_from_job(pipeline_def),
         )
 
         step_dict = {step.handle: step for step in self._steps.values()}
@@ -420,18 +419,20 @@ def get_root_graph_input_source(
     input_name: str,
     input_def: InputDefinition,
     pipeline_def: PipelineDefinition,
-) -> Optional[Union[FromRootInputConfigPlaceholder, FromRootInputValuePlaceholder]]:
+) -> Optional[Union[FromRootInputConfig, FromRootInputValuePlaceholder]]:
+    from dagster.core.definitions.job_definition import get_input_values_from_job
 
-    if pipeline_def.is_job and input_name in cast(JobDefinition, pipeline_def)._input_values:
+    input_values = get_input_values_from_job(pipeline_def)
+    if input_values and input_name in input_values:
         return FromRootInputValuePlaceholder(
             top_level_input_name=input_name,
-            input_value=cast(JobDefinition, pipeline_def)._input_values[input_name],
+            input_value=input_values[input_name],
         )
 
     input_config = plan_builder.resolved_run_config.inputs
 
     if input_config and input_name in input_config:
-        return FromRootInputConfigPlaceholder(top_level_input_name=input_name)
+        return FromRootInputConfig(input_name=input_name)
 
     if input_def.dagster_type.is_nothing:
         return None

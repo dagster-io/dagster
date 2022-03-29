@@ -470,3 +470,10 @@ def get_subselected_graph_definition(
             f"The attempted subset {str_format_set(resolved_op_selection_dict)} for graph "
             f"{graph.name} results in an invalid graph."
         ) from exc
+
+
+def get_input_values_from_job(target: PipelineDefinition) -> Optional[Dict[str, Any]]:
+    if target.is_job:
+        return cast(JobDefinition, target)._input_values
+    else:
+        return None
