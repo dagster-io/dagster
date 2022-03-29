@@ -1,11 +1,12 @@
 # pylint: disable=redefined-outer-name
 import random
 
-from hacker_news_assets.assets.user_story_matrix import IndexedCooMatrix
 from pandas import DataFrame, Series
 from sklearn.decomposition import TruncatedSVD
 
 from dagster import AssetIn, MetadataValue, Output, asset
+
+from .user_story_matrix import IndexedCooMatrix
 
 
 @asset
@@ -29,7 +30,7 @@ def recommender_model(user_story_matrix: IndexedCooMatrix):
 
 
 @asset(
-    ins={"stories": AssetIn(metadata={"columns": ["id", "title"]})},
+    ins={"stories": AssetIn(namespace="core", metadata={"columns": ["id", "title"]})},
     io_manager_key="warehouse_io_manager",
 )
 def component_top_stories(

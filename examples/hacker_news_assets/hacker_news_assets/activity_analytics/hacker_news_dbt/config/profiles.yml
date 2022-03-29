@@ -1,10 +1,10 @@
 hacker_news_dbt:
-  target: dev
+  target: local
   outputs:
     local:
       type: duckdb
       path: hackernews.duckdb
-      schema: hackernews
+      schema: activity_analytics
 
     staging:
       type: snowflake
@@ -14,9 +14,9 @@ hacker_news_dbt:
       user: "{{ env_var('SNOWFLAKE_USER') }}"
       password: "{{ env_var('SNOWFLAKE_PASSWORD') }}"
 
-      database: DEMO_DB
+      database: DEMO_DB_STAGING
       warehouse: TINY_WAREHOUSE
-      schema: hackernews_dev
+      schema: activity_analytics
       client_session_keep_alive: False
 
     prod:
@@ -29,5 +29,5 @@ hacker_news_dbt:
 
       database: DEMO_DB
       warehouse: TINY_WAREHOUSE
-      schema: hackernews
+      schema: activity_analytics
       client_session_keep_alive: False
