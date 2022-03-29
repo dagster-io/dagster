@@ -576,7 +576,7 @@ class FromRootInputValue(
     ),
     StepInputSource,
 ):
-    """This step input source is configuration to be passed to a type loader"""
+    """This root input source is for direct python values to be passed to a type loader"""
 
     def __new__(
         cls, input_name: str, leaf_input_name: str, input_value: Any, node_handle: NodeHandle
