@@ -6,7 +6,6 @@ import {
   MenuDividerWIP,
   MenuExternalLink,
   MenuItemWIP,
-  MenuLink,
   MenuWIP,
   Popover,
   Tooltip,
@@ -18,6 +17,7 @@ import * as yaml from 'yaml';
 import {AppContext} from '../app/AppContext';
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {usePermissions} from '../app/Permissions';
+import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob} from '../workspace/WorkspaceContext';
 import {useRepositoryForRun} from '../workspace/useRepositoryForRun';
 import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';

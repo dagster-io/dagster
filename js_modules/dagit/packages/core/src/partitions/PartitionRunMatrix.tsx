@@ -7,7 +7,6 @@ import {
   DialogWIP,
   IconWIP,
   MenuItemWIP,
-  MenuLink,
   MenuWIP,
   Popover,
   FontFamily,
@@ -21,6 +20,7 @@ import {useViewport} from '../gantt/useViewport';
 import {QueryPersistedStateConfig, useQueryPersistedState} from '../hooks/useQueryPersistedState';
 import {GRAPH_EXPLORER_SOLID_HANDLE_FRAGMENT} from '../pipelines/GraphExplorer';
 import {RunFilterToken} from '../runs/RunsFilterInput';
+import {MenuLink} from '../ui/MenuLink';
 import {repoAddressToSelector} from '../workspace/repoAddressToSelector';
 import {RepoAddress} from '../workspace/types';
 

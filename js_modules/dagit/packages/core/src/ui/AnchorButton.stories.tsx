@@ -1,9 +1,8 @@
+import {ExternalAnchorButton, Group, Icon} from '@dagster-io/ui';
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {AnchorButton, ExternalAnchorButton} from './Button';
-import {Group} from './Group';
-import {Icon as Icon} from './Icon';
+import {AnchorButton} from './AnchorButton';
 
 // eslint-disable-next-line import/no-default-export
 export default {

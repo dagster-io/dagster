@@ -1,7 +1,6 @@
 import {gql, useLazyQuery, useQuery} from '@apollo/client';
 import {
   Box,
-  AnchorButton,
   ButtonWIP,
   ButtonGroup,
   ColorsWIP,
@@ -36,6 +35,7 @@ import {RunTimeFragment} from '../runs/types/RunTimeFragment';
 import {SCHEDULE_SWITCH_FRAGMENT} from '../schedules/ScheduleSwitch';
 import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {RunStatus} from '../types/globalTypes';
+import {AnchorButton} from '../ui/AnchorButton';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
 import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
