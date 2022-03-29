@@ -802,6 +802,8 @@ def test_generic_output_op():
     def the_op() -> Output[str]:
         return Output("foo")
 
+    assert the_op.output_def_named("result").dagster_type.key == "String"
+
     result = execute_op_in_graph(the_op)
     assert result.success
     assert result.output_for_node("the_op") == "foo"
@@ -816,6 +818,15 @@ def test_generic_output_op():
         '"Int". Description: Value "foo" of python type "str" must be a int.',
     ):
         execute_op_in_graph(the_op_bad_type_match)
+
+
+def test_output_generic_correct_inner_type():
+    @op
+    def the_op_not_using_output() -> Output[int]:
+        return 42
+
+    result = execute_op_in_graph(the_op_not_using_output)
+    assert result.success
 
 
 def test_generic_output_tuple_op():
@@ -836,3 +847,12 @@ def test_generic_output_tuple_op():
         'Description: Value "foo" of python type "str" must be a int.',
     ):
         execute_op_in_graph(the_op_bad_type_match)
+
+
+def test_generic_output_tuple_complex_types():
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op() -> Tuple[Output[List[str]], Output[Dict[str, str]]]:
+        return (Output(["foo"]), Output({"foo": "bar"}))
+
+    result = execute_op_in_graph(the_op)
+    assert result.success

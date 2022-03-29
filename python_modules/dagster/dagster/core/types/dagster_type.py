@@ -823,12 +823,13 @@ def resolve_dagster_type(dagster_type: object) -> DagsterType:
         "Do not pass runtime type classes. Got {}".format(dagster_type),
     )
 
-    # First check to see if it is part of python's typing library
-    if is_typing_type(dagster_type):
-        dagster_type = transform_typing_type(dagster_type)
-
+    # First, check to see if we're using Dagster's generic output type to do the type catching.
     if get_origin(dagster_type) == Output:
         dagster_type = get_args(dagster_type)[0]
+
+    # Then, check to see if it is part of python's typing library
+    if is_typing_type(dagster_type):
+        dagster_type = transform_typing_type(dagster_type)
     if isinstance(dagster_type, DagsterType):
         return dagster_type
 
