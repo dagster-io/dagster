@@ -203,12 +203,20 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._external_asset_node.compute_kind
 
     def resolve_dependedBy(self, graphene_info) -> List[GrapheneAssetDependency]:
-        if not self._external_asset_node.depended_by:
+        depended_by_asset_nodes = graphene_info.context.get_cross_repo_asset_dependencies(
+            self._repository_location.name,
+            self._external_repository.name,
+            self._external_asset_node.asset_key,
+        )
+        if self._external_asset_node.depended_by:
+            depended_by_asset_nodes.extend(self._external_asset_node.depended_by)
+
+        if not depended_by_asset_nodes:
             return []
 
         materialization_loader = BatchMaterializationLoader(
             instance=graphene_info.context.instance,
-            asset_keys=[dep.downstream_asset_key for dep in self._external_asset_node.depended_by],
+            asset_keys=[dep.downstream_asset_key for dep in depended_by_asset_nodes],
         )
 
         return [
@@ -219,13 +227,19 @@ class GrapheneAssetNode(graphene.ObjectType):
                 asset_key=dep.downstream_asset_key,
                 materialization_loader=materialization_loader,
             )
-            for dep in self._external_asset_node.depended_by
+            for dep in depended_by_asset_nodes
         ]
 
     def resolve_dependedByKeys(self, _graphene_info) -> List[GrapheneAssetKey]:
+        depended_by_asset_nodes = _graphene_info.context.get_cross_repo_asset_dependencies(
+            self._repository_location.name,
+            self._external_repository.name,
+            self._external_asset_node.asset_key,
+        )
+        depended_by_asset_nodes.extend(self._external_asset_node.depended_by)
+
         return [
-            GrapheneAssetKey(path=dep.downstream_asset_key.path)
-            for dep in self._external_asset_node.depended_by
+            GrapheneAssetKey(path=dep.downstream_asset_key.path) for dep in depended_by_asset_nodes
         ]
 
     def resolve_dependencyKeys(self, _graphene_info):
