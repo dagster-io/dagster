@@ -3,7 +3,7 @@ import * as React from 'react';
 
 import {AnchorButton, ExternalAnchorButton} from './Button';
 import {Group} from './Group';
-import {IconWIP as Icon} from './Icon';
+import {Icon as Icon} from './Icon';
 
 // eslint-disable-next-line import/no-default-export
 export default {

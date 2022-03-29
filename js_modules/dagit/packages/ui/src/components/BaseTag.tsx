@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {IconWrapper} from './Icon';
 
 interface Props {
@@ -28,8 +28,8 @@ const BaseTagTooltipStyle: React.CSSProperties = {
 
 export const BaseTag = (props: Props) => {
   const {
-    fillColor = ColorsWIP.Gray10,
-    textColor = ColorsWIP.Gray900,
+    fillColor = Colors.Gray10,
+    textColor = Colors.Gray900,
     icon,
     interactive = false,
     rightIcon,

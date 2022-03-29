@@ -4,9 +4,9 @@ import * as React from 'react';
 import styled, {createGlobalStyle} from 'styled-components/macro';
 
 import {Box} from './Box';
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {Group} from './Group';
-import {IconName, IconWIP} from './Icon';
+import {IconName, Icon} from './Icon';
 
 interface Props
   extends Omit<
@@ -17,7 +17,7 @@ interface Props
   icon?: IconName;
 }
 
-export const DialogWIP: React.FC<Props> = (props) => {
+export const Dialog: React.FC<Props> = (props) => {
   const {icon, title, children, ...rest} = props;
   return (
     <BlueprintDialog
@@ -41,12 +41,12 @@ export const DialogHeader: React.FC<HeaderProps> = (props) => {
   const {icon, label} = props;
   return (
     <Box
-      background={ColorsWIP.White}
+      background={Colors.White}
       padding={{vertical: 16, horizontal: 24}}
-      border={{side: 'bottom', width: 1, color: ColorsWIP.Gray200}}
+      border={{side: 'bottom', width: 1, color: Colors.Gray200}}
     >
       <Group direction="row" spacing={8} alignItems="center">
-        {icon ? <IconWIP name={icon} color={ColorsWIP.Gray800} /> : null}
+        {icon ? <Icon name={icon} color={Colors.Gray800} /> : null}
         <DialogHeaderText>{label}</DialogHeaderText>
       </Group>
     </Box>
@@ -55,7 +55,7 @@ export const DialogHeader: React.FC<HeaderProps> = (props) => {
 
 export const DialogBody: React.FC = (props) => {
   return (
-    <Box padding={{vertical: 16, horizontal: 20}} background={ColorsWIP.White}>
+    <Box padding={{vertical: 16, horizontal: 20}} background={Colors.White}>
       {props.children}
     </Box>
   );
@@ -69,7 +69,7 @@ export const DialogFooter: React.FC<DialogFooterProps> = (props) => {
   return (
     <Box
       padding={{bottom: 20, top: 8, horizontal: 24}}
-      background={ColorsWIP.White}
+      background={Colors.White}
       flex={{direction: 'row', alignItems: 'center', justifyContent: 'space-between'}}
     >
       <div>{props.left}</div>
@@ -89,7 +89,7 @@ const DialogHeaderText = styled.div`
 
 export const GlobalDialogStyle = createGlobalStyle`
   .dagit-portal .bp3-overlay-backdrop {
-    background-color: ${ColorsWIP.WashGray};
+    background-color: ${Colors.WashGray};
   }
 
   .dagit-portal .bp3-dialog-container {
@@ -99,7 +99,7 @@ export const GlobalDialogStyle = createGlobalStyle`
   }
 
   .dagit-portal .bp3-dialog {
-    background-color: ${ColorsWIP.White};
+    background-color: ${Colors.White};
     border-radius: 4px;
     box-shadow: rgba(0, 0, 0, 0.12) 0px 2px 12px;
     grid-row: 2;

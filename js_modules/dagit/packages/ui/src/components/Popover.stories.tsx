@@ -1,10 +1,10 @@
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {ButtonWIP} from './Button';
+import {Button} from './Button';
 import {Group} from './Group';
-import {IconWIP} from './Icon';
-import {MenuWIP as Menu, MenuItemWIP as MenuItem} from './Menu';
+import {Icon} from './Icon';
+import {Menu, MenuItem} from './Menu';
 import {GlobalPopoverStyle, Popover} from './Popover';
 
 // eslint-disable-next-line import/no-default-export
@@ -28,9 +28,9 @@ export const Default = () => {
             </Menu>
           }
         >
-          <ButtonWIP intent="primary" rightIcon={<IconWIP name="expand_more" />}>
+          <Button intent="primary" rightIcon={<Icon name="expand_more" />}>
             Do important things
-          </ButtonWIP>
+          </Button>
         </Popover>
       </Group>
     </>

@@ -1,8 +1,8 @@
 import * as React from 'react';
 
 import {Box} from './Box';
-import {ColorsWIP} from './Colors';
-import {IconName, IconWIP} from './Icon';
+import {Colors} from './Colors';
+import {IconName, Icon} from './Icon';
 import {Spinner} from './Spinner';
 import {Subheading} from './Text';
 
@@ -29,7 +29,7 @@ export const NonIdealState: React.FC<NonIdealStateProps> = ({
   return (
     <Box
       flex={{gap: 20, alignItems: singleContentElement ? 'center' : 'flex-start'}}
-      background={ColorsWIP.Gray50}
+      background={Colors.Gray50}
       padding={24}
       style={{
         margin: 'auto',
@@ -41,9 +41,9 @@ export const NonIdealState: React.FC<NonIdealStateProps> = ({
       {icon === 'spinner' ? (
         <Spinner purpose="section" />
       ) : icon === 'no-results' ? (
-        <IconWIP name="search" size={48} color={ColorsWIP.Gray400} />
+        <Icon name="search" size={48} color={Colors.Gray400} />
       ) : (
-        <IconWIP name={icon} size={48} color={ColorsWIP.Gray400} />
+        <Icon name={icon} size={48} color={Colors.Gray400} />
       )}
       <Box
         flex={{
@@ -52,8 +52,8 @@ export const NonIdealState: React.FC<NonIdealStateProps> = ({
           alignItems: 'flex-start',
         }}
       >
-        {title && <Subheading style={{color: ColorsWIP.Gray900}}>{title}</Subheading>}
-        {description && <div style={{color: ColorsWIP.Gray500}}>{description}</div>}
+        {title && <Subheading style={{color: Colors.Gray900}}>{title}</Subheading>}
+        {description && <div style={{color: Colors.Gray500}}>{description}</div>}
         {action}
       </Box>
     </Box>
