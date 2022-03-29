@@ -15,7 +15,6 @@ from sqlalchemy import create_engine
 from dagster import IOManager, InputContext, MetadataEntry, OutputContext, io_manager
 
 SNOWFLAKE_DATETIME_FORMAT = "%Y-%m-%d %H:%M:%S"
-DB_SCHEMA = "hackernews"
 
 
 def spark_field_to_snowflake_type(spark_field: StructField):
@@ -73,7 +72,7 @@ class SnowflakeIOManager(IOManager):
         self._config = config
 
     def handle_output(self, context: OutputContext, obj: Union[PandasDataFrame, SparkDataFrame]):
-        schema, table = DB_SCHEMA, context.asset_key.path[-1]
+        schema, table = context.asset_key.path[-2], context.asset_key.path[-1]
 
         time_window = context.asset_partitions_time_window if context.has_asset_partitions else None
         with connect_snowflake(config=self._config, schema=schema) as con:
@@ -85,7 +84,7 @@ class SnowflakeIOManager(IOManager):
             yield from self._handle_pandas_output(obj, schema, table)
         elif obj is None:  # dbt
             config = dict(SHARED_SNOWFLAKE_CONF)
-            config["schema"] = DB_SCHEMA
+            config["schema"] = schema
             with connect_snowflake(config=config) as con:
                 df = read_sql(f"SELECT * FROM {context.name} LIMIT 5", con=con)
                 num_rows = con.execute(f"SELECT COUNT(*) FROM {context.name}").fetchone()
@@ -153,7 +152,7 @@ class SnowflakeIOManager(IOManager):
     def load_input(self, context: InputContext) -> PandasDataFrame:
         asset_key = context.upstream_output.asset_key
 
-        schema, table = DB_SCHEMA, asset_key.path[-1]
+        schema, table = asset_key.path[-2], asset_key.path[-1]
         with connect_snowflake(config=self._config) as con:
             result = read_sql(
                 sql=self._get_select_statement(

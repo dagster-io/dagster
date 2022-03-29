@@ -5,8 +5,8 @@ from dagster import AssetIn, asset
 
 @asset(
     ins={
-        "stories": AssetIn(metadata={"columns": ["id"]}),
-        "comments": AssetIn(metadata={"columns": ["id", "user_id", "parent"]}),
+        "stories": AssetIn(namespace="core", metadata={"columns": ["id"]}),
+        "comments": AssetIn(namespace="core", metadata={"columns": ["id", "user_id", "parent"]}),
     },
     io_manager_key="warehouse_io_manager",
 )

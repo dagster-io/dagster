@@ -41,7 +41,7 @@ class DuckDBPartitionedParquetIOManager(PartitionedParquetIOManager):
         )
 
     def _table_path(self, context):
-        return f"hackernews.{context.asset_key.path[-1]}"
+        return f"{context.asset_key.path[-2]}.{context.asset_key.path[-1]}"
 
     def _connect_duckdb(self, context):
         return duckdb.connect(database=context.resource_config["duckdb_path"], read_only=False)

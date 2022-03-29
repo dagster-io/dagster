@@ -4,7 +4,7 @@ from dagster_aws.s3 import s3_resource
 from dagster_dbt import dbt_cli_resource
 from dagster_pyspark import pyspark_resource
 
-from dagster import ResourceDefinition
+from dagster import ResourceDefinition, ResourceSet
 from dagster.utils import file_relative_path
 
 from .common_bucket_s3_pickle_io_manager import common_bucket_s3_pickle_io_manager
@@ -87,3 +87,11 @@ RESOURCES_LOCAL = {
     "hn_client": hn_api_client,
     "dbt": dbt_local_resource,
 }
+
+
+def get_resource_set_for_deployment(deployment_name: str) -> ResourceSet:
+    return {
+        "local": ResourceSet(RESOURCES_LOCAL),
+        "staging": ResourceSet(RESOURCES_STAGING),
+        "prod": ResourceSet(RESOURCES_PROD),
+    }[deployment_name]
