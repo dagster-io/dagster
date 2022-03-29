@@ -828,6 +828,13 @@ def test_output_generic_correct_inner_type():
     result = execute_op_in_graph(the_op_not_using_output)
     assert result.success
 
+    @op
+    def the_op_annotation_not_using_output() -> int:
+        return Output(42)
+
+    result = execute_op_in_graph(the_op_annotation_not_using_output)
+    assert result.success
+
 
 def test_generic_output_tuple_op():
     @op(out={"out1": Out(), "out2": Out()})
