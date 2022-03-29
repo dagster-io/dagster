@@ -1,32 +1,16 @@
-from hacker_news_assets.assets.activity_analytics import activity_analytics_assets
-from hacker_news_assets.assets.core import core_assets
-from hacker_news_assets.assets.recommender import recommender_assets
-from hacker_news_assets.resources import RESOURCES_LOCAL, RESOURCES_PROD, RESOURCES_STAGING
+from hacker_news_assets.activity_analytics import activity_analytics_definitions
+from hacker_news_assets.core import core_definitions
+from hacker_news_assets.recommender import recommender_definitions
+from hacker_news_assets.resources import get_resource_set_for_deployment
 
-from dagster import ScheduleDefinition, repository
-
-all_assets = core_assets + activity_analytics_assets + recommender_assets
+from dagster import repository
 
 
 @repository
-def local():
-    return [AssetGroup(all_assets, resource_defs=RESOURCES_LOCAL)]
-
-
-@repository
-def activity_analytics():
+def repo(deployment_name: str):
     return [
-        activity_analytics_asset_group,
-        ScheduleDefinition(
-            job=activity_analytics_asset_group.build_job(
-                "daily_stats_job",
-                selection=["comment_daily_stats", "story_daily_stats", "activity_daily_stats"],
-            ),
-            cron_schedule="0 0 * * *",
-        ),
+        core_definitions,
+        recommender_definitions,
+        activity_analytics_definitions,
+        get_resource_set_for_deployment(deployment_name),
     ]
-
-
-@repository
-def recommender():
-    return [recommender_asset_group]
