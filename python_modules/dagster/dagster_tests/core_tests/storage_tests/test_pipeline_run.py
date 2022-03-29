@@ -3,6 +3,7 @@ import sys
 import pytest
 
 from dagster import check
+from dagster.check import CheckError
 from dagster.core.code_pointer import ModuleCodePointer
 from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.host_representation.origin import (
@@ -20,6 +21,7 @@ from dagster.core.storage.pipeline_run import (
     NON_IN_PROGRESS_RUN_STATUSES,
     PipelineRun,
     PipelineRunStatus,
+    RunsFilter,
 )
 
 
@@ -68,3 +70,11 @@ def test_in_progress_statuses():
     assert len(IN_PROGRESS_RUN_STATUSES) + len(NON_IN_PROGRESS_RUN_STATUSES) == len(
         PipelineRunStatus
     )
+
+
+def test_runs_filter_supports_nonempty_run_ids():
+    assert RunsFilter()
+    assert RunsFilter(run_ids=["1234"])
+
+    with pytest.raises(CheckError):
+        RunsFilter(run_ids=[])
