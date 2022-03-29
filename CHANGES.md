@@ -4834,22 +4834,13 @@ Thank you to all of the community contributors to this release!! In alphabetical
 - New solids explorer in Dagit allows you to browse and search for solids used across the
   repository.
 
-  ![Solid Explorer](./screenshots/solid_explorer.png)
-  ![Solid Explorer](./screenshots/solid_explorer_input.png)
-
 - Enabled solid dependency selection in the Dagit search filter.
 
   - To select a solid and its upstream dependencies, search `+{solid_name}`.
   - To select a solid and its downstream dependents, search `{solid_name}+`.
   - For both search `+{solid_name}+`.
 
-  For example. In the Airline demo, searching `+join_q2_data` will get the following:
-
-  ![Screenshot](./screenshots/airline_join_parent_filter.png)
-
 - Added a terminate button in Dagit to terminate an active run.
-
-  ![Stop Button](./screenshots/stop_button.png)
 
 - Added an `--output` flag to `dagster-graphql` CLI.
 - Added confirmation step for `dagster run wipe` and `dagster schedule wipe` commands (Thanks
