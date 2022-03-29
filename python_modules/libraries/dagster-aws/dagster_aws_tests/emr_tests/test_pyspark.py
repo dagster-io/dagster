@@ -163,7 +163,6 @@ def sync_code():
         "rsync",
         "-av",
         "-progress",
-        "--exclude='scala_modules/'",
         "--exclude='js_modules/'",
         "--exclude='.git/'",
         "--exclude='docs/'",
