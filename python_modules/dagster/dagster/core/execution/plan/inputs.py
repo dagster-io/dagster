@@ -500,35 +500,18 @@ class FromRootPlaceholder:
         pass
 
 
-class FromRootInputConfigPlaceholder(FromRootPlaceholder):
-    def __init__(self, top_level_input_name: str):
-        self.top_level_input_name = top_level_input_name
-
-    def to_input_source(self, leaf_input_name: str, node_handle: NodeHandle) -> StepInputSource:
-        return FromRootInputConfig(
-            input_name=self.top_level_input_name,
-            leaf_input_name=leaf_input_name,
-            node_handle=node_handle,
-        )
-
-
 @whitelist_for_serdes
 class FromRootInputConfig(
-    NamedTuple(
-        "_FromRootInputConfig",
-        [("input_name", str), ("leaf_input_name", str), ("node_handle", NodeHandle)],
-    ),
+    NamedTuple("_FromRootInputConfig", [("input_name", str)]),
     StepInputSource,
 ):
-    """This step input source is configuration to be passed to a type loader"""
+    """This root input source is configuration to be passed to a type loader"""
 
-    def __new__(cls, input_name: str, leaf_input_name: str, node_handle: NodeHandle):
-        return super(FromRootInputConfig, cls).__new__(
-            cls, input_name=input_name, leaf_input_name=leaf_input_name, node_handle=node_handle
-        )
+    def __new__(cls, input_name: str):
+        return super(FromRootInputConfig, cls).__new__(cls, input_name=input_name)
 
     def get_input_def(self, pipeline_def: PipelineDefinition) -> InputDefinition:
-        return pipeline_def.get_solid(self.node_handle).input_def_named(self.leaf_input_name)
+        return pipeline_def.graph.input_def_named(self.input_name)
 
     def load_input_object(self, step_context: "StepExecutionContext") -> Any:
         with user_code_error_boundary(
