@@ -42,10 +42,10 @@ def test_my_partitioned_config():
 def my_offset_partitioned_config(start: datetime, _end: datetime):
     return {
         "ops": {
-            "process_data_for_date": {
+            "process_data": {
                 "config": {
                     "start": start.strftime("%Y-%m-%d-%H:%M"),
-                    "end": _end.strftime("%Y-%m-%d-%H-%M"),
+                    "end": _end.strftime("%Y-%m-%d-%H:%M"),
                 }
             }
         }
@@ -77,7 +77,7 @@ def test_my_offset_partitioned_config():
     # test that the contents of run_config are what you expect
     assert run_config == {
         "ops": {
-            "process_data_for_date": {
+            "process_data": {
                 "config": {"start": "2020-01-01-00:15", "end": "2020-01-02-00:15"}
             }
         }
