@@ -36,7 +36,6 @@ ENV LANG=en_US.UTF-8 \
     KIND_VERSION=v0.9.0 \
     KUBECTL_VERSION=v1.20.1 \
     PYSPARK_VERSION=3.0.1 \
-    SBT_VERSION=1.4.6 \
     FOSSA_VERSION=v1.1.10
 
 # Install kubectl
@@ -89,10 +88,6 @@ RUN echo "--- \033[32m:debian: Install Debian packages\033[0m" \
     # Confirm Java works
     && java -version
 
-
-# Add files needed for build
-ADD scala_modules scala_modules
-
 # Add gcloud CLI debian pkg source
 RUN echo "--- \033[32m:linux: Misc installs and cleanup\033[0m" \
     && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] http://packages.cloud.google.com/apt cloud-sdk main" | \
@@ -103,34 +98,15 @@ RUN echo "--- \033[32m:linux: Misc installs and cleanup\033[0m" \
     && curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose \
     && chmod +x /usr/local/bin/docker-compose \
     && curl -fsSL "https://download.docker.com/linux/ubuntu/gpg" | apt-key add - \
-    # Install SBT pkg from github
-    && curl -L0 "https://github.com/sbt/sbt/releases/download/v$SBT_VERSION/sbt-$SBT_VERSION.tgz" | tar zxf - -C /usr/share \
-    && cd /usr/share/sbt/bin \
-    && rm sbt.bat sbtn-x86_64-apple-darwin sbtn-x86_64-pc-linux sbtn-x86_64-pc-win32.exe \
-    && ln -s /usr/share/sbt/bin/sbt /usr/local/bin/sbt \
     && add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable" \
     && apt-get -yqq update \
     && apt-get -yqq install \
-    docker-ce \
-    google-cloud-sdk \
-    # sbt \
+        docker-ce \
+        google-cloud-sdk \
     # Clean up after install process
     && apt-get remove -yqq \
-    # Validate that SBT works
-    && sbt sbtVersion -Dsbt.rootdir=true \
-    # Pre-load jars for scala_modules by running a compile
-    && cd /scala_modules \
-    && make compile \
     && apt-get autoremove -yqq --purge \
-    && apt-get clean \
-    && rm -rf \
-        /scala_modules \
-        /sbt-$SBT_VERSION.deb \
-        /var/lib/apt/lists/* \
-        /tmp/* \
-        /var/tmp/* \
-        /usr/share/doc \
-        /usr/share/doc-base
+    && apt-get clean
 
 # Install docker compose-cli
 # https://github.com/docker/compose-cli/blob/main/INSTALL.md
