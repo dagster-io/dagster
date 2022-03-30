@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, Optional, Union, ca
 
 from dagster import check
 from dagster.core.definitions.events import AssetKey, AssetObservation
+from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 from dagster.core.definitions.op_definition import OpDefinition
 from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.solid_definition import SolidDefinition
@@ -10,14 +11,13 @@ from dagster.core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
 )
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 
 if TYPE_CHECKING:
     from dagster.core.definitions.resource_definition import Resources
+    from dagster.core.events import DagsterEvent
     from dagster.core.execution.context.system import StepExecutionContext
     from dagster.core.log_manager import DagsterLogManager
     from dagster.core.types.dagster_type import DagsterType
-    from dagster.core.events import DagsterEvent
 
     from .output import OutputContext
 
@@ -314,8 +314,8 @@ class InputContext:
         The asset observation will be yielded from the run and appear in the event log.
         Only valid if the context has an asset key.
         """
-        from dagster.core.events import DagsterEvent
         from dagster.core.definitions.metadata import normalize_metadata
+        from dagster.core.events import DagsterEvent
 
         metadata = check.dict_param(metadata, "metadata", key_type=str)
         self._metadata_entries.extend(normalize_metadata(metadata, []))

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, NamedTuple, Optiona
 from dagster import check
 from dagster.core.definitions import InputDefinition, NodeHandle, PipelineDefinition
 from dagster.core.definitions.events import AssetLineageInfo
+from dagster.core.definitions.metadata import MetadataEntry
 from dagster.core.errors import (
     DagsterExecutionLoadInputError,
     DagsterInvariantViolationError,
@@ -19,7 +20,6 @@ from dagster.utils import ensure_gen
 from .objects import TypeCheckData
 from .outputs import StepOutputHandle, UnresolvedStepOutputHandle
 from .utils import build_resources_for_manager, solid_execution_error_boundary
-from dagster.core.definitions.metadata import MetadataEntry
 
 if TYPE_CHECKING:
     from dagster.core.events import DagsterEvent

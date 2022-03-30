@@ -13,12 +13,12 @@ from dagster import (
     asset,
     build_assets_job,
     build_input_context,
-    root_input_manager,
     execute_pipeline,
     io_manager,
     job,
     op,
     pipeline,
+    root_input_manager,
     solid,
 )
 from dagster.check import CheckError
@@ -201,8 +201,8 @@ def test_io_manager_add_input_metadata():
     assert loaded_input_event
     loaded_input_event_metadata = loaded_input_event.event_specific_data.metadata_entries
     assert len(loaded_input_event_metadata) == 2
-    assert loaded_input_event_metadata[0].label == 'foo'
-    assert loaded_input_event_metadata[1].label == 'baz'
+    assert loaded_input_event_metadata[0].label == "foo"
+    assert loaded_input_event_metadata[1].label == "baz"
 
 
 def test_root_input_manager_add_input_metadata():
@@ -226,11 +226,11 @@ def test_root_input_manager_add_input_metadata():
     ][0]
     metadata_entries = loaded_input_event.event_specific_data.metadata_entries
     assert len(metadata_entries) == 2
-    assert metadata_entries[0].label == 'foo'
-    assert metadata_entries[1].label == 'baz'
+    assert metadata_entries[0].label == "foo"
+    assert metadata_entries[1].label == "baz"
 
 
-def test_io_manager_single_partition_observe_metadata():
+def test_io_manager_single_partition_add_input_metadata():
     partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
 
     @asset(partitions_def=partitions_def)
@@ -246,7 +246,7 @@ def test_io_manager_single_partition_observe_metadata():
             pass
 
         def load_input(self, context):
-            context.observe_metadata(metadata={"foo": "bar"}, description="hello world")
+            context.add_input_metadata(metadata={"foo": "bar"}, description="hello world")
             return 1
 
     @io_manager
@@ -270,14 +270,14 @@ def test_io_manager_single_partition_observe_metadata():
     )
 
 
-def test_context_error_observe_metadata():
+def test_context_error_add_input_metadata():
     @op
     def my_op():
         pass
 
     context = build_input_context(op_def=my_op)
     with pytest.raises(CheckError):
-        context.observe_metadata({"foo": "bar"})
+        context.add_input_metadata({"foo": "bar"})
 
 
 def test_io_manager_single_partition_materialization():
