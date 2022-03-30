@@ -51,10 +51,10 @@ class RepositoryPythonOrigin(
             ),
         )
 
-    def get_id(self):
+    def get_id(self) -> str:
         return create_snapshot_id(self)
 
-    def get_pipeline_origin(self, pipeline_name):
+    def get_pipeline_origin(self, pipeline_name: str) -> "PipelinePythonOrigin":
         check.str_param(pipeline_name, "pipeline_name")
         return PipelinePythonOrigin(pipeline_name, self)
 
@@ -76,11 +76,11 @@ class PipelinePythonOrigin(
             check.inst_param(repository_origin, "repository_origin", RepositoryPythonOrigin),
         )
 
-    def get_id(self):
+    def get_id(self) -> str:
         return create_snapshot_id(self)
 
     @property
-    def executable_path(self):
+    def executable_path(self) -> str:
         return self.repository_origin.executable_path
 
     def get_repo_pointer(self) -> CodePointer:
