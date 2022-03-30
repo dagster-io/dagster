@@ -9,6 +9,11 @@ from dagster.core.host_representation import ExternalRepository
 from dagster.core.scheduler.instigation import InstigatorType
 from dagster.core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
 from dagster.core.storage.tags import SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
+from dagster.core.host_representation.external_data import (
+    ExternalAssetNode,
+    ExternalAssetDependency,
+)
+from dagster.core.workspace.context import WorkspaceRequestContext
 
 
 class RepositoryDataType(Enum):
@@ -277,3 +282,79 @@ class BatchMaterializationLoader:
     def _fetch(self):
         self._fetched = True
         self._materializations = self._instance.get_latest_materialization_events(self._asset_keys)
+
+
+class BatchDependedByLoader:
+    def __init__(self, context: WorkspaceRequestContext):
+        self._context = context
+        self._fetched = False
+        self._sink_assets: Dict[AssetKey, ExternalAssetNode] = {}
+        self._external_asset_deps = {}
+
+    def _build_cross_repo_deps(self):
+        depended_by_assets_by_source_asset = (
+            {}
+        )  # key is asset key, value is list of DependedBy ExternalAssetNodes
+
+        map_defined_asset_to_location = (
+            {}
+        )  # key is asset key, value is tuple (location_name, repo_name)
+        for location in self._context.repository_locations:
+            repositories = location.get_repositories()
+            for repo_name, external_repo in repositories.items():
+                asset_nodes = external_repo.get_external_asset_nodes()
+                for asset_node in asset_nodes:
+                    if not asset_node.op_name:  # is source asset
+                        if asset_node.asset_key not in depended_by_assets_by_source_asset:
+                            depended_by_assets_by_source_asset[asset_node.asset_key] = []
+                        depended_by_assets_by_source_asset[asset_node.asset_key].extend(
+                            asset_node.depended_by
+                        )
+                    else:
+                        map_defined_asset_to_location[asset_node.asset_key] = (
+                            location.name,
+                            repo_name,
+                        )
+
+        self._external_asset_deps = (
+            {}
+        )  # nested dict that maps dependedby assets by asset key by location tuple (repo_location.name, repo_name)
+        self._sink_assets = {}
+        for source_asset, depended_by_assets in depended_by_assets_by_source_asset.items():
+            asset_def_location = map_defined_asset_to_location.get(source_asset, None)
+            if asset_def_location:  # source asset is defined as asset in another repository
+                if asset_def_location not in self._external_asset_deps:
+                    self._external_asset_deps[asset_def_location] = {}
+                if source_asset not in self._external_asset_deps[asset_def_location]:
+                    self._external_asset_deps[asset_def_location][source_asset] = []
+                self._external_asset_deps[asset_def_location][source_asset].extend(
+                    depended_by_assets
+                )
+                for asset in depended_by_assets:
+                    self._sink_assets[asset.downstream_asset_key] = ExternalAssetNode(
+                        asset_key=asset.downstream_asset_key,
+                        dependencies=[
+                            ExternalAssetDependency(
+                                upstream_asset_key=source_asset,
+                                input_name=asset.input_name,
+                                output_name=asset.output_name,
+                            )
+                        ],
+                        depended_by=[],
+                    )
+
+    def get_sink_asset(self, asset_key: AssetKey) -> ExternalAssetNode:
+        if not self._fetched:
+            self._fetch()
+        return self._sink_assets.get(asset_key)
+
+    def get_external_asset_deps(self, repository_location_name, repository_name, asset_key):
+        if not self._fetched:
+            self._fetch()
+        return self._external_asset_deps.get((repository_location_name, repository_name), {}).get(
+            asset_key, []
+        )
+
+    def _fetch(self):
+        self._fetched = True
+        self._build_cross_repo_deps()

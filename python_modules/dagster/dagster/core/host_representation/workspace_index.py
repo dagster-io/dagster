@@ -1,5 +1,9 @@
 from dagster import check
 from dagster.core.workspace.workspace import WorkspaceLocationEntry
+from dagster.core.host_representation.external_data import (
+    ExternalAssetNode,
+    ExternalAssetDependency,
+)
 
 
 class WorkspaceIndex:
@@ -10,7 +14,9 @@ class WorkspaceIndex:
             key_type=str,
             value_type=WorkspaceLocationEntry,
         )
-        self._external_asset_deps = self.build_external_asset_deps()
+        self._external_asset_deps = {}
+        self._sink_assets = {}
+        # self.build_external_asset_deps()
 
     def build_external_asset_deps(self):
         depended_by_assets_by_source_asset = (
@@ -38,24 +44,33 @@ class WorkspaceIndex:
                                 repo_name,
                             )
 
-        defined_asset_mapped_to_downstream_assets = (
+        self._external_asset_deps = (
             {}
         )  # nested dict that maps dependedby assets by asset key by location tuple (repo_location.name, repo_name)
         for source_asset, depended_by_assets in depended_by_assets_by_source_asset.items():
             asset_def_location = map_defined_asset_to_location.get(source_asset, None)
             if asset_def_location:  # source asset is defined as asset in another repository
-                if asset_def_location not in defined_asset_mapped_to_downstream_assets:
-                    defined_asset_mapped_to_downstream_assets[asset_def_location] = {}
-                if (
-                    source_asset
-                    not in defined_asset_mapped_to_downstream_assets[asset_def_location]
-                ):
-                    defined_asset_mapped_to_downstream_assets[asset_def_location][source_asset] = []
-                defined_asset_mapped_to_downstream_assets[asset_def_location][source_asset].extend(
+                if asset_def_location not in self._external_asset_deps:
+                    self._external_asset_deps[asset_def_location] = {}
+                if source_asset not in self._external_asset_deps[asset_def_location]:
+                    self._external_asset_deps[asset_def_location][source_asset] = []
+                self._external_asset_deps[asset_def_location][source_asset].extend(
                     depended_by_assets
                 )
+                for asset in depended_by_assets:
+                    self._sink_assets[asset.key] = ExternalAssetNode(
+                        asset_key=asset.key,
+                        dependencies=[
+                            ExternalAssetDependency(
+                                upstream_asset_key=source_asset.key,
+                                input_name=asset.input_name,
+                                output_name=asset.output_name,
+                            )
+                        ],
+                        depended_by=[],
+                    )
 
-        return defined_asset_mapped_to_downstream_assets
+        return self._external_asset_deps
 
     def get_external_asset_deps(self, repo_location_name, repo_name, asset_key):
         return self._external_asset_deps.get((repo_location_name, repo_name), {}).get(asset_key, [])

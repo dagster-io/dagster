@@ -907,6 +907,8 @@ def external_asset_graph_from_defs(
             )
         )
 
+    print(asset_nodes)
+
     return asset_nodes
 
 

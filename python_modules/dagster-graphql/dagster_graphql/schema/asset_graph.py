@@ -17,7 +17,7 @@ from dagster.core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 
-from ..implementation.loader import BatchMaterializationLoader
+from ..implementation.loader import BatchMaterializationLoader, BatchDependedByLoader
 from . import external
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
@@ -43,6 +43,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
         input_name: str,
         asset_key: AssetKey,
         materialization_loader: Optional[BatchMaterializationLoader] = None,
+        dependency_loader: Optional[BatchDependedByLoader] = None,
     ):
         self._repository_location = check.inst_param(
             repository_location, "repository_location", RepositoryLocation
@@ -54,12 +55,17 @@ class GrapheneAssetDependency(graphene.ObjectType):
         self._latest_materialization_loader = check.opt_inst_param(
             materialization_loader, "materialization_loader", BatchMaterializationLoader
         )
+        self._dependency_loader = check.opt_inst_param(
+            dependency_loader, "dependency_loader", BatchDependedByLoader
+        )
         super().__init__(inputName=input_name)
 
     def resolve_asset(self, _graphene_info):
-        asset_node = check.not_none(
-            self._external_repository.get_external_asset_node(self._asset_key)
-        )
+        # here I can return asset node if it is cross-repo dependency
+        asset_node = self._external_repository.get_external_asset_node(self._asset_key)
+        if not asset_node and self._dependency_loader:
+            asset_node = self._dependency_loader.get_sink_asset(self._asset_key)
+        asset_node = check.not_none(asset_node)
         return GrapheneAssetNode(
             self._repository_location,
             self._external_repository,
@@ -108,6 +114,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         external_repository: ExternalRepository,
         external_asset_node: ExternalAssetNode,
         materialization_loader: Optional[BatchMaterializationLoader] = None,
+        depended_by_loader: Optional[BatchDependedByLoader] = None,
     ):
         self._repository_location = check.inst_param(
             repository_location,
@@ -122,6 +129,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         )
         self._latest_materialization_loader = check.opt_inst_param(
             materialization_loader, "materialization_loader", BatchMaterializationLoader
+        )
+        self._depended_by_loader = check.opt_inst_param(
+            depended_by_loader, "depended_by_loader", BatchDependedByLoader
         )
 
         super().__init__(
@@ -203,13 +213,14 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._external_asset_node.compute_kind
 
     def resolve_dependedBy(self, graphene_info) -> List[GrapheneAssetDependency]:
-        depended_by_asset_nodes = graphene_info.context.get_cross_repo_asset_dependencies(
+        from ..implementation.fetch_assets import get_asset_external_deps
+
+        depended_by_asset_nodes = self._depended_by_loader.get_external_asset_deps(
             self._repository_location.name,
             self._external_repository.name,
             self._external_asset_node.asset_key,
         )
-        if self._external_asset_node.depended_by:
-            depended_by_asset_nodes.extend(self._external_asset_node.depended_by)
+        depended_by_asset_nodes.extend(self._external_asset_node.depended_by)
 
         if not depended_by_asset_nodes:
             return []
@@ -226,12 +237,15 @@ class GrapheneAssetNode(graphene.ObjectType):
                 input_name=dep.input_name,
                 asset_key=dep.downstream_asset_key,
                 materialization_loader=materialization_loader,
+                dependency_loader=self._depended_by_loader,
             )
             for dep in depended_by_asset_nodes
         ]
 
     def resolve_dependedByKeys(self, _graphene_info) -> List[GrapheneAssetKey]:
-        depended_by_asset_nodes = _graphene_info.context.get_cross_repo_asset_dependencies(
+        from ..implementation.fetch_assets import get_asset_external_deps
+
+        depended_by_asset_nodes = self._depended_by_loader.get_external_asset_deps(
             self._repository_location.name,
             self._external_repository.name,
             self._external_asset_node.asset_key,
