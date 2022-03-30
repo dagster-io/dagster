@@ -15,3 +15,4 @@ from .redis import Redis
 from .run_launcher import RunLauncher
 from .scheduler import Scheduler
 from .service_account import ServiceAccount
+from .telemetry import Telemetry
