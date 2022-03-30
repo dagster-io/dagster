@@ -17,7 +17,7 @@ from dagster.core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 
-from ..implementation.loader import BatchMaterializationLoader, BatchDependedByLoader
+from ..implementation.loader import BatchMaterializationLoader, BatchAssetDependencyLoader
 from . import external
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
@@ -43,7 +43,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
         input_name: str,
         asset_key: AssetKey,
         materialization_loader: Optional[BatchMaterializationLoader] = None,
-        dependency_loader: Optional[BatchDependedByLoader] = None,
+        dependency_loader: Optional[BatchAssetDependencyLoader] = None,
     ):
         self._repository_location = check.inst_param(
             repository_location, "repository_location", RepositoryLocation
@@ -56,7 +56,7 @@ class GrapheneAssetDependency(graphene.ObjectType):
             materialization_loader, "materialization_loader", BatchMaterializationLoader
         )
         self._dependency_loader = check.opt_inst_param(
-            dependency_loader, "dependency_loader", BatchDependedByLoader
+            dependency_loader, "dependency_loader", BatchAssetDependencyLoader
         )
         super().__init__(inputName=input_name)
 
@@ -114,7 +114,7 @@ class GrapheneAssetNode(graphene.ObjectType):
         external_repository: ExternalRepository,
         external_asset_node: ExternalAssetNode,
         materialization_loader: Optional[BatchMaterializationLoader] = None,
-        depended_by_loader: Optional[BatchDependedByLoader] = None,
+        dependency_loader: Optional[BatchAssetDependencyLoader] = None,
     ):
         self._repository_location = check.inst_param(
             repository_location,
@@ -130,8 +130,8 @@ class GrapheneAssetNode(graphene.ObjectType):
         self._latest_materialization_loader = check.opt_inst_param(
             materialization_loader, "materialization_loader", BatchMaterializationLoader
         )
-        self._depended_by_loader = check.opt_inst_param(
-            depended_by_loader, "depended_by_loader", BatchDependedByLoader
+        self._dependency_loader = check.opt_inst_param(
+            dependency_loader, "dependency_loader", BatchAssetDependencyLoader
         )
 
         super().__init__(
@@ -215,7 +215,15 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_dependedBy(self, graphene_info) -> List[GrapheneAssetDependency]:
         from ..implementation.fetch_assets import get_asset_external_deps
 
-        depended_by_asset_nodes = self._depended_by_loader.get_external_asset_deps(
+        # BatchAssetDependencyLoader class loads all cross-repo asset dependencies workspace-wide.
+        # In order to avoid recomputing workspace-wide values per asset node, we add a loader
+        # that batch loads all cross-repo dependencies for the whole workspace.
+        check.invariant(
+            self._dependency_loader,
+            "dependency_loader must exist in order to resolve dependedBy nodes",
+        )
+
+        depended_by_asset_nodes = self._dependency_loader.get_external_asset_deps(
             self._repository_location.name,
             self._external_repository.name,
             self._external_asset_node.asset_key,
@@ -237,7 +245,7 @@ class GrapheneAssetNode(graphene.ObjectType):
                 input_name=dep.input_name,
                 asset_key=dep.downstream_asset_key,
                 materialization_loader=materialization_loader,
-                dependency_loader=self._depended_by_loader,
+                dependency_loader=self._dependency_loader,
             )
             for dep in depended_by_asset_nodes
         ]
@@ -245,7 +253,12 @@ class GrapheneAssetNode(graphene.ObjectType):
     def resolve_dependedByKeys(self, _graphene_info) -> List[GrapheneAssetKey]:
         from ..implementation.fetch_assets import get_asset_external_deps
 
-        depended_by_asset_nodes = self._depended_by_loader.get_external_asset_deps(
+        check.invariant(
+            self._dependency_loader,
+            "dependency_loader must exist in order to resolve dependedBy nodes",
+        )
+
+        depended_by_asset_nodes = self._dependency_loader.get_external_asset_deps(
             self._repository_location.name,
             self._external_repository.name,
             self._external_asset_node.asset_key,

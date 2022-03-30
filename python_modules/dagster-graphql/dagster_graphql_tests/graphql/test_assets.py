@@ -258,6 +258,20 @@ GET_OP_ASSETS = """
     }
 """
 
+CROSS_REPO_ASSET_GRAPH = """
+    query AssetNodeQuery {
+        assetNodes {
+            id
+            dependencyKeys {
+                path
+            }
+            dependedByKeys {
+                path
+            }
+        }
+    }
+"""
+
 
 def _create_run(graphql_context, pipeline_name, mode="default", step_keys=None):
     selector = infer_pipeline_selector(graphql_context, pipeline_name)
@@ -768,6 +782,26 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         # A job containing asset 2 was run 6 times, asset 2 was never materialized
         assert result["asset_2"]["count"] == 6
         assert result["asset_2"]["sinceLatestMaterialization"] == False
+
+    def test_cross_repo_assets(self, graphql_context):
+        repository_location = graphql_context.get_repository_location("test")
+        repository = repository_location.get_repository("upstream_assets_repository")
+
+        selector = {
+            "repositoryLocationName": repository_location.name,
+            "repositoryName": repository.name,
+        }
+        result = execute_dagster_graphql(
+            graphql_context, CROSS_REPO_ASSET_GRAPH, variables={"repositorySelector": selector}
+        )
+        asset_nodes = result.data["assetNodes"]
+        upstream_asset = [node for node in asset_nodes if node["id"] == '["upstream_asset"]'][0]
+        dependent_asset_keys = [{'path': ['downstream_asset1']}, {'path': ['downstream_asset2']}]
+
+        result_dependent_keys = sorted(
+            upstream_asset["dependedByKeys"], key=lambda node: node.get('path')[0]
+        )
+        assert upstream_asset["dependedByKeys"] == dependent_asset_keys
 
 
 class TestPersistentInstanceAssetInProgress(ExecutingGraphQLContextTestMatrix):

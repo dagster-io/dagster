@@ -6,7 +6,7 @@ from dagster.core.host_representation.external_data import (
     ExternalAssetNode,
     ExternalAssetDependency,
 )
-from dagster_graphql.implementation.loader import BatchDependedByLoader
+from dagster_graphql.implementation.loader import BatchAssetDependencyLoader
 
 from .utils import capture_error
 
@@ -69,7 +69,7 @@ def get_asset_nodes_by_asset_key(graphene_info) -> Mapping[AssetKey, "GrapheneAs
 
     from ..schema.asset_graph import GrapheneAssetNode
 
-    depended_by_loader = BatchDependedByLoader(context=graphene_info.context)
+    dependency_loader = BatchAssetDependencyLoader(context=graphene_info.context)
 
     asset_nodes_by_asset_key: Dict[AssetKey, GrapheneAssetNode] = {}
     for location in graphene_info.context.repository_locations:
@@ -81,7 +81,7 @@ def get_asset_nodes_by_asset_key(graphene_info) -> Mapping[AssetKey, "GrapheneAs
                         location,
                         repository,
                         external_asset_node,
-                        depended_by_loader=depended_by_loader,
+                        dependency_loader=dependency_loader,
                     )
 
     return asset_nodes_by_asset_key

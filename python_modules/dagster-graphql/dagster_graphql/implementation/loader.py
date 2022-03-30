@@ -284,7 +284,7 @@ class BatchMaterializationLoader:
         self._materializations = self._instance.get_latest_materialization_events(self._asset_keys)
 
 
-class BatchDependedByLoader:
+class BatchAssetDependencyLoader:
     def __init__(self, context: WorkspaceRequestContext):
         self._context = context
         self._fetched = False
