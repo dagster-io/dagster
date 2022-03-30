@@ -350,7 +350,7 @@ class In(
     NamedTuple(
         "_In",
         [
-            ("dagster_type", Optional[Union[type, DagsterType]]),
+            ("dagster_type", Union[DagsterType, Type[NoValueSentinel]]),
             ("description", Optional[str]),
             ("default_value", Any),
             ("root_manager_key", Optional[str]),
@@ -386,7 +386,7 @@ class In(
 
     def __new__(
         cls,
-        dagster_type: Optional[Union[Type, DagsterType]] = NoValueSentinel,
+        dagster_type: Optional[Union[Type, DagsterType, Type[NoValueSentinel]]] = NoValueSentinel,
         description: Optional[str] = None,
         default_value: Any = NoValueSentinel,
         root_manager_key: Optional[str] = None,
@@ -396,9 +396,9 @@ class In(
     ):
         return super(In, cls).__new__(
             cls,
-            dagster_type=check.inst_param(
-                resolve_dagster_type(dagster_type), "dagster_type", (type, DagsterType)
-            ),
+            dagster_type=NoValueSentinel
+            if dagster_type is NoValueSentinel
+            else resolve_dagster_type(dagster_type),
             description=check.opt_str_param(description, "description"),
             default_value=default_value,
             root_manager_key=check.opt_str_param(root_manager_key, "root_manager_key"),
