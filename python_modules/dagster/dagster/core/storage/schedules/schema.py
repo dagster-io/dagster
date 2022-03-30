@@ -18,12 +18,12 @@ JobTable = db.Table(
     db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
 )
 
-InstigatorTable = db.Table(
+InstigatorsTable = db.Table(
     "instigators",
     ScheduleStorageSqlMetadata,
     db.Column("id", db.Integer, primary_key=True, autoincrement=True),
     db.Column("selector_id", db.String(255), unique=True),
-    db.Column("repository_name", db.Text),
+    db.Column("repository_selector_id", db.String(255)),
     db.Column("status", db.String(63)),
     db.Column("instigator_type", db.String(63), index=True),
     db.Column("instigator_body", db.Text),

@@ -267,25 +267,21 @@ def create_instigators_table():
         # not a schedule storage db
         return
 
-    if (
-        has_table("instigators")
-        and has_column("job_ticks", "selector_id")
-        and has_column("jobs", "selector_id")
-    ):
-        # already migrated
-        return
+    if not has_table("instigators"):
+        op.create_table(
+            "instigators",
+            db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+            db.Column("selector_id", db.String(255), unique=True),
+            db.Column("repository_selector_id", db.String(255)),
+            db.Column("status", db.String(63)),
+            db.Column("instigator_type", db.String(63), index=True),
+            db.Column("instigator_body", db.Text),
+            db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+            db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
+        )
 
-    op.create_table(
-        "instigators",
-        db.Column("id", db.Integer, primary_key=True, autoincrement=True),
-        db.Column("selector_id", db.String(255), unique=True),
-        db.Column("repository_name", db.Text),
-        db.Column("status", db.String(63)),
-        db.Column("instigator_type", db.String(63), index=True),
-        db.Column("instigator_body", db.Text),
-        db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
-        db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
-    )
+    if not has_column("jobs", "selector_id"):
+        op.add_column("jobs", db.Column("selector_id", db.String(255)))
 
-    op.add_column("jobs", db.Column("selector_id", db.String(255)))
-    op.add_column("job_ticks", db.Column("selector_id", db.String(255)))
+    if not has_column("job_ticks", "selector_id"):
+        op.add_column("job_ticks", db.Column("selector_id", db.String(255)))
