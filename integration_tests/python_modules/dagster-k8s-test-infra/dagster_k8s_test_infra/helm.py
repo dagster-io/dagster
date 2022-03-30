@@ -24,6 +24,9 @@ TEST_OTHER_CONFIGMAP_NAME = "test-other-env-configmap"
 TEST_SECRET_NAME = "test-env-secret"
 TEST_OTHER_SECRET_NAME = "test-other-env-secret"
 
+# Secret that is set on the deployment only
+TEST_DEPLOYMENT_SECRET_NAME = "test-deployment-env-secret"
+
 TEST_VOLUME_CONFIGMAP_NAME = "test-volume-configmap"
 
 TEST_IMAGE_PULL_SECRET_NAME = "test-image-pull-secret"
@@ -207,6 +210,15 @@ def secrets(namespace, should_cleanup):
     )
     kube_api.create_namespaced_secret(namespace=namespace, body=secret)
 
+    int_val = base64.b64encode(b"2").decode("utf-8")
+    deployment_secret = kubernetes.client.V1Secret(
+        api_version="v1",
+        kind="Secret",
+        data={"WORD_FACTOR": int_val},
+        metadata=kubernetes.client.V1ObjectMeta(name=TEST_DEPLOYMENT_SECRET_NAME),
+    )
+    kube_api.create_namespaced_secret(namespace=namespace, body=deployment_secret)
+
     kube_api.create_namespaced_secret(
         namespace=namespace,
         body=kubernetes.client.V1Secret(
@@ -241,6 +253,7 @@ def secrets(namespace, should_cleanup):
     if should_cleanup:
         kube_api.delete_namespaced_secret(name=TEST_SECRET_NAME, namespace=namespace)
         kube_api.delete_namespaced_secret(name=TEST_OTHER_SECRET_NAME, namespace=namespace)
+        kube_api.delete_namespaced_secret(name=TEST_DEPLOYMENT_SECRET_NAME, namespace=namespace)
         kube_api.delete_namespaced_secret(name=TEST_IMAGE_PULL_SECRET_NAME, namespace=namespace)
         kube_api.delete_namespaced_secret(
             name=TEST_OTHER_IMAGE_PULL_SECRET_NAME, namespace=namespace
@@ -652,6 +665,9 @@ def helm_chart_for_user_deployments_subchart_disabled(namespace, docker_image, s
                             "define_demo_execution_repo",
                         ],
                         "port": 3030,
+                        "includeConfigInLaunchedRuns": {
+                            "enabled": False,
+                        },
                         "env": (
                             {"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}
                         ),
@@ -707,6 +723,9 @@ def helm_chart_for_user_deployments_subchart(namespace, docker_image, should_cle
                     "define_demo_execution_repo",
                 ],
                 "port": 3030,
+                "includeConfigInLaunchedRuns": {
+                    "enabled": False,
+                },
             }
         ],
     }
@@ -739,12 +758,16 @@ def _base_helm_config(docker_image):
                         "define_demo_execution_repo",
                     ],
                     "port": 3030,
+                    "includeConfigInLaunchedRuns": {
+                        "enabled": True,
+                    },
                     "env": (
                         {"BUILDKITE": os.getenv("BUILDKITE")} if os.getenv("BUILDKITE") else {}
                     ),
                     "envConfigMaps": (
                         [{"name": TEST_AWS_CONFIGMAP_NAME}] if not IS_BUILDKITE else []
                     ),
+                    "envSecrets": [{"name": TEST_DEPLOYMENT_SECRET_NAME}],
                     "annotations": {"dagster-integration-tests": "ucd-1-pod-annotation"},
                     "service": {
                         "annotations": {"dagster-integration-tests": "ucd-1-svc-annotation"}

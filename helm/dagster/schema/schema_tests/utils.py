@@ -1,17 +1,27 @@
-from schema.charts.dagster_user_deployments.subschema.user_deployments import UserDeployment
+from schema.charts.dagster_user_deployments.subschema.user_deployments import (
+    UserDeployment,
+    UserDeploymentIncludeConfigInLaunchedRuns,
+)
 from schema.charts.utils import kubernetes
 
 
-def create_simple_user_deployment(name: str) -> UserDeployment:
+def create_simple_user_deployment(
+    name: str, include_config_in_launched_runs: bool = False
+) -> UserDeployment:
     return UserDeployment(
         name=name,
         image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
         dagsterApiGrpcArgs=["-m", name],
         port=3030,
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(
+            enabled=include_config_in_launched_runs
+        ),
     )
 
 
-def create_complex_user_deployment(name: str) -> UserDeployment:
+def create_complex_user_deployment(
+    name: str, include_config_in_launched_runs: bool = False
+) -> UserDeployment:
     return UserDeployment(
         name=name,
         image=kubernetes.Image(repository=f"repo/{name}", tag="tag1", pullPolicy="Always"),
@@ -61,4 +71,7 @@ def create_complex_user_deployment(name: str) -> UserDeployment:
             "label_one": "one",
             "label_two": "two",
         },
+        includeConfigInLaunchedRuns=UserDeploymentIncludeConfigInLaunchedRuns(
+            enabled=include_config_in_launched_runs
+        ),
     )

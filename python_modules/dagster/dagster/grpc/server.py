@@ -165,6 +165,7 @@ class DagsterApiServer(DagsterApiServicer):
         lazy_load_user_code=False,
         fixed_server_id=None,
         entry_point=None,
+        container_context=None,
     ):
         super(DagsterApiServer, self).__init__()
 
@@ -204,6 +205,8 @@ class DagsterApiServer(DagsterApiServicer):
             if entry_point != None
             else DEFAULT_DAGSTER_ENTRY_POINT
         )
+
+        self._container_context = check.opt_dict_param(container_context, "container_context")
 
         try:
             self._loaded_repositories = LoadedRepositories(
@@ -354,6 +357,8 @@ class DagsterApiServer(DagsterApiServicer):
             else None,
             repository_code_pointer_dict=self._loaded_repositories.code_pointers_by_repo_name,
             entry_point=self._entry_point,
+            container_image=_get_current_image(),
+            container_context=self._container_context,
         )
 
         return api_pb2.ListRepositoriesReply(
@@ -777,6 +782,7 @@ class DagsterGrpcServer:
         ipc_output_file=None,
         fixed_server_id=None,
         entry_point=None,
+        container_context=None,
     ):
         check.opt_str_param(host, "host")
         check.opt_int_param(port, "port")
@@ -826,6 +832,7 @@ class DagsterGrpcServer:
                 lazy_load_user_code=lazy_load_user_code,
                 fixed_server_id=fixed_server_id,
                 entry_point=entry_point,
+                container_context=container_context,
             )
         except Exception:
             if self._ipc_output_file:

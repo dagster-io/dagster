@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import sys
@@ -488,6 +489,13 @@ def _execute_step_command_body(
     default="INFO",
     help="Level at which to log output from the gRPC server process",
 )
+@click.option(
+    "--container-context",
+    type=click.STRING,
+    required=False,
+    help="Serialized JSON with configuration for any containers created to run the "
+    "code from this server.",
+)
 def grpc_command(
     port=None,
     socket=None,
@@ -501,6 +509,7 @@ def grpc_command(
     override_system_timezone=None,
     log_level="INFO",
     use_python_environment_entry_point=False,
+    container_context=None,
     **kwargs,
 ):
     if seven.IS_WINDOWS and port is None:
@@ -559,6 +568,7 @@ def grpc_command(
                 if use_python_environment_entry_point
                 else DEFAULT_DAGSTER_ENTRY_POINT
             ),
+            container_context=json.loads(container_context) if container_context != None else None,
         )
 
         code_desc = " "

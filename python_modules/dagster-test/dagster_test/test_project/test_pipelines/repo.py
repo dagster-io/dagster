@@ -18,6 +18,7 @@ from dagster import (
     In,
     InputDefinition,
     Int,
+    IntSource,
     List,
     ModeDefinition,
     Output,
@@ -100,13 +101,14 @@ def docker_mode_defs():
     ]
 
 
-@solid(input_defs=[InputDefinition("word", String)], config_schema={"factor": Int})
+@solid(input_defs=[InputDefinition("word", String)], config_schema={"factor": IntSource})
 def multiply_the_word(context, word):
     return word * context.solid_config["factor"]
 
 
 @solid(
-    input_defs=[InputDefinition("word", String)], config_schema={"factor": Int, "sleep_time": Int}
+    input_defs=[InputDefinition("word", String)],
+    config_schema={"factor": IntSource, "sleep_time": IntSource},
 )
 def multiply_the_word_slow(context, word):
     time.sleep(context.solid_config["sleep_time"])
@@ -130,7 +132,7 @@ def always_fail(context, word):
 
 @op(
     ins={"word": In(String)},
-    config_schema={"factor": Int},
+    config_schema={"factor": IntSource},
 )
 def multiply_the_word_op(context, word):
     return word * context.solid_config["factor"]

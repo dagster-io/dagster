@@ -405,6 +405,19 @@
             ],
             "additionalProperties": false
         },
+        "UserDeploymentIncludeConfigInLaunchedRuns": {
+            "title": "UserDeploymentIncludeConfigInLaunchedRuns",
+            "type": "object",
+            "properties": {
+                "enabled": {
+                    "title": "Enabled",
+                    "type": "boolean"
+                }
+            },
+            "required": [
+                "enabled"
+            ]
+        },
         "VolumeMount": {
             "title": "VolumeMount",
             "type": "object",
@@ -434,6 +447,9 @@
                     "items": {
                         "type": "string"
                     }
+                },
+                "includeConfigInLaunchedRuns": {
+                    "$ref": "#/definitions/UserDeploymentIncludeConfigInLaunchedRuns"
                 },
                 "port": {
                     "title": "Port",
@@ -516,6 +532,7 @@
                 "name",
                 "image",
                 "dagsterApiGrpcArgs",
+                "includeConfigInLaunchedRuns",
                 "port"
             ]
         },
