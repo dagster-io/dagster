@@ -10,6 +10,7 @@ from dagster.core.definitions.time_window_partitions import (
     TimeWindowPartitionsDefinition,
 )
 from dagster.core.errors import DagsterInvariantViolationError
+from dagster.core.definitions.metadata import MetadataEntry, PartitionMetadataEntry
 
 if TYPE_CHECKING:
     from dagster.core.definitions.resource_definition import Resources
@@ -89,6 +90,7 @@ class InputContext:
 
         self._events: List["DagsterEvent"] = []
         self._observations: List[AssetObservation] = []
+        self._metadata_entries: List[Union[MetadataEntry, PartitionMetadataEntry]] = []
 
     def __enter__(self):
         if self._resources_cm:
@@ -301,21 +303,24 @@ class InputContext:
         self._events = []
         yield from events
 
-    def observe_metadata(
+    def add_input_metadata(
         self,
         metadata: Dict[str, Any],
         description: Optional[str] = None,
     ) -> None:
-        """Accepts a dictionary of metadata and attaches it to an asset observation.
+        """Accepts a dictionary of metadata. Metadata entries will appear on the LOADED_INPUT event.
+        If the input is an asset, metadata will be attached to an asset observation.
 
         The asset observation will be yielded from the run and appear in the event log.
         Only valid if the context has an asset key.
         """
         from dagster.core.events import DagsterEvent
+        from dagster.core.definitions.metadata import normalize_metadata
 
+        metadata = check.dict_param(metadata, "metadata", key_type=str)
+        self._metadata_entries.extend(normalize_metadata(metadata, []))
         if self.asset_key:
             check.opt_str_param(description, "description")
-            metadata = check.dict_param(metadata, "metadata", key_type=str)
 
             observation = AssetObservation(
                 asset_key=self.asset_key,
@@ -352,6 +357,11 @@ class InputContext:
                 ...
         """
         return self._observations
+
+    def consume_metadata_entries(self) -> List[Union[MetadataEntry, PartitionMetadataEntry]]:
+        result = self._metadata_entries
+        self._metadata_entries = []
+        return result
 
 
 def build_input_context(

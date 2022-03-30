@@ -13,6 +13,7 @@ from dagster import (
     asset,
     build_assets_job,
     build_input_context,
+    root_input_manager,
     execute_pipeline,
     io_manager,
     job,
@@ -141,14 +142,14 @@ def test_output_definition_multiple_partition_materialization():
     )
 
 
-def test_io_manager_observe_metadata():
+def test_io_manager_add_input_metadata():
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
             pass
 
         def load_input(self, context):
-            context.observe_metadata(metadata={"foo": "bar"})
-            context.observe_metadata(metadata={"baz": "qux"})
+            context.add_input_metadata(metadata={"foo": "bar"})
+            context.add_input_metadata(metadata={"baz": "qux"})
 
             observations = context.get_observations()
             assert observations[0].asset_key == context.asset_key
@@ -192,6 +193,41 @@ def test_io_manager_observe_metadata():
     assert get_observation(observations[1]) == AssetObservation(
         asset_key=in_asset_key, metadata={"baz": "qux"}
     )
+
+    # confirm loaded_input event contains metadata
+    loaded_input_event = [
+        event for event in result.all_events if event.event_type_value == "LOADED_INPUT"
+    ][0]
+    assert loaded_input_event
+    loaded_input_event_metadata = loaded_input_event.event_specific_data.metadata_entries
+    assert len(loaded_input_event_metadata) == 2
+    assert loaded_input_event_metadata[0].label == 'foo'
+    assert loaded_input_event_metadata[1].label == 'baz'
+
+
+def test_root_input_manager_add_input_metadata():
+    @root_input_manager
+    def my_root_input_manager(context):
+        context.add_input_metadata(metadata={"foo": "bar"})
+        context.add_input_metadata(metadata={"baz": "qux"})
+        return []
+
+    @op(ins={"input1": In(root_manager_key="my_root_input_manager")})
+    def my_op(_, input1):
+        return input1
+
+    @job(resource_defs={"my_root_input_manager": my_root_input_manager})
+    def my_job():
+        my_op()
+
+    result = my_job.execute_in_process()
+    loaded_input_event = [
+        event for event in result.all_events if event.event_type_value == "LOADED_INPUT"
+    ][0]
+    metadata_entries = loaded_input_event.event_specific_data.metadata_entries
+    assert len(metadata_entries) == 2
+    assert metadata_entries[0].label == 'foo'
+    assert metadata_entries[1].label == 'baz'
 
 
 def test_io_manager_single_partition_observe_metadata():

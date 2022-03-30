@@ -1059,6 +1059,7 @@ class DagsterEvent(
         upstream_output_name: Optional[str] = None,
         upstream_step_key: Optional[str] = None,
         message_override: Optional[str] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
     ) -> "DagsterEvent":
 
         message = f'Loaded input "{input_name}" using input manager "{manager_key}"'
@@ -1073,6 +1074,7 @@ class DagsterEvent(
                 manager_key=manager_key,
                 upstream_output_name=upstream_output_name,
                 upstream_step_key=upstream_step_key,
+                metadata_entries=metadata_entries if metadata_entries else [],
             ),
             message=message_override or message,
         )
@@ -1442,6 +1444,7 @@ class LoadedInputData(
             ("manager_key", str),
             ("upstream_output_name", Optional[str]),
             ("upstream_step_key", Optional[str]),
+            ("metadata_entries", Optional[List[MetadataEntry]]),
         ],
     )
 ):
@@ -1451,6 +1454,7 @@ class LoadedInputData(
         manager_key: str,
         upstream_output_name: Optional[str] = None,
         upstream_step_key: Optional[str] = None,
+        metadata_entries: Optional[List[MetadataEntry]] = None,
     ):
         return super(LoadedInputData, cls).__new__(
             cls,
@@ -1458,6 +1462,9 @@ class LoadedInputData(
             manager_key=check.str_param(manager_key, "manager_key"),
             upstream_output_name=check.opt_str_param(upstream_output_name, "upstream_output_name"),
             upstream_step_key=check.opt_str_param(upstream_step_key, "upstream_step_key"),
+            metadata_entries=check.opt_list_param(
+                metadata_entries, "metadata_entries", of_type=MetadataEntry
+            ),
         )
 
 
