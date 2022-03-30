@@ -174,14 +174,9 @@ class FileCodePointer(
 
     def load_target(self) -> object:
         module = load_python_file(self.python_file, self.working_directory)
-        if not hasattr(module, self.fn_name):
-            raise DagsterInvariantViolationError(
-                "{name} not found at module scope in file {file}.".format(
-                    name=self.fn_name, file=self.python_file
-                )
-            )
-
-        return getattr(module, self.fn_name)
+        return _load_target_from_module(
+            module, self.fn_name, f"at module scope in file {self.python_file}."
+        )
 
     def describe(self) -> str:
         if self.working_directory:
@@ -190,6 +185,21 @@ class FileCodePointer(
             )
         else:
             return "{self.python_file}::{self.fn_name}".format(self=self)
+
+
+def _load_target_from_module(module: ModuleType, fn_name: str, error_suffix: str) -> object:
+    from dagster.core.asset_defs import AssetGroup
+    from dagster.core.workspace.autodiscovery import LOAD_ALL_ASSETS
+
+    if fn_name == LOAD_ALL_ASSETS:
+        # LOAD_ALL_ASSETS is a special symbol that's returned when, instead of loading a particular
+        # attribute, we should load all the assets in the module.
+        return AssetGroup.from_modules([module])
+    else:
+        if not hasattr(module, fn_name):
+            raise DagsterInvariantViolationError(f"{fn_name} not found {error_suffix}")
+
+        return getattr(module, fn_name)
 
 
 @whitelist_for_serdes
@@ -210,14 +220,9 @@ class ModuleCodePointer(
 
     def load_target(self) -> object:
         module = load_python_module(self.module, self.working_directory)
-
-        if not hasattr(module, self.fn_name):
-            raise DagsterInvariantViolationError(
-                "{name} not found in module {module}. dir: {dir}".format(
-                    name=self.fn_name, module=self.module, dir=dir(module)
-                )
-            )
-        return getattr(module, self.fn_name)
+        return _load_target_from_module(
+            module, self.fn_name, f"in module {self.module}. dir: {dir(module)}"
+        )
 
     def describe(self) -> str:
         return "from {self.module} import {self.fn_name}".format(self=self)
@@ -241,14 +246,9 @@ class PackageCodePointer(
 
     def load_target(self) -> object:
         module = load_python_module(self.module, self.working_directory)
-
-        if not hasattr(module, self.attribute):
-            raise DagsterInvariantViolationError(
-                "{name} not found in module {module}. dir: {dir}".format(
-                    name=self.attribute, module=self.module, dir=dir(module)
-                )
-            )
-        return getattr(module, self.attribute)
+        return _load_target_from_module(
+            module, self.attribute, f"in module {self.module}. dir: {dir(module)}"
+        )
 
     def describe(self) -> str:
         return "from {self.module} import {self.attribute}".format(self=self)
