@@ -313,6 +313,7 @@ enum DagsterEventType {
   HOOK_SKIPPED
   ALERT_START
   ALERT_SUCCESS
+  ALERT_FAILURE
   LOGS_CAPTURED
 }
 
@@ -613,6 +614,7 @@ union DagsterRunEvent =
   | HookErroredEvent
   | AlertStartEvent
   | AlertSuccessEvent
+  | AlertFailureEvent
 
 type ExecutionStepFailureEvent implements MessageEvent & StepEvent {
   runId: String!
@@ -966,6 +968,17 @@ type AlertStartEvent implements MessageEvent & RunEvent {
 }
 
 type AlertSuccessEvent implements MessageEvent & RunEvent {
+  runId: String!
+  message: String!
+  timestamp: String!
+  level: LogLevel!
+  stepKey: String
+  solidHandleID: String
+  eventType: DagsterEventType
+  pipelineName: String!
+}
+
+type AlertFailureEvent implements MessageEvent & RunEvent {
   runId: String!
   message: String!
   timestamp: String!

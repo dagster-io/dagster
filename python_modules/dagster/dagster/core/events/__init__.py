@@ -115,6 +115,8 @@ class DagsterEventType(Enum):
 
     ALERT_START = "ALERT_START"
     ALERT_SUCCESS = "ALERT_SUCCESS"
+    ALERT_FAILURE = "ALERT_FAILURE"
+
     LOGS_CAPTURED = "LOGS_CAPTURED"
 
 
@@ -172,6 +174,7 @@ HOOK_EVENTS = {
 ALERT_EVENTS = {
     DagsterEventType.ALERT_START,
     DagsterEventType.ALERT_SUCCESS,
+    DagsterEventType.ALERT_FAILURE,
 }
 
 
