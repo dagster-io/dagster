@@ -1,18 +1,12 @@
-from dagster import (
-    assets_from_package_module,
-    build_assets_job,
-    namespaced,
-    schedule_from_partitions,
-)
+from dagster import AssetGroup, schedule_from_partitions
 
 from . import assets
 
-core_assets = namespaced("core", assets_from_package_module(assets))
+core_assets = AssetGroup.from_package_module(package_module=assets, namespace="core")
 
 core_assets_schedule = schedule_from_partitions(
-    build_assets_job(
-        name="core",
-        assets=core_assets,
+    AssetGroup.build_job(
+        name="core_job",
         tags={
             "dagster-k8s/config": {
                 "container_config": {
@@ -25,4 +19,4 @@ core_assets_schedule = schedule_from_partitions(
     )
 )
 
-core_definitions = core_assets + [core_assets_schedule]
+core_definitions = [core_assets, core_assets_schedule]
