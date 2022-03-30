@@ -17,7 +17,7 @@ def _cli_load_invariant(condition, msg=None):
         raise UsageError(msg)
 
 
-def recon_repo_for_cli_args(kwargs: Dict[str, object]):
+def recon_repo_for_cli_args(kwargs: Dict[str, str]):
     """Builds a ReconstructableRepository for CLI arguments, which can be any of the combinations
     for repo loading above.
     """
