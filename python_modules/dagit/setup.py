@@ -20,7 +20,7 @@ def get_version():
 if __name__ == "__main__":
     ver = get_version()
     # dont pin dev installs to avoid pip dep resolver issues
-    pin = "" if ver == "dev" else f"=={ver}"
+    pin = "" if ver == "0+dev" else f"=={ver}"
     setup(
         name="dagit",
         version=ver,
@@ -39,7 +39,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=find_packages(exclude=["dagit_tests"]),
+        packages=find_packages(exclude=["dagit_tests*"]),
         include_package_data=True,
         install_requires=[
             "PyYAML",
@@ -47,6 +47,9 @@ if __name__ == "__main__":
             "click>=7.0,<9.0",
             f"dagster{pin}",
             f"dagster-graphql{pin}",
+            # 5.2+ stops pulling in `ipython_genutils`, on which the old version of `nbconvert` we use
+            # implicitly depends. Can remove nbformat dependency entirely when/if cap on nbconvert is lifted.
+            "nbformat<=5.1.3",
             "requests",
             # watchdog
             "watchdog>=0.8.3",

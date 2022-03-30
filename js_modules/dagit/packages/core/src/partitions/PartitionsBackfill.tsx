@@ -13,9 +13,11 @@ import {
   NonIdealState,
   Spinner,
   Tooltip,
+  Mono,
 } from '@dagster-io/ui';
+import {History} from 'history';
 import * as React from 'react';
-import styled from 'styled-components/macro';
+import {useHistory} from 'react-router';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
 import {SharedToaster} from '../app/DomUtils';
@@ -69,6 +71,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   onSubmit: () => void;
   repoAddress: RepoAddress;
 }> = ({partitionSetName, pipelineName, onLaunch, onCancel, onSubmit, repoAddress}) => {
+  const history = useHistory();
   const repositorySelector = repoAddressToSelector(repoAddress);
   const [currentSelectionRange, setCurrentSelectionRange] = React.useState<
     SelectionRange | undefined
@@ -196,24 +199,12 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
   }
 
   const onSuccess = (backfillId: string) => {
-    SharedToaster.show({
-      message: (
-        <div>
-          Created backfill job:{' '}
-          <FilteredRunsLink href="/instance/backfills">{backfillId}</FilteredRunsLink>
-        </div>
-      ),
-      intent: 'success',
-    });
+    showBackfillSuccessToast(history, backfillId);
     onLaunch?.(backfillId, query);
   };
 
   const onError = (data: LaunchPartitionBackfill | null | undefined) => {
-    SharedToaster.show({
-      message: messageForLaunchBackfillError(data),
-      icon: 'error',
-      intent: 'danger',
-    });
+    showBackfillErrorToast(data);
   };
 
   const {
@@ -407,10 +398,7 @@ export const PartitionsBackfillPartitionSelector: React.FC<{
           <strong>Tags</strong>
           {tags.length ? (
             <div style={{border: `1px solid ${ColorsWIP.Gray300}`, borderRadius: 8, padding: 3}}>
-              <TagContainer
-                tags={{fromSession: tags}}
-                onRequestEdit={() => setTagEditorOpen(true)}
-              />
+              <TagContainer tagsFromSession={tags} onRequestEdit={() => setTagEditorOpen(true)} />
             </div>
           ) : (
             <div>
@@ -635,10 +623,6 @@ const LaunchBackfillButton: React.FC<{
   );
 };
 
-const FilteredRunsLink = styled.a`
-  text-decoration: underline;
-`;
-
 const PARTITIONS_BACKFILL_SELECTOR_QUERY = gql`
   query PartitionsBackfillSelectorQuery(
     $partitionSetName: String!
@@ -795,7 +779,7 @@ export const LAUNCH_PARTITION_BACKFILL_MUTATION = gql`
   ${PYTHON_ERROR_FRAGMENT}
 `;
 
-export function messageForLaunchBackfillError(data: LaunchPartitionBackfill | null | undefined) {
+function messageForLaunchBackfillError(data: LaunchPartitionBackfill | null | undefined) {
   const result = data?.launchPartitionBackfill;
 
   let errors = <></>;
@@ -833,6 +817,29 @@ export function messageForLaunchBackfillError(data: LaunchPartitionBackfill | nu
       ) : null}
     </Group>
   );
+}
+
+export function showBackfillErrorToast(data: LaunchPartitionBackfill | null | undefined) {
+  SharedToaster.show({
+    message: messageForLaunchBackfillError(data),
+    icon: 'error',
+    intent: 'danger',
+  });
+}
+
+export function showBackfillSuccessToast(history: History<unknown>, backfillId: string) {
+  SharedToaster.show({
+    intent: 'success',
+    message: (
+      <div>
+        Created backfill <Mono>{backfillId}</Mono>
+      </div>
+    ),
+    action: {
+      text: 'View',
+      onClick: () => history.push(`/instance/backfills`),
+    },
+  });
 }
 
 const DaemonNotRunningAlert: React.FC = () => (

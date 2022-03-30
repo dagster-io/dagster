@@ -97,20 +97,24 @@ export const AssetTable = ({
           </tr>
         </thead>
         <tbody>
-          {pageDisplayPathKeys.map((pathStr, idx) => {
-            return (
-              <AssetEntryRow
-                key={idx}
-                prefixPath={prefixPath}
-                path={JSON.parse(pathStr)}
-                assets={assetGroups[pathStr] || []}
-                isSelected={checkedPaths.has(pathStr)}
-                onToggleChecked={onToggleFactory(pathStr)}
-                onWipe={(assets: Asset[]) => setToWipe(assets.map((asset) => asset.key))}
-                canWipe={canWipeAssets}
-              />
-            );
-          })}
+          {pageDisplayPathKeys.length ? (
+            pageDisplayPathKeys.map((pathStr, idx) => {
+              return (
+                <AssetEntryRow
+                  key={idx}
+                  prefixPath={prefixPath}
+                  path={JSON.parse(pathStr)}
+                  assets={assetGroups[pathStr] || []}
+                  isSelected={checkedPaths.has(pathStr)}
+                  onToggleChecked={onToggleFactory(pathStr)}
+                  onWipe={(assets: Asset[]) => setToWipe(assets.map((asset) => asset.key))}
+                  canWipe={canWipeAssets}
+                />
+              );
+            })
+          ) : (
+            <AssetEmptyRow />
+          )}
         </tbody>
       </Table>
       <AssetWipeDialog
@@ -121,6 +125,18 @@ export const AssetTable = ({
         requery={requery}
       />
     </Box>
+  );
+};
+
+const AssetEmptyRow = () => {
+  return (
+    <tr>
+      <td colSpan={4}>
+        <Box flex={{justifyContent: 'center', alignItems: 'center'}}>
+          <Box margin={{left: 8}}>No assets to display</Box>
+        </Box>
+      </td>
+    </tr>
   );
 };
 

@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="nyt_feed",
-    version="dev",
+    version="0+dev",
     author_email="hello@elementl.com",
     packages=find_packages(exclude=["test"]),
     install_requires=[

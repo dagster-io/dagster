@@ -12,10 +12,11 @@ interface Props {
   intent: AlertIntent;
   title: React.ReactNode;
   description?: React.ReactNode;
+  onClose?: () => void;
 }
 
 export const Alert: React.FC<Props> = (props) => {
-  const {intent, title, description} = props;
+  const {intent, title, description, onClose} = props;
 
   const {backgroundColor, borderColor, icon, iconColor, textColor} = React.useMemo(() => {
     switch (intent) {
@@ -62,13 +63,20 @@ export const Alert: React.FC<Props> = (props) => {
       $textColor={textColor}
       padding={{horizontal: 16, vertical: 12}}
     >
-      <Group direction="row" spacing={12} alignItems="flex-start">
-        <IconWIP name={icon as IconName} color={iconColor} />
-        <Group direction="column" spacing={8}>
-          <AlertTitle>{title}</AlertTitle>
-          {description ? <AlertDescription>{description}</AlertDescription> : null}
+      <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
+        <Group direction="row" spacing={12} alignItems="flex-start">
+          <IconWIP name={icon as IconName} color={iconColor} />
+          <Group direction="column" spacing={8}>
+            <AlertTitle>{title}</AlertTitle>
+            {description ? <AlertDescription>{description}</AlertDescription> : null}
+          </Group>
         </Group>
-      </Group>
+        {!!onClose ? (
+          <ButtonWrapper onClick={onClose}>
+            <IconWIP name="close" color={textColor} />
+          </ButtonWrapper>
+        ) : null}
+      </Box>
     </AlertContainer>
   );
 };
@@ -76,6 +84,17 @@ export const Alert: React.FC<Props> = (props) => {
 Alert.defaultProps = {
   intent: 'info',
 };
+
+const ButtonWrapper = styled.button`
+  background: none;
+  color: inherit;
+  border: none;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  flex-direction: column;
+  height: fit-content;
+`;
 
 const AlertContainer = styled(Box)<{$borderColor: string; $textColor: string}>`
   box-shadow: inset 4px 0 ${({$borderColor}) => $borderColor};

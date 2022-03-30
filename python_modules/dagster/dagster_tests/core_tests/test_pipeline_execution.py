@@ -1,4 +1,5 @@
 import uuid
+import warnings
 
 import pytest
 
@@ -251,11 +252,15 @@ def test_create_pipeline_with_empty_solids_list():
 def test_singleton_pipeline():
     stub_solid = define_stub_solid("stub", [{"a key": "a value"}])
 
-    @pipeline
-    def single_solid_pipeline():
-        stub_solid()
+    # will fail if any warning is emitted
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
 
-    assert execute_pipeline(single_solid_pipeline).success
+        @pipeline
+        def single_solid_pipeline():
+            stub_solid()
+
+        assert execute_pipeline(single_solid_pipeline).success
 
 
 def test_two_root_solid_pipeline_with_empty_dependency_definition():
@@ -697,7 +702,7 @@ def test_pipeline_init_failure():
     event = result.event_list[-1]
     assert event.event_type_value == "PIPELINE_FAILURE"
     assert event.pipeline_failure_data
-    assert mem_instance.get_run_by_id(result.run_id).is_failure
+    assert mem_instance.get_run_by_id(result.run_id).is_failure_or_canceled
 
     with instance_for_test() as fs_instance:
         result = execute_pipeline(
@@ -710,7 +715,7 @@ def test_pipeline_init_failure():
         event = result.event_list[-1]
         assert event.event_type_value == "PIPELINE_FAILURE"
         assert event.pipeline_failure_data
-        assert fs_instance.get_run_by_id(result.run_id).is_failure
+        assert fs_instance.get_run_by_id(result.run_id).is_failure_or_canceled
 
 
 def test_reexecution_fs_storage():

@@ -42,6 +42,23 @@ export interface InstanceWarningQuery_instance {
   hasInfo: boolean;
 }
 
+export interface InstanceWarningQuery_partitionBackfillsOrError_PythonError {
+  __typename: "PythonError";
+}
+
+export interface InstanceWarningQuery_partitionBackfillsOrError_PartitionBackfills_results {
+  __typename: "PartitionBackfill";
+  backfillId: string;
+}
+
+export interface InstanceWarningQuery_partitionBackfillsOrError_PartitionBackfills {
+  __typename: "PartitionBackfills";
+  results: InstanceWarningQuery_partitionBackfillsOrError_PartitionBackfills_results[];
+}
+
+export type InstanceWarningQuery_partitionBackfillsOrError = InstanceWarningQuery_partitionBackfillsOrError_PythonError | InstanceWarningQuery_partitionBackfillsOrError_PartitionBackfills;
+
 export interface InstanceWarningQuery {
   instance: InstanceWarningQuery_instance;
+  partitionBackfillsOrError: InstanceWarningQuery_partitionBackfillsOrError;
 }

@@ -41,8 +41,8 @@ def check_materialization(materialization, asset_key, parent_assets=None, metada
 
 def test_output_definition_single_partition_materialization():
 
-    entry1 = MetadataEntry.int(123, "nrows")
-    entry2 = MetadataEntry.float(3.21, "some value")
+    entry1 = MetadataEntry("nrows", value=123)
+    entry2 = MetadataEntry("some value", value=3.21)
 
     @solid(output_defs=[OutputDefinition(name="output1", asset_key=AssetKey("table1"))])
     def solid1(_):
@@ -78,10 +78,10 @@ def test_output_definition_single_partition_materialization():
 
 def test_output_definition_multiple_partition_materialization():
 
-    entry1 = MetadataEntry.int(123, "nrows")
-    entry2 = MetadataEntry.float(3.21, "some value")
+    entry1 = MetadataEntry("nrows", value=123)
+    entry2 = MetadataEntry("some value", value=3.21)
 
-    partition_entries = [MetadataEntry.int(123 * i * i, "partition count") for i in range(3)]
+    partition_entries = [MetadataEntry("partition count", value=123 * i * i) for i in range(3)]
 
     @solid(
         output_defs=[
@@ -282,8 +282,8 @@ def test_context_error_observe_metadata():
 
 def test_io_manager_single_partition_materialization():
 
-    entry1 = MetadataEntry.int(123, "nrows")
-    entry2 = MetadataEntry.float(3.21, "some value")
+    entry1 = MetadataEntry("nrows", value=123)
+    entry2 = MetadataEntry("some value", value=3.21)
 
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -339,7 +339,7 @@ def test_partition_specific_fails_on_na_partitions():
     def fail_solid(_):
         yield Output(
             None,
-            metadata_entries=[PartitionMetadataEntry("3", MetadataEntry.int(1, "x"))],
+            metadata_entries=[PartitionMetadataEntry("3", MetadataEntry("x", value=1))],
         )
 
     @pipeline
@@ -355,7 +355,7 @@ def test_partition_specific_fails_on_zero_partitions():
     def fail_solid(_):
         yield Output(
             None,
-            metadata_entries=[PartitionMetadataEntry("3", MetadataEntry.int(1, "x"))],
+            metadata_entries=[PartitionMetadataEntry("3", MetadataEntry("x", value=1))],
         )
 
     @pipeline

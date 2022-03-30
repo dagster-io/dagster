@@ -18,7 +18,7 @@ import {
 import * as React from 'react';
 
 import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
-import {QueryCountdown} from '../app/QueryCountdown';
+import {FIFTEEN_SECONDS, useQueryRefreshAtInterval} from '../app/QueryRefresh';
 import {ScheduleOrSensorTag} from '../nav/JobMetadata';
 import {LegacyPipelineTag} from '../pipelines/LegacyPipelineTag';
 import {PipelineReference} from '../pipelines/PipelineReference';
@@ -38,6 +38,7 @@ import {SENSOR_SWITCH_FRAGMENT} from '../sensors/SensorSwitch';
 import {RunStatus} from '../types/globalTypes';
 import {REPOSITORY_INFO_FRAGMENT} from '../workspace/RepositoryInformation';
 import {WorkspaceContext} from '../workspace/WorkspaceContext';
+import {__ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {repoAddressAsString} from '../workspace/repoAddressAsString';
 import {RepoAddress} from '../workspace/types';
@@ -100,22 +101,20 @@ const initialState: State = {
   searchValue: '',
 };
 
-const POLL_INTERVAL = 15 * 1000;
-
 export const InstanceOverviewPage = () => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
   const {allRepos, visibleRepos} = React.useContext(WorkspaceContext);
 
   const queryResult = useQuery<InstanceOverviewInitialQuery>(INSTANCE_OVERVIEW_INITIAL_QUERY, {
     fetchPolicy: 'network-only',
-    pollInterval: POLL_INTERVAL,
     notifyOnNetworkStatusChange: true,
   });
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
   const {data, loading} = queryResult;
 
   const [retrieveLastTenRuns, {data: lastTenRunsData}] = useLazyQuery<LastTenRunsPerJobQuery>(
     LAST_TEN_RUNS_PER_JOB_QUERY,
-    {fetchPolicy: 'network-only', pollInterval: POLL_INTERVAL},
+    {fetchPolicy: 'network-only', pollInterval: FIFTEEN_SECONDS},
   );
 
   const {searchValue} = state;
@@ -206,7 +205,9 @@ export const InstanceOverviewPage = () => {
         (r) =>
           r.repository.name === repoAddress.name &&
           r.repositoryLocation.name === repoAddress.location,
-      ) && job.name.toLocaleLowerCase().includes(searchToLower);
+      ) &&
+      job.name.toLocaleLowerCase().includes(searchToLower) &&
+      job.name !== __ASSET_GROUP;
 
     const {failed, inProgress, queued, succeeded, neverRan} = bucketed;
     return {
@@ -272,9 +273,15 @@ export const InstanceOverviewPage = () => {
 
   if (!data && loading) {
     return (
-      <Box padding={64}>
-        <Spinner purpose="page" />
-      </Box>
+      <>
+        <PageHeader
+          title={<Heading>Instance status</Heading>}
+          tabs={<InstanceTabs tab="overview" refreshState={refreshState} />}
+        />
+        <Box padding={64}>
+          <Spinner purpose="section" />
+        </Box>
+      </>
     );
   }
 
@@ -284,8 +291,7 @@ export const InstanceOverviewPage = () => {
     <>
       <PageHeader
         title={<Heading>Instance status</Heading>}
-        tabs={<InstanceTabs tab="overview" />}
-        right={<QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />}
+        tabs={<InstanceTabs tab="overview" refreshState={refreshState} />}
       />
       <Box
         padding={{horizontal: 24, top: 16}}
@@ -358,10 +364,13 @@ const RunTimelineSection = ({jobs, loading}: {jobs: JobItem[]; loading: boolean}
     }
   }, [loading]);
 
-  const now = nowRef.current;
+  const nowSecs = Math.floor(nowRef.current / 1000);
   const range: [number, number] = React.useMemo(() => {
-    return [now - Number(hourWindow) * ONE_HOUR, now + LOOKAHEAD_HOURS * ONE_HOUR];
-  }, [hourWindow, now]);
+    return [
+      nowSecs * 1000 - Number(hourWindow) * ONE_HOUR,
+      nowSecs * 1000 + LOOKAHEAD_HOURS * ONE_HOUR,
+    ];
+  }, [hourWindow, nowSecs]);
 
   const [start, end] = React.useMemo(() => {
     const [unvalidatedStart, unvalidatedEnd] = range;
@@ -452,6 +461,7 @@ const JobSection = (props: JobSectionProps) => {
         <tbody>
           {jobs.map(({job, repoAddress, runs, schedules, sensors}) => {
             const jobKey = makeJobKey(repoAddress, job.name);
+            const repoAddressString = repoAddressAsString(repoAddress);
             return (
               <tr key={jobKey}>
                 <td>
@@ -472,12 +482,12 @@ const JobSection = (props: JobSectionProps) => {
                         {!job.isJob ? <LegacyPipelineTag /> : null}
                       </Box>
                       <Body color={ColorsWIP.Gray400} style={{fontFamily: FontFamily.monospace}}>
-                        {repoAddressAsString(repoAddress)}
+                        {repoAddressString}
                       </Body>
                     </Box>
                     {runs ? (
                       <Box margin={{top: 4}}>
-                        <RunStatusPezList fade runs={runs} />
+                        <RunStatusPezList fade runs={runs} repoAddress={repoAddressString} />
                       </Box>
                     ) : null}
                   </Box>
@@ -604,9 +614,7 @@ const INSTANCE_OVERVIEW_INITIAL_QUERY = gql`
                 }
               }
             }
-            ... on PythonError {
-              ...PythonErrorFragment
-            }
+            ...PythonErrorFragment
           }
         }
       }
@@ -646,9 +654,7 @@ const LAST_TEN_RUNS_PER_JOB_QUERY = gql`
                 }
               }
             }
-            ... on PythonError {
-              ...PythonErrorFragment
-            }
+            ...PythonErrorFragment
           }
         }
       }

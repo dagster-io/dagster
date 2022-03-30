@@ -15,6 +15,7 @@ import {PartitionHealthSummary, usePartitionHealthData} from '../../assets/Parti
 import {AssetKey} from '../../assets/types';
 import {DagsterTypeSummary} from '../../dagstertype/DagsterType';
 import {DagsterTypeFragment} from '../../dagstertype/types/DagsterTypeFragment';
+import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntry';
 import {Description} from '../../pipelines/Description';
 import {SidebarSection, SidebarTitle} from '../../pipelines/SidebarComponents';
 import {pluginForMetadata} from '../../plugins';
@@ -55,6 +56,19 @@ export const SidebarAssetInfo: React.FC<{
     <>
       <Header assetKey={assetKey} opName={asset.op?.name} />
 
+      <AssetEvents
+        assetKey={assetKey}
+        assetLastMaterializedAt={lastMaterialization?.timestamp}
+        assetHasDefinedPartitions={!!asset.partitionDefinition}
+        asSidebarSection
+        liveData={liveData}
+        paramsTimeWindowOnly={false}
+        params={{}}
+        setParams={() => {}}
+      />
+
+      <div style={{borderBottom: `2px solid ${ColorsWIP.Gray300}`}} />
+
       {(asset.description || !(asset.description || assetType || assetMetadata)) && (
         <DescriptionSidebarSection asset={asset} repoAddress={repoAddress} />
       )}
@@ -75,19 +89,6 @@ export const SidebarAssetInfo: React.FC<{
           </Box>
         </SidebarSection>
       )}
-
-      <div style={{borderBottom: `2px solid ${ColorsWIP.Gray300}`}} />
-
-      <AssetEvents
-        assetKey={assetKey}
-        assetLastMaterializedAt={lastMaterialization?.timestamp}
-        assetHasDefinedPartitions={!!asset.partitionDefinition}
-        asSidebarSection
-        liveData={liveData}
-        paramsTimeWindowOnly={false}
-        params={{}}
-        setParams={() => {}}
-      />
     </>
   );
 };
@@ -125,8 +126,15 @@ const Header: React.FC<{assetKey: AssetKey; opName?: string}> = ({assetKey, opNa
 
   return (
     <Box flex={{gap: 4, direction: 'column'}} margin={{left: 24, right: 12, vertical: 16}}>
-      <SidebarTitle style={{marginBottom: 0, display: 'flex', justifyContent: 'space-between'}}>
-        {displayName}
+      <SidebarTitle
+        style={{
+          marginBottom: 0,
+          display: 'flex',
+          justifyContent: 'space-between',
+          flexWrap: 'wrap',
+        }}
+      >
+        <Box>{displayName}</Box>
         {displayName !== opName ? (
           <Box style={{opacity: 0.5}} flex={{gap: 6, alignItems: 'center'}}>
             <IconWIP name="op" size={16} />
@@ -154,6 +162,9 @@ export const SIDEBAR_ASSET_FRAGMENT = gql`
   fragment SidebarAssetFragment on AssetNode {
     id
     description
+    metadataEntries {
+      ...MetadataEntryFragment
+    }
     partitionDefinition
     assetKey {
       path
@@ -178,6 +189,7 @@ export const SIDEBAR_ASSET_FRAGMENT = gql`
     ...AssetNodeOpMetadataFragment
   }
   ${ASSET_NODE_OP_METADATA_FRAGMENT}
+  ${METADATA_ENTRY_FRAGMENT}
 `;
 
 const SIDEBAR_ASSET_QUERY = gql`

@@ -1,12 +1,16 @@
-import {gql, QueryResult, useQuery} from '@apollo/client';
+import {gql, useQuery} from '@apollo/client';
 import {Box, Checkbox, NonIdealState, SplitPanelContainer} from '@dagster-io/ui';
 import _, {flatMap, uniq, uniqBy, without} from 'lodash';
-import React, {useRef} from 'react';
-import {useHistory} from 'react-router-dom';
+import React from 'react';
 import styled from 'styled-components/macro';
 
 import {filterByQuery, GraphQueryItem} from '../../app/GraphQueryImpl';
-import {QueryCountdown} from '../../app/QueryCountdown';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  QueryRefreshState,
+  useQueryRefreshAtInterval,
+} from '../../app/QueryRefresh';
 import {tokenForAssetKey} from '../../app/Util';
 import {AssetKey} from '../../assets/types';
 import {SVGViewport} from '../../graph/SVGViewport';
@@ -42,7 +46,7 @@ import {
   buildLiveData,
   GraphData,
   graphHasCycles,
-  IN_PROGRESS_RUNS_FRAGMENT,
+  REPOSITORY_LIVE_FRAGMENT,
   layoutGraph,
   LiveData,
   Node,
@@ -120,26 +124,29 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
       skip: graphAssetKeys.length === 0,
       variables: {
         assetKeys: graphAssetKeys,
-        repositorySelector: {
-          repositoryLocationName: pipelineSelector?.repositoryLocationName || '',
-          repositoryName: pipelineSelector?.repositoryName || '',
-        },
+        repositorySelector: pipelineSelector
+          ? {
+              repositoryLocationName: pipelineSelector.repositoryLocationName,
+              repositoryName: pipelineSelector.repositoryName,
+            }
+          : undefined,
       },
       notifyOnNetworkStatusChange: true,
-      pollInterval: 5 * 1000,
     },
   );
+
+  const liveDataRefreshState = useQueryRefreshAtInterval(liveResult, FIFTEEN_SECONDS);
 
   const liveDataByNode = React.useMemo(() => {
     if (!liveResult.data || !assetGraphData) {
       return {};
     }
 
-    const {repositoryOrError, assetNodes: liveAssetNodes} = liveResult.data;
-    const inProgressRunsByStep =
-      repositoryOrError.__typename === 'Repository' ? repositoryOrError.inProgressRunsByStep : [];
+    const {repositoriesOrError, assetNodes: liveAssetNodes} = liveResult.data;
+    const repos =
+      repositoriesOrError.__typename === 'RepositoryConnection' ? repositoriesOrError.nodes : [];
 
-    return buildLiveData(assetGraphData, liveAssetNodes, inProgressRunsByStep);
+    return buildLiveData(assetGraphData, liveAssetNodes, repos);
   }, [assetGraphData, liveResult]);
 
   useDocumentTitle('Assets');
@@ -172,7 +179,7 @@ export const AssetGraphExplorer: React.FC<Props> = (props) => {
             assetGraphData={assetGraphData}
             graphQueryItems={graphQueryItems}
             applyingEmptyDefault={applyingEmptyDefault}
-            liveDataQueryResult={liveResult}
+            liveDataRefreshState={liveDataRefreshState}
             liveDataByNode={liveDataByNode}
             {...props}
           />
@@ -188,7 +195,7 @@ const AssetGraphExplorerWithData: React.FC<
     assetGraphData: GraphData;
     graphQueryItems: GraphQueryItem[];
     liveDataByNode: LiveData;
-    liveDataQueryResult: QueryResult<any>;
+    liveDataRefreshState: QueryRefreshState;
     applyingEmptyDefault: boolean;
   } & Props
 > = (props) => {
@@ -198,7 +205,7 @@ const AssetGraphExplorerWithData: React.FC<
     setOptions,
     explorerPath,
     onChangeExplorerPath,
-    liveDataQueryResult,
+    liveDataRefreshState,
     liveDataByNode,
     assetGraphData,
     graphQueryItems,
@@ -206,8 +213,6 @@ const AssetGraphExplorerWithData: React.FC<
     pipelineSelector,
   } = props;
 
-  const history = useHistory();
-  const splitpanelRef = useRef<SplitPanelContainer>(null);
   const findAssetInWorkspace = useFindAssetInWorkspace();
 
   const selectedAssetValues = explorerPath.opNames[explorerPath.opNames.length - 1].split(',');
@@ -231,20 +236,15 @@ const AssetGraphExplorerWithData: React.FC<
         clicked = {opName: node.definition.opName, jobName: explorerPath.pipelineName};
       } else {
         // The asset's definition was not provided in our query for job.assetNodes. This means
-        // it's in another job or is a foreign asset not defined in the repository at all.
+        // it's in another job or is a source asset not defined in the repository at all.
         clicked = await findAssetInWorkspace(assetKey);
-      }
-
-      if (!clicked.opName || !clicked.jobName) {
-        // We were unable to find this asset in the workspace - show it in the asset catalog.
-        history.push(`/instance/assets/${assetKey.path.join('/')}`);
-        return;
       }
 
       let nextOpsQuery = explorerPath.opsQuery;
       let nextOpsNameSelection = token;
 
-      if (clicked.jobName !== explorerPath.pipelineName) {
+      // If no opName, this is a source asset.
+      if (clicked.jobName !== explorerPath.pipelineName || !clicked.opName) {
         nextOpsQuery = '';
       } else if (e.shiftKey || e.metaKey) {
         const existing = explorerPath.opNames[0].split(',');
@@ -264,19 +264,12 @@ const AssetGraphExplorerWithData: React.FC<
           ...explorerPath,
           opNames: [nextOpsNameSelection],
           opsQuery: nextOpsQuery,
-          pipelineName: clicked.jobName,
+          pipelineName: clicked.jobName || explorerPath.pipelineName,
         },
         'replace',
       );
     },
-    [
-      explorerPath,
-      onChangeExplorerPath,
-      findAssetInWorkspace,
-      history,
-      lastSelectedNode,
-      assetGraphData,
-    ],
+    [explorerPath, onChangeExplorerPath, findAssetInWorkspace, lastSelectedNode, assetGraphData],
   );
 
   const layout = React.useMemo(() => layoutGraph(assetGraphData), [assetGraphData]);
@@ -289,9 +282,8 @@ const AssetGraphExplorerWithData: React.FC<
   return (
     <SplitPanelContainer
       identifier="explorer"
-      ref={splitpanelRef}
-      firstInitialPercent={100}
-      firstMinSize={600}
+      firstInitialPercent={70}
+      firstMinSize={400}
       first={
         <>
           {graphQueryItems.length === 0 ? (
@@ -320,13 +312,14 @@ const AssetGraphExplorerWithData: React.FC<
               <SVGContainer width={layout.width} height={layout.height}>
                 <AssetLinks edges={layout.edges} />
 
-                {layout.nodes.map((layoutNode) => {
+                {layout.nodes.map((layoutNode, index) => {
                   const graphNode = assetGraphData.nodes[layoutNode.id];
                   const path = JSON.parse(layoutNode.id);
 
                   if (isNodeOffscreen(layoutNode, bounds)) {
                     return layoutNode.id === lastSelectedNode?.id ? (
                       <RecenterGraph
+                        key={index}
                         viewportRef={viewportEl}
                         x={layoutNode.x + layoutNode.width / 2}
                         y={layoutNode.y + layoutNode.height / 2}
@@ -393,7 +386,7 @@ const AssetGraphExplorerWithData: React.FC<
             style={{position: 'absolute', right: 12, top: 12}}
           >
             <Box flex={{alignItems: 'center', gap: 12}}>
-              <QueryCountdown pollInterval={5 * 1000} queryResult={liveDataQueryResult} />
+              <QueryRefreshCountdown refreshState={liveDataRefreshState} />
 
               <LaunchAssetExecutionButton
                 title={titleForLaunch(selectedGraphNodes, liveDataByNode)}
@@ -446,17 +439,14 @@ const AssetGraphExplorerWithData: React.FC<
 };
 
 const ASSETS_GRAPH_LIVE_QUERY = gql`
-  query AssetGraphLiveQuery(
-    $repositorySelector: RepositorySelector!
-    $assetKeys: [AssetKeyInput!]
-  ) {
-    repositoryOrError(repositorySelector: $repositorySelector) {
+  query AssetGraphLiveQuery($repositorySelector: RepositorySelector, $assetKeys: [AssetKeyInput!]) {
+    repositoriesOrError(repositorySelector: $repositorySelector) {
       __typename
-      ... on Repository {
-        id
-        name
-        inProgressRunsByStep {
-          ...InProgressRunsFragment
+      ... on RepositoryConnection {
+        nodes {
+          __typename
+          id
+          ...RepositoryLiveFragment
         }
       }
     }
@@ -465,7 +455,7 @@ const ASSETS_GRAPH_LIVE_QUERY = gql`
       ...AssetNodeLiveFragment
     }
   }
-  ${IN_PROGRESS_RUNS_FRAGMENT}
+  ${REPOSITORY_LIVE_FRAGMENT}
   ${ASSET_NODE_LIVE_FRAGMENT}
 `;
 

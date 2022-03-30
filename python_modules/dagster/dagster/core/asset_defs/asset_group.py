@@ -1,11 +1,14 @@
+import inspect
 import os
 import pkgutil
 import re
+import warnings
 from importlib import import_module
 from types import ModuleType
 from typing import (
     Any,
     Dict,
+    Generator,
     Iterable,
     List,
     Mapping,
@@ -18,14 +21,17 @@ from typing import (
 )
 
 from dagster import check
+from dagster.core.definitions.events import AssetKey
+from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.utils import merge_dicts
+from dagster.utils.backcompat import ExperimentalWarning
 
 from ..definitions.executor_definition import ExecutorDefinition
 from ..definitions.job_definition import JobDefinition
 from ..definitions.op_definition import OpDefinition
 from ..definitions.resource_definition import ResourceDefinition
 from ..errors import DagsterInvalidDefinitionError
-from .asset import AssetsDefinition
+from .assets import AssetsDefinition
 from .assets_job import build_assets_job, build_root_manager, build_source_assets_by_key
 from .source_asset import SourceAsset
 
@@ -41,17 +47,30 @@ class AssetGroup(
         ],
     )
 ):
-    """Defines a group of assets, along with environment information in the form of resources and an executor.
+    """Defines a group of assets, along with environment information in the
+    form of resources and an executor.
 
-    An AssetGroup can be provided to a :py:class:`RepositoryDefinition`. When provided to a repository, the constituent assets can be materialized from Dagit. The AssetGroup also provides an interface for creating jobs from subselections of assets, which can then be provided to a :py:class:`ScheduleDefinition` or :py:class:`SensorDefinition`.
+    An AssetGroup can be provided to a :py:class:`RepositoryDefinition`. When
+    provided to a repository, the constituent assets can be materialized from
+    Dagit. The AssetGroup also provides an interface for creating jobs from
+    subselections of assets, which can then be provided to a
+    :py:class:`ScheduleDefinition` or :py:class:`SensorDefinition`.
 
     There can only be one AssetGroup per repository.
 
     Args:
-        assets (Sequence[AssetsDefinition]): The set of software-defined assets to group.
-        source_assets (Optional[Sequence[SourceAsset]]): The set of source assets that the software-defined may depend on.
-        resource_defs (Optional[Mapping[str, ResourceDefinition]]): A dictionary of resource definitions. When the AssetGroup is constructed, if there are any unsatisfied resource requirements from the assets, it will result in an error. Note that the `root_manager` key is a reserved resource key, and will result in an error if provided by the user.
-        executor_def (Optional[ExecutorDefinition]): The executor definition to use when re-materializing assets in this group.
+        assets (Sequence[AssetsDefinition]): The set of software-defined assets
+            to group.
+        source_assets (Optional[Sequence[SourceAsset]]): The set of source
+            assets that the software-defined may depend on.
+        resource_defs (Optional[Mapping[str, ResourceDefinition]]): A
+            dictionary of resource definitions. When the AssetGroup is
+            constructed, if there are any unsatisfied resource requirements
+            from the assets, it will result in an error. Note that the
+            `root_manager` key is a reserved resource key, and will result in
+            an error if provided by the user.
+        executor_def (Optional[ExecutorDefinition]): The executor definition to
+            use when re-materializing assets in this group.
 
     Examples:
 
@@ -73,7 +92,11 @@ class AssetGroup(
             def foo_resource():
                 ...
 
-            asset_group = AssetGroup(assets=[start_asset, next_asset], source_assets=[source_asset], resource_defs={"foo": foo_resource})
+            asset_group = AssetGroup(
+                assets=[start_asset, next_asset],
+                source_assets=[source_asset],
+                resource_defs={"foo": foo_resource},
+            )
             ...
 
     """
@@ -85,11 +108,11 @@ class AssetGroup(
         resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
         executor_def: Optional[ExecutorDefinition] = None,
     ):
-        from dagster.core.definitions.graph_definition import default_job_io_manager
-
-        check.list_param(assets, "assets", of_type=AssetsDefinition)
-        source_assets = check.opt_list_param(source_assets, "source_assets", of_type=SourceAsset)
-        resource_defs = check.opt_dict_param(
+        check.sequence_param(assets, "assets", of_type=AssetsDefinition)
+        source_assets = check.opt_sequence_param(
+            source_assets, "source_assets", of_type=SourceAsset
+        )
+        resource_defs = check.opt_mapping_param(
             resource_defs, "resource_defs", key_type=str, value_type=ResourceDefinition
         )
         executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
@@ -104,9 +127,11 @@ class AssetGroup(
                 "this key, and then change all places that require this key to "
                 "a new value."
             )
-        # In the case of collisions, merge_dicts takes values from the dictionary latest in the list, so we place the user provided resource defs after the defaults.
+        # In the case of collisions, merge_dicts takes values from the
+        # dictionary latest in the list, so we place the user provided resource
+        # defs after the defaults.
         resource_defs = merge_dicts(
-            {"root_manager": root_manager, "io_manager": default_job_io_manager},
+            {"root_manager": root_manager, "io_manager": fs_asset_io_manager},
             resource_defs,
         )
 
@@ -122,8 +147,8 @@ class AssetGroup(
             executor_def=executor_def,
         )
 
-    @property
-    def all_assets_job_name(self) -> str:
+    @staticmethod
+    def all_assets_job_name() -> str:
         """The name of the mega-job that the provided list of assets is coerced into."""
         return "__ASSET_GROUP"
 
@@ -139,18 +164,22 @@ class AssetGroup(
 
         Args:
             name (str): The name to give the job.
-            selection (Union[str, List[str]]): A single selection query or list of selection queries to execute. For example:
-                * ``['some_asset_key']``: selects ``some_asset_key`` itself.
-                * ``['*some_asset_key']``: select ``some_asset_key`` and all its ancestors (upstream dependencies).
-                * ``['*some_asset_key+++']``: select ``some_asset_key``, all its ancestors, and its descendants
-                (downstream dependencies) within 3 levels down.
-                * ``['*some_asset_key', 'other_asset_key_a', 'other_asset_key_b+']``: select ``some_asset_key`` and all its
-                ancestors, ``other_asset_key_a`` itself, and ``other_asset_key_b`` and its direct child asset keys. When subselecting into a multi-asset, all of the asset keys in that multi-asset must be selected.
-            executor_def (Optional[ExecutorDefinition]): The executor definition to use when executing the job. Defaults to the executor on the AssetGroup. If no executor was provided on the AssetGroup, then it defaults to :py:class:`multi_or_in_process_executor`.
-            tags (Optional[Dict[str, Any]]): Arbitrary metadata for any execution of the Job.
+            selection (Union[str, List[str]]): A single selection query or list of selection queries
+                to execute. For example:
+
+                    - ``['some_asset_key']`` select ``some_asset_key`` itself.
+                    - ``['*some_asset_key']`` select ``some_asset_key`` and all its ancestors (upstream dependencies).
+                    - ``['*some_asset_key+++']`` select ``some_asset_key``, all its ancestors, and its descendants (downstream dependencies) within 3 levels down.
+                    - ``['*some_asset_key', 'other_asset_key_a', 'other_asset_key_b+']`` select ``some_asset_key`` and all its ancestors, ``other_asset_key_a`` itself, and ``other_asset_key_b`` and its direct child asset keys. When subselecting into a multi-asset, all of the asset keys in that multi-asset must be selected.
+
+            executor_def (Optional[ExecutorDefinition]): The executor
+                definition to use when executing the job. Defaults to the
+                executor on the AssetGroup. If no executor was provided on the
+                AssetGroup, then it defaults to :py:class:`multi_or_in_process_executor`.
+            tags (Optional[Dict[str, Any]]): Arbitrary metadata for any execution of the job.
                 Values that are not strings will be json encoded and must meet the criteria that
-                `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten by tag
-                values provided at invocation time.
+                `json.loads(json.dumps(value)) == value`.  These tag values may be overwritten
+                tag values provided at invocation time.
             description (Optional[str]): A description of the job.
 
         Examples:
@@ -177,13 +206,15 @@ class AssetGroup(
         executor_def = check.opt_inst_param(executor_def, "executor_def", ExecutorDefinition)
         description = check.opt_str_param(description, "description")
 
-        mega_job_def = build_assets_job(
-            name=name,
-            assets=self.assets,
-            source_assets=self.source_assets,
-            resource_defs=self.resource_defs,
-            executor_def=self.executor_def,
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+            mega_job_def = build_assets_job(
+                name=name,
+                assets=self.assets,
+                source_assets=self.source_assets,
+                resource_defs=self.resource_defs,
+                executor_def=self.executor_def,
+            )
 
         if selection:
             op_selection = self._parse_asset_selection(selection, job_name=name)
@@ -209,15 +240,18 @@ class AssetGroup(
             # accidentally add to the original list
             excluded_assets = list(self.source_assets)
 
-        return build_assets_job(
-            name=name,
-            assets=included_assets,
-            source_assets=excluded_assets,
-            resource_defs=self.resource_defs,
-            executor_def=self.executor_def,
-            description=description,
-            tags=tags,
-        )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=ExperimentalWarning)
+            asset_job = build_assets_job(
+                name=name,
+                assets=included_assets,
+                source_assets=excluded_assets,
+                resource_defs=self.resource_defs,
+                executor_def=self.executor_def,
+                description=description,
+                tags=tags,
+            )
+        return asset_job
 
     def _parse_asset_selection(self, selection: Union[str, List[str]], job_name: str) -> List[str]:
         """Convert selection over asset keys to selection over ops"""
@@ -275,11 +309,18 @@ class AssetGroup(
             # https://github.com/dagster-io/dagster/issues/6647
             if key_str in source_asset_keys:
                 raise DagsterInvalidDefinitionError(
-                    f"When attempting to create job '{job_name}', the clause '{clause}' selects asset_key '{key_str}', which comes from a source asset. Source assets can't be materialized, and therefore can't be subsetted into a job. Please choose a subset on asset keys that are materializable - that is, included on assets within the group. Valid assets: {list(asset_keys_to_ops.keys())}"
+                    f"When attempting to create job '{job_name}', the clause '"
+                    f"{clause}' selects asset_key '{key_str}', which comes from "
+                    "a source asset. Source assets can't be materialized, and "
+                    "therefore can't be subsetted into a job. Please choose a "
+                    "subset on asset keys that are materializable - that is, "
+                    f"included on assets within the group. Valid assets: {list(asset_keys_to_ops.keys())}"
                 )
             if key_str not in asset_keys_to_ops:
                 raise DagsterInvalidDefinitionError(
-                    f"When attempting to create job '{job_name}', the clause '{clause}' within the asset key selection did not match any asset keys. Present asset keys: {list(asset_keys_to_ops.keys())}"
+                    f"When attempting to create job '{job_name}', the clause "
+                    f"'{clause}' within the asset key selection did not match "
+                    f"any asset keys. Present asset keys: {list(asset_keys_to_ops.keys())}"
                 )
 
             seen_asset_keys.add(key_str)
@@ -297,7 +338,12 @@ class AssetGroup(
             are_keys_in_set = [key in seen_asset_keys for key in asset_key_set]
             if any(are_keys_in_set) and not all(are_keys_in_set):
                 raise DagsterInvalidDefinitionError(
-                    f"When building job '{job_name}', the asset '{op_name}' contains asset keys {sorted(list(asset_key_set))}, but attempted to select only {sorted(list(asset_key_set.intersection(seen_asset_keys)))}. Selecting only some of the asset keys for a particular asset is not yet supported behavior. Please select all asset keys produced by a given asset when subsetting."
+                    f"When building job '{job_name}', the asset '{op_name}' "
+                    f"contains asset keys {sorted(list(asset_key_set))}, but "
+                    f"attempted to select only {sorted(list(asset_key_set.intersection(seen_asset_keys)))}. "
+                    "Selecting only some of the asset keys for a particular "
+                    "asset is not yet supported behavior. Please select all "
+                    "asset keys produced by a given asset when subsetting."
                 )
         return op_selection
 
@@ -308,8 +354,8 @@ class AssetGroup(
         executor_def: Optional[ExecutorDefinition] = None,
     ) -> "AssetGroup":
         """
-        Constructs an AssetGroup that includes all asset definitions in all sub-modules of the
-        given package module.
+        Constructs an AssetGroup that includes all asset definitions and source assets in all
+        sub-modules of the given package module.
 
         A package module is the result of importing a package.
 
@@ -323,19 +369,8 @@ class AssetGroup(
         Returns:
             AssetGroup: An asset group with all the assets in the package.
         """
-        assets = set()
-        source_assets = set()
-        for module in _find_modules_in_package(package_module):
-            for attr in dir(module):
-                value = getattr(module, attr)
-                if isinstance(value, AssetsDefinition):
-                    assets.add(value)
-                if isinstance(value, SourceAsset):
-                    source_assets.add(value)
-
-        return AssetGroup(
-            assets=list(assets),
-            source_assets=list(source_assets),
+        return AssetGroup.from_modules(
+            _find_modules_in_package(package_module),
             resource_defs=resource_defs,
             executor_def=executor_def,
         )
@@ -347,8 +382,8 @@ class AssetGroup(
         executor_def: Optional[ExecutorDefinition] = None,
     ) -> "AssetGroup":
         """
-        Constructs an AssetGroup that includes all asset definitions in all sub-modules of the
-        given package.
+        Constructs an AssetGroup that includes all asset definitions and source assets in all
+        sub-modules of the given package.
 
         Args:
             package_name (str): The name of a Python package to look for assets inside.
@@ -364,6 +399,97 @@ class AssetGroup(
         return AssetGroup.from_package_module(
             package_module, resource_defs=resource_defs, executor_def=executor_def
         )
+
+    @staticmethod
+    def from_modules(
+        modules: Iterable[ModuleType],
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        executor_def: Optional[ExecutorDefinition] = None,
+    ) -> "AssetGroup":
+        """
+        Constructs an AssetGroup that includes all asset definitions and source assets in the given
+        modules.
+
+        Args:
+            modules (Iterable[ModuleType]): The Python modules to look for assets inside.
+            resource_defs (Optional[Mapping[str, ResourceDefinition]]): A dictionary of resource
+                definitions to include on the returned asset group.
+            executor_def (Optional[ExecutorDefinition]): An executor to include on the returned
+                asset group.
+
+        Returns:
+            AssetGroup: An asset group with all the assets defined in the given modules.
+        """
+        asset_ids: Set[int] = set()
+        asset_keys: Dict[AssetKey, ModuleType] = dict()
+        source_assets: List[SourceAsset] = []
+        assets: List[AssetsDefinition] = []
+        for module in modules:
+            for asset in _find_assets_in_module(module):
+                if id(asset) not in asset_ids:
+                    asset_ids.add(id(asset))
+                    keys = asset.asset_keys if isinstance(asset, AssetsDefinition) else [asset.key]
+                    for key in keys:
+                        if key in asset_keys:
+                            modules_str = ", ".join(
+                                set([asset_keys[key].__name__, module.__name__])
+                            )
+                            raise DagsterInvalidDefinitionError(
+                                f"Asset key {key} is defined multiple times. Definitions found in modules: {modules_str}."
+                            )
+                        else:
+                            asset_keys[key] = module
+                    if isinstance(asset, SourceAsset):
+                        source_assets.append(asset)
+                    else:
+                        assets.append(asset)
+
+        return AssetGroup(
+            assets=assets,
+            source_assets=source_assets,
+            resource_defs=resource_defs,
+            executor_def=executor_def,
+        )
+
+    @staticmethod
+    def from_current_module(
+        resource_defs: Optional[Mapping[str, ResourceDefinition]] = None,
+        executor_def: Optional[ExecutorDefinition] = None,
+    ) -> "AssetGroup":
+        """
+        Constructs an AssetGroup that includes all asset definitions and source assets in the module
+        where this is called from.
+
+        Args:
+            resource_defs (Optional[Mapping[str, ResourceDefinition]]): A dictionary of resource
+                definitions to include on the returned asset group.
+            executor_def (Optional[ExecutorDefinition]): An executor to include on the returned
+                asset group.
+
+        Returns:
+            AssetGroup: An asset group with all the assets defined in the module.
+        """
+        caller = inspect.stack()[1]
+        module = inspect.getmodule(caller[0])
+        if module is None:
+            check.failed("Could not find a module for the caller")
+        return AssetGroup.from_modules([module], resource_defs, executor_def)
+
+
+def _find_assets_in_module(
+    module: ModuleType,
+) -> Generator[Union[AssetsDefinition, SourceAsset], None, None]:
+    """
+    Finds assets in the given module and adds them to the given sets of assets and source assets.
+    """
+    for attr in dir(module):
+        value = getattr(module, attr)
+        if isinstance(value, (AssetsDefinition, SourceAsset)):
+            yield value
+        elif isinstance(value, list) and all(
+            isinstance(el, (AssetsDefinition, SourceAsset)) for el in value
+        ):
+            yield from value
 
 
 def _find_modules_in_package(package_module: ModuleType) -> Iterable[ModuleType]:
@@ -399,13 +525,17 @@ def _validate_resource_reqs_for_asset_group(
         for asset_key, output_def in asset_def.output_defs_by_asset_key.items():
             if output_def.io_manager_key and output_def.io_manager_key not in present_resource_keys:
                 raise DagsterInvalidDefinitionError(
-                    f"Output '{output_def.name}' with AssetKey '{asset_key}' requires io manager '{output_def.io_manager_key}' but was not provided on asset group. Provided resources: {sorted(list(present_resource_keys))}"
+                    f"Output '{output_def.name}' with AssetKey '{asset_key}' "
+                    f"requires io manager '{output_def.io_manager_key}' but was "
+                    f"not provided on asset group. Provided resources: {sorted(list(present_resource_keys))}"
                 )
 
     for source_asset in source_assets:
         if source_asset.io_manager_key and source_asset.io_manager_key not in present_resource_keys:
             raise DagsterInvalidDefinitionError(
-                f"SourceAsset with key {source_asset.key} requires io manager with key '{source_asset.io_manager_key}', which was not provided on AssetGroup. Provided keys: {sorted(list(present_resource_keys))}"
+                f"SourceAsset with key {source_asset.key} requires io manager "
+                f"with key '{source_asset.io_manager_key}', which was not "
+                f"provided on AssetGroup. Provided keys: {sorted(list(present_resource_keys))}"
             )
 
     for resource_key, resource_def in resource_defs.items():
@@ -413,5 +543,6 @@ def _validate_resource_reqs_for_asset_group(
         missing_resource_keys = sorted(list(set(resource_keys) - present_resource_keys))
         if missing_resource_keys:
             raise DagsterInvalidDefinitionError(
-                f"AssetGroup is missing required resource keys for resource '{resource_key}'. Missing resource keys: {missing_resource_keys}"
+                "AssetGroup is missing required resource keys for resource '"
+                f"{resource_key}'. Missing resource keys: {missing_resource_keys}"
             )

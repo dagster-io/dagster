@@ -36,6 +36,7 @@ from schema.charts.dagster.subschema.run_launcher import (
     RunLauncherConfig,
     RunLauncherType,
 )
+from schema.charts.dagster.subschema.telemetry import Telemetry
 from schema.charts.dagster.values import DagsterHelmValues
 from schema.utils.helm_template import HelmTemplate
 
@@ -590,6 +591,17 @@ def test_custom_python_logs_missing_config(template: HelmTemplate):
     assert python_logs_config["python_log_level"] == "INFO"
     assert "managed_python_loggers" not in python_logs_config
     assert "dagster_handler_config" not in python_logs_config
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_telemetry(template: HelmTemplate, enabled: bool):
+    helm_values = DagsterHelmValues.construct(telemetry=Telemetry.construct(enabled=enabled))
+
+    configmaps = template.render(helm_values)
+    instance = yaml.full_load(configmaps[0].data["dagster.yaml"])
+    telemetry_config = instance.get("telemetry")
+
+    assert telemetry_config["enabled"] == enabled
 
 
 @pytest.mark.parametrize(

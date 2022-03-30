@@ -13,6 +13,19 @@ interface Props {
   label?: React.ReactNode;
 }
 
+const BaseTagTooltipStyle: React.CSSProperties = {
+  fontSize: 12,
+  lineHeight: '16px',
+  alignItems: 'center',
+  padding: '4px 8px',
+  userSelect: 'text',
+  pointerEvents: 'all',
+  borderRadius: 8,
+  border: 'none',
+  top: -10,
+  left: -13,
+};
+
 export const BaseTag = (props: Props) => {
   const {
     fillColor = ColorsWIP.Gray10,
@@ -25,7 +38,18 @@ export const BaseTag = (props: Props) => {
   return (
     <StyledTag $fillColor={fillColor} $interactive={interactive} $textColor={textColor}>
       {icon || null}
-      {label !== undefined && label !== null ? <span>{label}</span> : null}
+      {label !== undefined && label !== null ? (
+        <span
+          data-tooltip={typeof label === 'string' ? label : undefined}
+          data-tooltip-style={JSON.stringify({
+            ...BaseTagTooltipStyle,
+            backgroundColor: fillColor,
+            color: textColor,
+          })}
+        >
+          {label}
+        </span>
+      ) : null}
       {rightIcon || null}
     </StyledTag>
   );

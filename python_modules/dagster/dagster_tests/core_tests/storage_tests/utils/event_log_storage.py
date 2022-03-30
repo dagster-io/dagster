@@ -1,3 +1,4 @@
+import datetime
 import re
 import time
 from collections import Counter
@@ -18,6 +19,7 @@ from dagster import (
     Output,
     OutputDefinition,
     RetryRequested,
+    job,
     op,
     pipeline,
     resource,
@@ -258,7 +260,7 @@ def cursor_datetime_args():
     # timezone-aware and timezone-naive datetimes
     yield None
     yield pendulum.now()
-    yield pendulum.now().naive()
+    yield datetime.datetime.now()
 
 
 class TestEventLogStorage:
@@ -1961,3 +1963,33 @@ class TestEventLogStorage:
             )
 
             assert len(records) == 1
+
+    def test_asset_key_exists_on_observation(self, storage):
+
+        key = AssetKey("hello")
+
+        @op
+        def my_op():
+            yield AssetObservation(key)
+            yield Output(5)
+
+        with instance_for_test() as instance:
+            if not storage._instance:  # pylint: disable=protected-access
+                storage.register_instance(instance)
+
+            events, _ = _synthesize_events(lambda: my_op(), instance=instance)
+            for event in events:
+                storage.store_event(event)
+
+            assert [key] == storage.all_asset_keys()
+
+            if self.can_wipe():
+                storage.wipe_asset(key)
+
+                assert len(storage.all_asset_keys()) == 0
+
+                events, _ = _synthesize_events(lambda: my_op(), instance=instance)
+                for event in events:
+                    storage.store_event(event)
+
+                assert [key] == storage.all_asset_keys()

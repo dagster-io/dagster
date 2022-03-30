@@ -98,13 +98,13 @@ class DagsterLoggingMetadata(
 
     def __new__(
         cls,
-        run_id: str = None,
-        pipeline_name: str = None,
-        pipeline_tags: Dict[str, str] = None,
-        step_key: str = None,
-        solid_name: str = None,
-        resource_name: str = None,
-        resource_fn_name: str = None,
+        run_id: Optional[str] = None,
+        pipeline_name: Optional[str] = None,
+        pipeline_tags: Optional[Dict[str, str]] = None,
+        step_key: Optional[str] = None,
+        solid_name: Optional[str] = None,
+        resource_name: Optional[str] = None,
+        resource_fn_name: Optional[str] = None,
     ):
         return super().__new__(
             cls,
@@ -296,7 +296,7 @@ class DagsterLogManager(logging.Logger):
         self,
         dagster_handler: DagsterLogHandler,
         level: int = logging.NOTSET,
-        managed_loggers: List[logging.Logger] = None,
+        managed_loggers: Optional[List[logging.Logger]] = None,
     ):
         super().__init__(name="dagster", level=coerce_valid_log_level(level))
         self._managed_loggers = check.opt_list_param(
@@ -309,7 +309,7 @@ class DagsterLogManager(logging.Logger):
     def create(
         cls,
         loggers: List[logging.Logger],
-        handlers: List[logging.Handler] = None,
+        handlers: Optional[List[logging.Handler]] = None,
         instance: Optional["DagsterInstance"] = None,
         pipeline_run: Optional["PipelineRun"] = None,
     ) -> "DagsterLogManager":

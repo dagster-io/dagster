@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from dagster import (
@@ -7,6 +9,7 @@ from dagster import (
     FloatMetadataValue,
     IntMetadataValue,
     MetadataValue,
+    PathMetadataValue,
     PythonArtifactMetadataValue,
     TextMetadataValue,
     UrlMetadataValue,
@@ -39,6 +42,14 @@ def solid_events_for_type(result, solid_name, event_type):
     ]
 
 
+def test_metadata_entry_construction():
+    entry_1 = MetadataEntry("foo", value=MetadataValue.text("bar"))
+    entry_2 = MetadataEntry("foo", entry_data=MetadataValue.text("bar"))
+    assert entry_1.value == MetadataValue.text("bar")
+    assert entry_2.value == MetadataValue.text("bar")
+    assert entry_1 == entry_2
+
+
 def test_metadata_asset_materialization():
     @solid(output_defs=[])
     def the_solid(_context):
@@ -49,6 +60,7 @@ def test_metadata_asset_materialization():
                 "int": 22,
                 "url": MetadataValue.url("http://fake.com"),
                 "float": 0.1,
+                "path": MetadataValue.path(Path("/a/b.csv")),
                 "python": MetadataValue.python_artifact(MetadataValue),
             },
         )
@@ -67,7 +79,7 @@ def test_metadata_asset_materialization():
     )
     assert len(materialization_events) == 1
     materialization = materialization_events[0].event_specific_data.materialization
-    assert len(materialization.metadata_entries) == 5
+    assert len(materialization.metadata_entries) == 6
     entry_map = {
         entry.label: entry.entry_data.__class__ for entry in materialization.metadata_entries
     }
@@ -75,6 +87,7 @@ def test_metadata_asset_materialization():
     assert entry_map["int"] == IntMetadataValue
     assert entry_map["url"] == UrlMetadataValue
     assert entry_map["float"] == FloatMetadataValue
+    assert entry_map["path"] == PathMetadataValue
     assert entry_map["python"] == PythonArtifactMetadataValue
 
 
@@ -150,6 +163,16 @@ def test_parse_invalid_metadata():
     assert entries[0].entry_data == TextMetadataValue("[object] (unserializable)")
 
 
+def test_parse_path_metadata():
+
+    metadata = {"path": Path("/a/b.csv")}
+
+    entries = normalize_metadata(metadata, [])
+    assert len(entries) == 1
+    assert entries[0].label == "path"
+    assert entries[0].entry_data == PathMetadataValue("/a/b.csv")
+
+
 def test_bad_json_metadata_value():
     @solid(output_defs=[])
     def the_solid(context):
@@ -166,22 +189,24 @@ def test_bad_json_metadata_value():
         execute_pipeline(the_pipeline)
 
     assert str(exc_info.value) == (
-        'Could not resolve the metadata value for "bad" to a JSON serializable value. '
-        "Consider wrapping the value with the appropriate MetadataValue type."
+        'Could not resolve the metadata value for "bad" to a known type. '
+        "Value is a dictionary but is not JSON serializable."
     )
 
 
 def test_table_metadata_value_schema_inference():
 
-    table_metadata_value = MetadataEntry.table(
-        records=[
-            TableRecord(name="foo", status=False),
-            TableRecord(name="bar", status=True),
-        ],
-        label="foo",
+    table_metadata_entry = MetadataEntry(
+        "foo",
+        value=MetadataValue.table(
+            records=[
+                TableRecord(name="foo", status=False),
+                TableRecord(name="bar", status=True),
+            ],
+        ),
     )
 
-    schema = table_metadata_value.entry_data.schema
+    schema = table_metadata_entry.entry_data.schema  # type: ignore
     assert isinstance(schema, TableSchema)
     assert schema.columns == [
         TableColumn(name="name", type="string"),

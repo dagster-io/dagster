@@ -35,7 +35,7 @@ interface OpIOBoxProps extends OpIORenderMetadata {
   onHighlightEdges: (edges: Edge[]) => void;
 }
 
-export const OpIOBox: React.FunctionComponent<OpIOBoxProps> = ({
+export const OpIOBox: React.FC<OpIOBoxProps> = ({
   minified,
   title,
   jumpTargetOp,

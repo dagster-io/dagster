@@ -38,6 +38,7 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_repositoryO
 export interface RepositorySchedulesFragment_schedules_scheduleState_typeSpecificData_SensorData {
   __typename: "SensorData";
   lastRunKey: string | null;
+  lastCursor: string | null;
 }
 
 export interface RepositorySchedulesFragment_schedules_scheduleState_typeSpecificData_ScheduleData {
@@ -75,6 +76,7 @@ export interface RepositorySchedulesFragment_schedules_scheduleState_ticks {
   timestamp: number;
   skipReason: string | null;
   runIds: string[];
+  runKeys: string[];
   error: RepositorySchedulesFragment_schedules_scheduleState_ticks_error | null;
 }
 

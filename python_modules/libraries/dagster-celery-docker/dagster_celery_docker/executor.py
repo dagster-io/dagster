@@ -256,9 +256,9 @@ def create_docker_task(celery_app, **task_kwargs):
             pipeline_run,
             EngineEventData(
                 [
-                    MetadataEntry.text(step_keys_str, "Step keys"),
-                    MetadataEntry.text(docker_image, "Image"),
-                    MetadataEntry.text(self.request.hostname, "Celery worker"),
+                    MetadataEntry("Step keys", value=step_keys_str),
+                    MetadataEntry("Image", value=docker_image),
+                    MetadataEntry("Celery worker", value=self.request.hostname),
                 ],
                 marker_end=DELEGATE_MARKER,
             ),
@@ -290,8 +290,8 @@ def create_docker_task(celery_app, **task_kwargs):
                 pipeline_run,
                 EngineEventData(
                     [
-                        MetadataEntry.text(docker_image, "Job image"),
-                        MetadataEntry.text(err.stderr, "Docker stderr"),
+                        MetadataEntry("Job image", value=docker_image),
+                        MetadataEntry("Docker stderr", value=err.stderr),
                     ],
                 ),
                 CeleryDockerExecutor,

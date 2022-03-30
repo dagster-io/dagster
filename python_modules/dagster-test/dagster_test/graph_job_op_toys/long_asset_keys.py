@@ -1,5 +1,5 @@
 # pylint: disable=redefined-outer-name
-from dagster import AssetIn, asset, build_assets_job
+from dagster import AssetGroup, AssetIn, asset
 
 namespace1 = ["s3", "superdomain_1", "subdomain_1", "subsubdomain_1"]
 
@@ -17,4 +17,4 @@ def asset2(asset1):
     assert asset1 is None
 
 
-long_asset_keys_job = build_assets_job("long_asset_keys_job", assets=[asset1, asset2])
+long_asset_keys_group = AssetGroup([asset1, asset2])

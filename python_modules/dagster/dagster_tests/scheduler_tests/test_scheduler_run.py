@@ -1798,7 +1798,7 @@ def test_grpc_server_down(instance):
             with _grpc_server_external_repo(port) as external_repo:
                 external_schedule = external_repo.get_external_schedule("simple_schedule")
                 instance.start_schedule(external_schedule)
-                workspace.get_location(location_origin)
+                workspace.get_location(location_origin.location_name)
 
             # Server is no longer running, ticks fail but indicate it will resume once it is reachable
             for _trial in range(3):

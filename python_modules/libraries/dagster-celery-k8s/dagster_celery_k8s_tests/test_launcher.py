@@ -374,7 +374,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
             container = kwargs["body"].spec.template.spec.containers[0]
 
             job_resources = container.resources
-            assert job_resources == expected_resources
+            assert job_resources.to_dict() == expected_resources
 
             labels = kwargs["body"].spec.template.metadata.labels
             assert labels["foo_label_key"] == "bar_label_value"

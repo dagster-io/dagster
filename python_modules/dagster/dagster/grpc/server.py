@@ -6,7 +6,6 @@ import sys
 import threading
 import time
 import uuid
-from collections import namedtuple
 from concurrent.futures import ThreadPoolExecutor
 from threading import Event as ThreadingEventType
 from time import sleep
@@ -17,7 +16,7 @@ from grpc_health.v1 import health, health_pb2, health_pb2_grpc
 
 from dagster import check, seven
 from dagster.core.code_pointer import CodePointer
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.errors import DagsterUserCodeUnreachableError
 from dagster.core.host_representation.external_data import external_repository_data_from_def
 from dagster.core.host_representation.origin import ExternalPipelineOrigin, ExternalRepositoryOrigin
@@ -738,12 +737,12 @@ def _get_current_image():
 
 
 @whitelist_for_serdes
-class GrpcServerStartedEvent(namedtuple("GrpcServerStartedEvent", "")):
+class GrpcServerStartedEvent(NamedTuple("_GrpcServerStartedEvent", [])):
     pass
 
 
 @whitelist_for_serdes
-class GrpcServerFailedToBindEvent(namedtuple("GrpcServerStartedEvent", "")):
+class GrpcServerFailedToBindEvent(NamedTuple("_GrpcServerFailedToBindEvent", [])):
     pass
 
 

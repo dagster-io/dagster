@@ -30,7 +30,7 @@ export const REPOSITORY_INFO_FRAGMENT = gql`
   }
 `;
 
-export const RepositoryOriginInformation: React.FunctionComponent<{
+export const RepositoryOriginInformation: React.FC<{
   origin: RepositoryOriginFragment;
 }> = ({origin}) => {
   return (

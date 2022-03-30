@@ -3,7 +3,7 @@ import tempfile
 import pandas as pd
 
 from dagster import execute_pipeline
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.test_utils import instance_for_test
 from dagster.utils import file_relative_path
 

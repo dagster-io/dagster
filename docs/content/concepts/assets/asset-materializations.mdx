@@ -5,6 +5,8 @@ description: Dagster provides functionality to record and track changes to exter
 
 # Asset Materializations
 
+[Software-defined assets](/concepts/assets/software-defined-assets) provide a declarative way to define what assets should exist and how to create them. But when it's not known what asset an op is going to materialize until the op runs, you can still create assets using <PyObject object="AssetMaterialization" /> events.
+
 "Asset" is Dagster's word for an entity, external to ops, that is mutated or created by an op. An asset might be a table in a database that an op appends to, an ML model in a model store that an op overwrites, or even a slack channel that an op writes messages to.
 
 Op outputs often correspond to assets. For example, an op might be responsible for recreating a table, and one of its outputs might be a dataframe containing the contents of that table.
@@ -330,3 +332,9 @@ src="/images/concepts/assets/asset-lineage.png"
 width={1607}
 height={1031}
 />
+
+## Software-defined assets vs. Asset Materializations
+
+When working with software-defined assets, the assets and their dependencies must be known at definition time. When you look at software-defined assets in Dagit, you can see exactly what assets are going to be materialized before any code runs.
+
+Asset Materializations, on the other hand, are logged at run time. When you run an op, you find out which assets were materialized while the op is running. This allows for some flexibility, like if you wanted to determine which assets should be materialized based on the output of a previous op.

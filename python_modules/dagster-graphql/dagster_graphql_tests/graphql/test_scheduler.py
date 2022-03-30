@@ -1,6 +1,7 @@
 import os
 
 import pendulum
+import pytest
 from dagster_graphql.test.utils import (
     execute_dagster_graphql,
     infer_repository_selector,
@@ -9,7 +10,7 @@ from dagster_graphql.test.utils import (
     main_repo_name,
 )
 
-from dagster.core.definitions.reconstructable import ReconstructableRepository
+from dagster.core.definitions.reconstruct import ReconstructableRepository
 from dagster.core.host_representation import (
     ExternalRepositoryOrigin,
     InProcessRepositoryLocationOrigin,
@@ -22,6 +23,8 @@ from dagster.core.scheduler.instigation import (
 )
 from dagster.seven.compat.pendulum import create_pendulum_time
 from dagster.utils import Counter, traced_counter
+
+from .graphql_context_test_suite import ReadonlyGraphQLContextTestMatrix
 
 GET_SCHEDULES_QUERY = """
 query SchedulesQuery($repositorySelector: RepositorySelector!) {
@@ -133,6 +136,7 @@ mutation(
   startSchedule(
     scheduleSelector: $scheduleSelector,
   ) {
+    __typename
     ... on PythonError {
       message
       className
@@ -205,6 +209,10 @@ query RepositorySchedulesQuery($repositorySelector: RepositorySelector!) {
                     runs(limit: 1) {
                       id
                       runId
+                    }
+                    ticks(limit: 1) {
+                      id
+                      timestamp
                     }
                 }
             }
@@ -508,6 +516,10 @@ def test_future_ticks_until(graphql_context):
 
 
 def test_repository_batching(graphql_context):
+    instance = graphql_context.instance
+    if not instance.supports_batch_tick_queries or not instance.supports_bucket_queries:
+        pytest.skip("storage cannot batch fetch")
+
     traced_counter.set(Counter())
     selector = infer_repository_selector(graphql_context)
     result = execute_dagster_graphql(
@@ -521,7 +533,7 @@ def test_repository_batching(graphql_context):
     counter = traced_counter.get()
     counts = counter.counts()
     assert counts
-    assert len(counts) == 2
+    assert len(counts) == 3
 
     # We should have a single batch call to fetch run records (to fetch schedule runs) and a single
     # batch call to fetch instigator state, instead of separate calls for each schedule (~18
@@ -530,6 +542,7 @@ def test_repository_batching(graphql_context):
     # 2) `all_instigator_state` is fetched to instantiate GrapheneSchedule
     assert counts.get("DagsterInstance.get_run_records") == 1
     assert counts.get("DagsterInstance.all_instigator_state") == 1
+    assert counts.get("DagsterInstance.get_batch_ticks") == 1
 
 
 def test_start_schedule_with_default_status(graphql_context):
@@ -578,3 +591,24 @@ def test_start_schedule_with_default_status(graphql_context):
         start_result.data["startSchedule"]["scheduleState"]["status"]
         == InstigatorStatus.RUNNING.value
     )
+
+
+class TestSchedulePermissions(ReadonlyGraphQLContextTestMatrix):
+    def test_start_schedule_failure(self, graphql_context):
+        assert graphql_context.read_only == True
+
+        schedule_selector = infer_schedule_selector(
+            graphql_context, "no_config_pipeline_hourly_schedule"
+        )
+
+        # Start a single schedule
+        result = execute_dagster_graphql(
+            graphql_context,
+            START_SCHEDULES_QUERY,
+            variables={"scheduleSelector": schedule_selector},
+        )
+
+        assert not result.errors
+        assert result.data
+
+        assert result.data["startSchedule"]["__typename"] == "UnauthorizedError"

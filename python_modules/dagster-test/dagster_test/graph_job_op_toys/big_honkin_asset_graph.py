@@ -1,7 +1,7 @@
 import random
 from typing import Sequence
 
-from dagster import AssetKey, asset, build_assets_job
+from dagster import AssetGroup, AssetKey, asset
 
 N_ASSETS = 1000
 
@@ -24,4 +24,4 @@ def generate_big_honkin_assets() -> Sequence:
     return assets
 
 
-big_honkin_assets_job = build_assets_job("big_honkin_assets_job", generate_big_honkin_assets())
+big_honkin_asset_group = AssetGroup(generate_big_honkin_assets())

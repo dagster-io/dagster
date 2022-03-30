@@ -4,7 +4,7 @@ Not every property on these should be exposed to random Jane or Joe dagster user
 so we have a different layer of objects that encode the explicit public API
 in the user_context module
 """
-from abc import ABC, abstractproperty
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import (
     TYPE_CHECKING,
@@ -29,7 +29,7 @@ from dagster.core.definitions.partition_key_range import PartitionKeyRange
 from dagster.core.definitions.pipeline_base import IPipeline
 from dagster.core.definitions.pipeline_definition import PipelineDefinition
 from dagster.core.definitions.policy import RetryPolicy
-from dagster.core.definitions.reconstructable import ReconstructablePipeline
+from dagster.core.definitions.reconstruct import ReconstructablePipeline
 from dagster.core.definitions.resource_definition import ScopedResourcesBuilder
 from dagster.core.definitions.solid_definition import SolidDefinition
 from dagster.core.definitions.step_launcher import StepLauncher
@@ -67,7 +67,8 @@ class IPlanContext(ABC):
     The information available via this interface is accessible to the system throughout a run.
     """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def plan_data(self) -> "PlanData":
         raise NotImplementedError()
 
@@ -111,7 +112,8 @@ class IPlanContext(ABC):
     def execution_plan(self):
         return self.plan_data.execution_plan
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def output_capture(self) -> Optional[Dict[StepOutputHandle, Any]]:
         raise NotImplementedError()
 
@@ -163,11 +165,13 @@ class ExecutionData(NamedTuple):
 class IStepContext(IPlanContext):
     """Interface to represent data to be available during either step orchestration or execution."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def step(self) -> ExecutionStep:
         raise NotImplementedError()
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def solid_handle(self) -> "NodeHandle":
         raise NotImplementedError()
 
@@ -619,7 +623,7 @@ class StepExecutionContext(PlanExecutionContext, IStepContext):
 
     def _should_load_from_previous_runs(self, step_output_handle: StepOutputHandle) -> bool:
         return (  # this is re-execution
-            self.pipeline_run.parent_run_id
+            self.pipeline_run.parent_run_id is not None
             # we are not re-executing the entire pipeline
             and self.pipeline_run.step_keys_to_execute is not None
             # this step is not being executed

@@ -250,7 +250,7 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_tick(self.build_schedule_tick(current_time))
 
-        updated_tick = tick.with_status(TickStatus.SUCCESS).with_run(run_id="1234")
+        updated_tick = tick.with_status(TickStatus.SUCCESS).with_run_info(run_id="1234")
         assert updated_tick.status == TickStatus.SUCCESS
 
         storage.update_tick(updated_tick)
@@ -451,15 +451,17 @@ class TestScheduleStorage:
         with pytest.raises(Exception):
             storage.add_instigator_state(state)
 
-    def build_sensor_tick(self, current_time, status=TickStatus.STARTED, run_id=None, error=None):
+    def build_sensor_tick(
+        self, current_time, status=TickStatus.STARTED, run_id=None, error=None, name="my_sensor"
+    ):
         return TickData(
-            "my_sensor",
-            "my_sensor",
+            name,
+            name,
             InstigatorType.SENSOR,
             status,
             current_time,
             [run_id] if run_id else [],
-            error,
+            error=error,
         )
 
     def test_create_sensor_tick(self, storage):
@@ -505,7 +507,7 @@ class TestScheduleStorage:
         current_time = time.time()
         tick = storage.create_tick(self.build_sensor_tick(current_time))
 
-        updated_tick = tick.with_status(TickStatus.SUCCESS).with_run(run_id="1234")
+        updated_tick = tick.with_status(TickStatus.SUCCESS).with_run_info(run_id="1234")
         assert updated_tick.status == TickStatus.SUCCESS
 
         storage.update_tick(updated_tick)
@@ -587,3 +589,59 @@ class TestScheduleStorage:
 
         ticks = storage.get_ticks("my_sensor")
         assert len(ticks) == 2
+
+    def test_ticks_filtered(self, storage):
+        storage.create_tick(self.build_sensor_tick(time.time(), status=TickStatus.STARTED))
+        storage.create_tick(self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS))
+        storage.create_tick(self.build_sensor_tick(time.time(), status=TickStatus.SKIPPED))
+        storage.create_tick(
+            self.build_sensor_tick(
+                time.time(),
+                status=TickStatus.FAILURE,
+                error=SerializableErrorInfo(message="foobar", stack=[], cls_name=None, cause=None),
+            )
+        )
+
+        ticks = storage.get_ticks("my_sensor")
+        assert len(ticks) == 4
+
+        started = storage.get_ticks("my_sensor", statuses=[TickStatus.STARTED])
+        assert len(started) == 1
+
+        successes = storage.get_ticks("my_sensor", statuses=[TickStatus.SUCCESS])
+        assert len(successes) == 1
+
+        skips = storage.get_ticks("my_sensor", statuses=[TickStatus.SKIPPED])
+        assert len(skips) == 1
+
+        failures = storage.get_ticks("my_sensor", statuses=[TickStatus.FAILURE])
+        assert len(failures) == 1
+
+        # everything but skips
+        non_skips = storage.get_ticks(
+            "my_sensor", statuses=[TickStatus.STARTED, TickStatus.SUCCESS, TickStatus.FAILURE]
+        )
+        assert len(non_skips) == 3
+
+    def test_ticks_batched(self, storage):
+        if not storage.supports_batch_queries:
+            pytest.skip("storage cannot batch")
+
+        _a = storage.create_tick(
+            self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS, name="sensor_one")
+        )
+        b = storage.create_tick(
+            self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS, name="sensor_one")
+        )
+        _c = storage.create_tick(
+            self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS, name="sensor_two")
+        )
+        d = storage.create_tick(
+            self.build_sensor_tick(time.time(), status=TickStatus.SUCCESS, name="sensor_two")
+        )
+
+        ticks_by_origin = storage.get_batch_ticks(["sensor_one", "sensor_two"], limit=1)
+        assert set(ticks_by_origin.keys()) == {"sensor_one", "sensor_two"}
+        assert len(ticks_by_origin["sensor_one"]) == 1
+        assert ticks_by_origin["sensor_one"][0].tick_id == b.tick_id
+        assert ticks_by_origin["sensor_two"][0].tick_id == d.tick_id

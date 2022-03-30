@@ -4,7 +4,13 @@ from typing import Dict, List, Optional, cast
 import pendulum
 
 from dagster import check
-from dagster.core.events import DagsterEvent, EngineEventData, MetadataEntry, log_step_event
+from dagster.core.events import (
+    DagsterEvent,
+    DagsterEventType,
+    EngineEventData,
+    MetadataEntry,
+    log_step_event,
+)
 from dagster.core.execution.context.system import PlanOrchestrationContext
 from dagster.core.execution.plan.plan import ExecutionPlan
 from dagster.core.execution.plan.step import ExecutionStep
@@ -42,9 +48,11 @@ class StepDelegatingExecutor(Executor):
         return self._retries
 
     def _pop_events(self, instance, run_id) -> List[DagsterEvent]:
-        events = instance.logs_after(run_id, self._event_cursor)
+        events = instance.logs_after(run_id, self._event_cursor, of_type=set(DagsterEventType))
         self._event_cursor += len(events)
-        return [event.dagster_event for event in events if event.is_dagster_event]
+        dagster_events = [event.dagster_event for event in events]
+        check.invariant(None not in dagster_events, "Query should not return a non dagster event")
+        return dagster_events
 
     def _get_step_handler_context(
         self, plan_context, steps, active_execution
@@ -163,7 +171,9 @@ class StepDelegatingExecutor(Executor):
                             "run will be resumed",
                             EngineEventData(
                                 metadata_entries=[
-                                    MetadataEntry.text(str(running_steps.keys()), "steps_in_flight")
+                                    MetadataEntry(
+                                        "steps_in_flight", value=str(running_steps.keys())
+                                    )
                                 ]
                             ),
                         )

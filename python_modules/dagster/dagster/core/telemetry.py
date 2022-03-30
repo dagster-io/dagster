@@ -6,7 +6,7 @@ To see the logs we send, inspect $DAGSTER_HOME/logs/ if $DAGSTER_HOME is set or 
 See class TelemetryEntry for logged fields.
 
 For local development:
-  Spin up local telemetry server and set DAGSTER_TELEMETRY_URL = 'http://localhost:3000/actions'
+  Spin up local telemetry server and set the environment variable DAGSTER_TELEMETRY_URL = 'http://localhost:3000/actions'
   To test RotatingFileHandler, can set MAX_BYTES = 500
 """
 
@@ -27,7 +27,7 @@ import yaml
 
 from dagster import check
 from dagster.core.definitions.pipeline_base import IPipeline
-from dagster.core.definitions.reconstructable import (
+from dagster.core.definitions.reconstruct import (
     ReconstructablePipeline,
     ReconstructableRepository,
     get_ephemeral_repository_name,
@@ -48,7 +48,6 @@ DAEMON_ALIVE = "daemon_alive"
 SCHEDULED_RUN_CREATED = "scheduled_run_created"
 SENSOR_RUN_CREATED = "sensor_run_created"
 BACKFILL_RUN_CREATED = "backfill_run_created"
-TELEMETRY_VERSION = "0.2"
 OS_DESC = platform.platform()
 OS_PLATFORM = platform.system()
 
@@ -139,7 +138,6 @@ class TelemetryEntry(
             ("instance_id", str),
             ("metadata", Dict[str, str]),
             ("python_version", str),
-            ("version", str),
             ("dagster_version", str),
             ("os_desc", str),
             ("os_platform", str),
@@ -197,7 +195,6 @@ class TelemetryEntry(
             instance_id=instance_id,
             python_version=get_python_version(),
             metadata=metadata,
-            version=TELEMETRY_VERSION,
             dagster_version=dagster_module_version,
             os_desc=OS_DESC,
             os_platform=OS_PLATFORM,

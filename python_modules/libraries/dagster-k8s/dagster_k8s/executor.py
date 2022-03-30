@@ -56,6 +56,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
             service_account_name: ...
             env_config_maps: ...
             env_secrets: ...
+            env_vars: ...
             job_image: ... # leave out if using userDeployments
 
     Configuration set on the Kubernetes Jobs and Pods created by the `K8sRunLauncher` will also be
@@ -89,6 +90,7 @@ def k8s_job_executor(init_context: InitExecutorContext) -> Executor:
         ),
         env_config_maps=run_launcher.env_config_maps + (exc_cfg.get("env_config_maps") or []),
         env_secrets=run_launcher.env_secrets + (exc_cfg.get("env_secrets") or []),
+        env_vars=run_launcher.env_vars + (exc_cfg.get("env_vars") or []),
         volume_mounts=run_launcher.volume_mounts + (exc_cfg.get("volume_mounts") or []),
         volumes=run_launcher.volumes + (exc_cfg.get("volumes") or []),
         labels=merge_dicts(run_launcher.labels, exc_cfg.get("labels", {})),
@@ -154,9 +156,9 @@ class K8sStepHandler(StepHandler):
         if step_handler_context.execute_step_args.known_state:
             retry_state = step_handler_context.execute_step_args.known_state.get_retry_state()
             if retry_state.get_attempt_count(step_key):
-                return "dagster-job-%s-%d" % (name_key, retry_state.get_attempt_count(step_key))
+                return "dagster-step-%s-%d" % (name_key, retry_state.get_attempt_count(step_key))
 
-        return "dagster-job-%s" % (name_key)
+        return "dagster-step-%s" % (name_key)
 
     def launch_step(self, step_handler_context: StepHandlerContext):
         events = []
@@ -194,6 +196,7 @@ class K8sStepHandler(StepHandler):
             labels={
                 "dagster/job": step_handler_context.execute_step_args.pipeline_origin.pipeline_name,
                 "dagster/op": step_key,
+                "dagster/run-id": step_handler_context.execute_step_args.pipeline_run_id,
             },
         )
 
@@ -205,8 +208,8 @@ class K8sStepHandler(StepHandler):
                 message=f"Executing step {step_key} in Kubernetes job {job_name}",
                 event_specific_data=EngineEventData(
                     [
-                        MetadataEntry.text(step_key, "Step key"),
-                        MetadataEntry.text(job_name, "Kubernetes Job name"),
+                        MetadataEntry("Step key", value=step_key),
+                        MetadataEntry("Kubernetes Job name", value=job_name),
                     ],
                 ),
             )

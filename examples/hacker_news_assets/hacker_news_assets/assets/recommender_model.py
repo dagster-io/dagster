@@ -13,13 +13,13 @@ def recommender_model(user_story_matrix: IndexedCooMatrix):
     """
     An SVD model for collaborative filtering-based recommendation.
     """
-    n_components = random.randint(90, 110)
+    n_components = min(random.randint(90, 110), len(user_story_matrix.col_index) - 1)
     svd = TruncatedSVD(n_components=n_components)
     svd.fit(user_story_matrix.matrix)
 
     total_explained_variance = svd.explained_variance_ratio_.sum()
 
-    yield Output(
+    return Output(
         svd,
         metadata={
             "Total explained variance ratio": total_explained_variance,
@@ -60,7 +60,7 @@ def component_top_stories(
         {"component_index": Series(components_column), "title": Series(titles_column)}
     )
 
-    yield Output(
+    return Output(
         component_top_stories,
         metadata={
             "Top component top stories": MetadataValue.md(
@@ -80,7 +80,7 @@ def top_components_to_markdown(component_top_stories: DataFrame) -> str:
         component_markdowns.append(
             "\n".join(
                 [f"Component {i}"]
-                + ["- " + row["title"] for _, row in component_i_top_5_stories.iterrows()]
+                + ["- " + str(row["title"]) for _, row in component_i_top_5_stories.iterrows()]
             )
         )
 

@@ -2,27 +2,23 @@
 
 import os
 import sys
-from typing import List, Optional
+from typing import Generator, List, Optional
 
 import pendulum
 
 from dagster import check
 from dagster.core.definitions import ScheduleEvaluationContext
-from dagster.core.definitions.reconstructable import (
-    ReconstructablePipeline,
-    ReconstructableRepository,
-)
+from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster.core.definitions.sensor_definition import SensorEvaluationContext
 from dagster.core.errors import (
     DagsterExecutionInterruptedError,
-    DagsterInvalidSubsetError,
     DagsterRunNotFoundError,
     PartitionExecutionError,
     ScheduleExecutionError,
     SensorExecutionError,
     user_code_error_boundary,
 )
-from dagster.core.events import EngineEventData
+from dagster.core.events import DagsterEvent, EngineEventData
 from dagster.core.execution.api import create_execution_plan, execute_run_iterator
 from dagster.core.host_representation import external_pipeline_data_from_def
 from dagster.core.host_representation.external_data import (
@@ -43,7 +39,7 @@ from dagster.core.snap.execution_plan_snapshot import (
 )
 from dagster.core.storage.pipeline_run import PipelineRun
 from dagster.grpc.types import ExecutionPlanSnapshotArgs
-from dagster.serdes import deserialize_json_to_dagster_namedtuple
+from dagster.serdes import deserialize_as
 from dagster.serdes.ipc import IPCErrorMessage
 from dagster.seven import nullcontext
 from dagster.utils import start_termination_thread
@@ -61,14 +57,21 @@ class StartRunInSubprocessSuccessful:
     """Sentinel passed over multiprocessing Queue when launch is successful in subprocess."""
 
 
-def _report_run_failed_if_not_finished(instance, pipeline_run_id):
+def _report_run_failed_if_not_finished(
+    instance: DagsterInstance, pipeline_run_id: str
+) -> Generator[DagsterEvent, None, None]:
     check.inst_param(instance, "instance", DagsterInstance)
     pipeline_run = instance.get_run_by_id(pipeline_run_id)
     if pipeline_run and (not pipeline_run.is_finished):
         yield instance.report_run_failed(pipeline_run)
 
 
-def core_execute_run(recon_pipeline, pipeline_run, instance, resume_from_failure=False):
+def core_execute_run(
+    recon_pipeline: ReconstructablePipeline,
+    pipeline_run: PipelineRun,
+    instance: DagsterInstance,
+    resume_from_failure: bool = False,
+) -> Generator[DagsterEvent, None, None]:
     check.inst_param(recon_pipeline, "recon_pipeline", ReconstructablePipeline)
     check.inst_param(pipeline_run, "pipeline_run", PipelineRun)
     check.inst_param(instance, "instance", DagsterInstance)
@@ -116,14 +119,14 @@ def _run_in_subprocess(
 
     start_termination_thread(termination_event)
     try:
-        execute_run_args = deserialize_json_to_dagster_namedtuple(serialized_execute_run_args)
-        check.inst_param(execute_run_args, "execute_run_args", ExecuteExternalPipelineArgs)
+        execute_run_args = deserialize_as(serialized_execute_run_args, ExecuteExternalPipelineArgs)
 
         with (
             DagsterInstance.from_ref(execute_run_args.instance_ref)
             if execute_run_args.instance_ref
             else nullcontext()
         ) as instance:
+            instance = check.not_none(instance)
             pipeline_run = instance.get_run_by_id(execute_run_args.pipeline_run_id)
 
             if not pipeline_run:
@@ -205,7 +208,7 @@ def get_external_pipeline_subset_result(
         try:
             sub_pipeline = recon_pipeline.subset_for_execution(solid_selection)
             definition = sub_pipeline.get_definition()
-        except DagsterInvalidSubsetError:
+        except Exception:
             return ExternalPipelineSubsetResult(
                 success=False, error=serializable_error_info_from_exc_info(sys.exc_info())
             )
@@ -247,7 +250,7 @@ def get_external_schedule_execution(
                 "{schedule_name}".format(schedule_name=schedule_def.name),
             ):
                 return schedule_def.evaluate_tick(schedule_context)
-        except ScheduleExecutionError:
+        except Exception:
             return ExternalScheduleExecutionErrorData(
                 serializable_error_info_from_exc_info(sys.exc_info())
             )
@@ -279,7 +282,7 @@ def get_external_sensor_execution(
                 "{sensor_name}".format(sensor_name=sensor_def.name),
             ):
                 return sensor_def.evaluate_tick(sensor_context)
-        except SensorExecutionError:
+        except Exception:
             return ExternalSensorExecutionErrorData(
                 serializable_error_info_from_exc_info(sys.exc_info())
             )
@@ -299,7 +302,7 @@ def get_partition_config(recon_repo, partition_set_name, partition_name):
         ):
             run_config = partition_set_def.run_config_for_partition(partition)
             return ExternalPartitionConfigData(name=partition.name, run_config=run_config)
-    except PartitionExecutionError:
+    except Exception:
         return ExternalPartitionExecutionErrorData(
             serializable_error_info_from_exc_info(sys.exc_info())
         )
@@ -324,7 +327,7 @@ def get_partition_names(recon_repo, partition_set_name):
             return ExternalPartitionNamesData(
                 partition_names=partition_set_def.get_partition_names()
             )
-    except PartitionExecutionError:
+    except Exception:
         return ExternalPartitionExecutionErrorData(
             serializable_error_info_from_exc_info(sys.exc_info())
         )
@@ -342,7 +345,7 @@ def get_partition_tags(recon_repo, partition_set_name, partition_name):
         ):
             tags = partition_set_def.tags_for_partition(partition)
             return ExternalPartitionTagsData(name=partition.name, tags=tags)
-    except PartitionExecutionError:
+    except Exception:
         return ExternalPartitionExecutionErrorData(
             serializable_error_info_from_exc_info(sys.exc_info())
         )
@@ -415,7 +418,7 @@ def get_partition_set_execution_param_data(recon_repo, partition_set_name, parti
 
         return ExternalPartitionSetExecutionParamData(partition_data=partition_data)
 
-    except PartitionExecutionError:
+    except Exception:
         return ExternalPartitionExecutionErrorData(
             serializable_error_info_from_exc_info(sys.exc_info())
         )

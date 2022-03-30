@@ -1,4 +1,3 @@
-from collections import namedtuple
 from typing import Dict, List, NamedTuple, Optional
 
 from dagster import check
@@ -19,22 +18,30 @@ from dagster.utils.error import SerializableErrorInfo
 
 @whitelist_for_serdes
 class ExecutionPlanSnapshotArgs(
-    namedtuple(
+    NamedTuple(
         "_ExecutionPlanSnapshotArgs",
-        "pipeline_origin solid_selection run_config mode step_keys_to_execute pipeline_snapshot_id "
-        "known_state instance_ref",
+        [
+            ("pipeline_origin", ExternalPipelineOrigin),
+            ("solid_selection", List[str]),
+            ("run_config", Dict[str, object]),
+            ("mode", str),
+            ("step_keys_to_execute", Optional[List[str]]),
+            ("pipeline_snapshot_id", str),
+            ("known_state", Optional[KnownExecutionState]),
+            ("instance_ref", Optional[InstanceRef]),
+        ],
     )
 ):
     def __new__(
         cls,
-        pipeline_origin,
-        solid_selection,
-        run_config,
-        mode,
-        step_keys_to_execute,
-        pipeline_snapshot_id,
-        known_state=None,
-        instance_ref=None,
+        pipeline_origin: ExternalPipelineOrigin,
+        solid_selection: List[str],
+        run_config: Dict[str, object],
+        mode: str,
+        step_keys_to_execute: Optional[List[str]],
+        pipeline_snapshot_id: str,
+        known_state: Optional[KnownExecutionState] = None,
+        instance_ref: Optional[InstanceRef] = None,
     ):
         return super(ExecutionPlanSnapshotArgs, cls).__new__(
             cls,
@@ -42,7 +49,7 @@ class ExecutionPlanSnapshotArgs(
                 pipeline_origin, "pipeline_origin", ExternalPipelineOrigin
             ),
             solid_selection=check.opt_list_param(solid_selection, "solid_selection", of_type=str),
-            run_config=check.dict_param(run_config, "run_config"),
+            run_config=check.dict_param(run_config, "run_config", key_type=str),
             mode=check.str_param(mode, "mode"),
             step_keys_to_execute=check.opt_nullable_list_param(
                 step_keys_to_execute, "step_keys_to_execute", of_type=str
@@ -151,9 +158,21 @@ class ResumeRunArgs(
 
 @whitelist_for_serdes
 class ExecuteExternalPipelineArgs(
-    namedtuple("_ExecuteExternalPipelineArgs", "pipeline_origin pipeline_run_id instance_ref")
+    NamedTuple(
+        "_ExecuteExternalPipelineArgs",
+        [
+            ("pipeline_origin", ExternalPipelineOrigin),
+            ("pipeline_run_id", str),
+            ("instance_ref", Optional[InstanceRef]),
+        ],
+    )
 ):
-    def __new__(cls, pipeline_origin, pipeline_run_id, instance_ref):
+    def __new__(
+        cls,
+        pipeline_origin: ExternalPipelineOrigin,
+        pipeline_run_id: str,
+        instance_ref: Optional[InstanceRef],
+    ):
         return super(ExecuteExternalPipelineArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
@@ -168,21 +187,28 @@ class ExecuteExternalPipelineArgs(
 
 @whitelist_for_serdes
 class ExecuteStepArgs(
-    namedtuple(
+    NamedTuple(
         "_ExecuteStepArgs",
-        "pipeline_origin pipeline_run_id step_keys_to_execute instance_ref "
-        "retry_mode known_state should_verify_step",
+        [
+            ("pipeline_origin", PipelinePythonOrigin),
+            ("pipeline_run_id", str),
+            ("step_keys_to_execute", Optional[List[str]]),
+            ("instance_ref", Optional[InstanceRef]),
+            ("retry_mode", Optional[RetryMode]),
+            ("known_state", Optional[KnownExecutionState]),
+            ("should_verify_step", Optional[bool]),
+        ],
     )
 ):
     def __new__(
         cls,
-        pipeline_origin,
-        pipeline_run_id,
-        step_keys_to_execute,
-        instance_ref=None,
-        retry_mode=None,
-        known_state=None,
-        should_verify_step=None,
+        pipeline_origin: PipelinePythonOrigin,
+        pipeline_run_id: str,
+        step_keys_to_execute: Optional[List[str]],
+        instance_ref: Optional[InstanceRef] = None,
+        retry_mode: Optional[RetryMode] = None,
+        known_state: Optional[KnownExecutionState] = None,
+        should_verify_step: Optional[bool] = None,
     ):
         return super(ExecuteStepArgs, cls).__new__(
             cls,
@@ -211,9 +237,9 @@ class ExecuteStepArgs(
 
 @whitelist_for_serdes
 class LoadableRepositorySymbol(
-    namedtuple("_LoadableRepositorySymbol", "repository_name attribute")
+    NamedTuple("_LoadableRepositorySymbol", [("repository_name", str), ("attribute", str)])
 ):
-    def __new__(cls, repository_name, attribute):
+    def __new__(cls, repository_name: str, attribute: str):
         return super(LoadableRepositorySymbol, cls).__new__(
             cls,
             repository_name=check.str_param(repository_name, "repository_name"),
@@ -262,9 +288,23 @@ class ListRepositoriesResponse(
 
 @whitelist_for_serdes
 class ListRepositoriesInput(
-    namedtuple("_ListRepositoriesInput", "module_name python_file working_directory attribute")
+    NamedTuple(
+        "_ListRepositoriesInput",
+        [
+            ("module_name", Optional[str]),
+            ("python_file", Optional[str]),
+            ("working_directory", Optional[str]),
+            ("attribute", Optional[str]),
+        ],
+    )
 ):
-    def __new__(cls, module_name, python_file, working_directory, attribute):
+    def __new__(
+        cls,
+        module_name: Optional[str],
+        python_file: Optional[str],
+        working_directory: Optional[str],
+        attribute: Optional[str],
+    ):
         check.invariant(not (module_name and python_file), "Must set only one")
         check.invariant(module_name or python_file, "Must set at least one")
         return super(ListRepositoriesInput, cls).__new__(
@@ -278,9 +318,21 @@ class ListRepositoriesInput(
 
 @whitelist_for_serdes
 class PartitionArgs(
-    namedtuple("_PartitionArgs", "repository_origin partition_set_name partition_name")
+    NamedTuple(
+        "_PartitionArgs",
+        [
+            ("repository_origin", ExternalRepositoryOrigin),
+            ("partition_set_name", str),
+            ("partition_name", str),
+        ],
+    )
 ):
-    def __new__(cls, repository_origin, partition_set_name, partition_name):
+    def __new__(
+        cls,
+        repository_origin: ExternalRepositoryOrigin,
+        partition_set_name: str,
+        partition_name: str,
+    ):
         return super(PartitionArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
@@ -294,8 +346,13 @@ class PartitionArgs(
 
 
 @whitelist_for_serdes
-class PartitionNamesArgs(namedtuple("_PartitionNamesArgs", "repository_origin partition_set_name")):
-    def __new__(cls, repository_origin, partition_set_name):
+class PartitionNamesArgs(
+    NamedTuple(
+        "_PartitionNamesArgs",
+        [("repository_origin", ExternalRepositoryOrigin), ("partition_set_name", str)],
+    )
+):
+    def __new__(cls, repository_origin: ExternalRepositoryOrigin, partition_set_name: str):
         return super(PartitionNamesArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
@@ -307,12 +364,21 @@ class PartitionNamesArgs(namedtuple("_PartitionNamesArgs", "repository_origin pa
 
 @whitelist_for_serdes
 class PartitionSetExecutionParamArgs(
-    namedtuple(
+    NamedTuple(
         "_PartitionSetExecutionParamArgs",
-        "repository_origin partition_set_name partition_names",
+        [
+            ("repository_origin", ExternalRepositoryOrigin),
+            ("partition_set_name", str),
+            ("partition_names", List[str]),
+        ],
     )
 ):
-    def __new__(cls, repository_origin, partition_set_name, partition_names):
+    def __new__(
+        cls,
+        repository_origin: ExternalRepositoryOrigin,
+        partition_set_name: str,
+        partition_names: List[str],
+    ):
         return super(PartitionSetExecutionParamArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
@@ -325,9 +391,12 @@ class PartitionSetExecutionParamArgs(
 
 @whitelist_for_serdes
 class PipelineSubsetSnapshotArgs(
-    namedtuple("_PipelineSubsetSnapshotArgs", "pipeline_origin solid_selection")
+    NamedTuple(
+        "_PipelineSubsetSnapshotArgs",
+        [("pipeline_origin", ExternalPipelineOrigin), ("solid_selection", Optional[List[str]])],
+    )
 ):
-    def __new__(cls, pipeline_origin, solid_selection):
+    def __new__(cls, pipeline_origin: ExternalPipelineOrigin, solid_selection: List[str]):
         return super(PipelineSubsetSnapshotArgs, cls).__new__(
             cls,
             pipeline_origin=check.inst_param(
@@ -340,8 +409,13 @@ class PipelineSubsetSnapshotArgs(
 
 
 @whitelist_for_serdes
-class NotebookPathArgs(namedtuple("_NotebookPathArgs", "repository_location_origin notebook_path")):
-    def __new__(cls, repository_location_origin, notebook_path):
+class NotebookPathArgs(
+    NamedTuple(
+        "_NotebookPathArgs",
+        [("repository_location_origin", RepositoryLocationOrigin), ("notebook_path", str)],
+    )
+):
+    def __new__(cls, repository_location_origin: RepositoryLocationOrigin, notebook_path: str):
         return super(NotebookPathArgs, cls).__new__(
             cls,
             repository_location_origin=check.inst_param(
@@ -353,19 +427,24 @@ class NotebookPathArgs(namedtuple("_NotebookPathArgs", "repository_location_orig
 
 @whitelist_for_serdes
 class ExternalScheduleExecutionArgs(
-    namedtuple(
+    NamedTuple(
         "_ExternalScheduleExecutionArgs",
-        "repository_origin instance_ref schedule_name "
-        "scheduled_execution_timestamp scheduled_execution_timezone",
+        [
+            ("repository_origin", ExternalRepositoryOrigin),
+            ("instance_ref", Optional[InstanceRef]),
+            ("schedule_name", str),
+            ("scheduled_execution_timestamp", Optional[float]),
+            ("scheduled_execution_timezone", Optional[str]),
+        ],
     )
 ):
     def __new__(
         cls,
-        repository_origin,
-        instance_ref,
-        schedule_name,
-        scheduled_execution_timestamp=None,
-        scheduled_execution_timezone=None,
+        repository_origin: ExternalRepositoryOrigin,
+        instance_ref: Optional[InstanceRef],
+        schedule_name: str,
+        scheduled_execution_timestamp: Optional[float] = None,
+        scheduled_execution_timezone: Optional[str] = None,
     ):
         return super(ExternalScheduleExecutionArgs, cls).__new__(
             cls,
@@ -386,19 +465,26 @@ class ExternalScheduleExecutionArgs(
 
 @whitelist_for_serdes
 class SensorExecutionArgs(
-    namedtuple(
+    NamedTuple(
         "_SensorExecutionArgs",
-        "repository_origin instance_ref sensor_name last_completion_time last_run_key cursor",
+        [
+            ("repository_origin", ExternalRepositoryOrigin),
+            ("instance_ref", Optional[InstanceRef]),
+            ("sensor_name", str),
+            ("last_completion_time", Optional[float]),
+            ("last_run_key", Optional[str]),
+            ("cursor", Optional[str]),
+        ],
     )
 ):
     def __new__(
         cls,
-        repository_origin,
-        instance_ref,
-        sensor_name,
-        last_completion_time,
-        last_run_key,
-        cursor,
+        repository_origin: ExternalRepositoryOrigin,
+        instance_ref: Optional[InstanceRef],
+        sensor_name: str,
+        last_completion_time: Optional[float],
+        last_run_key: Optional[str],
+        cursor: Optional[str],
     ):
         return super(SensorExecutionArgs, cls).__new__(
             cls,
@@ -417,12 +503,18 @@ class SensorExecutionArgs(
 
 @whitelist_for_serdes
 class ExternalJobArgs(
-    namedtuple(
+    NamedTuple(
         "_ExternalJobArgs",
-        "repository_origin instance_ref name",
+        [
+            ("repository_origin", ExternalRepositoryOrigin),
+            ("instance_ref", InstanceRef),
+            ("name", str),
+        ],
     )
 ):
-    def __new__(cls, repository_origin, instance_ref, name):
+    def __new__(
+        cls, repository_origin: ExternalRepositoryOrigin, instance_ref: InstanceRef, name: str
+    ):
         return super(ExternalJobArgs, cls).__new__(
             cls,
             repository_origin=check.inst_param(
@@ -434,8 +526,13 @@ class ExternalJobArgs(
 
 
 @whitelist_for_serdes
-class ShutdownServerResult(namedtuple("_ShutdownServerResult", "success serializable_error_info")):
-    def __new__(cls, success, serializable_error_info):
+class ShutdownServerResult(
+    NamedTuple(
+        "_ShutdownServerResult",
+        [("success", bool), ("serializable_error_info", Optional[SerializableErrorInfo])],
+    )
+):
+    def __new__(cls, success: bool, serializable_error_info: Optional[SerializableErrorInfo]):
         return super(ShutdownServerResult, cls).__new__(
             cls,
             success=check.bool_param(success, "success"),
@@ -446,8 +543,8 @@ class ShutdownServerResult(namedtuple("_ShutdownServerResult", "success serializ
 
 
 @whitelist_for_serdes
-class CancelExecutionRequest(namedtuple("_CancelExecutionRequest", "run_id")):
-    def __new__(cls, run_id):
+class CancelExecutionRequest(NamedTuple("_CancelExecutionRequest", [("run_id", str)])):
+    def __new__(cls, run_id: str):
         return super(CancelExecutionRequest, cls).__new__(
             cls,
             run_id=check.str_param(run_id, "run_id"),
@@ -456,9 +553,21 @@ class CancelExecutionRequest(namedtuple("_CancelExecutionRequest", "run_id")):
 
 @whitelist_for_serdes
 class CancelExecutionResult(
-    namedtuple("_CancelExecutionResult", "success message serializable_error_info")
+    NamedTuple(
+        "_CancelExecutionResult",
+        [
+            ("success", bool),
+            ("message", Optional[str]),
+            ("serializable_error_info", Optional[SerializableErrorInfo]),
+        ],
+    )
 ):
-    def __new__(cls, success, message, serializable_error_info):
+    def __new__(
+        cls,
+        success: bool,
+        message: Optional[str],
+        serializable_error_info: Optional[SerializableErrorInfo],
+    ):
         return super(CancelExecutionResult, cls).__new__(
             cls,
             success=check.bool_param(success, "success"),
@@ -470,8 +579,8 @@ class CancelExecutionResult(
 
 
 @whitelist_for_serdes
-class CanCancelExecutionRequest(namedtuple("_CanCancelExecutionRequest", "run_id")):
-    def __new__(cls, run_id):
+class CanCancelExecutionRequest(NamedTuple("_CanCancelExecutionRequest", [("run_id", str)])):
+    def __new__(cls, run_id: str):
         return super(CanCancelExecutionRequest, cls).__new__(
             cls,
             run_id=check.str_param(run_id, "run_id"),
@@ -479,8 +588,8 @@ class CanCancelExecutionRequest(namedtuple("_CanCancelExecutionRequest", "run_id
 
 
 @whitelist_for_serdes
-class CanCancelExecutionResult(namedtuple("_CancelExecutionResult", "can_cancel")):
-    def __new__(cls, can_cancel):
+class CanCancelExecutionResult(NamedTuple("_CancelExecutionResult", [("can_cancel", bool)])):
+    def __new__(cls, can_cancel: bool):
         return super(CanCancelExecutionResult, cls).__new__(
             cls,
             can_cancel=check.bool_param(can_cancel, "can_cancel"),
@@ -488,8 +597,22 @@ class CanCancelExecutionResult(namedtuple("_CancelExecutionResult", "can_cancel"
 
 
 @whitelist_for_serdes
-class StartRunResult(namedtuple("_StartRunResult", "success message serializable_error_info")):
-    def __new__(cls, success, message, serializable_error_info):
+class StartRunResult(
+    NamedTuple(
+        "_StartRunResult",
+        [
+            ("success", bool),
+            ("message", Optional[str]),
+            ("serializable_error_info", Optional[SerializableErrorInfo]),
+        ],
+    )
+):
+    def __new__(
+        cls,
+        success: bool,
+        message: Optional[str],
+        serializable_error_info: Optional[SerializableErrorInfo],
+    ):
         return super(StartRunResult, cls).__new__(
             cls,
             success=check.bool_param(success, "success"),
@@ -502,9 +625,17 @@ class StartRunResult(namedtuple("_StartRunResult", "success message serializable
 
 @whitelist_for_serdes
 class GetCurrentImageResult(
-    namedtuple("_GetCurrentImageResult", "current_image serializable_error_info")
+    NamedTuple(
+        "_GetCurrentImageResult",
+        [
+            ("current_image", Optional[str]),
+            ("serializable_error_info", Optional[SerializableErrorInfo]),
+        ],
+    )
 ):
-    def __new__(cls, current_image, serializable_error_info):
+    def __new__(
+        cls, current_image: Optional[str], serializable_error_info: Optional[SerializableErrorInfo]
+    ):
         return super(GetCurrentImageResult, cls).__new__(
             cls,
             current_image=check.opt_str_param(current_image, "current_image"),

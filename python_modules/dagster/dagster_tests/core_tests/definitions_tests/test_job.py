@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 
 from dagster import (
@@ -26,6 +28,15 @@ def define_the_job():
             my_op()
 
     return call_the_op
+
+
+def test_simple_job_no_warnings():
+
+    # will fail if any warning is emitted
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        job = define_the_job()
+        assert job.execute_in_process().success
 
 
 def test_job_execution_multiprocess_config():

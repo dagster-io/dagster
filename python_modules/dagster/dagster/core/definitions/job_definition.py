@@ -33,7 +33,7 @@ from dagster.core.selector.subset_selector import (
     OpSelectionData,
     parse_op_selection,
 )
-from dagster.core.storage.tags import PARTITION_NAME_TAG
+from dagster.core.storage.fs_asset_io_manager import fs_asset_io_manager
 from dagster.core.utils import str_format_set
 
 from .executor_definition import ExecutorDefinition
@@ -61,7 +61,7 @@ class JobDefinition(PipelineDefinition):
         name: Optional[str] = None,
         description: Optional[str] = None,
         preset_defs: Optional[List[PresetDefinition]] = None,
-        tags: Dict[str, Any] = None,
+        tags: Optional[Dict[str, Any]] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
         op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
@@ -175,6 +175,7 @@ class JobDefinition(PipelineDefinition):
             version_strategy=self.version_strategy,
         ).get_job_def_for_op_selection(op_selection)
 
+        tags = None
         if partition_key:
             if not base_mode.partitioned_config:
                 check.failed(
@@ -184,7 +185,15 @@ class JobDefinition(PipelineDefinition):
                 not run_config,
                 "Cannot provide both run_config and partition_key arguments to `execute_in_process`",
             )
-            run_config = base_mode.partitioned_config.get_run_config(partition_key)
+            partition_set = self.get_partition_set_def()
+            if not partition_set:
+                check.failed(
+                    f"Provided partition key `{partition_key}` for job `{self._name}` without a partitioned config"
+                )
+
+            partition = partition_set.get_partition(partition_key)
+            run_config = partition_set.run_config_for_partition(partition)
+            tags = partition_set.tags_for_partition(partition)
 
         return core_execute_in_process(
             node=self._graph_def,
@@ -193,7 +202,7 @@ class JobDefinition(PipelineDefinition):
             instance=instance,
             output_capturing_enabled=True,
             raise_on_error=raise_on_error,
-            run_tags={PARTITION_NAME_TAG: partition_key} if partition_key else None,
+            run_tags=tags,
         )
 
     @property
@@ -242,11 +251,15 @@ class JobDefinition(PipelineDefinition):
 
         if not self._cached_partition_set:
 
+            tags_fn = mode.partitioned_config.tags_for_partition_fn
+            if not tags_fn:
+                tags_fn = lambda _: {}
             self._cached_partition_set = PartitionSetDefinition(
                 job_name=self.name,
                 name=f"{self.name}_partition_set",
                 partitions_def=mode.partitioned_config.partitions_def,
                 run_config_fn_for_partition=mode.partitioned_config.run_config_for_partition_fn,
+                tags_fn_for_partition=tags_fn,
                 mode=mode.name,
             )
 
@@ -302,7 +315,7 @@ def _swap_default_io_man(resources: Dict[str, ResourceDefinition], job: Pipeline
 
     if (
         # pylint: disable=comparison-with-callable
-        resources.get("io_manager") == default_job_io_manager
+        resources.get("io_manager") in [default_job_io_manager, fs_asset_io_manager]
         and job.version_strategy is None
     ):
         updated_resources = dict(resources)

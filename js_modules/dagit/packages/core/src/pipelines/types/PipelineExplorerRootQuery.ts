@@ -1478,9 +1478,17 @@ export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnaps
   message: string;
 }
 
+export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError {
   __typename: "PythonError";
   message: string;
+  stack: string[];
+  cause: PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError_cause | null;
 }
 
 export type PipelineExplorerRootQuery_pipelineSnapshotOrError = PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshot | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineNotFoundError | PipelineExplorerRootQuery_pipelineSnapshotOrError_PipelineSnapshotNotFoundError | PipelineExplorerRootQuery_pipelineSnapshotOrError_PythonError;

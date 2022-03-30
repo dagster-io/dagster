@@ -81,9 +81,7 @@ const RELOAD_WORKSPACE_MUTATION = gql`
                 }
               }
             }
-            ... on PythonError {
-              message
-            }
+            ...PythonErrorFragment
           }
         }
       }

@@ -1,3 +1,5 @@
+import warnings
+
 import pytest
 
 from dagster import (
@@ -12,6 +14,21 @@ from dagster import (
 )
 from dagster.core.asset_defs import AssetIn, AssetsDefinition, asset, build_assets_job, multi_asset
 from dagster.core.asset_defs.decorators import ASSET_DEPENDENCY_METADATA_KEY
+from dagster.utils.backcompat import ExperimentalWarning
+
+
+@pytest.fixture(autouse=True)
+def check_experimental_warnings():
+    with warnings.catch_warnings(record=True) as record:
+        yield
+
+        raises_warning = False
+        for w in record:
+            if "asset_key" in w.message.args[0]:
+                raises_warning = True
+                break
+
+        assert not raises_warning
 
 
 def test_asset_no_decorator_args():

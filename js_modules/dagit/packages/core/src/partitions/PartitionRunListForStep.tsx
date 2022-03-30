@@ -33,9 +33,7 @@ interface PartitionRunListForStepProps {
   };
 }
 
-export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListForStepProps> = (
-  props,
-) => {
+export const PartitionRunListForStep: React.FC<PartitionRunListForStepProps> = (props) => {
   const {data, loading} = useQuery<
     PartitionRunListForStepQuery,
     PartitionRunListForStepQueryVariables
@@ -86,7 +84,7 @@ export const PartitionRunListForStep: React.FunctionComponent<PartitionRunListFo
   );
 };
 
-const StepStatsColumn: React.FunctionComponent<{
+const StepStatsColumn: React.FC<{
   stats: StepStats | null;
   linkToLogs: string;
 }> = ({stats, linkToLogs}) => {
@@ -148,9 +146,7 @@ const PARTITION_RUN_LIST_FOR_STEP_QUERY = gql`
       ... on InvalidPipelineRunsFilterError {
         message
       }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
     }
   }
   ${RUN_TABLE_RUN_FRAGMENT}

@@ -25,10 +25,17 @@ export interface StartSensor_startSensor_Sensor {
   sensorState: StartSensor_startSensor_Sensor_sensorState;
 }
 
+export interface StartSensor_startSensor_PythonError_cause {
+  __typename: "PythonError";
+  message: string;
+  stack: string[];
+}
+
 export interface StartSensor_startSensor_PythonError {
   __typename: "PythonError";
   message: string;
   stack: string[];
+  cause: StartSensor_startSensor_PythonError_cause | null;
 }
 
 export type StartSensor_startSensor = StartSensor_startSensor_SensorNotFoundError | StartSensor_startSensor_Sensor | StartSensor_startSensor_PythonError;

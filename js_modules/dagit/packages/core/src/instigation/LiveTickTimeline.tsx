@@ -190,7 +190,9 @@ export const LiveTickTimeline: React.FC<{
         onHoverTick(undefined);
       }
     },
+
+    maintainAspectRatio: false,
   };
 
-  return <Line type="line" data={graphData} height={30} options={options} key="100%" />;
+  return <Line type="line" data={graphData} height={150} options={options} key="100%" />;
 };

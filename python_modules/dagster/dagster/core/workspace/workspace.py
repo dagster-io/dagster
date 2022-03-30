@@ -23,18 +23,12 @@ class WorkspaceLocationEntry(NamedTuple):
 
 class IWorkspace(ABC):
     """
-    A class that knows how to get a RepositoryLocation from a RepositoryLocationOrigin,
-    possibly creating it lazily.
-
-    Used both by Dagit (where this is a fixed WorkspaceRequestContext that manages a static
-    list of RepositoryLocations) and the dagster-daemon process in, which lazily creates and reloads
-    repository locations in a DynamicWorkspace based on the running schedules, sensors, and queued
-    runs in the database.
+    Manages a set of RepositoryLocations.
     """
 
     @abstractmethod
-    def get_location(self, origin: RepositoryLocationOrigin):
-        """Return the RepositoryLocation for the given RepositoryLocationOrigin, or raise an error if there is an error loading it."""
+    def get_location(self, location_name: str):
+        """Return the RepositoryLocation for the given location name, or raise an error if there is an error loading it."""
 
     @abstractmethod
     def get_workspace_snapshot(self) -> Dict[str, WorkspaceLocationEntry]:

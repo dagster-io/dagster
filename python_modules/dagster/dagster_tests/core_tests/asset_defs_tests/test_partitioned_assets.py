@@ -5,9 +5,11 @@ from dagster import (
     AssetMaterialization,
     DagsterInvalidDefinitionError,
     DailyPartitionsDefinition,
+    HourlyPartitionsDefinition,
     IOManager,
     IOManagerDefinition,
     PartitionsDefinition,
+    SourceAsset,
     StaticPartitionsDefinition,
 )
 from dagster.core.asset_defs import asset, build_assets_job
@@ -238,7 +240,7 @@ def test_access_partition_keys_from_context_only_one_asset_partitioned():
         def handle_output(self, context, obj):
             if context.op_def.name == "upstream_asset":
                 assert context.asset_partition_key == "b"
-            elif context.op_def.name == "downstream_asset":
+            elif context.op_def.name in ["downstream_asset", "double_downstream_asset"]:
                 assert not context.has_asset_partitions
                 with pytest.raises(Exception):  # TODO: better error message
                     assert context.asset_partition_key_range
@@ -256,9 +258,13 @@ def test_access_partition_keys_from_context_only_one_asset_partitioned():
     def downstream_asset(upstream_asset):
         assert upstream_asset is None
 
+    @asset
+    def double_downstream_asset(downstream_asset):
+        assert downstream_asset is None
+
     my_job = build_assets_job(
         "my_job",
-        assets=[upstream_asset, downstream_asset],
+        assets=[upstream_asset, downstream_asset, double_downstream_asset],
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     result = my_job.execute_in_process(partition_key="b")
@@ -378,3 +384,58 @@ def test_asset_partitions_time_window_non_identity_partition_mapping():
         resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(MyIOManager())},
     )
     my_job.execute_in_process(partition_key="2020-01-02")
+
+
+def test_cross_job_different_partitions():
+    @asset(partitions_def=HourlyPartitionsDefinition(start_date="2021-05-05-00:00"))
+    def hourly_asset():
+        pass
+
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2021-05-05"))
+    def daily_asset(hourly_asset):
+        assert hourly_asset is None
+
+    class CustomIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            key_range = context.asset_partition_key_range
+            assert key_range.start == "2021-06-06-00:00"
+            assert key_range.end == "2021-06-06-23:00"
+
+    daily_job = build_assets_job(
+        name="daily_job",
+        assets=[daily_asset],
+        source_assets=[hourly_asset],
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
+    )
+    assert daily_job.execute_in_process(partition_key="2021-06-06").success
+
+
+def test_source_asset_partitions():
+    hourly_asset = SourceAsset(
+        AssetKey("hourly_asset"),
+        partitions_def=HourlyPartitionsDefinition(start_date="2021-05-05-00:00"),
+    )
+
+    @asset(partitions_def=DailyPartitionsDefinition(start_date="2021-05-05"))
+    def daily_asset(hourly_asset):
+        assert hourly_asset is None
+
+    class CustomIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            key_range = context.asset_partition_key_range
+            assert key_range.start == "2021-06-06-00:00"
+            assert key_range.end == "2021-06-06-23:00"
+
+    daily_job = build_assets_job(
+        name="daily_job",
+        assets=[daily_asset],
+        source_assets=[hourly_asset],
+        resource_defs={"io_manager": IOManagerDefinition.hardcoded_io_manager(CustomIOManager())},
+    )
+    assert daily_job.execute_in_process(partition_key="2021-06-06").success

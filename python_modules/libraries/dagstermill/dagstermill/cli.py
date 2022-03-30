@@ -1,7 +1,7 @@
 import copy
 import os
 import subprocess
-from typing import Dict
+from typing import Dict, Optional
 
 import click
 import nbformat
@@ -22,7 +22,7 @@ def get_parameters_cell():
     return parameters_cell
 
 
-def get_kernelspec(kernel: str = None):
+def get_kernelspec(kernel: Optional[str] = None):
     kernelspecs = loads(subprocess.check_output(["jupyter", "kernelspec", "list", "--json"]))
 
     check.invariant(len(kernelspecs["kernelspecs"]) > 0, "No available Jupyter kernelspecs!")

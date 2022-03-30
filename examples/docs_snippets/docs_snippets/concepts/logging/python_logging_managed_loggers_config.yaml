@@ -1,3 +1,4 @@
 python_logs:
   managed_python_loggers:
-    - root
+    - my_logger
+    - my_other_logger

@@ -5,13 +5,17 @@ from dagster_test.graph_job_op_toys.error_monster import error_monster_failing_j
 from dagster_test.graph_job_op_toys.log_asset import log_asset_job
 from dagster_test.graph_job_op_toys.log_file import log_file_job
 from dagster_test.graph_job_op_toys.log_s3 import log_s3_job
-from slack_sdk import WebClient
+from slack_sdk.web.client import WebClient
 
-from dagster import AssetKey, RunRequest, SkipReason, check, sensor
-from dagster.core.definitions.decorators.sensor import asset_sensor
-from dagster.core.definitions.run_status_sensor_definition import (
+from dagster import (
+    AssetKey,
     RunFailureSensorContext,
+    RunRequest,
+    SkipReason,
+    asset_sensor,
+    check,
     run_failure_sensor,
+    sensor,
 )
 
 

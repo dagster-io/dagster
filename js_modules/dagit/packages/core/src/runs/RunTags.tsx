@@ -1,7 +1,8 @@
-import {Box, TokenizingFieldValue} from '@dagster-io/ui';
+import {Box} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {RunTag} from './RunTag';
+import {RunFilterToken} from './RunsFilterInput';
 
 interface RunTagType {
   key: string;
@@ -11,7 +12,7 @@ interface RunTagType {
 export const RunTags: React.FC<{
   tags: RunTagType[];
   mode: string | null;
-  onSetFilter?: (search: TokenizingFieldValue[]) => void;
+  onSetFilter?: (search: RunFilterToken[]) => void;
 }> = React.memo(({tags, onSetFilter, mode}) => {
   if (!tags.length) {
     return null;

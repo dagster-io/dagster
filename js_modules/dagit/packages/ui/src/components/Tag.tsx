@@ -18,7 +18,7 @@ export const Tag = ({tag, onClick, isDagsterTag}: ITagProps) => {
   return (
     <TagButton onClick={onTagClick}>
       <TagWIP intent={isDagsterTag ? 'none' : 'primary'} interactive>
-        {tag.key}: {tag.value}
+        {`${tag.key}: ${tag.value}`}
       </TagWIP>
     </TagButton>
   );

@@ -24,7 +24,7 @@ from dagster.core.errors import (
 from dagster.utils import frozentags
 
 from .config import ConfigMapping
-from .decorators.solid import (
+from .decorators.solid_decorator import (
     DecoratedSolidFunction,
     NoContextDecoratedSolidFunction,
     resolve_checked_solid_fn_inputs,
@@ -564,7 +564,7 @@ class PendingNodeInvocation:
         name: Optional[str] = None,
         description: Optional[str] = None,
         resource_defs: Optional[Dict[str, ResourceDefinition]] = None,
-        config: Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"] = None,
+        config: Optional[Union[ConfigMapping, Dict[str, Any], "PartitionedConfig"]] = None,
         tags: Optional[Dict[str, Any]] = None,
         logger_defs: Optional[Dict[str, LoggerDefinition]] = None,
         executor_def: Optional["ExecutorDefinition"] = None,
@@ -601,7 +601,7 @@ class PendingNodeInvocation:
 
     def execute_in_process(
         self,
-        run_config: Any = None,
+        run_config: Optional[Any] = None,
         instance: Optional["DagsterInstance"] = None,
         resources: Optional[Dict[str, Any]] = None,
         raise_on_error: bool = True,
@@ -1041,10 +1041,17 @@ def do_composition(
         ]
 
         if len(mappings) == 0:
+            if decorator_name in {"@op", "@graph"}:
+                invocation_name = "op/graph"
+            else:
+                invocation_name = "solid"
             raise DagsterInvalidDefinitionError(
                 "{decorator_name} '{graph_name}' has unmapped input '{input_name}'. "
-                "Remove it or pass it to the appropriate solid invocation.".format(
-                    decorator_name=decorator_name, graph_name=graph_name, input_name=defn.name
+                "Remove it or pass it to the appropriate {invocation_name} invocation.".format(
+                    decorator_name=decorator_name,
+                    graph_name=graph_name,
+                    input_name=defn.name,
+                    invocation_name=invocation_name,
                 )
             )
 

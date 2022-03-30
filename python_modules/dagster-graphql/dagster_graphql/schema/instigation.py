@@ -1,4 +1,5 @@
 import sys
+import warnings
 
 import graphene
 import pendulum
@@ -13,6 +14,7 @@ from dagster.core.scheduler.instigation import (
     InstigatorType,
     ScheduleInstigatorData,
     SensorInstigatorData,
+    TickStatus,
 )
 from dagster.core.storage.pipeline_run import RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
@@ -57,6 +59,7 @@ class GrapheneInstigationTickStatus(graphene.Enum):
 class GrapheneSensorData(graphene.ObjectType):
     lastTickTimestamp = graphene.Float()
     lastRunKey = graphene.String()
+    lastCursor = graphene.String()
 
     class Meta:
         name = "SensorData"
@@ -66,6 +69,7 @@ class GrapheneSensorData(graphene.ObjectType):
         super().__init__(
             lastTickTimestamp=instigator_data.last_tick_timestamp,
             lastRunKey=instigator_data.last_run_key,
+            lastCursor=instigator_data.cursor,
         )
 
 
@@ -95,6 +99,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
     status = graphene.NonNull(GrapheneInstigationTickStatus)
     timestamp = graphene.NonNull(graphene.Float)
     runIds = non_null_list(graphene.String)
+    runKeys = non_null_list(graphene.String)
     error = graphene.Field(GraphenePythonError)
     skipReason = graphene.String()
     cursor = graphene.String()
@@ -111,6 +116,7 @@ class GrapheneInstigationTick(graphene.ObjectType):
             status=tick.status,
             timestamp=tick.timestamp,
             runIds=tick.run_ids,
+            runKeys=tick.run_keys,
             error=tick.error,
             skipReason=tick.skip_reason,
             originRunIds=tick.origin_run_ids,
@@ -270,6 +276,8 @@ class GrapheneInstigationState(graphene.ObjectType):
         dayRange=graphene.Int(),
         dayOffset=graphene.Int(),
         limit=graphene.Int(),
+        cursor=graphene.String(),
+        statuses=graphene.List(graphene.NonNull(GrapheneInstigationTickStatus)),
     )
     nextTick = graphene.Field(GrapheneFutureInstigationTick)
     runningCount = graphene.NonNull(graphene.Int)  # remove with cron scheduler
@@ -360,17 +368,48 @@ class GrapheneInstigationState(graphene.ObjectType):
         )
         return GrapheneInstigationTick(graphene_info, matches[0]) if matches else None
 
-    def resolve_ticks(self, graphene_info, dayRange=None, dayOffset=None, limit=None):
-        before = pendulum.now("UTC").subtract(days=dayOffset).timestamp() if dayOffset else None
+    def resolve_ticks(
+        self, graphene_info, dayRange=None, dayOffset=None, limit=None, cursor=None, statuses=None
+    ):
+        before = None
+        if dayOffset:
+            before = pendulum.now("UTC").subtract(days=dayOffset).timestamp()
+        elif cursor:
+            parts = cursor.split(":")
+            if parts:
+                try:
+                    before = float(parts[-1])
+                except (ValueError, IndexError):
+                    warnings.warn(f"Invalid cursor for {self.name} ticks: {cursor}")
+
         after = (
             pendulum.now("UTC").subtract(days=dayRange + (dayOffset or 0)).timestamp()
             if dayRange
             else None
         )
+        if statuses:
+            statuses = [TickStatus(status) for status in statuses]
+
+        if self._batch_loader and limit and not cursor and not before and not after:
+            ticks = (
+                self._batch_loader.get_sensor_ticks(
+                    self._instigator_state.instigator_origin_id, limit
+                )
+                if self._instigator_state.instigator_type == InstigatorType.SENSOR
+                else self._batch_loader.get_schedule_ticks(
+                    self._instigator_state.instigator_origin_id, limit
+                )
+            )
+            return [GrapheneInstigationTick(graphene_info, tick) for tick in ticks]
+
         return [
             GrapheneInstigationTick(graphene_info, tick)
             for tick in graphene_info.context.instance.get_ticks(
-                self._instigator_state.instigator_origin_id, before=before, after=after, limit=limit
+                self._instigator_state.instigator_origin_id,
+                before=before,
+                after=after,
+                limit=limit,
+                statuses=statuses,
             )
         ]
 

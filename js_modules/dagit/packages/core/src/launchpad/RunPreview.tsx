@@ -541,7 +541,7 @@ const RuntimeAndResourcesSection = styled.div`
   }
 `;
 
-const ErrorRow: React.FunctionComponent<{
+const ErrorRow: React.FC<{
   error: ValidationError | React.ReactNode;
   onHighlight: (path: string[]) => void;
 }> = ({error, onHighlight}) => {

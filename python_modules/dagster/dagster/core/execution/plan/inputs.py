@@ -1,5 +1,5 @@
 import hashlib
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Any, Dict, Iterator, List, NamedTuple, Optional, Set, Union, cast
 
 from dagster import check
@@ -103,11 +103,13 @@ class StepInputSource(ABC):
     def get_input_def(self, pipeline_def: PipelineDefinition) -> InputDefinition:
         return pipeline_def.get_solid(self.solid_handle).input_def_named(self.input_name)
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def solid_handle(self) -> NodeHandle:
         pass
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def input_name(self) -> str:
         pass
 
@@ -539,6 +541,7 @@ class FromMultipleSources(
         from dagster.core.events import DagsterEvent
 
         values = []
+
         # some upstream steps may have skipped and we allow fan-in to continue in their absence
         source_handles_to_skip = list(
             filter(lambda x: not step_context.can_load(x), self.step_output_handle_dependencies)

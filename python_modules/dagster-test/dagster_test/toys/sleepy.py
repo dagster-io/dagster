@@ -2,8 +2,7 @@
 from time import sleep
 from typing import Iterator, List
 
-from dagster import Field, Output, OutputDefinition, solid
-from dagster.core.definitions.decorators.graph import graph
+from dagster import Field, Output, OutputDefinition, graph, solid
 
 
 @solid

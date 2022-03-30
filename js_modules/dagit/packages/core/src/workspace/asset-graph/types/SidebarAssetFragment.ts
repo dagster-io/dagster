@@ -7,6 +7,157 @@
 // GraphQL fragment: SidebarAssetFragment
 // ====================================================
 
+export interface SidebarAssetFragment_metadataEntries_PathMetadataEntry {
+  __typename: "PathMetadataEntry";
+  label: string;
+  description: string | null;
+  path: string;
+}
+
+export interface SidebarAssetFragment_metadataEntries_JsonMetadataEntry {
+  __typename: "JsonMetadataEntry";
+  label: string;
+  description: string | null;
+  jsonString: string;
+}
+
+export interface SidebarAssetFragment_metadataEntries_UrlMetadataEntry {
+  __typename: "UrlMetadataEntry";
+  label: string;
+  description: string | null;
+  url: string;
+}
+
+export interface SidebarAssetFragment_metadataEntries_TextMetadataEntry {
+  __typename: "TextMetadataEntry";
+  label: string;
+  description: string | null;
+  text: string;
+}
+
+export interface SidebarAssetFragment_metadataEntries_MarkdownMetadataEntry {
+  __typename: "MarkdownMetadataEntry";
+  label: string;
+  description: string | null;
+  mdStr: string;
+}
+
+export interface SidebarAssetFragment_metadataEntries_PythonArtifactMetadataEntry {
+  __typename: "PythonArtifactMetadataEntry";
+  label: string;
+  description: string | null;
+  module: string;
+  name: string;
+}
+
+export interface SidebarAssetFragment_metadataEntries_FloatMetadataEntry {
+  __typename: "FloatMetadataEntry";
+  label: string;
+  description: string | null;
+  floatValue: number | null;
+}
+
+export interface SidebarAssetFragment_metadataEntries_IntMetadataEntry {
+  __typename: "IntMetadataEntry";
+  label: string;
+  description: string | null;
+  intValue: number | null;
+  intRepr: string;
+}
+
+export interface SidebarAssetFragment_metadataEntries_PipelineRunMetadataEntry {
+  __typename: "PipelineRunMetadataEntry";
+  label: string;
+  description: string | null;
+  runId: string;
+}
+
+export interface SidebarAssetFragment_metadataEntries_AssetMetadataEntry_assetKey {
+  __typename: "AssetKey";
+  path: string[];
+}
+
+export interface SidebarAssetFragment_metadataEntries_AssetMetadataEntry {
+  __typename: "AssetMetadataEntry";
+  label: string;
+  description: string | null;
+  assetKey: SidebarAssetFragment_metadataEntries_AssetMetadataEntry_assetKey;
+}
+
+export interface SidebarAssetFragment_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface SidebarAssetFragment_metadataEntries_TableMetadataEntry_table_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: SidebarAssetFragment_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
+}
+
+export interface SidebarAssetFragment_metadataEntries_TableMetadataEntry_table_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface SidebarAssetFragment_metadataEntries_TableMetadataEntry_table_schema {
+  __typename: "TableSchema";
+  columns: SidebarAssetFragment_metadataEntries_TableMetadataEntry_table_schema_columns[];
+  constraints: SidebarAssetFragment_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
+}
+
+export interface SidebarAssetFragment_metadataEntries_TableMetadataEntry_table {
+  __typename: "Table";
+  records: string[];
+  schema: SidebarAssetFragment_metadataEntries_TableMetadataEntry_table_schema;
+}
+
+export interface SidebarAssetFragment_metadataEntries_TableMetadataEntry {
+  __typename: "TableMetadataEntry";
+  label: string;
+  description: string | null;
+  table: SidebarAssetFragment_metadataEntries_TableMetadataEntry_table;
+}
+
+export interface SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
+  __typename: "TableColumnConstraints";
+  nullable: boolean;
+  unique: boolean;
+  other: string[];
+}
+
+export interface SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns {
+  __typename: "TableColumn";
+  name: string;
+  description: string | null;
+  type: string;
+  constraints: SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
+}
+
+export interface SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
+  __typename: "TableConstraints";
+  other: string[];
+}
+
+export interface SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry_schema {
+  __typename: "TableSchema";
+  columns: SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
+  constraints: SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
+}
+
+export interface SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry {
+  __typename: "TableSchemaMetadataEntry";
+  label: string;
+  description: string | null;
+  schema: SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry_schema;
+}
+
+export type SidebarAssetFragment_metadataEntries = SidebarAssetFragment_metadataEntries_PathMetadataEntry | SidebarAssetFragment_metadataEntries_JsonMetadataEntry | SidebarAssetFragment_metadataEntries_UrlMetadataEntry | SidebarAssetFragment_metadataEntries_TextMetadataEntry | SidebarAssetFragment_metadataEntries_MarkdownMetadataEntry | SidebarAssetFragment_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetFragment_metadataEntries_FloatMetadataEntry | SidebarAssetFragment_metadataEntries_IntMetadataEntry | SidebarAssetFragment_metadataEntries_PipelineRunMetadataEntry | SidebarAssetFragment_metadataEntries_AssetMetadataEntry | SidebarAssetFragment_metadataEntries_TableMetadataEntry | SidebarAssetFragment_metadataEntries_TableSchemaMetadataEntry;
+
 export interface SidebarAssetFragment_assetKey {
   __typename: "AssetKey";
   path: string[];
@@ -17,157 +168,6 @@ export interface SidebarAssetFragment_op_metadata {
   key: string;
   value: string;
 }
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_PathMetadataEntry {
-  __typename: "PathMetadataEntry";
-  label: string;
-  description: string | null;
-  path: string;
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_JsonMetadataEntry {
-  __typename: "JsonMetadataEntry";
-  label: string;
-  description: string | null;
-  jsonString: string;
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_UrlMetadataEntry {
-  __typename: "UrlMetadataEntry";
-  label: string;
-  description: string | null;
-  url: string;
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_TextMetadataEntry {
-  __typename: "TextMetadataEntry";
-  label: string;
-  description: string | null;
-  text: string;
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_MarkdownMetadataEntry {
-  __typename: "MarkdownMetadataEntry";
-  label: string;
-  description: string | null;
-  mdStr: string;
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_PythonArtifactMetadataEntry {
-  __typename: "PythonArtifactMetadataEntry";
-  label: string;
-  description: string | null;
-  module: string;
-  name: string;
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_FloatMetadataEntry {
-  __typename: "FloatMetadataEntry";
-  label: string;
-  description: string | null;
-  floatValue: number | null;
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_IntMetadataEntry {
-  __typename: "IntMetadataEntry";
-  label: string;
-  description: string | null;
-  intValue: number | null;
-  intRepr: string;
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_PipelineRunMetadataEntry {
-  __typename: "PipelineRunMetadataEntry";
-  label: string;
-  description: string | null;
-  runId: string;
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_AssetMetadataEntry_assetKey {
-  __typename: "AssetKey";
-  path: string[];
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_AssetMetadataEntry {
-  __typename: "AssetMetadataEntry";
-  label: string;
-  description: string | null;
-  assetKey: SidebarAssetFragment_op_outputDefinitions_metadataEntries_AssetMetadataEntry_assetKey;
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_columns_constraints {
-  __typename: "TableColumnConstraints";
-  nullable: boolean;
-  unique: boolean;
-  other: string[];
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_columns {
-  __typename: "TableColumn";
-  name: string;
-  description: string | null;
-  type: string;
-  constraints: SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_columns_constraints;
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_constraints {
-  __typename: "TableConstraints";
-  other: string[];
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema {
-  __typename: "TableSchema";
-  columns: SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_columns[];
-  constraints: SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema_constraints | null;
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table {
-  __typename: "Table";
-  records: string[];
-  schema: SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table_schema;
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry {
-  __typename: "TableMetadataEntry";
-  label: string;
-  description: string | null;
-  table: SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry_table;
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints {
-  __typename: "TableColumnConstraints";
-  nullable: boolean;
-  unique: boolean;
-  other: string[];
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_columns {
-  __typename: "TableColumn";
-  name: string;
-  description: string | null;
-  type: string;
-  constraints: SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_columns_constraints;
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_constraints {
-  __typename: "TableConstraints";
-  other: string[];
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema {
-  __typename: "TableSchema";
-  columns: SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_columns[];
-  constraints: SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema_constraints | null;
-}
-
-export interface SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry {
-  __typename: "TableSchemaMetadataEntry";
-  label: string;
-  description: string | null;
-  schema: SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry_schema;
-}
-
-export type SidebarAssetFragment_op_outputDefinitions_metadataEntries = SidebarAssetFragment_op_outputDefinitions_metadataEntries_PathMetadataEntry | SidebarAssetFragment_op_outputDefinitions_metadataEntries_JsonMetadataEntry | SidebarAssetFragment_op_outputDefinitions_metadataEntries_UrlMetadataEntry | SidebarAssetFragment_op_outputDefinitions_metadataEntries_TextMetadataEntry | SidebarAssetFragment_op_outputDefinitions_metadataEntries_MarkdownMetadataEntry | SidebarAssetFragment_op_outputDefinitions_metadataEntries_PythonArtifactMetadataEntry | SidebarAssetFragment_op_outputDefinitions_metadataEntries_FloatMetadataEntry | SidebarAssetFragment_op_outputDefinitions_metadataEntries_IntMetadataEntry | SidebarAssetFragment_op_outputDefinitions_metadataEntries_PipelineRunMetadataEntry | SidebarAssetFragment_op_outputDefinitions_metadataEntries_AssetMetadataEntry | SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableMetadataEntry | SidebarAssetFragment_op_outputDefinitions_metadataEntries_TableSchemaMetadataEntry;
 
 export interface SidebarAssetFragment_op_outputDefinitions_type_metadataEntries_PathMetadataEntry {
   __typename: "PathMetadataEntry";
@@ -2320,7 +2320,6 @@ export interface SidebarAssetFragment_op_outputDefinitions_type {
 
 export interface SidebarAssetFragment_op_outputDefinitions {
   __typename: "OutputDefinition";
-  metadataEntries: SidebarAssetFragment_op_outputDefinitions_metadataEntries[];
   type: SidebarAssetFragment_op_outputDefinitions_type;
 }
 
@@ -2349,6 +2348,7 @@ export interface SidebarAssetFragment {
   __typename: "AssetNode";
   id: string;
   description: string | null;
+  metadataEntries: SidebarAssetFragment_metadataEntries[];
   partitionDefinition: string | null;
   assetKey: SidebarAssetFragment_assetKey;
   op: SidebarAssetFragment_op | null;

@@ -3,7 +3,7 @@ import sys
 import threading
 from abc import abstractmethod
 from contextlib import AbstractContextManager
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Optional, Union, cast
 
 from dagster import check
 from dagster.api.get_server_id import sync_get_server_id
@@ -21,10 +21,7 @@ from dagster.api.snapshot_repository import sync_get_streaming_external_reposito
 from dagster.api.snapshot_schedule import sync_get_external_schedule_execution_data_grpc
 from dagster.api.snapshot_sensor import sync_get_external_sensor_execution_data_grpc
 from dagster.core.code_pointer import CodePointer
-from dagster.core.definitions.reconstructable import (
-    ReconstructablePipeline,
-    ReconstructableRepository,
-)
+from dagster.core.definitions.reconstruct import ReconstructablePipeline, ReconstructableRepository
 from dagster.core.errors import DagsterInvariantViolationError
 from dagster.core.execution.api import create_execution_plan
 from dagster.core.execution.plan.state import KnownExecutionState
@@ -607,7 +604,7 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
     def use_ssl(self) -> bool:
         return self._use_ssl
 
-    def _reload_current_image(self) -> str:
+    def _reload_current_image(self) -> Optional[str]:
         return deserialize_as(
             self.client.get_current_image(),
             GetCurrentImageResult,
@@ -647,14 +644,14 @@ class GrpcServerRepositoryLocation(RepositoryLocation):
     def get_external_execution_plan(
         self,
         external_pipeline: ExternalPipeline,
-        run_config: Dict[str, Any],
+        run_config: Mapping[str, Any],
         mode: str,
         step_keys_to_execute: Optional[List[str]],
         known_state: Optional[KnownExecutionState],
         instance: Optional[DagsterInstance] = None,
     ) -> ExternalExecutionPlan:
         check.inst_param(external_pipeline, "external_pipeline", ExternalPipeline)
-        check.dict_param(run_config, "run_config")
+        run_config = check.dict_param(run_config, "run_config")
         check.str_param(mode, "mode")
         check.opt_nullable_list_param(step_keys_to_execute, "step_keys_to_execute", of_type=str)
         check.opt_inst_param(known_state, "known_state", KnownExecutionState)

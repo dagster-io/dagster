@@ -10,7 +10,12 @@ import {
 import * as React from 'react';
 import {useParams} from 'react-router-dom';
 
-import {QueryCountdown} from '../app/QueryCountdown';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {RunTable, RUN_TABLE_RUN_FRAGMENT} from '../runs/RunTable';
 import {RunsQueryRefetchContext} from '../runs/RunUtils';
 import {
@@ -19,7 +24,7 @@ import {
   runsFilterForSearchTokens,
   useQueryPersistedRunFilters,
 } from '../runs/RunsFilterInput';
-import {POLL_INTERVAL, useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
+import {useCursorPaginatedQuery} from '../runs/useCursorPaginatedQuery';
 import {Loading} from '../ui/Loading';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
@@ -79,6 +84,8 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
     },
   });
 
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+
   return (
     <RunsQueryRefetchContext.Provider value={{refetch: queryResult.refetch}}>
       <Page>
@@ -109,7 +116,7 @@ export const PipelineRunsRoot: React.FC<Props> = (props) => {
                       <TagWIP key={token}>{`${token}:${value}`}</TagWIP>
                     ))}
                   </Box>
-                  <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
+                  <QueryRefreshCountdown refreshState={refreshState} />
                 </Box>
                 <RunTable
                   runs={displayed}
@@ -149,11 +156,10 @@ const PIPELINE_RUNS_ROOT_QUERY = gql`
       ... on InvalidPipelineRunsFilterError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
   }
 
   ${RUN_TABLE_RUN_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;

@@ -17,7 +17,12 @@ import isEqual from 'lodash/isEqual';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 
-import {QueryCountdown} from '../app/QueryCountdown';
+import {PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useCanSeeConfig} from '../instance/useCanSeeConfig';
 import {RunStatus} from '../types/globalTypes';
@@ -35,7 +40,7 @@ import {
 } from './RunsFilterInput';
 import {QueueDaemonStatusQuery} from './types/QueueDaemonStatusQuery';
 import {RunsRootQuery, RunsRootQueryVariables} from './types/RunsRootQuery';
-import {POLL_INTERVAL, useCursorPaginatedQuery} from './useCursorPaginatedQuery';
+import {useCursorPaginatedQuery} from './useCursorPaginatedQuery';
 
 const PAGE_SIZE = 25;
 
@@ -86,13 +91,14 @@ export const RunsRoot = () => {
     query: RUNS_ROOT_QUERY,
     pageSize: PAGE_SIZE,
   });
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
 
   const selectedTab = showScheduled ? 'scheduled' : selectedTabId(filterTokens);
   const staticStatusTags = selectedTab !== 'all';
 
   const setStatusFilter = (statuses: RunStatus[]) => {
     const tokensMinusStatus = filterTokens.filter((token) => token.token !== 'status');
-    const statusTokens = statuses.map((status) => ({token: 'status', value: status}));
+    const statusTokens = statuses.map((status) => ({token: 'status' as const, value: status}));
     setFilterTokens([...statusTokens, ...tokensMinusStatus]);
     setShowScheduled(false);
   };
@@ -162,7 +168,7 @@ export const RunsRoot = () => {
               <Tab title="Scheduled" onClick={() => setShowScheduled(true)} id="scheduled" />
             </Tabs>
             <Box padding={{bottom: 8}}>
-              <QueryCountdown pollInterval={POLL_INTERVAL} queryResult={queryResult} />
+              <QueryRefreshCountdown refreshState={refreshState} />
             </Box>
           </Box>
         }
@@ -264,9 +270,7 @@ const RUNS_ROOT_QUERY = gql`
       ... on InvalidPipelineRunsFilterError {
         message
       }
-      ... on PythonError {
-        message
-      }
+      ...PythonErrorFragment
     }
     queuedCount: pipelineRunsOrError(filter: $queuedFilter) {
       ...CountFragment
@@ -278,6 +282,7 @@ const RUNS_ROOT_QUERY = gql`
 
   ${RUN_TABLE_RUN_FRAGMENT}
   ${COUNT_FRAGMENT}
+  ${PYTHON_ERROR_FRAGMENT}
 `;
 
 const QueueDaemonAlert = () => {

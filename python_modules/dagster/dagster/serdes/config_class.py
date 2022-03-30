@@ -1,5 +1,5 @@
 import importlib
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from typing import NamedTuple
 
 import yaml
@@ -116,7 +116,8 @@ class ConfigurableClass(ABC):
 
     """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def inst_data(self):
         """
         Subclass must be able to return the inst_data as a property if it has been constructed

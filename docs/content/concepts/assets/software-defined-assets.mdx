@@ -172,13 +172,14 @@ In any situation where you might use a source asset, you could also have the cod
 
 By default, materializing an asset will pickle it to a local file named "my_asset", in a temporary directory. You can specify this directory by providing a value for the `local_artifact_storage` property in your dagster.yaml file.
 
-[IO managers](/concepts/io-management/io-managers) enable fully overriding this behavior and storing asset contents in any way you wish - e.g. writing them as tables in a database or as objects in a cloud object store. Dagster also provides built-in IO managers that pickle assets to AWS S3, Azure Blob Storage, and GCS, or you can write your own.
+[IO managers](/concepts/io-management/io-managers) enable fully overriding this behavior and storing asset contents in any way you wish - e.g. writing them as tables in a database or as objects in a cloud object store. Dagster also provides built-in IO managers that pickle assets to AWS S3 (<PyObject module="dagster_aws.s3" object="s3_pickle_asset_io_manager" />), Azure Blob Storage, and GCS (<PyObject module="dagster_gcp.gcs" object="gcs_pickle_asset_io_manager" />), or you can write your own.
 
 To apply an IO manager to a set of assets, you can include it with them in an <PyObject object="AssetGroup" />.
 
 ```python file=/concepts/assets/asset_io_manager.py startafter=start_marker endbefore=end_marker
-from dagster import AssetGroup, asset
 from dagster_aws.s3 import s3_pickle_asset_io_manager, s3_resource
+
+from dagster import AssetGroup, asset
 
 
 @asset
@@ -204,8 +205,9 @@ When `upstream_asset` is materialized, the value `[1, 2, 3]` will be will be pic
 Different assets can have different IO managers:
 
 ```python file=/concepts/assets/asset_different_io_managers.py startafter=start_marker endbefore=end_marker
-from dagster import AssetGroup, asset, fs_asset_io_manager
 from dagster_aws.s3 import s3_pickle_asset_io_manager, s3_resource
+
+from dagster import AssetGroup, asset, fs_asset_io_manager
 
 
 @asset(io_manager_key="s3_io_manager")
@@ -233,8 +235,9 @@ When `upstream_asset` is materialized, the value `[1, 2, 3]` will be will be pic
 The same assets can be bound to different resources and IO managers in different environments. For example, for local development, you might want to store assets on your local filesystem while, in production, you might want to store the assets in S3.
 
 ```python file=/concepts/assets/asset_io_manager_prod_local.py startafter=start_marker endbefore=end_marker
-from dagster import AssetGroup, asset, fs_asset_io_manager
 from dagster_aws.s3 import s3_pickle_asset_io_manager, s3_resource
+
+from dagster import AssetGroup, asset, fs_asset_io_manager
 
 
 @asset
@@ -405,3 +408,7 @@ def my_asset(context):
     # fetches contents of an asset
     return context.resources.api.fetch_table("my_asset")
 ```
+
+## Further Reading
+
+Interested in learning more about software-defined assets and working through a more complex example? Check out our [guide on software-defined assets](/guides/dagster/software-defined-assets) and our [example project](https://github.com/dagster-io/dagster/tree/master/examples/modern_data_stack_assets) that integrates software-defined assets with other Modern Data Stack tools.

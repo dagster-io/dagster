@@ -27,7 +27,7 @@ import {InstigationTickStatus, InstigationType} from '../types/globalTypes';
 import {LaunchedRunListQuery, LaunchedRunListQueryVariables} from './types/LaunchedRunListQuery';
 import {TickTagFragment} from './types/TickTagFragment';
 
-export const TickTag: React.FunctionComponent<{
+export const TickTag: React.FC<{
   tick: TickTagFragment;
   instigationType?: InstigationType;
 }> = ({tick, instigationType}) => {
@@ -39,7 +39,7 @@ export const TickTag: React.FunctionComponent<{
       if (!tick.runIds.length) {
         return <TagWIP intent="primary">Requested</TagWIP>;
       }
-      return (
+      const tag = (
         <>
           <TagWIP intent="primary" interactive>
             <ButtonLink underline="never" onClick={() => setOpen(true)}>
@@ -61,37 +61,60 @@ export const TickTag: React.FunctionComponent<{
           </DialogWIP>
         </>
       );
-    case InstigationTickStatus.SKIPPED:
-      if (!tick.skipReason) {
-        return <TagWIP intent="warning">Skipped</TagWIP>;
+      if (tick.runKeys.length > tick.runIds.length) {
+        const message = `${tick.runKeys.length} runs requested, but ${
+          tick.runKeys.length - tick.runIds.length
+        } skipped because the runs already exist for those requested keys.`;
+        return (
+          <Tooltip position="right" content={message}>
+            {tag}
+          </Tooltip>
+        );
       }
-      return (
-        <Tooltip position="right" content={tick.skipReason} targetTagName="div">
-          <TagWIP intent="warning">Skipped</TagWIP>
-        </Tooltip>
-      );
+      return tag;
+
+    case InstigationTickStatus.SKIPPED:
+      if (tick.runKeys) {
+        const message = `${tick.runKeys.length} runs requested, but skipped because the runs already exist for the requested keys.`;
+        return (
+          <Tooltip position="right" content={message}>
+            <TagWIP intent="warning">Skipped</TagWIP>
+          </Tooltip>
+        );
+      }
+      if (tick.skipReason) {
+        return (
+          <Tooltip position="right" content={tick.skipReason} targetTagName="div">
+            <TagWIP intent="warning">Skipped</TagWIP>
+          </Tooltip>
+        );
+      }
+      return <TagWIP intent="warning">Skipped</TagWIP>;
     case InstigationTickStatus.FAILURE:
       if (!tick.error) {
         return <TagWIP intent="danger">Failure</TagWIP>;
       } else {
         const error = tick.error;
+        const showError = () =>
+          showCustomAlert({
+            title: instigationType
+              ? instigationType === InstigationType.SCHEDULE
+                ? 'Schedule Response'
+                : 'Sensor Response'
+              : 'Python Error',
+            body: <PythonErrorInfo error={error} />,
+          });
         return (
-          <LinkButton
-            onClick={() =>
-              showCustomAlert({
-                title: instigationType
-                  ? instigationType === InstigationType.SCHEDULE
-                    ? 'Schedule Response'
-                    : 'Sensor Response'
-                  : 'Python Error',
-                body: <PythonErrorInfo error={error} />,
-              })
-            }
-          >
-            <TagWIP minimal={true} intent="danger">
-              Failure
-            </TagWIP>
-          </LinkButton>
+          <>
+            <LinkButton onClick={showError}>
+              <TagWIP minimal={true} intent="danger">
+                Failure
+              </TagWIP>
+            </LinkButton>
+            <ButtonLink onClick={showError} style={{marginLeft: 8, fontSize: 14}}>
+              View error
+            </ButtonLink>
+          </>
         );
       }
     default:
@@ -99,7 +122,7 @@ export const TickTag: React.FunctionComponent<{
   }
 };
 
-export const RunList: React.FunctionComponent<{
+export const RunList: React.FC<{
   runIds: string[];
 }> = ({runIds}) => {
   const {data, loading} = useQuery<LaunchedRunListQuery, LaunchedRunListQueryVariables>(
@@ -133,7 +156,7 @@ export const RunList: React.FunctionComponent<{
   );
 };
 
-export const FailedRunList: React.FunctionComponent<{
+export const FailedRunList: React.FC<{
   originRunIds?: string[];
 }> = ({originRunIds}) => {
   if (!originRunIds || !originRunIds.length) {
@@ -183,6 +206,7 @@ export const TICK_TAG_FRAGMENT = gql`
     timestamp
     skipReason
     runIds
+    runKeys
     error {
       ...PythonErrorFragment
     }
@@ -202,9 +226,7 @@ const LAUNCHED_RUN_LIST_QUERY = gql`
       ... on InvalidPipelineRunsFilterError {
         message
       }
-      ... on PythonError {
-        ...PythonErrorFragment
-      }
+      ...PythonErrorFragment
     }
   }
   ${RUN_TABLE_RUN_FRAGMENT}

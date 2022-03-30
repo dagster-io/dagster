@@ -22,7 +22,7 @@ from dagster.utils import mkdir_p
 from ..schema import InstanceInfo, RunStorageSqlMetadata, RunTagsTable, RunsTable
 from ..sql_run_storage import SqlRunStorage
 
-MINIMUM_SQLITE_BUCKET_VERSION = "3.25.0"
+MINIMUM_SQLITE_BUCKET_VERSION = [3, 25, 0]
 
 
 class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
@@ -100,11 +100,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         engine = create_engine(self._conn_string, poolclass=NullPool)
         conn = engine.connect()
         try:
-            with handle_schema_errors(
-                conn,
-                get_alembic_config(__file__),
-                msg="Sqlite run storage requires migration",
-            ):
+            with handle_schema_errors(conn, get_alembic_config(__file__)):
                 yield conn
         finally:
             conn.close()
@@ -121,7 +117,18 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
 
     @property
     def supports_bucket_queries(self):
-        return get_sqlite_version() > MINIMUM_SQLITE_BUCKET_VERSION
+        parts = get_sqlite_version().split(".")
+        try:
+            for i in range(min(len(parts), len(MINIMUM_SQLITE_BUCKET_VERSION))):
+                curr = int(parts[i])
+                if curr < MINIMUM_SQLITE_BUCKET_VERSION[i]:
+                    return False
+                if curr > MINIMUM_SQLITE_BUCKET_VERSION[i]:
+                    return True
+        except ValueError:
+            return False
+
+        return False
 
     def upgrade(self):
         self._check_for_version_066_migration_and_perform()

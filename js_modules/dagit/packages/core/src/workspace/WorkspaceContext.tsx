@@ -114,9 +114,7 @@ const ROOT_WORKSPACE_QUERY = gql`
                 ...RepositoryInfoFragment
               }
             }
-            ... on PythonError {
-              ...PythonErrorFragment
-            }
+            ...PythonErrorFragment
           }
         }
       }

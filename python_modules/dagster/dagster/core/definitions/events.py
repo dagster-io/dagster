@@ -1,7 +1,20 @@
 import re
 import warnings
 from enum import Enum
-from typing import AbstractSet, Any, Dict, List, NamedTuple, Optional, Tuple, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    AbstractSet,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Union,
+    cast,
+)
 
 from dagster import check, seven
 from dagster.core.errors import DagsterInvalidAssetKey
@@ -10,12 +23,16 @@ from dagster.utils.backcompat import experimental_class_param_warning
 
 from .metadata import (
     MetadataEntry,
+    MetadataValue,
     PartitionMetadataEntry,
     RawMetadataValue,
     last_file_comp,
     normalize_metadata,
 )
 from .utils import DEFAULT_OUTPUT, check_valid_name
+
+if TYPE_CHECKING:
+    from dagster.core.execution.context.output import OutputContext
 
 ASSET_KEY_REGEX = re.compile("^[a-zA-Z0-9_.-]+$")  # alphanumeric, _, -, .
 ASSET_KEY_SPLIT_REGEX = re.compile("[^a-zA-Z0-9_]")
@@ -34,7 +51,7 @@ def parse_asset_key_string(s: str) -> List[str]:
 
 
 @whitelist_for_serdes
-class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str]])])):
+class AssetKey(NamedTuple("_AssetKey", [("path", List[str])])):
     """Object representing the structure of an asset key.  Takes in a sanitized string, list of
     strings, or tuple of strings.
 
@@ -66,17 +83,15 @@ class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str
             )
 
     Args:
-        path (Union[str, List[str], Tuple[str, ...]]): String, list of strings, or tuple of strings.  A list of strings
+        path (Sequence[str]): String, list of strings, or tuple of strings.  A list of strings
             represent the hierarchical structure of the asset_key.
     """
 
-    def __new__(cls, path: Optional[Union[str, List[str], Tuple[str, ...]]] = None):
+    def __new__(cls, path: Sequence[str]):
         if isinstance(path, str):
             path = [path]
-        elif isinstance(path, list):
-            path = check.list_param(path, "path", of_type=str)
         else:
-            path = check.tuple_param(path, "path", of_type=str)
+            path = list(check.sequence_param(path, "path", of_type=str))
 
         return super(AssetKey, cls).__new__(cls, path=path)
 
@@ -123,10 +138,13 @@ class AssetKey(NamedTuple("_AssetKey", [("path", Union[Tuple[str, ...], List[str
         return seven.json.dumps(path)[:-2]  # strip trailing '"]' from json string
 
     @staticmethod
-    def from_graphql_input(asset_key: Dict[str, List[str]]) -> Optional["AssetKey"]:
+    def from_graphql_input(asset_key: Mapping[str, List[str]]) -> Optional["AssetKey"]:
         if asset_key and asset_key.get("path"):
-            return AssetKey(asset_key.get("path"))
+            return AssetKey(asset_key["path"])
         return None
+
+
+DynamicAssetKey = Callable[["OutputContext"], Optional[AssetKey]]
 
 
 @whitelist_for_serdes
@@ -417,7 +435,7 @@ class AssetMaterialization(
         return AssetMaterialization(
             asset_key=cast(Union[str, AssetKey, List[str]], asset_key),
             description=description,
-            metadata_entries=[MetadataEntry.fspath(path)],
+            metadata_entries=[MetadataEntry("path", value=MetadataValue.path(path))],
         )
 
 
@@ -468,7 +486,7 @@ class Materialization(
 
     def __new__(
         cls,
-        label: str = None,
+        label: Optional[str] = None,
         description: Optional[str] = None,
         metadata_entries: Optional[List[MetadataEntry]] = None,
         asset_key: Optional[Union[str, AssetKey]] = None,
@@ -524,7 +542,7 @@ class Materialization(
         return Materialization(
             label=last_file_comp(path),
             description=description,
-            metadata_entries=[MetadataEntry.fspath(path)],
+            metadata_entries=[MetadataEntry("path", value=MetadataValue.path(path))],
             asset_key=asset_key,
         )
 
@@ -689,8 +707,8 @@ class RetryRequested(Exception):
             def flakes():
                 try:
                     flakey_operation()
-                except:
-                    raise RetryRequested(max_retries=3)
+                except Exception as e:
+                    raise RetryRequested(max_retries=3) from e
     """
 
     def __init__(

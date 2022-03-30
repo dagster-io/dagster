@@ -1,3 +1,5 @@
+from typing import Dict
+
 import click
 
 from dagster import __version__ as dagster_version
@@ -94,7 +96,7 @@ def job_list_versions_command(**kwargs):
         execute_list_versions_command(instance, kwargs)
 
 
-def execute_list_versions_command(instance, kwargs):
+def execute_list_versions_command(instance: DagsterInstance, kwargs: Dict[str, object]):
     check.inst_param(instance, "instance", DagsterInstance)
 
     config = list(check.opt_tuple_param(kwargs.get("config"), "config", default=(), of_type=str))

@@ -16,6 +16,7 @@ from dagster.core.definitions import (
     NodeHandle,
 )
 from dagster.core.definitions.events import AssetLineageInfo, ObjectStoreOperationType
+from dagster.core.definitions.metadata import MetadataValue
 from dagster.core.errors import DagsterError, HookExecutionError
 from dagster.core.execution.context.hook import HookContext
 from dagster.core.execution.context.system import (
@@ -733,7 +734,7 @@ class DagsterEvent(
     def asset_materialization(
         step_context: IStepContext,
         materialization: Union[AssetMaterialization, Materialization],
-        asset_lineage: List[AssetLineageInfo] = None,
+        asset_lineage: Optional[List[AssetLineageInfo]] = None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_step(
             event_type=DagsterEventType.ASSET_MATERIALIZATION,
@@ -874,13 +875,15 @@ class DagsterEvent(
     ) -> "DagsterEvent":
 
         metadata_entries = []
-        for resource_key in resource_instances.keys():
-            resource_obj = resource_instances[resource_key]
-            resource_time = resource_init_times[resource_key]
-            metadata_entries.append(
-                MetadataEntry.python_artifact(
-                    resource_obj.__class__, resource_key, "Initialized in {}".format(resource_time)
-                )
+        for key in resource_instances.keys():
+            metadata_entries.extend(
+                [
+                    MetadataEntry(
+                        key,
+                        value=MetadataValue.python_artifact(resource_instances[key].__class__),
+                    ),
+                    MetadataEntry(f"{key}:init_time", value=resource_init_times[key]),
+                ]
             )
 
         return DagsterEvent.from_resource(
@@ -944,7 +947,7 @@ class DagsterEvent(
         pipeline_context: IPlanContext,
         message: str,
         event_specific_data: Optional["EngineEventData"] = None,
-        step_handle: Optional[StepHandle] = None,
+        step_handle: Optional[Union[StepHandle, ResolvedFromDynamicStepHandle]] = None,
     ) -> "DagsterEvent":
         return DagsterEvent.from_pipeline(
             DagsterEventType.ENGINE_EVENT,
@@ -1023,7 +1026,9 @@ class DagsterEvent(
                 value_name=value_name,
                 address=object_store_operation_result.key,
                 metadata_entries=[
-                    MetadataEntry.path(object_store_operation_result.key, label="key")
+                    MetadataEntry(
+                        "key", value=MetadataValue.path(object_store_operation_result.key)
+                    ),
                 ],
                 version=object_store_operation_result.version,
                 mapping_key=object_store_operation_result.mapping_key,
@@ -1330,9 +1335,9 @@ class EngineEventData(
         pid: int, step_keys_to_execute: Optional[List[str]] = None, marker_end: Optional[str] = None
     ) -> "EngineEventData":
         return EngineEventData(
-            metadata_entries=[MetadataEntry.text(str(pid), "pid")]
+            metadata_entries=[MetadataEntry("pid", value=str(pid))]
             + (
-                [MetadataEntry.text(str(step_keys_to_execute), "step_keys")]
+                [MetadataEntry("step_keys", value=str(step_keys_to_execute))]
                 if step_keys_to_execute
                 else []
             ),
@@ -1344,9 +1349,9 @@ class EngineEventData(
         pid: int, step_keys_to_execute: Optional[List[str]] = None
     ) -> "EngineEventData":
         return EngineEventData(
-            metadata_entries=[MetadataEntry.text(str(pid), "pid")]
+            metadata_entries=[MetadataEntry("pid", value=str(pid))]
             + (
-                [MetadataEntry.text(str(step_keys_to_execute), "step_keys")]
+                [MetadataEntry("step_keys", value=str(step_keys_to_execute))]
                 if step_keys_to_execute
                 else []
             )
@@ -1355,7 +1360,7 @@ class EngineEventData(
     @staticmethod
     def interrupted(steps_interrupted: List[str]) -> "EngineEventData":
         return EngineEventData(
-            metadata_entries=[MetadataEntry.text(str(steps_interrupted), "steps_interrupted")]
+            metadata_entries=[MetadataEntry("steps_interrupted", value=str(steps_interrupted))]
         )
 
     @staticmethod

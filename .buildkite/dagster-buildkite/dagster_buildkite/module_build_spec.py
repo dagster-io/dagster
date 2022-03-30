@@ -7,7 +7,6 @@ from .utils import get_python_versions_for_branch
 MYPY_EXCLUDES = [
     "python_modules/dagit",
     "python_modules/automation",
-    "python_modules/dagster-graphql",
     "python_modules/libraries/dagster-databricks",
     "python_modules/libraries/dagster-dbt",
     "python_modules/libraries/dagster-docker",
@@ -161,8 +160,7 @@ class ModuleBuildSpec(
             tests.append(
                 StepBuilder(f":mypy: {package}")
                 .run(
-                    "pip install -e python_modules/dagster[lint]",
-                    "mkdir -p .mypy_cache",
+                    "pip install -e python_modules/dagster[mypy]",
                     # mypy raises an error for missing stubs. We try to specify them in
                     # dependencies, but inclusion of `--install-types
                     # --non-interactive` will cause mypy to automatically download any missing ones.

@@ -48,7 +48,11 @@ from ..runs import (
     parse_run_config_input,
 )
 from ..schedules import GrapheneStartScheduleMutation, GrapheneStopRunningScheduleMutation
-from ..sensors import GrapheneStartSensorMutation, GrapheneStopSensorMutation
+from ..sensors import (
+    GrapheneSetSensorCursorMutation,
+    GrapheneStartSensorMutation,
+    GrapheneStopSensorMutation,
+)
 from ..util import non_null_list
 
 
@@ -331,7 +335,7 @@ class GrapheneTerminateRunMutation(graphene.Mutation):
     @check_permission(Permissions.TERMINATE_PIPELINE_EXECUTION)
     def mutate(self, graphene_info, **kwargs):
         return terminate_pipeline_execution(
-            graphene_info,
+            graphene_info.context.instance,
             kwargs["runId"],
             kwargs.get("terminatePolicy", GrapheneTerminateRunPolicy.SAFE_TERMINATE),
         )
@@ -528,6 +532,7 @@ class GrapheneDagitMutation(graphene.ObjectType):
     start_schedule = GrapheneStartScheduleMutation.Field()
     stop_running_schedule = GrapheneStopRunningScheduleMutation.Field()
     start_sensor = GrapheneStartSensorMutation.Field()
+    set_sensor_cursor = GrapheneSetSensorCursorMutation.Field()
     stop_sensor = GrapheneStopSensorMutation.Field()
     terminate_pipeline_execution = GrapheneTerminateRunMutation.Field()
     terminate_run = GrapheneTerminateRunMutation.Field()

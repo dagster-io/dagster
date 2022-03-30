@@ -50,8 +50,8 @@ class _ScheduleLaunchContext:
         if skip_reason:
             self._tick = self._tick.with_reason(skip_reason=skip_reason)
 
-    def add_run(self, run_id, run_key=None):
-        self._tick = self._tick.with_run(run_id, run_key)
+    def add_run_info(self, run_id=None, run_key=None):
+        self._tick = self._tick.with_run_info(run_id, run_key)
 
     def _write(self):
         self._instance.update_tick(self._tick)
@@ -421,7 +421,7 @@ def _schedule_runs_at_time(
     )
 
     repo_location = workspace.get_location(
-        schedule_origin.external_repository_origin.repository_location_origin
+        schedule_origin.external_repository_origin.repository_location_origin.location_name
     )
 
     external_pipeline = repo_location.get_external_pipeline(pipeline_selector)
@@ -459,7 +459,7 @@ def _schedule_runs_at_time(
                 logger.info(
                     f"Run {run.run_id} already completed for this execution of {external_schedule.name}"
                 )
-                tick_context.add_run(run_id=run.run_id, run_key=run_request.run_key)
+                tick_context.add_run_info(run_id=run.run_id, run_key=run_request.run_key)
                 yield
                 continue
             else:
@@ -490,7 +490,7 @@ def _schedule_runs_at_time(
                 yield error_info
 
         _check_for_debug_crash(debug_crash_flags, "RUN_LAUNCHED")
-        tick_context.add_run(run_id=run.run_id, run_key=run_request.run_key)
+        tick_context.add_run_info(run_id=run.run_id, run_key=run_request.run_key)
         _check_for_debug_crash(debug_crash_flags, "RUN_ADDED")
         yield
 

@@ -22,7 +22,7 @@ from dagster import (
     run_failure_sensor,
     solid,
 )
-from dagster.core.definitions.decorators.sensor import asset_sensor, sensor
+from dagster.core.definitions.decorators.sensor_decorator import asset_sensor, sensor
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.definitions.run_status_sensor_definition import run_status_sensor
 from dagster.core.definitions.sensor_definition import DefaultSensorStatus, RunRequest, SkipReason
@@ -238,6 +238,11 @@ def my_pipeline_success_sensor(context):
     assert isinstance(context.instance, DagsterInstance)
 
 
+@run_status_sensor(pipeline_run_status=PipelineRunStatus.STARTED)
+def my_pipeline_started_sensor(context):
+    assert isinstance(context.instance, DagsterInstance)
+
+
 config_job = config_graph.to_job()
 
 
@@ -293,6 +298,7 @@ def the_repo():
         my_run_failure_sensor_filtered,
         my_run_failure_sensor_that_itself_fails,
         my_pipeline_success_sensor,
+        my_pipeline_started_sensor,
         failure_pipeline,
         failure_job,
         hanging_pipeline,
@@ -783,6 +789,120 @@ def test_launch_once(capfd):
         "US/Central",
     )
     with instance_with_sensors() as (
+        instance,
+        workspace,
+        external_repo,
+    ):
+        with pendulum.test(freeze_datetime):
+
+            external_sensor = external_repo.get_external_sensor("run_key_sensor")
+            instance.add_instigator_state(
+                InstigatorState(
+                    external_sensor.get_external_origin(),
+                    InstigatorType.SENSOR,
+                    InstigatorStatus.RUNNING,
+                )
+            )
+            assert instance.get_runs_count() == 0
+            ticks = instance.get_ticks(external_sensor.get_external_origin_id())
+            assert len(ticks) == 0
+
+            evaluate_sensors(instance, workspace)
+            wait_for_all_runs_to_start(instance)
+
+            assert instance.get_runs_count() == 1
+            run = instance.get_runs()[0]
+            ticks = instance.get_ticks(external_sensor.get_external_origin_id())
+            assert len(ticks) == 1
+            validate_tick(
+                ticks[0],
+                external_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+                expected_run_ids=[run.run_id],
+            )
+
+        # run again (after 30 seconds), to ensure that the run key maintains idempotence
+        freeze_datetime = freeze_datetime.add(seconds=30)
+        with pendulum.test(freeze_datetime):
+            evaluate_sensors(instance, workspace)
+            assert instance.get_runs_count() == 1
+            ticks = instance.get_ticks(external_sensor.get_external_origin_id())
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                external_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+            assert ticks[0].run_keys
+            assert len(ticks[0].run_keys) == 1
+            assert not ticks[0].run_ids
+
+            captured = capfd.readouterr()
+            assert (
+                'Skipping 1 run for sensor run_key_sensor already completed with run keys: ["only_once"]'
+                in captured.out
+            )
+
+            launched_run = instance.get_runs()[0]
+
+            # Manually create a new run with the same tags
+            execute_pipeline(
+                the_pipeline,
+                run_config=launched_run.run_config,
+                tags=launched_run.tags,
+                instance=instance,
+            )
+
+            # Sensor loop still executes
+        freeze_datetime = freeze_datetime.add(seconds=30)
+        with pendulum.test(freeze_datetime):
+            evaluate_sensors(instance, workspace)
+            ticks = instance.get_ticks(external_sensor.get_external_origin_id())
+
+            assert len(ticks) == 3
+            validate_tick(
+                ticks[0],
+                external_sensor,
+                freeze_datetime,
+                TickStatus.SKIPPED,
+            )
+
+
+@contextmanager
+def instance_with_sensors_no_run_bucketing():
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with instance_with_sensors(
+            overrides={
+                "run_storage": {
+                    "module": "dagster_tests.core_tests.storage_tests.test_run_storage",
+                    "class": "NonBucketQuerySqliteRunStorage",
+                    "config": {"base_dir": temp_dir},
+                },
+            }
+        ) as (
+            instance,
+            workspace,
+            external_repo,
+        ):
+            yield instance, workspace, external_repo
+
+
+def test_launch_once_unbatched(capfd):
+    freeze_datetime = to_timezone(
+        create_pendulum_time(
+            year=2019,
+            month=2,
+            day=27,
+            hour=23,
+            minute=59,
+            second=59,
+            tz="UTC",
+        ),
+        "US/Central",
+    )
+    with instance_with_sensors_no_run_bucketing() as (
         instance,
         workspace,
         external_repo,
@@ -1472,7 +1592,7 @@ def test_run_failure_sensor_filtered():
             )
 
 
-def test_run_status_sensor():
+def test_run_status_sensor(capfd):
     freeze_datetime = pendulum.now()
     with instance_with_sensors() as (
         instance,
@@ -1482,6 +1602,9 @@ def test_run_status_sensor():
         with pendulum.test(freeze_datetime):
             success_sensor = external_repo.get_external_sensor("my_pipeline_success_sensor")
             instance.start_sensor(success_sensor)
+
+            started_sensor = external_repo.get_external_sensor("my_pipeline_started_sensor")
+            instance.start_sensor(started_sensor)
 
             evaluate_sensors(instance, workspace)
 
@@ -1512,7 +1635,7 @@ def test_run_status_sensor():
 
         with pendulum.test(freeze_datetime):
 
-            # should not fire the success sensor
+            # should not fire the success sensor, should fire the started sensro
             evaluate_sensors(instance, workspace)
 
             ticks = instance.get_ticks(success_sensor.get_external_origin_id())
@@ -1522,6 +1645,15 @@ def test_run_status_sensor():
                 success_sensor,
                 freeze_datetime,
                 TickStatus.SKIPPED,
+            )
+
+            ticks = instance.get_ticks(started_sensor.get_external_origin_id())
+            assert len(ticks) == 2
+            validate_tick(
+                ticks[0],
+                started_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
             )
 
         with pendulum.test(freeze_datetime):
@@ -1537,9 +1669,11 @@ def test_run_status_sensor():
             assert run.status == PipelineRunStatus.SUCCESS
             freeze_datetime = freeze_datetime.add(seconds=60)
 
+        capfd.readouterr()
+
         with pendulum.test(freeze_datetime):
 
-            # should fire the success sensor
+            # should fire the success sensor and the started sensor
             evaluate_sensors(instance, workspace)
 
             ticks = instance.get_ticks(success_sensor.get_external_origin_id())
@@ -1549,6 +1683,25 @@ def test_run_status_sensor():
                 success_sensor,
                 freeze_datetime,
                 TickStatus.SUCCESS,
+            )
+
+            ticks = instance.get_ticks(started_sensor.get_external_origin_id())
+            assert len(ticks) == 3
+            validate_tick(
+                ticks[0],
+                started_sensor,
+                freeze_datetime,
+                TickStatus.SUCCESS,
+            )
+
+            captured = capfd.readouterr()
+            assert (
+                'Sensor "my_pipeline_started_sensor" acted on run status STARTED of run'
+                in captured.out
+            )
+            assert (
+                'Sensor "my_pipeline_success_sensor" acted on run status SUCCESS of run'
+                in captured.out
             )
 
 
@@ -1824,7 +1977,8 @@ def test_bad_run_request_untargeted():
                 None,
                 (
                     "Error in sensor bad_request_untargeted: Sensor evaluation function returned a "
-                    "RunRequest for a sensor without a specified target."
+                    "RunRequest for a sensor lacking a specified target (pipeline_name, job, or "
+                    "jobs)."
                 ),
             )
 

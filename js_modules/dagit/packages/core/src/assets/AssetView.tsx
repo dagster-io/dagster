@@ -1,30 +1,47 @@
 import {gql, useQuery} from '@apollo/client';
-import {Alert, Box, ButtonLink, ColorsWIP, NonIdealState, Spinner, Tab, Tabs} from '@dagster-io/ui';
+import {
+  Alert,
+  Box,
+  ButtonLink,
+  ColorsWIP,
+  NonIdealState,
+  Spinner,
+  Tab,
+  Tabs,
+  TagWIP,
+} from '@dagster-io/ui';
 import * as React from 'react';
 
-import {QueryCountdown} from '../app/QueryCountdown';
+import {
+  FIFTEEN_SECONDS,
+  QueryRefreshCountdown,
+  useQueryRefreshAtInterval,
+} from '../app/QueryRefresh';
 import {displayNameForAssetKey} from '../app/Util';
 import {Timestamp} from '../app/time/Timestamp';
 import {useDocumentTitle} from '../hooks/useDocumentTitle';
 import {useQueryPersistedState} from '../hooks/useQueryPersistedState';
+import {RepositoryLink} from '../nav/RepositoryLink';
 import {useDidLaunchEvent} from '../runs/RunUtils';
 import {LaunchAssetExecutionButton} from '../workspace/asset-graph/LaunchAssetExecutionButton';
 import {
   buildGraphDataFromSingleNode,
   buildLiveData,
-  IN_PROGRESS_RUNS_FRAGMENT,
+  REPOSITORY_LIVE_FRAGMENT,
   LiveData,
+  toGraphId,
 } from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 
 import {AssetEvents} from './AssetEvents';
 import {AssetNodeDefinition, ASSET_NODE_DEFINITION_FRAGMENT} from './AssetNodeDefinition';
+import {AssetNodeInstigatorTag, ASSET_NODE_INSTIGATORS_FRAGMENT} from './AssetNodeInstigatorTag';
 import {AssetPageHeader} from './AssetPageHeader';
 import {AssetKey} from './types';
 import {
-  AssetNodeDefinitionRunsQuery,
-  AssetNodeDefinitionRunsQueryVariables,
-} from './types/AssetNodeDefinitionRunsQuery';
+  AssetNodeDefinitionLiveQuery,
+  AssetNodeDefinitionLiveQueryVariables,
+} from './types/AssetNodeDefinitionLiveQuery';
 import {AssetQuery, AssetQueryVariables} from './types/AssetQuery';
 
 interface Props {
@@ -46,11 +63,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
   const queryResult = useQuery<AssetQuery, AssetQueryVariables>(ASSET_QUERY, {
     variables: {assetKey: {path: assetKey.path}},
     notifyOnNetworkStatusChange: true,
-    pollInterval: 5 * 1000,
   });
-
-  // Refresh immediately when a run is launched from this page
-  useDidLaunchEvent(queryResult.refetch);
 
   const {assetOrError} = queryResult.data || queryResult.previousData || {};
   const asset = assetOrError && assetOrError.__typename === 'Asset' ? assetOrError : null;
@@ -61,10 +74,10 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     ? buildRepoAddress(definition.repository.name, definition.repository.location.name)
     : null;
 
-  const inProgressRunsQuery = useQuery<
-    AssetNodeDefinitionRunsQuery,
-    AssetNodeDefinitionRunsQueryVariables
-  >(ASSET_NODE_DEFINITION_RUNS_QUERY, {
+  const liveQueryResult = useQuery<
+    AssetNodeDefinitionLiveQuery,
+    AssetNodeDefinitionLiveQueryVariables
+  >(ASSET_NODE_DEFINITION_LIVE_QUERY, {
     skip: !repoAddress,
     variables: {
       repositorySelector: {
@@ -73,17 +86,23 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
       },
     },
     notifyOnNetworkStatusChange: true,
-    pollInterval: 15 * 1000,
   });
+
+  const refreshState = useQueryRefreshAtInterval(queryResult, FIFTEEN_SECONDS);
+  useQueryRefreshAtInterval(liveQueryResult, FIFTEEN_SECONDS);
+
+  // Refresh immediately when a run is launched from this page
+  useDidLaunchEvent(queryResult.refetch);
+  useDidLaunchEvent(liveQueryResult.refetch);
 
   let liveDataByNode: LiveData = {};
 
-  if (definition) {
-    const inProgressRuns =
-      inProgressRunsQuery.data?.repositoryOrError.__typename === 'Repository'
-        ? inProgressRunsQuery.data.repositoryOrError.inProgressRunsByStep
-        : [];
+  const repo =
+    liveQueryResult.data?.repositoryOrError.__typename === 'Repository'
+      ? liveQueryResult.data.repositoryOrError
+      : null;
 
+  if (definition && repo) {
     const nodesWithLatestMaterialization = [
       definition,
       ...definition.dependencies.map((d) => d.asset),
@@ -92,7 +111,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     liveDataByNode = buildLiveData(
       buildGraphDataFromSingleNode(definition),
       nodesWithLatestMaterialization,
-      inProgressRuns,
+      [repo],
     );
   }
 
@@ -104,7 +123,20 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
     <div>
       <AssetPageHeader
         assetKey={assetKey}
-        repoAddress={repoAddress}
+        tags={
+          <>
+            {repoAddress ? (
+              <TagWIP icon="asset">
+                Asset in <RepositoryLink repoAddress={repoAddress} />
+              </TagWIP>
+            ) : (
+              <TagWIP icon="asset">Asset</TagWIP>
+            )}
+            {definition && repoAddress && (
+              <AssetNodeInstigatorTag assetNode={definition} repoAddress={repoAddress} />
+            )}
+          </>
+        }
         tabs={
           <Tabs size="large" selectedTabId={params.view || 'activity'}>
             <Tab
@@ -123,7 +155,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
         right={
           <Box style={{margin: '-4px 0'}} flex={{gap: 8, alignItems: 'baseline'}}>
             <Box margin={{top: 4}}>
-              <QueryCountdown pollInterval={5 * 1000} queryResult={queryResult} />
+              <QueryRefreshCountdown refreshState={refreshState} />
             </Box>
             {definition && definition.jobNames.length > 0 && repoAddress && (
               <LaunchAssetExecutionButton
@@ -179,16 +211,7 @@ export const AssetView: React.FC<Props> = ({assetKey}) => {
             params={params}
             paramsTimeWindowOnly={!!params.asOf}
             setParams={setParams}
-            liveData={definition ? liveDataByNode[definition.id] : undefined}
-            repository={
-              definition?.repository
-                ? {
-                    repositoryLocationName: definition?.repository.location.name,
-                    repositoryName: definition.repository.name,
-                  }
-                : undefined
-            }
-            opName={definition?.opName}
+            liveData={definition ? liveDataByNode[toGraphId(definition.assetKey)] : undefined}
           />
         ))}
     </div>
@@ -219,28 +242,29 @@ const ASSET_QUERY = gql`
               name
             }
           }
+
+          ...AssetNodeInstigatorsFragment
           ...AssetNodeDefinitionFragment
         }
       }
     }
   }
+  ${ASSET_NODE_INSTIGATORS_FRAGMENT}
   ${ASSET_NODE_DEFINITION_FRAGMENT}
 `;
 
-const ASSET_NODE_DEFINITION_RUNS_QUERY = gql`
-  query AssetNodeDefinitionRunsQuery($repositorySelector: RepositorySelector!) {
+const ASSET_NODE_DEFINITION_LIVE_QUERY = gql`
+  query AssetNodeDefinitionLiveQuery($repositorySelector: RepositorySelector!) {
     repositoryOrError(repositorySelector: $repositorySelector) {
       __typename
       ... on Repository {
         id
         name
-        inProgressRunsByStep {
-          ...InProgressRunsFragment
-        }
+        ...RepositoryLiveFragment
       }
     }
   }
-  ${IN_PROGRESS_RUNS_FRAGMENT}
+  ${REPOSITORY_LIVE_FRAGMENT}
 `;
 
 const HistoricalViewAlert: React.FC<{

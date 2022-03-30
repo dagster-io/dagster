@@ -7,16 +7,13 @@
 pylint:
 	pylint -j 0 `git ls-files '*.py'` --rcfile=.pylintrc
 
-update_doc_snapshot:
-	pytest docs --snapshot-update
-
 # NOTE: See pyproject.toml [tool.black] for majority of black config. Only include/exclude options
 # and format targets should be specified here. Note there are separate pyproject.toml for the root
 # and examples/docs_snippets.
 #
 # NOTE: Use `extend-exclude` instead of `exclude`. If `exclude` is provided, it stops black from
 # reading gitignore. `extend-exclude` is layered on top of gitignore. See:
-#   https://black.readthedocs.io/en/stable/usage_and_configuration/file_collection_and_discovery.html#gitignore 
+#   https://black.readthedocs.io/en/stable/usage_and_configuration/file_collection_and_discovery.html#gitignore
 black:
 	black --fast \
     --extend-exclude="examples/docs_snippets|snapshots" \
@@ -25,28 +22,36 @@ black:
     examples/docs_snippets
 
 check_black:
-	-black --check --fast \
+	black --check --fast \
     --extend-exclude="examples/docs_snippets|snapshots" \
     examples integration_tests helm python_modules .buildkite
-	-black --check --fast \
+	black --check --fast \
     examples/docs_snippets
 
+
+# NOTE: We use `git ls-files` instead of isort's built-in recursive discovery
+# because it is much faster. Note that we also need to skip files with `git
+# ls-files` (the `:!:` directives are exclued patterns). Even isort
+# `--skip`/`--filter-files` is very slow.
 isort:
 	isort \
-    --skip=examples/docs_snippets --skip=snapshots \
-    examples integration_tests helm python_modules .buildkite
+    `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' 'helm/*.py' 'python_modules/*.py' \
+      ':!:examples/docs_snippets' \
+      ':!:snapshots'`
 	isort \
-    examples/docs_snippets
+   `git ls-files 'examples/docs_snippets/*.py'`
 
 check_isort:
-	-isort --check \
-    --skip=examples/docs_snippets --skip=snapshots \
-    examples integration_tests helm python_modules .buildkite
-	-isort --check \
-    examples/docs_snippets
+	isort --check \
+    `git ls-files '.buildkite/*.py' 'examples/*.py' 'integration_tests/*.py' 'helm/*.py' 'python_modules/*.py' \
+      ':!:examples/docs_snippets' \
+      ':!:snapshots'`
+	isort --check \
+    `git ls-files 'examples/docs_snippets/*.py'`
 
 yamllint:
-	yamllint -c .yamllint.yaml --strict `git ls-files 'helm/**/*.yml' 'helm/**/*.yaml' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'`
+	yamllint -c .yamllint.yaml --strict \
+    `git ls-files 'helm/*.yml' 'helm/*.yaml' ':!:helm/**/templates/*.yml' ':!:helm/**/templates/*.yaml'`
 
 install_dev_python_modules:
 	python scripts/install_dev_python_modules.py -qqq
@@ -55,7 +60,7 @@ install_dev_python_modules_verbose:
 	python scripts/install_dev_python_modules.py
 
 graphql:
-	cd js_modules/dagit/; make generate-graphql
+	cd js_modules/dagit/; make generate-graphql; make generate-perms
 
 sanity_check:
 #NOTE:  fails on nonPOSIX-compliant shells (e.g. CMD, powershell)

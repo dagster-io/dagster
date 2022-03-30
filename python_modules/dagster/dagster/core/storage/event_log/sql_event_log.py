@@ -108,7 +108,39 @@ class SqlEventLogStorage(EventLogStorage):
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return
 
-        materialization = event.dagster_event.step_materialization_data.materialization
+        # The AssetKeyTable contains a `last_materialization_timestamp` column that is exclusively
+        # used to determine if an asset exists (last materialization timestamp > wipe timestamp).
+        # This column is used nowhere else, and as of AssetObservation creation, we want to extend
+        # this functionality to ensure that assets with observation OR materialization timestamp
+        # > wipe timestamp display in Dagit.
+
+        # As of the following PR, we update last_materialization_timestamp to store the timestamp
+        # of the latest asset observation or materialization that has occurred.
+        # https://github.com/dagster-io/dagster/pull/6885
+        if event.dagster_event.is_asset_observation:
+            self.store_asset_observation(event)
+        elif event.dagster_event.is_step_materialization:
+            self.store_asset_materialization(event)
+
+    def store_asset_observation(self, event):
+        # last_materialization_timestamp is updated upon observation or materialization
+        # See store_asset method above for more details
+        if self.has_asset_key_index_cols():
+            insert_statement = AssetKeyTable.insert().values(
+                asset_key=event.dagster_event.asset_key.to_string(),
+                last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
+            )
+            update_statement = AssetKeyTable.update().values(
+                last_materialization_timestamp=utc_datetime_from_timestamp(event.timestamp),
+            )
+
+            with self.index_connection() as conn:
+                try:
+                    conn.execute(insert_statement)
+                except db.exc.IntegrityError:
+                    conn.execute(update_statement)
+
+    def store_asset_materialization(self, event):
         # We switched to storing the entire event record of the last materialization instead of just
         # the AssetMaterialization object, so that we have access to metadata like timestamp,
         # pipeline, run_id, etc.
@@ -120,7 +152,11 @@ class SqlEventLogStorage(EventLogStorage):
         # to `last_materialization_event`, for clarity.  For now, we should do some back-compat.
         #
         # https://github.com/dagster-io/dagster/issues/3945
+
+        # last_materialization_timestamp is updated upon observation or materialization
+        # See store_asset method above for more details
         if self.has_asset_key_index_cols():
+            materialization = event.dagster_event.step_materialization_data.materialization
             insert_statement = (
                 AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
                     asset_key=event.dagster_event.asset_key.to_string(),
@@ -182,12 +218,12 @@ class SqlEventLogStorage(EventLogStorage):
 
         if (
             event.is_dagster_event
-            and event.dagster_event.is_step_materialization
+            and (
+                event.dagster_event.is_step_materialization
+                or event.dagster_event.is_asset_observation
+            )
             and event.dagster_event.asset_key
         ):
-            # Currently, only materializations are stored in the asset catalog.
-            # We will store observations after adding a column migration to
-            # store latest asset observation timestamp in the asset key table.
             self.store_asset(event)
 
     def get_logs_for_run_by_log_id(
@@ -218,7 +254,7 @@ class SqlEventLogStorage(EventLogStorage):
             .order_by(SqlEventLogStorageTable.c.id.asc())
         )
         if dagster_event_types:
-            query = query.filter(
+            query = query.where(
                 SqlEventLogStorageTable.c.dagster_event_type.in_(
                     [dagster_event_type.value for dagster_event_type in dagster_event_types]
                 )
@@ -738,16 +774,18 @@ class SqlEventLogStorage(EventLogStorage):
                     )
                 )
                 .group_by(SqlEventLogStorageTable.c.asset_key)
-                .subquery()
+                .alias("latest_materializations")
             )
             backcompat_query = db.select(
                 [SqlEventLogStorageTable.c.asset_key, SqlEventLogStorageTable.c.event]
-            ).join(
-                latest_event_subquery,
-                db.and_(
-                    SqlEventLogStorageTable.c.asset_key == latest_event_subquery.c.asset_key,
-                    SqlEventLogStorageTable.c.timestamp == latest_event_subquery.c.timestamp,
-                ),
+            ).select_from(
+                latest_event_subquery.join(
+                    SqlEventLogStorageTable,
+                    db.and_(
+                        SqlEventLogStorageTable.c.asset_key == latest_event_subquery.c.asset_key,
+                        SqlEventLogStorageTable.c.timestamp == latest_event_subquery.c.timestamp,
+                    ),
+                )
             )
             with self.index_connection() as conn:
                 event_rows = conn.execute(backcompat_query).fetchall()
@@ -906,10 +944,10 @@ class SqlEventLogStorage(EventLogStorage):
             return False
 
         for row in rows:
-            row_dict = row._asdict()
-            if not row_dict.get("last_materialization_timestamp"):
+            if not _get_from_row(row, "last_materialization_timestamp"):
                 return False
-            if row_dict.get("asset_details") and not row_dict.get("wipe_timestamp"):
+
+            if _get_from_row(row, "asset_details") and not _get_from_row(row, "wipe_timestamp"):
                 return False
 
         return True
@@ -1163,3 +1201,11 @@ class SqlEventLogStorage(EventLogStorage):
                 materialization_count_by_partition[asset_key][row[1]] = row[2]
 
         return materialization_count_by_partition
+
+
+def _get_from_row(row, column):
+    """utility function for extracting a column from a sqlalchemy row proxy, since '_asdict' is not
+    supported in sqlalchemy 1.3"""
+    if not row.has_key(column):
+        return None
+    return row[column]

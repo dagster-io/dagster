@@ -32,7 +32,7 @@ from .target import DirectTarget, RepoRelativeTarget
 from .utils import check_valid_name
 
 if TYPE_CHECKING:
-    from .decorators.schedule import DecoratedScheduleFunction
+    from .decorators.schedule_decorator import DecoratedScheduleFunction
 
 
 @whitelist_for_serdes
@@ -204,14 +204,14 @@ class ScheduleDefinition:
         job: Optional[Union[GraphDefinition, PipelineDefinition]] = None,
         default_status: DefaultScheduleStatus = DefaultScheduleStatus.STOPPED,
     ):
-        from .decorators.schedule import DecoratedScheduleFunction
+        from .decorators.schedule_decorator import DecoratedScheduleFunction
 
         self._cron_schedule = check.str_param(cron_schedule, "cron_schedule")
 
         if not is_valid_cron_string(self._cron_schedule):
             raise DagsterInvalidDefinitionError(
-                f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''.  "
-                "Dagster recognizes cron expressions consisting of 5 space-separated fields."
+                f"Found invalid cron schedule '{self._cron_schedule}' for schedule '{name}''. "
+                "Dagster recognizes standard cron expressions consisting of 5 fields."
             )
 
         if job is not None:
@@ -334,7 +334,7 @@ class ScheduleDefinition:
         )
 
     def __call__(self, *args, **kwargs):
-        from .decorators.schedule import DecoratedScheduleFunction
+        from .decorators.schedule_decorator import DecoratedScheduleFunction
 
         if not isinstance(self._execution_fn, DecoratedScheduleFunction):
             raise DagsterInvalidInvocationError(
@@ -416,6 +416,12 @@ class ScheduleDefinition:
     def execution_timezone(self) -> Optional[str]:
         return self._execution_timezone
 
+    @property
+    def job(self) -> PipelineDefinition:
+        if isinstance(self._target, DirectTarget):
+            return self._target.pipeline
+        raise DagsterInvalidDefinitionError("No job was provided to ScheduleDefinition.")
+
     def evaluate_tick(self, context: "ScheduleEvaluationContext") -> ScheduleExecutionData:
         """Evaluate schedule using the provided context.
 
@@ -426,7 +432,7 @@ class ScheduleDefinition:
 
         """
 
-        from .decorators.schedule import DecoratedScheduleFunction
+        from .decorators.schedule_decorator import DecoratedScheduleFunction
 
         check.inst_param(context, "context", ScheduleEvaluationContext)
         if isinstance(self._execution_fn, DecoratedScheduleFunction):

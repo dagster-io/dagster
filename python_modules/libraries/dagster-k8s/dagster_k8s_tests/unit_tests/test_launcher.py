@@ -3,10 +3,13 @@ from unittest import mock
 
 from dagster_k8s import K8sRunLauncher
 from dagster_k8s.job import DAGSTER_PG_PASSWORD_ENV_VAR, UserDefinedDagsterK8sConfig
+from kubernetes.client.models.v1_job import V1Job
+from kubernetes.client.models.v1_job_status import V1JobStatus
 
 from dagster import pipeline, reconstructable
 from dagster.core.host_representation import RepositoryHandle
 from dagster.core.launcher import LaunchRunContext
+from dagster.core.launcher.base import WorkerStatus
 from dagster.core.storage.tags import DOCKER_IMAGE_TAG
 from dagster.core.test_utils import (
     create_run_for_test,
@@ -126,7 +129,7 @@ def test_user_defined_k8s_config_in_run_tags(kubeconfig_file):
         container = kwargs["body"].spec.template.spec.containers[0]
 
         job_resources = container.resources
-        assert job_resources == expected_resources
+        assert job_resources.to_dict() == expected_resources
         assert DAGSTER_PG_PASSWORD_ENV_VAR in [env.name for env in container.env]
 
         labels = kwargs["body"].spec.template.metadata.labels
@@ -262,3 +265,59 @@ def test_no_postgres(kubeconfig_file):
 @pipeline
 def fake_pipeline():
     pass
+
+
+def test_check_run_health(kubeconfig_file):
+
+    labels = {"foo_label_key": "bar_label_value"}
+
+    # Construct a K8s run launcher in a fake k8s environment.
+    mock_k8s_client_batch_api = mock.Mock(spec_set=["read_namespaced_job"])
+    mock_k8s_client_batch_api.read_namespaced_job.side_effect = [
+        V1Job(status=V1JobStatus(failed=0, succeeded=0)),
+        V1Job(status=V1JobStatus(failed=0, succeeded=1)),
+        V1Job(status=V1JobStatus(failed=1, succeeded=0)),
+    ]
+    k8s_run_launcher = K8sRunLauncher(
+        service_account_name="dagit-admin",
+        instance_config_map="dagster-instance",
+        postgres_password_secret="dagster-postgresql-secret",
+        dagster_home="/opt/dagster/dagster_home",
+        job_image="fake_job_image",
+        load_incluster_config=False,
+        kubeconfig_file=kubeconfig_file,
+        k8s_client_batch_api=mock_k8s_client_batch_api,
+        labels=labels,
+    )
+
+    # Create fake external pipeline.
+    recon_pipeline = reconstructable(fake_pipeline)
+    recon_repo = recon_pipeline.repository
+    repo_def = recon_repo.get_definition()
+    with instance_for_test() as instance:
+        with in_process_test_workspace(instance, recon_repo) as workspace:
+            location = workspace.get_repository_location(workspace.repository_location_names[0])
+            repo_handle = RepositoryHandle(
+                repository_name=repo_def.name,
+                repository_location=location,
+            )
+            fake_external_pipeline = external_pipeline_from_recon_pipeline(
+                recon_pipeline,
+                solid_selection=None,
+                repository_handle=repo_handle,
+            )
+
+            # Launch the run in a fake Dagster instance.
+            pipeline_name = "demo_pipeline"
+            run = create_run_for_test(
+                instance,
+                pipeline_name=pipeline_name,
+                external_pipeline_origin=fake_external_pipeline.get_external_origin(),
+                pipeline_code_origin=fake_external_pipeline.get_python_origin(),
+            )
+            k8s_run_launcher.register_instance(instance)
+
+            # same order as side effects
+            assert k8s_run_launcher.check_run_worker_health(run).status == WorkerStatus.RUNNING
+            assert k8s_run_launcher.check_run_worker_health(run).status == WorkerStatus.SUCCESS
+            assert k8s_run_launcher.check_run_worker_health(run).status == WorkerStatus.FAILED

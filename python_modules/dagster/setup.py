@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Dict
 
-from setuptools import find_packages, setup  # type: ignore
+from setuptools import find_packages, setup
 
 
 def get_description() -> str:
@@ -44,7 +44,7 @@ if __name__ == "__main__":
             "License :: OSI Approved :: Apache Software License",
             "Operating System :: OS Independent",
         ],
-        packages=find_packages(exclude=["dagster_tests"]),
+        packages=find_packages(exclude=["dagster_tests*"]),
         package_data={
             "dagster": [
                 "dagster/core/storage/event_log/sqlite/alembic/*",
@@ -73,6 +73,7 @@ if __name__ == "__main__":
             "grpcio-health-checking>=1.32.0,<1.44.0",
             "packaging>=20.9",
             "pendulum",
+            "pep562",
             "protobuf>=3.13.0",  # ensure version we require is >= that with which we generated the proto code (set in dev-requirements)
             "python-dateutil",
             "pytz",
@@ -117,21 +118,23 @@ if __name__ == "__main__":
                 "pylint==2.6.0",
             ],
             "black": [
-                "black==22.1.0",
+                "black[jupyter]==22.1.0",
             ],
             "isort": [
                 "isort==5.10.1",
             ],
             "mypy": [
-                "mypy==0.931",
+                "mypy==0.940",
                 "types-croniter",  # version will be resolved against croniter
                 "types-mock",  # version will be resolved against mock
                 "types-pkg-resources",  # version will be resolved against setuptools (contains pkg_resources)
+                "types-protobuf",  # version will be resolved against protobuf
                 "types-python-dateutil",  # version will be resolved against python-dateutil
                 "types-PyYAML",  # version will be resolved against PyYAML
                 "types-pytz",  # version will be resolved against pytz
                 "types-requests",  # version will be resolved against requests
                 "types-tabulate",  # version will be resolved against tabulate
+                "types-toml",  # version will be resolved against toml
             ],
         },
         entry_points={

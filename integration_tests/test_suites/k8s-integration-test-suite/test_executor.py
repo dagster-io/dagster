@@ -169,7 +169,7 @@ def test_k8s_executor_combine_configs(
     )
 
     step_job_key = get_k8s_job_name(run_id, "count_letters")
-    step_job_name = f"dagster-job-{step_job_key}"
+    step_job_name = f"dagster-step-{step_job_key}"
 
     step_pods = get_pods_in_job(
         job_name=step_job_name, namespace=helm_namespace_for_k8s_run_launcher

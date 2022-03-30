@@ -8,10 +8,7 @@ from dagster.core.test_utils import create_test_daemon_workspace
 from dagster.daemon import get_default_daemon_logger
 from dagster.daemon.sensor import execute_sensor_iteration
 
-from .graphql_context_test_suite import (  # get_dict_recon_repo,
-    GraphQLContextVariant,
-    make_graphql_context_test_suite,
-)
+from .graphql_context_test_suite import NonLaunchableGraphQLContextTestMatrix
 
 INSTIGATION_QUERY = """
 query JobQuery($instigationSelector: InstigationSelector!) {
@@ -43,11 +40,7 @@ def _create_sensor_tick(graphql_context):
         )
 
 
-class TestNextTickRepository(
-    make_graphql_context_test_suite(
-        context_variants=GraphQLContextVariant.all_non_launchable_variants(),
-    )
-):
+class TestNextTickRepository(NonLaunchableGraphQLContextTestMatrix):
     def test_schedule_next_tick(self, graphql_context):
         repository_selector = infer_repository_selector(graphql_context)
         external_repository = graphql_context.get_repository_location(

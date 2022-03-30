@@ -1,6 +1,7 @@
 import tempfile
 from contextlib import contextmanager
 
+import mock
 import pytest
 from dagster_tests.core_tests.storage_tests.utils.run_storage import TestRunStorage
 
@@ -20,8 +21,13 @@ def create_non_bucket_sqlite_run_storage():
 
 
 class NonBucketQuerySqliteRunStorage(SqliteRunStorage):
-    def supports_bucket_query(self):
+    @property
+    def supports_bucket_queries(self):
         return False
+
+    @staticmethod
+    def from_config_value(inst_data, config_value):
+        return NonBucketQuerySqliteRunStorage.from_local(inst_data=inst_data, **config_value)
 
 
 @contextmanager
@@ -36,6 +42,25 @@ class TestSqliteImplementation(TestRunStorage):
     def run_storage(self, request):
         with request.param() as s:
             yield s
+
+    def test_bucket_gating(self, storage):
+        with mock.patch(
+            "dagster.core.storage.runs.sqlite.sqlite_run_storage.get_sqlite_version",
+            return_value="3.7.17",
+        ):
+            assert not storage.supports_bucket_queries
+
+        with mock.patch(
+            "dagster.core.storage.runs.sqlite.sqlite_run_storage.get_sqlite_version",
+            return_value="3.25.1",
+        ):
+            assert storage.supports_bucket_queries
+
+        with mock.patch(
+            "dagster.core.storage.runs.sqlite.sqlite_run_storage.get_sqlite_version",
+            return_value="3.25.19",
+        ):
+            assert storage.supports_bucket_queries
 
 
 class TestNonBucketQuerySqliteImplementation(TestRunStorage):

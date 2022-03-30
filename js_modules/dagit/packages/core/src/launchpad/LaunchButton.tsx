@@ -184,7 +184,7 @@ interface ButtonWithConfigurationProps {
 
 // Basic helper components
 
-const ButtonWithConfiguration: React.FunctionComponent<ButtonWithConfigurationProps> = ({
+const ButtonWithConfiguration: React.FC<ButtonWithConfigurationProps> = ({
   tooltip,
   icon,
   title,
