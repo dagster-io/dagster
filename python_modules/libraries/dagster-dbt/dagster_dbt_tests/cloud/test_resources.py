@@ -14,6 +14,7 @@ from .utils import (
     sample_list_artifacts,
     sample_run_details,
     sample_run_results,
+    sample_runs_details,
 )
 
 
@@ -37,6 +38,19 @@ def test_get_job():
             json=sample_job_details(),
         )
         assert dc_resource.get_job(SAMPLE_JOB_ID) == sample_job_details()["data"]
+
+
+def test_get_runs():
+
+    dc_resource = get_dbt_cloud_resource()
+
+    with responses.RequestsMock() as rsps:
+        rsps.add(
+            rsps.GET,
+            f"{SAMPLE_API_PREFIX}/runs/",
+            json=sample_runs_details(),
+        )
+        assert dc_resource.get_runs() == sample_runs_details()["data"]
 
 
 def test_get_run():
