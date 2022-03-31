@@ -1,5 +1,37 @@
 # Changelog
 
+# 0.14.7 Changelog
+
+### New
+
+* [helm] Added configuration to explicitly enable or disable telemetry.
+* IO manager for materializing assets to Azure ADLS. Specify the ADLS2 asset IO manager using the following config for `resource_defs` in `AssetGroup`:  
+
+```
+`from dagster import AssetGroup
+from dagster_azure import adls2_pickle_asset_io_manager, adls2_resource
+asset_group = AssetGroup(
+    [upstream_asset, downstream_asset],
+    resource_defs={"io_manager": adls2_pickle_asset_io_manager, "adls2": adls2_resource}
+)`
+```
+
+* Added ability to set a custom start time for partitions when using `@hourly_partitioned_config` ,  `@daily_partitioned_config`, `@weekly_partitioned_config`, and `@monthly_partitioned_config`
+* Run configs generated from partitions can be retrieved using the `PartitionedConfig,get_partition_for_partition_key` function. This will allow the use of the `validate_run_config` function in unit tests. 
+* [dagit] If a run is re-executed from failure, and the run fails again, the default action will be to re-execute from the point of failure, rather than to re-execute the entire job.
+
+### Bugfixes
+
+* Fixed a bug in the message for reporting Kubernetes run worker failures
+* [dagit] Fixed issue where re-executing a run that materialized a single asset could end up re-executing all steps in the job.
+* [dagit] Fixed issue where the health of an asset’s partitions would not always be up to date in certain views.
+* [dagit] Fixed issue where the “Materialize All” button would be greyed out if a job had SourceAssets defined.
+
+### Documentation
+
+* Updated resource docs to reference “ops” instead of “solids” (thanks @joe-hdai!)
+* Fixed formatting issues in the ECS docs
+
 # 0.14.6
 
 ### New
