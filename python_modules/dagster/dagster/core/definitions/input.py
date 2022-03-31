@@ -386,7 +386,7 @@ class In(
 
     def __new__(
         cls,
-        dagster_type: Optional[Union[Type, DagsterType, Type[NoValueSentinel]]] = NoValueSentinel,
+        dagster_type: Union[Type, DagsterType] = NoValueSentinel,
         description: Optional[str] = None,
         default_value: Any = NoValueSentinel,
         root_manager_key: Optional[str] = None,
