@@ -42,14 +42,16 @@ class SqlScheduleStorage(ScheduleStorage):
         return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
     def all_instigator_state(
-        self, repository_origin_id=None, repository_name=None, instigator_type=None
+        self, repository_origin_id=None, repository_selector_id=None, instigator_type=None
     ):
         check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
 
         if self.has_instigators_table() and self.has_built_index(SCHEDULE_JOBS_SELECTOR_ID):
             query = db.select([InstigatorsTable.c.instigator_body]).select_from(InstigatorsTable)
-            if repository_name:
-                query = query.where(InstigatorsTable.c.repository_name == repository_name)
+            if repository_selector_id:
+                query = query.where(
+                    InstigatorsTable.c.repository_selector_id == repository_selector_id
+                )
             if instigator_type:
                 query = query.where(InstigatorsTable.c.instigator_type == instigator_type.value)
         else:

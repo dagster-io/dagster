@@ -87,7 +87,7 @@ class TestScheduleStorage:
         storage.add_instigator_state(schedule)
         schedules = storage.all_instigator_state(
             self.fake_repo_target().get_id(),
-            self.fake_repo_target().repository_name,
+            self.fake_repo_target().get_selector_id(),
             InstigatorType.SCHEDULE,
         )
         assert len(schedules) == 1
@@ -110,7 +110,7 @@ class TestScheduleStorage:
 
         schedules = storage.all_instigator_state(
             self.fake_repo_target().get_id(),
-            self.fake_repo_target().repository_name,
+            self.fake_repo_target().get_selector_id(),
             InstigatorType.SCHEDULE,
         )
         assert len(schedules) == 3
@@ -156,7 +156,7 @@ class TestScheduleStorage:
 
         schedules = storage.all_instigator_state(
             self.fake_repo_target().get_id(),
-            self.fake_repo_target().repository_name,
+            self.fake_repo_target().get_selector_id(),
             InstigatorType.SCHEDULE,
         )
         assert len(schedules) == 1
@@ -173,7 +173,7 @@ class TestScheduleStorage:
 
         schedules = storage.all_instigator_state(
             self.fake_repo_target().get_id(),
-            self.fake_repo_target().repository_name,
+            self.fake_repo_target().get_selector_id(),
             InstigatorType.SCHEDULE,
         )
         assert len(schedules) == 1
@@ -203,7 +203,7 @@ class TestScheduleStorage:
 
         schedules = storage.all_instigator_state(
             self.fake_repo_target().get_id(),
-            self.fake_repo_target().repository_name,
+            self.fake_repo_target().get_selector_id(),
             InstigatorType.SCHEDULE,
         )
         assert len(schedules) == 0
@@ -324,7 +324,7 @@ class TestScheduleStorage:
         sensor_state = self.build_sensor("my_sensor")
         storage.add_instigator_state(sensor_state)
         states = storage.all_instigator_state(
-            self.fake_repo_target().get_id(), self.fake_repo_target().repository_name
+            self.fake_repo_target().get_id(), self.fake_repo_target().get_selector_id()
         )
         assert len(states) == 1
 
@@ -343,7 +343,7 @@ class TestScheduleStorage:
         storage.add_instigator_state(state_3)
 
         states = storage.all_instigator_state(
-            self.fake_repo_target().get_id(), self.fake_repo_target().repository_name
+            self.fake_repo_target().get_id(), self.fake_repo_target().get_selector_id()
         )
         assert len(states) == 3
 
@@ -377,7 +377,7 @@ class TestScheduleStorage:
         storage.update_instigator_state(new_state)
 
         states = storage.all_instigator_state(
-            self.fake_repo_target().get_id(), self.fake_repo_target().repository_name
+            self.fake_repo_target().get_id(), self.fake_repo_target().get_selector_id()
         )
         assert len(states) == 1
 
@@ -389,7 +389,7 @@ class TestScheduleStorage:
         storage.update_instigator_state(stopped_state)
 
         states = storage.all_instigator_state(
-            self.fake_repo_target().get_id(), self.fake_repo_target().repository_name
+            self.fake_repo_target().get_id(), self.fake_repo_target().get_selector_id()
         )
         assert len(states) == 1
 
@@ -416,7 +416,7 @@ class TestScheduleStorage:
         storage.delete_instigator_state(state.instigator_origin_id, state.selector_id)
 
         states = storage.all_instigator_state(
-            self.fake_repo_target().get_id(), self.fake_repo_target().repository_name
+            self.fake_repo_target().get_id(), self.fake_repo_target().get_selector_id()
         )
         assert len(states) == 0
 

@@ -17,14 +17,14 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
     def all_instigator_state(
         self,
         repository_origin_id: Optional[str] = None,
-        repository_name: Optional[str] = None,
+        repository_selector_id: Optional[str] = None,
         instigator_type: Optional[InstigatorType] = None,
     ) -> Iterable[InstigatorState]:
         """Return all InstigationStates present in storage
 
         Args:
             repository_origin_id (Optional[str]): The ExternalRepository target id to scope results to
-            repository_name (Optional[str]): The repository name to scope results to
+            repository_selector_id (Optional[str]): The repository selector id to scope results to
             instigator_type (Optional[InstigatorType]): The InstigatorType to scope results to
         """
 
