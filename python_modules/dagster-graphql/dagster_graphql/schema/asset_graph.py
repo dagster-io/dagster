@@ -17,7 +17,7 @@ from dagster.core.host_representation.external_data import (
     ExternalTimeWindowPartitionsDefinitionData,
 )
 
-from ..implementation.loader import BatchMaterializationLoader, BatchAssetDependencyLoader
+from ..implementation.loader import BatchAssetDependencyLoader, BatchMaterializationLoader
 from . import external
 from .asset_key import GrapheneAssetKey
 from .errors import GrapheneAssetNotFoundError
@@ -61,7 +61,6 @@ class GrapheneAssetDependency(graphene.ObjectType):
         super().__init__(inputName=input_name)
 
     def resolve_asset(self, _graphene_info):
-        # here I can return asset node if it is cross-repo dependency
         asset_node = self._external_repository.get_external_asset_node(self._asset_key)
         if not asset_node and self._dependency_loader:
             asset_node = self._dependency_loader.get_sink_asset(self._asset_key)
@@ -213,8 +212,6 @@ class GrapheneAssetNode(graphene.ObjectType):
         return self._external_asset_node.compute_kind
 
     def resolve_dependedBy(self, graphene_info) -> List[GrapheneAssetDependency]:
-        from ..implementation.fetch_assets import get_asset_external_deps
-
         # BatchAssetDependencyLoader class loads all cross-repo asset dependencies workspace-wide.
         # In order to avoid recomputing workspace-wide values per asset node, we add a loader
         # that batch loads all cross-repo dependencies for the whole workspace.
@@ -251,8 +248,9 @@ class GrapheneAssetNode(graphene.ObjectType):
         ]
 
     def resolve_dependedByKeys(self, _graphene_info) -> List[GrapheneAssetKey]:
-        from ..implementation.fetch_assets import get_asset_external_deps
-
+        # BatchAssetDependencyLoader class loads all cross-repo asset dependencies workspace-wide.
+        # In order to avoid recomputing workspace-wide values per asset node, we add a loader
+        # that batch loads all cross-repo dependencies for the whole workspace.
         check.invariant(
             self._dependency_loader,
             "dependency_loader must exist in order to resolve dependedBy nodes",

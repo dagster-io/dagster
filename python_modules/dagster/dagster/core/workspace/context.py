@@ -32,7 +32,6 @@ from dagster.core.host_representation.origin import GrpcServerRepositoryLocation
 from dagster.core.instance import DagsterInstance
 from dagster.grpc.server_watcher import create_grpc_watch_thread
 from dagster.utils.error import SerializableErrorInfo, serializable_error_info_from_exc_info
-from dagster.core.host_representation.workspace_index import WorkspaceIndex
 
 from .load_target import WorkspaceLoadTarget
 from .permissions import get_user_permissions
@@ -73,10 +72,6 @@ class BaseWorkspaceRequestContext(IWorkspace):
 
     @abstractmethod
     def get_workspace_snapshot(self) -> Dict[str, WorkspaceLocationEntry]:
-        pass
-
-    @abstractmethod
-    def get_workspace_index(self) -> WorkspaceIndex:
         pass
 
     @abstractmethod
@@ -266,25 +261,18 @@ class BaseWorkspaceRequestContext(IWorkspace):
         repository_location = self.get_repository_location(repository_location_name)
         return repository_location.get_external_notebook_data(notebook_path=notebook_path)
 
-    def get_cross_repo_asset_dependencies(self, repository_location_name, repo_name, asset_key):
-        return self.get_workspace_index().get_external_asset_deps(
-            repository_location_name, repo_name, asset_key
-        )
-
 
 class WorkspaceRequestContext(BaseWorkspaceRequestContext):
     def __init__(
         self,
         instance: DagsterInstance,
         workspace_snapshot: Dict[str, WorkspaceLocationEntry],
-        workspace_index: WorkspaceIndex,
         process_context: "WorkspaceProcessContext",
         version: Optional[str],
         source: Optional[object],
     ):
         self._instance = instance
         self._workspace_snapshot = workspace_snapshot
-        self._workspace_index = workspace_index
         self._process_context = process_context
         self._version = version
         self._source = source
@@ -295,9 +283,6 @@ class WorkspaceRequestContext(BaseWorkspaceRequestContext):
 
     def get_workspace_snapshot(self) -> Dict[str, WorkspaceLocationEntry]:
         return self._workspace_snapshot
-
-    def get_workspace_index(self) -> WorkspaceIndex:
-        return self._workspace_index
 
     def get_location_entry(self, name) -> Optional[WorkspaceLocationEntry]:
         return self._workspace_snapshot.get(name)
@@ -654,11 +639,9 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         self._location_entry_dict = OrderedDict()
 
     def create_request_context(self, source=None) -> WorkspaceRequestContext:
-        snapshot = self.create_snapshot()
         return WorkspaceRequestContext(
             instance=self._instance,
-            workspace_snapshot=snapshot,
-            workspace_index=WorkspaceIndex(snapshot),
+            workspace_snapshot=self.create_snapshot(),
             process_context=self,
             version=self.version,
             source=source,

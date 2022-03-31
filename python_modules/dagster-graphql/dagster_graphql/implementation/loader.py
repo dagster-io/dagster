@@ -6,13 +6,13 @@ from dagster import DagsterInstance, check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation import ExternalRepository
+from dagster.core.host_representation.external_data import (
+    ExternalAssetDependency,
+    ExternalAssetNode,
+)
 from dagster.core.scheduler.instigation import InstigatorType
 from dagster.core.storage.pipeline_run import JobBucket, RunRecord, RunsFilter, TagBucket
 from dagster.core.storage.tags import SCHEDULE_NAME_TAG, SENSOR_NAME_TAG
-from dagster.core.host_representation.external_data import (
-    ExternalAssetNode,
-    ExternalAssetDependency,
-)
 from dagster.core.workspace.context import WorkspaceRequestContext
 
 

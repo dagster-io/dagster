@@ -1,12 +1,13 @@
 from typing import TYPE_CHECKING, Dict, Mapping
 
+from dagster_graphql.implementation.loader import BatchAssetDependencyLoader
+
 from dagster import AssetKey, DagsterEventType, EventRecordsFilter, check, seven
 from dagster.core.events import ASSET_EVENTS
 from dagster.core.host_representation.external_data import (
-    ExternalAssetNode,
     ExternalAssetDependency,
+    ExternalAssetNode,
 )
-from dagster_graphql.implementation.loader import BatchAssetDependencyLoader
 
 from .utils import capture_error
 
@@ -186,55 +187,3 @@ def get_assets_for_run_id(graphene_info, run_id):
         if record.is_dagster_event and record.dagster_event.asset_key
     ]
     return [GrapheneAsset(key=asset_key) for asset_key in asset_keys]
-
-
-def get_asset_external_deps(graphene_info):
-    depended_by_assets_by_source_asset = (
-        {}
-    )  # key is asset key, value is list of DependedBy ExternalAssetNodes
-    map_defined_asset_to_location = (
-        {}
-    )  # key is asset key, value is tuple (location_name, repo_name)
-    for location in graphene_info.context.repository_locations:
-        repositories = location.get_repositories()
-        for repo_name, external_repo in repositories.items():
-            asset_nodes = external_repo.get_external_asset_nodes()
-            for asset_node in asset_nodes:
-                if not asset_node.op_name:  # is source asset
-                    if asset_node.asset_key not in depended_by_assets_by_source_asset:
-                        depended_by_assets_by_source_asset[asset_node.asset_key] = []
-                    depended_by_assets_by_source_asset[asset_node.asset_key].extend(
-                        asset_node.depended_by
-                    )
-                else:
-                    map_defined_asset_to_location[asset_node.asset_key] = (
-                        location.name,
-                        repo_name,
-                    )
-
-    external_asset_deps = (
-        {}
-    )  # nested dict that maps dependedby assets by asset key by location tuple (repo_location.name, repo_name)
-    sink_assets = {}
-    for source_asset, depended_by_assets in depended_by_assets_by_source_asset.items():
-        asset_def_location = map_defined_asset_to_location.get(source_asset, None)
-        if asset_def_location:  # source asset is defined as asset in another repository
-            if asset_def_location not in external_asset_deps:
-                external_asset_deps[asset_def_location] = {}
-            if source_asset not in external_asset_deps[asset_def_location]:
-                external_asset_deps[asset_def_location][source_asset] = []
-            external_asset_deps[asset_def_location][source_asset].extend(depended_by_assets)
-            for asset in depended_by_assets:
-                sink_assets[asset.downstream_asset_key] = ExternalAssetNode(
-                    asset_key=asset.downstream_asset_key,
-                    dependencies=[
-                        ExternalAssetDependency(
-                            upstream_asset_key=source_asset,
-                            input_name=asset.input_name,
-                            output_name=asset.output_name,
-                        )
-                    ],
-                    depended_by=[],
-                )
-
-    return external_asset_deps, sink_assets

@@ -39,7 +39,7 @@ from ...implementation.fetch_schedules import (
 )
 from ...implementation.fetch_sensors import get_sensor_or_error, get_sensors_or_error
 from ...implementation.fetch_solids import get_graph_or_error
-from ...implementation.loader import BatchMaterializationLoader, BatchAssetDependencyLoader
+from ...implementation.loader import BatchAssetDependencyLoader, BatchMaterializationLoader
 from ...implementation.run_config_schema import resolve_run_config_schema_or_error
 from ...implementation.utils import graph_selector_from_graphql, pipeline_selector_from_graphql
 from ..asset_graph import GrapheneAssetNode, GrapheneAssetNodeOrError
