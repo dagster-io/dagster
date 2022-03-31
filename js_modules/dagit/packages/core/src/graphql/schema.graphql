@@ -846,7 +846,7 @@ type HandledOutputEvent implements MessageEvent & StepEvent & DisplayableEvent {
   managerKey: String!
 }
 
-type LoadedInputEvent implements MessageEvent & StepEvent {
+type LoadedInputEvent implements MessageEvent & StepEvent & DisplayableEvent {
   runId: String!
   message: String!
   timestamp: String!
@@ -854,6 +854,9 @@ type LoadedInputEvent implements MessageEvent & StepEvent {
   stepKey: String
   solidHandleID: String
   eventType: DagsterEventType
+  label: String!
+  description: String
+  metadataEntries: [MetadataEntry!]!
   inputName: String!
   managerKey: String!
   upstreamOutputName: String
