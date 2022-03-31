@@ -39,6 +39,7 @@ import {
   LaunchPartitionBackfill,
   LaunchPartitionBackfillVariables,
 } from '../../partitions/types/LaunchPartitionBackfill';
+import {DagsterTag} from '../../runs/RunTag';
 import {handleLaunchResult, LAUNCH_PIPELINE_EXECUTION_MUTATION} from '../../runs/RunUtils';
 import {
   LaunchPipelineExecution,
@@ -200,6 +201,7 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
 
       const tags = [...partition.tagsOrError.results];
       const runConfigData = yaml.parse(partition.runConfigOrError.yaml || '') || {};
+      const stepKeys = assets.map((a) => a.opName!);
 
       const launchResult = await client.mutate<
         LaunchPipelineExecution,
@@ -210,14 +212,17 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
           executionParams: {
             runConfigData,
             mode: partition.mode,
-            stepKeys: assets.map((a) => a.opName!),
+            stepKeys: stepKeys,
             selector: {
               repositoryLocationName: repoAddress.location,
               repositoryName: repoAddress.name,
               jobName: assetJobName,
             },
             executionMetadata: {
-              tags: tags.map((t) => pick(t, ['key', 'value'])),
+              tags: [
+                ...tags.map((t) => pick(t, ['key', 'value'])),
+                {key: DagsterTag.StepSelection, value: stepKeys.join(',')},
+              ],
             },
           },
         },
