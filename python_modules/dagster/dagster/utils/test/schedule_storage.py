@@ -124,7 +124,7 @@ class TestScheduleStorage:
 
         state = self.build_schedule("my_schedule", "* * * * *")
         storage.add_instigator_state(state)
-        schedule = storage.get_instigator_state(state.instigator_origin_id, state.get_selector_id())
+        schedule = storage.get_instigator_state(state.instigator_origin_id, state.selector_id)
 
         assert schedule.instigator_name == "my_schedule"
         assert schedule.instigator_data.start_timestamp == None
@@ -356,7 +356,7 @@ class TestScheduleStorage:
 
         state = self.build_sensor("my_sensor")
         storage.add_instigator_state(state)
-        state = storage.get_instigator_state(state.instigator_origin_id, state.get_selector_id())
+        state = storage.get_instigator_state(state.instigator_origin_id, state.selector_id)
 
         assert state.instigator_name == "my_sensor"
 

@@ -555,7 +555,7 @@ def test_bad_load_sensor_repository(capfd):
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_ticks(
-                invalid_state.instigator_origin_id, invalid_state.get_selector_id()
+                invalid_state.instigator_origin_id, invalid_state.selector_id
             )
             assert len(ticks) == 0
 
@@ -563,7 +563,7 @@ def test_bad_load_sensor_repository(capfd):
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_ticks(
-                invalid_state.instigator_origin_id, invalid_state.get_selector_id()
+                invalid_state.instigator_origin_id, invalid_state.selector_id
             )
             assert len(ticks) == 0
 
@@ -603,7 +603,7 @@ def test_bad_load_sensor(capfd):
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_ticks(
-                invalid_state.instigator_origin_id, invalid_state.get_selector_id()
+                invalid_state.instigator_origin_id, invalid_state.selector_id
             )
             assert len(ticks) == 0
 
@@ -611,7 +611,7 @@ def test_bad_load_sensor(capfd):
 
             assert instance.get_runs_count() == 0
             ticks = instance.get_ticks(
-                invalid_state.instigator_origin_id, invalid_state.get_selector_id()
+                invalid_state.instigator_origin_id, invalid_state.selector_id
             )
             assert len(ticks) == 0
 
