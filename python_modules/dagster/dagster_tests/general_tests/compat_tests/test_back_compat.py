@@ -823,7 +823,7 @@ def test_jobs_selector_id_migration():
     import sqlalchemy as db
 
     from dagster.core.storage.schedules.migration import SCHEDULE_JOBS_SELECTOR_ID
-    from dagster.core.storage.schedules.schema import InstigatorTable, JobTable, JobTickTable
+    from dagster.core.storage.schedules.schema import InstigatorsTable, JobTable, JobTickTable
 
     with copy_directory(src_dir) as test_dir:
         db_path = os.path.join(test_dir, "schedules", "schedules.db")
@@ -836,7 +836,7 @@ def test_jobs_selector_id_migration():
             assert instance.schedule_storage.has_built_index(SCHEDULE_JOBS_SELECTOR_ID)
             legacy_count = len(instance.all_instigator_state())
             migrated_instigator_count = instance.schedule_storage.execute(
-                db.select([db.func.count()]).select_from(InstigatorTable)
+                db.select([db.func.count()]).select_from(InstigatorsTable)
             )[0][0]
             assert migrated_instigator_count == legacy_count
 

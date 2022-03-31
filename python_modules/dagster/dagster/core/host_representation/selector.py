@@ -54,6 +54,7 @@ class PipelineSelector(
         )
 
 
+@whitelist_for_serdes
 class RepositorySelector(
     NamedTuple("_RepositorySelector", [("location_name", str), ("repository_name", str)])
 ):

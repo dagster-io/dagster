@@ -445,10 +445,6 @@ class ExternalSchedule:
         self._handle = InstigatorHandle(
             self._external_schedule_data.name, check.inst_param(handle, "handle", RepositoryHandle)
         )
-        self._selector = InstigatorSelector(
-            handle.location_name, handle.repository_name, external_schedule_data.name
-        )
-        self._selector_id = None
 
     @property
     def name(self):
@@ -498,9 +494,13 @@ class ExternalSchedule:
 
     @property
     def selector_id(self):
-        if self._selector_id is None:
-            self._selector_id = create_snapshot_id(self._selector)
-        return self._selector_id
+        return create_snapshot_id(
+            InstigatorSelector(
+                self.handle.location_name,
+                self.handle.repository_name,
+                self._external_schedule_data.name,
+            )
+        )
 
     @property
     def default_status(self) -> DefaultScheduleStatus:
@@ -556,10 +556,6 @@ class ExternalSensor:
         self._handle = InstigatorHandle(
             self._external_sensor_data.name, check.inst_param(handle, "handle", RepositoryHandle)
         )
-        self._selector = InstigatorSelector(
-            handle.location_name, handle.repository_name, external_sensor_data.name
-        )
-        self._selector_id = None
 
     @property
     def name(self):
@@ -620,9 +616,13 @@ class ExternalSensor:
 
     @property
     def selector_id(self):
-        if self._selector_id is None:
-            self._selector_id = create_snapshot_id(self._selector)
-        return self._selector_id
+        return create_snapshot_id(
+            InstigatorSelector(
+                self.handle.location_name,
+                self.handle.repository_name,
+                self._external_sensor_data.name,
+            )
+        )
 
     def get_current_instigator_state(self, stored_state: Optional["InstigatorState"]):
         from dagster.core.scheduler.instigation import (

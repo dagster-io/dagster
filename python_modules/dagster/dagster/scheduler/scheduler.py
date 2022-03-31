@@ -148,7 +148,7 @@ def launch_scheduled_runs(
     }
     for state in states_to_delete:
         instance.schedule_storage.delete_instigator_state(
-            state.instigator_origin_id, state.get_selector_id()
+            state.instigator_origin_id, state.selector_id
         )
 
     if log_verbose_checks:

@@ -3,6 +3,7 @@ from collections import defaultdict
 from datetime import datetime
 from typing import Callable, Iterable, Mapping, Optional, Sequence, cast
 
+import pendulum
 import sqlalchemy as db
 
 from dagster import check
@@ -20,7 +21,7 @@ from dagster.utils import utc_datetime_from_timestamp
 
 from .base import ScheduleStorage
 from .migration import OPTIONAL_SCHEDULE_DATA_MIGRATIONS, REQUIRED_SCHEDULE_DATA_MIGRATIONS
-from .schema import InstigatorTable, JobTable, JobTickTable, SecondaryIndexMigrationTable
+from .schema import InstigatorsTable, JobTable, JobTickTable, SecondaryIndexMigrationTable
 
 
 class SqlScheduleStorage(ScheduleStorage):
@@ -83,12 +84,12 @@ class SqlScheduleStorage(ScheduleStorage):
         return self._deserialize_rows(rows[:1])[0] if len(rows) else None
 
     def _add_or_update_instigators_table(self, conn, state):
-        selector_id = state.get_selector_id()
+        selector_id = state.selector_id
         try:
             conn.execute(
-                InstigatorTable.insert().values(  # pylint: disable=no-value-for-parameter
+                InstigatorsTable.insert().values(  # pylint: disable=no-value-for-parameter
                     selector_id=selector_id,
-                    repository_name=state.origin.external_repository_origin.repository_name,
+                    repository_selector_id=state.repository_selector_id,
                     status=state.status.value,
                     instigator_type=state.instigator_type.value,
                     instigator_body=serialize_dagster_namedtuple(state),
@@ -96,13 +97,13 @@ class SqlScheduleStorage(ScheduleStorage):
             )
         except db.exc.IntegrityError:
             conn.execute(
-                InstigatorTable.update()
-                .where(InstigatorTable.c.selector_id == selector_id)
+                InstigatorsTable.update()
+                .where(InstigatorsTable.c.selector_id == selector_id)
                 .values(
                     status=state.status.value,
-                    repository_name=state.origin.external_repository_origin.repository_name,
                     instigator_type=state.instigator_type.value,
                     instigator_body=serialize_dagster_namedtuple(state),
+                    update_timestamp=pendulum.now("UTC"),
                 )
             )
 
@@ -142,9 +143,10 @@ class SqlScheduleStorage(ScheduleStorage):
         values = {
             "status": state.status.value,
             "job_body": serialize_dagster_namedtuple(state),
+            "update_timestamp": pendulum.now("UTC"),
         }
         if self.has_instigators_table():
-            values["selector_id"] = state.get_selector_id()
+            values["selector_id"] = state.selector_id
 
         with self.connect() as conn:
             conn.execute(
@@ -174,8 +176,8 @@ class SqlScheduleStorage(ScheduleStorage):
             if self._has_instigators_table(conn):
                 if not self._jobs_has_selector_state(conn, selector_id):
                     conn.execute(
-                        InstigatorTable.delete().where(  # pylint: disable=no-value-for-parameter
-                            InstigatorTable.c.selector_id == selector_id
+                        InstigatorsTable.delete().where(  # pylint: disable=no-value-for-parameter
+                            InstigatorsTable.c.selector_id == selector_id
                         )
                     )
 
@@ -384,7 +386,7 @@ class SqlScheduleStorage(ScheduleStorage):
             conn.execute(JobTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(JobTickTable.delete())  # pylint: disable=no-value-for-parameter
             if self._has_instigators_table(conn):
-                conn.execute(InstigatorTable.delete())
+                conn.execute(InstigatorsTable.delete())
 
     # MIGRATIONS
 

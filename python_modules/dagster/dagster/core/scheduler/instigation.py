@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Mapping, NamedTuple, Optional, Type, Union
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.host_representation.origin import ExternalInstigatorOrigin
-from dagster.core.host_representation.selector import InstigatorSelector
+from dagster.core.host_representation.selector import InstigatorSelector, RepositorySelector
 from dagster.serdes import create_snapshot_id
 from dagster.serdes.serdes import (
     DefaultNamedTupleSerializer,
@@ -200,16 +200,27 @@ class InstigatorState(
         return self.origin.external_repository_origin.get_id()
 
     @property
+    def repository_selector_id(self):
+        return create_snapshot_id(
+            RepositorySelector(
+                self.origin.external_repository_origin.repository_location_origin.location_name,
+                self.origin.external_repository_origin.repository_name,
+            )
+        )
+
+    @property
     def instigator_origin_id(self):
         return self.origin.get_id()
 
-    def get_selector_id(self):
-        selector = InstigatorSelector(
-            self.origin.external_repository_origin.repository_location_origin.location_name,
-            self.origin.external_repository_origin.repository_name,
-            self.origin.instigator_name,
+    @property
+    def selector_id(self):
+        return create_snapshot_id(
+            InstigatorSelector(
+                self.origin.external_repository_origin.repository_location_origin.location_name,
+                self.origin.external_repository_origin.repository_name,
+                self.origin.instigator_name,
+            )
         )
-        return create_snapshot_id(selector)
 
     def with_status(self, status):
         check.inst_param(status, "status", InstigatorStatus)

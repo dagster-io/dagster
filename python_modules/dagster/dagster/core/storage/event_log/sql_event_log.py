@@ -433,7 +433,7 @@ class SqlEventLogStorage(EventLogStorage):
         if self.has_secondary_index(migration_name):
             if not force:
                 if print_fn:
-                    print_fn("Skipping already applied migration: {}".format(migration_name))
+                    print_fn(f"Skipping already applied data migration: {migration_name}")
                 return
         if print_fn:
             print_fn(f"Starting data migration: {migration_name}")
