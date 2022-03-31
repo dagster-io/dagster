@@ -1295,7 +1295,7 @@ def test_bad_load_schedule(instance, workspace, external_repo, caplog):
 
         assert instance.get_runs_count() == 0
 
-        ticks = instance.get_ticks(invalid_repo_origin.get_id(), schedule_state.get_selector_id())
+        ticks = instance.get_ticks(invalid_repo_origin.get_id(), schedule_state.selector_id)
 
         assert len(ticks) == 0
 
@@ -1328,7 +1328,7 @@ def test_error_load_repository_location(instance):
 
             assert instance.get_runs_count() == 0
 
-            ticks = instance.get_ticks(fake_origin.get_id(), schedule_state.get_selector_id())
+            ticks = instance.get_ticks(fake_origin.get_id(), schedule_state.selector_id)
 
             assert len(ticks) == 0
 
@@ -1336,7 +1336,7 @@ def test_error_load_repository_location(instance):
         with pendulum.test(initial_datetime):
             list(launch_scheduled_runs(instance, workspace, logger(), pendulum.now("UTC")))
             assert instance.get_runs_count() == 0
-            ticks = instance.get_ticks(fake_origin.get_id(), schedule_state.get_selector_id())
+            ticks = instance.get_ticks(fake_origin.get_id(), schedule_state.selector_id)
             assert len(ticks) == 0
 
 
@@ -1375,7 +1375,7 @@ def test_load_repository_location_not_in_workspace(instance, workspace, external
 
         assert instance.get_runs_count() == 0
 
-        ticks = instance.get_ticks(invalid_repo_origin.get_id(), schedule_state.get_selector_id())
+        ticks = instance.get_ticks(invalid_repo_origin.get_id(), schedule_state.selector_id)
 
         assert len(ticks) == 0
 
