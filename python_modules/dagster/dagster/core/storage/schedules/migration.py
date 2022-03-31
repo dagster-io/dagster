@@ -1,8 +1,10 @@
 from typing import Callable, Mapping
 
+import sqlalchemy as db
 from tqdm import tqdm
 
-from dagster.serdes import deserialize_as, serialize_dagster_namedtuple
+from dagster.core.scheduler.instigation import InstigatorState
+from dagster.serdes import deserialize_as
 
 from ..schedules.schema import InstigatorsTable, JobTable, JobTickTable
 
@@ -46,7 +48,7 @@ def add_selector_id_to_jobs_table(storage, print_fn=None):
             # selector_id
             try:
                 conn.execute(
-                    InstigatorTable.update().values(
+                    InstigatorsTable.update().values(
                         selector_id=selector_id,
                         repository_selector_id=state.repository_selector_id,
                         status=state.status.value,
