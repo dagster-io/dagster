@@ -1,7 +1,7 @@
 from typing import List, NamedTuple, Optional
 
 from dagster import check
-from dagster.serdes import whitelist_for_serdes
+from dagster.serdes import create_snapshot_id, whitelist_for_serdes
 
 
 class PipelineSelector(
@@ -70,6 +70,10 @@ class RepositorySelector(
             "repositoryLocationName": self.location_name,
             "repositoryName": self.repository_name,
         }
+
+    @property
+    def selector_id(self):
+        return create_snapshot_id(self)
 
     @staticmethod
     def from_graphql_input(graphql_data):

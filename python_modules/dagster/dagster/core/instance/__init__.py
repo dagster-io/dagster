@@ -1766,10 +1766,10 @@ records = instance.get_event_records(
 
     @traced
     def all_instigator_state(
-        self, repository_origin_id=None, repository_name=None, instigator_type=None
+        self, repository_origin_id=None, repository_selector_id=None, instigator_type=None
     ):
         return self._schedule_storage.all_instigator_state(
-            repository_origin_id, repository_name, instigator_type
+            repository_origin_id, repository_selector_id, instigator_type
         )
 
     @traced

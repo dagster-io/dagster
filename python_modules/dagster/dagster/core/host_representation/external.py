@@ -28,7 +28,7 @@ from .external_data import (
 from .handle import InstigatorHandle, PartitionSetHandle, PipelineHandle, RepositoryHandle
 from .pipeline_index import PipelineIndex
 from .represented import RepresentedPipeline
-from .selector import InstigatorSelector
+from .selector import InstigatorSelector, RepositorySelector
 
 if TYPE_CHECKING:
     from dagster.core.scheduler.instigation import InstigatorState
@@ -176,6 +176,12 @@ class ExternalRepository:
     @property
     def handle(self):
         return self._handle
+
+    @property
+    def selector_id(self):
+        return create_snapshot_id(
+            RepositorySelector(self._handle.location_name, self._handle.repository_name)
+        )
 
     def get_external_origin(self):
         return self.handle.get_external_origin()
