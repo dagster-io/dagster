@@ -190,7 +190,7 @@ ALTER TABLE public.instance_info OWNER TO test;
 CREATE TABLE public.instigators (
     id integer NOT NULL,
     selector_id character varying(255),
-    repository_name text,
+    repository_selector_id character varying(255),
     status character varying(63),
     instigator_type character varying(63),
     instigator_body text,
