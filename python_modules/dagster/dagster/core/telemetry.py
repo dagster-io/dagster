@@ -279,13 +279,13 @@ def _get_telemetry_logger():
     # If a concurrently running process deleted the logging directory since the
     # last action, we need to make sure to re-create the directory
     # (the logger does not do this itself.)
-    get_or_create_dir_from_dagster_home("logs")
+    dagster_home_path = get_or_create_dir_from_dagster_home("logs")
 
     logger = logging.getLogger("dagster_telemetry_logger")
 
     if len(logger.handlers) == 0:
         handler = RotatingFileHandler(
-            os.path.join(get_or_create_dir_from_dagster_home("logs"), "event.log"),
+            os.path.join(dagster_home_path, "event.log"),
             maxBytes=MAX_BYTES,
             backupCount=10,
         )
