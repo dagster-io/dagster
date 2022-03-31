@@ -47,11 +47,11 @@ class SqlScheduleStorage(ScheduleStorage):
         check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
 
         if self.has_instigators_table() and self.has_built_index(SCHEDULE_JOBS_SELECTOR_ID):
-            query = db.select([InstigatorTable.c.instigator_body]).select_from(InstigatorTable)
+            query = db.select([InstigatorsTable.c.instigator_body]).select_from(InstigatorsTable)
             if repository_name:
-                query = query.where(InstigatorTable.c.repository_name == repository_name)
+                query = query.where(InstigatorsTable.c.repository_name == repository_name)
             if instigator_type:
-                query = query.where(InstigatorTable.c.instigator_type == instigator_type.value)
+                query = query.where(InstigatorsTable.c.instigator_type == instigator_type.value)
         else:
             query = db.select([JobTable.c.job_body]).select_from(JobTable)
             if repository_origin_id:
@@ -68,9 +68,9 @@ class SqlScheduleStorage(ScheduleStorage):
 
         if self.has_instigators_table() and self.has_built_index(SCHEDULE_JOBS_SELECTOR_ID):
             query = (
-                db.select([InstigatorTable.c.instigator_body])
-                .select_from(InstigatorTable)
-                .where(InstigatorTable.c.selector_id == selector_id)
+                db.select([InstigatorsTable.c.instigator_body])
+                .select_from(InstigatorsTable)
+                .where(InstigatorsTable.c.selector_id == selector_id)
             )
         else:
             query = (
