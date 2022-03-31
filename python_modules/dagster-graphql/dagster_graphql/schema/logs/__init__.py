@@ -1,7 +1,6 @@
 def types():
     from .compute_logs import GrapheneComputeLogFile, GrapheneComputeLogs
     from .events import (
-        GrapheneAssetMaterializationPlannedEvent,
         GrapheneDisplayableEvent,
         GrapheneEngineEvent,
         GrapheneExecutionStepFailureEvent,
@@ -88,5 +87,4 @@ def types():
         GrapheneMaterializationEvent,
         GrapheneObservationEvent,
         GrapheneTypeCheck,
-        GrapheneAssetMaterializationPlannedEvent,
     ]

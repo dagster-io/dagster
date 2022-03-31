@@ -4,7 +4,7 @@ from graphql.execution.base import ResolveInfo
 from rx import Observable
 
 from dagster import check
-from dagster.core.events import EngineEventData
+from dagster.core.events import DagsterEventType, EngineEventData
 from dagster.core.instance import DagsterInstance
 from dagster.core.storage.compute_log_manager import ComputeIOType
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunsFilter
@@ -151,6 +151,11 @@ def get_pipeline_run_observable(graphene_info, run_id, after=None):
 
     def _handle_events(payload):
         events, loading_past = payload
+        events = [
+            event
+            for event in events
+            if event.dagster_event_type != DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+        ]
         return GraphenePipelineRunLogsSubscriptionSuccess(
             run=GrapheneRun(record),
             messages=[from_event_record(event, run.pipeline_name) for event in events],

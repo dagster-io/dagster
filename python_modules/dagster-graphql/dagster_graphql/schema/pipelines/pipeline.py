@@ -2,6 +2,7 @@ import graphene
 import yaml
 
 from dagster import check
+from dagster.core.events import DagsterEventType
 from dagster.core.host_representation.external import ExternalExecutionPlan, ExternalPipeline
 from dagster.core.host_representation.external_data import ExternalPresetData
 from dagster.core.storage.pipeline_run import PipelineRunStatus, RunRecord, RunsFilter
@@ -358,6 +359,11 @@ class GrapheneRun(graphene.ObjectType):
 
     def resolve_events(self, graphene_info, after=-1):
         events = graphene_info.context.instance.logs_after(self.run_id, cursor=after)
+        events = [
+            event
+            for event in events
+            if event.dagster_event_type != DagsterEventType.ASSET_MATERIALIZATION_PLANNED
+        ]
         return [from_event_record(event, self._pipeline_run.pipeline_name) for event in events]
 
     def _get_run_record(self, instance):

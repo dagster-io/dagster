@@ -47,11 +47,7 @@ interface ILogsScrollingTableSizedProps {
 
 function filterLogs(logs: LogsProviderLogs, filter: LogFilter, filterStepKeys: string[]) {
   const filteredNodes = logs.allNodes.filter((node) => {
-    const l =
-      node.__typename === 'LogMessageEvent' ||
-      node.__typename === 'AssetMaterializationPlannedEvent'
-        ? node.level
-        : 'EVENT';
+    const l = node.__typename === 'LogMessageEvent' ? node.level : 'EVENT';
     if (!filter.levels[l]) {
       return false;
     }

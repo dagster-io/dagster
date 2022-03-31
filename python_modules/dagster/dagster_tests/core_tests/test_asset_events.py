@@ -79,6 +79,12 @@ def test_multi_asset_asset_materialization_planned_events():
 
     with instance_for_test() as instance:
         result = assets_job.execute_in_process(instance=instance)
+        records = instance.get_event_records(
+            EventRecordsFilter(
+                DagsterEventType.ASSET_MATERIALIZATION_PLANNED, AssetKey("my_asset_name")
+            )
+        )
+        assert result.run_id == records[0].event_log_entry.run_id
         run_id = result.run_id
 
         assert instance.run_ids_for_asset_key(AssetKey("my_asset_name")) == [run_id]
