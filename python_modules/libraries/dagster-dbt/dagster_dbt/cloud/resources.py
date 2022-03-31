@@ -188,7 +188,7 @@ class DbtCloudResourceV2:
         order_by: Optional[str] = "-id",
         offset: int = 0,
         limit: int = 100,
-    ):
+    ) -> List[Dict[str, any]]:
         """
         Returns a list of runs from dbt cloud. This can be optionally filtered to a specific job using the job_definition_id.
         It supports pagination using offset and limit as well and can be configured to load a variety of related information
