@@ -40,7 +40,6 @@ export const AssetNodeList: React.FC<{
                 definition={asset}
                 metadata={[]}
                 inAssetCatalog
-                jobName={asset.jobNames[0]}
                 selected={false}
                 liveData={liveDataByNode[toGraphId(asset.assetKey)]}
               />

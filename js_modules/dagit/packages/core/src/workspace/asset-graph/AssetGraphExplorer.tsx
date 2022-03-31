@@ -345,7 +345,6 @@ const AssetGraphExplorerWithData: React.FC<
                               .definition.metadata || []
                           }
                           selected={selectedGraphNodes.includes(graphNode)}
-                          jobName={explorerPath.pipelineName}
                         />
                       )}
                     </foreignObject>
