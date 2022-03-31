@@ -575,3 +575,30 @@ def test_composites_user_defined_type():
         return subtract(a, emit_one())
 
     assert add_one.input_mappings
+
+
+def test_none_return_annotation_to_nothing():
+    @op
+    def my_op() -> None:
+        ...
+
+    assert my_op.output_defs[0].dagster_type.is_nothing
+
+
+def test_none_param_annotation_to_nothing():
+    @op
+    def my_op(_in1: None, _in2: None, _in3: str):
+        ...
+
+    assert my_op.input_defs[0].dagster_type.is_nothing
+    assert my_op.input_defs[1].dagster_type.is_nothing
+    assert not my_op.input_defs[2].dagster_type.is_nothing
+
+
+def test_empty_annotations_to_not_nothing():
+    @op
+    def my_op(_in1):
+        ...
+
+    assert not my_op.output_defs[0].dagster_type.is_nothing
+    assert not my_op.input_defs[0].dagster_type.is_nothing

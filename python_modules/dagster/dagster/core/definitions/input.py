@@ -12,7 +12,7 @@ from dagster.core.types.dagster_type import (
 )
 from dagster.utils.backcompat import experimental_arg_warning
 
-from .inference import InferredInputProps
+from .inference import InferredInputProps, type_annotation_to_dagster_type
 from .utils import NoValueSentinel, check_valid_name
 
 if TYPE_CHECKING:
@@ -276,7 +276,7 @@ class InputDefinition:
 
 def _checked_inferred_type(inferred: InferredInputProps, decorator_name: str) -> DagsterType:
     try:
-        resolved_type = resolve_dagster_type(inferred.annotation)
+        resolved_type = type_annotation_to_dagster_type(inferred.annotation)
     except DagsterError as e:
         raise DagsterInvalidDefinitionError(
             f"Problem using type '{inferred.annotation}' from type annotation for argument "
@@ -284,7 +284,7 @@ def _checked_inferred_type(inferred: InferredInputProps, decorator_name: str) ->
             "your InputDefinition."
         ) from e
 
-    if resolved_type.is_nothing:
+    if isinstance(inferred.annotation, DagsterType) and inferred.annotation.is_nothing:
         raise DagsterInvalidDefinitionError(
             f"Input parameter {inferred.name} is annotated with {resolved_type.display_name} "
             "which is a type that represents passing no data. This type must be used "

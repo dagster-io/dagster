@@ -1,6 +1,8 @@
 import inspect
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Type
+from inspect import Parameter
+from typing import Any, Callable, Dict, List, NamedTuple, Optional
 
+from dagster.core.types.dagster_type import DagsterType, Nothing, resolve_dagster_type
 from dagster.seven import funcsigs, is_module_available
 
 from .utils import NoValueSentinel
@@ -57,7 +59,7 @@ def infer_output_props(fn: Callable) -> InferredOutputProps:
 
     annotation = None
     if not inspect.isgeneratorfunction(fn):
-        annotation = _coerce_annotation(signature.return_annotation)
+        annotation = signature.return_annotation
 
     return InferredOutputProps(
         annotation=annotation,
@@ -70,12 +72,6 @@ def has_explicit_return_type(fn: Callable) -> bool:
     return not signature.return_annotation is funcsigs.Signature.empty
 
 
-def _coerce_annotation(type_annotation: Type) -> Optional[Type]:
-    if type_annotation is not inspect.Parameter.empty:
-        return type_annotation
-    return None
-
-
 def _infer_inputs_from_params(
     params: List[funcsigs.Parameter],
     descriptions: Optional[Dict[str, Optional[str]]] = None,
@@ -86,14 +82,14 @@ def _infer_inputs_from_params(
         if param.default is not funcsigs.Parameter.empty:
             input_def = InferredInputProps(
                 param.name,
-                _coerce_annotation(param.annotation),
+                param.annotation,
                 default_value=param.default,
                 description=descriptions.get(param.name),
             )
         else:
             input_def = InferredInputProps(
                 param.name,
-                _coerce_annotation(param.annotation),
+                param.annotation,
                 description=descriptions.get(param.name),
             )
 
@@ -109,3 +105,12 @@ def infer_input_props(fn: Callable, context_arg_provided: bool) -> List[Inferred
     params_to_infer = params[1:] if context_arg_provided else params
     defs = _infer_inputs_from_params(params_to_infer, descriptions=descriptions)
     return defs
+
+
+def type_annotation_to_dagster_type(type_annotation: object) -> DagsterType:
+    if type_annotation is Parameter.empty:
+        return resolve_dagster_type(None)
+    elif type_annotation is None:
+        return Nothing
+    else:
+        return resolve_dagster_type(type_annotation)

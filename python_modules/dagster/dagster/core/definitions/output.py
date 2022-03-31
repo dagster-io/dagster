@@ -2,7 +2,6 @@ import warnings
 from typing import (
     TYPE_CHECKING,
     AbstractSet,
-    Any,
     Callable,
     List,
     NamedTuple,
@@ -20,7 +19,7 @@ from dagster.core.errors import DagsterError, DagsterInvalidDefinitionError
 from dagster.core.types.dagster_type import DagsterType, resolve_dagster_type
 from dagster.utils.backcompat import experimental_arg_warning
 
-from .inference import InferredOutputProps
+from .inference import InferredOutputProps, type_annotation_to_dagster_type
 from .input import NoValueSentinel
 from .utils import DEFAULT_OUTPUT, check_valid_name
 
@@ -258,9 +257,9 @@ class OutputDefinition:
         )
 
 
-def _checked_inferred_type(inferred: Any) -> DagsterType:
+def _checked_inferred_type(inferred: object) -> DagsterType:
     try:
-        return resolve_dagster_type(inferred)
+        return type_annotation_to_dagster_type(inferred)
     except DagsterError as e:
         raise DagsterInvalidDefinitionError(
             f"Problem using type '{inferred}' from return type annotation, correct the issue "
