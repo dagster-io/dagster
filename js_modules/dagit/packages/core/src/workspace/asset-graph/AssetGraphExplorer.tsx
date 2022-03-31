@@ -50,6 +50,7 @@ import {
   layoutGraph,
   LiveData,
   Node,
+  isSourceAsset,
 } from './Utils';
 import {AssetGraphLiveQuery, AssetGraphLiveQueryVariables} from './types/AssetGraphLiveQuery';
 import {
@@ -222,7 +223,7 @@ const AssetGraphExplorerWithData: React.FC<
   const lastSelectedNode = selectedGraphNodes[selectedGraphNodes.length - 1];
   const launchGraphNodes = selectedGraphNodes.length
     ? selectedGraphNodes
-    : Object.values(assetGraphData.nodes);
+    : Object.values(assetGraphData.nodes).filter((a) => !isSourceAsset(a.definition));
 
   const onSelectNode = React.useCallback(
     async (e: React.MouseEvent<any>, assetKey: {path: string[]}, node: Node | null) => {

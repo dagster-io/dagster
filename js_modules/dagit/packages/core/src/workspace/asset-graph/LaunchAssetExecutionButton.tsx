@@ -6,6 +6,7 @@ import {LaunchRootExecutionButton} from '../../launchpad/LaunchRootExecutionButt
 import {buildRepoAddress} from '../buildRepoAddress';
 
 import {LaunchAssetChoosePartitionsDialog} from './LaunchAssetChoosePartitionsDialog';
+import {isSourceAsset} from './Utils';
 
 type AssetMinimal = {
   assetKey: {path: string[]};
@@ -28,7 +29,7 @@ export const LaunchAssetExecutionButton: React.FC<{
   );
 
   let disabledReason = '';
-  if (!assets.every((a) => a.opName)) {
+  if (assets.some(isSourceAsset)) {
     disabledReason = 'One or more source assets are selected and cannot be materialized.';
   }
   if (
@@ -38,19 +39,22 @@ export const LaunchAssetExecutionButton: React.FC<{
         a.repository.location.name === repoAddress.location,
     )
   ) {
-    disabledReason = 'Assets must be in the same repository to be materialized together.';
+    disabledReason =
+      disabledReason || 'Assets must be in the same repository to be materialized together.';
   }
 
   const everyAssetHasJob = (jobName: string) => assets.every((a) => a.jobNames.includes(jobName));
   const jobsInCommon = assets[0] ? assets[0].jobNames.filter(everyAssetHasJob) : [];
   const jobName = jobsInCommon.find((name) => name === preferredJobName) || jobsInCommon[0];
   if (!jobName) {
-    disabledReason = 'Assets must be in the same job to be materialized together.';
+    disabledReason =
+      disabledReason || 'Assets must be in the same job to be materialized together.';
   }
 
   const partitionDefinition = assets[0]?.partitionDefinition;
   if (assets.some((a) => a.partitionDefinition !== partitionDefinition)) {
-    disabledReason = 'Assets must share a partition definition to be materialized together.';
+    disabledReason =
+      disabledReason || 'Assets must share a partition definition to be materialized together.';
   }
 
   title = title || 'Refresh';
