@@ -5,7 +5,7 @@
 ### New
 
 * [helm] Added configuration to explicitly enable or disable telemetry.
-* Added a new IO manager for materializing assets to Azure ADLS. You can specify the this IO manager for your AssetGroups using the following config:  
+* Added a new IO manager for materializing assets to Azure ADLS. You can specify this IO manager for your AssetGroups by using the following config:  
 
 ```
 `from dagster import AssetGroup
