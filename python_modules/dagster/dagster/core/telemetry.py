@@ -281,11 +281,18 @@ def _get_telemetry_logger():
     # (the logger does not do this itself.)
     dagster_home_path = get_or_create_dir_from_dagster_home("logs")
 
+    logging_file_path = os.path.join(dagster_home_path, "event.log")
     logger = logging.getLogger("dagster_telemetry_logger")
+
+    # If the file we were writing to has been overwritten, dump the existing logger and re-open the stream.
+    if not os.path.exists(logging_file_path) and len(logger.handlers) > 0:
+        handler = next(iter(logger.handlers))
+        handler.close()
+        logger.removeHandler(handler)
 
     if len(logger.handlers) == 0:
         handler = RotatingFileHandler(
-            os.path.join(dagster_home_path, "event.log"),
+            logging_file_path,
             maxBytes=MAX_BYTES,
             backupCount=10,
         )

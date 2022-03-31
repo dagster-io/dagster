@@ -12,8 +12,9 @@ from dagster.core.telemetry import (
     get_or_create_dir_from_dagster_home,
     hash_name,
     log_workspace_stats,
+    write_telemetry_log_line,
 )
-from dagster.core.test_utils import instance_for_test
+from dagster.core.test_utils import environ, instance_for_test
 from dagster.core.workspace.load import load_workspace_process_context_from_yaml_paths
 from dagster.utils import file_relative_path, pushd, script_relative_path
 
@@ -183,3 +184,21 @@ def test_hash_name():
     assert SequenceMatcher(None, hashes[0], hashes[1]).ratio() < 0.4
     assert SequenceMatcher(None, hashes[0], hashes[2]).ratio() < 0.4
     assert SequenceMatcher(None, hashes[1], hashes[2]).ratio() < 0.4
+
+
+def test_write_telemetry_log_line_writes_to_dagster_home():
+    # Ensures that if logging directory is deleted between writes, it can be re-created without failure.
+    with tempfile.TemporaryDirectory() as temp_dir:
+        with environ({"DAGSTER_HOME": temp_dir}):
+            write_telemetry_log_line({"foo": "bar"})
+            with open(os.path.join(temp_dir, "logs/event.log"), "r") as f:
+                res = json.load(f)
+                assert res == {"foo": "bar"}
+
+            os.remove(os.path.join(temp_dir, "logs/event.log"))
+            os.rmdir(os.path.join(temp_dir, "logs"))
+
+            write_telemetry_log_line({"foo": "bar"})
+            with open(os.path.join(temp_dir, "logs/event.log"), "r") as f:
+                res = json.load(f)
+                assert res == {"foo": "bar"}
