@@ -52,14 +52,50 @@ import {
   AssetJobPartitionSetsQueryVariables,
 } from './types/AssetJobPartitionSetsQuery';
 
-export const LaunchAssetChoosePartitionsDialog: React.FC<{
+interface Props {
   open: boolean;
   setOpen: (open: boolean) => void;
   repoAddress: RepoAddress;
   assetJobName: string;
   assets: {assetKey: AssetKey; opName: string | null; partitionDefinition: string | null}[];
   upstreamAssetKeys: AssetKey[]; // single layer of upstream dependencies
-}> = ({open, setOpen, assets, repoAddress, assetJobName, upstreamAssetKeys}) => {
+}
+
+export const LaunchAssetChoosePartitionsDialog: React.FC<Props> = (props) => {
+  const title = `Launch runs to materialize ${
+    props.assets.length > 1
+      ? `${props.assets.length} assets`
+      : displayNameForAssetKey(props.assets[0].assetKey)
+  }`;
+
+  return (
+    <DialogWIP
+      style={{width: 700}}
+      isOpen={props.open}
+      canEscapeKeyClose
+      canOutsideClickClose
+      onClose={() => props.setOpen(false)}
+    >
+      <DialogHeader icon="layers" label={title} />
+      <LaunchAssetChoosePartitionsDialogBody {...props} />
+    </DialogWIP>
+  );
+};
+
+// Note: This dialog loads a lot of data - the body is broken into a separate
+// component so we can be *sure* the hooks won't load data until it's opened.
+// (<Dialog> does not render it's children until open=true)
+//
+// Additionally, we want the dialog to reset when it's closed and re-opened so
+// that partition health, etc. is up-to-date.
+//
+const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
+  setOpen,
+  assets,
+  repoAddress,
+  assetJobName,
+  upstreamAssetKeys,
+}) => {
   const data = usePartitionHealthData(assets.map((a) => a.assetKey));
   const upstreamData = usePartitionHealthData(upstreamAssetKeys);
 
@@ -79,10 +115,6 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
     setSelected([mostRecentKey]);
   }, [mostRecentKey]);
 
-  const title = `Launch runs to materialize ${
-    assets.length > 1 ? `${assets.length} assets` : displayNameForAssetKey(assets[0].assetKey)
-  }`;
-
   const client = useApolloClient();
   const history = useHistory();
 
@@ -92,7 +124,6 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
     AssetJobPartitionSetsQuery,
     AssetJobPartitionSetsQueryVariables
   >(ASSET_JOB_PARTITION_SETS_QUERY, {
-    skip: !open,
     variables: {
       repositoryLocationName: repoAddress.location,
       repositoryName: repoAddress.name,
@@ -128,6 +159,7 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
         ConfigPartitionSelectionQueryVariables
       >({
         query: CONFIG_PARTITION_SELECTION_QUERY,
+        fetchPolicy: 'network-only',
         variables: {
           repositorySelector: {
             repositoryLocationName: repoAddress.location,
@@ -243,14 +275,7 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
   };
 
   return (
-    <DialogWIP
-      style={{width: 700}}
-      isOpen={open}
-      canEscapeKeyClose
-      canOutsideClickClose
-      onClose={() => setOpen(false)}
-    >
-      <DialogHeader icon="layers" label={title} />
+    <>
       <DialogBody>
         <Box flex={{direction: 'column', gap: 8}}>
           <Subheading style={{flex: 1}}>Partition Keys</Subheading>
@@ -327,7 +352,7 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<{
             : `Launch 1 Run`}
         </ButtonWIP>
       </DialogFooter>
-    </DialogWIP>
+    </>
   );
 };
 
