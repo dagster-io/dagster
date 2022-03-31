@@ -2,13 +2,23 @@ import pytest
 
 from dagster import (
     AssetKey,
+    AssetObservation,
+    In,
     InputDefinition,
     ModeDefinition,
+    Out,
     Output,
     OutputDefinition,
+    StaticPartitionsDefinition,
+    asset,
+    build_assets_job,
+    build_input_context,
     execute_pipeline,
     io_manager,
+    job,
+    op,
     pipeline,
+    root_input_manager,
     solid,
 )
 from dagster.check import CheckError
@@ -130,6 +140,144 @@ def test_output_definition_multiple_partition_materialization():
         metadata_entries=[entry2],
         parent_assets=[n_asset_keys("table1", 3)],
     )
+
+
+def test_io_manager_add_input_metadata():
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            context.add_input_metadata(metadata={"foo": "bar"})
+            context.add_input_metadata(metadata={"baz": "qux"})
+
+            observations = context.get_observations()
+            assert observations[0].asset_key == context.asset_key
+            assert observations[0].metadata_entries[0].label == "foo"
+            assert observations[1].metadata_entries[0].label == "baz"
+            return 1
+
+    @io_manager
+    def my_io_manager(_):
+        return MyIOManager()
+
+    in_asset_key = AssetKey(["a", "b"])
+    out_asset_key = AssetKey(["c", "d"])
+
+    @op(out=Out(asset_key=out_asset_key))
+    def before():
+        pass
+
+    @op(ins={"a": In(asset_key=in_asset_key)}, out={})
+    def after(a):
+        pass
+
+    @job(resource_defs={"io_manager": my_io_manager})
+    def my_job():
+        after(before())
+
+    get_observation = lambda event: event.event_specific_data.asset_observation
+
+    result = my_job.execute_in_process()
+    observations = [
+        event for event in result.all_node_events if event.event_type_value == "ASSET_OBSERVATION"
+    ]
+
+    # first observation
+    assert observations[0].step_key == "after"
+    assert get_observation(observations[0]) == AssetObservation(
+        asset_key=in_asset_key, metadata={"foo": "bar"}
+    )
+    # second observation
+    assert observations[1].step_key == "after"
+    assert get_observation(observations[1]) == AssetObservation(
+        asset_key=in_asset_key, metadata={"baz": "qux"}
+    )
+
+    # confirm loaded_input event contains metadata
+    loaded_input_event = [
+        event for event in result.all_events if event.event_type_value == "LOADED_INPUT"
+    ][0]
+    assert loaded_input_event
+    loaded_input_event_metadata = loaded_input_event.event_specific_data.metadata_entries
+    assert len(loaded_input_event_metadata) == 2
+    assert loaded_input_event_metadata[0].label == "foo"
+    assert loaded_input_event_metadata[1].label == "baz"
+
+
+def test_root_input_manager_add_input_metadata():
+    @root_input_manager
+    def my_root_input_manager(context):
+        context.add_input_metadata(metadata={"foo": "bar"})
+        context.add_input_metadata(metadata={"baz": "qux"})
+        return []
+
+    @op(ins={"input1": In(root_manager_key="my_root_input_manager")})
+    def my_op(_, input1):
+        return input1
+
+    @job(resource_defs={"my_root_input_manager": my_root_input_manager})
+    def my_job():
+        my_op()
+
+    result = my_job.execute_in_process()
+    loaded_input_event = [
+        event for event in result.all_events if event.event_type_value == "LOADED_INPUT"
+    ][0]
+    metadata_entries = loaded_input_event.event_specific_data.metadata_entries
+    assert len(metadata_entries) == 2
+    assert metadata_entries[0].label == "foo"
+    assert metadata_entries[1].label == "baz"
+
+
+def test_io_manager_single_partition_add_input_metadata():
+    partitions_def = StaticPartitionsDefinition(["a", "b", "c"])
+
+    @asset(partitions_def=partitions_def)
+    def asset_1():
+        return 1
+
+    @asset(partitions_def=partitions_def)
+    def asset_2(asset_1):
+        return 2
+
+    class MyIOManager(IOManager):
+        def handle_output(self, context, obj):
+            pass
+
+        def load_input(self, context):
+            context.add_input_metadata(metadata={"foo": "bar"}, description="hello world")
+            return 1
+
+    @io_manager
+    def my_io_manager(_):
+        return MyIOManager()
+
+    assets_job = build_assets_job(
+        "assets_job", [asset_1, asset_2], resource_defs={"io_manager": my_io_manager}
+    )
+    result = assets_job.execute_in_process(partition_key="a")
+
+    get_observation = lambda event: event.event_specific_data.asset_observation
+
+    observations = [
+        event for event in result.all_node_events if event.event_type_value == "ASSET_OBSERVATION"
+    ]
+
+    assert observations[0].step_key == "asset_2"
+    assert get_observation(observations[0]) == AssetObservation(
+        asset_key="asset_1", metadata={"foo": "bar"}, description="hello world", partition="a"
+    )
+
+
+def test_context_error_add_input_metadata():
+    @op
+    def my_op():
+        pass
+
+    context = build_input_context(op_def=my_op)
+    with pytest.raises(CheckError):
+        context.add_input_metadata({"foo": "bar"})
 
 
 def test_io_manager_single_partition_materialization():
