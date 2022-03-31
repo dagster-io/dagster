@@ -19,7 +19,6 @@ from dagster_graphql.test.utils import (
 
 from dagster import (
     Any,
-    AssetGroup,
     AssetKey,
     AssetMaterialization,
     AssetObservation,

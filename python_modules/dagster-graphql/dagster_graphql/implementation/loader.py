@@ -1,12 +1,13 @@
 from collections import defaultdict
 from enum import Enum
-from typing import Any, Dict, Iterable, List, Optional, Set
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 from dagster import DagsterInstance, check
 from dagster.core.definitions.events import AssetKey
 from dagster.core.events.log import EventLogEntry
 from dagster.core.host_representation import ExternalRepository
 from dagster.core.host_representation.external_data import (
+    ExternalAssetDependedBy,
     ExternalAssetDependency,
     ExternalAssetNode,
 )
@@ -289,16 +290,18 @@ class BatchAssetDependencyLoader:
         self._context = context
         self._fetched = False
         self._sink_assets: Dict[AssetKey, ExternalAssetNode] = {}
-        self._external_asset_deps = {}
+        self._external_asset_deps: Dict[
+            Tuple[str, str], Dict[AssetKey, Sequence[ExternalAssetDependedBy]]
+        ] = (
+            {}
+        )  # nested dict that maps dependedby assets by asset key by location tuple (repo_location.name, repo_name)
 
     def _build_cross_repo_deps(self):
-        depended_by_assets_by_source_asset = (
-            {}
-        )  # key is asset key, value is list of DependedBy ExternalAssetNodes
+        depended_by_assets_by_source_asset: Dict[AssetKey, Sequence[ExternalAssetDependedBy]] = {}
 
-        map_defined_asset_to_location = (
-            {}
-        )  # key is asset key, value is tuple (location_name, repo_name)
+        map_defined_asset_to_location: Dict[
+            AssetKey, Tuple[str, str]
+        ] = {}  # key is asset key, value is tuple (location_name, repo_name)
         for location in self._context.repository_locations:
             repositories = location.get_repositories()
             for repo_name, external_repo in repositories.items():
@@ -316,10 +319,6 @@ class BatchAssetDependencyLoader:
                             repo_name,
                         )
 
-        self._external_asset_deps = (
-            {}
-        )  # nested dict that maps dependedby assets by asset key by location tuple (repo_location.name, repo_name)
-        self._sink_assets = {}
         for source_asset, depended_by_assets in depended_by_assets_by_source_asset.items():
             asset_def_location = map_defined_asset_to_location.get(source_asset, None)
             if asset_def_location:  # source asset is defined as asset in another repository

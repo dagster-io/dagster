@@ -1,4 +1,5 @@
-from dagster import asset, AssetGroup, repository, SourceAsset, AssetKey
+# pylint: disable=redefined-outer-name
+from dagster import AssetGroup, AssetKey, SourceAsset, asset, repository
 
 
 @asset

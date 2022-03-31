@@ -4,10 +4,6 @@ from dagster_graphql.implementation.loader import BatchAssetDependencyLoader
 
 from dagster import AssetKey, DagsterEventType, EventRecordsFilter, check, seven
 from dagster.core.events import ASSET_EVENTS
-from dagster.core.host_representation.external_data import (
-    ExternalAssetDependency,
-    ExternalAssetNode,
-)
 
 from .utils import capture_error
 
