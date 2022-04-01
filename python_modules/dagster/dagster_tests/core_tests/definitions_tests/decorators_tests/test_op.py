@@ -836,6 +836,28 @@ def test_output_generic_correct_inner_type():
     assert result.success
 
 
+def test_output_generic_type_mismatches():
+    @op
+    def the_op_annotation_type_mismatch() -> int:
+        return Output("foo")  # type: ignore[return-value]
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step output "result" - expected type "Int". Description: Value "foo" of python type "str" must be a int.',
+    ):
+        execute_op_in_graph(the_op_annotation_type_mismatch)
+
+    @op
+    def the_op_output_annotation_type_mismatch() -> Output[int]:
+        return "foo"  # type: ignore[return-value]
+
+    with pytest.raises(
+        DagsterTypeCheckDidNotPass,
+        match='Type check failed for step output "result" - expected type "Int". Description: Value "foo" of python type "str" must be a int.',
+    ):
+        execute_op_in_graph(the_op_output_annotation_type_mismatch)
+
+
 def test_generic_output_tuple_op():
     @op(out={"out1": Out(), "out2": Out()})
     def the_op() -> Tuple[Output[str], Output[int]]:
