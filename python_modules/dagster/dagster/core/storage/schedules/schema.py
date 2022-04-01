@@ -1,6 +1,6 @@
 import sqlalchemy as db
 
-from ..sql import get_current_timestamp
+from ..sql import MySQLCompatabilityTypes, get_current_timestamp
 
 ScheduleStorageSqlMetadata = db.MetaData()
 
@@ -28,6 +28,17 @@ JobTickTable = db.Table(
     db.Column("tick_body", db.Text),
     db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
     db.Column("update_timestamp", db.DateTime, server_default=get_current_timestamp()),
+)
+
+# Secondary Index migration table, used to track data migrations, event_logs and runs.
+# This schema should match the schema in the event_log storage, run schema
+SecondaryIndexMigrationTable = db.Table(
+    "secondary_indexes",
+    ScheduleStorageSqlMetadata,
+    db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+    db.Column("name", MySQLCompatabilityTypes.UniqueText, unique=True),
+    db.Column("create_timestamp", db.DateTime, server_default=get_current_timestamp()),
+    db.Column("migration_completed", db.DateTime),
 )
 
 db.Index(

@@ -642,6 +642,7 @@ class DagsterInstance:
             if print_fn:
                 print_fn("Updating schedule storage...")
             self._schedule_storage.upgrade()
+            self._schedule_storage.migrate(print_fn)
 
     def optimize_for_dagit(self, statement_timeout):
         if self._schedule_storage:
@@ -654,6 +655,7 @@ class DagsterInstance:
         self._event_storage.reindex_events(print_fn)
         self._event_storage.reindex_assets(print_fn)
         self._run_storage.optimize(print_fn)
+        self._schedule_storage.optimize(print_fn)
         print_fn("Done.")
 
     def dispose(self):

@@ -245,3 +245,17 @@ def drop_run_record_start_end_timestamps():
 
     op.drop_column("runs", "start_time")
     op.drop_column("runs", "end_time")
+
+
+def create_schedule_secondary_index_table():
+    if not has_table("jobs"):
+        return
+
+    if not has_table("secondary_indexes"):
+        op.create_table(
+            "secondary_indexes",
+            db.Column("id", db.Integer, primary_key=True, autoincrement=True),
+            db.Column("name", db.String, unique=True),
+            db.Column("create_timestamp", db.DateTime, server_default=db.text("CURRENT_TIMESTAMP")),
+            db.Column("migration_completed", db.DateTime),
+        )

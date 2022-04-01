@@ -1,5 +1,5 @@
 import abc
-from typing import Iterable, List, Mapping, Optional, Sequence
+from typing import Callable, Iterable, List, Mapping, Optional, Sequence
 
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.instance import MayHaveInstanceWeakref
@@ -122,6 +122,12 @@ class ScheduleStorage(abc.ABC, MayHaveInstanceWeakref):
     @abc.abstractmethod
     def upgrade(self):
         """Perform any needed migrations"""
+
+    def migrate(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
+        """Call this method to run any required data migrations"""
+
+    def optimize(self, print_fn: Optional[Callable] = None, force_rebuild_all: bool = False):
+        """Call this method to run any optional data migrations for optimized reads"""
 
     def optimize_for_dagit(self, statement_timeout: int):
         """Allows for optimizing database connection / use in the context of a long lived dagit process"""
