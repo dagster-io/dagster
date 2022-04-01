@@ -92,6 +92,8 @@ def asset(
             name forms the asset key.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
             and namespaces.
+        non_argument_deps (Optional[Set[AssetKey]]): Set of asset keys that are upstream dependencies,
+            but do not pass an input to the asset.
         metadata (Optional[Dict[str, Any]]): A dict of metadata entries for the asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
         io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
@@ -249,6 +251,8 @@ def multi_asset(
         outs: (Optional[Dict[str, Out]]): The Outs representing the produced assets.
         ins (Optional[Mapping[str, AssetIn]]): A dictionary that maps input names to their metadata
             and namespaces.
+        non_argument_deps (Optional[Set[AssetKey]]): Set of asset keys that are upstream dependencies,
+            but do not pass an input to the multi_asset.
         required_resource_keys (Optional[Set[str]]): Set of resource handles required by the op.
         io_manager_key (Optional[str]): The resource key of the IOManager used for storing the
             output of the op as an asset, and for loading it in downstream ops
