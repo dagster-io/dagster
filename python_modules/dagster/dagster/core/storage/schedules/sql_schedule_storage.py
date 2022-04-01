@@ -9,18 +9,17 @@ import sqlalchemy as db
 from dagster import check
 from dagster.core.definitions.run_request import InstigatorType
 from dagster.core.errors import DagsterInvariantViolationError
-from dagster.core.scheduler.instigation import (
-    InstigatorState,
-    InstigatorTick,
-    TickData,
-    TickStatsSnapshot,
-    TickStatus,
-)
+from dagster.core.scheduler.instigation import InstigatorState, InstigatorTick, TickData, TickStatus
 from dagster.serdes import deserialize_json_to_dagster_namedtuple, serialize_dagster_namedtuple
 from dagster.utils import utc_datetime_from_timestamp
 
 from .base import ScheduleStorage
-from .migration import OPTIONAL_SCHEDULE_DATA_MIGRATIONS, REQUIRED_SCHEDULE_DATA_MIGRATIONS
+from .migration import (
+    OPTIONAL_SCHEDULE_DATA_MIGRATIONS,
+    REQUIRED_SCHEDULE_DATA_MIGRATIONS,
+    SCHEDULE_JOBS_SELECTOR_ID,
+    SCHEDULE_TICKS_SELECTOR_ID,
+)
 from .schema import InstigatorsTable, JobTable, JobTickTable, SecondaryIndexMigrationTable
 
 
@@ -42,31 +41,45 @@ class SqlScheduleStorage(ScheduleStorage):
     def _deserialize_rows(self, rows):
         return list(map(lambda r: deserialize_json_to_dagster_namedtuple(r[0]), rows))
 
-    def all_instigator_state(self, repository_origin_id=None, instigator_type=None):
+    def all_instigator_state(
+        self, repository_origin_id=None, repository_selector_id=None, instigator_type=None
+    ):
         check.opt_inst_param(instigator_type, "instigator_type", InstigatorType)
-        base_query = db.select([JobTable.c.job_body, JobTable.c.job_origin_id]).select_from(
-            JobTable
-        )
 
-        if repository_origin_id:
-            query = base_query.where(JobTable.c.repository_origin_id == repository_origin_id)
+        if self.has_instigators_table() and self.has_built_index(SCHEDULE_JOBS_SELECTOR_ID):
+            query = db.select([InstigatorsTable.c.instigator_body]).select_from(InstigatorsTable)
+            if repository_selector_id:
+                query = query.where(
+                    InstigatorsTable.c.repository_selector_id == repository_selector_id
+                )
+            if instigator_type:
+                query = query.where(InstigatorsTable.c.instigator_type == instigator_type.value)
         else:
-            query = base_query
-
-        if instigator_type:
-            query = query.where(JobTable.c.job_type == instigator_type.value)
+            query = db.select([JobTable.c.job_body]).select_from(JobTable)
+            if repository_origin_id:
+                query = query.where(JobTable.c.repository_origin_id == repository_origin_id)
+            if instigator_type:
+                query = query.where(JobTable.c.job_type == instigator_type.value)
 
         rows = self.execute(query)
         return self._deserialize_rows(rows)
 
-    def get_instigator_state(self, origin_id):
+    def get_instigator_state(self, origin_id, selector_id):
         check.str_param(origin_id, "origin_id")
+        check.str_param(selector_id, "selector_id")
 
-        query = (
-            db.select([JobTable.c.job_body])
-            .select_from(JobTable)
-            .where(JobTable.c.job_origin_id == origin_id)
-        )
+        if self.has_instigators_table() and self.has_built_index(SCHEDULE_JOBS_SELECTOR_ID):
+            query = (
+                db.select([InstigatorsTable.c.instigator_body])
+                .select_from(InstigatorsTable)
+                .where(InstigatorsTable.c.selector_id == selector_id)
+            )
+        else:
+            query = (
+                db.select([JobTable.c.job_body])
+                .select_from(JobTable)
+                .where(JobTable.c.job_origin_id == origin_id)
+            )
 
         rows = self.execute(query)
         return self._deserialize_rows(rows[:1])[0] if len(rows) else None
@@ -133,7 +146,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
     def update_instigator_state(self, state):
         check.inst_param(state, "state", InstigatorState)
-        if not self.get_instigator_state(state.instigator_origin_id):
+        if not self.get_instigator_state(state.instigator_origin_id, state.selector_id):
             raise DagsterInvariantViolationError(
                 "InstigatorState {id} is not present in storage".format(
                     id=state.instigator_origin_id
@@ -161,7 +174,7 @@ class SqlScheduleStorage(ScheduleStorage):
         check.str_param(origin_id, "origin_id")
         check.str_param(selector_id, "selector_id")
 
-        if not self.get_instigator_state(origin_id):
+        if not self.get_instigator_state(origin_id, selector_id):
             raise DagsterInvariantViolationError(
                 "InstigatorState {id} is not present in storage".format(id=origin_id)
             )
@@ -210,7 +223,7 @@ class SqlScheduleStorage(ScheduleStorage):
 
     @property
     def supports_batch_queries(self):
-        return True
+        return self.has_instigators_table() and self.has_built_index(SCHEDULE_TICKS_SELECTOR_ID)
 
     def has_instigators_table(self):
         with self.connect() as conn:
@@ -222,11 +235,11 @@ class SqlScheduleStorage(ScheduleStorage):
 
     def get_batch_ticks(
         self,
-        origin_ids: Sequence[str],
+        selector_ids: Sequence[str],
         limit: Optional[int] = None,
         statuses: Optional[Sequence[TickStatus]] = None,
     ) -> Mapping[str, Iterable[InstigatorTick]]:
-        check.list_param(origin_ids, "origin_ids", of_type=str)
+        check.list_param(selector_ids, "selector_ids", of_type=str)
         check.opt_int_param(limit, "limit")
         check.opt_list_param(statuses, "statuses", of_type=TickStatus)
 
@@ -234,7 +247,7 @@ class SqlScheduleStorage(ScheduleStorage):
             db.func.rank()
             .over(
                 order_by=db.desc(JobTickTable.c.timestamp),
-                partition_by=JobTickTable.c.job_origin_id,
+                partition_by=JobTickTable.c.selector_id,
             )
             .label("rank")
         )
@@ -242,13 +255,13 @@ class SqlScheduleStorage(ScheduleStorage):
             db.select(
                 [
                     JobTickTable.c.id,
-                    JobTickTable.c.job_origin_id,
+                    JobTickTable.c.selector_id,
                     JobTickTable.c.tick_body,
                     bucket_rank_column,
                 ]
             )
             .select_from(JobTickTable)
-            .where(JobTickTable.c.job_origin_id.in_(origin_ids))
+            .where(JobTickTable.c.selector_id.in_(selector_ids))
             .alias("subquery")
         )
         if statuses:
@@ -257,7 +270,7 @@ class SqlScheduleStorage(ScheduleStorage):
             )
 
         query = (
-            db.select([subquery.c.id, subquery.c.job_origin_id, subquery.c.tick_body])
+            db.select([subquery.c.id, subquery.c.selector_id, subquery.c.tick_body])
             .order_by(subquery.c.rank.asc())
             .where(subquery.c.rank <= limit)
         )
@@ -266,24 +279,35 @@ class SqlScheduleStorage(ScheduleStorage):
         results = defaultdict(list)
         for row in rows:
             tick_id = row[0]
-            origin_id = row[1]
+            selector_id = row[1]
             tick_data = cast(TickData, deserialize_json_to_dagster_namedtuple(row[2]))
-            results[origin_id].append(InstigatorTick(tick_id, tick_data))
+            results[selector_id].append(InstigatorTick(tick_id, tick_data))
         return results
 
-    def get_ticks(self, origin_id, before=None, after=None, limit=None, statuses=None):
+    def get_ticks(self, origin_id, selector_id, before=None, after=None, limit=None, statuses=None):
         check.str_param(origin_id, "origin_id")
         check.opt_float_param(before, "before")
         check.opt_float_param(after, "after")
         check.opt_int_param(limit, "limit")
         check.opt_list_param(statuses, "statuses", of_type=TickStatus)
 
-        query = (
+        base_query = (
             db.select([JobTickTable.c.id, JobTickTable.c.tick_body])
             .select_from(JobTickTable)
-            .where(JobTickTable.c.job_origin_id == origin_id)
             .order_by(JobTickTable.c.timestamp.desc())
         )
+        if self.has_instigators_table():
+            query = base_query.where(
+                db.or_(
+                    JobTickTable.c.selector_id == selector_id,
+                    db.and_(
+                        JobTickTable.c.selector_id == None,
+                        JobTickTable.c.job_origin_id == origin_id,
+                    ),
+                )
+            )
+        else:
+            query = base_query.where(JobTickTable.c.job_origin_id == origin_id)
 
         query = self._add_filter_limit(
             query, before=before, after=after, limit=limit, statuses=statuses
@@ -341,43 +365,34 @@ class SqlScheduleStorage(ScheduleStorage):
 
         return tick
 
-    def purge_ticks(self, origin_id, tick_status, before):
+    def purge_ticks(self, origin_id, selector_id, tick_status, before):
         check.str_param(origin_id, "origin_id")
         check.inst_param(tick_status, "tick_status", TickStatus)
         check.float_param(before, "before")
 
         utc_before = utc_datetime_from_timestamp(before)
 
-        with self.connect() as conn:
-            conn.execute(
-                JobTickTable.delete()  # pylint: disable=no-value-for-parameter
-                .where(JobTickTable.c.status == tick_status.value)
-                .where(JobTickTable.c.timestamp < utc_before)
-                .where(JobTickTable.c.job_origin_id == origin_id)
+        base_query = (
+            JobTickTable.delete()  # pylint: disable=no-value-for-parameter
+            .where(JobTickTable.c.status == tick_status.value)
+            .where(JobTickTable.c.timestamp < utc_before)
+        )
+
+        if self.has_instigators_table():
+            query = base_query.where(
+                db.or_(
+                    JobTickTable.c.selector_id == selector_id,
+                    db.and_(
+                        JobTickTable.c.selector_id == None,
+                        JobTickTable.c.job_origin_id == origin_id,
+                    ),
+                )
             )
+        else:
+            query = base_query.where(JobTickTable.c.job_origin_id == origin_id)
 
-    def get_tick_stats(self, origin_id):
-        check.str_param(origin_id, "origin_id")
-
-        query = (
-            db.select([JobTickTable.c.status, db.func.count()])
-            .select_from(JobTickTable)
-            .where(JobTickTable.c.job_origin_id == origin_id)
-            .group_by(JobTickTable.c.status)
-        )
-
-        rows = self.execute(query)
-
-        counts = {}
-        for status, count in rows:
-            counts[status] = count
-
-        return TickStatsSnapshot(
-            ticks_started=counts.get(TickStatus.STARTED.value, 0),
-            ticks_succeeded=counts.get(TickStatus.SUCCESS.value, 0),
-            ticks_skipped=counts.get(TickStatus.SKIPPED.value, 0),
-            ticks_failed=counts.get(TickStatus.FAILURE.value, 0),
-        )
+        with self.connect() as conn:
+            conn.execute(query)
 
     def wipe(self):
         """Clears the schedule storage."""

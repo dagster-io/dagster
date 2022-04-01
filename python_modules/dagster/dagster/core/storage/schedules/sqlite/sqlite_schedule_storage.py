@@ -82,7 +82,9 @@ class SqliteScheduleStorage(SqlScheduleStorage, ConfigurableClass):
 
     @property
     def supports_batch_queries(self):
-        return get_sqlite_version() > MINIMUM_SQLITE_BATCH_VERSION
+        return (
+            get_sqlite_version() > MINIMUM_SQLITE_BATCH_VERSION and super().supports_batch_queries
+        )
 
     def upgrade(self):
         alembic_config = get_alembic_config(__file__)

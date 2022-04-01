@@ -129,6 +129,7 @@ class RepositoryScopedBatchLoader:
         elif data_type == RepositoryDataType.SCHEDULE_STATES:
             schedule_states = self._instance.all_instigator_state(
                 repository_origin_id=self._repository.get_external_origin_id(),
+                repository_selector_id=self._repository.selector_id,
                 instigator_type=InstigatorType.SCHEDULE,
             )
             for state in schedule_states:
@@ -137,32 +138,45 @@ class RepositoryScopedBatchLoader:
         elif data_type == RepositoryDataType.SENSOR_STATES:
             sensor_states = self._instance.all_instigator_state(
                 repository_origin_id=self._repository.get_external_origin_id(),
+                repository_selector_id=self._repository.selector_id,
                 instigator_type=InstigatorType.SENSOR,
             )
             for state in sensor_states:
                 fetched[state.name].append(state)
 
         elif data_type == RepositoryDataType.SCHEDULE_TICKS:
-            origin_ids = [
-                schedule.get_external_origin_id()
-                for schedule in self._repository.get_external_schedules()
-            ]
             if self._instance.supports_batch_tick_queries:
-                fetched = self._instance.get_batch_ticks(origin_ids, limit=limit)
+                selector_ids = [
+                    schedule.selector_id for schedule in self._repository.get_external_schedules()
+                ]
+                ticks_by_selector = self._instance.get_batch_ticks(selector_ids, limit=limit)
+                for schedule in self._repository.get_external_schedules():
+                    fetched[schedule.get_external_origin_id()] = ticks_by_selector.get(
+                        schedule.selector_id, []
+                    )
             else:
-                for origin_id in origin_ids:
-                    fetched[origin_id] = self._instance.get_ticks(origin_id, limit=limit)
+                for schedule in self._repository.get_external_schedules():
+                    origin_id = schedule.get_external_origin_id()
+                    fetched[origin_id] = self._instance.get_ticks(
+                        origin_id, schedule.selector_id, limit=limit
+                    )
 
         elif data_type == RepositoryDataType.SENSOR_TICKS:
-            origin_ids = [
-                sensor.get_external_origin_id()
-                for sensor in self._repository.get_external_sensors()
-            ]
             if self._instance.supports_batch_tick_queries:
-                fetched = self._instance.get_batch_ticks(origin_ids, limit=limit)
+                selector_ids = [
+                    schedule.selector_id for schedule in self._repository.get_external_sensors()
+                ]
+                ticks_by_selector = self._instance.get_batch_ticks(selector_ids, limit=limit)
+                for sensor in self._repository.get_external_sensors():
+                    fetched[sensor.get_external_origin_id()] = ticks_by_selector.get(
+                        sensor.selector_id, []
+                    )
             else:
-                for origin_id in origin_ids:
-                    fetched[origin_id] = self._instance.get_ticks(origin_id, limit=limit)
+                for sensor in self._repository.get_external_sensors():
+                    origin_id = sensor.get_external_origin_id()
+                    fetched[origin_id] = self._instance.get_ticks(
+                        origin_id, sensor.selector_id, limit=limit
+                    )
 
         else:
             check.failed(f"Unknown data type for {self.__class__.__name__}: {data_type}")

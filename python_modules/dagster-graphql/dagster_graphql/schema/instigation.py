@@ -362,6 +362,7 @@ class GrapheneInstigationState(graphene.ObjectType):
     def resolve_tick(self, graphene_info, timestamp):
         matches = graphene_info.context.instance.get_ticks(
             self._instigator_state.instigator_origin_id,
+            self._instigator_state.selector_id,
             before=timestamp + 1,
             after=timestamp - 1,
             limit=1,
@@ -406,6 +407,7 @@ class GrapheneInstigationState(graphene.ObjectType):
             GrapheneInstigationTick(graphene_info, tick)
             for tick in graphene_info.context.instance.get_ticks(
                 self._instigator_state.instigator_origin_id,
+                self._instigator_state.selector_id,
                 before=before,
                 after=after,
                 limit=limit,

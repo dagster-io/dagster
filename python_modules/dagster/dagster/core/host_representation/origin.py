@@ -29,6 +29,8 @@ from dagster.serdes import (
 )
 from dagster.serdes.serdes import WhitelistMap, unpack_inner_value
 
+from .selector import RepositorySelector
+
 if TYPE_CHECKING:
     from dagster.core.host_representation.repository_location import (
         GrpcServerRepositoryLocation,
@@ -353,6 +355,11 @@ class ExternalRepositoryOrigin(
 
     def get_id(self) -> str:
         return create_snapshot_id(self)
+
+    def get_selector_id(self) -> str:
+        return create_snapshot_id(
+            RepositorySelector(self.repository_location_origin.location_name, self.repository_name)
+        )
 
     def get_pipeline_origin(self, pipeline_name: str) -> "ExternalPipelineOrigin":
         return ExternalPipelineOrigin(self, pipeline_name)
