@@ -2,10 +2,10 @@ import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
 
-import {ButtonWIP} from './Button';
-import {IconWIP} from './Icon';
-import {MenuItemWIP} from './Menu';
-import {SelectWIP as Select} from './Select';
+import {Button} from './Button';
+import {Icon} from './Icon';
+import {MenuItem} from './Menu';
+import {Select} from './Select';
 
 // eslint-disable-next-line import/no-default-export
 export default {
@@ -30,13 +30,13 @@ export const Default = () => {
       items={items}
       itemPredicate={(query, item) => item.productName.toLowerCase().includes(query)}
       itemRenderer={(item, props) => (
-        <MenuItemWIP key={item.productName} text={item.productName} onClick={props.handleClick} />
+        <MenuItem key={item.productName} text={item.productName} onClick={props.handleClick} />
       )}
       onItemSelect={(item) => setActive(item)}
     >
-      <ButtonWIP intent="primary" rightIcon={<IconWIP name="arrow_drop_down" />}>
+      <Button intent="primary" rightIcon={<Icon name="arrow_drop_down" />}>
         {active ? active.productName : 'Choose a product'}
-      </ButtonWIP>
+      </Button>
     </Select>
   );
 };

@@ -4,7 +4,7 @@ import * as React from 'react';
 import {Link, LinkProps} from 'react-router-dom';
 
 import {BaseButton} from './BaseButton';
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {Spinner} from './Spinner';
 import {StyledButton, StyledButtonText} from './StyledButton';
 
@@ -17,15 +17,15 @@ const intentToFillColor = (intent: BlueprintIntent, outlined: BlueprintOutlined)
   }
   switch (intent) {
     case 'primary':
-      return ColorsWIP.Gray900;
+      return Colors.Gray900;
     case 'danger':
-      return ColorsWIP.Red500;
+      return Colors.Red500;
     case 'success':
-      return ColorsWIP.Green500;
+      return Colors.Green500;
     case 'warning':
-      return ColorsWIP.Yellow500;
+      return Colors.Yellow500;
     case 'none':
-      return ColorsWIP.White;
+      return Colors.White;
     default:
       return 'transparent';
   }
@@ -35,35 +35,35 @@ const intentToTextColor = (intent: BlueprintIntent, outlined: BlueprintOutlined)
   if (outlined) {
     switch (intent) {
       case 'primary':
-        return ColorsWIP.Gray900;
+        return Colors.Gray900;
       case 'danger':
-        return ColorsWIP.Red500;
+        return Colors.Red500;
       case 'success':
-        return ColorsWIP.Green500;
+        return Colors.Green500;
       case 'warning':
-        return ColorsWIP.Yellow500;
+        return Colors.Yellow500;
       case 'none':
       default:
-        return ColorsWIP.Dark;
+        return Colors.Dark;
     }
   }
-  return !intent || intent === 'none' ? ColorsWIP.Dark : ColorsWIP.White;
+  return !intent || intent === 'none' ? Colors.Dark : Colors.White;
 };
 
 const intentToStrokeColor = (intent: BlueprintIntent, outlined: BlueprintOutlined) => {
   if (!intent || intent === 'none' || outlined) {
     switch (intent) {
       case 'primary':
-        return ColorsWIP.Gray900;
+        return Colors.Gray900;
       case 'danger':
-        return ColorsWIP.Red500;
+        return Colors.Red500;
       case 'success':
-        return ColorsWIP.Green500;
+        return Colors.Green500;
       case 'warning':
-        return ColorsWIP.Yellow500;
+        return Colors.Yellow500;
       case 'none':
       default:
-        return ColorsWIP.Gray300;
+        return Colors.Gray300;
     }
   }
   return 'transparent';
@@ -73,22 +73,22 @@ const intentToSpinnerColor = (intent: BlueprintIntent, outlined: BlueprintOutlin
   if (outlined) {
     switch (intent) {
       case 'primary':
-        return ColorsWIP.Gray600;
+        return Colors.Gray600;
       case 'danger':
-        return ColorsWIP.Red500;
+        return Colors.Red500;
       case 'success':
-        return ColorsWIP.Green500;
+        return Colors.Green500;
       case 'warning':
-        return ColorsWIP.Yellow500;
+        return Colors.Yellow500;
       case 'none':
       default:
-        return ColorsWIP.Gray600;
+        return Colors.Gray600;
     }
   }
-  return !intent || intent === 'none' ? ColorsWIP.Gray600 : ColorsWIP.White;
+  return !intent || intent === 'none' ? Colors.Gray600 : Colors.White;
 };
 
-export const ButtonWIP = React.forwardRef(
+export const Button = React.forwardRef(
   (
     props: React.ComponentProps<typeof BlueprintButton>,
     ref: React.ForwardedRef<HTMLButtonElement>,
@@ -121,7 +121,7 @@ export const ButtonWIP = React.forwardRef(
   },
 );
 
-ButtonWIP.displayName = 'Button';
+Button.displayName = 'Button';
 
 interface AnchorButtonProps
   extends Omit<React.ComponentProps<typeof BlueprintAnchorButton>, 'loading' | 'onClick' | 'type'>,

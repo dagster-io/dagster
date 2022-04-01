@@ -2,9 +2,9 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {Box} from './Box';
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {Group} from './Group';
-import {IconName, IconWIP} from './Icon';
+import {IconName, Icon} from './Icon';
 
 export type AlertIntent = 'info' | 'warning' | 'error' | 'success';
 
@@ -22,36 +22,36 @@ export const Alert: React.FC<Props> = (props) => {
     switch (intent) {
       case 'warning':
         return {
-          backgroundColor: ColorsWIP.Yellow50,
-          borderColor: ColorsWIP.Yellow500,
+          backgroundColor: Colors.Yellow50,
+          borderColor: Colors.Yellow500,
           icon: 'warning',
-          iconColor: ColorsWIP.Yellow500,
-          textColor: ColorsWIP.Yellow700,
+          iconColor: Colors.Yellow500,
+          textColor: Colors.Yellow700,
         };
       case 'error':
         return {
-          backgroundColor: ColorsWIP.Red50,
-          borderColor: ColorsWIP.Red500,
+          backgroundColor: Colors.Red50,
+          borderColor: Colors.Red500,
           icon: 'error',
-          iconColor: ColorsWIP.Red500,
-          textColor: ColorsWIP.Red700,
+          iconColor: Colors.Red500,
+          textColor: Colors.Red700,
         };
       case 'success':
         return {
-          backgroundColor: ColorsWIP.Green50,
-          borderColor: ColorsWIP.Green500,
+          backgroundColor: Colors.Green50,
+          borderColor: Colors.Green500,
           icon: 'done',
-          iconColor: ColorsWIP.Green500,
-          textColor: ColorsWIP.Green700,
+          iconColor: Colors.Green500,
+          textColor: Colors.Green700,
         };
       case 'info':
       default:
         return {
-          backgroundColor: ColorsWIP.Blue50,
-          borderColor: ColorsWIP.Blue500,
+          backgroundColor: Colors.Blue50,
+          borderColor: Colors.Blue500,
           icon: 'info',
-          iconColor: ColorsWIP.Blue500,
-          textColor: ColorsWIP.Blue700,
+          iconColor: Colors.Blue500,
+          textColor: Colors.Blue700,
         };
     }
   }, [intent]);
@@ -65,7 +65,7 @@ export const Alert: React.FC<Props> = (props) => {
     >
       <Box flex={{direction: 'row', justifyContent: 'space-between'}}>
         <Group direction="row" spacing={12} alignItems="flex-start">
-          <IconWIP name={icon as IconName} color={iconColor} />
+          <Icon name={icon as IconName} color={iconColor} />
           <Group direction="column" spacing={8}>
             <AlertTitle>{title}</AlertTitle>
             {description ? <AlertDescription>{description}</AlertDescription> : null}
@@ -73,7 +73,7 @@ export const Alert: React.FC<Props> = (props) => {
         </Group>
         {!!onClose ? (
           <ButtonWrapper onClick={onClose}>
-            <IconWIP name="close" color={textColor} />
+            <Icon name="close" color={textColor} />
           </ButtonWrapper>
         ) : null}
       </Box>

@@ -3,7 +3,7 @@ import * as React from 'react';
 import styled from 'styled-components/macro';
 
 import {Group} from './Group';
-import {MenuWIP as Menu, MenuItemWIP as MenuItem, MenuDividerWIP as MenuDivider} from './Menu';
+import {Menu, MenuItem, MenuDivider} from './Menu';
 
 // eslint-disable-next-line import/no-default-export
 export default {
