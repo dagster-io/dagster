@@ -278,13 +278,6 @@ class K8sRunLauncher(RunLauncher, ConfigurableClass):
         self._instance.report_engine_event(
             "Kubernetes run worker job created",
             run,
-            EngineEventData(
-                [
-                    MetadataEntry("Kubernetes Job name", value=job_name),
-                    MetadataEntry("Kubernetes Namespace", value=self.job_namespace),
-                    MetadataEntry("Run ID", value=run.run_id),
-                ]
-            ),
             cls=self.__class__,
         )
 

@@ -3,7 +3,7 @@ import * as React from 'react';
 import {useState} from 'react';
 
 import {Checkbox} from './Checkbox';
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {Group} from './Group';
 
 // eslint-disable-next-line import/no-default-export
@@ -19,7 +19,7 @@ export const Default = () => {
 
   return (
     <Group spacing={8} direction="column">
-      {[ColorsWIP.Blue500, ColorsWIP.ForestGreen, ColorsWIP.Gray800].map((fillColor) => (
+      {[Colors.Blue500, Colors.ForestGreen, Colors.Gray800].map((fillColor) => (
         <Group spacing={24} direction="row" key={fillColor}>
           <Checkbox
             label="Hello world"
@@ -84,7 +84,7 @@ export const Small = () => {
 
   return (
     <Group spacing={8} direction="column">
-      {[ColorsWIP.Blue500, ColorsWIP.ForestGreen, ColorsWIP.Gray800].map((fillColor) => (
+      {[Colors.Blue500, Colors.ForestGreen, Colors.Gray800].map((fillColor) => (
         <Group spacing={24} direction="row" key={fillColor}>
           <Checkbox
             size="small"

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 
 // Mostly Material Design icons - need another one? Download the SVG:
 // https://github.com/marella/material-design-icons/tree/main/svg/outlined
@@ -139,8 +139,8 @@ interface Props {
   style?: React.CSSProperties;
 }
 
-export const IconWIP = React.memo((props: Props) => {
-  const {color = ColorsWIP.Dark, name, size = 16, style} = props;
+export const Icon = React.memo((props: Props) => {
+  const {color = Colors.Dark, name, size = 16, style} = props;
   let img = Icons[name] || '';
   if (typeof img === 'object' && 'default' in img) {
     // in Dagit but not in Storybook due to webpack config differences

@@ -9,7 +9,7 @@ import {Description} from '../pipelines/Description';
 import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {ASSET_NODE_FRAGMENT, ASSET_NODE_LIVE_FRAGMENT} from '../workspace/asset-graph/AssetNode';
-import {LiveData, __ASSET_GROUP} from '../workspace/asset-graph/Utils';
+import {isSourceAsset, LiveData, __ASSET_GROUP} from '../workspace/asset-graph/Utils';
 import {buildRepoAddress} from '../workspace/buildRepoAddress';
 import {RepoAddress} from '../workspace/types';
 
@@ -135,7 +135,7 @@ const JobGraphLink: React.FC<{
   assetNode: AssetNodeDefinitionFragment;
   direction: 'upstream' | 'downstream';
 }> = ({direction, assetNode}) => {
-  if (assetNode.jobNames.length === 0 || !assetNode.opName) {
+  if (isSourceAsset(assetNode)) {
     return null;
   }
   const populated =
@@ -185,7 +185,7 @@ const DefinitionLocation: React.FC<{
       </Box>
     )}
 
-    {assetNode.jobNames.length === 0 && !assetNode.opName && (
+    {isSourceAsset(assetNode) && (
       <Caption style={{lineHeight: '16px', marginTop: 2}}>Source Asset</Caption>
     )}
   </Box>

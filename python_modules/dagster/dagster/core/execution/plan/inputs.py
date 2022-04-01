@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Dict, Iterator, List, NamedTuple, Optiona
 from dagster import check
 from dagster.core.definitions import InputDefinition, NodeHandle, PipelineDefinition
 from dagster.core.definitions.events import AssetLineageInfo
+from dagster.core.definitions.metadata import MetadataEntry
 from dagster.core.errors import (
     DagsterExecutionLoadInputError,
     DagsterInvariantViolationError,
@@ -160,11 +161,17 @@ class FromRootInputManager(
             ].config,
             resources=build_resources_for_manager(input_def.root_manager_key, step_context),
         )
-        yield _load_input_with_input_manager(loader, load_input_context)
+        yield from _load_input_with_input_manager(loader, load_input_context)
+
+        metadata_entries = load_input_context.consume_metadata_entries()
+
         yield DagsterEvent.loaded_input(
             step_context,
             input_name=input_def.name,
             manager_key=input_def.root_manager_key,
+            metadata_entries=[
+                entry for entry in metadata_entries if isinstance(entry, MetadataEntry)
+            ],
         )
 
     def compute_version(self, step_versions, pipeline_def, resolved_run_config) -> Optional[str]:
@@ -278,13 +285,20 @@ class FromStepOutput(
             f"Please ensure that the resource returned for resource key "
             f'"{manager_key}" is an IOManager.',
         )
-        yield _load_input_with_input_manager(input_manager, self.get_load_context(step_context))
+        load_input_context = self.get_load_context(step_context)
+        yield from _load_input_with_input_manager(input_manager, load_input_context)
+
+        metadata_entries = load_input_context.consume_metadata_entries()
+
         yield DagsterEvent.loaded_input(
             step_context,
             input_name=self.input_name,
             manager_key=manager_key,
             upstream_output_name=source_handle.output_name,
             upstream_step_key=source_handle.step_key,
+            metadata_entries=[
+                entry for entry in metadata_entries if isinstance(entry, MetadataEntry)
+            ],
         )
 
     def compute_version(
@@ -586,7 +600,10 @@ def _load_input_with_input_manager(input_manager: "InputManager", context: "Inpu
     ):
         value = input_manager.load_input(context)
     # close user code boundary before returning value
-    return value
+    for event in context.consume_events():
+        yield event
+
+    yield value
 
 
 @whitelist_for_serdes

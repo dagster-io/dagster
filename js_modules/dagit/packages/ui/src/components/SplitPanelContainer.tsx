@@ -1,10 +1,10 @@
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ButtonWIP} from './Button';
+import {Button} from './Button';
 import {ButtonGroup} from './ButtonGroup';
-import {ColorsWIP} from './Colors';
-import {IconWIP} from './Icon';
+import {Colors} from './Colors';
+import {Icon} from './Icon';
 
 const DIVIDER_THICKNESS = 2;
 
@@ -185,11 +185,11 @@ export const SecondPanelToggle = ({container, axis}: PanelToggleProps) => {
   React.useEffect(() => setOpen(initialIsOpen), [initialIsOpen]);
 
   return (
-    <ButtonWIP
+    <Button
       active={open}
       title="Toggle second pane"
       icon={
-        <IconWIP
+        <Icon
           name={
             axis === 'horizontal'
               ? open
@@ -226,7 +226,7 @@ const DividerWrapper = {
   horizontal: styled.div<{resizing: boolean}>`
     width: ${DIVIDER_THICKNESS}px;
     z-index: 1;
-    background: ${(p) => (p.resizing ? ColorsWIP.Gray400 : ColorsWIP.KeylineGray)};
+    background: ${(p) => (p.resizing ? Colors.Gray400 : Colors.KeylineGray)};
     margin-left: -1px;
     overflow: visible;
     position: relative;
@@ -234,7 +234,7 @@ const DividerWrapper = {
   vertical: styled.div<{resizing: boolean}>`
     height: ${DIVIDER_THICKNESS}px;
     z-index: 1;
-    background: ${(p) => (p.resizing ? ColorsWIP.Gray400 : ColorsWIP.KeylineGray)};
+    background: ${(p) => (p.resizing ? Colors.Gray400 : Colors.KeylineGray)};
     margin-top: -1px;
     overflow: visible;
     position: relative;

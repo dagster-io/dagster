@@ -5,7 +5,7 @@ import {
   GlobalSuggestStyle,
   GlobalToasterStyle,
   GlobalTooltipStyle,
-  ColorsWIP,
+  Colors,
 } from '../src';
 
 import {MemoryRouter} from 'react-router-dom';
@@ -19,7 +19,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   html, body {
-    color: ${ColorsWIP.Gray800};
+    color: ${Colors.Gray800};
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -27,7 +27,7 @@ const GlobalStyle = createGlobalStyle`
   a,
   a:hover,
   a:active {
-    color: ${ColorsWIP.Link};
+    color: ${Colors.Link};
   }
 
   body {
@@ -60,7 +60,7 @@ const GlobalStyle = createGlobalStyle`
   }
 
   .bp3-button:disabled .material-icons {
-    color: ${ColorsWIP.Gray300}
+    color: ${Colors.Gray300}
   }
 `;
 

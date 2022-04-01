@@ -1,15 +1,8 @@
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {ButtonWIP} from './Button';
-import {
-  DialogBody,
-  DialogFooter,
-  DialogHeader,
-  DialogWIP as Dialog,
-  DialogWIP,
-  GlobalDialogStyle,
-} from './Dialog';
+import {Button} from './Button';
+import {DialogBody, DialogFooter, DialogHeader, Dialog, GlobalDialogStyle} from './Dialog';
 import {Group} from './Group';
 
 // eslint-disable-next-line import/no-default-export
@@ -23,13 +16,8 @@ export const Simple = () => {
   return (
     <>
       <GlobalDialogStyle />
-      <ButtonWIP onClick={() => setOpen(true)}>Show me the dialog</ButtonWIP>
-      <DialogWIP
-        isOpen={open}
-        canEscapeKeyClose
-        canOutsideClickClose
-        onClose={() => setOpen(false)}
-      >
+      <Button onClick={() => setOpen(true)}>Show me the dialog</Button>
+      <Dialog isOpen={open} canEscapeKeyClose canOutsideClickClose onClose={() => setOpen(false)}>
         <DialogHeader icon="layers" label="Start the process" />
         <DialogBody>
           <Group direction="column" spacing={12}>
@@ -46,14 +34,14 @@ export const Simple = () => {
           </Group>
         </DialogBody>
         <DialogFooter>
-          <ButtonWIP intent="none" onClick={() => setOpen(false)}>
+          <Button intent="none" onClick={() => setOpen(false)}>
             Cancel
-          </ButtonWIP>
-          <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
+          </Button>
+          <Button intent="primary" onClick={() => setOpen(false)}>
             Perform action
-          </ButtonWIP>
+          </Button>
         </DialogFooter>
-      </DialogWIP>
+      </Dialog>
     </>
   );
 };

@@ -25,6 +25,7 @@ import {
   successStatuses,
 } from './RunStatuses';
 import {TimeElapsed} from './TimeElapsed';
+import {batchRunsForTimeline, overlap, RunBatch} from './batchRunsForTimeline';
 import {RunTimelineQuery, RunTimelineQueryVariables} from './types/RunTimelineQuery';
 
 const ROW_HEIGHT = 24;
@@ -350,17 +351,6 @@ const DividerLine = styled.div`
   width: 1px;
 `;
 
-const overlap = (a: {start: number; end: number}, b: {start: number; end: number}) =>
-  !(a.end < b.start || b.end < a.start);
-
-type RunBatch = {
-  runs: TimelineRun[];
-  startTime: number;
-  endTime: number;
-  left: number;
-  width: number;
-};
-
 const mergeStatusToColor = (runs: TimelineRun[]) => {
   let anyInProgress = false;
   let anyQueued = false;
@@ -417,73 +407,22 @@ const RunTimelineRow = ({
 }) => {
   // const {jobKey, jobLabel, jobPath, runs, top, range, width: containerWidth} = props;
   const [start, end] = range;
-  const rangeLength = end - start;
   const width = containerWidth - LABEL_WIDTH;
+  const {runs} = job;
 
   // Batch overlapping runs in this row.
   const batched = React.useMemo(() => {
-    const batches: RunBatch[] = job.runs
-      .map((run) => {
-        const startTime = run.startTime;
-        const endTime = run.endTime || Date.now();
-        const left = Math.max(0, Math.floor(((startTime - start) / rangeLength) * width));
-        const runWidth = Math.max(
-          MIN_CHUNK_WIDTH,
-          Math.min(
-            Math.ceil(((endTime - startTime) / rangeLength) * width),
-            Math.ceil(((endTime - start) / rangeLength) * width),
-          ),
-        );
+    const batches: RunBatch<TimelineRun>[] = batchRunsForTimeline({
+      runs,
+      start,
+      end,
+      width,
+      minChunkWidth: MIN_CHUNK_WIDTH,
+      minMultipleWidth: MIN_WIDTH_FOR_MULTIPLE,
+    });
 
-        return {
-          runs: [run],
-          startTime,
-          endTime,
-          left,
-          width: runWidth,
-        };
-      })
-      .sort((a, b) => b.left - a.left);
-
-    const consolidated = [];
-    while (batches.length) {
-      const current = batches.shift();
-      const next = batches[0];
-      if (current) {
-        if (
-          next &&
-          overlap(
-            {
-              start: current.left,
-              end: current.left + Math.max(current.width, MIN_WIDTH_FOR_MULTIPLE),
-            },
-            {start: next.left, end: next.left + Math.max(next.width, MIN_WIDTH_FOR_MULTIPLE)},
-          )
-        ) {
-          // Remove `next`, consolidate it with `current`, and unshift it back on.
-          // This way, we keep looking for batches to consolidate with.
-          batches.shift();
-          current.runs = [...current.runs, ...next.runs];
-          current.startTime = Math.min(current.startTime, next.startTime);
-          current.endTime = Math.max(current.endTime, next.endTime);
-          current.left = Math.min(current.left, next.left);
-          const right = Math.max(
-            current.left + MIN_WIDTH_FOR_MULTIPLE,
-            current.left + current.width,
-            next.left + next.width,
-          );
-          current.width = right - current.left;
-          batches.unshift(current);
-        } else {
-          // If the next batch doesn't overlap, we've consolidated this batch
-          // all we can. Move on!
-          consolidated.push(current);
-        }
-      }
-    }
-
-    return consolidated;
-  }, [rangeLength, job, start, width]);
+    return batches;
+  }, [runs, start, end, width]);
 
   if (!job.runs.length) {
     return null;
@@ -612,7 +551,7 @@ const BatchCount = styled.div`
 
 interface RunHoverContentProps {
   jobKey: string;
-  batch: RunBatch;
+  batch: RunBatch<TimelineRun>;
 }
 
 const RunHoverContent = (props: RunHoverContentProps) => {

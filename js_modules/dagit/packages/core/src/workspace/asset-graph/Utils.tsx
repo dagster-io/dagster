@@ -60,6 +60,10 @@ export type IEdge = {
   dashed: boolean;
 };
 
+export const isSourceAsset = (node: {jobNames: string[]; opName: string | null}) => {
+  return node.jobNames.length === 0 && !node.opName;
+};
+
 export const buildGraphData = (assetNodes: AssetNode[]) => {
   const data: GraphData = {
     nodes: {},
@@ -295,7 +299,6 @@ export const buildLiveData = (
 
     const lastMaterialization = liveNode.assetMaterializations[0] || null;
     const lastStepStart = lastMaterialization?.stepStats?.startTime || 0;
-    const isForeignNode = !liveNode.opName;
     const isPartitioned = graphNode.definition.partitionDefinition;
     const repo = repos.find(
       (r) =>
@@ -323,7 +326,7 @@ export const buildLiveData = (
       unstartedRunIds: runs?.unstartedRuns.map((r) => r.id) || [],
       runsSinceMaterialization,
       runWhichFailedToMaterialize,
-      computeStatus: isForeignNode
+      computeStatus: isSourceAsset(graphNode.definition)
         ? 'good' // foreign nodes are always considered up-to-date
         : isPartitioned
         ? // partitioned nodes are not supported, need to compare materializations

@@ -6,7 +6,7 @@ import gfm from 'remark-gfm';
 import toPlainText from 'remark-plain-text';
 import styled from 'styled-components/macro';
 
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {FontFamily} from './styles';
 
 interface Props {
@@ -45,7 +45,7 @@ const Container = styled.div`
 
   &&& table tr th {
     box-shadow: none !important;
-    color: ${ColorsWIP.Gray400};
+    color: ${Colors.Gray400};
     font-family: ${FontFamily.default};
     font-size: 12px;
     font-weight: normal;

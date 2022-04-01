@@ -2,7 +2,7 @@ import {Intent, Position} from '@blueprintjs/core';
 import {Meta} from '@storybook/react/types-6-0';
 import * as React from 'react';
 
-import {ButtonWIP} from './Button';
+import {Button} from './Button';
 import {Group} from './Group';
 import {GlobalToasterStyle, Toaster} from './Toaster';
 
@@ -18,7 +18,7 @@ export const Sizes = () => {
     <Group direction="column" spacing={16}>
       <GlobalToasterStyle />
 
-      <ButtonWIP
+      <Button
         onClick={() =>
           SharedToaster.show({
             intent: Intent.NONE,
@@ -29,8 +29,8 @@ export const Sizes = () => {
         }
       >
         Basic Toast with Icon
-      </ButtonWIP>
-      <ButtonWIP
+      </Button>
+      <Button
         onClick={() =>
           SharedToaster.show({
             intent: Intent.SUCCESS,
@@ -46,8 +46,8 @@ export const Sizes = () => {
         }
       >
         Success Toast with React Content
-      </ButtonWIP>
-      <ButtonWIP
+      </Button>
+      <Button
         onClick={() =>
           SharedToaster.show({
             intent: Intent.DANGER,
@@ -57,7 +57,7 @@ export const Sizes = () => {
         }
       >
         Error Toast
-      </ButtonWIP>
+      </Button>
     </Group>
   );
 };
