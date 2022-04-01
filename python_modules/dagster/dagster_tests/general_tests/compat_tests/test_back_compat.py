@@ -137,6 +137,13 @@ def get_sqlite3_columns(db_path, table_name):
     return [r[1] for r in cursor.fetchall()]
 
 
+def get_sqlite3_indexes(db_path, table_name):
+    con = sqlite3.connect(db_path)
+    cursor = con.cursor()
+    cursor.execute('PRAGMA index_list("{}");'.format(table_name))
+    return [r[1] for r in cursor.fetchall()]
+
+
 def test_snapshot_0_7_6_pre_add_pipeline_snapshot():
     run_id = "fb0b3905-068b-4444-8f00-76fcbaef7e8b"
     src_dir = file_relative_path(__file__, "snapshot_0_7_6_pre_add_pipeline_snapshot/sqlite")
@@ -869,3 +876,18 @@ def test_jobs_selector_id_migration():
                 .where(JobTickTable.c.selector_id.isnot(None))
             )[0][0]
             assert migrated_tick_count == legacy_tick_count
+
+
+def test_tick_selector_index_migration():
+    src_dir = file_relative_path(__file__, "snapshot_0_14_6_post_schema_pre_data_migration/sqlite")
+    import sqlalchemy as db
+
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "schedules", "schedules.db")
+
+        assert get_current_alembic_version(db_path) == "c892b3fe0a9f"
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            assert "idx_tick_selector_timestamp" not in get_sqlite3_indexes(db_path, "job_ticks")
+            instance.upgrade()
+            assert "idx_tick_selector_timestamp" in get_sqlite3_indexes(db_path, "job_ticks")

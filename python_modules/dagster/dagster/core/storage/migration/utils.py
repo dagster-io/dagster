@@ -285,3 +285,18 @@ def create_instigators_table():
 
     if not has_column("job_ticks", "selector_id"):
         op.add_column("job_ticks", db.Column("selector_id", db.String(255)))
+
+
+def create_tick_selector_index():
+    if not has_table("job_ticks"):
+        # not a schedule storage db
+        return
+
+    indexes = [x.get("name") for x in get_inspector().get_indexes("job_ticks")]
+    if "idx_tick_selector_timestamp" in indexes:
+        # already migrated
+        return
+
+    op.create_index(
+        "idx_tick_selector_timestamp", "job_ticks", ["selector_id", "timestamp"], unique=False
+    )
