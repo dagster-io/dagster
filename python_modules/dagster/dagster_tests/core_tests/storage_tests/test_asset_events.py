@@ -170,7 +170,7 @@ def test_io_manager_add_input_metadata():
 
     @op(ins={"a": In(asset_key=in_asset_key)}, out={})
     def after(a):
-        pass
+        del a
 
     @job(resource_defs={"io_manager": my_io_manager})
     def my_job():
@@ -239,7 +239,7 @@ def test_io_manager_single_partition_add_input_metadata():
 
     @asset(partitions_def=partitions_def)
     def asset_2(asset_1):
-        return 2
+        return asset_1 + 1
 
     class MyIOManager(IOManager):
         def handle_output(self, context, obj):
@@ -270,14 +270,13 @@ def test_io_manager_single_partition_add_input_metadata():
     )
 
 
-def test_context_error_add_input_metadata():
+def test_build_input_context_add_input_metadata():
     @op
     def my_op():
         pass
 
     context = build_input_context(op_def=my_op)
-    with pytest.raises(CheckError):
-        context.add_input_metadata({"foo": "bar"})
+    context.add_input_metadata({"foo": "bar"})
 
 
 def test_io_manager_single_partition_materialization():
