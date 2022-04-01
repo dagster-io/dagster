@@ -72,6 +72,16 @@ const SettingsRoot = () => {
                 />
               ),
             },
+            {
+              key: 'Always collapse left navigation',
+              value: (
+                <Checkbox
+                  format="switch"
+                  checked={flags.includes(FeatureFlag.flagAlwaysCollapseNavigation)}
+                  onChange={() => toggleFlag(FeatureFlag.flagAlwaysCollapseNavigation)}
+                />
+              ),
+            },
           ]}
         />
       </Box>
