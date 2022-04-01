@@ -1,9 +1,10 @@
 from collections import defaultdict
-from typing import Dict, List
+from typing import Dict
 
 from graphql.execution.base import ResolveInfo
 
 from dagster import (
+    AssetKey,
     DagsterEventType,
     EventRecordsFilter,
     PipelineDefinition,
@@ -17,7 +18,6 @@ from dagster.core.execution.stats import StepEventStatus
 from dagster.core.host_representation import PipelineSelector
 from dagster.core.storage.pipeline_run import PipelineRun, RunsFilter
 from dagster.core.storage.tags import TagType, get_tag_type
-from dagster.utils import utc_datetime_from_timestamp
 
 from .external import ensure_valid_config, get_external_pipeline_or_raise
 from .utils import UserFacingGraphQLError, capture_error
@@ -204,9 +204,10 @@ def get_latest_asset_run_by_step_key(graphene_info, asset_nodes):
 
     run_records_by_run_id = {}
     run_ids = list(set(latest_run_id_by_asset.values()))
-    run_records = instance.get_run_records(RunsFilter(run_ids=run_ids))
-    for run_record in run_records:
-        run_records_by_run_id[run_record.pipeline_run.run_id] = run_record
+    if run_ids:
+        run_records = instance.get_run_records(RunsFilter(run_ids=run_ids))
+        for run_record in run_records:
+            run_records_by_run_id[run_record.pipeline_run.run_id] = run_record
 
     for asset in asset_nodes:
         run_id = latest_run_id_by_asset.get(asset.asset_key)
