@@ -797,3 +797,22 @@ def test_schedule_secondary_index_table_backcompat():
             instance.upgrade()
 
         assert "secondary_indexes" in get_sqlite3_tables(db_path)
+
+
+def test_instigators_table_backcompat():
+    src_dir = file_relative_path(__file__, "snapshot_0_14_6_instigators_table/sqlite")
+    with copy_directory(src_dir) as test_dir:
+        db_path = os.path.join(test_dir, "schedules", "schedules.db")
+
+        assert get_current_alembic_version(db_path) == "54666da3db5c"
+
+        assert "instigators" not in get_sqlite3_tables(db_path)
+        assert "selector_id" not in set(get_sqlite3_columns(db_path, "jobs"))
+        assert "selector_id" not in set(get_sqlite3_columns(db_path, "job_ticks"))
+
+        with DagsterInstance.from_ref(InstanceRef.from_dir(test_dir)) as instance:
+            instance.upgrade()
+
+        assert "instigators" in get_sqlite3_tables(db_path)
+        assert "selector_id" in set(get_sqlite3_columns(db_path, "jobs"))
+        assert "selector_id" in set(get_sqlite3_columns(db_path, "job_ticks"))

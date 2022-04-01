@@ -429,3 +429,25 @@ def test_schedule_secondary_index_table_backcompat(hostname, conn_string):
 
         # no-op
         assert instance.schedule_storage.has_secondary_index_table()
+
+
+def test_instigators_table_backcompat(hostname, conn_string):
+    _reconstruct_from_file(
+        hostname,
+        conn_string,
+        file_relative_path(__file__, "snapshot_0_14_6_instigators_table/postgres/pg_dump.txt"),
+    )
+
+    with tempfile.TemporaryDirectory() as tempdir:
+        with open(file_relative_path(__file__, "dagster.yaml"), "r") as template_fd:
+            with open(os.path.join(tempdir, "dagster.yaml"), "w") as target_fd:
+                template = template_fd.read().format(hostname=hostname)
+                target_fd.write(template)
+
+        instance = DagsterInstance.from_config(tempdir)
+
+        assert not instance.schedule_storage.has_instigators_table()
+
+        instance.upgrade()
+
+        assert instance.schedule_storage.has_instigators_table()
