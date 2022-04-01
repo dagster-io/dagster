@@ -4,11 +4,11 @@ from typing import Dict, List
 from graphql.execution.base import ResolveInfo
 
 from dagster import (
+    DagsterEventType,
+    EventRecordsFilter,
     PipelineDefinition,
     PipelineRunStatus,
     check,
-    EventRecordsFilter,
-    DagsterEventType,
 )
 from dagster.config.validate import validate_config
 from dagster.core.definitions import create_run_config_schema
@@ -179,13 +179,6 @@ def get_in_progress_runs_by_step(graphene_info, job_names, step_keys):
 
 
 def get_asset_run_stats_by_step(graphene_info, asset_nodes):
-    # This is a utility method that gets the latest run that selected an asset,
-    # by searching within the last 5 runs of each job the asset belongs in.
-    # If none of the most recent runs selected the asset, we return back a GrapheneJobRunsCount
-    # object that contains the total number of job runs that have occurred since the latest
-    # asset materialization (or the total number of job runs if the asset has never been
-    # materialized).
-
     latest_run_by_step = get_latest_asset_run_by_step_key(graphene_info, asset_nodes)
 
     return [latest_run_by_step.get(asset_node.op_name) for asset_node in asset_nodes]
@@ -193,12 +186,6 @@ def get_asset_run_stats_by_step(graphene_info, asset_nodes):
 
 def get_latest_asset_run_by_step_key(graphene_info, asset_nodes):
     from ..schema.pipelines.pipeline import GrapheneLatestRun, GrapheneRun
-
-    # This method returns the latest run that has occurred for a given step.
-    # Because it is expensive to deserialize PipelineRun objects, we limit this
-    # query to retrieving the last 5 runs per job. If no runs have occurred, we return
-    # a GrapheneLatestRun object with no run. If none of the latest runs contain the
-    # step key, we return None.
 
     instance = graphene_info.context.instance
 
@@ -224,6 +211,7 @@ def get_latest_asset_run_by_step_key(graphene_info, asset_nodes):
     for asset in asset_nodes:
         run_id = latest_run_id_by_asset.get(asset.asset_key)
         step_key = asset.op_name
+        # return run = None when no runs have occurred for the asset
         latest_run_by_step[step_key] = GrapheneLatestRun(
             step_key, GrapheneRun(run_records_by_run_id[run_id]) if run_id else None
         )

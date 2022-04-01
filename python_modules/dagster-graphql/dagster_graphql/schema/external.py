@@ -21,8 +21,8 @@ from .partition_sets import GraphenePartitionSet
 from .pipelines.pipeline import (
     GrapheneInProgressRunsByStep,
     GrapheneJob,
-    GraphenePipeline,
     GrapheneLatestRun,
+    GraphenePipeline,
 )
 from .repository_origin import GrapheneRepositoryMetadata, GrapheneRepositoryOrigin
 from .schedules import GrapheneSchedule
