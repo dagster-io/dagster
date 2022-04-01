@@ -58,6 +58,7 @@ if TYPE_CHECKING:
         "LoadedInputData",
         "ComputeLogsCaptureData",
         "AssetObservationData",
+        "AssetMaterializationPlannedData",
     ]
 
 
@@ -75,6 +76,7 @@ class DagsterEventType(Enum):
     STEP_RESTARTED = "STEP_RESTARTED"
 
     ASSET_MATERIALIZATION = "ASSET_MATERIALIZATION"
+    ASSET_MATERIALIZATION_PLANNED = "ASSET_MATERIALIZATION_PLANNED"
     ASSET_OBSERVATION = "ASSET_OBSERVATION"
     STEP_EXPECTATION_RESULT = "STEP_EXPECTATION_RESULT"
 
@@ -193,6 +195,7 @@ PIPELINE_RUN_STATUS_TO_EVENT_TYPE = {v: k for k, v in EVENT_TYPE_TO_PIPELINE_RUN
 ASSET_EVENTS = {
     DagsterEventType.ASSET_MATERIALIZATION,
     DagsterEventType.ASSET_OBSERVATION,
+    DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
 }
 
 
@@ -229,6 +232,10 @@ def _validate_event_specific_data(
         check.inst_param(event_specific_data, "event_specific_data", EngineEventData)
     elif event_type == DagsterEventType.HOOK_ERRORED:
         check.inst_param(event_specific_data, "event_specific_data", HookErroredData)
+    elif event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
+        check.inst_param(
+            event_specific_data, "event_specific_data", AssetMaterializationPlannedData
+        )
 
     return event_specific_data
 
@@ -365,6 +372,22 @@ class DagsterEvent(
             pid=os.getpid(),
         )
         log_resource_event(log_manager, event)
+        return event
+
+    @staticmethod
+    def asset_materialization_planned(
+        pipeline_name: str,
+        asset_key: AssetKey,
+        log_manager: DagsterLogManager,
+    ) -> "DagsterEvent":
+        event = DagsterEvent(
+            event_type_value=DagsterEventType.ASSET_MATERIALIZATION_PLANNED.value,
+            pipeline_name=pipeline_name,
+            message=f"{pipeline_name} intends to materialize asset {asset_key.to_string()}",
+            event_specific_data=AssetMaterializationPlannedData(asset_key),
+        )
+        log_level = logging.DEBUG
+        log_manager.log_dagster_event(level=log_level, msg=event.message or "", dagster_event=event)
         return event
 
     def __new__(
@@ -513,6 +536,8 @@ class DagsterEvent(
             return self.step_materialization_data.materialization.asset_key
         elif self.event_type == DagsterEventType.ASSET_OBSERVATION:
             return self.asset_observation_data.asset_observation.asset_key
+        elif self.event_type == DagsterEventType.ASSET_MATERIALIZATION_PLANNED:
+            return self.asset_materialization_planned_data.asset_key
         else:
             return None
 
@@ -569,6 +594,15 @@ class DagsterEvent(
     def asset_observation_data(self) -> "AssetObservationData":
         _assert_type("asset_observation_data", DagsterEventType.ASSET_OBSERVATION, self.event_type)
         return cast(AssetObservationData, self.event_specific_data)
+
+    @property
+    def asset_materialization_planned_data(self) -> "AssetMaterializationPlannedData":
+        _assert_type(
+            "asset_materialization_planned",
+            DagsterEventType.ASSET_MATERIALIZATION_PLANNED,
+            self.event_type,
+        )
+        return cast(AssetMaterializationPlannedData, self.event_specific_data)
 
     @property
     def step_expectation_result_data(self) -> "StepExpectationResultData":
@@ -1243,6 +1277,16 @@ class StepMaterializationData(
             asset_lineage=check.opt_list_param(
                 asset_lineage, "asset_lineage", of_type=AssetLineageInfo
             ),
+        )
+
+
+@whitelist_for_serdes
+class AssetMaterializationPlannedData(
+    NamedTuple("_AssetMaterializationPlannedData", [("asset_key", AssetKey)])
+):
+    def __new__(cls, asset_key: AssetKey):
+        return super(AssetMaterializationPlannedData, cls).__new__(
+            cls, asset_key=check.inst_param(asset_key, "asset_key", AssetKey)
         )
 
 
