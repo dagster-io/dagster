@@ -482,44 +482,43 @@ def _get_code_pointer_dict_from_kwargs(kwargs: Dict[str, str]) -> Dict[str, Code
     package_name = kwargs.get("package_name")
     working_directory = get_working_directory_from_kwargs(kwargs)
     attribute = kwargs.get("attribute")
+
+    num_args = (
+        int(python_file is not None) + int(module_name is not None) + int(package_name is not None)
+    )
+    check.invariant(
+        num_args == 1,
+        f"Must specify exactly one of 'python_file', 'module_name', and 'package_name', but provided {num_args}",
+    )
+
+    target_attributes_by_repo_name = {
+        cast(
+            RepositoryDefinition,
+            repository_def_from_target_def(loadable_target.target_definition),
+        ).name: loadable_target.attribute
+        for loadable_target in get_loadable_targets(
+            python_file, module_name, package_name, working_directory, attribute
+        )
+    }
+
     if python_file:
-        _check_cli_arguments_none(kwargs, "module_name", "package_name")
         return {
-            cast(
-                RepositoryDefinition,
-                repository_def_from_target_def(loadable_target.target_definition),
-            ).name: CodePointer.from_python_file(
-                python_file, loadable_target.attribute, working_directory
+            repo_name: CodePointer.from_python_file(
+                python_file, target_attribute, working_directory
             )
-            for loadable_target in get_loadable_targets(
-                python_file, module_name, package_name, working_directory, attribute
-            )
+            for repo_name, target_attribute in target_attributes_by_repo_name.items()
         }
     elif module_name:
-        _check_cli_arguments_none(kwargs, "python_file", "package_name")
         return {
-            cast(
-                RepositoryDefinition,
-                repository_def_from_target_def(loadable_target.target_definition),
-            ).name: CodePointer.from_module(
-                module_name, loadable_target.attribute, working_directory
-            )
-            for loadable_target in get_loadable_targets(
-                python_file, module_name, package_name, working_directory, attribute
-            )
+            repo_name: CodePointer.from_module(module_name, target_attribute, working_directory)
+            for repo_name, target_attribute in target_attributes_by_repo_name.items()
         }
     elif package_name:
-        _check_cli_arguments_none(kwargs, "module_name", "python_file")
         return {
-            cast(
-                RepositoryDefinition,
-                repository_def_from_target_def(loadable_target.target_definition),
-            ).name: CodePointer.from_python_package(
-                package_name, loadable_target.attribute, working_directory
+            repo_name: CodePointer.from_python_package(
+                package_name, target_attribute, working_directory
             )
-            for loadable_target in get_loadable_targets(
-                python_file, module_name, package_name, working_directory, attribute
-            )
+            for repo_name, target_attribute in target_attributes_by_repo_name.items()
         }
     else:
         check.failed("Must specify a Python file or module name")

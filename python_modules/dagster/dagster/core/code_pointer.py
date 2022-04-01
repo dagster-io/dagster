@@ -164,6 +164,13 @@ class FileCodePointer(
     ),
     CodePointer,
 ):
+    """
+    'attribute' would be a more accurate name for the 'fn_name' property, because it typically
+    refers to a repository definition, job definition, etc. - not a function.
+
+    It's too much of a pain to change because it crosses process boundaries.
+    """
+
     def __new__(cls, python_file: str, fn_name: str, working_directory: Optional[str] = None):
         return super(FileCodePointer, cls).__new__(
             cls,
@@ -200,6 +207,13 @@ class ModuleCodePointer(
     ),
     CodePointer,
 ):
+    """
+    'attribute' would be a more accurate name for the 'fn_name' property, because it typically
+    refers to a repository definition, job definition, etc. - not a function.
+
+    It's too much of a pain to change because it crosses process boundaries.
+    """
+
     def __new__(cls, module: str, fn_name: str, working_directory: Optional[str] = None):
         return super(ModuleCodePointer, cls).__new__(
             cls,
