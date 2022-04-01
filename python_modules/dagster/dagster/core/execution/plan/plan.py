@@ -284,7 +284,6 @@ class _PlanBuilder:
                     dependency_structure,
                     handle,
                     parent_step_inputs,
-                    top_level_inputs,
                 )
 
                 # If an input with dagster_type "Nothing" doesn't have a value
@@ -459,7 +458,6 @@ def get_step_input_source(
     parent_step_inputs: Optional[
         List[Union[StepInput, UnresolvedMappedStepInput, UnresolvedCollectStepInput]]
     ],
-    top_level_inputs: Optional[Dict[str, Any]],
 ):
     check.inst_param(plan_builder, "plan_builder", _PlanBuilder)
     check.inst_param(solid, "solid", Node)
