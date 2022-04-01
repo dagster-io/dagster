@@ -474,6 +474,6 @@ def get_subselected_graph_definition(
 
 def get_input_values_from_job(target: PipelineDefinition) -> Optional[Dict[str, Any]]:
     if target.is_job:
-        return cast(JobDefinition, target)._input_values
+        return cast(JobDefinition, target)._input_values  # pylint: disable=protected-access
     else:
         return None
