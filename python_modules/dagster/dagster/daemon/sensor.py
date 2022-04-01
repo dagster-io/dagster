@@ -301,6 +301,7 @@ def execute_sensor_iteration(
                     instigator_type=InstigatorType.SENSOR,
                     status=TickStatus.STARTED,
                     timestamp=now.timestamp(),
+                    selector_id=external_sensor.selector_id,
                 )
             )
 

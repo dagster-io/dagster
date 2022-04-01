@@ -140,14 +140,16 @@ def launch_scheduled_runs(
     # Remove any schedule states that were previously created with AUTOMATICALLY_RUNNING
     # and can no longer be found in the workspace (so that if they are later added
     # back again, their timestamps will start at the correct place)
-    schedule_state_ids_to_delete = {
-        origin_id
+    states_to_delete = {
+        schedule_state
         for origin_id, schedule_state in all_schedule_states.items()
         if origin_id not in schedules
         and schedule_state.status == InstigatorStatus.AUTOMATICALLY_RUNNING
     }
-    for origin_id in schedule_state_ids_to_delete:
-        instance.schedule_storage.delete_instigator_state(origin_id)
+    for state in states_to_delete:
+        instance.schedule_storage.delete_instigator_state(
+            state.instigator_origin_id, state.selector_id
+        )
 
     if log_verbose_checks:
         unloadable_schedule_states = {
@@ -340,6 +342,7 @@ def launch_scheduled_runs_for_schedule(
                     instigator_type=InstigatorType.SCHEDULE,
                     status=TickStatus.STARTED,
                     timestamp=schedule_timestamp,
+                    selector_id=external_schedule.selector_id,
                 )
             )
 
