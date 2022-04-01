@@ -34,6 +34,7 @@ export function usePartitionHealthData(assetKeys: AssetKey[]) {
     const load = async () => {
       const {data} = await client.query<PartitionHealthQuery, PartitionHealthQueryVariables>({
         query: PARTITION_HEALTH_QUERY,
+        fetchPolicy: 'network-only',
         variables: {
           assetKey: {path: loadKey.path},
         },

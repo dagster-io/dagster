@@ -4,16 +4,16 @@ import deepmerge from 'deepmerge';
 import React from 'react';
 import styled, {createGlobalStyle, css} from 'styled-components/macro';
 
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {FontFamily} from './styles';
 
 export const GlobalTooltipStyle = createGlobalStyle`
   .dagit-tooltip .bp3-popover2-content {
-      background: ${ColorsWIP.Gray900};
+      background: ${Colors.Gray900};
       font-family: ${FontFamily.default};
       font-size: 12px;
       line-height: 16px;
-      color: ${ColorsWIP.Gray50};
+      color: ${Colors.Gray50};
       padding: 8px 16px;
   }
 

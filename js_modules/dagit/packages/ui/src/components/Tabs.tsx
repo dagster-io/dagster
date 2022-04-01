@@ -2,7 +2,7 @@ import React, {HTMLProps} from 'react';
 import {Link, LinkProps} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 import {IconWrapper} from './Icon';
 import {FontFamily} from './styles';
 
@@ -103,7 +103,7 @@ export const Tab = styled(({id, title, count, icon, selected, disabled, to, onCl
   line-height: 20px;
   font-weight: 600;
   padding: ${({$size}) => ($size === 'small' ? '10px 0' : '16px 0')};
-  box-shadow: ${({selected}) => (selected ? ColorsWIP.Blue500 : 'transparent')} 0 -2px 0 inset;
+  box-shadow: ${({selected}) => (selected ? Colors.Blue500 : 'transparent')} 0 -2px 0 inset;
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -114,19 +114,19 @@ export const Tab = styled(({id, title, count, icon, selected, disabled, to, onCl
     cursor: pointer;
     user-select: none;
     color: ${({selected, disabled}) =>
-      selected ? ColorsWIP.Blue500 : disabled ? ColorsWIP.Gray300 : ColorsWIP.Gray700};
+      selected ? Colors.Blue500 : disabled ? Colors.Gray300 : Colors.Gray700};
   }
 
   & ${IconWrapper} {
     color: ${({selected, disabled}) =>
-      selected ? ColorsWIP.Blue500 : disabled ? ColorsWIP.Gray300 : ''};
+      selected ? Colors.Blue500 : disabled ? Colors.Gray300 : ''};
   }
 
   /* Focus outline only when using keyboard, not when focusing via mouse. */
   &:focus {
     outline: none !important;
     box-shadow: ${({selected, disabled}) =>
-        selected ? ColorsWIP.Blue500 : disabled ? 'transparent' : ColorsWIP.Blue200}
+        selected ? Colors.Blue500 : disabled ? 'transparent' : Colors.Blue200}
       0 -2px 0 inset;
   }
 
@@ -135,11 +135,11 @@ export const Tab = styled(({id, title, count, icon, selected, disabled, to, onCl
     a {
       text-decoration: none;
       color: ${({selected, disabled}) =>
-        selected ? ColorsWIP.Blue700 : disabled ? ColorsWIP.Gray300 : ColorsWIP.Blue700};
+        selected ? Colors.Blue700 : disabled ? Colors.Gray300 : Colors.Blue700};
     }
     ${IconWrapper} {
       color: ${({selected, disabled}) =>
-        selected ? ColorsWIP.Blue700 : disabled ? ColorsWIP.Gray300 : ''};
+        selected ? Colors.Blue700 : disabled ? Colors.Gray300 : ''};
     }
   }
 `;
@@ -151,6 +151,6 @@ const Count = styled.div`
   font-weight: 500;
   letter-spacing: -0.02%;
   padding: 0 4px;
-  color: ${ColorsWIP.Gray900};
-  background: ${ColorsWIP.Gray100};
+  color: ${Colors.Gray900};
+  background: ${Colors.Gray100};
 `;

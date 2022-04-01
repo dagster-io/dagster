@@ -3,7 +3,7 @@ import {Spinner as BlueprintSpinner} from '@blueprintjs/core';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
-import {ColorsWIP} from './Colors';
+import {Colors} from './Colors';
 
 type SpinnerPurpose = 'page' | 'section' | 'body-text' | 'caption-text';
 
@@ -12,7 +12,7 @@ export const Spinner: React.FC<{
   value?: number;
   fillColor?: string;
   stopped?: boolean;
-}> = ({purpose, value, fillColor = ColorsWIP.Gray600, stopped}) => {
+}> = ({purpose, value, fillColor = Colors.Gray600, stopped}) => {
   const size = () => {
     switch (purpose) {
       case 'page':

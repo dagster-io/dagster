@@ -15,13 +15,15 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
   const otherRepos =
     data?.repositoriesOrError.__typename === 'RepositoryConnection'
       ? data.repositoriesOrError.nodes.filter(
-          (n) =>
-            (n.name !== loadedFromRepo.name || n.location.name !== loadedFromRepo.location) &&
-            n.assetNodes.some((n) => n.id === assetId),
+          (r) => r.name !== loadedFromRepo.name || r.location.name !== loadedFromRepo.location,
         )
       : [];
 
-  if (otherRepos.length === 0) {
+  const otherReposWithAsset = otherRepos.filter((r) =>
+    r.assetNodes.some((a) => a.id === assetId && a.opName),
+  );
+
+  if (otherReposWithAsset.length === 0) {
     return <span />;
   }
 
@@ -35,7 +37,7 @@ export const AssetDefinedInMultipleReposNotice: React.FC<{
         title={`Multiple repositories in your workspace include assets with this name. Showing the definition from ${buildRepoPath(
           loadedFromRepo.name,
           loadedFromRepo.location,
-        )} below. (Also found in ${otherRepos
+        )} below. (Also found in ${otherReposWithAsset
           .map((o) => buildRepoPath(o.name, o.location.name))
           .join(', ')}). You may want to consider renaming to avoid collisions.`}
       />
@@ -57,6 +59,7 @@ const ASSET_ID_SCAN_QUERY = gql`
           }
           assetNodes {
             id
+            opName
           }
         }
       }

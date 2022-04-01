@@ -387,11 +387,9 @@ def build_asset_ins(
             asset_key = asset_ins[input_name].asset_key
             metadata = asset_ins[input_name].metadata or {}
             namespace = asset_ins[input_name].namespace
-            dagster_type = None
         else:
             metadata = {}
             namespace = None
-            dagster_type = None
 
         asset_key = asset_key or AssetKey(
             list(filter(None, [*(namespace or asset_namespace or []), input_name]))
@@ -401,7 +399,6 @@ def build_asset_ins(
             metadata=metadata,
             root_manager_key="root_manager",
             asset_key=asset_key,
-            dagster_type=dagster_type,
         )
 
     for asset_key in non_argument_deps:
