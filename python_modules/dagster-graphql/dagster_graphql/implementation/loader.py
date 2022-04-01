@@ -1,5 +1,6 @@
 from collections import defaultdict
 from enum import Enum
+from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 
 from dagster import DagsterInstance, check
@@ -285,7 +286,21 @@ class BatchMaterializationLoader:
         self._materializations = self._instance.get_latest_materialization_events(self._asset_keys)
 
 
-class BatchAssetDependencyLoader:
+class CrossRepoAssetDependencyLoader:
+    """
+    A batch loader that computes cross-repository asset dependencies. Locates source assets
+    within all workspace repositories, and determines if they are derived (defined) assets in
+    other repositories.
+
+    For each asset that contains cross-repo dependencies (every asset that is defined as a source
+    asset in another repository) a sink asset is any asset immediately downstream of the source
+    asset.
+
+    E.g. Asset A is defined in repo X and referenced in repo Y as source asset C (but contains the
+    same asset key as A). If within repo C has a downstream asset B, B is a sink asset of A (it
+    is external from A's repo but an edge exists from A to B).
+
+    """
     def __init__(self, context: WorkspaceRequestContext):
         self._context = context
         self._fetched = False
@@ -296,12 +311,27 @@ class BatchAssetDependencyLoader:
             {}
         )  # nested dict that maps dependedby assets by asset key by location tuple (repo_location.name, repo_name)
 
-    def _build_cross_repo_deps(self):
+    @lru_cache(maxsize=1)
+    def _build_cross_repo_deps(self) -> None:
+        """
+        This method constructs a sink asset as an ExternalAssetNode for every asset immediately
+        downstream of a source asset that is defined in another repository as a derived asset.
+
+        In Dagit, sink assets will display as ForeignAssets, which are external from the repository.
+
+        This method also stores a mapping from source asset key to ExternalAssetDependedBy nodes
+        that depend on the asset with that key. When get_cross_repo_dependent_assets is called with a derived
+        asset's asset key and its location, all dependent ExternalAssetDependedBy nodes are returned.
+        """
         depended_by_assets_by_source_asset: Dict[AssetKey, Sequence[ExternalAssetDependedBy]] = {}
 
         map_defined_asset_to_location: Dict[
             AssetKey, Tuple[str, str]
         ] = {}  # key is asset key, value is tuple (location_name, repo_name)
+
+        external_asset_node_by_asset_key: Dict[
+            AssetKey, ExternalAssetNode
+        ] = {}  # only contains derived assets
         for location in self._context.repository_locations:
             repositories = location.get_repositories()
             for repo_name, external_repo in repositories.items():
@@ -318,6 +348,7 @@ class BatchAssetDependencyLoader:
                             location.name,
                             repo_name,
                         )
+                        external_asset_node_by_asset_key[asset_node.asset_key] = asset_node
 
         for source_asset, depended_by_assets in depended_by_assets_by_source_asset.items():
             asset_def_location = map_defined_asset_to_location.get(source_asset, None)
@@ -330,6 +361,10 @@ class BatchAssetDependencyLoader:
                     depended_by_assets
                 )
                 for asset in depended_by_assets:
+                    # SourceAssets defined as ExternalAssetNodes contain no definition data (e.g.
+                    # no output or partition definition data) and no job_names. Dagit displays
+                    # all ExternalAssetNodes with no job_names as foreign assets, so sink assets
+                    # are defined as ExternalAssetNodes with no definition data.
                     self._sink_assets[asset.downstream_asset_key] = ExternalAssetNode(
                         asset_key=asset.downstream_asset_key,
                         dependencies=[
@@ -347,7 +382,7 @@ class BatchAssetDependencyLoader:
             self._fetch()
         return self._sink_assets.get(asset_key)
 
-    def get_external_asset_deps(self, repository_location_name, repository_name, asset_key):
+    def get_cross_repo_dependent_assets(self, repository_location_name: str, repository_name: str, asset_key: AssetKey) -> List[ExternalAssetDependedBy]:
         if not self._fetched:
             self._fetch()
         return self._external_asset_deps.get((repository_location_name, repository_name), {}).get(

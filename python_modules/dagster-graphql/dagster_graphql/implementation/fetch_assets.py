@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Dict, Mapping
 
-from dagster_graphql.implementation.loader import BatchAssetDependencyLoader
+from dagster_graphql.implementation.loader import CrossRepoAssetDependencyLoader
 
 from dagster import AssetKey, DagsterEventType, EventRecordsFilter, check, seven
 from dagster.core.events import ASSET_EVENTS
@@ -66,7 +66,7 @@ def get_asset_nodes_by_asset_key(graphene_info) -> Mapping[AssetKey, "GrapheneAs
 
     from ..schema.asset_graph import GrapheneAssetNode
 
-    dependency_loader = BatchAssetDependencyLoader(context=graphene_info.context)
+    dependency_loader = CrossRepoAssetDependencyLoader(context=graphene_info.context)
 
     asset_nodes_by_asset_key: Dict[AssetKey, GrapheneAssetNode] = {}
     for location in graphene_info.context.repository_locations:
