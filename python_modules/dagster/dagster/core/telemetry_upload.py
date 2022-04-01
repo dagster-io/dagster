@@ -4,7 +4,7 @@ import threading
 import zlib
 from contextlib import contextmanager
 
-from .telemetry import MAX_BYTES, get_dir_from_dagster_home
+from .telemetry import MAX_BYTES, get_or_create_dir_from_dagster_home
 
 
 def get_dagster_telemetry_url():
@@ -45,8 +45,8 @@ def upload_logs(stop_event, raise_errors=False):
 
     try:
         last_run = datetime.datetime.now() - datetime.timedelta(minutes=120)
-        dagster_log_dir = get_dir_from_dagster_home("logs")
-        dagster_log_queue_dir = get_dir_from_dagster_home(".logs_queue")
+        dagster_log_dir = get_or_create_dir_from_dagster_home("logs")
+        dagster_log_queue_dir = get_or_create_dir_from_dagster_home(".logs_queue")
         in_progress = False
         while not stop_event.is_set():
             log_size = 0
@@ -75,8 +75,8 @@ def upload_logs(stop_event, raise_errors=False):
             ):
                 in_progress = True  # Prevent concurrent _upload_logs invocations
                 last_run = datetime.datetime.now()
-                dagster_log_dir = get_dir_from_dagster_home("logs")
-                dagster_log_queue_dir = get_dir_from_dagster_home(".logs_queue")
+                dagster_log_dir = get_or_create_dir_from_dagster_home("logs")
+                dagster_log_queue_dir = get_or_create_dir_from_dagster_home(".logs_queue")
                 _upload_logs(
                     dagster_log_dir, log_size, dagster_log_queue_dir, raise_errors=raise_errors
                 )
