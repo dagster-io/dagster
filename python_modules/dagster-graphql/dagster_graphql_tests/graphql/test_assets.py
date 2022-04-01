@@ -119,12 +119,6 @@ GET_ASSET_LATEST_RUN_STATS = """
                             runId
                         }
                     }
-                    ... on JobRunsCount {
-                        stepKey
-                        jobNames
-                        count
-                        sinceLatestMaterialization
-                    }
                 }
             }
         }
@@ -762,29 +756,6 @@ class TestAssetAwareEventLog(ExecutingGraphQLContextTestMatrix):
         assert result["asset_1"]["run"]["runId"] == first_run_id
         assert result["asset_2"]["run"]["runId"] == first_run_id
         assert result["asset_3"]["run"]["runId"] == run_id
-
-        # Create 4 runs
-        # When 5 most recent runs in asset do not have asset selected, confirm that the number
-        # of runs since last materialization is correct
-        for _ in range(4):
-            _create_run(graphql_context, "failure_assets_job", step_keys=["asset_3"])
-
-        result = execute_dagster_graphql(
-            graphql_context,
-            GET_ASSET_LATEST_RUN_STATS,
-            variables={"repositorySelector": selector},
-        )
-
-        assert result.data
-        assert result.data["repositoryOrError"]
-        result = get_response_by_step(result.data["repositoryOrError"]["latestRunByStep"])
-        assert result["asset_1"]["jobNames"] == ["failure_assets_job"]
-        # A job containing asset 1 was run 5 times, since latest materialization
-        assert result["asset_1"]["count"] == 5
-        assert result["asset_1"]["sinceLatestMaterialization"] == True
-        # A job containing asset 2 was run 6 times, asset 2 was never materialized
-        assert result["asset_2"]["count"] == 6
-        assert result["asset_2"]["sinceLatestMaterialization"] == False
 
     def test_get_run_materialization(self, graphql_context, snapshot):
         _create_run(graphql_context, "single_asset_pipeline")

@@ -796,25 +796,9 @@ class GrapheneInProgressRunsByStep(graphene.ObjectType):
         name = "InProgressRunsByStep"
 
 
-class GrapheneJobRunsCount(graphene.ObjectType):
-    stepKey = graphene.NonNull(graphene.String)
-    jobNames = non_null_list(graphene.String)
-    count = graphene.NonNull(graphene.Int)
-    sinceLatestMaterialization = graphene.NonNull(graphene.Boolean)
-
-    class Meta:
-        name = "JobRunsCount"
-
-
 class GrapheneLatestRun(graphene.ObjectType):
     stepKey = graphene.NonNull(graphene.String)
     run = graphene.Field(GrapheneRun)
 
     class Meta:
         name = "LatestRun"
-
-
-class GrapheneRunStatsByStep(graphene.Union):
-    class Meta:
-        types = (GrapheneLatestRun, GrapheneJobRunsCount)
-        name = "RunStatsByStep"

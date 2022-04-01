@@ -36,27 +36,17 @@ export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inPro
   inProgressRuns: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_inProgressRunsByStep_inProgressRuns[];
 }
 
-export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_latestRunByStep_LatestRun_run {
+export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_latestRunByStep_run {
   __typename: "Run";
   id: string;
   status: RunStatus;
 }
 
-export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_latestRunByStep_LatestRun {
+export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_latestRunByStep {
   __typename: "LatestRun";
   stepKey: string;
-  run: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_latestRunByStep_LatestRun_run | null;
+  run: AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_latestRunByStep_run | null;
 }
-
-export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_latestRunByStep_JobRunsCount {
-  __typename: "JobRunsCount";
-  stepKey: string;
-  jobNames: string[];
-  count: number;
-  sinceLatestMaterialization: boolean;
-}
-
-export type AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_latestRunByStep = AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_latestRunByStep_LatestRun | AssetNodeDefinitionLiveQuery_repositoryOrError_Repository_latestRunByStep_JobRunsCount;
 
 export interface AssetNodeDefinitionLiveQuery_repositoryOrError_Repository {
   __typename: "Repository";
