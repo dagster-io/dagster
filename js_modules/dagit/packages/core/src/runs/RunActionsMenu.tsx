@@ -11,7 +11,6 @@ import {
   Popover,
   Tooltip,
 } from '@dagster-io/ui';
-import qs from 'qs';
 import * as React from 'react';
 import {useHistory} from 'react-router-dom';
 import * as yaml from 'yaml';
@@ -75,10 +74,7 @@ export const RunActionsMenu: React.FC<{
   const isJob = !!(repoMatch && isThisThingAJob(repoMatch?.match, run.pipelineName));
 
   const launchpadPath = () => {
-    const path = `/playground/setup?${qs.stringify({
-      config: runConfigYaml,
-      solidSelection: run.solidSelection,
-    })}`;
+    const path = `/playground/setup-from-run/${run.id}`;
 
     if (repoMatch) {
       return workspacePipelinePath({
