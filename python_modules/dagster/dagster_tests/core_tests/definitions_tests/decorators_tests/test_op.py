@@ -885,3 +885,15 @@ def test_generic_output_tuple_complex_types():
 
     result = execute_op_in_graph(the_op)
     assert result.success
+
+
+def test_generic_output_name_mismatch():
+    @op(out={"out1": Out(), "out2": Out()})
+    def the_op() -> Tuple[Output[int], Output[str]]:
+        return (Output("foo", output_name="out2"), Output(42, output_name="out1"))
+
+    with pytest.raises(
+        DagsterInvariantViolationError,
+        match="Received output named 'out2', but expected output named 'out1'.",
+    ):
+        execute_op_in_graph(the_op)

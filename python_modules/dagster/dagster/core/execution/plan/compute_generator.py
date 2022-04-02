@@ -68,6 +68,7 @@ def _coerce_solid_compute_fn_to_iterator(fn, output_defs, context, context_arg_p
 
 
 def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
+    from dagster.core.definitions.events import DEFAULT_OUTPUT
 
     if isinstance(result, (AssetMaterialization, Materialization, ExpectationResult)):
         raise DagsterInvariantViolationError(
@@ -110,6 +111,13 @@ def _validate_and_coerce_solid_result_to_iterator(result, context, output_defs):
 
         for output_def, element in zip(output_defs, result):
             if isinstance(element, Output):
+                if (
+                    not element.output_name == DEFAULT_OUTPUT
+                    and not element.output_name == output_def.name
+                ):
+                    raise DagsterInvariantViolationError(
+                        f"Received output named '{element.output_name}', but expected output named '{output_def.name}'."
+                    )
                 yield Output(
                     output_name=output_def.name,
                     value=element.value,
