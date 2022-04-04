@@ -1,4 +1,4 @@
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractproperty
 from typing import Callable, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Union
 
 from dagster.core.definitions.events import AssetKey

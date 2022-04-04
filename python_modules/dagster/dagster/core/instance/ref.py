@@ -222,18 +222,10 @@ class InstanceRef(
             defaults["compute_logs"],
         )
 
-        run_storage_data = configurable_class_data_or_default(config_value, "run_storage", None)
-        event_storage_data = configurable_class_data_or_default(
-            config_value, "event_log_storage", None
-        )
-        schedule_storage_data = configurable_class_data_or_default(
-            config_value, "schedule_storage", None
-        )
-
         has_legacy_storage = (
             config_value.get("run_storage")
-            and config_value.get("event_log_storage")
-            and config_value.get("schedule_storage")
+            or config_value.get("event_log_storage")
+            or config_value.get("schedule_storage")
         )
 
         if has_legacy_storage:

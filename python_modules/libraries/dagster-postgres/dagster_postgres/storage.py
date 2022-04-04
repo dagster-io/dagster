@@ -3,7 +3,7 @@ from dagster.core.storage.base_storage import DagsterStorage
 from dagster.core.storage.event_log import EventLogStorage
 from dagster.core.storage.runs import RunStorage
 from dagster.core.storage.schedules import ScheduleStorage
-from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
+from dagster.serdes import ConfigurableClass, ConfigurableClassData
 
 from .event_log import PostgresEventLogStorage
 from .run_storage import PostgresRunStorage
