@@ -1,13 +1,18 @@
 {
   "name": "@dagster-io/ui",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Dagster UI Component Library",
   "license": "Apache-2.0",
   "main": "lib/index.js",
   "module": "lib/index.js",
   "types": "lib/index.d.ts",
+  "files": [
+    "lib/**/*"
+  ],
   "sideEffects": false,
   "scripts": {
+    "prepack": "yarn build",
+    "prepublish": "yarn lint && yarn ts && yarn jest",
     "build": "rm -rf lib && tsc --declaration --emitDeclarationOnly --noEmit false -p . && yarn rollup -c rollup.config.js",
     "lint": "eslint src/ --ext=.tsx,.ts,.js --fix -c .eslintrc.js",
     "jest": "jest",
