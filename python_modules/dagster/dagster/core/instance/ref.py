@@ -294,18 +294,6 @@ class InstanceRef(
     def storage(self):
         return self.storage_data.rehydrate()
 
-    # @property
-    # def run_storage(self):
-    #     return self.storage.run_storage
-
-    # @property
-    # def event_storage(self):
-    #     return self.storage.event_storage
-
-    # @property
-    # def schedule_storage(self):
-    #     return self.storage.schedule_storage
-
     @property
     def compute_log_manager(self):
         return self.compute_logs_data.rehydrate()
