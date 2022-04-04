@@ -81,10 +81,10 @@ const FinalRedirectOrLoadingRoot = () => {
     <Box padding={{vertical: 64}}>
       <NonIdealState
         icon="no-results"
-        title={repoWithNoJob ? 'No pipelines or jobs' : 'No repositories'}
+        title={repoWithNoJob ? 'No jobs' : 'No repositories'}
         description={
           repoWithNoJob
-            ? 'Your repository is loaded but no pipelines or jobs were found.'
+            ? 'Your repository is loaded, but no jobs were found.'
             : 'Add a repository to get started.'
         }
         action={
