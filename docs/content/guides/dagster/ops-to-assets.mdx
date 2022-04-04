@@ -1,0 +1,162 @@
+---
+title: Introducing Software-Defined Assets into Op-Based Jobs | Dagster
+description: This guide explains how to augment op-based jobs to take advantage of the benefits of software-defined assets.
+---
+
+# Introducing Software-Defined Assets into Op-Based Jobs
+
+If you developed using Dagster prior to the introduction of software-defined assets, it's likely that you wrote jobs whose responsibilities included keeping assets up-to-date. This guide explains how to augment those jobs to take advantage of the benefits of software-defined assets.
+
+The basic idea is that you can declare that particular outputs and root inputs of a job correspond to particular asset keys. After you do so, asset definitions will appear in the asset catalog and asset graph, and you can trigger materializations of those assets, which will result in executions of subsets of the job where they're defined. This also enables tracing lineage across jobs. Dagster will match upstream asset keys at the roots of jobs to asset keys produced by other jobs in the same deployment.
+
+Job/op code that has been augmented with software-defined assets is often more verbose than code written directly for software-defined assets. This guide also describes how to incrementally move towards more asset-native code.
+
+### An asset-less job
+
+Below is a job that sends promotional emails based on machine learning-based recommendations. For the sake of brevity, the implementations of the ops are omitted. As part of its execution, it updates a few assets:
+
+- A table of users
+- A table of items
+- A table of user-item product recommendations
+
+It also relies on a few assets that are produced and kept up-to-date outside the job:
+
+- Raw tables of users and items
+- A recommendation machine learning model
+
+```python file=/guides/dagster/ops_to_assets/full_jobs_and_ops.py
+from dagster import job, op
+
+
+@op
+def refresh_items():
+    """Loads a table of raw item data and outputs a cleaned, canonical table of items"""
+
+
+@op
+def refresh_users():
+    """Loads a table of raw user data and outputs a cleaned, canonical table of users"""
+
+
+@op
+def build_user_item_matrix(users, items):
+    """Builds a matrix of users and items that an ML model can score"""
+
+
+@op
+def refresh_recommendations(user_item_matrix):
+    """Loads an ML model and applies it to a user-item matrix to generate recommendations"""
+
+
+@op
+def send_promotional_emails(recommendations):
+    """Sends promotional emails based on a set of item recommendations"""
+
+
+@job
+def refresh_recommendations_and_send_promotions():
+    user_item_matrix = build_user_item_matrix(refresh_items(), refresh_users())
+    recommendations = refresh_recommendations(user_item_matrix)
+    send_promotional_emails(recommendations)
+```
+
+To achieve the benefits of software-defined assets, we need to declare the assets that our job's inputs and outputs correspond to.
+
+For the outputs, we can achieve this by supplying a value for the `output_asset_keys` argument when we define our job.
+
+For the inputs, we can achieve this by:
+
+- For our ops that load external data, making it explicit that they have inputs.
+- Supplying a value for the `input_asset_keys` argument when we define our job.
+
+```python file=/guides/dagster/ops_to_assets/augmented_with_assets.py
+from dagster import In, Nothing, job, op
+
+
+@op(ins={"raw_items": In(Nothing)})
+def refresh_items():
+    """Loads a table of raw item data and outputs a cleaned, canonical table of items"""
+
+
+@op(ins={"raw_users": In(Nothing)})
+def refresh_users():
+    """Loads a table of raw user data and outputs a cleaned, canonical table of users"""
+
+
+@op
+def build_user_item_matrix(users, items):
+    """Builds a matrix of users and items that an ML model can score"""
+
+
+@op(ins={"recommender_model": In(Nothing)})
+def refresh_recommendations(user_item_matrix):
+    """Loads an ML model and applies it to a user-item matrix to generate recommendations"""
+
+
+@op
+def send_promotional_emails(recommendations):
+    """Sends promotional emails based on a set of item recommendations"""
+
+
+@job(
+    output_asset_keys={
+        "refresh_recommendations.result": "recommendations",
+        "refresh_items.result": "items",
+        "refresh_users.result": "users",
+    },
+    input_asset_keys={
+        "refresh_users.raw_users": "raw_users",
+        "refresh_items.raw_items": "raw_items",
+        "refresh_recommendations.recommender_model": "recommender_model",
+    },
+)
+def refresh_recommendations_and_send_promotions():
+    user_item_matrix = build_user_item_matrix(refresh_items(), refresh_users())
+    recommendations = refresh_recommendations(user_item_matrix)
+    send_promotional_emails(recommendations)
+```
+
+If we were to build this job using asset-native APIs from the start, here's what we might do instead.
+
+```python file=/guides/dagster/ops_to_assets/asset_native.py
+from dagster import AssetGroup, In, Nothing, asset, asset_dep, graph, op
+
+
+@asset(non_argument_deps={"raw_items"})
+def items():
+    ...
+
+
+@asset(non_argument_deps={"raw_users"})
+def users():
+    ...
+
+
+@op
+def build_user_item_matrix(users, items):
+    ...
+
+
+@op(ins={"recommender_model": In(Nothing)})
+def refresh_recommendations(user_item_matrix):
+    ...
+
+
+@asset
+@graph
+def recommendations(users, items, recommender_model):
+    return refresh_recommendations(build_user_item_matrix(users, items, recommender_model))
+
+
+@op
+def send_promotional_emails(recommendations):
+    ...
+
+
+asset_group = AssetGroup([recommendations, users, items])
+
+
+@asset_group.job
+def refresh_recommendations_and_send_promotions():
+    send_promotional_emails(asset_dep("recommendations"))
+```
