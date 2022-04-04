@@ -10,24 +10,30 @@ We love to see our community members get involved! If you are planning to contri
 ## Environment Setup
 
 ### Apple M1 specific setup
+
 If you have a Mac with an M1 chip, you will need to set up a separate environment to emulate an x86 architecture before following the remaining setup instructions.
+
 1. Install rosetta
+
    ```bash
    softwareupdate --install-rosetta --agree-to-license
    ```
 
 2. Create a duplicate terminal that will default to running the rosetta x86 emulator. [Source stack overflow post](https://apple.stackexchange.com/questions/428768/on-apple-m1-with-rosetta-how-to-open-entire-terminal-iterm-in-x86-64-architec)
-   * Go to `Finder` > `Applications` and find your terminal app.
-   * Right click the app and duplicate it.
-   * Right click the new terminal > `Get Info` > `Enable Open using Rosetta`.
-   * Click to open the terminal, type `arch` to verify it says `i386` now.
+
+   - Go to `Finder` > `Applications` and find your terminal app.
+   - Right click the app and duplicate it.
+   - Right click the new terminal > `Get Info` > `Enable Open using Rosetta`.
+   - Click to open the terminal, type `arch` to verify it says `i386` now.
 
 3. In your rosetta terminal, install `homebrew`
+
    ```bash
    arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
    ```
 
 4. To ensure that the correct installation of `homebrew` is automatically used in your rosetta terminal, add the following snippet to your `~/.bashrc`, `~/.zshrc` or profile manager of choice
+
    ```bash
    arch_name="$(uname -m)"
 
@@ -45,9 +51,11 @@ If you have a Mac with an M1 chip, you will need to set up a separate environmen
    export LDFLAGS="-L $(brew --prefix openssl)/lib"
    export CFLAGS="-I $(brew --prefix openssl)/include"
    ```
+
 After sourcing this file, you can ensure that the correct version of `homebrew` is being used by confirming the output of `which brew` is `/usr/local/bin/brew`.
 
 ### Dagster development setup
+
 1. Install Python. Python 3.6 or above recommended, but our CI/CD pipeline currently tests against up-to-date patch versions of Python 3.6, 3.7 and 3.8.
 
 2. Create and activate a virtualenv, using the tool of your choice. On macOS you can install `pyenv` with Homebrew:
