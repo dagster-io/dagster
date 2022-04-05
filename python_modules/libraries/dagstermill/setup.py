@@ -33,17 +33,7 @@ if __name__ == "__main__":
         ],
         install_requires=[
             f"dagster{pin}",
-            # ipykernel 5.4.0 and 5.4.1 broke papermill
-            # see https://github.com/dagster-io/dagster/issues/3401,
-            # https://github.com/nteract/papermill/issues/519,
-            # https://github.com/ipython/ipykernel/issues/568
-            "ipykernel>=4.9.0,!=5.4.0,!=5.4.1",
-            # See: https://github.com/mu-editor/mu/pull/1844
-            # ipykernel<6 depends on ipython_genutils, but it isn't explicitly
-            # declared as a dependency. It also depends on traitlets, which
-            # incidentally brought ipython_genutils, but in v5.1 it was dropped, so as
-            # a workaround we need to manually specify it here
-            "ipython_genutils>=0.2.0",
+            "ipykernel>=6.0.0",
             "packaging>=20.5",
             "papermill>=1.0.0",
             "scrapbook>=0.5.0",
