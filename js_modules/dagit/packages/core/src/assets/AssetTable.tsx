@@ -5,7 +5,6 @@ import {
   Checkbox,
   ColorsWIP,
   IconWIP,
-  markdownToPlaintext,
   MenuItemWIP,
   MenuWIP,
   Popover,
@@ -21,6 +20,7 @@ import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
 import {MenuLink} from '../ui/MenuLink';
+import {markdownToPlaintext} from '../ui/markdownToPlaintext';
 
 import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';

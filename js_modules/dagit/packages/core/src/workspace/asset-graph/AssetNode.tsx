@@ -1,13 +1,5 @@
 import {gql} from '@apollo/client';
-import {
-  ColorsWIP,
-  IconWIP,
-  markdownToPlaintext,
-  Spinner,
-  Tooltip,
-  FontFamily,
-  Box,
-} from '@dagster-io/ui';
+import {ColorsWIP, IconWIP, Spinner, Tooltip, FontFamily, Box} from '@dagster-io/ui';
 import {isEqual} from 'lodash';
 import qs from 'qs';
 import React, {CSSProperties} from 'react';
@@ -22,6 +14,7 @@ import {METADATA_ENTRY_FRAGMENT} from '../../metadata/MetadataEntry';
 import {titleForRun} from '../../runs/RunUtils';
 import {TimeElapsed} from '../../runs/TimeElapsed';
 import {TimestampDisplay} from '../../schedules/TimestampDisplay';
+import {markdownToPlaintext} from '../../ui/markdownToPlaintext';
 import {buildRepoAddress} from '../buildRepoAddress';
 import {workspacePath, workspacePipelinePathGuessRepo} from '../workspacePath';
 
