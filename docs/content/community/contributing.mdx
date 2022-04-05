@@ -9,30 +9,33 @@ We love to see our community members get involved! If you are planning to contri
 
 ## Environment Setup
 
-### Apple M1 specific setup
+### Apple M1-specific setup
 
 If you have a Mac with an M1 chip, you will need to set up a separate environment to emulate an x86 architecture before following the remaining setup instructions.
+To find out if your Mac has an M1 chip, follow the instructions [here](https://www.howtogeek.com/706226/how-to-check-if-your-mac-is-using-an-intel-or-apple-silicon-processor/).
 
-1. Install rosetta
+If you don't have a Mac with an M1 chip, skip ahead to the next section - [Dagster development setup](#dagster-development-setup).
+
+1. Install rosetta. [About rosetta](https://developer.apple.com/documentation/apple-silicon/about-the-rosetta-translation-environment).
 
    ```bash
    softwareupdate --install-rosetta --agree-to-license
    ```
 
-2. Create a duplicate terminal that will default to running the rosetta x86 emulator. [Source stack overflow post](https://apple.stackexchange.com/questions/428768/on-apple-m1-with-rosetta-how-to-open-entire-terminal-iterm-in-x86-64-architec)
+2. Create a duplicate terminal that will default to running the rosetta x86 emulator. [Source stack overflow post](https://apple.stackexchange.com/questions/428768/on-apple-m1-with-rosetta-how-to-open-entire-terminal-iterm-in-x86-64-architec).
 
    - Go to `Finder` > `Applications` and find your terminal app.
    - Right click the app and duplicate it.
    - Right click the new terminal > `Get Info` > `Enable Open using Rosetta`.
    - Click to open the terminal, type `arch` to verify it says `i386` now.
 
-3. In your rosetta terminal, install `homebrew`
+3. In your rosetta terminal, install `homebrew`.
 
    ```bash
    arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
    ```
 
-4. To ensure that the correct installation of `homebrew` is automatically used in your rosetta terminal, add the following snippet to your `~/.bashrc`, `~/.zshrc` or profile manager of choice
+4. To ensure that the correct installation of `homebrew` is automatically used in your rosetta terminal, add the following snippet to your `~/.bashrc`, `~/.zshrc` or profile manager of choice.
 
    ```bash
    arch_name="$(uname -m)"
