@@ -93,7 +93,7 @@ def celery_docker_executor(init_context):
     .. code-block:: python
 
         from dagster import job
-        from dagster_celery_docker.executor import celery_executor
+        from dagster_celery_docker.executor import celery_docker_executor
 
         @job(executor_def=celery_docker_executor)
         def celery_enabled_job():
