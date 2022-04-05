@@ -17,6 +17,7 @@ import * as yaml from 'yaml';
 import {AppContext} from '../app/AppContext';
 import {TimestampDisplay} from '../schedules/TimestampDisplay';
 import {RunStatus} from '../types/globalTypes';
+import {workspacePipelinePath, workspacePipelinePathGuessRepo} from '../workspace/workspacePath';
 
 import {RunTags} from './RunTags';
 import {TimeElapsed} from './TimeElapsed';
@@ -112,14 +113,38 @@ export const RunDetails: React.FC<{
   );
 };
 
+
 export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({run, isJob}) => {
   const [showDialog, setShowDialog] = React.useState(false);
   const {rootServerURI} = React.useContext(AppContext);
   const runConfigYaml = yaml.stringify(run.runConfig) || '';
+
+  const launchpadPath = () => {
+    const path = `/playground/setup-from-run/${run.id}`;
+
+    if (run.repositoryOrigin) {
+      return workspacePipelinePath({
+        repoName: run.repositoryOrigin.repositoryName,
+        repoLocation: run.repositoryOrigin.repositoryLocationName,
+        pipelineName: run.pipelineName,
+        isJob,
+        path,
+      });
+    }
+
+    return workspacePipelinePathGuessRepo(run.pipelineName, isJob, path);
+  };
+
   return (
     <div>
       <Group direction="row" spacing={8}>
-        <ButtonWIP icon={<IconWIP name="tag" />} onClick={() => setShowDialog(true)}>
+        <ButtonWIP 
+          icon={<IconWIP name="edit" />}
+          onClick={() => window.open(launchpadPath())}
+        >
+            Open in Launchpad...
+        </ButtonWIP>
+        <ButtonWIP  onClick={() => setShowDialog(true)}>
           View tags and config
         </ButtonWIP>
         <Tooltip content="Loadable in dagit-debug" position="bottom-right">
