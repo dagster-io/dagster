@@ -1,5 +1,5 @@
 import yaml
-from graphql.execution.base import ResolveInfo
+from graphene import ResolveInfo
 
 from dagster import check
 from dagster.core.host_representation import (

@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from graphql.error.base import GraphQLError
+from graphql.error import GraphQLError
 
 from dagster.utils.log import get_stack_trace_array
 

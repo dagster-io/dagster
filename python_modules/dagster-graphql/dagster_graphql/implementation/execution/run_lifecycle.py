@@ -1,4 +1,4 @@
-from graphql.execution.base import ResolveInfo
+from graphene import ResolveInfo
 
 from dagster import check
 from dagster.core.execution.plan.resume_retry import get_retry_steps_from_parent_run

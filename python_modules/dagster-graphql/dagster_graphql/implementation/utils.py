@@ -2,7 +2,7 @@ import sys
 from collections import namedtuple
 from typing import cast
 
-from graphql.execution.base import ResolveInfo
+from graphene import ResolveInfo
 
 from dagster import check
 from dagster.core.host_representation import GraphSelector, PipelineSelector

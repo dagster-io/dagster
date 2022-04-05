@@ -78,7 +78,7 @@ if __name__ == "__main__":
             "python-dateutil",
             "pytz",
             "requests",
-            "rx>=1.6,<2",  # https://github.com/dagster-io/dagster/issues/4089
+            "rx>=3.0",
             "tabulate",
             "tqdm",
             "typing_compat",

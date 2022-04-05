@@ -9,7 +9,7 @@ from graphql.error import GraphQLError
 from graphql.error import format_error as format_graphql_error
 from graphql.execution import ExecutionResult
 from rx import Observable
-from rx.concurrency import thread_pool_scheduler
+from rx.scheduler import ThreadPoolScheduler
 from starlette import status
 from starlette.applications import Starlette
 from starlette.concurrency import run_in_threadpool
@@ -300,6 +300,7 @@ def _disposable_and_async_gen_from_obs(obs: Observable, loop):
     queue: Queue = Queue()
 
     # process observable in a thread, handle results in aio loop
+    thread_pool_scheduler = ThreadPoolScheduler()
     disposable = obs.subscribe_on(thread_pool_scheduler).subscribe(
         on_next=lambda i: loop.call_soon_threadsafe(queue.put_nowait, i)
     )

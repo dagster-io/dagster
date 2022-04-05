@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 
 from dagster_graphql.schema import create_schema
-from graphql import graphql
+from graphql import graphql_sync
 
 from dagster import check
 from dagster.core.instance import DagsterInstance
@@ -18,13 +18,11 @@ def main_repo_name():
 
 
 def execute_dagster_graphql(context, query, variables=None):
-    result = graphql(
-        create_schema(),
-        query,
+    result = graphql_sync(
+        schema=create_schema(),
+        source=query,
         context_value=context,
         variable_values=variables,
-        allow_subscriptions=True,
-        return_promise=False,
     )
 
     # has to check attr because in subscription case it returns AnonymousObservable

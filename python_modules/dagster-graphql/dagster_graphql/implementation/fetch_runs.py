@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import Dict, List
 
-from graphql.execution.base import ResolveInfo
+from graphene import ResolveInfo
 
 from dagster import PipelineDefinition, PipelineRunStatus, check
 from dagster.config.validate import validate_config

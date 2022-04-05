@@ -38,7 +38,7 @@ from .permissions import get_user_permissions
 from .workspace import IWorkspace, WorkspaceLocationEntry, WorkspaceLocationLoadStatus
 
 if TYPE_CHECKING:
-    from rx.subjects import Subject
+    from rx.subject import Subject
 
     from dagster.core.host_representation import (
         ExternalPartitionConfigData,
@@ -397,7 +397,7 @@ class WorkspaceProcessContext(IWorkspaceProcessContext):
         check.bool_param(read_only, "read_only")
 
         # lazy import for perf
-        from rx.subjects import Subject
+        from rx.subject import Subject
 
         self._instance = check.inst_param(instance, "instance", DagsterInstance)
         self._workspace_load_target = check.opt_inst_param(
