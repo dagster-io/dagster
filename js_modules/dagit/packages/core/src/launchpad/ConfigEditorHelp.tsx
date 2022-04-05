@@ -1,4 +1,4 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -32,14 +32,14 @@ const AutocompletionsNote = styled.div`
   font-size: 0.75rem;
   text-align: center;
   padding: 4px;
-  border-top: 1px solid ${ColorsWIP.KeylineGray};
-  background: ${ColorsWIP.Gray100};
-  color: ${ColorsWIP.Gray500};
+  border-top: 1px solid ${Colors.KeylineGray};
+  background: ${Colors.Gray100};
+  color: ${Colors.Gray500};
 `;
 
 const ConfigScrollWrap = styled.div`
   padding: 8px;
-  color: ${ColorsWIP.Dark};
+  color: ${Colors.Dark};
   flex: 1;
   pointer-events: initial;
   max-height: 100%;
@@ -50,6 +50,6 @@ const Container = styled.div`
   position: relative;
   display: flex;
   flex-direction: column;
-  background-color: ${ColorsWIP.Gray50};
+  background-color: ${Colors.Gray50};
   height: 100%;
 `;

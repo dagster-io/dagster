@@ -1,4 +1,4 @@
-import {ButtonWIP, IconWIP, MenuItemWIP, SelectWIP} from '@dagster-io/ui';
+import {Button, Icon, MenuItem, Select} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {ModeNotFoundError} from './ModeNotFoundError';
@@ -37,14 +37,14 @@ export const ConfigEditorModePicker: React.FC<ConfigEditorModePickerProps> = (pr
   };
 
   return (
-    <SelectWIP
+    <Select
       activeItem={resolvedMode}
       filterable={true}
       disabled={disabled}
       items={props.modes}
       itemPredicate={(query, mode) => query.length === 0 || mode.name.includes(query)}
       itemRenderer={(mode, props) => (
-        <MenuItemWIP
+        <MenuItem
           active={props.modifiers.active}
           key={mode.name}
           text={mode.name}
@@ -53,12 +53,12 @@ export const ConfigEditorModePicker: React.FC<ConfigEditorModePickerProps> = (pr
       )}
       onItemSelect={onItemSelect}
     >
-      <ButtonWIP
-        icon={valid ? undefined : <IconWIP name="error" />}
+      <Button
+        icon={valid ? undefined : <Icon name="error" />}
         intent={valid ? 'none' : 'danger'}
         title={disabled ? MODE_PICKER_HINT_TEXT : 'Current execution mode'}
         disabled={disabled}
-        rightIcon={<IconWIP name="expand_more" />}
+        rightIcon={<Icon name="expand_more" />}
         data-test-id="mode-picker-button"
       >
         {valid
@@ -66,7 +66,7 @@ export const ConfigEditorModePicker: React.FC<ConfigEditorModePickerProps> = (pr
             ? `Mode: ${resolvedMode.name}`
             : 'Select Mode'
           : 'Invalid Mode Selection'}
-      </ButtonWIP>
-    </SelectWIP>
+      </Button>
+    </Select>
   );
 };

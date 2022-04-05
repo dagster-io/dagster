@@ -1,15 +1,6 @@
 import {useMutation} from '@apollo/client';
 import {ProgressBar} from '@blueprintjs/core';
-import {
-  ButtonWIP,
-  ColorsWIP,
-  DialogBody,
-  DialogFooter,
-  DialogWIP,
-  Group,
-  IconWIP,
-  Mono,
-} from '@dagster-io/ui';
+import {Button, Colors, DialogBody, DialogFooter, Dialog, Group, Icon, Mono} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {NavigationBlock} from './NavitationBlock';
@@ -194,32 +185,32 @@ export const DeletionDialog = (props: Props) => {
       case 'initial':
         return (
           <>
-            <ButtonWIP intent="none" onClick={onClose}>
+            <Button intent="none" onClick={onClose}>
               Cancel
-            </ButtonWIP>
-            <ButtonWIP intent="danger" onClick={mutate}>
+            </Button>
+            <Button intent="danger" onClick={mutate}>
               {`Yes, delete ${`${count} ${count === 1 ? 'run' : 'runs'}`}`}
-            </ButtonWIP>
+            </Button>
             {terminatableCount ? (
-              <ButtonWIP intent="primary" onClick={onTerminateInstead}>
+              <Button intent="primary" onClick={onTerminateInstead}>
                 {`Terminate ${`${terminatableCount} ${
                   terminatableCount === 1 ? 'run' : 'runs'
                 }`} instead`}
-              </ButtonWIP>
+              </Button>
             ) : null}
           </>
         );
       case 'deleting':
         return (
-          <ButtonWIP intent="danger" disabled>
+          <Button intent="danger" disabled>
             Deleting…
-          </ButtonWIP>
+          </Button>
         );
       case 'completed':
         return (
-          <ButtonWIP intent="primary" onClick={onClose}>
+          <Button intent="primary" onClick={onClose}>
             Done
-          </ButtonWIP>
+          </Button>
         );
     }
   };
@@ -241,7 +232,7 @@ export const DeletionDialog = (props: Props) => {
       <Group direction="column" spacing={8}>
         {successCount ? (
           <Group direction="row" spacing={8} alignItems="center">
-            <IconWIP name="check_circle" color={ColorsWIP.Green500} />
+            <Icon name="check_circle" color={Colors.Green500} />
             <div>{`Successfully deleted ${successCount} ${
               successCount === 1 ? 'run' : 'runs'
             }.`}</div>
@@ -250,7 +241,7 @@ export const DeletionDialog = (props: Props) => {
         {errorCount ? (
           <Group direction="column" spacing={8}>
             <Group direction="row" spacing={8} alignItems="center">
-              <IconWIP name="warning" color={ColorsWIP.Yellow500} />
+              <Icon name="warning" color={Colors.Yellow500} />
               <div>{`Could not delete ${errorCount} ${errorCount === 1 ? 'run' : 'runs'}.`}</div>
             </Group>
             <ul>
@@ -272,7 +263,7 @@ export const DeletionDialog = (props: Props) => {
   const canQuicklyClose = state.step !== 'deleting';
 
   return (
-    <DialogWIP
+    <Dialog
       isOpen={isOpen}
       title="Delete runs"
       canEscapeKeyClose={canQuicklyClose}
@@ -286,6 +277,6 @@ export const DeletionDialog = (props: Props) => {
         </Group>
       </DialogBody>
       <DialogFooter>{buttons()}</DialogFooter>
-    </DialogWIP>
+    </Dialog>
   );
 };

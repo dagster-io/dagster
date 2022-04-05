@@ -1,4 +1,4 @@
-import {ButtonWIP, DialogBody, DialogFooter, DialogWIP} from '@dagster-io/ui';
+import {Button, DialogBody, DialogFooter, Dialog} from '@dagster-io/ui';
 import * as React from 'react';
 
 interface ConfirmationOptions {
@@ -21,15 +21,15 @@ const ConfirmationDialog: React.FC<ConfirmationDialogProps> = ({
   onClose,
 }) => {
   return (
-    <DialogWIP icon={title ? 'info' : undefined} onClose={onClose} title={title} isOpen={open}>
+    <Dialog icon={title ? 'info' : undefined} onClose={onClose} title={title} isOpen={open}>
       <DialogBody>{description}</DialogBody>
       <DialogFooter>
-        <ButtonWIP onClick={onClose}>Cancel</ButtonWIP>
-        <ButtonWIP onClick={onSubmit} intent="danger">
+        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onSubmit} intent="danger">
           Confirm
-        </ButtonWIP>
+        </Button>
       </DialogFooter>
-    </DialogWIP>
+    </Dialog>
   );
 };
 

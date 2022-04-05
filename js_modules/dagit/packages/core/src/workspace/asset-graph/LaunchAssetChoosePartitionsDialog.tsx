@@ -1,11 +1,11 @@
 import {gql, useApolloClient, useQuery} from '@apollo/client';
 import {
-  DialogWIP,
+  Dialog,
   DialogHeader,
   DialogBody,
   Box,
   Subheading,
-  ButtonWIP,
+  Button,
   ButtonLink,
   DialogFooter,
   Alert,
@@ -70,7 +70,7 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<Props> = (props) => {
   }`;
 
   return (
-    <DialogWIP
+    <Dialog
       style={{width: 700}}
       isOpen={props.open}
       canEscapeKeyClose
@@ -79,7 +79,7 @@ export const LaunchAssetChoosePartitionsDialog: React.FC<Props> = (props) => {
     >
       <DialogHeader icon="layers" label={title} />
       <LaunchAssetChoosePartitionsDialogBody {...props} />
-    </DialogWIP>
+    </Dialog>
   );
 };
 
@@ -292,15 +292,15 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
                 partitionNames={allKeys}
               />
             </Box>
-            <ButtonWIP small onClick={setMostRecent}>
+            <Button small onClick={setMostRecent}>
               Most Recent
-            </ButtonWIP>
-            <ButtonWIP small onClick={setMissing}>
+            </Button>
+            <Button small onClick={setMissing}>
               Missing
-            </ButtonWIP>
-            <ButtonWIP small onClick={setAll}>
+            </Button>
+            <Button small onClick={setAll}>
               All
-            </ButtonWIP>
+            </Button>
           </Box>
         </Box>
         <Box
@@ -346,16 +346,16 @@ const LaunchAssetChoosePartitionsDialogBody: React.FC<Props> = ({
       <DialogFooter
         left={partitionSet && <RunningBackfillsNotice partitionSetName={partitionSet.name} />}
       >
-        <ButtonWIP intent="none" onClick={() => setOpen(false)}>
+        <Button intent="none" onClick={() => setOpen(false)}>
           Cancel
-        </ButtonWIP>
-        <ButtonWIP intent="primary" onClick={onLaunch}>
+        </Button>
+        <Button intent="primary" onClick={onLaunch}>
           {launching
             ? 'Launching...'
             : selected.length !== 1
             ? `Launch ${selected.length}-Run Backfill`
             : `Launch 1 Run`}
-        </ButtonWIP>
+        </Button>
       </DialogFooter>
     </>
   );

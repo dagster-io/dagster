@@ -1,4 +1,4 @@
-import {Box, ColorsWIP} from '@dagster-io/ui';
+import {Box, Colors} from '@dagster-io/ui';
 import {Meta} from '@storybook/react/types-6-0';
 import faker from 'faker';
 import * as React from 'react';
@@ -143,7 +143,7 @@ export const ManyRepos = () => {
   );
 
   return (
-    <Box background={ColorsWIP.Gray800} padding={16}>
+    <Box background={Colors.Gray800} padding={16}>
       <RepoSelector options={OPTIONS} onBrowse={() => {}} onToggle={onToggle} selected={selected} />
     </Box>
   );

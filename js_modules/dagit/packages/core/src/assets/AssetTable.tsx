@@ -1,15 +1,5 @@
 import {gql, RefetchQueriesFunction} from '@apollo/client';
-import {
-  Box,
-  ButtonWIP,
-  Checkbox,
-  ColorsWIP,
-  IconWIP,
-  MenuItemWIP,
-  MenuWIP,
-  Popover,
-  Table,
-} from '@dagster-io/ui';
+import {Box, Button, Checkbox, Colors, Icon, MenuItem, Menu, Popover, Table} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -200,31 +190,31 @@ const AssetEntryRow: React.FC<{
                   opNames: [tokenForAssetKey({path})],
                 })}
               >
-                <ButtonWIP>View in Asset Graph</ButtonWIP>
+                <Button>View in Asset Graph</Button>
               </Link>
             ) : (
-              <ButtonWIP disabled={true}>View in Asset Graph</ButtonWIP>
+              <Button disabled={true}>View in Asset Graph</Button>
             )}
             <Popover
               position="bottom-right"
               content={
-                <MenuWIP>
+                <Menu>
                   <MenuLink
                     text="View details…"
                     to={`/instance/assets/${path.join('/')}`}
                     icon="view_list"
                   />
-                  <MenuItemWIP
+                  <MenuItem
                     text="Wipe Asset…"
                     icon="delete"
                     disabled={!canWipe}
                     intent="danger"
                     onClick={() => canWipe && onWipe(assets)}
                   />
-                </MenuWIP>
+                </Menu>
               }
             >
-              <ButtonWIP icon={<IconWIP name="expand_more" />} />
+              <Button icon={<Icon name="expand_more" />} />
             </Popover>
           </Box>
         ) : (
@@ -257,15 +247,15 @@ const AssetBulkActions: React.FC<{
 
   return (
     <>
-      <ButtonWIP
+      <Button
         disabled={disabled}
-        icon={<IconWIP name="delete" />}
+        icon={<Icon name="delete" />}
         intent={disabled ? 'none' : 'danger'}
         outlined={!disabled}
         onClick={() => setShowBulkWipeDialog(true)}
       >
         {label}
-      </ButtonWIP>
+      </Button>
       <AssetWipeDialog
         assetKeys={selected.map((asset) => asset.key)}
         isOpen={showBulkWipeDialog}
@@ -304,6 +294,6 @@ export const ASSET_TABLE_FRAGMENT = gql`
 `;
 
 const Description = styled.div`
-  color: ${ColorsWIP.Gray800};
+  color: ${Colors.Gray800};
   font-size: 14px;
 `;

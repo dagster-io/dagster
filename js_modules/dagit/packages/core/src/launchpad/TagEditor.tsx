@@ -1,12 +1,12 @@
 import {
   Box,
-  ButtonWIP,
-  ColorsWIP,
+  Button,
+  Colors,
   DialogBody,
   DialogFooter,
-  DialogWIP,
+  Dialog,
   Group,
-  IconWIP,
+  Icon,
   TextInput,
   Tooltip,
 } from '@dagster-io/ui';
@@ -91,7 +91,7 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
   };
 
   return (
-    <DialogWIP
+    <Dialog
       icon="info"
       onClose={onRequestClose}
       style={{minWidth: 700}}
@@ -147,38 +147,38 @@ export const TagEditor: React.FC<ITagEditorProps> = ({
                       value={value}
                       onChange={(e) => onTagEdit(key, e.target.value, idx)}
                     />
-                    <ButtonWIP
+                    <Button
                       disabled={editState.length === 1 && !key.trim() && !value.trim()}
                       onClick={() => onRemove(idx)}
-                      icon={<IconWIP name="delete" />}
+                      icon={<Icon name="delete" />}
                     >
                       Remove
-                    </ButtonWIP>
+                    </Button>
                   </div>
                 );
               })}
             </Box>
             <Box margin={{left: 2}} flex={{direction: 'row'}}>
-              <ButtonWIP onClick={addTagEntry} icon={<IconWIP name="add_circle" />}>
+              <Button onClick={addTagEntry} icon={<Icon name="add_circle" />}>
                 Add custom tag
-              </ButtonWIP>
+              </Button>
             </Box>
           </Box>
         </Group>
       </DialogBody>
       <DialogFooter>
-        <ButtonWIP onClick={onRequestClose}>Cancel</ButtonWIP>
+        <Button onClick={onRequestClose}>Cancel</Button>
         <ShortcutHandler
           shortcutLabel="⌥Enter"
           shortcutFilter={(e) => e.keyCode === 13 && e.altKey}
           onShortcut={onSave}
         >
-          <ButtonWIP intent="primary" onClick={onSave} disabled={disabled}>
+          <Button intent="primary" onClick={onSave} disabled={disabled}>
             Apply
-          </ButtonWIP>
+          </Button>
         </ShortcutHandler>
       </DialogFooter>
-    </DialogWIP>
+    </Dialog>
   );
 };
 
@@ -212,7 +212,7 @@ export const TagContainer = ({
       </TagList>
       <TagEditorLink onRequestOpen={onRequestEdit}>
         <Group direction="row" spacing={4} alignItems="center">
-          <IconWIP name="edit" color={ColorsWIP.Gray500} /> Edit Tags
+          <Icon name="edit" color={Colors.Gray500} /> Edit Tags
         </Group>
       </TagEditorLink>
     </Container>

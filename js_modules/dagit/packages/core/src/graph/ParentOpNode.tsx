@@ -1,4 +1,4 @@
-import {ColorsWIP} from '@dagster-io/ui';
+import {Colors} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -54,7 +54,7 @@ export const ParentOpNode: React.FC<ParentOpNodeProps> = (props) => {
       <SVGLabeledParentRect
         {...boundingBox}
         label={op.definition.name}
-        fill={ColorsWIP.Gray50}
+        fill={Colors.Gray50}
         minified={minified}
       />
       {def.inputMappings.map(({definition, mappedInput}, idx) => {

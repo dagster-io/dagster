@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, NonIdealState, Caption, Subheading, Checkbox} from '@dagster-io/ui';
+import {Box, Colors, NonIdealState, Caption, Subheading, Checkbox} from '@dagster-io/ui';
 import flatMap from 'lodash/flatMap';
 import uniq from 'lodash/uniq';
 import * as React from 'react';
@@ -50,7 +50,7 @@ export const AssetMaterializationGraphs: React.FC<{
           <Box
             key={label}
             style={{width: '100%'}}
-            border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+            border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
           >
             {props.asSidebarSection ? (
               <Box padding={{horizontal: 24, top: 8}} flex={{justifyContent: 'space-between'}}>
@@ -65,7 +65,7 @@ export const AssetMaterializationGraphs: React.FC<{
             ) : (
               <Box
                 padding={{horizontal: 24, vertical: 16}}
-                border={{side: 'bottom', width: 1, color: ColorsWIP.KeylineGray}}
+                border={{side: 'bottom', width: 1, color: Colors.KeylineGray}}
                 flex={{justifyContent: 'space-between'}}
               >
                 <Subheading>{label}</Subheading>
@@ -95,7 +95,7 @@ export const AssetMaterializationGraphs: React.FC<{
         props.asSidebarSection ? (
           <Box
             margin={{horizontal: 24, vertical: 12}}
-            style={{color: ColorsWIP.Gray500, fontSize: '0.8rem'}}
+            style={{color: Colors.Gray500, fontSize: '0.8rem'}}
           >
             No numeric metadata entries available to be graphed.
           </Box>
@@ -111,7 +111,7 @@ export const AssetMaterializationGraphs: React.FC<{
         )
       ) : (
         props.xAxis === 'partition' && (
-          <Box padding={{vertical: 16, horizontal: 24}} style={{color: ColorsWIP.Gray400}}>
+          <Box padding={{vertical: 16, horizontal: 24}} style={{color: Colors.Gray400}}>
             When graphing values by partition, the highest data point for each materialized event
             label is displayed.
           </Box>

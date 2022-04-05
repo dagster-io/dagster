@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, Spinner} from '@dagster-io/ui';
+import {Box, Colors, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -130,7 +130,7 @@ const PipelineGraphLoading: React.FC<{manyOps: boolean}> = (props) => {
 };
 
 const LoadingContainer = styled.div`
-  background-color: ${ColorsWIP.White};
+  background-color: ${Colors.White};
   position: absolute;
   top: 0;
   bottom: 0;

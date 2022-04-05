@@ -1,5 +1,5 @@
 import {IconName} from '@blueprintjs/core';
-import {Box, PageHeader, Tabs, TagWIP, Heading, Tooltip} from '@dagster-io/ui';
+import {Box, PageHeader, Tabs, Tag, Heading, Tooltip} from '@dagster-io/ui';
 import React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
@@ -111,10 +111,10 @@ export const PipelineNav: React.FC<Props> = (props) => {
         title={<Heading>{pipelineName}</Heading>}
         tags={
           <Box flex={{direction: 'row', alignItems: 'center', gap: 8, wrap: 'wrap'}}>
-            <TagWIP icon="job">
+            <Tag icon="job">
               {isJob ? 'Job in ' : 'Pipeline in '}
               <RepositoryLink repoAddress={repoAddress} />
-            </TagWIP>
+            </Tag>
             {snapshotId ? null : (
               <JobMetadata pipelineName={pipelineName} repoAddress={repoAddress} />
             )}

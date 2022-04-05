@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {ColorsWIP, IconWIP} from '@dagster-io/ui';
+import {Colors, Icon} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {INSTANCE_HEALTH_FRAGMENT} from '../instance/InstanceHealthFragment';
@@ -83,7 +83,7 @@ export const InstanceWarningIcon = React.memo(() => {
         position="bottom"
         modifiers={{offset: {enabled: true, options: {offset: [0, 28]}}}}
       >
-        <IconWIP name="warning" color={ColorsWIP.Yellow500} />
+        <Icon name="warning" color={Colors.Yellow500} />
       </WarningTooltip>
     );
   }

@@ -2,7 +2,7 @@ import {
   Box,
   ButtonLink,
   Checkbox,
-  ColorsWIP,
+  Colors,
   MetadataTable,
   PageHeader,
   Heading,
@@ -55,7 +55,7 @@ const SettingsRoot = () => {
       </Box>
       <Box
         padding={{vertical: 16, horizontal: 24}}
-        border={{side: 'top', width: 1, color: ColorsWIP.KeylineGray}}
+        border={{side: 'top', width: 1, color: Colors.KeylineGray}}
       >
         <Box padding={{bottom: 8}}>
           <Subheading>Experimental features</Subheading>

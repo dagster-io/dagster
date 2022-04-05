@@ -1,17 +1,17 @@
 import {gql, useQuery} from '@apollo/client';
 import {
   Box,
-  ButtonWIP,
+  Button,
   ButtonLink,
-  ColorsWIP,
+  Colors,
   DialogBody,
   DialogFooter,
-  DialogWIP,
+  Dialog,
   Group,
-  IconWIP,
+  Icon,
   NonIdealState,
   Spinner,
-  TagWIP,
+  Tag,
   Body,
   Tooltip,
 } from '@dagster-io/ui';
@@ -34,19 +34,19 @@ export const TickTag: React.FC<{
   const [open, setOpen] = React.useState<boolean>(false);
   switch (tick.status) {
     case InstigationTickStatus.STARTED:
-      return <TagWIP>Started</TagWIP>;
+      return <Tag>Started</Tag>;
     case InstigationTickStatus.SUCCESS:
       if (!tick.runIds.length) {
-        return <TagWIP intent="primary">Requested</TagWIP>;
+        return <Tag intent="primary">Requested</Tag>;
       }
       const tag = (
         <>
-          <TagWIP intent="primary" interactive>
+          <Tag intent="primary" interactive>
             <ButtonLink underline="never" onClick={() => setOpen(true)}>
               {tick.runIds.length} Requested
             </ButtonLink>
-          </TagWIP>
-          <DialogWIP
+          </Tag>
+          <Dialog
             isOpen={open}
             onClose={() => setOpen(false)}
             style={{width: '90vw'}}
@@ -54,11 +54,11 @@ export const TickTag: React.FC<{
           >
             <DialogBody>{open && <RunList runIds={tick.runIds} />}</DialogBody>
             <DialogFooter>
-              <ButtonWIP intent="primary" onClick={() => setOpen(false)}>
+              <Button intent="primary" onClick={() => setOpen(false)}>
                 OK
-              </ButtonWIP>
+              </Button>
             </DialogFooter>
-          </DialogWIP>
+          </Dialog>
         </>
       );
       if (tick.runKeys.length > tick.runIds.length) {
@@ -78,21 +78,21 @@ export const TickTag: React.FC<{
         const message = `${tick.runKeys.length} runs requested, but skipped because the runs already exist for the requested keys.`;
         return (
           <Tooltip position="right" content={message}>
-            <TagWIP intent="warning">Skipped</TagWIP>
+            <Tag intent="warning">Skipped</Tag>
           </Tooltip>
         );
       }
       if (tick.skipReason) {
         return (
           <Tooltip position="right" content={tick.skipReason} targetTagName="div">
-            <TagWIP intent="warning">Skipped</TagWIP>
+            <Tag intent="warning">Skipped</Tag>
           </Tooltip>
         );
       }
-      return <TagWIP intent="warning">Skipped</TagWIP>;
+      return <Tag intent="warning">Skipped</Tag>;
     case InstigationTickStatus.FAILURE:
       if (!tick.error) {
-        return <TagWIP intent="danger">Failure</TagWIP>;
+        return <Tag intent="danger">Failure</Tag>;
       } else {
         const error = tick.error;
         const showError = () =>
@@ -107,9 +107,9 @@ export const TickTag: React.FC<{
         return (
           <>
             <LinkButton onClick={showError}>
-              <TagWIP minimal={true} intent="danger">
+              <Tag minimal={true} intent="danger">
                 Failure
-              </TagWIP>
+              </Tag>
             </LinkButton>
             <ButtonLink onClick={showError} style={{marginLeft: 8, fontSize: 14}}>
               View error
@@ -164,11 +164,11 @@ export const FailedRunList: React.FC<{
   }
   return (
     <Group direction="column" spacing={16}>
-      <Box padding={12} border={{side: 'bottom', width: 1, color: ColorsWIP.Gray200}}>
+      <Box padding={12} border={{side: 'bottom', width: 1, color: Colors.Gray200}}>
         <Body>
           Failed Runs
           <Tooltip content="Failed runs this tick reacted on and reported back to.">
-            <IconWIP name="info" color={ColorsWIP.Gray500} />
+            <Icon name="info" color={Colors.Gray500} />
           </Tooltip>
         </Body>
 
@@ -178,7 +178,7 @@ export const FailedRunList: React.FC<{
         <Body>
           Requested Runs
           <Tooltip content="Runs launched by the run requests in this tick.">
-            <IconWIP name="info" color={ColorsWIP.Gray500} />
+            <Icon name="info" color={Colors.Gray500} />
           </Tooltip>
         </Body>
         <NonIdealState

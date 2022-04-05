@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, IconWIP, IconWrapper, Tooltip} from '@dagster-io/ui';
+import {Box, Colors, Icon, IconWrapper, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link, useHistory} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -103,7 +103,7 @@ export const AppTopNavLogo: React.FC = () => {
           ref={navButton}
           $visible={nav.isCollapsible}
         >
-          <IconWIP name="menu" color={ColorsWIP.White} size={24} />
+          <Icon name="menu" color={Colors.White} size={24} />
         </NavButton>
       </ShortcutHandler>
       <Box flex={{display: 'inline-flex'}} margin={{left: 8}}>
@@ -174,20 +174,20 @@ const DaggyTooltip = styled(Tooltip)`
 `;
 
 export const TopNavLink = styled(Link)`
-  color: ${ColorsWIP.Gray200};
+  color: ${Colors.Gray200};
   font-weight: 600;
   transition: color 50ms linear;
   padding: 24px 0;
 
   :hover,
   :active {
-    color: ${ColorsWIP.White};
+    color: ${Colors.White};
     text-decoration: none;
   }
 `;
 
 export const AppTopNavContainer = styled.div`
-  background: ${ColorsWIP.Gray900};
+  background: ${Colors.Gray900};
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -227,14 +227,14 @@ const NavButton = styled.button<{$visible: boolean}>`
   }
 
   :hover ${IconWrapper} {
-    background: ${ColorsWIP.Gray500};
+    background: ${Colors.Gray500};
   }
 
   :active ${IconWrapper} {
-    background: ${ColorsWIP.Blue200};
+    background: ${Colors.Blue200};
   }
 
   :focus {
-    background: ${ColorsWIP.Gray700};
+    background: ${Colors.Gray700};
   }
 `;

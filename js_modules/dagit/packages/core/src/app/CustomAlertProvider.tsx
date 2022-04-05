@@ -1,4 +1,4 @@
-import {ButtonWIP, DialogWIP, DialogBody, DialogFooter, FontFamily} from '@dagster-io/ui';
+import {Button, Dialog, DialogBody, DialogFooter, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -46,7 +46,7 @@ export const CustomAlertProvider = () => {
   );
 
   return (
-    <DialogWIP
+    <Dialog
       title={alert?.title}
       icon={alert ? 'info' : undefined}
       onClose={() => setCustomAlert(null)}
@@ -59,14 +59,14 @@ export const CustomAlertProvider = () => {
         </DialogBody>
       ) : null}
       <DialogFooter>
-        <ButtonWIP autoFocus={false} onClick={onCopy}>
+        <Button autoFocus={false} onClick={onCopy}>
           Copy
-        </ButtonWIP>
-        <ButtonWIP intent="primary" autoFocus={true} onClick={() => setCustomAlert(null)}>
+        </Button>
+        <Button intent="primary" autoFocus={true} onClick={() => setCustomAlert(null)}>
           OK
-        </ButtonWIP>
+        </Button>
       </DialogFooter>
-    </DialogWIP>
+    </Dialog>
   );
 };
 
