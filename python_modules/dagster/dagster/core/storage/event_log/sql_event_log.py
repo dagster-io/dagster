@@ -103,7 +103,7 @@ class SqlEventLogStorage(EventLogStorage):
             column_names = [x.get("name") for x in db.inspect(conn).get_columns(AssetKeyTable.name)]
             return "last_materialization_timestamp" in column_names
 
-    def store_asset(self, event):
+    def store_asset_event(self, event):
         check.inst_param(event, "event", EventLogEntry)
         if not event.is_dagster_event or not event.dagster_event.asset_key:
             return
@@ -121,6 +121,8 @@ class SqlEventLogStorage(EventLogStorage):
             self.store_asset_observation(event)
         elif event.dagster_event.is_step_materialization:
             self.store_asset_materialization(event)
+        elif event.dagster_event.is_asset_materialization_planned:
+            self.store_asset_materialization_planned(event)
 
     def store_asset_observation(self, event):
         # last_materialization_timestamp is updated upon observation or materialization
@@ -203,6 +205,29 @@ class SqlEventLogStorage(EventLogStorage):
             except db.exc.IntegrityError:
                 conn.execute(update_statement)
 
+    def store_asset_materialization_planned(self, event):
+        insert_statement = (
+            AssetKeyTable.insert().values(  # pylint: disable=no-value-for-parameter
+                asset_key=event.dagster_event.asset_key.to_string(),
+                last_run_id=event.run_id,
+            )
+        )
+        update_statement = (
+            AssetKeyTable.update()
+            .values(
+                last_run_id=event.run_id,
+            )
+            .where(
+                AssetKeyTable.c.asset_key == event.dagster_event.asset_key.to_string(),
+            )
+        )
+        with self.index_connection() as conn:
+            try:
+                conn.execute(insert_statement)
+            except db.exc.IntegrityError:
+                conn.execute(update_statement)
+
+
     def store_event(self, event):
         """Store an event corresponding to a pipeline run.
 
@@ -221,10 +246,11 @@ class SqlEventLogStorage(EventLogStorage):
             and (
                 event.dagster_event.is_step_materialization
                 or event.dagster_event.is_asset_observation
+                or event.dagster_event.is_asset_materialization_planned
             )
             and event.dagster_event.asset_key
         ):
-            self.store_asset(event)
+            self.store_asset_event(event)
 
     def get_logs_for_run_by_log_id(
         self,

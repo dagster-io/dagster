@@ -179,6 +179,19 @@ class MySQLEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     )
                 )
 
+    def store_asset_materialization_planned(self, event):
+        with self.index_connection() as conn:
+            conn.execute(
+                db.dialects.mysql.insert(AssetKeyTable)
+                .values(
+                    asset_key=event.dagster_event.asset_key.to_string(),
+                    last_run_id=event.run_id,
+                )
+                .on_duplicate_key_update(
+                    last_run_id=event.run_id,
+                )
+            )
+
     def _connect(self):
         return create_mysql_connection(self._engine, __file__, "event log")
 

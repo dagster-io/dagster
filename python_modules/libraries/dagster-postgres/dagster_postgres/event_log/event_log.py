@@ -237,6 +237,22 @@ class PostgresEventLogStorage(SqlEventLogStorage, ConfigurableClass):
                     )
                 )
 
+    def store_asset_materialization_planned(self, event):
+        with self.index_connection() as conn:
+            conn.execute(
+                db.dialects.postgresql.insert(AssetKeyTable)
+                .values(
+                    asset_key=event.dagster_event.asset_key.to_string(),
+                    last_run_id=event.run_id,
+                )
+                .on_conflict_do_update(
+                    index_elements=[AssetKeyTable.c.asset_key],
+                    set_=dict(
+                        last_run_id=event.run_id,
+                    ),
+                )
+            )
+
     def _connect(self):
         return create_pg_connection(self._engine, __file__, "event log")
 
