@@ -1,7 +1,6 @@
 // eslint-disable-next-line no-restricted-imports
 import {Button as BlueprintButton, AnchorButton as BlueprintAnchorButton} from '@blueprintjs/core';
 import * as React from 'react';
-import {Link, LinkProps} from 'react-router-dom';
 
 import {BaseButton} from './BaseButton';
 import {Colors} from './Colors';
@@ -11,7 +10,7 @@ import {StyledButton, StyledButtonText} from './StyledButton';
 type BlueprintIntent = React.ComponentProps<typeof BlueprintButton>['intent'];
 type BlueprintOutlined = React.ComponentProps<typeof BlueprintButton>['outlined'];
 
-const intentToFillColor = (intent: BlueprintIntent, outlined: BlueprintOutlined) => {
+export const intentToFillColor = (intent: BlueprintIntent, outlined: BlueprintOutlined) => {
   if (outlined) {
     return 'transparent';
   }
@@ -31,7 +30,7 @@ const intentToFillColor = (intent: BlueprintIntent, outlined: BlueprintOutlined)
   }
 };
 
-const intentToTextColor = (intent: BlueprintIntent, outlined: BlueprintOutlined) => {
+export const intentToTextColor = (intent: BlueprintIntent, outlined: BlueprintOutlined) => {
   if (outlined) {
     switch (intent) {
       case 'primary':
@@ -50,7 +49,7 @@ const intentToTextColor = (intent: BlueprintIntent, outlined: BlueprintOutlined)
   return !intent || intent === 'none' ? Colors.Dark : Colors.White;
 };
 
-const intentToStrokeColor = (intent: BlueprintIntent, outlined: BlueprintOutlined) => {
+export const intentToStrokeColor = (intent: BlueprintIntent, outlined: BlueprintOutlined) => {
   if (!intent || intent === 'none' || outlined) {
     switch (intent) {
       case 'primary':
@@ -69,7 +68,7 @@ const intentToStrokeColor = (intent: BlueprintIntent, outlined: BlueprintOutline
   return 'transparent';
 };
 
-const intentToSpinnerColor = (intent: BlueprintIntent, outlined: BlueprintOutlined) => {
+export const intentToSpinnerColor = (intent: BlueprintIntent, outlined: BlueprintOutlined) => {
   if (outlined) {
     switch (intent) {
       case 'primary':
@@ -122,34 +121,6 @@ export const Button = React.forwardRef(
 );
 
 Button.displayName = 'Button';
-
-interface AnchorButtonProps
-  extends Omit<React.ComponentProps<typeof BlueprintAnchorButton>, 'loading' | 'onClick' | 'type'>,
-    LinkProps {
-  label?: React.ReactNode;
-}
-
-export const AnchorButton = React.forwardRef(
-  (props: AnchorButtonProps, ref: React.ForwardedRef<HTMLAnchorElement>) => {
-    const {children, icon, intent, outlined, rightIcon, ...rest} = props;
-    return (
-      <StyledButton
-        {...rest}
-        as={Link}
-        $fillColor={intentToFillColor(intent, outlined)}
-        $strokeColor={intentToStrokeColor(intent, outlined)}
-        $textColor={intentToTextColor(intent, outlined)}
-        ref={ref}
-      >
-        {icon || null}
-        {children ? <StyledButtonText>{children}</StyledButtonText> : null}
-        {rightIcon || null}
-      </StyledButton>
-    );
-  },
-);
-
-AnchorButton.displayName = 'AnchorButton';
 
 export const ExternalAnchorButton = React.forwardRef(
   (

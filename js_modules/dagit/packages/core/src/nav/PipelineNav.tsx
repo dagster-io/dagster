@@ -1,5 +1,5 @@
 import {IconName} from '@blueprintjs/core';
-import {Box, PageHeader, Tab, Tabs, TagWIP, Heading, Tooltip} from '@dagster-io/ui';
+import {Box, PageHeader, Tabs, TagWIP, Heading, Tooltip} from '@dagster-io/ui';
 import React from 'react';
 import {useRouteMatch} from 'react-router-dom';
 
@@ -9,6 +9,7 @@ import {
   explorerPathToString,
   ExplorerPath,
 } from '../pipelines/PipelinePathUtils';
+import {TabLink} from '../ui/TabLink';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';
@@ -131,7 +132,7 @@ export const PipelineNav: React.FC<Props> = (props) => {
               ) : (
                 text
               );
-              return <Tab key={text} id={text} title={title} disabled={disabled} to={href} />;
+              return <TabLink key={text} id={text} title={title} disabled={disabled} to={href} />;
             })}
           </Tabs>
         }

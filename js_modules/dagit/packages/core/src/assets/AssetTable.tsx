@@ -7,7 +7,6 @@ import {
   IconWIP,
   markdownToPlaintext,
   MenuItemWIP,
-  MenuLink,
   MenuWIP,
   Popover,
   Table,
@@ -21,6 +20,7 @@ import {tokenForAssetKey} from '../app/Util';
 import {useSelectionReducer} from '../hooks/useSelectionReducer';
 import {RepositoryLink} from '../nav/RepositoryLink';
 import {instanceAssetsExplorerPathToURL} from '../pipelines/PipelinePathUtils';
+import {MenuLink} from '../ui/MenuLink';
 
 import {AssetLink} from './AssetLink';
 import {AssetWipeDialog} from './AssetWipeDialog';

@@ -11,7 +11,6 @@ import {
   HighlightedCodeBlock,
   IconWIP,
   MenuItemWIP,
-  MenuLink,
   MenuWIP,
   NonIdealState,
   Popover,
@@ -29,6 +28,7 @@ import {PythonErrorInfo, PYTHON_ERROR_FRAGMENT} from '../app/PythonErrorInfo';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {RunTags} from '../runs/RunTags';
 import {InstigationStatus} from '../types/globalTypes';
+import {MenuLink} from '../ui/MenuLink';
 import {
   findRepositoryAmongOptions,
   isThisThingAJob,

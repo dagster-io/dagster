@@ -3,7 +3,6 @@ import {
   ButtonWIP,
   ColorsWIP,
   IconWIP,
-  MenuLink,
   MenuWIP,
   Popover,
   Table,
@@ -18,6 +17,7 @@ import {TickTag} from '../instigation/InstigationTick';
 import {InstigatedRunStatus} from '../instigation/InstigationUtils';
 import {PipelineReference} from '../pipelines/PipelineReference';
 import {InstigationStatus, InstigationType} from '../types/globalTypes';
+import {MenuLink} from '../ui/MenuLink';
 import {isThisThingAJob, useRepository} from '../workspace/WorkspaceContext';
 import {RepoAddress} from '../workspace/types';
 import {workspacePathFromAddress} from '../workspace/workspacePath';

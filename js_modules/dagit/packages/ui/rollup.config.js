@@ -60,8 +60,6 @@ export default {
     'react',
     'react-dom',
     'react-is',
-    'react-router',
-    'react-router-dom',
     'react-virtualized',
     'styled-components',
   ],
