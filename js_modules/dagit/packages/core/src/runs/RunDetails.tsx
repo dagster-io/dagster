@@ -116,7 +116,6 @@ export const RunDetails: React.FC<{
   );
 };
 
-
 export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({run, isJob}) => {
   const [showDialog, setShowDialog] = React.useState(false);
   const {rootServerURI} = React.useContext(AppContext);
@@ -127,24 +126,32 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
       <Group direction="row" spacing={8}>
         <Button
           icon={<Icon name="edit" />}
-          onClick={() => window.open(workspacePathFromRunDetails({
-            id: run.id,
-            repositoryName: run.repositoryOrigin?.repositoryName,
-            repositoryLocationName: run.repositoryOrigin?.repositoryLocationName,
-            pipelineName: run.pipelineName,
-            isJob,
-          }))}
+          onClick={() =>
+            window.open(
+              workspacePathFromRunDetails({
+                id: run.id,
+                repositoryName: run.repositoryOrigin?.repositoryName,
+                repositoryLocationName: run.repositoryOrigin?.repositoryLocationName,
+                pipelineName: run.pipelineName,
+                isJob,
+              }),
+            )
+          }
         >
-            Open in Launchpad
+          Open in Launchpad
         </Button>
         <Button icon={<Icon name="tag" />} onClick={() => setShowDialog(true)}>
           View tags and config
         </Button>
-        <Popover 
+        <Popover
           position="bottom-right"
           content={
             <Menu>
-              <Tooltip content="Loadable in dagit-debug" position="bottom-right" targetTagName="div">
+              <Tooltip
+                content="Loadable in dagit-debug"
+                position="bottom-right"
+                targetTagName="div"
+              >
                 <MenuItem
                   text={'Debug file'}
                   icon={<Icon name="download_for_offline" />}
@@ -152,9 +159,10 @@ export const RunConfigDialog: React.FC<{run: RunFragment; isJob: boolean}> = ({r
                 />
               </Tooltip>
             </Menu>
-        }>
-        <Button icon={<Icon name="expand_more" />} />
-      </Popover>
+          }
+        >
+          <Button icon={<Icon name="expand_more" />} />
+        </Popover>
       </Group>
       <Dialog
         isOpen={showDialog}
