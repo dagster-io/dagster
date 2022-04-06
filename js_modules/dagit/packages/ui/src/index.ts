@@ -27,6 +27,7 @@ export * from './components/Select';
 export * from './components/Slider';
 export * from './components/Spinner';
 export * from './components/SplitPanelContainer';
+export * from './components/StyledButton';
 export * from './components/Suggest';
 export * from './components/Table';
 export * from './components/Tabs';
@@ -45,17 +46,3 @@ export * from './components/useSuggestionsForString';
 // your app tree root. E.g. <GlobalInconsolata />
 export * from './fonts/GlobalInconsolata';
 export * from './fonts/GlobalInter';
-
-// todo dish: Delete these when callsites are cleaned up.
-export {Button as ButtonWIP} from './components/Button';
-export {Colors as ColorsWIP} from './components/Colors';
-export {Dialog as DialogWIP} from './components/Dialog';
-export {Tag as TagWIP} from './components/Tag';
-export {Icon as IconWIP} from './components/Icon';
-export {
-  Menu as MenuWIP,
-  MenuItem as MenuItemWIP,
-  MenuDivider as MenuDividerWIP,
-} from './components/Menu';
-export {Select as SelectWIP} from './components/Select';
-export {Suggest as SuggestWIP} from './components/Suggest';

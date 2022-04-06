@@ -1,4 +1,4 @@
-import {ColorsWIP, Tooltip, FontFamily} from '@dagster-io/ui';
+import {Colors, Tooltip, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -9,8 +9,8 @@ export const LegacyPipelineTag = () => (
 );
 
 const LegacyTag = styled.div`
-  background: ${ColorsWIP.Gray10};
-  color: ${ColorsWIP.Gray600};
+  background: ${Colors.Gray10};
+  color: ${Colors.Gray600};
   font-family: ${FontFamily.default};
   font-size: 14px;
   border-radius: 7px;

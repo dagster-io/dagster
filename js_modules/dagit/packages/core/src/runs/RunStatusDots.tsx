@@ -1,4 +1,4 @@
-import {ColorsWIP, Popover, Spinner} from '@dagster-io/ui';
+import {Colors, Popover, Spinner} from '@dagster-io/ui';
 import * as React from 'react';
 import styled, {css, keyframes} from 'styled-components/macro';
 
@@ -8,18 +8,18 @@ import {RunStats} from './RunStats';
 import {inProgressStatuses, queuedStatuses} from './RunStatuses';
 
 const RUN_STATUS_COLORS = {
-  QUEUED: ColorsWIP.Blue200,
-  NOT_STARTED: ColorsWIP.Gray600,
-  STARTING: ColorsWIP.Gray400,
-  MANAGED: ColorsWIP.Gray400,
-  STARTED: ColorsWIP.Blue500,
-  SUCCESS: ColorsWIP.Green500,
-  FAILURE: ColorsWIP.Red500,
-  CANCELING: ColorsWIP.Red500,
-  CANCELED: ColorsWIP.Red500,
+  QUEUED: Colors.Blue200,
+  NOT_STARTED: Colors.Gray600,
+  STARTING: Colors.Gray400,
+  MANAGED: Colors.Gray400,
+  STARTED: Colors.Blue500,
+  SUCCESS: Colors.Green500,
+  FAILURE: Colors.Red500,
+  CANCELING: Colors.Red500,
+  CANCELED: Colors.Red500,
 
   // Not technically a RunStatus, but useful.
-  SCHEDULED: ColorsWIP.Blue200,
+  SCHEDULED: Colors.Blue200,
 };
 
 export const RunStatusWithStats: React.FC<RunStatusProps & {runId: string}> = React.memo(

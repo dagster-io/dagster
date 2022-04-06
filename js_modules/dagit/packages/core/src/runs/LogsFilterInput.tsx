@@ -1,5 +1,5 @@
 import {
-  ColorsWIP,
+  Colors,
   Popover,
   TextInput,
   SuggestionProvider,
@@ -222,8 +222,8 @@ interface HighlightableTextProps {
 
 const Item = styled.li<HighlightableTextProps>`
   align-items: center;
-  background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Blue500 : ColorsWIP.White)};
-  color: ${({isHighlight}) => (isHighlight ? ColorsWIP.White : 'default')};
+  background-color: ${({isHighlight}) => (isHighlight ? Colors.Blue500 : Colors.White)};
+  color: ${({isHighlight}) => (isHighlight ? Colors.White : 'default')};
   cursor: pointer;
   display: flex;
   flex-direction: row;
@@ -235,6 +235,6 @@ const Item = styled.li<HighlightableTextProps>`
   text-overflow: ellipsis;
 
   &:hover {
-    background-color: ${({isHighlight}) => (isHighlight ? ColorsWIP.Blue500 : ColorsWIP.Gray100)};
+    background-color: ${({isHighlight}) => (isHighlight ? Colors.Blue500 : Colors.Gray100)};
   }
 `;

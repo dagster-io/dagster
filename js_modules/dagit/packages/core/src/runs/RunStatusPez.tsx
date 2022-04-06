@@ -1,4 +1,4 @@
-import {Box, ColorsWIP, FontFamily, Mono, Popover} from '@dagster-io/ui';
+import {Box, Colors, FontFamily, Mono, Popover} from '@dagster-io/ui';
 import * as React from 'react';
 import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
@@ -11,15 +11,15 @@ import {RunTime, titleForRun} from './RunUtils';
 import {RunTimeFragment} from './types/RunTimeFragment';
 
 const RUN_STATUS_COLORS = {
-  QUEUED: ColorsWIP.Blue500,
-  NOT_STARTED: ColorsWIP.Blue500,
-  STARTING: ColorsWIP.Blue500,
-  MANAGED: ColorsWIP.Blue500,
-  STARTED: ColorsWIP.Blue500,
-  SUCCESS: ColorsWIP.Green500,
-  FAILURE: ColorsWIP.Red500,
-  CANCELING: ColorsWIP.Red500,
-  CANCELED: ColorsWIP.Red500,
+  QUEUED: Colors.Blue500,
+  NOT_STARTED: Colors.Blue500,
+  STARTING: Colors.Blue500,
+  MANAGED: Colors.Blue500,
+  STARTED: Colors.Blue500,
+  SUCCESS: Colors.Green500,
+  FAILURE: Colors.Red500,
+  CANCELING: Colors.Red500,
+  CANCELED: Colors.Red500,
 };
 
 const MIN_OPACITY = 0.2;
@@ -109,7 +109,7 @@ const HorizontalSpace = styled.div`
 
 const OverlayTitle = styled(SectionHeader)`
   padding: 8px;
-  box-shadow: inset 0 -1px ${ColorsWIP.KeylineGray};
+  box-shadow: inset 0 -1px ${Colors.KeylineGray};
   max-width: 100%;
   text-overflow: ellipsis;
   overflow: hidden;

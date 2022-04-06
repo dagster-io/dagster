@@ -5,7 +5,7 @@
 ### New
 
 * [helm] Added configuration to explicitly enable or disable telemetry.
-* Added a new IO manager for materializing assets to Azure ADLS. You can specify this IO manager for your AssetGroups by using the following config:  
+* Added a new IO manager for materializing assets to Azure ADLS. You can specify this IO manager for your AssetGroups by using the following config:
 
 ```
 `from dagster import AssetGroup
@@ -17,8 +17,9 @@ asset_group = AssetGroup(
 ```
 
 * Added ability to set a custom start time for partitions when using `@hourly_partitioned_config` ,  `@daily_partitioned_config`, `@weekly_partitioned_config`, and `@monthly_partitioned_config`
-* Run configs generated from partitions can be retrieved using the `PartitionedConfig,get_partition_for_partition_key` function. This will allow the use of the `validate_run_config` function in unit tests. 
+* Run configs generated from partitions can be retrieved using the `PartitionedConfig.get_run_config_for_partition_key` function. This will allow the use of the `validate_run_config` function in unit tests.
 * [dagit] If a run is re-executed from failure, and the run fails again, the default action will be to re-execute from the point of failure, rather than to re-execute the entire job.
+* `PartitionedConfig` now takes an argument `tags_for_partition_fn` which allows for custom run tags for a given partition.
 
 ### Bugfixes
 

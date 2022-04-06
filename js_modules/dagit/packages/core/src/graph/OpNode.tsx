@@ -1,5 +1,5 @@
 import {gql} from '@apollo/client';
-import {ColorsWIP, IconWIP, FontFamily} from '@dagster-io/ui';
+import {Colors, Icon, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
 import styled from 'styled-components/macro';
 
@@ -160,7 +160,7 @@ export class OpNode extends React.Component<IOpNodeProps> {
 
         <div className="node-box" style={{...position(layout.op)}}>
           <div className="name">
-            {!minified && <IconWIP name="op" size={16} />}
+            {!minified && <Icon name="op" size={16} />}
             <div className="label" data-tooltip={label} data-tooltip-style={TOOLTIP_STYLE}>
               {withMiddleTruncation(label, {maxLength: 48})}
             </div>
@@ -193,7 +193,7 @@ const OpNodeAssociatedAssets: React.FC<{nodes: {assetKey: AssetKey}[]}> = ({node
   const more = nodes.length > 1 ? ` + ${nodes.length - 1} more` : '';
   return (
     <div className="assets">
-      <IconWIP name="asset" size={16} />
+      <Icon name="asset" size={16} />
       {withMiddleTruncation(displayNameForAssetKey(nodes[0].assetKey), {
         maxLength: 48 - more.length,
       })}
@@ -329,7 +329,7 @@ const NodeContainer = styled.div<{
       p.$selected
         ? `2px dashed ${NodeHighlightColors.Border}`
         : p.$secondaryHighlight
-        ? `2px solid ${ColorsWIP.Blue500}55`
+        ? `2px solid ${Colors.Blue500}55`
         : '2px solid transparent'};
     border-radius: 6px;
     background: ${(p) => (p.$selected ? NodeHighlightColors.Background : 'transparent')};
@@ -338,11 +338,11 @@ const NodeContainer = styled.div<{
     border: 2px solid #dcd5ca;
     border-width: ${(p) => (p.$minified ? '3px' : '2px')};
     border-radius: 5px;
-    background: ${(p) => (p.$minified ? ColorsWIP.Gray50 : ColorsWIP.White)};
+    background: ${(p) => (p.$minified ? Colors.Gray50 : Colors.White)};
   }
   .composite-marker {
     outline: ${(p) => (p.$minified ? '3px' : '2px')} solid
-      ${(p) => (p.$selected ? 'transparent' : ColorsWIP.Yellow200)};
+      ${(p) => (p.$selected ? 'transparent' : Colors.Yellow200)};
     outline-offset: ${(p) => (p.$minified ? '5px' : '3px')};
     border-radius: 3px;
   }

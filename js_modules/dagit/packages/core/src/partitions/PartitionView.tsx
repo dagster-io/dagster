@@ -1,12 +1,4 @@
-import {
-  Box,
-  ButtonWIP,
-  CursorHistoryControls,
-  DialogWIP,
-  IconWIP,
-  Spinner,
-  Tooltip,
-} from '@dagster-io/ui';
+import {Box, Button, CursorHistoryControls, Dialog, Icon, Spinner, Tooltip} from '@dagster-io/ui';
 import * as React from 'react';
 
 import {showCustomAlert} from '../app/CustomAlertProvider';
@@ -79,27 +71,27 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
     if (!canLaunchPartitionBackfill) {
       return (
         <Tooltip content={DISABLED_MESSAGE}>
-          <ButtonWIP icon={<IconWIP name="add_circle" />} disabled>
+          <Button icon={<Icon name="add_circle" />} disabled>
             Launch backfill
-          </ButtonWIP>
+          </Button>
         </Tooltip>
       );
     }
 
     return (
-      <ButtonWIP
+      <Button
         onClick={() => setShowBackfillSetup(!showBackfillSetup)}
-        icon={<IconWIP name="add_circle" />}
+        icon={<Icon name="add_circle" />}
         active={showBackfillSetup}
       >
         Launch backfill
-      </ButtonWIP>
+      </Button>
     );
   };
 
   return (
     <div>
-      <DialogWIP
+      <Dialog
         canEscapeKeyClose={!blockDialog}
         canOutsideClickClose={!blockDialog}
         onClose={() => setShowBackfillSetup(false)}
@@ -121,7 +113,7 @@ export const PartitionView: React.FC<PartitionViewProps> = ({
             repoAddress={repoAddress}
           />
         )}
-      </DialogWIP>
+      </Dialog>
       <OptionsContainer style={{gap: 12}}>
         {partitionSets.length <= 1 ? null : (
           <PartitionSetSelector

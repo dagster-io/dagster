@@ -1,5 +1,5 @@
 import {gql, useQuery} from '@apollo/client';
-import {Box, ColorsWIP, IconWIP} from '@dagster-io/ui';
+import {Box, Colors, Icon} from '@dagster-io/ui';
 import React from 'react';
 import {Link} from 'react-router-dom';
 
@@ -25,13 +25,13 @@ export const RunningBackfillsNotice: React.FC<{partitionSetName: string}> = ({
     return <span />;
   }
   return (
-    <div style={{color: ColorsWIP.Gray400, maxWidth: 350}}>
+    <div style={{color: Colors.Gray400, maxWidth: 350}}>
       {runningBackfillCount === 1
         ? 'Note: A backfill has been requested for this job and may be refreshing displayed assets. '
         : `Note: ${runningBackfillCount} backfills have been requested for this job and may be refreshing displayed assets. `}
       <Link to="/instance/backfills" target="_blank">
         <Box flex={{gap: 4, display: 'inline-flex', alignItems: 'center'}}>
-          View <IconWIP name="open_in_new" color={ColorsWIP.Link} />
+          View <Icon name="open_in_new" color={Colors.Link} />
         </Box>
       </Link>
     </div>

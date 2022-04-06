@@ -7,10 +7,8 @@
   "dependencies": {
     "@apollo/client": "3.3.16",
     "@blueprintjs/core": "^3.45.0",
-    "@blueprintjs/icons": "^3.26.1",
     "@blueprintjs/popover2": "0.10.1",
     "@blueprintjs/select": "^3.16.4",
-    "@blueprintjs/table": "^3.8.33",
     "@dagster-io/dagit-core": "workspace:*",
     "@dagster-io/ui": "workspace:*",
     "graphql": "^15.5.0",

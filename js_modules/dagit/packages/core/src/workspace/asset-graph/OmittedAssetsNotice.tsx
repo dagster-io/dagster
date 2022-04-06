@@ -2,7 +2,7 @@ import {gql, useQuery} from '@apollo/client';
 import React from 'react';
 import styled from 'styled-components/macro';
 
-import {ColorsWIP} from '../../../../ui/src';
+import {Colors} from '../../../../ui/src';
 import {AssetKey} from '../../assets/types';
 
 import {OmittedAssetCountQuery} from './types/OmittedAssetCountQuery';
@@ -29,9 +29,9 @@ export const OmittedAssetsNotice: React.FC<{assetKeys: AssetKey[]}> = ({assetKey
 };
 
 const Container = styled.div`
-  background: ${ColorsWIP.Gray100};
+  background: ${Colors.Gray100};
   border-radius: 8px;
-  color: ${ColorsWIP.Gray500};
+  color: ${Colors.Gray500};
   align-items: center;
   display: flex;
   padding: 4px 8px;
