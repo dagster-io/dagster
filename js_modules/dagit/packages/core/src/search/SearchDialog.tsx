@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import {Overlay} from '@blueprintjs/core';
 import {Box, Colors, Icon, Spinner, FontFamily} from '@dagster-io/ui';
 import Fuse from 'fuse.js';

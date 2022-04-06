@@ -1,3 +1,4 @@
+// eslint-disable-next-line no-restricted-imports
 import {Text} from '@blueprintjs/core';
 import {Colors, Group, Icon, IconWrapper, Code, FontFamily} from '@dagster-io/ui';
 import * as React from 'react';
